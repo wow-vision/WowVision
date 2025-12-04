@@ -11,6 +11,7 @@ externals:
   libs/LibRangeCheck-3.0: https://github.com/WeakAuras/LibRangeCheck-3.0/LibRangeCheck-3.0
 
 ignore:
+  - .stylua.toml
   - .gitignore
   - .gitmodules
   - .github
