@@ -1,0 +1,6 @@
+[submodule "locale"]
+	path = locale
+	url = https://github.com/wow-vision/vision-locale
+[submodule "audio"]
+	path = audio
+	url = https://github.com/wow-vision/vision-default-audio
