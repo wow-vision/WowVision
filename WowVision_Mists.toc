@@ -1,5 +1,5 @@
 ## Title: WowVision
-## Version: V0.4.0
+## Version: @project-version@
 ## Author: bradjrenshaw
 ## Interface: 50500
 ## OptionalDeps: Sku, BlindSlash
