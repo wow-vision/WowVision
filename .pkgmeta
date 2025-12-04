@@ -1,4 +1,6 @@
 package-as: WowVision
+manual-changelog: changes.md
+changelog-markup: markdown
 
 externals:
   libs/LibStub: https://github.com/WoWUIDev/Ace3/LibStub
@@ -16,5 +18,4 @@ ignore:
   - .gitmodules
   - .github
   - .vscode
-  - changes.md
   - packager
