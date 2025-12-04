@@ -1,0 +1,84 @@
+local ProxyEditBox, parent = WowVision.ui:CreateElementType("ProxyEditBox", "ProxyWidget")
+local L = WowVision:getLocale()
+
+-- Define InfoClass fields at class level
+ProxyEditBox.info:addFields({
+    { key = "autoInputOnFocus", default = true },
+    { key = "hookTab", default = true },
+    { key = "hookEnter", default = false },
+    { key = "fixAutoFocus", default = false },
+})
+
+function ProxyEditBox:initialize()
+    parent.initialize(self, "ProxyEditBox")
+
+    self:addProp({
+        key = "autoInputOnFocus",
+        default = true,
+    })
+
+    self:addProp({
+        key = "hookTab",
+        default = true,
+    })
+
+    self:addProp({
+        key = "hookEnter",
+        default = false,
+    })
+
+    self:addProp({
+        key = "fixAutoFocus",
+        default = false,
+    })
+end
+
+function ProxyEditBox:getValue()
+    if self.frame:IsNumeric() then
+        return self.frame:GetNumber()
+    end
+    return self.frame:GetText()
+end
+
+function ProxyEditBox:onFocus()
+    parent.onFocus(self)
+    if self.fixAutoFocus then
+        self.frame:SetAutoFocus(false)
+    end
+    if self.frame:IsEnabled() then
+        if self.autoInputOnFocus then
+            self:input()
+        end
+    end
+end
+
+function ProxyEditBox:input()
+    self.frame:SetFocus()
+    if self.hookTab then
+        self.frame:SetScript("OnTabPressed", function(frame)
+            local binding
+            if IsShiftKeyDown() then
+                binding = WowVision.input:getBinding("previous")
+            else
+                binding = WowVision.input:getBinding("next")
+            end
+            WowVision.UIHost:onBindingPressed(binding)
+        end)
+    end
+    if self.hookEnter then
+        self.frame:SetScript("OnEnterPressed", function(frame)
+            self.frame:ClearFocus()
+        end)
+    end
+end
+
+function ProxyEditBox:onUnfocus()
+    parent.onUnfocus(self)
+    self.frame:ClearFocus()
+end
+
+function ProxyEditBox:onClick(binding)
+    if not self.frame:HasFocus() and self.frame:IsEnabled() then
+        self:input()
+    end
+end

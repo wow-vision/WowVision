@@ -1,0 +1,20 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+  <Script file="UIContainer.lua" />
+  <Script file="List.lua" />
+  <Script file="Panel.lua" />
+  <Script file="ProxyScrollFrame.lua" />
+  <Script file="ProxyScrollBox.lua" />
+  <Script file = "ProxyScrollTable.lua" />
+  <Script file="GeneratorPanel.lua" />
+  <Script file="DropdownGeneratorPanel.lua" />
+  <Script file="ProxyTabPanel.lua" />
+  <Script file="ProxyHybridScrollFrame.lua" />
+  <Script file="ModulePanel.lua" />
+  <Script file="money.lua" />
+  <Script file="MessageBufferView.lua" />
+  <Script file="DataList.lua" />
+  <Script file="BindingSetMapper.lua" />
+
+</Ui>

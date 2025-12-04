@@ -1,0 +1,157 @@
+local Field = WowVision.Class("InfoField")
+WowVision.info.Field = Field
+
+function Field:initialize(info)
+    if not info.key then
+        error("All info fields must have a key.")
+    end
+    self.key = info.key
+    if info.type then
+        local fieldType = WowVision.info.fieldTypes:get(info.type)
+        if fieldType == nil then
+            error("Unknown field type " .. info.type .. ".")
+        end
+        self.type = fieldType
+        fieldType.parameters:set(self, info)
+    end
+    self.required = info.required or false
+    self.once = info.once or false
+    self.default = info.default
+    self.getFunc = info.get
+    self.setFunc = info.set
+    self.compareMode = info.compareMode or "deep" -- "deep" or "direct"
+    self.getLabelFunc = info.getLabel
+end
+
+function Field:getInfo()
+    local result = {
+        key = self.key,
+        required = self.required,
+        once = self.once,
+        default = self.default,
+        get = self.getFunc,
+        set = self.setFunc,
+        compareMode = self.compareMode,
+        getLabel = self.getLabelFunc,
+    }
+    if self.type then
+        result.type = self.type.key
+    end
+    return result
+end
+
+function Field:validate(value)
+    if self.type then
+        return self.type:validate(self, value)
+    end
+    return value
+end
+
+function Field:compare(a, b)
+    if self.compareMode == "direct" then
+        return a == b
+    end
+    -- Deep comparison
+    return WowVision:recursiveComp(a, b)
+end
+
+function Field:getLabel(obj, value)
+    if self.getLabelFunc then
+        return self.getLabelFunc(obj, value)
+    end
+    if value == nil then
+        return nil
+    end
+    return tostring(value)
+end
+
+function Field:get(obj)
+    if self.getFunc then
+        return self.getFunc(obj, self.key)
+    end
+    return obj[self.key]
+end
+
+function Field:getDefault(obj)
+    if type(self.default) == "function" then
+        return self.default(obj)
+    end
+    return self.default
+end
+
+function Field:set(obj, value)
+    local value = self:validate(value)
+    if self.setFunc then
+        self.setFunc(obj, self.key, value)
+    else
+        obj[self.key] = value
+    end
+end
+
+function Field:setInfo(obj, info, ignoreRequired)
+    local ignoreRequired = ignoreRequired or false
+    local newValue = info[self.key]
+    local currentValue = self:get(obj)
+    if newValue == nil then
+        if currentValue == nil and self.default ~= nil then
+            self:set(obj, self:getDefault())
+        elseif ignoreRequired == false and self.required and currentValue == nil then
+            error("Field " .. self.key .. " must have a value.")
+        end
+    else
+        if self.once and currentValue ~= nil then
+            error("Field " .. self.key .. " cannot be overwritten.")
+        end
+        self:set(obj, newValue)
+    end
+end
+
+local FieldType = WowVision.Class("FieldType")
+WowVision.info.FieldType = FieldType
+
+function FieldType:initialize(key, parent)
+    self.key = key
+    self.operators = {}
+    if parent then
+        self.parameters = parent.parameters:clone()
+        for _, operator in ipairs(parent.operators) do
+            self:addOperator(operator:getInfo())
+        end
+    else
+        self.parameters = WowVision.info.InfoManager:new()
+    end
+end
+
+function FieldType:addOperator(info)
+    local operator = WowVision.info.Operator:new(info)
+    self.operators[info.key] = operator
+    return operator
+end
+
+function FieldType:validate(field, value)
+    return value
+end
+
+local Operator = WowVision.Class("InfoFieldOperator"):include(WowVision.InfoClass)
+WowVision.info.Operator = Operator
+Operator.info:addFields({
+    { key = "key", required = true },
+    { key = "label" },
+    { key = "symbol" },
+    {
+        key = "operands",
+        required = true,
+        default = function()
+            return {}
+        end,
+    },
+    { key = "func", required = true },
+})
+
+function Operator:initialize(info)
+    self:setInfo(info)
+end
+
+function Operator:evaluate(...)
+    return self.func(...)
+end

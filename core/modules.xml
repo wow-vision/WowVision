@@ -1,0 +1,36 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+  <Script file = "WowVision.lua" />
+              <Script file="Registry.lua" />
+  <Script file="db.lua" />
+  <Include file="info/modules.xml" />
+  <Include file="../locale/modules.xml" />
+  <Script file="utils.lua" />
+  <Script file="Profiler.lua" />
+  <Script file="dev.lua" />
+  <Script file="json.lua" />
+  <Script file="Dataset.lua" />
+    <Script file="data.lua" />
+    <Include file="gameDB/modules.xml" />
+    <Script file="ViewList.lua" />
+    <Include file="parameters/modules.xml" />
+    <Include file="audio/modules.xml" />
+    <Include file="../audio/modules.xml" />
+    <Include file="alerts/modules.xml" />
+  <Script file="MessageBuffer.lua" />
+  <Script file="Event.lua" />
+  <Include file="ui/modules.xml" />
+    <Script file="UIHost.lua" />
+      <include file="module/modules.xml" />
+          <Include file="ui modules/modules.xml" />
+    <Include file="objects/modules.xml" />
+    <Include file="speech/modules.xml" />
+    <Include file="buffers/modules.xml" />
+    <Include file="windows/modules.xml" />
+  <Include file="chat/modules.xml" />
+  <Script file="errors.lua" />
+  <Include file="navigation/modules.xml" />
+  <Include file="targeting/modules.xml" />
+
+</Ui>
