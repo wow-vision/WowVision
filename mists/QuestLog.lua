@@ -122,8 +122,8 @@ gen:Element("QuestLog/QuestControl", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "QuestLog",
-    auto = true,
     generated = true,
     rootElement = "QuestLog",
     frameName = "QuestLogFrame",

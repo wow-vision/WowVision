@@ -60,11 +60,11 @@ end)
 --There are 4 StaticPopup frames. Register a window to each; when the corresponding frame becomes shown, open a generated window with that frame attached.
 for i = 1, 4 do
     module:registerWindow({
+        type = "FrameWindow",
         name = "StaticPopup" .. i,
-        auto = true, --Automatically open when frame is shown
-        generated = true, --Use a generated descriptor as above
-        rootElement = "StaticPopup", --Root path of the descriptor
-        frameName = "StaticPopup" .. i, --The name of the Blizzard frame, IE StaticPopup1
+        generated = true,
+        rootElement = "StaticPopup",
+        frameName = "StaticPopup" .. i,
         conflictingAddons = { "Sku" },
     })
 end

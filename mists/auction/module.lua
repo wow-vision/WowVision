@@ -701,10 +701,8 @@ end)
 module:registerWindow({
     type = "EventWindow",
     name = "AuctionHouseFrame",
-    auto = true,
     generated = true,
     rootElement = "auction",
-    frameName = "AuctionHouseFrame",
     openEvent = "AUCTION_HOUSE_SHOW",
     closeEvent = "AUCTION_HOUSE_CLOSED",
 })

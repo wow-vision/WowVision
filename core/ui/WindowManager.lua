@@ -41,7 +41,7 @@ end
 
 function WindowManager:RegisterWindow(window)
     self.windows[window.name] = window
-    if window.auto then
+    if window:needsPolling() then
         self.autoWindows[#self.autoWindows + 1] = window
     end
 end
@@ -49,7 +49,7 @@ end
 function WindowManager:UnregisterWindow(name)
     local window = self.windows[name]
     self.windows[name] = nil
-    if window and window.auto then
+    if window and window:needsPolling() then
         for i = #self.autoWindows, 1, -1 do
             if self.autoWindows[i] == window then
                 table.remove(self.autoWindows, i)
@@ -67,7 +67,7 @@ end
 
 function WindowManager:notifyOpened(window, instance)
     tinsert(self.openWindows, instance)
-    if window.auto then
+    if window:needsPolling() then
         self.openWindows.autoWindows[window.name] = true
     end
     self.windowContext:add(instance.context)
@@ -110,8 +110,8 @@ function WindowManager:openWindow(windowOrName, props)
         end
     end
 
-    -- Check if already open (for auto windows)
-    if window.auto and self.openWindows.autoWindows[window.name] then
+    -- Check if already open (for polling windows)
+    if window:needsPolling() and self.openWindows.autoWindows[window.name] then
         return nil
     end
 

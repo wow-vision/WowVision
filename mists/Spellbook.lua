@@ -111,8 +111,8 @@ gen:Element("spellbook/SpellBookPageNavigation", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "spellbook",
-    auto = true,
     generated = true,
     rootElement = "spellbook",
     frameName = "SpellBookFrame",
@@ -130,8 +130,8 @@ gen:Element("SpellFlyout", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "SpellFlyout",
-    auto = true,
     generated = true,
     rootElement = "SpellFlyout",
     frameName = "SpellFlyout",

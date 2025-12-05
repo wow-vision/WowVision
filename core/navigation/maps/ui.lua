@@ -59,8 +59,8 @@ gen:Element("maps/Atlas", function(props)
 end)
 
 module:registerWindow({
+    type = "ManualWindow",
     name = "atlas",
-    auto = false,
     generated = true,
     rootElement = "maps/Atlas",
     hookEscape = true,

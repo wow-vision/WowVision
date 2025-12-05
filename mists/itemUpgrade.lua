@@ -90,8 +90,8 @@ gen:Element("itemUpgrade/Stats", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "itemUpgrade",
-    auto = true,
     generated = true,
     rootElement = "itemUpgrade",
     frameName = "ItemUpgradeFrame",

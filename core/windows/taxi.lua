@@ -45,10 +45,8 @@ end)
 module:registerWindow({
     type = "PlayerInteractionWindow",
     name = "taxi",
-    auto = true,
     generated = true,
     rootElement = "taxi",
-    frameName = "TaxiFrame",
     conflictingAddons = { "Sku" },
     interactionType = Enum.PlayerInteractionType.TaxiNode,
 })

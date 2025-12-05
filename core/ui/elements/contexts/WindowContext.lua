@@ -50,7 +50,8 @@ function Context:closeWindow(shouldHandleContext)
     if self.onClose then
         self:onClose()
     end
-    WowVision.UIHost.windowManager:closeWindow(self.window, shouldHandleContext)
+    -- self.window is the config object from CreateElement, ref contains the actual Window
+    WowVision.UIHost.windowManager:closeWindow(self.window.ref, shouldHandleContext)
 end
 
 function Context:handleEscape()

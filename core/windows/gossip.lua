@@ -21,10 +21,8 @@ end)
 module:registerWindow({
     type = "EventWindow",
     name = "gossip",
-    auto = true,
     generated = true,
     rootElement = "gossip",
-    frameName = "GossipFrame",
     conflictingAddons = { "Sku" },
     openEvent = "GOSSIP_SHOW",
     closeEvent = "GOSSIP_CLOSED",

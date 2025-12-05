@@ -170,23 +170,16 @@ function Module:registerWindow(config)
     if config.checkState then
         window = config
     elseif config.type then
-        -- Explicit type specified → use it directly
+        -- CustomWindow uses isOpenFunc internally, but isOpen in config
         if config.type == "CustomWindow" and config.isOpen then
             config.isOpenFunc = config.isOpen
             config.isOpen = nil
         end
         window = WowVision.WindowManager:CreateWindow(config.type, config)
-    elseif config.isOpen then
-        -- Custom isOpen function → CustomWindow
-        config.isOpenFunc = config.isOpen
-        config.isOpen = nil
-        window = WowVision.WindowManager:CreateWindow("CustomWindow", config)
-    elseif config.frameName then
-        -- Frame-based detection → FrameWindow
-        window = WowVision.WindowManager:CreateWindow("FrameWindow", config)
     else
-        -- No auto-detection → ManualWindow (opened/closed programmatically)
-        window = WowVision.WindowManager:CreateWindow("ManualWindow", config)
+        error(
+            "Window config must specify 'type' field. Available types: FrameWindow, CustomWindow, ManualWindow, EventWindow, PlayerInteractionWindow"
+        )
     end
     self.registeredWindows[window.name] = window
 end

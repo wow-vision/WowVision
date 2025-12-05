@@ -58,8 +58,8 @@ gen:Element("rolePoll/RoleButton", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "RolePoll",
-    auto = true,
     generated = true,
     rootElement = "RolePoll",
     frameName = "RolePollPopup",
@@ -67,8 +67,8 @@ module:registerWindow({
 })
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "LFDRoleCheckPopup",
-    auto = true,
     generated = true,
     rootElement = "RolePoll",
     frameName = "LFDRoleCheckPopup",

@@ -57,8 +57,8 @@ gen:Element("reforging/Stats", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "reforging",
-    auto = true,
     generated = true,
     rootElement = "reforging",
     frameName = "ReforgingFrame",

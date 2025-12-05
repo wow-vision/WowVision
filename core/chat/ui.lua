@@ -156,26 +156,17 @@ gen:Element("ChatConfig/ChatConfigOtherSettings", function(props)
 end)
 
 module:registerWindow({
+    type = "ManualWindow", -- Only opened via Shift-F3 binding, not polled
     name = "chat",
-    auto = false,
     innate = true,
     generated = true,
     rootElement = "chat",
     hookEscape = true,
-    isOpen = function()
-        for i = 1, FCF_GetNumActiveChatFrames() do
-            local frame = _G["ChatFrame" .. i]
-            if frame and frame.editBox:IsShown() then
-                return true
-            end
-        end
-        return false
-    end,
 })
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "ChatConfigFrame",
-    auto = true,
     generated = true,
     rootElement = "ChatConfig",
     frameName = "ChatConfigFrame",

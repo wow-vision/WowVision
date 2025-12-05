@@ -50,8 +50,8 @@ gen:Element("trade/TargetItems", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "trade",
-    auto = true,
     generated = true,
     rootElement = "trade",
     frameName = "TradeFrame",

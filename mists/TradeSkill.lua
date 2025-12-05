@@ -135,8 +135,8 @@ gen:Element("TradeSkill/List", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "TradeSkill",
-    auto = true,
     generated = true,
     rootElement = "TradeSkill",
     frameName = "TradeSkillFrame",

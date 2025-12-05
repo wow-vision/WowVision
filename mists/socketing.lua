@@ -51,8 +51,8 @@ gen:Element("socketing/Sockets", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "socketing",
-    auto = true,
     generated = true,
     rootElement = "socketing",
     frameName = "ItemSocketingFrame",

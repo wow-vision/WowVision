@@ -143,8 +143,8 @@ gen:Element("character/Currency", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "character",
-    auto = true,
     generated = true,
     rootElement = "character",
     frameName = "CharacterFrame",

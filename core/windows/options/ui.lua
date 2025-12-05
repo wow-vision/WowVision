@@ -379,8 +379,8 @@ gen:Element("settings/frames/SettingsLanguageRestartNeededTemplate", function(pr
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "options",
-    auto = true,
     generated = true,
     rootElement = "options",
     frameName = "SettingsPanel",

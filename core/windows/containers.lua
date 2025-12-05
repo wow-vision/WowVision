@@ -44,8 +44,8 @@ gen:Element("bags/Container", function(props)
 end)
 
 module:registerWindow({
+    type = "CustomWindow",
     name = "bags",
-    auto = true,
     generated = true,
     rootElement = "bags",
     isOpen = function(self)

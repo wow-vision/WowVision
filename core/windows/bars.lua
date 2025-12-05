@@ -171,8 +171,8 @@ gen:Element("bars", function(props)
 end)
 
 module:registerWindow({
+    type = "ManualWindow",
     name = "bars",
-    auto = false,
     innate = true,
     generated = true,
     rootElement = "bars",

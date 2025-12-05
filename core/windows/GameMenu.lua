@@ -17,9 +17,9 @@ gen:Element("GameMenu", {
 end)
 
 module:registerWindow({
-    name = "GameMenuFrame", --The name in the window manager to reference this window
-    auto = true, --will automatically open on escape menu
+    type = "FrameWindow",
+    name = "GameMenuFrame",
     generated = true,
-    rootElement = "GameMenu", --Root generator for the virtual UI
-    frameName = "GameMenuFrame", --Global of the blizzard frame to detect
+    rootElement = "GameMenu",
+    frameName = "GameMenuFrame",
 })

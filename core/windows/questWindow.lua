@@ -167,8 +167,8 @@ gen:Element("QuestWindow/reward", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "questWindow",
-    auto = true,
     generated = true,
     rootElement = "QuestWindow",
     frameName = "QuestFrame",

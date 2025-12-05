@@ -114,8 +114,8 @@ gen:Element("macros/PopupPanel", function(props)
 end)
 
 macros:registerWindow({
+    type = "FrameWindow",
     name = "MacroFrame",
-    auto = true,
     generated = true,
     rootElement = "macros",
     frameName = "MacroFrame",

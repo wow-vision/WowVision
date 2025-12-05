@@ -146,7 +146,6 @@ end)
 module:registerWindow({
     type = "PlayerInteractionWindow",
     name = "mail",
-    auto = true,
     generated = true,
     rootElement = "mail",
     conflictingAddons = { "Sku" },

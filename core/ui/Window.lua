@@ -3,7 +3,6 @@ local Window, _ = WowVision.WindowManager:CreateWindowType("Window")
 
 Window.info:addFields({
     { key = "name", required = true },
-    { key = "auto", default = false },
     { key = "generated", default = false },
     { key = "rootElement" },
     { key = "hookEscape", default = false },
@@ -11,6 +10,12 @@ Window.info:addFields({
     { key = "conflictingAddons" },
     { key = "onClose" },
 })
+
+-- Whether this window type needs to be polled each frame
+-- Override in subclasses that need polling (FrameWindow, CustomWindow)
+function Window:needsPolling()
+    return false
+end
 
 function Window:initialize(config)
     self:setInfo(config)
@@ -151,6 +156,10 @@ function FrameWindow:initialize(config)
     self._frameCheckTime = 0
 end
 
+function FrameWindow:needsPolling()
+    return true
+end
+
 local FRAME_RETRY_INTERVAL = 1.0 -- Only re-check _G every 1 second for missing frames
 
 function FrameWindow:getFrame()
@@ -211,6 +220,10 @@ CustomWindow.info:addFields({
 
 function CustomWindow:initialize(config)
     Window.initialize(self, config)
+end
+
+function CustomWindow:needsPolling()
+    return true
 end
 
 function CustomWindow:isOpen()

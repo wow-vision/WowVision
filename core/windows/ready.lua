@@ -18,8 +18,8 @@ gen:Element("ReadyCheck", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "ReadyCheck",
-    auto = true,
     generated = true,
     rootElement = "ReadyCheck",
     frameName = "ReadyCheckFrame",
@@ -60,8 +60,8 @@ gen:Element("DungeonReady", function(props)
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "DungeonReady",
-    auto = true,
     generated = true,
     rootElement = "DungeonReady",
     frameName = "LFGDungeonReadyDialog",

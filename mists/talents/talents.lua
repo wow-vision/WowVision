@@ -210,8 +210,8 @@ gen:Element("talents/TalentsClearButton", {
 end)
 
 module:registerWindow({
+    type = "FrameWindow",
     name = "talents",
-    auto = true,
     generated = true,
     rootElement = "talents",
     frameName = "PlayerTalentFrame",
