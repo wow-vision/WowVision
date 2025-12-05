@@ -8,4 +8,5 @@
 
 libs.xml
 modules.xml
+classic/modules.xml
 mists/modules.xml

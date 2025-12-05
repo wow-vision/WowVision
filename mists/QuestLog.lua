@@ -106,7 +106,7 @@ end)
 
 gen:Element("QuestLog/QuestControl", function(props)
     local frame = props.frame
-    if not frame:IsShown() or not frame:IsVisible() then
+    if frame == nil or not frame:IsShown() or not frame:IsVisible() then
         return nil
     end
     return {
