@@ -1,9 +1,11 @@
 # Changes
 
 ## V0.4.1
+this patch introduces significant refactors to the UI code, greatly increasing performance.
 
 * Fixed gem socket colors reading as "color" if you didn't have colorblind mode enabled.
 * Fixed tainting issue with gem socketing UI that prevented socket buttons from being clicked.
+* Majorly refactored the UI code behind the scenes. This increased performance by ~50%. The changes won't be too noticeable, but bags/etc should feel more responsive.
 
 ## V0.4.0
 Unfortunately once again this release resets saved addon data entirely. I had to move away from using a popular addon library (AceDB) due to issues with how it handles default values for certain settings. As a result I had to restructure the data significantly. To be safe, old WowVision data (such as speech settings) will be reset the first time you log into a character. Sorry again for the inconvenience and this should not happen in future updates.
