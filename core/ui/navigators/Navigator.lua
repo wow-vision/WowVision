@@ -4,22 +4,22 @@ WowVision.navigators = WowVision.Registry:new()
 
 function Navigator:initialize(root)
     self.root = root
-    self.frames = {}
-    self.containerFrameType = WowVision.NavigatorContainerFrame
-    self.syncedContainerFrameType = WowVision.NavigatorSyncedContainerFrame
-    self.elementFrameType = WowVision.NavigatorElementFrame
-    self:setFrameTypes()
-    self.rootFrame = self:createFrame(nil, root)
+    self.nodes = {}
+    self.containerNodeType = WowVision.NavigatorContainerNode
+    self.syncedContainerNodeType = WowVision.NavigatorSyncedContainerNode
+    self.elementNodeType = WowVision.NavigatorElementNode
+    self:setNodeTypes()
+    self.rootNode = self:createNode(nil, root)
     self.activationSet = WowVision.input:createActivationSet()
 end
 
-function Navigator:getBottomFrame()
-    local frame = self.rootFrame
-    while frame do
-        if self.childFrame then
-            frame = self.childFrame
+function Navigator:getBottomNode()
+    local node = self.rootNode
+    while node do
+        if node.childNode then
+            node = node.childNode
         else
-            return frame
+            return node
         end
     end
 end
@@ -32,56 +32,66 @@ function Navigator:deactivate()
     self.activationSet:deactivateAll()
 end
 
-function Navigator:setFrameTypes() end
+function Navigator:destroy()
+    self:deactivate()
+    if self.rootNode then
+        self.rootNode:destroy()
+        self.rootNode = nil
+    end
+    self.nodes = {}
+    self.root = nil
+end
 
-function Navigator:createFrame(parent, element, direction)
+function Navigator:setNodeTypes() end
+
+function Navigator:createNode(parent, element, direction)
     if element:isContainer() then
         if element.sync then
-            return self.syncedContainerFrameType:new(parent, self, element, direction)
+            return self.syncedContainerNodeType:new(parent, self, element, direction)
         end
-        return self.containerFrameType:new(parent, self, element, direction)
+        return self.containerNodeType:new(parent, self, element, direction)
     end
-    return self.elementFrameType:new(parent, self, element, direction)
+    return self.elementNodeType:new(parent, self, element, direction)
 end
 
 function Navigator:reconcile()
-    self.rootFrame:reconcile()
+    self.rootNode:reconcile()
 end
 
 function Navigator:update()
-    if not self.rootFrame then
+    if not self.rootNode then
         return
     end
     self:reconcile()
-    local frame = self.rootFrame
+    local node = self.rootNode
     local focusChanged = false
-    while frame do
-        if frame.focusChange then
+    while node do
+        if node.focusChange then
             focusChanged = true
-            frame.focusChange = false
+            node.focusChange = false
         end
         -- Announce "always" mode updates regardless of focus change
-        for k, v in pairs(frame.alwaysUpdates or {}) do
+        for k, v in pairs(node.alwaysUpdates or {}) do
             WowVision:speak(v)
         end
-        if frame.childFrame then
-            frame = frame.childFrame
+        if node.childNode then
+            node = node.childNode
         else
             break
         end
     end
     -- Announce "focus" mode updates only if focus didn't change
     if not focusChanged then
-        for k, v in pairs(frame.liveUpdates) do
+        for k, v in pairs(node.liveUpdates) do
             WowVision:speak(v)
         end
     end
 end
 
-WowVision.NavigatorElementFrame = WowVision.Class("NavigatorFrame")
-local NavigatorFrame = WowVision.NavigatorElementFrame
+WowVision.NavigatorElementNode = WowVision.Class("NavigatorElementNode")
+local NavigatorNode = WowVision.NavigatorElementNode
 
-function NavigatorFrame:initialize(parent, navigator, element, direction)
+function NavigatorNode:initialize(parent, navigator, element, direction)
     self.parent = parent
     self.navigator = navigator
     self.fieldValues = {} -- Stores current field values for comparison
@@ -91,20 +101,20 @@ function NavigatorFrame:initialize(parent, navigator, element, direction)
     self:setElement(element)
 end
 
-function NavigatorFrame:shouldRebuild(element)
+function NavigatorNode:shouldRebuild(element)
     if self.element ~= element then
         return true
     end
     return false
 end
 
-function NavigatorFrame:announce()
+function NavigatorNode:announce()
     if self.element then
         self.element:announce()
     end
 end
 
-function NavigatorFrame:setElement(element)
+function NavigatorNode:setElement(element)
     if element == nil then
         error("Tried to set navigator nil element")
     end
@@ -115,7 +125,7 @@ end
 
 -- Reconciles field values and populates liveUpdates/alwaysUpdates
 -- This is the expensive operation that polls all props/fields
-function NavigatorFrame:reconcileFields()
+function NavigatorNode:reconcileFields()
     self.liveUpdates = {}
     self.alwaysUpdates = {}
 
@@ -161,26 +171,49 @@ function NavigatorFrame:reconcileFields()
     end
 end
 
+-- Check if this element has any "always" mode liveFields
+function NavigatorNode:hasAlwaysFields()
+    local elementClass = self.element.class
+    if elementClass and elementClass.liveFields then
+        for k, mode in pairs(elementClass.liveFields) do
+            if mode == "always" then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 -- Base reconcile for leaf elements - reconciles fields
-function NavigatorFrame:reconcile()
+function NavigatorNode:reconcile()
     self:reconcileFields()
 end
 
-function NavigatorFrame:onBindingPressed(binding)
+-- Cleanup method to release references
+function NavigatorNode:destroy()
+    self.parent = nil
+    self.navigator = nil
+    self.element = nil
+    self.fieldValues = nil
+    self.liveUpdates = nil
+    self.alwaysUpdates = nil
+end
+
+function NavigatorNode:onBindingPressed(binding)
     if self.element:onBindingPressed(binding) then
         return true
     end
     return false
 end
 
-local NavigatorContainerFrame = WowVision.Class("NavigatorContainerFrame", WowVision.NavigatorElementFrame)
-WowVision.NavigatorContainerFrame = NavigatorContainerFrame
+local NavigatorContainerNode = WowVision.Class("NavigatorContainerNode", WowVision.NavigatorElementNode)
+WowVision.NavigatorContainerNode = NavigatorContainerNode
 
-function NavigatorContainerFrame:initialize(parent, navigator, element, direction)
-    WowVision.NavigatorElementFrame.initialize(self, parent, navigator, element, direction)
+function NavigatorContainerNode:initialize(parent, navigator, element, direction)
+    WowVision.NavigatorElementNode.initialize(self, parent, navigator, element, direction)
 end
 
-function NavigatorContainerFrame:select(element, direction)
+function NavigatorContainerNode:select(element, direction)
     if element == self.selectedElement then
         return
     end
@@ -205,12 +238,12 @@ function NavigatorContainerFrame:select(element, direction)
     )
 end
 
-function NavigatorContainerFrame:selectIndex(index, direction)
+function NavigatorContainerNode:selectIndex(index, direction)
     local children = self.element:getNavigatorChildren()
     self:select(children[index].element, direction)
 end
 
-function NavigatorContainerFrame:deselect()
+function NavigatorContainerNode:deselect()
     if self.selectedElement == nil then
         return
     end
@@ -220,11 +253,22 @@ function NavigatorContainerFrame:deselect()
     self.selectedIndex = nil
 end
 
-function NavigatorContainerFrame:onSelect(element, direction) end
+function NavigatorContainerNode:onSelect(element, direction) end
 
-function NavigatorContainerFrame:onDeselect(element) end
+function NavigatorContainerNode:onDeselect(element) end
 
-function NavigatorContainerFrame:focusSelected(direction)
+-- Override destroy to also clean up child node
+function NavigatorContainerNode:destroy()
+    if self.childNode then
+        self.childNode:destroy()
+        self.childNode = nil
+    end
+    self.selectedElement = nil
+    self.selectedIndex = nil
+    WowVision.NavigatorElementNode.destroy(self)
+end
+
+function NavigatorContainerNode:focusSelected(direction)
     if not self.selectedElement then
         return
     end
@@ -236,10 +280,10 @@ function NavigatorContainerFrame:focusSelected(direction)
     end
     self.element:setFocus(self.selectedElement)
     self.focusChange = true
-    self:reconcileChildFrame(direction)
+    self:reconcileChildNode(direction)
 end
 
-function NavigatorContainerFrame:unfocusSelected()
+function NavigatorContainerNode:unfocusSelected()
     if self.selectedElement and self.element:getFocus() == self.selectedElement then
         self.element:setFocus(nil)
         self.focusChange = true
@@ -249,20 +293,8 @@ end
 -- Container reconcile - handles navigation/selection and conditional field reconciliation
 -- Only reconciles fields if the element has "always" mode liveFields (optimization)
 -- "focus" mode fields only matter on the focused leaf element
-function NavigatorContainerFrame:reconcile()
-    -- Check if this element has any "always" mode liveFields
-    local hasAlwaysFields = false
-    local elementClass = self.element.class
-    if elementClass and elementClass.liveFields then
-        for k, mode in pairs(elementClass.liveFields) do
-            if mode == "always" then
-                hasAlwaysFields = true
-                break
-            end
-        end
-    end
-
-    if hasAlwaysFields then
+function NavigatorContainerNode:reconcile()
+    if self:hasAlwaysFields() then
         self:reconcileFields()
     else
         self.liveUpdates = {}
@@ -311,41 +343,41 @@ function NavigatorContainerFrame:reconcile()
     if focusedElement ~= initialFocusedElement then
         self.focusChange = true
     end
-    self:reconcileChildFrame(self.initialDirection)
+    self:reconcileChildNode(self.initialDirection)
     self.initialDirection = nil
 end
 
-function NavigatorContainerFrame:reconcileChildFrame(direction)
+function NavigatorContainerNode:reconcileChildNode(direction)
     local focus = self.element:getFocus()
     if not focus then
-        if self.childFrame then
-            self.childFrame = nil
+        if self.childNode then
+            self.childNode = nil
         end
         return
     end
 
-    if not self.childFrame then
-        self.childFrame = self.navigator:createFrame(self, focus, direction)
+    if not self.childNode then
+        self.childNode = self.navigator:createNode(self, focus, direction)
         return
     end
 
-    if not self.childFrame.shouldRebuild then
-        f = self.childFrame
-        error("Missing method on childFrame rebuild")
+    if not self.childNode.shouldRebuild then
+        f = self.childNode
+        error("Missing method on childNode rebuild")
     end
 
-    if self.childFrame:shouldRebuild(focus) then
-        self.childFrame = self.navigator:createFrame(self, focus, direction)
+    if self.childNode:shouldRebuild(focus) then
+        self.childNode = self.navigator:createNode(self, focus, direction)
         return
     end
 
-    self.childFrame:reconcile()
+    self.childNode:reconcile()
 end
 
-local SyncedContainerFrame = WowVision.Class("NavigatorSyncedContainerFrame", NavigatorContainerFrame)
-WowVision.NavigatorSyncedContainerFrame = SyncedContainerFrame
+local SyncedContainerNode = WowVision.Class("NavigatorSyncedContainerNode", NavigatorContainerNode)
+WowVision.NavigatorSyncedContainerNode = SyncedContainerNode
 
-function SyncedContainerFrame:selectIndex(index, direction)
+function SyncedContainerNode:selectIndex(index, direction)
     if index < 1 or index > self:getNumEntries() then
         return
     end
@@ -353,17 +385,16 @@ function SyncedContainerFrame:selectIndex(index, direction)
     if element and element ~= self.selectedElement then
         self:deselect()
         self:select(element, direction)
-        self.index = index
         return element
     end
 end
 
-function SyncedContainerFrame:select(element, direction)
+function SyncedContainerNode:select(element, direction)
     self.selectedElement = element
     self:onSelect(element, direction)
 end
 
-function SyncedContainerFrame:deselect()
+function SyncedContainerNode:deselect()
     if self.selectedElement then
         self:onDeselect(self.selectedElement)
     end
@@ -371,43 +402,31 @@ function SyncedContainerFrame:deselect()
     self.selectedIndex = -1
 end
 
-function SyncedContainerFrame:getNumEntries()
+function SyncedContainerNode:getNumEntries()
     return self.element:getNumEntries()
 end
 
-function SyncedContainerFrame:focusSelected(direction)
+function SyncedContainerNode:focusSelected(direction)
     if self.selectedElement then
         self.element:focusCurrent()
         self.focusChange = true
     end
-    self:reconcileChildFrame(direction)
+    self:reconcileChildNode(direction)
 end
 
-function SyncedContainerFrame:unfocusSelected()
+function SyncedContainerNode:unfocusSelected()
     local focus = self.element:getFocus()
     if focus then
         self.element:unfocusCurrent()
         self.focusChange = true
     end
-    self:reconcileChildFrame()
+    self:reconcileChildNode()
 end
 
 -- Synced container reconcile - handles navigation/selection and conditional field reconciliation
 -- Only reconciles fields if the element has "always" mode liveFields (optimization)
-function SyncedContainerFrame:reconcile()
-    -- Check if this element has any "always" mode liveFields
-    local hasAlwaysFields = false
-    local elementClass = self.element.class
-    if elementClass and elementClass.liveFields then
-        for k, mode in pairs(elementClass.liveFields) do
-            if mode == "always" then
-                hasAlwaysFields = true
-                break
-            end
-        end
-    end
-
-    if hasAlwaysFields then
+function SyncedContainerNode:reconcile()
+    if self:hasAlwaysFields() then
         self:reconcileFields()
     else
         self.liveUpdates = {}
@@ -433,23 +452,23 @@ function SyncedContainerFrame:reconcile()
     if initialFocus ~= self.element:getFocus() then
         self.focusChange = true
     end
-    self:reconcileChildFrame(self.initialDirection)
+    self:reconcileChildNode(self.initialDirection)
     self.initialDirection = nil
 end
 
-function SyncedContainerFrame:reconcileChildFrame(direction)
+function SyncedContainerNode:reconcileChildNode(direction)
     local focus = self.element:getFocus()
     if not focus then
-        if self.childFrame then
-            self.childFrame = nil
+        if self.childNode then
+            self.childNode = nil
         end
         return
     end
 
-    if not self.childFrame then
-        self.childFrame = self.navigator:createFrame(self, focus, direction)
+    if not self.childNode then
+        self.childNode = self.navigator:createNode(self, focus, direction)
         return
     end
 
-    self.childFrame:reconcile(focus)
+    self.childNode:reconcile(focus)
 end

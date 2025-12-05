@@ -1,18 +1,18 @@
-local WindowedContainerFrame = WowVision.Class("WindowedContainerFrame", WowVision.NavigatorContainerFrame)
+local WindowedContainerNode = WowVision.Class("WindowedContainerNode", WowVision.NavigatorContainerNode)
 
-function WindowedContainerFrame:onSelect(element, direction)
+function WindowedContainerNode:onSelect(element, direction)
     if element.shouldAnnounce then
         element:announce()
     end
     self:focusSelected(direction)
 end
 
-function WindowedContainerFrame:onDeselect(element)
+function WindowedContainerNode:onDeselect(element)
     self:unfocusSelected()
 end
 
-function WindowedContainerFrame:onBindingPressed(binding)
-    if self.childFrame and self.childFrame:onBindingPressed(binding) then
+function WindowedContainerNode:onBindingPressed(binding)
+    if self.childNode and self.childNode:onBindingPressed(binding) then
         return true
     end
     local children = self.element:getNavigatorChildren()
@@ -53,19 +53,19 @@ function WindowedContainerFrame:onBindingPressed(binding)
     return false
 end
 
-local WindowedSyncedContainerFrame =
-    WowVision.Class("WindowedSyncedContainerFrame", WowVision.NavigatorSyncedContainerFrame)
+local WindowedSyncedContainerNode =
+    WowVision.Class("WindowedSyncedContainerNode", WowVision.NavigatorSyncedContainerNode)
 
-function WindowedSyncedContainerFrame:onSelect(element, direction)
+function WindowedSyncedContainerNode:onSelect(element, direction)
     self:focusSelected(direction)
 end
 
-function WindowedSyncedContainerFrame:onDeselect(element)
+function WindowedSyncedContainerNode:onDeselect(element)
     self:unfocusSelected()
 end
 
-function WindowedSyncedContainerFrame:onBindingPressed(binding)
-    if self.childFrame and self.childFrame:onBindingPressed(binding) then
+function WindowedSyncedContainerNode:onBindingPressed(binding)
+    if self.childNode and self.childNode:onBindingPressed(binding) then
         return true
     end
     if not self.element.layout then
@@ -104,13 +104,13 @@ function WindowedNavigator:initialize(root)
     end
 end
 
-function WindowedNavigator:setFrameTypes()
-    self.containerFrameType = WindowedContainerFrame
-    self.syncedContainerFrameType = WindowedSyncedContainerFrame
+function WindowedNavigator:setNodeTypes()
+    self.containerNodeType = WindowedContainerNode
+    self.syncedContainerNodeType = WindowedSyncedContainerNode
 end
 
 function WindowedNavigator:onBindingPressed(binding)
-    if self.rootFrame:onBindingPressed(binding) then
+    if self.rootNode:onBindingPressed(binding) then
         return true
     end
     return false
