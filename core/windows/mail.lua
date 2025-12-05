@@ -144,10 +144,11 @@ gen:Element("mail/inbox/open/list", function(props)
 end)
 
 module:registerWindow({
+    type = "PlayerInteractionWindow",
     name = "mail",
     auto = true,
     generated = true,
     rootElement = "mail",
-    frameName = "MailFrame",
     conflictingAddons = { "Sku" },
+    interactionType = Enum.PlayerInteractionType.MailInfo,
 })
