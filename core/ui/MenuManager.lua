@@ -49,12 +49,11 @@ function MenuManager:update()
         return
     end
 
-    local panel = WowVision.ui:CreateElement(
-        "DropdownGeneratorPanel",
-        WowVision.ui.generator,
-        dropdownMenuFrame,
-        self.activeDescription
-    )
+    local panel = WowVision.ui:CreateElement("DropdownGeneratorPanel", {
+        generator = WowVision.ui.generator,
+        dropdown = dropdownMenuFrame,
+        description = self.activeDescription,
+    })
     local newMenuWindow = WowVision.UIHost:openTemporaryWindow({
         name = "dropdown",
         virtual = false,

@@ -2,25 +2,24 @@ local Context, parent = WowVision.ui:CreateElementType("WindowContext", "StackCo
 
 -- Define InfoClass fields at class level
 Context.info:addFields({
-    { key = "hookEscape", default = false },
+    { key = "window", default = nil, compareMode = "direct" },
+    {
+        key = "hookEscape",
+        default = false,
+        set = function(obj, key, value)
+            obj:setHookEscape(value)
+        end,
+    },
     { key = "innate", default = false },
+    { key = "onClose", default = nil, compareMode = "direct" },
 })
 
-function Context:initialize(window)
+function Context:initialize()
     parent.initialize(self)
-    self.window = window
     self.closeBinding = self:addBinding({
         binding = "close",
         targetFrame = self,
         enabled = false,
-    })
-    self:addProp({
-        key = "hookEscape",
-        default = false,
-    })
-    self:addProp({
-        key = "innate",
-        default = false,
     })
 
     self._open = true
@@ -50,8 +49,7 @@ function Context:closeWindow(shouldHandleContext)
     if self.onClose then
         self:onClose()
     end
-    -- self.window is the config object from CreateElement, ref contains the actual Window
-    WowVision.UIHost.windowManager:closeWindow(self.window.ref, shouldHandleContext)
+    WowVision.UIHost.windowManager:closeWindow(self.window, shouldHandleContext)
 end
 
 function Context:handleEscape()

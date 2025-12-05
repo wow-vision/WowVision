@@ -42,7 +42,7 @@ ProxyScrollFrame.info:addFields({
 function ProxyScrollFrame:initialize()
     parent.initialize(self)
     self.displayType = "List"
-    self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", WowVision.ui.generator)
+    self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", { generator = WowVision.ui.generator })
     self.buttons = {}
     self.currentElement = nil
     self.currentIndex = -1

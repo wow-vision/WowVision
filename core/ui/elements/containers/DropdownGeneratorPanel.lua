@@ -1,9 +1,13 @@
 local DropdownGeneratorPanel, parent = WowVision.ui:CreateElementType("DropdownGeneratorPanel", "GeneratorPanel")
 
-function DropdownGeneratorPanel:initialize(generator, dropdown, description)
-    parent.initialize(self, generator, nil)
-    self.dropdown = dropdown
-    self.description = description
+-- Define InfoClass fields at class level
+DropdownGeneratorPanel.info:addFields({
+    { key = "dropdown", default = nil, compareMode = "direct" },
+    { key = "description", default = nil },
+})
+
+function DropdownGeneratorPanel:initialize()
+    parent.initialize(self)
 end
 
 function DropdownGeneratorPanel:generateButton(frame, regions)

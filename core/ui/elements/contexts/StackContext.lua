@@ -29,7 +29,10 @@ function Context:add(element, index)
 end
 
 function Context:addGenerated(element, index)
-    local panel = WowVision.ui:CreateElement("GeneratorPanel", WowVision.ui.generator, element)
+    local panel = WowVision.ui:CreateElement("GeneratorPanel", {
+        generator = WowVision.ui.generator,
+        startingElement = element,
+    })
     self:add(panel, index)
 end
 

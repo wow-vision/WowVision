@@ -141,16 +141,12 @@ end
 
 -- Create and configure the WindowContext for this window
 function Window:createContext()
-    local context = WowVision.ui:CreateElement("WindowContext", {
-        ref = self,
-        name = self.name,
+    return WowVision.ui:CreateElement("WindowContext", {
+        window = self,
         hookEscape = self.hookEscape,
+        innate = self.innate,
         onClose = self.onClose,
     })
-    context:setHookEscape(self.hookEscape)
-    context.innate = self.innate
-    context.onClose = self.onClose
-    return context
 end
 
 -- Open the window with optional props

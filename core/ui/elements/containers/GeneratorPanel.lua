@@ -1,9 +1,19 @@
 local GeneratorPanel, parent = WowVision.ui:CreateElementType("GeneratorPanel", "Panel")
 
-function GeneratorPanel:initialize(generator, startingElement)
+-- Define InfoClass fields at class level
+GeneratorPanel.info:addFields({
+    { key = "generator", default = nil, compareMode = "direct" },
+    {
+        key = "startingElement",
+        default = nil,
+        set = function(obj, key, value)
+            obj:setStartingElement(value)
+        end,
+    },
+})
+
+function GeneratorPanel:initialize()
     parent.initialize(self)
-    self.generator = generator
-    self:setStartingElement(startingElement)
     self.tree = nil
     self.layout = true
     self.shouldAnnounce = false

@@ -22,7 +22,7 @@ function WowVision:cacheLoadedAddons()
         local name = C_AddOns.GetAddOnInfo(i)
         if C_AddOns.IsAddOnLoaded(i) then
             self.loadedAddons[name] = true
-            self.loadedAddons[name:lower()] = true  -- case-insensitive lookup
+            self.loadedAddons[name:lower()] = true -- case-insensitive lookup
         end
     end
 end

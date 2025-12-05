@@ -32,13 +32,16 @@ function UI:CreateElementType(typeKey, parentKey)
     return newElement, parent.class, newData
 end
 
-function UI:CreateElement(typeKey, ...)
+function UI:CreateElement(typeKey, config)
     local elementType = self.elementTypes:get(typeKey)
     if elementType == nil then
         error("Element of type " .. typeKey .. " not found.")
     end
-    local element = elementType.class:new(...)
+    local element = elementType.class:new()
     element.ui = self
+    if config then
+        element:setInfo(config)
+    end
     return element
 end
 

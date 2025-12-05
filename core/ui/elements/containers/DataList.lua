@@ -36,7 +36,7 @@ function DataList:initialize()
         key = "getElement",
     })
 
-    self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", WowVision.ui.generator)
+    self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", { generator = WowVision.ui.generator })
 
     self.currentIndex = -1
     self.currentElement = nil
