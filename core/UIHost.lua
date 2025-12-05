@@ -112,6 +112,10 @@ function UIHost:openWindow(window)
     return self.windowManager:openWindow(window)
 end
 
+function UIHost:openTemporaryWindow(config)
+    return self.windowManager:openTemporaryWindow(config)
+end
+
 function UIHost:closeWindow(window)
     return self.windowManager:closeWindow(window)
 end

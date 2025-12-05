@@ -105,10 +105,12 @@ gen:Element("training/Details", function(props)
 end)
 
 module:registerWindow({
+    type = "PlayerInteractionWindow",
     name = "training",
     auto = true,
     generated = true,
     rootElement = "training",
     frameName = "ClassTrainerFrame",
     conflictingAddons = { "sku" },
+    interactionType = Enum.PlayerInteractionType.Trainer,
 })

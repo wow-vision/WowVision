@@ -70,7 +70,7 @@ function WowVision:SlashCommand(msg)
         print("Profiler reset")
     elseif msg == "bind" then
         local root = { "binding/List", bindings = WowVision.input.bindings }
-        self.UIHost:openWindow({
+        self.UIHost:openTemporaryWindow({
             generated = true,
             rootElement = root,
             hookEscape = true,
@@ -83,7 +83,7 @@ function WowVision:SlashCommand(msg)
         print(version)
     else
         local root = self.base:getMenuPanel()
-        self.UIHost:openWindow({
+        self.UIHost:openTemporaryWindow({
             generated = true,
             rootElement = root,
             hookEscape = true,

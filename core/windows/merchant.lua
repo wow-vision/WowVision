@@ -71,10 +71,12 @@ gen:Element("merchant/Repair", function(props)
 end)
 
 module:registerWindow({
+    type = "PlayerInteractionWindow",
     name = "merchant",
     auto = true,
     generated = true,
     rootElement = "merchant",
     frameName = "MerchantFrame",
     conflictingAddons = { "Sku" },
+    interactionType = Enum.PlayerInteractionType.Merchant,
 })

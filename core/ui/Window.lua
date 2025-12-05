@@ -15,6 +15,7 @@ Window.info:addFields({
 function Window:initialize(config)
     self:setInfo(config)
     self._isCurrentlyOpen = false
+    self._openInstance = nil
 end
 
 -- Abstract method - subclasses must override
@@ -32,6 +33,106 @@ function Window:checkState()
         return true, nowOpen
     end
     return false, nowOpen
+end
+
+-- Check for conflicting addons before opening
+function Window:canOpen()
+    if self.conflictingAddons then
+        for _, addonName in ipairs(self.conflictingAddons) do
+            if C_AddOns.IsAddOnLoaded(addonName) then
+                return false
+            end
+        end
+    end
+    return true
+end
+
+-- Build the root element configuration for generated windows
+function Window:buildRootElement(props)
+    local generated = {}
+    local frame = self.getFrame and self:getFrame()
+    if frame then
+        generated.frame = frame
+    end
+    if type(self.rootElement) == "string" then
+        generated[1] = self.rootElement
+    elseif type(self.rootElement) == "table" then
+        for k, v in pairs(self.rootElement) do
+            generated[k] = v
+        end
+    else
+        error("Window: invalid root element format")
+    end
+    if props then
+        for k, v in pairs(props) do
+            generated[k] = v
+        end
+    end
+    return generated
+end
+
+-- Create and configure the WindowContext for this window
+function Window:createContext()
+    local context = WowVision.ui:CreateElement("WindowContext", {
+        ref = self,
+        name = self.name,
+        hookEscape = self.hookEscape,
+        onClose = self.onClose,
+    })
+    context:setHookEscape(self.hookEscape)
+    context.innate = self.innate
+    context.onClose = self.onClose
+    return context
+end
+
+-- Open the window with optional props
+-- Returns the open instance, or nil if window couldn't be opened
+function Window:open(manager, props)
+    if not self:canOpen() then
+        return nil
+    end
+    if self._openInstance then
+        return nil -- Already open
+    end
+
+    local context = self:createContext()
+    local instance = {
+        ref = self,
+        name = self.name,
+        hookEscape = self.hookEscape,
+        onClose = self.onClose,
+        context = context,
+    }
+
+    if self.generated then
+        context:addGenerated(self:buildRootElement(props))
+    else
+        if props then
+            for k, v in pairs(props) do
+                self.rootElement:setProp(k, v)
+            end
+        end
+        context:add(self.rootElement)
+    end
+
+    self._openInstance = instance
+    manager:notifyOpened(self, instance)
+    return instance
+end
+
+-- Close the window
+function Window:close(manager)
+    local instance = self._openInstance
+    if not instance then
+        return
+    end
+    self._openInstance = nil
+    manager:notifyClosed(self, instance)
+end
+
+-- Get the current open instance (if any)
+function Window:getOpenInstance()
+    return self._openInstance
 end
 
 WowVision.Window = Window
@@ -131,3 +232,91 @@ function ManualWindow:isOpen()
 end
 
 WowVision.ManualWindow = ManualWindow
+
+-- EventWindow - opens/closes based on WoW events
+local EventWindow, _ = WowVision.WindowManager:CreateWindowType("EventWindow", "Window")
+
+EventWindow.info:addFields({
+    { key = "openEvent", required = true },
+    { key = "closeEvent", required = true },
+})
+
+function EventWindow:initialize(config)
+    Window.initialize(self, config)
+
+    -- Create a frame to receive events
+    self._eventFrame = CreateFrame("Frame")
+
+    self:registerEvents()
+
+    -- Set up event handler
+    local window = self
+    self._eventFrame:SetScript("OnEvent", function(frame, event, ...)
+        window:onEvent(event, ...)
+    end)
+end
+
+function EventWindow:registerEvents()
+    self._eventFrame:UnregisterAllEvents()
+    self._eventFrame:RegisterEvent(self.openEvent)
+    self._eventFrame:RegisterEvent(self.closeEvent)
+end
+
+function EventWindow:onEvent(event, ...)
+    if event == self.openEvent then
+        self._isCurrentlyOpen = true
+        self:open(WowVision.UIHost.windowManager)
+    elseif event == self.closeEvent then
+        self._isCurrentlyOpen = false
+        self:close(WowVision.UIHost.windowManager)
+    end
+end
+
+function EventWindow:isOpen()
+    return self._isCurrentlyOpen
+end
+
+WowVision.EventWindow = EventWindow
+
+-- PlayerInteractionWindow - opens/closes based on PLAYER_INTERACTION_MANAGER events
+local PlayerInteractionWindow, _ = WowVision.WindowManager:CreateWindowType("PlayerInteractionWindow", "Window")
+
+PlayerInteractionWindow.info:addFields({
+    { key = "interactionType", required = true },
+})
+
+function PlayerInteractionWindow:initialize(config)
+    Window.initialize(self, config)
+
+    -- Create a frame to receive events
+    self._eventFrame = CreateFrame("Frame")
+
+    self._eventFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
+    self._eventFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
+
+    -- Set up event handler
+    local window = self
+    self._eventFrame:SetScript("OnEvent", function(frame, event, interactionType)
+        window:onEvent(event, interactionType)
+    end)
+end
+
+function PlayerInteractionWindow:onEvent(event, interactionType)
+    if interactionType ~= self.interactionType then
+        return
+    end
+
+    if event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
+        self._isCurrentlyOpen = true
+        self:open(WowVision.UIHost.windowManager)
+    elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" then
+        self._isCurrentlyOpen = false
+        self:close(WowVision.UIHost.windowManager)
+    end
+end
+
+function PlayerInteractionWindow:isOpen()
+    return self._isCurrentlyOpen
+end
+
+WowVision.PlayerInteractionWindow = PlayerInteractionWindow

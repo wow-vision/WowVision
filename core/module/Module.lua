@@ -169,6 +169,13 @@ function Module:registerWindow(config)
     -- If already a Window instance, use it directly
     if config.checkState then
         window = config
+    elseif config.type then
+        -- Explicit type specified → use it directly
+        if config.type == "CustomWindow" and config.isOpen then
+            config.isOpenFunc = config.isOpen
+            config.isOpen = nil
+        end
+        window = WowVision.WindowManager:CreateWindow(config.type, config)
     elseif config.isOpen then
         -- Custom isOpen function → CustomWindow
         config.isOpenFunc = config.isOpen

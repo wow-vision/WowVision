@@ -12,6 +12,8 @@ function WindowManager:initialize(windowContext)
     self.dropdownMenuIndex = nil
 end
 
+-- Type registry methods
+
 function WindowManager:CreateWindowType(typeKey, parentKey)
     local parent = nil
     if parentKey then
@@ -35,6 +37,8 @@ function WindowManager:CreateWindow(typeKey, config)
     return windowClass:new(config)
 end
 
+-- Window instance registry methods
+
 function WindowManager:RegisterWindow(window)
     self.windows[window.name] = window
     if window.auto then
@@ -55,97 +59,100 @@ function WindowManager:UnregisterWindow(name)
     end
 end
 
-function WindowManager:openWindow(window, props)
-    local window = window
-    local props = props or {}
-    if type(window) == "string" then
-        local windowObj = self.windows[window]
-        if not windowObj then
-            return
-        end
-        window = windowObj
-    end
-    if window.conflictingAddons then
-        for _, v in ipairs(window.conflictingAddons) do
-            if C_AddOns.IsAddOnLoaded(v) then
-                return
-            end
-        end
-    end
-    if window.auto and self.openWindows.autoWindows[window.name] then
-        return
-    end
-    local newWindow = {
-        ref = window,
-        name = window.name,
-        hookEscape = window.hookEscape,
-        onClose = window.onClose,
-    }
-    local windowContext = WowVision.ui:CreateElement("WindowContext", newWindow)
-    windowContext:setHookEscape(newWindow.hookEscape)
-    windowContext.innate = window.innate
-    windowContext.onClose = newWindow.onClose
-    newWindow.context = windowContext
-    if window.generated then
-        local generated = {}
-        local frame = window.getFrame and window:getFrame()
-        if frame then
-            generated.frame = frame
-        end
-        if type(window.rootElement) == "string" then
-            generated[1] = window.rootElement
-        elseif type(window.rootElement) == "table" then
-            for k, v in pairs(window.rootElement) do
-                generated[k] = v
-            end
-        else
-            error("WindowManager: invalid root generated element format")
-        end
-        for k, v in pairs(props) do
-            generated[k] = v
-        end
-        windowContext:addGenerated(generated)
-    else
-        for k, v in pairs(props) do
-            window.rootElement:setProp(k, v)
-        end
-        windowContext:add(window.rootElement)
-    end
+function WindowManager:getWindow(name)
+    return self.windows[name]
+end
 
-    tinsert(self.openWindows, newWindow)
+-- Notification methods (called by Window when it opens/closes)
+
+function WindowManager:notifyOpened(window, instance)
+    tinsert(self.openWindows, instance)
     if window.auto then
         self.openWindows.autoWindows[window.name] = true
     end
-    self.windowContext:add(windowContext)
+    self.windowContext:add(instance.context)
     WowVision.UIHost:open()
-    return newWindow
 end
 
-function WindowManager:closeWindow(ref, shouldHandleContext)
-    local window = nil
+function WindowManager:notifyClosed(window, instance, shouldHandleContext)
+    if WowVision.base.ui.settings.interruptSpeechOnWindowClose then
+        WowVision.base.speech:uiStop()
+    end
+
+    -- Remove from open windows list
     for i, v in ipairs(self.openWindows) do
-        if ref == v or ref == v.ref or ref == v.name then
-            if WowVision.base.ui.settings.interruptSpeechOnWindowClose then
-                WowVision.base.speech:uiStop()
-            end
-            window = v
+        if v == instance then
             table.remove(self.openWindows, i)
-            if v.name then
-                self.openWindows.autoWindows[v.name] = nil
-            end
             break
         end
     end
-    if not window then
-        return
+
+    if window.name then
+        self.openWindows.autoWindows[window.name] = nil
     end
+
     if shouldHandleContext ~= false then
-        self.windowContext:remove(window.context)
+        self.windowContext:remove(instance.context)
         if WowVision.UIHost:shouldClose() then
             WowVision.UIHost:close()
         end
     end
 end
+
+-- Public API for opening/closing windows
+
+function WindowManager:openWindow(windowOrName, props)
+    local window = windowOrName
+    if type(window) == "string" then
+        window = self.windows[window]
+        if not window then
+            return nil
+        end
+    end
+
+    -- Check if already open (for auto windows)
+    if window.auto and self.openWindows.autoWindows[window.name] then
+        return nil
+    end
+
+    return window:open(self, props)
+end
+
+-- Open an ad-hoc window from a raw config table (not registered)
+function WindowManager:openTemporaryWindow(config)
+    -- Generate a unique name if not provided
+    if not config.name then
+        config.name = "temp_" .. tostring(GetTime()) .. "_" .. math.random(1000, 9999)
+    end
+
+    -- Create a ManualWindow from the config
+    local window = self:CreateWindow("ManualWindow", config)
+    return window:open(self)
+end
+
+function WindowManager:closeWindow(ref, shouldHandleContext)
+    -- Find the window by reference, instance, or name
+    local window = nil
+    local instance = nil
+
+    for i, v in ipairs(self.openWindows) do
+        if ref == v or ref == v.ref or ref == v.name then
+            instance = v
+            window = v.ref
+            break
+        end
+    end
+
+    if not window or not instance then
+        return
+    end
+
+    -- Clear the instance from the window before notifying
+    window._openInstance = nil
+    self:notifyClosed(window, instance, shouldHandleContext)
+end
+
+-- Update loop for auto-detecting window state changes
 
 function WindowManager:update()
     local autoWindows = self.autoWindows
@@ -154,9 +161,9 @@ function WindowManager:update()
         local changed, isOpen = window:checkState()
         if changed then
             if isOpen then
-                self:openWindow(window)
+                window:open(self)
             else
-                self:closeWindow(window)
+                window:close(self)
             end
         end
     end
