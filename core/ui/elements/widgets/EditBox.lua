@@ -21,7 +21,7 @@ EditBox.info:addFields({
 })
 
 function EditBox:initialize()
-    parent.initialize(self, "EditBox")
+    parent.initialize(self)
     self.frame = CreateFrame("EditBox")
     self.frame:SetAutoFocus(false)
     self.frame:Hide()

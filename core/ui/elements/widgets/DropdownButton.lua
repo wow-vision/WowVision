@@ -6,7 +6,7 @@ DropdownButton.info:addFields({
 })
 
 function DropdownButton:initialize()
-    parent.initialize(self, "DropdownButton")
+    parent.initialize(self)
 
     self:addProp({
         key = "dropdownRoot",

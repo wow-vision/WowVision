@@ -1,7 +1,7 @@
 local ProxyCheckButton, parent = WowVision.ui:CreateElementType("ProxyCheckButton", "ProxyButton")
 
 function ProxyCheckButton:initialize()
-    parent.initialize(self, "ProxyCheckButton")
+    parent.initialize(self)
     self:setProp("displayType", "Checkbox")
 end
 

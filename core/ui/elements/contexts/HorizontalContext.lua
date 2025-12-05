@@ -1,7 +1,7 @@
 local Context, parent = WowVision.ui:CreateElementType("HorizontalContext", "Context")
 
 function Context:initialize()
-    parent.initialize(self, "StackContext")
+    parent.initialize(self)
     self.direction = "control-tab"
     self.wrap = true
 end

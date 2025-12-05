@@ -11,6 +11,7 @@ function UI:CreateElementType(typeKey, parentKey)
         error("Parent " .. parentKey .. " not found.")
     end
     local newElement = WowVision.Class(typeKey, parent.class):include(WowVision.InfoClass)
+    newElement.typeKey = typeKey
 
     -- Deep copy liveFields from parent (middleclass only does shallow copy)
     if parent.class.liveFields then

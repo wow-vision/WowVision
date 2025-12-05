@@ -21,7 +21,7 @@ Button.info:updateFields({
 Button.liveFields.value = nil
 
 function Button:initialize()
-    parent.initialize(self, "Button")
+    parent.initialize(self)
     self:updateProp({
         key = "value",
         getLabel = function()

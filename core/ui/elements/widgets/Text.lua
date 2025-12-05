@@ -16,7 +16,7 @@ Text.info:addFields({
 })
 
 function Text:initialize()
-    parent.initialize(self, "Text")
+    parent.initialize(self)
 
     self:addProp({
         key = "text",

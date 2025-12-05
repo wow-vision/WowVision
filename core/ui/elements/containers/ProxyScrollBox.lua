@@ -33,7 +33,8 @@ ProxyScrollBox.info:addFields({
 })
 
 function ProxyScrollBox:initialize()
-    parent.initialize(self, "List")
+    parent.initialize(self)
+    self.displayType = "List"
     self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", WowVision.ui.generator)
     self.buttons = {}
     self.currentElement = nil

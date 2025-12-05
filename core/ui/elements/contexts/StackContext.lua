@@ -1,7 +1,7 @@
 local Context, parent = WowVision.ui:CreateElementType("StackContext", "Context")
 
 function Context:initialize()
-    parent.initialize(self, "StackContext")
+    parent.initialize(self)
 end
 
 function Context:getNavigatorChildren()

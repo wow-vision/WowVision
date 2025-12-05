@@ -41,8 +41,8 @@ ProxyWidget.info:updateFields({
     },
 })
 
-function ProxyWidget:initialize(key)
-    parent.initialize(self, key)
+function ProxyWidget:initialize()
+    parent.initialize(self)
     self:addProp({
         key = "ignoreRequiresFrameShown",
         default = false,

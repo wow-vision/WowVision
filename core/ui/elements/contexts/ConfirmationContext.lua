@@ -15,7 +15,7 @@ Context.info:addFields({
 })
 
 function Context:initialize()
-    parent.initialize(self, "ConfirmationContext")
+    parent.initialize(self)
     self.direction = "vertical"
     self:addProp({
         key = "prompt",

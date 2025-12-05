@@ -6,8 +6,8 @@ Container.info:addFields({
     { key = "wrap", default = false },
 })
 
-function Container:initialize(key)
-    parent.initialize(self, key)
+function Container:initialize()
+    parent.initialize(self)
 
     self:addProp({
         key = "direction",

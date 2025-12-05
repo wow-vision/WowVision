@@ -10,7 +10,7 @@ ProxyEditBox.info:addFields({
 })
 
 function ProxyEditBox:initialize()
-    parent.initialize(self, "ProxyEditBox")
+    parent.initialize(self)
 
     self:addProp({
         key = "autoInputOnFocus",

@@ -15,7 +15,7 @@ Context.info:addFields({
 Context.liveFields.currentMapping = "always"
 
 function Context:initialize()
-    parent.initialize(self, "InputMappingContext")
+    parent.initialize(self)
 
     -- Add events
     self:addEvent("mappingComplete")

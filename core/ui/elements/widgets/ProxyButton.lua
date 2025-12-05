@@ -25,7 +25,7 @@ end
 ProxyButton.setupUniqueBindings = setupUniqueBindings
 
 function ProxyButton:initialize()
-    parent.initialize(self, "ProxyButton")
+    parent.initialize(self)
     self:setProp("displayType", "Button")
     self:addProp({
         key = "clickType",

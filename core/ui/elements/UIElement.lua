@@ -37,9 +37,12 @@ UIElement.liveFields = {
     label = "focus",
 }
 
-function UIElement:initialize(typeKey)
+-- Set typeKey at class level (child classes get this via CreateElementType)
+UIElement.typeKey = "Element"
+
+function UIElement:initialize()
     self.L = LibStub("AceLocale-3.0"):GetLocale("WowVision")
-    self.typeKey = typeKey
+    self.typeKey = self.class.typeKey
     self._focused = false
     self._batching = false
     self.parent = nil

@@ -1,7 +1,7 @@
 local Checkbox, parent = WowVision.ui:CreateElementType("Checkbox", "Widget")
 
-function Checkbox:initialize(checked)
-    parent.initialize(self, "Checkbox")
+function Checkbox:initialize()
+    parent.initialize(self)
 end
 
 function Checkbox:onClick()

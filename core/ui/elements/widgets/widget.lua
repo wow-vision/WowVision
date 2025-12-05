@@ -50,8 +50,8 @@ Widget.liveFields.value = "focus"
 Widget.liveFields.enabled = "focus"
 Widget.liveFields.selected = "focus"
 
-function Widget:initialize(key)
-    parent.initialize(self, key)
+function Widget:initialize()
+    parent.initialize(self)
     self:addProp({
         key = "bind",
         type = "reference",

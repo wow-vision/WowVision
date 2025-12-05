@@ -1,7 +1,8 @@
 local MessageBufferView, parent = WowVision.ui:CreateElementType("MessageBufferView", "Widget")
 
 function MessageBufferView:initialize()
-    parent.initialize(self, "List")
+    parent.initialize(self)
+    self.displayType = "List"
 
     self:addProp({
         key = "buffer",

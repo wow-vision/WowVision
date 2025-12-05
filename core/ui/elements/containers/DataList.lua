@@ -17,7 +17,7 @@ DataList.info:addFields({
 })
 
 function DataList:initialize()
-    parent.initialize(self, "DataList")
+    parent.initialize(self)
 
     self.sync = true
     self:setProp("displayType", "List")
