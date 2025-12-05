@@ -16,6 +16,9 @@ WowVision.info = info
 
 function InfoManager:initialize()
     self.fields = {}
+    self.config = {
+        applyMode = "merge", -- "merge" (preserve unspecified) or "replace" (reset to defaults)
+    }
 end
 
 function InfoManager:addField(info)
@@ -65,6 +68,11 @@ end
 
 function InfoManager:clone()
     local clone = InfoManager:new()
+    -- Copy config
+    for k, v in pairs(self.config) do
+        clone.config[k] = v
+    end
+    -- Copy fields
     for k, field in pairs(self.fields) do
         clone:addField(field:getInfo())
     end
@@ -100,8 +108,9 @@ function InfoManager:get(obj)
 end
 
 function InfoManager:set(obj, info, ignoreRequired)
+    local applyMode = self.config.applyMode or "merge"
     for _, field in pairs(self.fields) do
-        field:setInfo(obj, info, ignoreRequired)
+        field:setInfo(obj, info, ignoreRequired, applyMode)
     end
 end
 

@@ -25,26 +25,6 @@ function EditBox:initialize()
     self.frame = CreateFrame("EditBox")
     self.frame:SetAutoFocus(false)
     self.frame:Hide()
-
-    self:addProp({
-        key = "autoInputOnFocus",
-        default = true,
-    })
-
-    self:addProp({
-        key = "type",
-        default = "string",
-        set = function(value)
-            self.type = value
-            if value == "string" then
-                self.frame:SetNumeric(false)
-            elseif value == "number" then
-                self.frame:SetNumeric(true)
-            elseif value == "decimal" then
-                self.frame:SetNumeric(false) --apparently numeric text fields only take integers
-            end
-        end,
-    })
 end
 
 function EditBox:getValue()

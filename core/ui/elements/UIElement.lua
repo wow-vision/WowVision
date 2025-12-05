@@ -1,5 +1,8 @@
 local UIElement = WowVision.Class("UIElement"):include(WowVision.InfoClass)
 
+-- Configure InfoClass to use replace mode (React-style prop handling)
+UIElement.info.config.applyMode = "replace"
+
 -- Define InfoClass fields at class level
 UIElement.info:addFields({
     { key = "userdata", default = nil, compareMode = "direct" },
@@ -46,64 +49,9 @@ function UIElement:initialize()
     self._focused = false
     self._batching = false
     self.parent = nil
-    self.props = {}
     self.events = {}
     self.activationSet = WowVision.input:createActivationSet()
     self.activationInfo = { dorment = false }
-    self:addProp({
-        key = "userdata",
-        type = "reference",
-        default = nil,
-    })
-    self:addProp({
-        key = "label",
-        default = "",
-        live = "focus",
-        getLabel = function(value)
-            return tostring(value)
-        end,
-        get = function()
-            return self:getLabel()
-        end,
-        set = function(value)
-            self:setLabel(value)
-        end,
-    })
-
-    self:addProp({
-        key = "events",
-        get = function()
-            return self.eventPropHandlers
-        end,
-        set = function(value)
-            self:setEventProp(value)
-        end,
-    })
-
-    self:addProp({
-        key = "layout",
-        default = false,
-    })
-
-    self:addProp({
-        key = "shouldAnnounce",
-        default = true,
-    })
-
-    self:addProp({
-        key = "key",
-        default = nil,
-    })
-
-    self:addProp({
-        key = "displayType",
-        default = nil,
-    })
-
-    self:addProp({
-        key = "sync",
-        default = false,
-    })
 
     self:setupUniqueBindings()
 end
@@ -128,60 +76,15 @@ function UIElement:addEvent(event)
     self.events[event] = WowVision.Event:new(event)
 end
 
-function UIElement:addProp(prop)
-    if not prop.key then
-        error("Missing key for prop.")
-    end
-    if not prop.get then
-        prop.get = function()
-            return self[prop.key]
-        end
-    end
-    if not prop.set then
-        prop.set = function(value)
-            self[prop.key] = value
-        end
-    end
-    if not prop.type then
-        prop.type = "value"
-    end
-    self.props[prop.key] = prop
-    if prop.default then
-        if type(prop.default) == "function" then
-            prop.set(prop.default())
-        else
-            prop.set(prop.default)
-        end
-    end
-end
-
-function UIElement:updateProp(prop)
-    local oldProp = self.props[prop.key]
-    if not oldProp then
-        error("No prop to update matching " .. prop.key)
-    end
-
-    local newProp = {
-        key = prop.key,
-        default = prop.default or oldProp.default,
-        type = prop.type or oldProp.type,
-        live = prop.live or oldProp.live,
-        getLabel = prop.getLabel or oldProp.getLabel,
-        get = prop.get or oldProp.get,
-        set = prop.set or oldProp.set,
-    }
-    self:addProp(newProp)
-end
-
 function UIElement:getProp(key)
     if key == 1 or key == "children" or key == "events" then
         return nil
     end
-    local prop = self.props[key]
-    if not prop then
+    local field = self.class.info:getField(key)
+    if not field then
         error("Unknown prop " .. key .. ".")
     end
-    return prop.get()
+    return field:get(self)
 end
 
 function UIElement:setEventProp(events)
@@ -199,19 +102,24 @@ function UIElement:setEventProp(events)
     end
 end
 
-function UIElement:setProp(key, value, initial)
+function UIElement:setProp(key, value)
     if key == 1 or key == "children" then
         return
     end
-
-    local prop = self.props[key]
-    if not prop then
+    local field = self.class.info:getField(key)
+    if not field then
         error("Unknown prop " .. key .. ".")
     end
-    if initial and value == nil then
-        prop.set(prop.default)
+    local applyMode = self.class.info.config.applyMode or "merge"
+    if applyMode == "replace" and value == nil then
+        -- In replace mode, nil resets to default or nil (if not required)
+        if field.default ~= nil then
+            field:set(self, field:getDefault(self))
+        elseif not field.required then
+            field:set(self, nil)
+        end
     else
-        prop.set(value)
+        field:set(self, value)
     end
 end
 

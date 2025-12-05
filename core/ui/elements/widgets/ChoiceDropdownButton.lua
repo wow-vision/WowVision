@@ -7,12 +7,7 @@ ChoiceDropdownButton.info:addFields({
 
 function ChoiceDropdownButton:initialize()
     parent.initialize(self)
-    self:setProp("displayType", "Dropdown")
-
-    self:addProp({
-        key = "choices",
-        default = {},
-    })
+    self.displayType = "Dropdown"
 end
 
 function ChoiceDropdownButton:getDropdown()

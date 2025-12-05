@@ -88,21 +88,42 @@ function Field:set(obj, value)
     end
 end
 
-function Field:setInfo(obj, info, ignoreRequired)
+function Field:setInfo(obj, info, ignoreRequired, applyMode)
     local ignoreRequired = ignoreRequired or false
+    local applyMode = applyMode or "merge"
     local newValue = info[self.key]
-    local currentValue = self:get(obj)
-    if newValue == nil then
-        if currentValue == nil and self.default ~= nil then
-            self:set(obj, self:getDefault())
-        elseif ignoreRequired == false and self.required and currentValue == nil then
+
+    if applyMode == "replace" then
+        -- Replace mode: always set value from config, default, or nil
+        if self.once and self:get(obj) ~= nil and newValue ~= nil then
+            error("Field " .. self.key .. " cannot be overwritten.")
+        end
+        if newValue ~= nil then
+            self:set(obj, newValue)
+        elseif self.default ~= nil then
+            self:set(obj, self:getDefault(obj))
+        elseif not self.required then
+            self:set(obj, nil)
+        end
+        -- Check required after setting
+        if not ignoreRequired and self.required and self:get(obj) == nil then
             error("Field " .. self.key .. " must have a value.")
         end
     else
-        if self.once and currentValue ~= nil then
-            error("Field " .. self.key .. " cannot be overwritten.")
+        -- Merge mode (default): only set if provided or if current is nil
+        local currentValue = self:get(obj)
+        if newValue == nil then
+            if currentValue == nil and self.default ~= nil then
+                self:set(obj, self:getDefault(obj))
+            elseif ignoreRequired == false and self.required and currentValue == nil then
+                error("Field " .. self.key .. " must have a value.")
+            end
+        else
+            if self.once and currentValue ~= nil then
+                error("Field " .. self.key .. " cannot be overwritten.")
+            end
+            self:set(obj, newValue)
         end
-        self:set(obj, newValue)
     end
 end
 

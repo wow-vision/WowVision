@@ -21,16 +21,6 @@ function Context:initialize()
     self:addEvent("mappingComplete")
     self:addEvent("mappingCancelled")
 
-    -- Add prop for real-time feedback
-    self:addProp({
-        key = "currentMapping",
-        default = "",
-        live = "always", -- Announce as it builds
-        getLabel = function(value)
-            return value
-        end,
-    })
-
     -- State tracking
     self.modifiers = { CTRL = false, SHIFT = false, ALT = false }
     self.mainKey = nil

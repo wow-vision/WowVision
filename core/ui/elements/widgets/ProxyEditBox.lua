@@ -11,29 +11,12 @@ ProxyEditBox.info:addFields({
 
 function ProxyEditBox:initialize()
     parent.initialize(self)
-
-    self:addProp({
-        key = "autoInputOnFocus",
-        default = true,
-    })
-
-    self:addProp({
-        key = "hookTab",
-        default = true,
-    })
-
-    self:addProp({
-        key = "hookEnter",
-        default = false,
-    })
-
-    self:addProp({
-        key = "fixAutoFocus",
-        default = false,
-    })
 end
 
 function ProxyEditBox:getValue()
+    if not self.frame then
+        return nil
+    end
     if self.frame:IsNumeric() then
         return self.frame:GetNumber()
     end
@@ -42,6 +25,9 @@ end
 
 function ProxyEditBox:onFocus()
     parent.onFocus(self)
+    if not self.frame then
+        return
+    end
     if self.fixAutoFocus then
         self.frame:SetAutoFocus(false)
     end
@@ -53,6 +39,9 @@ function ProxyEditBox:onFocus()
 end
 
 function ProxyEditBox:input()
+    if not self.frame then
+        return
+    end
     self.frame:SetFocus()
     if self.hookTab then
         self.frame:SetScript("OnTabPressed", function(frame)
@@ -74,11 +63,13 @@ end
 
 function ProxyEditBox:onUnfocus()
     parent.onUnfocus(self)
-    self.frame:ClearFocus()
+    if self.frame then
+        self.frame:ClearFocus()
+    end
 end
 
 function ProxyEditBox:onClick(binding)
-    if not self.frame:HasFocus() and self.frame:IsEnabled() then
+    if self.frame and not self.frame:HasFocus() and self.frame:IsEnabled() then
         self:input()
     end
 end

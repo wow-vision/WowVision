@@ -275,9 +275,10 @@ function Generator:reconcileDirect(realParent, tree1, tree2)
             if k ~= "children" then
                 local oldValue = tree1.props[k]
                 if oldValue ~= v then
-                    -- Check if actually changed using compareProps
-                    if tree1.realElement and tree1.realElement.props[k] then
-                        if not WowVision:compareProps(tree1.realElement.props[k], tree1.realElement:getProp(k), v) then
+                    -- Check if actually changed using InfoClass field comparison
+                    local field = real.class.info:getField(k)
+                    if field then
+                        if not field:compare(real:getProp(k), v) then
                             real:setProp(k, v)
                         end
                     else

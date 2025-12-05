@@ -18,26 +18,9 @@ DataList.info:addFields({
 
 function DataList:initialize()
     parent.initialize(self)
-
+    self.displayType = "List"
     self.sync = true
-    self:setProp("displayType", "List")
-    self:addProp({
-        key = "dataset",
-        type = "reference",
-        set = function(value)
-            self:unfocusCurrent()
-            self.currentIndex = -1
-            self.currentElement = -1
-            self.dataset = value
-        end,
-    })
-
-    self:addProp({
-        key = "getElement",
-    })
-
     self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", { generator = WowVision.ui.generator })
-
     self.currentIndex = -1
     self.currentElement = nil
     self.focused = false

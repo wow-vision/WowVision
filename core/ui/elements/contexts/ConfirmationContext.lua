@@ -17,16 +17,6 @@ Context.info:addFields({
 function Context:initialize()
     parent.initialize(self)
     self.direction = "vertical"
-    self:addProp({
-        key = "prompt",
-        default = "Confirm?",
-        set = function(value)
-            self.prompt = value
-            if self.promptText then
-                self.promptText:setProp("text", value)
-            end
-        end,
-    })
 
     self:addEvent("confirm")
     self:addEvent("cancel")

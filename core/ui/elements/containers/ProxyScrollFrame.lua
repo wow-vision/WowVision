@@ -48,44 +48,6 @@ function ProxyScrollFrame:initialize()
     self.currentIndex = -1
     self.sync = true
     self.direction = "vertical"
-    self:addProp({
-        key = "getNumEntries",
-        default = function()
-            return function(self)
-                return nil
-            end
-        end,
-    })
-    self:addProp({
-        key = "getElement",
-        required = true,
-    })
-    self:addProp({
-        key = "getElementIndex",
-        default = function()
-            return function(self, element)
-                --Element here is the game's UI element, not a virtual element
-                local id = element:GetID()
-                return element.index or id
-            end
-        end,
-    })
-    self:addProp({
-        key = "getElementHeight",
-        default = function()
-            return function(self)
-                return self.frame.buttonHeight
-            end
-        end,
-    })
-    self:addProp({
-        key = "getButtons",
-        default = function()
-            return function(self)
-                return self.frame.buttons or { self.scrollChild:GetChildren() }
-            end
-        end,
-    })
 end
 
 function ProxyScrollFrame:getFocus()

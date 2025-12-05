@@ -6,6 +6,9 @@ function ProxyCheckButton:initialize()
 end
 
 function ProxyCheckButton:getValue()
+    if not self.frame then
+        return nil
+    end
     if self.dropdown then
         local regions = { self.frame:GetRegions() }
         return regions[2]:GetAtlas() == "common-dropdown-icon-checkmark-yellow-classic"
@@ -15,7 +18,7 @@ function ProxyCheckButton:getValue()
 end
 
 function ProxyCheckButton:getLabel()
-    if self.dropdown then
+    if self.dropdown and self.frame then
         local regions = { self.frame:GetRegions() }
         return regions[3]:GetText()
     end

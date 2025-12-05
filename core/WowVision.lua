@@ -156,22 +156,6 @@ function WowVision:recursiveComp(a, b, level)
     return a == b
 end
 
-function WowVision:compareProps(prop, a, b)
-    local result, err = nil, nil
-    if prop.key == "children" then
-        return true
-    end
-    if prop.type == "reference" then
-        return a == b
-    end
-    result, err = WowVision:recursiveComp(a, b)
-    if err then
-        print("error when comparing prop", prop.key, ":", err)
-        tprint(prop)
-    end
-    return result
-end
-
 function WowVision:play(path, channel)
     local channel = channel or "SFX"
     local resource = WowVision.audio.directory:getPath(path)

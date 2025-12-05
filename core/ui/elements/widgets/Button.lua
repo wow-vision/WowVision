@@ -22,19 +22,6 @@ Button.liveFields.value = nil
 
 function Button:initialize()
     parent.initialize(self)
-    self:updateProp({
-        key = "value",
-        getLabel = function()
-            return nil
-        end,
-        live = false,
-    })
-    self:updateProp({
-        key = "bind",
-        set = function(value)
-            self.bind = value
-        end,
-    })
 end
 
 function Button:onClick()

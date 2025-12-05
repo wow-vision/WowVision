@@ -52,56 +52,6 @@ Widget.liveFields.selected = "focus"
 
 function Widget:initialize()
     parent.initialize(self)
-    self:addProp({
-        key = "bind",
-        type = "reference",
-        default = nil,
-        set = function(value)
-            self.bind = value
-            self:setValue(self:getBoundValue())
-        end,
-    })
-
-    self:addProp({
-        key = "value",
-        default = nil,
-        live = "focus",
-        getLabel = function()
-            return self:getValueString()
-        end,
-        get = function()
-            return self:getValue()
-        end,
-        set = function(value)
-            self:setValue(value)
-        end,
-    })
-
-    self:addProp({
-        key = "tooltip",
-    })
-
-    self:addProp({
-        key = "enabled",
-        default = true,
-        live = "focus",
-        getLabel = function(value)
-            if value == false then
-                return self.L["Disabled"]
-            end
-        end,
-    })
-
-    self:addProp({
-        key = "selected",
-        default = false,
-        live = "focus",
-        getLabel = function(value)
-            if value then
-                return self.L["selected"]
-            end
-        end,
-    })
 
     self:addEvent("click")
     self:addEvent("drag")
@@ -244,12 +194,18 @@ function Widget:announceTooltip()
 end
 
 function Widget:getExtras()
-    local props = {}
+    local extras = {}
     if not self.enabled then
-        tinsert(props, self.L["Disabled"])
+        tinsert(extras, self.L["Disabled"])
     end
-    tinsert(props, self.props.value.getLabel())
-    return props
+    local valueField = self.class.info:getField("value")
+    if valueField then
+        local label = valueField:getLabel(self, self:getValue())
+        if label then
+            tinsert(extras, label)
+        end
+    end
+    return extras
 end
 
 function Widget:unfocus()

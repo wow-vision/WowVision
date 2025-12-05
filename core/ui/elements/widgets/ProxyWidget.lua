@@ -43,56 +43,6 @@ ProxyWidget.info:updateFields({
 
 function ProxyWidget:initialize()
     parent.initialize(self)
-    self:addProp({
-        key = "ignoreRequiresFrameShown",
-        default = false,
-    })
-    self:addProp({
-        key = "frame",
-        type = "reference",
-        default = nil,
-        set = function(value)
-            self:setFrame(value)
-        end,
-    })
-
-    self:updateProp({
-        key = "selected",
-        get = function()
-            return self:getSelected()
-        end,
-    })
-
-    self:addProp({
-        key = "macroCall",
-        default = nil,
-    })
-
-    self:addProp({
-        key = "dropdown",
-        default = false,
-    })
-
-    self:addProp({
-        key = "useGameTooltip",
-        default = true,
-    })
-
-    self:addProp({
-        key = "secure",
-        default = false,
-    })
-
-    self:updateProp({
-        key = "tooltip",
-        type = "reference",
-        default = function()
-            return {
-                type = "game",
-                mode = "static",
-            }
-        end,
-    })
 end
 
 function ProxyWidget:setFrame(frame)
@@ -125,7 +75,7 @@ end
 
 function ProxyWidget:onFocus()
     parent.onFocus(self)
-    if self.tooltip then
+    if self.tooltip and self.frame then
         if self.tooltip.mode == "static" then
             if self.frame:HasScript("OnEnter") then
                 ExecuteFrameScript(self.frame, "OnEnter")
@@ -136,7 +86,7 @@ end
 
 function ProxyWidget:onUnfocus()
     WowVision.UIHost.tooltip:reset()
-    if self.tooltip and self.tooltip.mode == "static" and self.frame:HasScript("OnLeave") then
+    if self.tooltip and self.tooltip.mode == "static" and self.frame and self.frame:HasScript("OnLeave") then
         ExecuteFrameScript(self.frame, "OnLeave")
     end
     parent.onUnfocus(self)
@@ -172,6 +122,9 @@ function ProxyWidget:getExtras()
 end
 
 function ProxyWidget:onDrag()
+    if not self.frame then
+        return
+    end
     local script = self.frame:GetScript("OnDragStart")
     if script then
         script(self.frame)
@@ -181,6 +134,9 @@ end
 function ProxyWidget:getLabel()
     if self.label and self.label ~= "" then
         return self.label
+    end
+    if not self.frame then
+        return nil
     end
     if self.frame.Text then
         local text = self.frame.Text:GetText()

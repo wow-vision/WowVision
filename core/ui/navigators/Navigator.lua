@@ -124,12 +124,10 @@ function NavigatorNode:setElement(element)
 end
 
 -- Reconciles field values and populates liveUpdates/alwaysUpdates
--- This is the expensive operation that polls all props/fields
 function NavigatorNode:reconcileFields()
     self.liveUpdates = {}
     self.alwaysUpdates = {}
 
-    -- Use InfoClass fields and liveFields system
     local elementClass = self.element.class
     if elementClass and elementClass.info and elementClass.info.fields then
         local liveFields = elementClass.liveFields or {}
@@ -146,24 +144,6 @@ function NavigatorNode:reconcileFields()
                         else -- "focus" mode
                             self.liveUpdates[k] = label
                         end
-                    end
-                end
-            end
-        end
-    end
-
-    -- Also support old props system during transition
-    for k, v in pairs(self.element.props) do
-        local newValue = v.get()
-        if not WowVision:compareProps(v, self.fieldValues[k], newValue) then
-            self.fieldValues[k] = newValue
-            if v.live then
-                local label = v.getLabel(newValue)
-                if label then
-                    if v.live == "always" then
-                        self.alwaysUpdates[k] = label
-                    else
-                        self.liveUpdates[k] = label
                     end
                 end
             end

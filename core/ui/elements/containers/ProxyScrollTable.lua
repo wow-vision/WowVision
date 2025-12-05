@@ -8,15 +8,6 @@ ProxyScrollTable.info:addFields({
 
 function ProxyScrollTable:initialize()
     parent.initialize(self)
-    self:addProp({
-        key = "headers",
-        default = {},
-    })
-
-    self:addProp({
-        key = "getButtonData",
-        default = nil,
-    })
 end
 
 function ProxyScrollTable:getElement(button)

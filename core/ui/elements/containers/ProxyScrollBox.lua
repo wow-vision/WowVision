@@ -41,44 +41,6 @@ function ProxyScrollBox:initialize()
     self.currentIndex = -1
     self.sync = true
     self.direction = "vertical"
-
-    self:addProp({
-        key = "getNumEntries",
-        default = function()
-            return function(self)
-                return self.frame:GetDataProviderSize()
-            end
-        end,
-    })
-    self:addProp({
-        key = "getElement",
-    })
-    self:addProp({
-        key = "getSelectedIndex",
-        default = function(self)
-            return -1
-        end,
-    })
-    self:addProp({
-        key = "selectedElement",
-        default = nil,
-        set = function(value)
-            self.selectedElement = value
-            if not self.proxyButton or not self.proxyButton.frame.GetRowData then
-                return
-            end
-            self.proxyButton.selected = WowVision:recursiveComp(self.proxyButton.frame:GetRowData(), value)
-        end,
-    })
-    self:addProp({
-        key = "clicks",
-        default = nil,
-    })
-    self:addProp({
-        key = "ordered",
-        default = true,
-    })
-
     self.focus = nil
 end
 

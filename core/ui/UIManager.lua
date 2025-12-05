@@ -39,9 +39,10 @@ function UI:CreateElement(typeKey, config)
     end
     local element = elementType.class:new()
     element.ui = self
-    if config then
-        element:setInfo(config)
-    end
+    -- When no config provided (e.g., from Generator), ignore required field validation
+    -- since Generator will set props via setProp() after creation
+    local ignoreRequired = config == nil
+    element:setInfo(config or {}, ignoreRequired)
     return element
 end
 

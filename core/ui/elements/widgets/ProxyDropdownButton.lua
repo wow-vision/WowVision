@@ -11,33 +11,19 @@ ProxyDropdownButton.liveFields.value = "focus"
 
 function ProxyDropdownButton:initialize()
     parent.initialize(self)
-    self:setProp("displayType", "Dropdown")
-
-    self:addProp({
-        key = "menuDescription",
-        default = nil,
-    })
-
-    self:addProp({
-        key = "textIsValue",
-        default = false,
-    })
-
-    self:updateProp({
-        key = "value",
-        live = true,
-    })
-
+    self.displayType = "Dropdown"
     self.menuOpen = false
 end
 
 function ProxyDropdownButton:getValue()
-    if self.textIsValue then
+    if self.textIsValue and self.frame then
         return self.frame:GetText()
     end
 end
 
 function ProxyDropdownButton:onClick()
-    self.frame:OpenMenu()
+    if self.frame then
+        self.frame:OpenMenu()
+    end
     parent.onClick(self)
 end

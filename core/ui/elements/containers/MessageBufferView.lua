@@ -1,17 +1,20 @@
 local MessageBufferView, parent = WowVision.ui:CreateElementType("MessageBufferView", "Widget")
 
+-- Define InfoClass fields at class level
+MessageBufferView.info:addFields({
+    {
+        key = "buffer",
+        default = nil,
+        compareMode = "direct",
+        set = function(obj, key, value)
+            obj:setBuffer(value)
+        end,
+    },
+})
+
 function MessageBufferView:initialize()
     parent.initialize(self)
     self.displayType = "List"
-
-    self:addProp({
-        key = "buffer",
-        type = "reference",
-        set = function(value)
-            self:setBuffer(value)
-        end,
-    })
-
     self.index = -1
 end
 

@@ -26,35 +26,11 @@ ProxyButton.setupUniqueBindings = setupUniqueBindings
 
 function ProxyButton:initialize()
     parent.initialize(self)
-    self:setProp("displayType", "Button")
-    self:addProp({
-        key = "clickType",
-        default = "direct",
-    })
-
-    self:addProp({
-        key = "macroCall",
-        default = nil,
-    })
-
-    self:addProp({
-        key = "clicks",
-        default = nil,
-    })
-
-    self:addProp({
-        key = "header",
-        default = nil,
-    })
-
-    self:updateProp({
-        key = "value",
-        live = false,
-    })
+    self.displayType = "Button"
 end
 
 function ProxyButton:getLabel()
-    if self.dropdown then
+    if self.dropdown and self.frame then
         local regions = { self.frame:GetRegions() }
         if regions[1]:GetObjectType() == "Texture" then
             if regions[1]:GetTexture() == 130940 then

@@ -8,17 +8,6 @@ Container.info:addFields({
 
 function Container:initialize()
     parent.initialize(self)
-
-    self:addProp({
-        key = "direction",
-        default = "vertical",
-    })
-
-    self:addProp({
-        key = "wrap",
-        default = false,
-    })
-
     self.children = {}
     self.focused = nil
 end
