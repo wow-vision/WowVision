@@ -1,3 +1,56 @@
+-- Shared event dispatcher for event-driven windows (created lazily)
+local EventDispatcher = {
+    frame = nil,
+    listeners = {}, -- event -> { window1, window2, ... }
+}
+
+function EventDispatcher:getFrame()
+    if not self.frame then
+        self.frame = CreateFrame("Frame")
+        self.frame:SetScript("OnEvent", function(frame, event, ...)
+            self:dispatch(event, ...)
+        end)
+    end
+    return self.frame
+end
+
+function EventDispatcher:register(window, events)
+    local frame = self:getFrame()
+    for _, event in ipairs(events) do
+        if not self.listeners[event] then
+            self.listeners[event] = {}
+            frame:RegisterEvent(event)
+        end
+        self.listeners[event][window] = true
+    end
+end
+
+function EventDispatcher:unregister(window, events)
+    for _, event in ipairs(events) do
+        if self.listeners[event] then
+            self.listeners[event][window] = nil
+            -- If no more listeners for this event, unregister it
+            if not next(self.listeners[event]) then
+                self.listeners[event] = nil
+                if self.frame then
+                    self.frame:UnregisterEvent(event)
+                end
+            end
+        end
+    end
+end
+
+function EventDispatcher:dispatch(event, ...)
+    local listeners = self.listeners[event]
+    if listeners then
+        for window in pairs(listeners) do
+            window:onEvent(event, ...)
+        end
+    end
+end
+
+WowVision.EventDispatcher = EventDispatcher
+
 -- Base Window class
 local Window, _ = WowVision.WindowManager:CreateWindowType("Window")
 
@@ -21,6 +74,20 @@ function Window:initialize(config)
     self:setInfo(config)
     self._isCurrentlyOpen = false
     self._openInstance = nil
+    -- Cache conflicting addon check at init (addons don't change during session)
+    self._hasConflictingAddon = self:checkConflictingAddons()
+end
+
+-- Check if any conflicting addons are loaded (called once at init)
+function Window:checkConflictingAddons()
+    if self.conflictingAddons then
+        for _, addonName in ipairs(self.conflictingAddons) do
+            if C_AddOns.IsAddOnLoaded(addonName) then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 -- Abstract method - subclasses must override
@@ -40,16 +107,9 @@ function Window:checkState()
     return false, nowOpen
 end
 
--- Check for conflicting addons before opening
+-- Check if window can open (uses cached addon check)
 function Window:canOpen()
-    if self.conflictingAddons then
-        for _, addonName in ipairs(self.conflictingAddons) do
-            if C_AddOns.IsAddOnLoaded(addonName) then
-                return false
-            end
-        end
-    end
-    return true
+    return not self._hasConflictingAddon
 end
 
 -- Build the root element configuration for generated windows
@@ -256,23 +316,8 @@ EventWindow.info:addFields({
 
 function EventWindow:initialize(config)
     Window.initialize(self, config)
-
-    -- Create a frame to receive events
-    self._eventFrame = CreateFrame("Frame")
-
-    self:registerEvents()
-
-    -- Set up event handler
-    local window = self
-    self._eventFrame:SetScript("OnEvent", function(frame, event, ...)
-        window:onEvent(event, ...)
-    end)
-end
-
-function EventWindow:registerEvents()
-    self._eventFrame:UnregisterAllEvents()
-    self._eventFrame:RegisterEvent(self.openEvent)
-    self._eventFrame:RegisterEvent(self.closeEvent)
+    -- Register with shared event dispatcher
+    EventDispatcher:register(self, { self.openEvent, self.closeEvent })
 end
 
 function EventWindow:onEvent(event, ...)
@@ -300,18 +345,11 @@ PlayerInteractionWindow.info:addFields({
 
 function PlayerInteractionWindow:initialize(config)
     Window.initialize(self, config)
-
-    -- Create a frame to receive events
-    self._eventFrame = CreateFrame("Frame")
-
-    self._eventFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
-    self._eventFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
-
-    -- Set up event handler
-    local window = self
-    self._eventFrame:SetScript("OnEvent", function(frame, event, interactionType)
-        window:onEvent(event, interactionType)
-    end)
+    -- Register with shared event dispatcher
+    EventDispatcher:register(self, {
+        "PLAYER_INTERACTION_MANAGER_FRAME_SHOW",
+        "PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
+    })
 end
 
 function PlayerInteractionWindow:onEvent(event, interactionType)
