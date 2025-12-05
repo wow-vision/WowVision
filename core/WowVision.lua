@@ -4,6 +4,7 @@ WowVision.Class = WowVisionNamespace.Class
 
 function WowVision:OnInitialize()
     self.L = LibStub("AceLocale-3.0"):GetLocale("WowVision")
+    self:cacheLoadedAddons()
     self:registerCommands()
     local defaultDB = self.base:getDefaultDBRecursive()
     if WowVisionDB == nil or WowVision.profiles ~= nil then
@@ -11,6 +12,19 @@ function WowVision:OnInitialize()
     end
     self.db = WowVision.dbManager:reconcile(defaultDB, WowVisionDB)
     self.base:setDBObj(self.db)
+end
+
+-- Cache all loaded addons at startup for O(1) lookups
+-- Addons don't change during a session, so this is safe to cache once
+function WowVision:cacheLoadedAddons()
+    self.loadedAddons = {}
+    for i = 1, C_AddOns.GetNumAddOns() do
+        local name = C_AddOns.GetAddOnInfo(i)
+        if C_AddOns.IsAddOnLoaded(i) then
+            self.loadedAddons[name] = true
+            self.loadedAddons[name:lower()] = true  -- case-insensitive lookup
+        end
+    end
 end
 
 function WowVision:OnEnable()
@@ -175,7 +189,7 @@ function WowVision:registerCommands()
         self:RegisterChatCommand("pquit", "PartyQuitCommand")
         self:RegisterChatCommand("dquit", "InstanceGroupQuitCommand")
     end
-    if not C_AddOns.IsAddOnLoaded("BlindSlash") then
+    if not self.loadedAddons["BlindSlash"] then
         self:RegisterChatCommand("enableaddon", "EnableAddon")
         self:RegisterChatCommand("disableaddon", "DisableAddon")
     end

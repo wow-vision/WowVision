@@ -169,8 +169,9 @@ function Binding:activate(info)
     if newInfo.dorment then
         return nil
     end
+    local loaded = WowVision.loadedAddons
     for _, addon in ipairs(newInfo.conflictingAddons) do
-        if C_AddOns.IsAddOnLoaded(addon) then
+        if loaded and (loaded[addon] or loaded[addon:lower()]) then
             return nil
         end
     end

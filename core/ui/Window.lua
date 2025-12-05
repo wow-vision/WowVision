@@ -79,12 +79,15 @@ function Window:initialize(config)
 end
 
 -- Check if any conflicting addons are loaded (called once at init)
+-- Uses WowVision.loadedAddons cache for O(1) lookups
 function Window:checkConflictingAddons()
-    if self.conflictingAddons then
-        for _, addonName in ipairs(self.conflictingAddons) do
-            if C_AddOns.IsAddOnLoaded(addonName) then
-                return true
-            end
+    local loaded = WowVision.loadedAddons
+    if not loaded or not self.conflictingAddons then
+        return false
+    end
+    for _, addonName in ipairs(self.conflictingAddons) do
+        if loaded[addonName] or loaded[addonName:lower()] then
+            return true
         end
     end
     return false
@@ -213,26 +216,17 @@ FrameWindow.info:addFields({
 function FrameWindow:initialize(config)
     Window.initialize(self, config)
     self._cachedFrame = nil
-    self._frameCheckTime = 0
 end
 
 function FrameWindow:needsPolling()
     return true
 end
 
-local FRAME_RETRY_INTERVAL = 1.0 -- Only re-check _G every 1 second for missing frames
-
 function FrameWindow:getFrame()
     local frame = self._cachedFrame
     if frame then
         return frame
     end
-    -- Throttle _G lookups for frames that don't exist yet
-    local now = GetTime()
-    if now - self._frameCheckTime < FRAME_RETRY_INTERVAL then
-        return nil
-    end
-    self._frameCheckTime = now
     frame = self.frame or rawget(_G, self.frameName)
     if frame then
         self._cachedFrame = frame
@@ -247,16 +241,12 @@ end
 
 -- Inlined checkState for performance - avoids method call overhead
 function FrameWindow:checkState()
-    -- Inline frame lookup
+    -- Inline frame lookup (cache once found)
     local frame = self._cachedFrame
     if not frame then
-        local now = GetTime()
-        if now - self._frameCheckTime >= FRAME_RETRY_INTERVAL then
-            self._frameCheckTime = now
-            frame = self.frame or rawget(_G, self.frameName)
-            if frame then
-                self._cachedFrame = frame
-            end
+        frame = self.frame or rawget(_G, self.frameName)
+        if frame then
+            self._cachedFrame = frame
         end
     end
     -- Inline isOpen check
