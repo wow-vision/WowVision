@@ -39,14 +39,18 @@ ProxyScrollFrame.info:addFields({
     },
 })
 
+-- Override inherited defaults
+ProxyScrollFrame.info:updateFields({
+    { key = "displayType", default = "List" },
+    { key = "sync", default = true },
+})
+
 function ProxyScrollFrame:initialize()
     parent.initialize(self)
-    self.displayType = "List"
     self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", { generator = WowVision.ui.generator })
     self.buttons = {}
     self.currentElement = nil
     self.currentIndex = -1
-    self.sync = true
     self.direction = "vertical"
 end
 

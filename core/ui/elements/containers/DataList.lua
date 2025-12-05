@@ -16,10 +16,14 @@ DataList.info:addFields({
     { key = "getElement", default = nil },
 })
 
+-- Override inherited defaults
+DataList.info:updateFields({
+    { key = "displayType", default = "List" },
+    { key = "sync", default = true },
+})
+
 function DataList:initialize()
     parent.initialize(self)
-    self.displayType = "List"
-    self.sync = true
     self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", { generator = WowVision.ui.generator })
     self.currentIndex = -1
     self.currentElement = nil

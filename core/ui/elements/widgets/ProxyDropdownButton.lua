@@ -6,12 +6,16 @@ ProxyDropdownButton.info:addFields({
     { key = "textIsValue", default = false },
 })
 
+-- Override inherited defaults
+ProxyDropdownButton.info:updateFields({
+    { key = "displayType", default = "Dropdown" },
+})
+
 -- Add value to liveFields (equivalent to live = true)
 ProxyDropdownButton.liveFields.value = "focus"
 
 function ProxyDropdownButton:initialize()
     parent.initialize(self)
-    self.displayType = "Dropdown"
     self.menuOpen = false
 end
 

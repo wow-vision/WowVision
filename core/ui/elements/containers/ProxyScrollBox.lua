@@ -32,14 +32,18 @@ ProxyScrollBox.info:addFields({
     { key = "ordered", default = true },
 })
 
+-- Override inherited defaults
+ProxyScrollBox.info:updateFields({
+    { key = "displayType", default = "List" },
+    { key = "sync", default = true },
+})
+
 function ProxyScrollBox:initialize()
     parent.initialize(self)
-    self.displayType = "List"
     self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", { generator = WowVision.ui.generator })
     self.buttons = {}
     self.currentElement = nil
     self.currentIndex = -1
-    self.sync = true
     self.direction = "vertical"
     self.focus = nil
 end

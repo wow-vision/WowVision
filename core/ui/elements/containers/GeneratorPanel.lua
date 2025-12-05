@@ -12,11 +12,15 @@ GeneratorPanel.info:addFields({
     },
 })
 
+-- Override inherited defaults
+GeneratorPanel.info:updateFields({
+    { key = "layout", default = true },
+    { key = "shouldAnnounce", default = false },
+})
+
 function GeneratorPanel:initialize()
     parent.initialize(self)
     self.tree = nil
-    self.layout = true
-    self.shouldAnnounce = false
 end
 
 function GeneratorPanel:getFocusList()

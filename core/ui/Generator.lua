@@ -406,11 +406,8 @@ function Generator:build(parent, root)
     --use newParent to keep track of the real element to add child real elements to, as virtual elements can have multiple levels without a real element.
     local newParent = parent
     if not root.virtualElement then
-        newParent = WowVision.ui:CreateElement(root.elementType)
+        newParent = WowVision.ui:CreateElement(root.elementType, root.props)
         root.realElement = newParent
-        for k, v in pairs(root.props) do
-            newParent:setProp(k, v)
-        end
         parent:add(newParent)
     end
     if root.hooks.mount then

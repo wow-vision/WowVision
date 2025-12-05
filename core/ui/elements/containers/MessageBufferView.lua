@@ -12,9 +12,13 @@ MessageBufferView.info:addFields({
     },
 })
 
+-- Override inherited defaults
+MessageBufferView.info:updateFields({
+    { key = "displayType", default = "List" },
+})
+
 function MessageBufferView:initialize()
     parent.initialize(self)
-    self.displayType = "List"
     self.index = -1
 end
 

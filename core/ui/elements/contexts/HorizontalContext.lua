@@ -1,9 +1,13 @@
 local Context, parent = WowVision.ui:CreateElementType("HorizontalContext", "Context")
 
+-- Override defaults for HorizontalContext
+Context.info:updateFields({
+    { key = "direction", default = "control-tab" },
+    { key = "wrap", default = true },
+})
+
 function Context:initialize()
     parent.initialize(self)
-    self.direction = "control-tab"
-    self.wrap = true
 end
 
 function Context:add(element, index)

@@ -89,6 +89,9 @@ end
 
 function UIElement:setEventProp(events)
     self.eventPropHandlers = events
+    if events == nil then
+        return
+    end
     for event, handlers in pairs(events) do
         local eventTable = self.events[event]
         if not eventTable then

@@ -14,9 +14,13 @@ Context.info:addFields({
     },
 })
 
+-- Override inherited defaults
+Context.info:updateFields({
+    { key = "direction", default = "vertical" },
+})
+
 function Context:initialize()
     parent.initialize(self)
-    self.direction = "vertical"
 
     self:addEvent("confirm")
     self:addEvent("cancel")

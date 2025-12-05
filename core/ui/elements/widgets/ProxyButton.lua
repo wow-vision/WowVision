@@ -8,6 +8,11 @@ ProxyButton.info:addFields({
     { key = "header", default = nil },
 })
 
+-- Override inherited defaults
+ProxyButton.info:updateFields({
+    { key = "displayType", default = "Button" },
+})
+
 -- Remove value from liveFields (equivalent to live = false)
 ProxyButton.liveFields.value = nil
 
@@ -26,7 +31,6 @@ ProxyButton.setupUniqueBindings = setupUniqueBindings
 
 function ProxyButton:initialize()
     parent.initialize(self)
-    self.displayType = "Button"
 end
 
 function ProxyButton:getLabel()

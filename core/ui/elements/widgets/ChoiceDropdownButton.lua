@@ -5,9 +5,13 @@ ChoiceDropdownButton.info:addFields({
     { key = "choices", default = {} },
 })
 
+-- Override inherited defaults
+ChoiceDropdownButton.info:updateFields({
+    { key = "displayType", default = "Dropdown" },
+})
+
 function ChoiceDropdownButton:initialize()
     parent.initialize(self)
-    self.displayType = "Dropdown"
 end
 
 function ChoiceDropdownButton:getDropdown()
