@@ -55,7 +55,7 @@ function MenuManager:update()
         dropdownMenuFrame,
         self.activeDescription
     )
-    local newMenuWindow = WowVision.UIHost:openWindow({
+    local newMenuWindow = WowVision.UIHost:openTemporaryWindow({
         name = "dropdown",
         virtual = false,
         rootElement = panel,
