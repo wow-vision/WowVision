@@ -5,6 +5,19 @@ ProxyCheckButton.info:updateFields({
     { key = "displayType", default = "Checkbox" },
 })
 
+-- Add field for checked state value
+ProxyCheckButton.info:addFields({
+    {
+        key = "value",
+        get = function(self)
+            return self:getValueString()
+        end,
+    },
+})
+
+-- Register value as a live field (announces changes when focused)
+ProxyCheckButton.liveFields.value = "focus"
+
 function ProxyCheckButton:initialize()
     parent.initialize(self)
 end

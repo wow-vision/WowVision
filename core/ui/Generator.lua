@@ -259,6 +259,10 @@ function Generator:generateNode(parent, props, previousNode, panel)
     local node = GeneratorNode:new(parent)
     node.elementType = props[1]
     local elementDef = self:getVirtualElementDef(props[1])
+    -- Fallback to global generator if not found (submodule elements are registered on separate generators)
+    if not elementDef and self ~= WowVision.ui.generator then
+        elementDef = WowVision.ui.generator:getVirtualElementDef(props[1])
+    end
     local virtualElement = elementDef and elementDef.func
     for k, v in pairs(props) do
         if k == "hooks" then
