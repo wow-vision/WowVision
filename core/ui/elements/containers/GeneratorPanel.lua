@@ -21,6 +21,21 @@ GeneratorPanel.info:updateFields({
 function GeneratorPanel:initialize()
     parent.initialize(self)
     self.tree = nil
+    self.dirtyElements = {}  -- tracks which element types need regeneration
+end
+
+function GeneratorPanel:onAdd()
+    parent.onAdd(self)
+    if self.generator then
+        self.generator:registerPanel(self)
+    end
+end
+
+function GeneratorPanel:onRemove()
+    if self.generator then
+        self.generator:unregisterPanel(self)
+    end
+    parent.onRemove(self)
 end
 
 function GeneratorPanel:getFocusList()
@@ -63,7 +78,7 @@ end
 function GeneratorPanel:iterate()
     local startTime = debugprofilestop()
     local tree1 = self.tree
-    local tree2 = self.generator:generateNode(nil, self.startingElement, tree1)
+    local tree2 = self.generator:generateNode(nil, self.startingElement, tree1, self)
     local focusListFirst = self:getFocusList()
     self:batch()
     -- Single-pass reconciliation (combines old generateCompareNode + reconcile)

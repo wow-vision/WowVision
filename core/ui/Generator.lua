@@ -2,6 +2,53 @@
 --Comparison functions should be called each frame, as there is often a delay between user input and UI updates
 -- Unlike frameworks such as React, state is not held on virtual components. Use game state or your own tables to influence UI state.
 
+-- VirtualElementType manages a virtual element's function and regeneration conditions
+-- Similar to how elementTypes manages real elements with generationConditions
+local VirtualElementType = WowVision.Class("VirtualElementType")
+
+function VirtualElementType:initialize(elementType, func, generator)
+    self.elementType = elementType
+    self.func = func
+    self.generator = generator
+    self.events = {}
+    self.frames = {}
+    self.valuesFunc = nil
+    self.alwaysRun = true  -- default until conditions added
+end
+
+function VirtualElementType:addEvents(events)
+    for _, event in ipairs(events) do
+        self.events[event] = true
+    end
+    -- Register events with generator
+    if self.generator then
+        self.generator:registerElementEvents(self.elementType, events)
+    end
+    self.alwaysRun = false
+    return self
+end
+
+function VirtualElementType:addFrameConditions(frames)
+    for _, frameConfig in ipairs(frames) do
+        tinsert(self.frames, frameConfig)
+    end
+    self.alwaysRun = false
+    return self
+end
+
+function VirtualElementType:setValues(func)
+    self.valuesFunc = func
+    self.alwaysRun = false
+    return self
+end
+
+function VirtualElementType:setAlwaysRun(value)
+    self.alwaysRun = value
+    return self
+end
+
+WowVision.VirtualElementType = VirtualElementType
+
 --GeneratorNode is equivalent to a Virtual DOM node in React.
 local GeneratorNode = WowVision.Class("GeneratorNode")
 
@@ -23,6 +70,48 @@ local Generator = WowVision.Class("Generator")
 function Generator:initialize()
     self.includedGenerators = {}
     self.virtualElements = {}
+
+    -- Event-driven regeneration system
+    self.activePanels = {}          -- set of active GeneratorPanel instances
+    self.registeredEvents = {}      -- event name -> { elementType = true, ... }
+
+    -- Create event frame for WoW events
+    self.eventFrame = CreateFrame("Frame")
+    self.eventFrame:SetScript("OnEvent", function(frame, event, ...)
+        self:onEvent(event, ...)
+    end)
+end
+
+-- Panel registration for dirty tracking
+function Generator:registerPanel(panel)
+    self.activePanels[panel] = true
+end
+
+function Generator:unregisterPanel(panel)
+    self.activePanels[panel] = nil
+end
+
+-- Register events for an element type
+function Generator:registerElementEvents(elementType, events)
+    for _, event in ipairs(events) do
+        if not self.registeredEvents[event] then
+            self.registeredEvents[event] = {}
+            self.eventFrame:RegisterEvent(event)
+        end
+        self.registeredEvents[event][elementType] = true
+    end
+end
+
+-- Handle WoW events - mark elements dirty in all active panels
+function Generator:onEvent(event, ...)
+    local elementTypes = self.registeredEvents[event]
+    if elementTypes then
+        for elementType in pairs(elementTypes) do
+            for panel in pairs(self.activePanels) do
+                panel.dirtyElements[elementType] = true
+            end
+        end
+    end
 end
 
 -- Shallow comparison of two tables for dynamicValues caching
@@ -70,28 +159,61 @@ function Generator:exclude(generator)
     end
 end
 
+-- Creates a virtual element type and returns it for chained configuration
+function Generator:CreateVirtualElement(elementType, func)
+    local virtualElement = VirtualElementType:new(elementType, func, self)
+    self.virtualElements[elementType] = virtualElement
+    return virtualElement
+end
+
 function Generator:Element(elementType, configOrFunc, elementFunc)
     -- Support both old and new signatures:
     -- Old: gen:Element("name", function(props) ... end)
-    -- New: gen:Element("name", { dynamicValues = ..., alwaysRun = ... }, function(props) ... end)
+    -- New: gen:Element("name", { dynamicValues = ..., alwaysRun = ..., regenerateOn = ... }, function(props) ... end)
     local config, func
     if type(configOrFunc) == "function" then
         -- Old signature
-        config = { alwaysRun = true } -- Default to current behavior
         func = configOrFunc
+        -- Create VirtualElementType with alwaysRun default
+        local virtualElement = self:CreateVirtualElement(elementType, func)
+        virtualElement:setAlwaysRun(true)
+        return virtualElement
     else
         -- New signature
         config = configOrFunc or {}
         func = elementFunc
-        -- If no dynamicValues and no alwaysRun specified, default to alwaysRun for backwards compatibility
-        if config.dynamicValues == nil and config.alwaysRun == nil then
-            config.alwaysRun = true
+
+        local virtualElement = self:CreateVirtualElement(elementType, func)
+
+        -- Handle regenerateOn config
+        local regenerateOn = config.regenerateOn
+        if regenerateOn then
+            if regenerateOn.events then
+                virtualElement:addEvents(regenerateOn.events)
+            end
+            if regenerateOn.frames then
+                virtualElement:addFrameConditions(regenerateOn.frames)
+            end
+            if regenerateOn.values then
+                virtualElement:setValues(regenerateOn.values)
+            end
         end
+
+        -- Handle legacy dynamicValues
+        if config.dynamicValues then
+            virtualElement:setValues(config.dynamicValues)
+        end
+
+        -- Handle explicit alwaysRun
+        if config.alwaysRun ~= nil then
+            virtualElement:setAlwaysRun(config.alwaysRun)
+        elseif config.dynamicValues == nil and config.regenerateOn == nil then
+            -- If no conditions specified, default to alwaysRun for backwards compatibility
+            virtualElement:setAlwaysRun(true)
+        end
+
+        return virtualElement
     end
-    self.virtualElements[elementType] = {
-        func = func,
-        config = config,
-    }
 end
 
 function Generator:hasElement(element)
@@ -106,7 +228,7 @@ function Generator:hasElement(element)
     return false
 end
 
--- Returns the full definition { func, config } for a virtual element
+-- Returns the VirtualElementType for a virtual element
 function Generator:getVirtualElementDef(path)
     local def = self.virtualElements[path]
     if def then
@@ -130,7 +252,7 @@ function Generator:getVirtualElement(path)
     return nil
 end
 
-function Generator:generateNode(parent, props, previousNode)
+function Generator:generateNode(parent, props, previousNode, panel)
     if props == nil or props[1] == nil then
         return nil
     end
@@ -148,16 +270,40 @@ function Generator:generateNode(parent, props, previousNode)
     end
     if virtualElement then
         node.virtualElement = true
-        local config = elementDef.config or {}
 
         local root
-        local canUseCache = config.dynamicValues
-            and not config.alwaysRun
+        local shouldRegenerate = false
+
+        -- Check if marked dirty by event (highest priority)
+        if panel and panel.dirtyElements[props[1]] then
+            panel.dirtyElements[props[1]] = nil
+            shouldRegenerate = true
+        end
+
+        -- Check frame conditions
+        if not shouldRegenerate and #elementDef.frames > 0 and previousNode then
+            for _, frameConfig in ipairs(elementDef.frames) do
+                local frame, method = frameConfig[1], frameConfig[2]
+                if frame and frame[method] then
+                    local currentValue = frame[method](frame)
+                    local cacheKey = tostring(frame) .. method
+                    local cachedValue = previousNode.frameCache and previousNode.frameCache[cacheKey]
+                    if currentValue ~= cachedValue then
+                        shouldRegenerate = true
+                        break
+                    end
+                end
+            end
+        end
+
+        local canUseCache = not shouldRegenerate
+            and elementDef.valuesFunc
+            and not elementDef.alwaysRun
             and previousNode
             and previousNode.virtualElement
 
         if canUseCache then
-            local currentValues = config.dynamicValues(node.props)
+            local currentValues = elementDef.valuesFunc(node.props)
             if self:valuesEqual(currentValues, previousNode.lastDynamicValues) then
                 -- Values unchanged, reuse cached generator output but still process children
                 node.lastDynamicValues = currentValues
@@ -165,14 +311,28 @@ function Generator:generateNode(parent, props, previousNode)
             else
                 -- Values changed, regenerate
                 node.lastDynamicValues = currentValues
-                root = virtualElement(node.props)
+                shouldRegenerate = true
             end
-        else
-            -- First generation, alwaysRun, or no dynamicValues
-            if config.dynamicValues then
-                node.lastDynamicValues = config.dynamicValues(node.props)
+        end
+
+        if shouldRegenerate or not canUseCache then
+            -- First generation, alwaysRun, dirty, or conditions changed
+            if elementDef.valuesFunc then
+                node.lastDynamicValues = elementDef.valuesFunc(node.props)
             end
             root = virtualElement(node.props)
+        end
+
+        -- Cache frame values for next comparison
+        if #elementDef.frames > 0 then
+            node.frameCache = {}
+            for _, frameConfig in ipairs(elementDef.frames) do
+                local frame, method = frameConfig[1], frameConfig[2]
+                if frame and frame[method] then
+                    local cacheKey = tostring(frame) .. method
+                    node.frameCache[cacheKey] = frame[method](frame)
+                end
+            end
         end
 
         -- Cache the generator output for potential reuse
@@ -180,7 +340,7 @@ function Generator:generateNode(parent, props, previousNode)
 
         -- Always process children so nested dynamicValues get evaluated
         local previousChild = previousNode and previousNode.children[1]
-        local childNode = self:generateNode(node, root, previousChild)
+        local childNode = self:generateNode(node, root, previousChild, panel)
         if childNode then
             node:addChild(childNode)
         end
@@ -223,7 +383,7 @@ function Generator:generateNode(parent, props, previousNode)
                 prevChild = previousNode.children[i]
             end
 
-            local childRoot = self:generateNode(node, child, prevChild)
+            local childRoot = self:generateNode(node, child, prevChild, panel)
             if childRoot then
                 node:addChild(childRoot)
             end
