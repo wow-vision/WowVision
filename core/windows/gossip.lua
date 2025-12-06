@@ -46,7 +46,7 @@ gen:Element("gossip", {
         tinsert(result.children, {
             "Button",
             key = "available_" .. quest.questID,
-            label = quest.title,
+            label = L["Available Quest"] .. ": " .. quest.title,
             events = {
                 click = function()
                     C_GossipInfo.SelectAvailableQuest(quest.questID)
@@ -61,7 +61,7 @@ gen:Element("gossip", {
         tinsert(result.children, {
             "Button",
             key = "active_" .. quest.questID,
-            label = quest.title,
+            label = L["Accepted Quest"] .. ": " .. quest.title,
             events = {
                 click = function()
                     C_GossipInfo.SelectActiveQuest(quest.questID)

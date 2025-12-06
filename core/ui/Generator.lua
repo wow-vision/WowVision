@@ -516,6 +516,17 @@ function Generator:reconcileKeyedChildrenDirect(realParent, tree1, tree2)
         end
     end
 
+    -- Reorder real children to match tree2's order
+    if realParent.reorderChildren then
+        local orderedChildren = {}
+        for _, newChild in ipairs(tree2.children) do
+            if newChild.realElement then
+                tinsert(orderedChildren, newChild.realElement)
+            end
+        end
+        realParent:reorderChildren(orderedChildren)
+    end
+
     return true
 end
 

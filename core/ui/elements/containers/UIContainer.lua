@@ -82,6 +82,30 @@ function Container:updateIndexes()
     end
 end
 
+function Container:reorderChildren(orderedChildren)
+    -- Build a set of provided children for quick lookup
+    local providedSet = {}
+    for _, child in ipairs(orderedChildren) do
+        providedSet[child] = true
+    end
+
+    -- Start with the ordered children
+    local newChildren = {}
+    for _, child in ipairs(orderedChildren) do
+        tinsert(newChildren, child)
+    end
+
+    -- Append any children not in the provided list (preserve their relative order)
+    for _, child in ipairs(self.children) do
+        if not providedSet[child] then
+            tinsert(newChildren, child)
+        end
+    end
+
+    self.children = newChildren
+    self:updateIndexes()
+end
+
 function Container:batch()
     parent.batch(self)
     for _, child in ipairs(self.children) do
