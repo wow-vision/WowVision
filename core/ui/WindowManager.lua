@@ -147,8 +147,9 @@ function WindowManager:closeWindow(ref, shouldHandleContext)
         return
     end
 
-    -- Clear the instance from the window before notifying
+    -- Clear the instance and update state so checkState() can detect reopening
     window._openInstance = nil
+    window._isCurrentlyOpen = false
     self:notifyClosed(window, instance, shouldHandleContext)
 end
 

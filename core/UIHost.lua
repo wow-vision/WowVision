@@ -23,6 +23,15 @@ function UIHost:initialize()
             self.inCombat = true
         elseif event == "PLAYER_REGEN_ENABLED" then
             self.inCombat = false
+            -- If UI was opened during combat, it wasn't properly focused (show() returned early)
+            -- Now that combat ended, focus it properly (defer to next frame for safety)
+            if self._open then
+                C_Timer.After(0, function()
+                    if self._open and not self.inCombat then
+                        self:show()
+                    end
+                end)
+            end
         end
     end)
 end
@@ -60,7 +69,6 @@ function UIHost:show()
         return
     end
     self:bind()
-    --self.frame:Show()
     if self.context then
         self.context:focus()
     end
@@ -70,7 +78,6 @@ function UIHost:hide()
     if self.inCombat then
         return
     end
-    --self.frame:Hide()
     if self.bindingSet then
         self.bindingSet:deactivateAll()
     end

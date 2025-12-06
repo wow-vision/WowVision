@@ -18,6 +18,10 @@ Widget.info:addFields({
             return obj:getValue()
         end,
         set = function(obj, key, value)
+            -- Don't write nil to bound source - let bind handle the value
+            if value == nil and obj.bind then
+                return
+            end
             obj:setValue(value)
         end,
         getLabel = function(obj, value)
