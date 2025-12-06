@@ -303,11 +303,12 @@ function Generator:generateNode(parent, props, previousNode, panel)
         -- Can skip regeneration if:
         -- 1. Not marked dirty (shouldRegenerate is false)
         -- 2. Not alwaysRun
-        -- 3. Has previous cached output
+        -- 3. Has previous cached output for the SAME element type
         local canSkipRegeneration = not shouldRegenerate
             and not elementDef.alwaysRun
             and previousNode
             and previousNode.virtualElement
+            and previousNode.elementType == node.elementType
             and previousNode.cachedGeneratorOutput
 
         if canSkipRegeneration then

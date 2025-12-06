@@ -29,6 +29,9 @@ local SLOT_NAMES = {
 gen:Element("character", {
     regenerateOn = {
         events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
+        values = function(props)
+            return { selectedTab = CharacterFrame.selectedTab }
+        end,
     },
 }, function(props)
     local result = { "Panel", label = "Character Frame", wrap = true, children = {} }
