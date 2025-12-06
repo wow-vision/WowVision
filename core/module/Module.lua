@@ -175,6 +175,10 @@ function Module:registerWindow(config)
             config.isOpenFunc = config.isOpen
             config.isOpen = nil
         end
+        -- Pass the module's generator to the window for event-driven regeneration
+        if self.elementGenerator then
+            config.generator = self.elementGenerator
+        end
         window = WowVision.WindowManager:CreateWindow(config.type, config)
     else
         error(

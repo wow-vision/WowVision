@@ -13,7 +13,7 @@ function VirtualElementType:initialize(elementType, func, generator)
     self.events = {}
     self.frames = {}
     self.valuesFunc = nil
-    self.alwaysRun = true  -- default until conditions added
+    self.alwaysRun = true -- default until conditions added
 end
 
 function VirtualElementType:addEvents(events)
@@ -72,8 +72,8 @@ function Generator:initialize()
     self.virtualElements = {}
 
     -- Event-driven regeneration system
-    self.activePanels = {}          -- set of active GeneratorPanel instances
-    self.registeredEvents = {}      -- event name -> { elementType = true, ... }
+    self.activePanels = {} -- set of active GeneratorPanel instances
+    self.registeredEvents = {} -- event name -> { elementType = true, ... }
 
     -- Create event frame for WoW events
     self.eventFrame = CreateFrame("Frame")
@@ -296,27 +296,35 @@ function Generator:generateNode(parent, props, previousNode, panel)
             end
         end
 
-        local canUseCache = not shouldRegenerate
-            and elementDef.valuesFunc
+        -- Can skip regeneration if:
+        -- 1. Not marked dirty (shouldRegenerate is false)
+        -- 2. Not alwaysRun
+        -- 3. Has previous cached output
+        local canSkipRegeneration = not shouldRegenerate
             and not elementDef.alwaysRun
             and previousNode
             and previousNode.virtualElement
+            and previousNode.cachedGeneratorOutput
 
-        if canUseCache then
-            local currentValues = elementDef.valuesFunc(node.props)
-            if self:valuesEqual(currentValues, previousNode.lastDynamicValues) then
-                -- Values unchanged, reuse cached generator output but still process children
-                node.lastDynamicValues = currentValues
-                root = previousNode.cachedGeneratorOutput
+        if canSkipRegeneration then
+            if elementDef.valuesFunc then
+                -- Has values function - check if values changed
+                local currentValues = elementDef.valuesFunc(node.props)
+                if self:valuesEqual(currentValues, previousNode.lastDynamicValues) then
+                    -- Values unchanged, reuse cached output
+                    node.lastDynamicValues = currentValues
+                    root = previousNode.cachedGeneratorOutput
+                else
+                    -- Values changed, regenerate
+                    node.lastDynamicValues = currentValues
+                    root = virtualElement(node.props)
+                end
             else
-                -- Values changed, regenerate
-                node.lastDynamicValues = currentValues
-                shouldRegenerate = true
+                -- No values function (event-only) - use cached output
+                root = previousNode.cachedGeneratorOutput
             end
-        end
-
-        if shouldRegenerate or not canUseCache then
-            -- First generation, alwaysRun, dirty, or conditions changed
+        else
+            -- Must regenerate (first run, alwaysRun, dirty, or no previous)
             if elementDef.valuesFunc then
                 node.lastDynamicValues = elementDef.valuesFunc(node.props)
             end

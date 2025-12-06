@@ -28,7 +28,7 @@ local SLOT_NAMES = {
 
 gen:Element("character", {
     regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED" },
+        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
     },
 }, function(props)
     local result = { "Panel", label = "Character Frame", wrap = true, children = {} }
@@ -44,13 +44,20 @@ gen:Element("character", {
     return result
 end)
 
-gen:Element("character/Tabs", function(props)
+gen:Element("character/Tabs", {
+    regenerateOn = {
+        values = function(props)
+            return { selectedTab = CharacterFrame.selectedTab }
+        end,
+    },
+}, function(props)
     local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
     for i = 1, 4 do
         local tab = _G["CharacterFrameTab" .. i]
         if tab then
             tinsert(result.children, {
                 "ProxyButton",
+                key = "tab_" .. i,
                 frame = tab,
                 selected = CharacterFrame.selectedTab == i,
             })
@@ -59,7 +66,11 @@ gen:Element("character/Tabs", function(props)
     return result
 end)
 
-gen:Element("character/PaperDoll", function(props)
+gen:Element("character/PaperDoll", {
+    regenerateOn = {
+        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
+    },
+}, function(props)
     return {
         "Panel",
         layout = true,
@@ -85,7 +96,7 @@ end
 
 gen:Element("character/Equipment", {
     regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED" },
+        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
     },
 }, function(props)
     local result = { "List", label = L["Equipment"], children = {} }
@@ -108,7 +119,18 @@ end)
 
 gen:Element("character/Stats", {
     regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED", "COMBAT_RATING_UPDATE", "UNIT_STATS", "UNIT_AURA" },
+        events = {
+            "PLAYER_EQUIPMENT_CHANGED",
+            "UNIT_INVENTORY_CHANGED",
+            "COMBAT_RATING_UPDATE",
+            "UNIT_STATS",
+            "UNIT_AURA",
+            "UNIT_DAMAGE",
+            "UNIT_ATTACK_SPEED",
+            "UNIT_ATTACK_POWER",
+            "UNIT_RANGED_ATTACK_POWER",
+            "PLAYER_DAMAGE_DONE_MODS",
+        },
     },
 }, function(props)
     local result = { "List", label = L["Stats"], children = {} }
@@ -120,11 +142,9 @@ gen:Element("character/Stats", {
     return result
 end)
 
-gen:Element("character/StatsCategory", {
-    regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED", "COMBAT_RATING_UPDATE", "UNIT_STATS", "UNIT_AURA" },
-    },
-}, function(props)
+-- No regenerateOn needed - this is always a child of character/Stats
+-- which handles the event-driven regeneration
+gen:Element("character/StatsCategory", function(props)
     local label = props.frame.NameText:GetText()
     if not label or label == "" then
         return nil
@@ -171,7 +191,11 @@ local function getTokenElement(self, button)
     return { "ProxyButton", frame = button, label = label, header = header }
 end
 
-gen:Element("character/Currency", function(props)
+gen:Element("character/Currency", {
+    regenerateOn = {
+        events = { "CURRENCY_DISPLAY_UPDATE" },
+    },
+}, function(props)
     local frame = TokenFrameContainer
     local result = {
         "List",

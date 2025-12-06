@@ -21,7 +21,7 @@ GeneratorPanel.info:updateFields({
 function GeneratorPanel:initialize()
     parent.initialize(self)
     self.tree = nil
-    self.dirtyElements = {}  -- tracks which element types need regeneration
+    self.dirtyElements = {} -- tracks which element types need regeneration
 end
 
 function GeneratorPanel:onAdd()

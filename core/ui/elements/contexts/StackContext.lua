@@ -28,9 +28,9 @@ function Context:add(element, index)
     self:setFocus(element)
 end
 
-function Context:addGenerated(element, index)
+function Context:addGenerated(element, index, generator)
     local panel = WowVision.ui:CreateElement("GeneratorPanel", {
-        generator = WowVision.ui.generator,
+        generator = generator or WowVision.ui.generator,
         startingElement = element,
     })
     self:add(panel, index)

@@ -58,6 +58,7 @@ Window.info:addFields({
     { key = "name", required = true },
     { key = "generated", default = false },
     { key = "rootElement" },
+    { key = "generator" }, -- Module's generator for event-driven regeneration
     { key = "hookEscape", default = false },
     { key = "innate", default = false },
     { key = "conflictingAddons" },
@@ -169,7 +170,7 @@ function Window:open(manager, props)
     }
 
     if self.generated then
-        context:addGenerated(self:buildRootElement(props))
+        context:addGenerated(self:buildRootElement(props), nil, self.generator)
     else
         if props then
             for k, v in pairs(props) do
