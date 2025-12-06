@@ -3,7 +3,11 @@ local L = module.L
 module:setLabel(L["Quest Log"])
 local gen = module:hasUI()
 
-gen:Element("QuestLog", function(props)
+gen:Element("QuestLog", {
+    regenerateOn = {
+        events = { "QUEST_LOG_UPDATE" },
+    },
+}, function(props)
     return {
         "Panel",
         label = L["Quest Log"],
@@ -70,7 +74,11 @@ gen:Element("QuestLog/QuestList", function(props)
     }
 end)
 
-gen:Element("QuestLog/QuestDetails", function(props)
+gen:Element("QuestLog/QuestDetails", {
+    regenerateOn = {
+        events = { "QUEST_LOG_UPDATE" },
+    },
+}, function(props)
     local frame = props.frame
     if not frame:IsShown() or not frame:IsVisible() then
         return nil
@@ -79,22 +87,26 @@ gen:Element("QuestLog/QuestDetails", function(props)
         "List",
         label = L["Details"],
         children = {
-            { "Text", text = QuestInfoTitleHeader:GetText() },
-            { "Text", text = QuestInfoDescriptionText:GetText() },
-            { "Text", text = QuestInfoObjectivesText:GetText() },
+            { "Text", key = "title", text = QuestInfoTitleHeader:GetText() },
+            { "Text", key = "description", text = QuestInfoDescriptionText:GetText() },
+            { "Text", key = "objectivesText", text = QuestInfoObjectivesText:GetText() },
             { "QuestLog/QuestObjectives", frame = QuestInfoObjectivesFrame },
         },
     }
     return result
 end)
 
-gen:Element("QuestLog/QuestObjectives", function(props)
+gen:Element("QuestLog/QuestObjectives", {
+    regenerateOn = {
+        events = { "QUEST_LOG_UPDATE", "QUEST_WATCH_UPDATE" },
+    },
+}, function(props)
     local frame = props.frame
     local result = { "List", label = L["Objectives"], children = {} }
     for i = 1, #frame.Objectives do
         local objective = frame.Objectives[i]
         if objective:IsShown() then
-            tinsert(result.children, { "Text", text = objective:GetText() })
+            tinsert(result.children, { "Text", key = "objective_" .. i, text = objective:GetText() })
         end
     end
 
