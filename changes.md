@@ -10,7 +10,7 @@ this patch introduces significant refactors to the UI code, greatly increasing p
 * Fixed a bug where the gossip window would sometimes be blank.
 * Fixed a bug where the text elements when picking up available quests were in a random order.
 * The significant performance issues with the character pane are now fixed.
-* Fixed the long-standing bug where entering combat with certain UI windows open would cause odd behavior, such as certain windows not closing.
+* Fixed the long-standing bug where entering combat with certain UI windows open would cause odd behavior, such as certain windows not closing. Now navigation-related hotkeys are just disabled until combat ends.
 
 ## For Developers
 * Added a performance profiler. This can either be used via code or via slash commands for some global WowVision profiling parameters. See Profiler.lua for the class and /wv profile for the global profiling. The global profiling commands are /wv profile, /wv profile report, and /wv profile reset.
