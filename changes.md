@@ -10,6 +10,10 @@ this patch introduces significant refactors to the UI code, greatly increasing p
 * Fixed a bug where the gossip window would sometimes be blank.
 * Fixed a bug where the text elements when picking up available quests were in a random order.
 * The significant performance issues with the character pane are now fixed.
+* Fixed the long-standing bug where entering combat with certain UI windows open would cause odd behavior, such as certain windows not closing.
+
+## For Developers
+* Added a performance profiler. This can either be used via code or via slash commands for some global WowVision profiling parameters. See Profiler.lua for the class and /wv profile for the global profiling. The global profiling commands are /wv profile, /wv profile report, and /wv profile reset.
 
 ## V0.4.0
 Unfortunately once again this release resets saved addon data entirely. I had to move away from using a popular addon library (AceDB) due to issues with how it handles default values for certain settings. As a result I had to restructure the data significantly. To be safe, old WowVision data (such as speech settings) will be reset the first time you log into a character. Sorry again for the inconvenience and this should not happen in future updates.
