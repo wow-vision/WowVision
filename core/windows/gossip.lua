@@ -3,18 +3,85 @@ local L = module.L
 module:setLabel(L["Gossip"])
 local gen = module:hasUI()
 
-gen:Element("gossip", function(props)
-    local frame = GossipFrame.GreetingPanel.ScrollBox
-    local result = { "Panel", label = GossipFrame:GetTitleText():GetText() or "", wrap = true, children = {} }
-    local children = { frame.ScrollTarget:GetChildren() }
-    for _, v in ipairs(children) do
-        if v.GreetingText then
-            tinsert(result.children, { "Text", text = v.GreetingText:GetText() })
-        elseif v:GetObjectType() == "Button" then
-            tinsert(result.children, { "ProxyButton", frame = v })
-        end
+gen:Element("gossip", {
+    regenerateOn = {
+        events = { "GOSSIP_SHOW" },
+    },
+}, function(props)
+    local result = {
+        "Panel",
+        label = L["Gossip"],
+        wrap = true,
+        children = {},
+    }
+
+    -- NPC greeting text
+    local greetingText = C_GossipInfo.GetText()
+    if greetingText and greetingText ~= "" then
+        tinsert(result.children, {
+            "Text",
+            key = "greeting",
+            text = greetingText,
+        })
     end
-    tinsert(result.children, { "ProxyButton", frame = GossipFrame.GreetingPanel.GoodbyeButton })
+
+    -- Gossip options (dialogue choices)
+    local options = C_GossipInfo.GetOptions()
+    for _, option in ipairs(options) do
+        tinsert(result.children, {
+            "Button",
+            key = "option_" .. option.gossipOptionID,
+            label = option.name,
+            events = {
+                click = function()
+                    C_GossipInfo.SelectOption(option.gossipOptionID)
+                end,
+            },
+        })
+    end
+
+    -- Available quests (quests the NPC can give)
+    local availableQuests = C_GossipInfo.GetAvailableQuests()
+    for _, quest in ipairs(availableQuests) do
+        tinsert(result.children, {
+            "Button",
+            key = "available_" .. quest.questID,
+            label = quest.title,
+            events = {
+                click = function()
+                    C_GossipInfo.SelectAvailableQuest(quest.questID)
+                end,
+            },
+        })
+    end
+
+    -- Active quests (quests in progress with this NPC)
+    local activeQuests = C_GossipInfo.GetActiveQuests()
+    for _, quest in ipairs(activeQuests) do
+        tinsert(result.children, {
+            "Button",
+            key = "active_" .. quest.questID,
+            label = quest.title,
+            events = {
+                click = function()
+                    C_GossipInfo.SelectActiveQuest(quest.questID)
+                end,
+            },
+        })
+    end
+
+    -- Goodbye button
+    tinsert(result.children, {
+        "Button",
+        key = "goodbye",
+        label = L["Goodbye"],
+        events = {
+            click = function()
+                C_GossipInfo.CloseGossip()
+            end,
+        },
+    })
+
     return result
 end)
 
