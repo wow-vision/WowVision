@@ -3,7 +3,34 @@ local L = module.L
 module:setLabel(L["Character"])
 local gen = module:hasUI()
 
-gen:Element("character", function(props)
+-- Slot ID to localized name mapping for empty slots
+local SLOT_NAMES = {
+    [INVSLOT_HEAD] = L["Head"],
+    [INVSLOT_NECK] = L["Neck"],
+    [INVSLOT_SHOULDER] = L["Shoulders"],
+    [INVSLOT_BACK] = L["Back"],
+    [INVSLOT_CHEST] = L["Chest"],
+    [INVSLOT_BODY] = L["Shirt"],
+    [INVSLOT_TABARD] = L["Tabard"],
+    [INVSLOT_WRIST] = L["Wrist"],
+    [INVSLOT_HAND] = L["Hands"],
+    [INVSLOT_WAIST] = L["Waist"],
+    [INVSLOT_LEGS] = L["Legs"],
+    [INVSLOT_FEET] = L["Feet"],
+    [INVSLOT_FINGER1] = L["Finger"],
+    [INVSLOT_FINGER2] = L["Finger"],
+    [INVSLOT_TRINKET1] = L["Trinket"],
+    [INVSLOT_TRINKET2] = L["Trinket"],
+    [INVSLOT_MAINHAND] = L["Main Hand"],
+    [INVSLOT_OFFHAND] = L["Off Hand"],
+    [INVSLOT_RANGED] = L["Ranged"],
+}
+
+gen:Element("character", {
+    regenerateOn = {
+        events = { "PLAYER_EQUIPMENT_CHANGED" },
+    },
+}, function(props)
     local result = { "Panel", label = "Character Frame", wrap = true, children = {} }
     local tab = CharacterFrame.selectedTab
     if tab == 1 then
@@ -44,19 +71,30 @@ gen:Element("character/PaperDoll", function(props)
     }
 end)
 
-local function getEquipmentLabel(frame, slot)
-    ExecuteFrameScript(frame, "OnEnter")
-    local label = GameTooltipTextLeft1:GetText()
-    ExecuteFrameScript(frame, "OnLeave")
-    return label
+local function getEquipmentLabel(frame)
+    local slotId = frame:GetID()
+    local itemLink = GetInventoryItemLink("player", slotId)
+    if itemLink then
+        local itemName = GetItemInfo(itemLink)
+        -- GetItemInfo may return nil if item isn't cached yet, fallback to link
+        return itemName or itemLink
+    end
+    -- Empty slot - return localized slot name
+    return SLOT_NAMES[slotId] or L["Empty"]
 end
 
-gen:Element("character/Equipment", function(props)
-    local result = { "List", label = "Equipment", children = {} }
+gen:Element("character/Equipment", {
+    regenerateOn = {
+        events = { "PLAYER_EQUIPMENT_CHANGED" },
+    },
+}, function(props)
+    local result = { "List", label = L["Equipment"], children = {} }
     local children = { props.frame:GetChildren() }
     for i, v in ipairs(children) do
+        local slotId = v:GetID()
         tinsert(result.children, {
             "ProxyButton",
+            key = "slot_" .. slotId,
             frame = v,
             label = getEquipmentLabel(v),
             tooltip = {
@@ -68,18 +106,25 @@ gen:Element("character/Equipment", function(props)
     return result
 end)
 
-gen:Element("character/Stats", function(props)
-    local result = { "List", label = "Stats", children = {} }
+gen:Element("character/Stats", {
+    regenerateOn = {
+        events = { "PLAYER_EQUIPMENT_CHANGED", "COMBAT_RATING_UPDATE", "UNIT_STATS", "UNIT_AURA" },
+    },
+}, function(props)
+    local result = { "List", label = L["Stats"], children = {} }
     for i, k in ipairs(PAPERDOLL_STATCATEGORY_DEFAULTORDER) do
         local v = PAPERDOLL_STATCATEGORIES[k]
         local categoryFrame = _G["CharacterStatsPaneCategory" .. v.id]
-        tinsert(result.children, { "character/StatsCategory", frame = categoryFrame })
+        tinsert(result.children, { "character/StatsCategory", key = "category_" .. v.id, frame = categoryFrame })
     end
     return result
 end)
 
-gen:Element("character/StatsCategory", function(props)
-    --PaperDollFrame_UpdateStatCategory(props.frame)
+gen:Element("character/StatsCategory", {
+    regenerateOn = {
+        events = { "PLAYER_EQUIPMENT_CHANGED", "COMBAT_RATING_UPDATE", "UNIT_STATS", "UNIT_AURA" },
+    },
+}, function(props)
     local label = props.frame.NameText:GetText()
     if not label or label == "" then
         return nil
@@ -91,6 +136,7 @@ gen:Element("character/StatsCategory", function(props)
         if stat:IsShown() then
             tinsert(result.children, {
                 "ProxyButton",
+                key = "stat_" .. i,
                 frame = stat,
                 label = tostring(stat.Label:GetText()) .. " " .. tostring(stat.Value:GetText()),
                 tooltip = {
