@@ -17,18 +17,19 @@ function UIHost:initialize()
     self.frame:RegisterEvent("PLAYER_REGEN_ENABLED")
     self.frame:SetScript("OnEvent", function(frame, event)
         if event == "PLAYER_REGEN_DISABLED" then
-            if self._open then
-                self:close()
-            end
             self.inCombat = true
+            -- Just deactivate navigator to stop input handling
+            -- Don't unfocus or destroy - that clears focus state we need to restore
+            if self._open and self.navigator then
+                self.navigator:deactivate()
+            end
         elseif event == "PLAYER_REGEN_ENABLED" then
             self.inCombat = false
-            -- If UI was opened during combat, it wasn't properly focused (show() returned early)
-            -- Now that combat ended, focus it properly (defer to next frame for safety)
-            if self._open then
+            -- Restore navigator after combat ends
+            if self._open and self.navigator then
                 C_Timer.After(0, function()
-                    if self._open and not self.inCombat then
-                        self:show()
+                    if self._open and not self.inCombat and self.navigator then
+                        self.navigator:activate()
                     end
                 end)
             end
