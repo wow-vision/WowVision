@@ -27,9 +27,39 @@ end)
 gen:Element("QuestWindow/detail", function(props)
     local result = { "Panel", label = L["Details"], wrap = true, children = {} }
     local text = { "List", shouldAnnounce = false, children = {} }
-    for _, v in ipairs({ QuestDetailScrollChildFrame:GetRegions() }) do
-        tinsert(text.children, { "Text", text = v:GetText() })
+
+    -- Quest name
+    if QuestInfoTitleHeader and QuestInfoTitleHeader:IsShown() then
+        local titleText = QuestInfoTitleHeader:GetText()
+        if titleText and titleText ~= "" then
+            tinsert(text.children, { "Text", key = "title", text = titleText })
+        end
     end
+
+    -- Quest description
+    if QuestInfoDescriptionText and QuestInfoDescriptionText:IsShown() then
+        local descText = QuestInfoDescriptionText:GetText()
+        if descText and descText ~= "" then
+            tinsert(text.children, { "Text", key = "description", text = descText })
+        end
+    end
+
+    -- Objectives header (requirements label)
+    if QuestInfoObjectivesHeader and QuestInfoObjectivesHeader:IsShown() then
+        local headerText = QuestInfoObjectivesHeader:GetText()
+        if headerText and headerText ~= "" then
+            tinsert(text.children, { "Text", key = "objectivesHeader", text = headerText })
+        end
+    end
+
+    -- Objectives text (actual requirements)
+    if QuestInfoObjectivesText and QuestInfoObjectivesText:IsShown() then
+        local objText = QuestInfoObjectivesText:GetText()
+        if objText and objText ~= "" then
+            tinsert(text.children, { "Text", key = "objectives", text = objText })
+        end
+    end
+
     tinsert(result.children, text)
     tinsert(result.children, { "ProxyButton", frame = QuestFrameAcceptButton })
     tinsert(result.children, { "ProxyButton", frame = QuestFrameDeclineButton })

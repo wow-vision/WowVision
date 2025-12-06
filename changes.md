@@ -8,6 +8,7 @@ this patch introduces significant refactors to the UI code, greatly increasing p
 * Majorly refactored the UI code behind the scenes. This increased performance by ~50%. The changes won't be too noticeable, but bags/etc should feel more responsive.
 * Fixed a long-standing bug where certain UI elements would be in an incorrect order if certain screens refreshed.
 * Fixed a bug where the gossip window would sometimes be blank.
+* Fixed a bug where the text elements when picking up available quests were in a random order.
 
 ## V0.4.0
 Unfortunately once again this release resets saved addon data entirely. I had to move away from using a popular addon library (AceDB) due to issues with how it handles default values for certain settings. As a result I had to restructure the data significantly. To be safe, old WowVision data (such as speech settings) will be reset the first time you log into a character. Sorry again for the inconvenience and this should not happen in future updates.
