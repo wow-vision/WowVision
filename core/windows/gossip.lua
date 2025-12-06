@@ -8,9 +8,10 @@ gen:Element("gossip", {
         events = { "GOSSIP_SHOW" },
     },
 }, function(props)
+    local npcName = UnitName("npc") or L["Gossip"]
     local result = {
         "Panel",
-        label = L["Gossip"],
+        label = npcName,
         wrap = true,
         children = {},
     }
