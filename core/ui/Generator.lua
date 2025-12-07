@@ -311,6 +311,10 @@ function Generator:generateNode(parent, props, previousNode, panel)
             and previousNode.elementType == node.elementType
             and previousNode.cachedGeneratorOutput
 
+        -- Track whether this element regenerated (vs using cached output)
+        -- Used to invalidate child caches when parent structure changes
+        local didRegenerate = false
+
         if canSkipRegeneration then
             if elementDef.valuesFunc then
                 -- Has values function - check if values changed
@@ -323,6 +327,7 @@ function Generator:generateNode(parent, props, previousNode, panel)
                     -- Values changed, regenerate
                     node.lastDynamicValues = currentValues
                     root = virtualElement(node.props)
+                    didRegenerate = true
                 end
             else
                 -- No values function (event-only) - use cached output
@@ -334,6 +339,7 @@ function Generator:generateNode(parent, props, previousNode, panel)
                 node.lastDynamicValues = elementDef.valuesFunc(node.props)
             end
             root = virtualElement(node.props)
+            didRegenerate = true
         end
 
         -- Cache frame values for next comparison
@@ -351,8 +357,13 @@ function Generator:generateNode(parent, props, previousNode, panel)
         -- Cache the generator output for potential reuse
         node.cachedGeneratorOutput = root
 
-        -- Always process children so nested dynamicValues get evaluated
-        local previousChild = previousNode and previousNode.children[1]
+        -- Process children
+        -- If this element regenerated, don't pass previousChild - force children to regenerate fresh
+        -- This ensures that when a parent's structure changes, stale child caches are invalidated
+        local previousChild = nil
+        if not didRegenerate and previousNode then
+            previousChild = previousNode.children[1]
+        end
         local childNode = self:generateNode(node, root, previousChild, panel)
         if childNode then
             node:addChild(childNode)
@@ -466,6 +477,24 @@ function Generator:reconcileDirect(realParent, tree1, tree2)
     self:reconcileChildrenDirect(real, tree1, tree2)
 end
 
+-- Helper to collect real elements from a node (traversing through virtual wrappers)
+function Generator:collectRealElements(node, result)
+    result = result or {}
+    if not node then
+        return result
+    end
+    if node.realElement then
+        -- This is a real element, add it
+        tinsert(result, node.realElement)
+    else
+        -- Virtual element - collect from children
+        for _, child in ipairs(node.children) do
+            self:collectRealElements(child, result)
+        end
+    end
+    return result
+end
+
 -- Reconcile children, choosing keyed or non-keyed strategy
 function Generator:reconcileChildrenDirect(realParent, tree1, tree2)
     -- Try keyed comparison if first child has a key
@@ -530,12 +559,11 @@ function Generator:reconcileKeyedChildrenDirect(realParent, tree1, tree2)
     end
 
     -- Reorder real children to match tree2's order
+    -- Must traverse through virtual wrappers to find the actual real elements
     if realParent.reorderChildren then
         local orderedChildren = {}
         for _, newChild in ipairs(tree2.children) do
-            if newChild.realElement then
-                tinsert(orderedChildren, newChild.realElement)
-            end
+            self:collectRealElements(newChild, orderedChildren)
         end
         realParent:reorderChildren(orderedChildren)
     end
