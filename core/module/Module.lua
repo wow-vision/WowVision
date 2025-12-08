@@ -48,6 +48,21 @@ function Module:hasUI()
     return self.elementGenerator
 end
 
+function Module:registerCommand(config)
+    if not self.registeredCommands then
+        self.registeredCommands = {}
+    end
+    local command = WowVision.SlashCommandManager:createCommand(config, self)
+    self.registeredCommands[command.name:lower()] = command
+    return command
+end
+
+function Module:unregisterCommand(name)
+    if self.registeredCommands then
+        self.registeredCommands[name:lower()] = nil
+    end
+end
+
 function Module:hasSettings()
     if not self.settingsRoot then
         self.settingsRoot = WowVision.parameters.Category:new({
@@ -249,6 +264,13 @@ function Module:enable()
         end
     end
 
+    -- Register slash commands with the manager
+    if self.registeredCommands then
+        for _, command in pairs(self.registeredCommands) do
+            WowVision.SlashCommandManager:registerCommand(command)
+        end
+    end
+
     self.bindings:activateAll()
 
     for _, v in ipairs(self.registeredEvents) do
@@ -288,6 +310,13 @@ function Module:disable()
 
         for k, _ in pairs(self.registeredDropdownMenus) do
             WowVision.UIHost.menuManager:unregisterMenu(k)
+        end
+    end
+
+    -- Unregister slash commands from the manager
+    if self.registeredCommands then
+        for _, command in pairs(self.registeredCommands) do
+            WowVision.SlashCommandManager:unregisterCommand(command)
         end
     end
 

@@ -65,41 +65,18 @@ function WowVision:speak(text)
 end
 
 function WowVision:SlashCommand(msg)
-    if msg == "dev" then
-        self:globalizeDevTools()
-        print("Developer tools active")
-    elseif msg == "profile" then
-        self.profiler:enable()
-        print("Profiler enabled")
-    elseif msg == "profile stop" then
-        self.profiler:report()
-        self.profiler:disable()
-    elseif msg == "profile report" then
-        self.profiler:report()
-    elseif msg == "profile reset" then
-        self.profiler:reset()
-        print("Profiler reset")
-    elseif msg == "bind" then
-        local root = { "binding/List", bindings = WowVision.input.bindings }
-        self.UIHost:openTemporaryWindow({
-            generated = true,
-            rootElement = root,
-            hookEscape = true,
-        })
-    elseif msg == "version" then
-        local version = C_AddOns.GetAddOnMetadata(addonName, "version")
-        if version == nil then
-            error("Version data unavailable.")
-        end
-        print(version)
-    else
-        local root = self.base:getMenuPanel()
-        self.UIHost:openTemporaryWindow({
-            generated = true,
-            rootElement = root,
-            hookEscape = true,
-        })
+    -- Try to dispatch through the command manager first
+    if msg and msg ~= "" and WowVision.SlashCommandManager:dispatch(msg) then
+        return
     end
+
+    -- Default behavior: open the menu
+    local root = self.base:getMenuPanel()
+    self.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = root,
+        hookEscape = true,
+    })
 end
 
 function WowVision:InspectCommand(args)
@@ -163,27 +140,114 @@ function WowVision:play(path, channel)
 end
 
 function WowVision:registerCommands()
+    -- Register the main /wv entry point (uses Ace3)
     self:RegisterChatCommand("wv", "SlashCommand")
-    self:RegisterChatCommand("wvbind", "BindCommand")
-    self:RegisterChatCommand("uiinsp", "InspectCommand")
-    if not SkuCore then
-        self:RegisterChatCommand("pquit", "PartyQuitCommand")
-        self:RegisterChatCommand("dquit", "InstanceGroupQuitCommand")
-    end
-    if not self.loadedAddons["BlindSlash"] then
-        self:RegisterChatCommand("enableaddon", "EnableAddon")
-        self:RegisterChatCommand("disableaddon", "DisableAddon")
-    end
-end
 
-function WowVision:PartyQuitCommand()
-    LeaveParty()
-end
+    -- Register WowVision-scoped subcommands (/wv <name>)
+    self.base:registerCommand({
+        name = "dev",
+        description = "Enable developer tools",
+        func = function(args)
+            WowVision:globalizeDevTools()
+            print("Developer tools active")
+        end,
+    })
 
-function WowVision:InstanceGroupQuitCommand()
-    if IsPartyLFG() then
-        ConfirmOrLeaveLFGParty()
-    end
+    self.base:registerCommand({
+        name = "profile",
+        description = "Profiler commands (start/stop/report/reset)",
+        func = function(args)
+            if args == "stop" then
+                WowVision.profiler:report()
+                WowVision.profiler:disable()
+            elseif args == "report" then
+                WowVision.profiler:report()
+            elseif args == "reset" then
+                WowVision.profiler:reset()
+                print("Profiler reset")
+            else
+                WowVision.profiler:enable()
+                print("Profiler enabled")
+            end
+        end,
+    })
+
+    self.base:registerCommand({
+        name = "bind",
+        description = "Show keybindings",
+        func = function(args)
+            local root = { "binding/List", bindings = WowVision.input.bindings }
+            WowVision.UIHost:openTemporaryWindow({
+                generated = true,
+                rootElement = root,
+                hookEscape = true,
+            })
+        end,
+    })
+
+    self.base:registerCommand({
+        name = "version",
+        description = "Show addon version",
+        func = function(args)
+            local version = C_AddOns.GetAddOnMetadata(addonName, "version")
+            if version == nil then
+                error("Version data unavailable.")
+            end
+            print(version)
+        end,
+    })
+
+    -- Register global commands (/<name>)
+    self.base:registerCommand({
+        name = "uiinsp",
+        description = "UI inspection tool",
+        scope = "Global",
+        func = function(args)
+            WowVision:InspectCommand(args)
+        end,
+    })
+
+    self.base:registerCommand({
+        name = "pquit",
+        description = "Leave party",
+        scope = "Global",
+        conflictingAddons = { "Sku" },
+        func = function(args)
+            LeaveParty()
+        end,
+    })
+
+    self.base:registerCommand({
+        name = "dquit",
+        description = "Leave dungeon/LFG group",
+        scope = "Global",
+        conflictingAddons = { "Sku" },
+        func = function(args)
+            if IsPartyLFG() then
+                ConfirmOrLeaveLFGParty()
+            end
+        end,
+    })
+
+    self.base:registerCommand({
+        name = "enableaddon",
+        description = "Enable an addon and reload",
+        scope = "Global",
+        conflictingAddons = { "BlindSlash" },
+        func = function(args)
+            WowVision:EnableAddon(args)
+        end,
+    })
+
+    self.base:registerCommand({
+        name = "disableaddon",
+        description = "Disable an addon and reload",
+        scope = "Global",
+        conflictingAddons = { "BlindSlash" },
+        func = function(args)
+            WowVision:DisableAddon(args)
+        end,
+    })
 end
 
 local function setAddonStates(state, ...)
