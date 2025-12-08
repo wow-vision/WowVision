@@ -2,9 +2,19 @@ local addonName, WowVisionNamespace = ...
 WowVision = LibStub("AceAddon-3.0"):NewAddon("WowVision", "AceConsole-3.0")
 WowVision.Class = WowVisionNamespace.Class
 
+-- Cache loaded addons immediately at file load time (before any modules register windows)
+-- This must happen before Window:initialize() calls checkConflictingAddons()
+WowVision.loadedAddons = {}
+for i = 1, C_AddOns.GetNumAddOns() do
+    local name = C_AddOns.GetAddOnInfo(i)
+    if C_AddOns.IsAddOnLoaded(i) then
+        WowVision.loadedAddons[name] = true
+        WowVision.loadedAddons[name:lower()] = true
+    end
+end
+
 function WowVision:OnInitialize()
     self.L = LibStub("AceLocale-3.0"):GetLocale("WowVision")
-    self:cacheLoadedAddons()
     self:registerCommands()
     local defaultDB = self.base:getDefaultDBRecursive()
     if WowVisionDB == nil or WowVision.profiles ~= nil then
@@ -12,19 +22,6 @@ function WowVision:OnInitialize()
     end
     self.db = WowVision.dbManager:reconcile(defaultDB, WowVisionDB)
     self.base:setDBObj(self.db)
-end
-
--- Cache all loaded addons at startup for O(1) lookups
--- Addons don't change during a session, so this is safe to cache once
-function WowVision:cacheLoadedAddons()
-    self.loadedAddons = {}
-    for i = 1, C_AddOns.GetNumAddOns() do
-        local name = C_AddOns.GetAddOnInfo(i)
-        if C_AddOns.IsAddOnLoaded(i) then
-            self.loadedAddons[name] = true
-            self.loadedAddons[name:lower()] = true -- case-insensitive lookup
-        end
-    end
 end
 
 function WowVision:OnEnable()
