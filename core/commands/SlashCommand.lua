@@ -5,10 +5,10 @@ local SlashCommand = WowVision.Class("SlashCommand")
 SlashCommand:include(WowVision.InfoClass)
 
 SlashCommand.info:addFields({
-    { key = "name", required = true },          -- Command name (e.g., "version")
-    { key = "func", required = true },          -- function(args, module) to execute
-    { key = "description", default = "" },      -- Help text for the command
-    { key = "scope", default = "WowVision" },   -- "WowVision" (subcommand) or "Global" (top-level)
+    { key = "name", required = true }, -- Command name (e.g., "version")
+    { key = "func", required = true }, -- function(args, module) to execute
+    { key = "description", default = "" }, -- Help text for the command
+    { key = "scope", default = "WowVision" }, -- "WowVision" (subcommand) or "Global" (top-level)
     { key = "conflictingAddons", default = {} }, -- Addons that conflict with this command
 })
 

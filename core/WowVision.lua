@@ -226,6 +226,13 @@ function WowVision:registerCommands()
             if IsPartyLFG() then
                 ConfirmOrLeaveLFGParty()
             end
+            local inInstance, instanceType = IsInInstance()
+            if not inInstance then
+                return
+            end
+            if instanceType == "pvp" or instanceType == "arena" then
+                ConfirmOrLeaveBattlefield()
+            end
         end,
     })
 
