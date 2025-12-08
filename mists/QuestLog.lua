@@ -76,7 +76,10 @@ end)
 
 gen:Element("QuestLog/QuestDetails", {
     regenerateOn = {
-        events = { "QUEST_LOG_UPDATE" },
+        events = { "QUEST_LOG_UPDATE", "QUEST_WATCH_UPDATE", "UNIT_QUEST_LOG_CHANGED" },
+        values = function(props)
+            return { GetQuestLogSelection() }
+        end,
     },
 }, function(props)
     local frame = props.frame
