@@ -92,7 +92,7 @@ indoorsAlert:addOutput({
 
 local flyingStartedAlert = module:addAlert({
     key = "flyingStarted",
-    label = L["Flying Started"],
+    label = L["Flying Started Alert"],
 })
 
 flyingStartedAlert:addOutput({
@@ -106,7 +106,7 @@ flyingStartedAlert:addOutput({
 
 local flyingEndedAlert = module:addAlert({
     key = "flyingEnded",
-    label = L["Flying Ended"],
+    label = L["Flying Ended Alert"],
 })
 
 flyingEndedAlert:addOutput({
