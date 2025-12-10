@@ -1,5 +1,5 @@
 package-as: WowVision
-manual-changelog: changes.md
+manual-changelog: changes-latest.md
 changelog-markup: markdown
 
 externals:
@@ -19,3 +19,4 @@ ignore:
   - .github
   - .vscode
   - packager
+  - changes-latest.md
