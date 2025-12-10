@@ -255,6 +255,14 @@ function WowVision:registerCommands()
             WowVision:DisableAddon(args)
         end,
     })
+
+    self.base:registerCommand({
+        name = "close",
+        description = "Force close WowVision UI",
+        func = function(args)
+            WowVision.UIHost:close()
+        end,
+    })
 end
 
 local function setAddonStates(state, ...)
