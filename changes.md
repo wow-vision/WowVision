@@ -11,6 +11,7 @@ this patch introduces significant refactors to the UI code, greatly increasing p
 * Fixed a bug where the text elements when picking up available quests were in a random order.
 * The significant performance issues with the character pane are now fixed.
 * Fixed the long-standing bug where entering combat with certain UI windows open would cause odd behavior, such as certain windows not closing. Now navigation-related hotkeys are just disabled until combat ends.
+* Added the /wv close command. If the UI does glitch out again, this will force any remaining UI contexts to close. Please report any further UI bugs.
 * The /dquit command will now properly leave battlegrounds and arenas.
 * Updated and added various TTS output alerts:
     * For navigation/compass: direction changed, outdoors/indoors, flying start and end, swimming, and diving

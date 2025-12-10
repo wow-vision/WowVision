@@ -82,7 +82,9 @@ function UIHost:hide()
     if self.bindingSet then
         self.bindingSet:deactivateAll()
     end
+    if self.navigator then
     self.navigator:deactivate()
+    end
     if self.context then
         self.context:unfocus()
     end
@@ -110,7 +112,9 @@ end
 
 function UIHost:close()
     self:hide()
+    if self.context then
     self.context:onRemove()
+    end
     self.navigator = nil
     self.context = nil
     self._open = false
