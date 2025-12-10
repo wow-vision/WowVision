@@ -18,6 +18,16 @@ directionAlert:addOutput({
     end,
 })
 
+directionAlert:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    enabled = false,
+    buildMessage = function(self, message)
+        return L[message.direction]
+    end,
+})
+
 local zoneChanged = module:addAlert({
     key = "zoneChanged",
     label = L["Zone Changed Alert"],
