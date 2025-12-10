@@ -118,6 +118,34 @@ flyingEndedAlert:addOutput({
     end,
 })
 
+local swimmingAlert = module:addAlert({
+    key = "swimming",
+    label = L["Swimming Alert"],
+})
+
+swimmingAlert:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    buildMessage = function(self, message)
+        return L["swimming"]
+    end,
+})
+
+local divingAlert = module:addAlert({
+    key = "diving",
+    label = L["Diving Alert"],
+})
+
+divingAlert:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    buildMessage = function(self, message)
+        return L["diving"]
+    end,
+})
+
 module:registerEvent("event", "ZONE_CHANGED_NEW_AREA")
 module:registerEvent("event", "ZONE_CHANGED")
 module:registerEvent("event", "ZONE_CHANGED_INDOORS")
@@ -129,6 +157,8 @@ settings:addRef("outdoors", outdoorsAlert.parameters)
 settings:addRef("indoors", indoorsAlert.parameters)
 settings:addRef("flyingStarted", flyingStartedAlert.parameters)
 settings:addRef("flyingEnded", flyingEndedAlert.parameters)
+settings:addRef("swimming", swimmingAlert.parameters)
+settings:addRef("diving", divingAlert.parameters)
 
 function module:getDirection(angle)
     if angle == nil then
@@ -159,6 +189,8 @@ function module:onEnable()
     self.direction = self:getDirection(self.angle)
     self.isOutdoors = IsOutdoors()
     self.isFlying = IsFlying()
+    self.isSwimming = IsSwimming()
+    self.isSubmerged = IsSubmerged()
     self:hasUpdate(function(self)
         if IsInInstance() then
             return
@@ -192,6 +224,18 @@ function module:onEnable()
             end
             self.isFlying = isFlying
         end
+
+        local isSwimming = IsSwimming()
+        if isSwimming and not self.isSwimming then
+            swimmingAlert:fire({})
+        end
+        self.isSwimming = isSwimming
+
+        local isSubmerged = IsSubmerged()
+        if isSubmerged and not self.isSubmerged then
+            divingAlert:fire({})
+        end
+        self.isSubmerged = isSubmerged
     end)
 end
 
