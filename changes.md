@@ -1,7 +1,7 @@
 # Changes
 
 ## V0.5.0
-this patch introduces significant refactors to the UI code, greatly increasing performance.
+this patch introduces significant refactors to the UI code, greatly increasing performance. It also fixes some bugs with gem socketing and adds more alerts for flying, outdoors, swimming, and combat start/end.
 
 * Fixed gem socket colors reading as "color" if you didn't have colorblind mode enabled.
 * Fixed tainting issue with gem socketing UI that prevented socket buttons from being clicked.
