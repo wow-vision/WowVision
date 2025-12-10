@@ -90,6 +90,34 @@ indoorsAlert:addOutput({
     end,
 })
 
+local flyingStartedAlert = module:addAlert({
+    key = "flyingStarted",
+    label = L["Flying Started"],
+})
+
+flyingStartedAlert:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    buildMessage = function(self, message)
+        return L["flying"]
+    end,
+})
+
+local flyingEndedAlert = module:addAlert({
+    key = "flyingEnded",
+    label = L["Flying Ended"],
+})
+
+flyingEndedAlert:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    buildMessage = function(self, message)
+        return L["landed"]
+    end,
+})
+
 module:registerEvent("event", "ZONE_CHANGED_NEW_AREA")
 module:registerEvent("event", "ZONE_CHANGED")
 module:registerEvent("event", "ZONE_CHANGED_INDOORS")
@@ -99,6 +127,8 @@ settings:addRef("zoneChanged", zoneChanged.parameters)
 settings:addRef("subzoneChanged", subzoneChanged.parameters)
 settings:addRef("outdoors", outdoorsAlert.parameters)
 settings:addRef("indoors", indoorsAlert.parameters)
+settings:addRef("flyingStarted", flyingStartedAlert.parameters)
+settings:addRef("flyingEnded", flyingEndedAlert.parameters)
 
 function module:getDirection(angle)
     if angle == nil then
@@ -128,6 +158,7 @@ function module:onEnable()
     self.angle = GetPlayerFacing()
     self.direction = self:getDirection(self.angle)
     self.isOutdoors = IsOutdoors()
+    self.isFlying = IsFlying()
     self:hasUpdate(function(self)
         if IsInInstance() then
             return
@@ -150,6 +181,16 @@ function module:onEnable()
                 indoorsAlert:fire({})
             end
             self.isOutdoors = isOutdoors
+        end
+
+        local isFlying = IsFlying()
+        if isFlying ~= self.isFlying then
+            if isFlying then
+                flyingStartedAlert:fire({})
+            else
+                flyingEndedAlert:fire({})
+            end
+            self.isFlying = isFlying
         end
     end)
 end
