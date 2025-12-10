@@ -114,7 +114,7 @@ flyingEndedAlert:addOutput({
     key = "tts",
     label = L["TTS Alert"],
     buildMessage = function(self, message)
-        return L["landed"]
+        return L["flying ended"]
     end,
 })
 
