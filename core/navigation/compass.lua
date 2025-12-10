@@ -62,6 +62,34 @@ subzoneChanged:addOutput({
     end,
 })
 
+local outdoorsAlert = module:addAlert({
+    key = "outdoors",
+    label = L["Outdoors Alert"],
+})
+
+outdoorsAlert:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    buildMessage = function(self, message)
+        return L["outdoors"]
+    end,
+})
+
+local indoorsAlert = module:addAlert({
+    key = "indoors",
+    label = L["Indoors Alert"],
+})
+
+indoorsAlert:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    buildMessage = function(self, message)
+        return L["indoors"]
+    end,
+})
+
 module:registerEvent("event", "ZONE_CHANGED_NEW_AREA")
 module:registerEvent("event", "ZONE_CHANGED")
 module:registerEvent("event", "ZONE_CHANGED_INDOORS")
@@ -69,6 +97,8 @@ module:registerEvent("event", "ZONE_CHANGED_INDOORS")
 settings:addRef("direction", directionAlert.parameters)
 settings:addRef("zoneChanged", zoneChanged.parameters)
 settings:addRef("subzoneChanged", subzoneChanged.parameters)
+settings:addRef("outdoors", outdoorsAlert.parameters)
+settings:addRef("indoors", indoorsAlert.parameters)
 
 function module:getDirection(angle)
     if angle == nil then
@@ -97,6 +127,7 @@ end
 function module:onEnable()
     self.angle = GetPlayerFacing()
     self.direction = self:getDirection(self.angle)
+    self.isOutdoors = IsOutdoors()
     self:hasUpdate(function(self)
         if IsInInstance() then
             return
@@ -110,6 +141,16 @@ function module:onEnable()
             })
         end
         self.angle, self.direction = angle, direction
+
+        local isOutdoors = IsOutdoors()
+        if isOutdoors ~= self.isOutdoors then
+            if isOutdoors then
+                outdoorsAlert:fire({})
+            else
+                indoorsAlert:fire({})
+            end
+            self.isOutdoors = isOutdoors
+        end
     end)
 end
 
