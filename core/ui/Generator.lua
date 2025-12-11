@@ -11,7 +11,8 @@ function VirtualElementType:initialize(elementType, func, generator)
     self.func = func
     self.generator = generator
     self.events = {}
-    self.frames = {}
+    self.frameFields = {}     -- { { frame, "fieldName" }, ... }
+    self.framePredicates = {} -- { { frame, "methodName" }, ... }
     self.valuesFunc = nil
     self.alwaysRun = true -- default until conditions added
 end
@@ -28,9 +29,17 @@ function VirtualElementType:addEvents(events)
     return self
 end
 
-function VirtualElementType:addFrameConditions(frames)
-    for _, frameConfig in ipairs(frames) do
-        tinsert(self.frames, frameConfig)
+function VirtualElementType:addFrameFields(fields)
+    for _, fieldConfig in ipairs(fields) do
+        tinsert(self.frameFields, fieldConfig)
+    end
+    self.alwaysRun = false
+    return self
+end
+
+function VirtualElementType:addFramePredicates(predicates)
+    for _, predicateConfig in ipairs(predicates) do
+        tinsert(self.framePredicates, predicateConfig)
     end
     self.alwaysRun = false
     return self
@@ -191,8 +200,11 @@ function Generator:Element(elementType, configOrFunc, elementFunc)
             if regenerateOn.events then
                 virtualElement:addEvents(regenerateOn.events)
             end
-            if regenerateOn.frames then
-                virtualElement:addFrameConditions(regenerateOn.frames)
+            if regenerateOn.frameFields then
+                virtualElement:addFrameFields(regenerateOn.frameFields)
+            end
+            if regenerateOn.framePredicates then
+                virtualElement:addFramePredicates(regenerateOn.framePredicates)
             end
             if regenerateOn.values then
                 virtualElement:setValues(regenerateOn.values)
@@ -284,13 +296,33 @@ function Generator:generateNode(parent, props, previousNode, panel)
             shouldRegenerate = true
         end
 
-        -- Check frame conditions
-        if not shouldRegenerate and #elementDef.frames > 0 and previousNode then
-            for _, frameConfig in ipairs(elementDef.frames) do
-                local frame, method = frameConfig[1], frameConfig[2]
+        -- Check frameFields (property access)
+        if not shouldRegenerate and #elementDef.frameFields > 0 and previousNode then
+            for _, fieldConfig in ipairs(elementDef.frameFields) do
+                local frameRef, field = fieldConfig[1], fieldConfig[2]
+                -- Support string frame names (looked up at check time) or direct references
+                local frame = type(frameRef) == "string" and _G[frameRef] or frameRef
+                if frame then
+                    local currentValue = frame[field]
+                    local cacheKey = (type(frameRef) == "string" and frameRef or tostring(frame)) .. "." .. field
+                    local cachedValue = previousNode.frameCache and previousNode.frameCache[cacheKey]
+                    if currentValue ~= cachedValue then
+                        shouldRegenerate = true
+                        break
+                    end
+                end
+            end
+        end
+
+        -- Check framePredicates (method calls)
+        if not shouldRegenerate and #elementDef.framePredicates > 0 and previousNode then
+            for _, predicateConfig in ipairs(elementDef.framePredicates) do
+                local frameRef, method = predicateConfig[1], predicateConfig[2]
+                -- Support string frame names (looked up at check time) or direct references
+                local frame = type(frameRef) == "string" and _G[frameRef] or frameRef
                 if frame and frame[method] then
                     local currentValue = frame[method](frame)
-                    local cacheKey = tostring(frame) .. method
+                    local cacheKey = (type(frameRef) == "string" and frameRef or tostring(frame)) .. ":" .. method
                     local cachedValue = previousNode.frameCache and previousNode.frameCache[cacheKey]
                     if currentValue ~= cachedValue then
                         shouldRegenerate = true
@@ -342,13 +374,22 @@ function Generator:generateNode(parent, props, previousNode, panel)
             didRegenerate = true
         end
 
-        -- Cache frame values for next comparison
-        if #elementDef.frames > 0 then
+        -- Cache frame field/predicate values for next comparison
+        if #elementDef.frameFields > 0 or #elementDef.framePredicates > 0 then
             node.frameCache = {}
-            for _, frameConfig in ipairs(elementDef.frames) do
-                local frame, method = frameConfig[1], frameConfig[2]
+            for _, fieldConfig in ipairs(elementDef.frameFields) do
+                local frameRef, field = fieldConfig[1], fieldConfig[2]
+                local frame = type(frameRef) == "string" and _G[frameRef] or frameRef
+                if frame then
+                    local cacheKey = (type(frameRef) == "string" and frameRef or tostring(frame)) .. "." .. field
+                    node.frameCache[cacheKey] = frame[field]
+                end
+            end
+            for _, predicateConfig in ipairs(elementDef.framePredicates) do
+                local frameRef, method = predicateConfig[1], predicateConfig[2]
+                local frame = type(frameRef) == "string" and _G[frameRef] or frameRef
                 if frame and frame[method] then
-                    local cacheKey = tostring(frame) .. method
+                    local cacheKey = (type(frameRef) == "string" and frameRef or tostring(frame)) .. ":" .. method
                     node.frameCache[cacheKey] = frame[method](frame)
                 end
             end

@@ -2,6 +2,7 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="character.lua" />
+  <Include file="collections/modules.xml" />
   <Script file="itemUpgrade.lua" />
   <Include file="auction/modules.xml" />
   <Script file="Spellbook.lua" />
