@@ -11,6 +11,7 @@ ProxyWidget.info:addFields({
             obj:setFrame(value)
         end,
     },
+    {key = "dragFrame", default = nil, compareMode = "direct"},
     { key = "macroCall", default = nil },
     { key = "dropdown", default = false },
     { key = "useGameTooltip", default = true },
@@ -122,12 +123,13 @@ function ProxyWidget:getExtras()
 end
 
 function ProxyWidget:onDrag()
-    if not self.frame then
+    local dragFrame = self.dragFrame or self.frame
+    if dragFrame == nil then
         return
     end
-    local script = self.frame:GetScript("OnDragStart")
+    local script = dragFrame:GetScript("OnDragStart")
     if script then
-        script(self.frame)
+        script(dragFrame)
     end
 end
 
