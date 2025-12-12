@@ -36,7 +36,7 @@ ProxyWidget.info:updateFields({
         default = function()
             return {
                 type = "Game",
-                mode = "static",
+                mode = "immediate",
             }
         end,
     },
