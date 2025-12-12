@@ -1,16 +1,7 @@
-## V0.5.0
-this patch introduces significant refactors to the UI code, greatly increasing performance. It also fixes some bugs with gem socketing and adds more alerts for flying, outdoors, swimming, and combat start/end.
+## V0.5.1
+This patch fixes a few bugs and introduces virtual focus (allowing you to quickly set multiple focus targets.)
 
-* Fixed gem socket colors reading as "color" if you didn't have colorblind mode enabled.
-* Fixed tainting issue with gem socketing UI that prevented socket buttons from being clicked.
-* Majorly refactored the UI code behind the scenes. This increased performance by ~50%. The changes won't be too noticeable, but bags/etc should feel more responsive.
-* Fixed a long-standing bug where certain UI elements would be in an incorrect order if certain screens refreshed.
-* Fixed a bug where the gossip window would sometimes be blank.
-* Fixed a bug where the text elements when picking up available quests were in a random order.
-* The significant performance issues with the character pane are now fixed.
-* Fixed the long-standing bug where entering combat with certain UI windows open would cause odd behavior, such as certain windows not closing. Now navigation-related hotkeys are just disabled until combat ends.
-* Added the /wv close command. If the UI does glitch out again, this will force any remaining UI contexts to close. Please report any further UI bugs.
-* The /dquit command will now properly leave battlegrounds and arenas.
-* Updated and added various TTS output alerts:
-    * For navigation/compass: direction changed, outdoors/indoors, flying start and end, swimming, and diving
-    * For UI/Combat: combat start and end
+* Fixed a bug where trying to access bindings from the /wv UI menu would cause 
+errors.
+* Added virtual focus. This works as the Sku feature does; you can use the /focus1 through /focus5 commands to set the corresponding virtual focus to either your target or to a specified unit name. Using the corresponding hotkey will /targetexact that unit name. Note that virtual foci cannot be changed while in combat due to Blizzard restrictions.
+    * For example I could set my focus1, focus2, and focus3 to each of the bosses in a given raid encounter. Then I could map my focus hotkeys (let's say to alt 1, alt 2, and alt 3). Pressing alt 1 would target the first boss, alt 2 the second, and alt 3 the third.

@@ -5,7 +5,7 @@ module:setVital(true)
 
 local function BindingsButton_Click(source, button)
     local root = { "binding/List", bindings = WowVision.input.bindings }
-    WowVision.UIHost:openWindow({
+    WowVision.UIHost:openTemporaryWindow({
         generated = true,
         rootElement = root,
         hookEscape = true,

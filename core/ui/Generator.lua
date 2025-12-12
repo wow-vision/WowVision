@@ -11,7 +11,7 @@ function VirtualElementType:initialize(elementType, func, generator)
     self.func = func
     self.generator = generator
     self.events = {}
-    self.frameFields = {}     -- { { frame, "fieldName" }, ... }
+    self.frameFields = {} -- { { frame, "fieldName" }, ... }
     self.framePredicates = {} -- { { frame, "methodName" }, ... }
     self.valuesFunc = nil
     self.alwaysRun = true -- default until conditions added

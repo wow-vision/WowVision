@@ -14,9 +14,7 @@ gen:Element("collections", {
         wrap = true,
         children = {
             { "collections/Tabs", frame = CollectionsJournal },
-            {"Text",
-        text = "Tab: " .. CollectionsJournal.selectedTab
-        }
+            { "collections/CurrentTab", tab = CollectionsJournal.selectedTab },
         },
     }
     return result
@@ -36,6 +34,25 @@ gen:Element("collections/Tabs", function(props)
         end
     end
     return result
+end)
+
+local function getTabFrame(tab)
+    if tab == 1 then
+        return MountJournal
+    end
+    return nil
+end
+
+gen:Element("collections/CurrentTab", function(props)
+    local tab = props.tab
+    local frame = getTabFrame(tab)
+    if frame == nil or not frame:IsShown() or not frame:IsVisible() then
+        return { "Text", text = "Not implemented yet" }
+    end
+    if tab == 1 then
+        return { "collections/MountJournal", frame = frame }
+    end
+    return { "Text", text = "Not implemented yet" }
 end)
 
 module:registerWindow({

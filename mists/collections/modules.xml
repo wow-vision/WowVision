@@ -2,5 +2,6 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="module.lua" />
+  <Script file="MountJournal.lua" />
 
 </Ui>
