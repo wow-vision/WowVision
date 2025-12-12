@@ -3,10 +3,10 @@ local L = module.L
 module:setLabel(L["Buffers"])
 
 function module:onFullEnable()
-    local group = self.BufferGroup:new()
+    local group = WowVision.buffers.BufferGroup:new()
     group:setLabel(L["Buffers"])
 
-    local general = self.Buffer:new({
+    local general = WowVision.buffers:create("Static", {
         key = "general",
         label = L["General"],
     })

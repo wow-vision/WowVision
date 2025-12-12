@@ -19,7 +19,6 @@
     <Include file="audio/modules.xml" />
     <Include file="../audio/modules.xml" />
     <Include file="alerts/modules.xml" />
-  <Script file="MessageBuffer.lua" />
   <Script file="Event.lua" />
   <Include file="ui/modules.xml" />
     <Script file="UIHost.lua" />

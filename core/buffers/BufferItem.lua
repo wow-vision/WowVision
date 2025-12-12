@@ -1,4 +1,4 @@
-local BufferItem = WowVision.Class("BufferObject")
+local BufferItem = WowVision.Class("BufferItem")
 
 function BufferItem:initialize(object)
     self.object = object
@@ -20,4 +20,4 @@ function BufferItem:serialize()
     return self.object:serialize()
 end
 
-WowVision.base.buffers.BufferItem = BufferItem
+WowVision.buffers.BufferItem = BufferItem

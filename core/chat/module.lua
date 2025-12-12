@@ -77,7 +77,11 @@ function module:addFrame(frame, index)
         frame = frame,
         exists = true,
         data = data,
-        buffer = WowVision.MessageBuffer:new(data.history, 5000, self.getMessageString),
+        buffer = WowVision.buffers:create("Message", {
+            messages = data.history,
+            maxMessages = 5000,
+            getDataString = self.getMessageString,
+        }),
     }
     WowVision.UIHost:hookFunc(frame, "AddMessage", self.onMessage)
     self.frames[index] = ref

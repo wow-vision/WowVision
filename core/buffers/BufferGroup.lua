@@ -30,7 +30,7 @@ function BufferGroup:deserialize(data)
     self:setEnabled(data.enabled or true)
     self:clear()
     for _, v in ipairs(data.buffers) do
-        local buffer = WowVision.Buffer:new()
+        local buffer = WowVision.buffers:create(v.type or "Static", v)
         buffer:deserialize(v)
         self:add(buffer)
     end
@@ -48,4 +48,4 @@ function BufferGroup:serialize()
     return data
 end
 
-WowVision.base.buffers.BufferGroup = BufferGroup
+WowVision.buffers.BufferGroup = BufferGroup

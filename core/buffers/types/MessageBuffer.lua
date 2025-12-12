@@ -1,9 +1,10 @@
-local MessageBuffer = WowVision.Class("MessageBuffer")
+local MessageBuffer = WowVision.buffers:createType("Message")
 
-function MessageBuffer:initialize(messages, maxMessages, getDataString)
-    self.messages = messages
-    self.maxMessages = maxMessages or nil
-    self.getDataString = getDataString
+function MessageBuffer:initialize(obj)
+    WowVision.buffers.Buffer.initialize(self, obj)
+    self.messages = obj.messages or {}
+    self.maxMessages = obj.maxMessages or nil
+    self.getDataString = obj.getDataString
     self.events = {
         add = WowVision.Event:new("add"),
         remove = WowVision.Event:new("remove"),
@@ -12,13 +13,13 @@ end
 
 function MessageBuffer:add(message)
     if self.maxMessages and #self.messages > self.maxMessages then
-        self:remove(1)
+        self:removeMessage(1)
     end
     tinsert(self.messages, message)
     self.events.add:emit(self, message)
 end
 
-function MessageBuffer:remove(index)
+function MessageBuffer:removeMessage(index)
     if index < 1 or index > #self.messages then
         return
     end
@@ -37,5 +38,3 @@ function MessageBuffer:getMessageString(index)
         return data
     end
 end
-
-WowVision.MessageBuffer = MessageBuffer

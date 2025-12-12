@@ -2,17 +2,11 @@ local Buffer = WowVision.Class("Buffer")
 Buffer:include(WowVision.ViewList)
 
 function Buffer:initialize(obj)
+    obj = obj or {}
     self.key = obj.key
     self.label = obj.label
     self:setupViewList()
     self.allowRefocus = true
-end
-
-function Buffer:addObject(typeKey, params)
-    local obj = WowVision.objects:create(typeKey, params)
-    if obj then
-        self:add(WowVision.base.buffers.BufferItem:new(obj))
-    end
 end
 
 function Buffer:getLabel()
@@ -31,28 +25,6 @@ function Buffer:setEnabled(enabled)
     self.enabled = enabled
 end
 
-function Buffer:deserialize(data)
-    self:setLabel(data.label or "")
-    self:setEnabled(data.enabled or true)
-    self:clear()
-    for _, v in ipairs(data.items) do
-        local item = WowVision.base.buffers.BufferItem:new()
-        item:deserialize(v)
-        self:add(item)
-    end
-end
-
-function Buffer:serialize()
-    local data = {
-        label = self:getLabel(),
-        enabled = self:getEnabled(),
-        items = {},
-    }
-    for _, v in ipairs(self.items) do
-        tinsert(data.items, v:serialize())
-    end
-end
-
 function Buffer:getFocusString()
     local result = self:getLabel()
     local focus = self:getFocus()
@@ -62,4 +34,36 @@ function Buffer:getFocusString()
     return result
 end
 
-WowVision.base.buffers.Buffer = Buffer
+function Buffer:deserialize(data)
+    self:setLabel(data.label or "")
+    self:setEnabled(data.enabled or true)
+    self:clear()
+end
+
+function Buffer:serialize()
+    return {
+        label = self:getLabel(),
+        enabled = self:getEnabled(),
+    }
+end
+
+local buffers = {
+    Buffer = Buffer,
+    types = WowVision.Registry:new(),
+}
+
+function buffers:createType(key)
+    local class = WowVision.Class(key .. "Buffer", self.Buffer)
+    self.types:register(key, class)
+    return class
+end
+
+function buffers:create(typeKey, params)
+    local bufferType = self.types:get(typeKey)
+    if not bufferType then
+        error("Unknown buffer type: " .. typeKey)
+    end
+    return bufferType:new(params)
+end
+
+WowVision.buffers = buffers
