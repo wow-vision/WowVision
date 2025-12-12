@@ -184,11 +184,13 @@ end
 function Widget:onFocus()
     if self.tooltip then
         WowVision.UIHost.tooltip:set(self, self.tooltip)
+        WowVision.UIHost.tooltip:onFocus()
     end
 end
 
 function Widget:onUnfocus()
     if self.tooltip then
+        WowVision.UIHost.tooltip:onUnfocus()
         WowVision.UIHost.tooltip:reset()
     end
 end

@@ -7,7 +7,7 @@
   <Script file="Window.lua" />
   <Script file="MenuManager.lua" />
 <Script file="UIManager.lua" />
-  <Script file="Tooltip.lua" />
+  <Include file="tooltip/modules.xml" />
   <Include file="elements/modules.xml" />
   <Include file="navigators/modules.xml" />
 

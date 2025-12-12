@@ -280,7 +280,7 @@ function module:updateHardTarget()
     end
     if target ~= self.hardTarget then
         self.hardTarget = target
-        module.tooltips.hardTarget:set(nil, { type = "unit", unit = "target" })
+        module.tooltips.hardTarget:set(nil, { type = "Unit", unit = "target" })
         hardTargetChange:fire({ target = target })
     end
     local targetHealth = UnitHealth("target")
@@ -300,7 +300,7 @@ function module:updateSoftTarget(target, newGuid)
     end
     if newGuid ~= target.guid then
         if newGuid then
-            target.tooltip:set(nil, { type = "unit", unit = target.unit })
+            target.tooltip:set(nil, { type = "Unit", unit = target.unit })
             target.alert:fire({ name = UnitName(target.unit) })
         else
             target.tooltip:reset()

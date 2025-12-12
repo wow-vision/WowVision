@@ -112,7 +112,7 @@ gen:Element("character/Equipment", {
             frame = v,
             label = getEquipmentLabel(v),
             tooltip = {
-                type = "game",
+                type = "Game",
                 mode = "immediate",
             },
         })
@@ -163,7 +163,7 @@ gen:Element("character/StatsCategory", function(props)
                 frame = stat,
                 label = tostring(stat.Label:GetText()) .. " " .. tostring(stat.Value:GetText()),
                 tooltip = {
-                    type = "game",
+                    type = "Game",
                     mode = "immediate",
                 },
             })

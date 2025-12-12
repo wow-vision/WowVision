@@ -11,7 +11,7 @@ ProxyWidget.info:addFields({
             obj:setFrame(value)
         end,
     },
-    {key = "dragFrame", default = nil, compareMode = "direct"},
+    { key = "dragFrame", default = nil, compareMode = "direct" },
     { key = "macroCall", default = nil },
     { key = "dropdown", default = false },
     { key = "useGameTooltip", default = true },
@@ -35,7 +35,7 @@ ProxyWidget.info:updateFields({
         compareMode = "direct",
         default = function()
             return {
-                type = "game",
+                type = "Game",
                 mode = "static",
             }
         end,
@@ -76,20 +76,9 @@ end
 
 function ProxyWidget:onFocus()
     parent.onFocus(self)
-    if self.tooltip and self.frame then
-        if self.tooltip.mode == "static" then
-            if self.frame:HasScript("OnEnter") then
-                ExecuteFrameScript(self.frame, "OnEnter")
-            end
-        end
-    end
 end
 
 function ProxyWidget:onUnfocus()
-    WowVision.UIHost.tooltip:reset()
-    if self.tooltip and self.tooltip.mode == "static" and self.frame and self.frame:HasScript("OnLeave") then
-        ExecuteFrameScript(self.frame, "OnLeave")
-    end
     parent.onUnfocus(self)
 end
 

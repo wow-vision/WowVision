@@ -4,14 +4,15 @@ local gen = module:hasUI()
 
 gen:Element("collections/MountJournal", function(props)
     local frame = props.frame
-    local result =
-        { "Panel", label = L["Mounts"], children = {
+    local result = {
+        "Panel",
+        label = L["Mounts"],
+        children = {
             { "collections/MountJournal/SearchBox" },
-            {"collections/MountJournal/MountList", frame = frame.ScrollBox},
-            {"ProxyButton",
-            frame = MountJournalMountButton
-                }
-        } }
+            { "collections/MountJournal/MountList", frame = frame.ScrollBox },
+            { "ProxyButton", frame = MountJournalMountButton },
+        },
+    }
     return result
 end)
 
@@ -36,18 +37,15 @@ local function MountList_GetButton(self, button)
     if button.active then
         label = label .. " (" .. L["Mounted"] .. ")"
     end
-    return {"ProxyButton",
-    frame = button,
-    dragFrame = button.DragButton,
-    label = label
-}
+    return { "ProxyButton", frame = button, dragFrame = button.DragButton, label = label }
 end
 
 gen:Element("collections/MountJournal/MountList", function(props)
-    return {"ProxyScrollBox",
-    frame = MountJournal.ScrollBox,
-    label = L["Mounts"],
-    getElement = MountList_GetButton,
-    ordered = false
-}
+    return {
+        "ProxyScrollBox",
+        frame = MountJournal.ScrollBox,
+        label = L["Mounts"],
+        getElement = MountList_GetButton,
+        ordered = false,
+    }
 end)
