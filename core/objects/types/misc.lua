@@ -1,8 +1,7 @@
 local L = WowVision:getLocale()
-local ObjectType = WowVision.objects.ObjectType
 local objects = WowVision.objects
 
-local PlayerXP = ObjectType:new("PlayerXP")
+local PlayerXP = objects:createObjectType("PlayerXP")
 PlayerXP:setLabel(L["XP"])
 
 PlayerXP:addField({
@@ -39,10 +38,7 @@ function PlayerXP:getFocusString(params)
         .. ")"
 end
 
-objects.types:register("PlayerXP", PlayerXP)
-
-local PlayerMoney = ObjectType:new("PlayerMoney")
-
+local PlayerMoney = objects:createObjectType("PlayerMoney")
 PlayerMoney:setLabel(L["Money"])
 
 PlayerMoney:addField({
@@ -55,5 +51,3 @@ PlayerMoney:addField({
 function PlayerMoney:getFocusString(params)
     return C_CurrencyInfo.GetCoinText(self:get(params, "current"))
 end
-
-objects.types:register("PlayerMoney", PlayerMoney)
