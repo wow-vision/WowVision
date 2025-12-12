@@ -2,6 +2,7 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="GameTooltip.lua" />
+  <Script file="MountTooltip.lua" />
   <Script file="UnitTooltip.lua" />
   <Script file="TextTooltip.lua" />
 
