@@ -49,5 +49,5 @@ function module:setFocus(index, id)
     end
     local focus = self.focus[index]
     focus.id = id
-    focus.frame:SetAttribute("macrotext", "/targetexact " .. id)
+    focus.frame:SetAttribute("macrotext", "/target " .. id)
 end
