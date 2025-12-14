@@ -3,6 +3,7 @@
 
   <Script file="type.lua" />
   <Include file="unit/modules.xml" />
-  <Script file="misc.lua" />
-  
+  <Script file="PlayerXP.lua" />
+  <Script file="PlayerMoney.lua" />
+
 </Ui>
