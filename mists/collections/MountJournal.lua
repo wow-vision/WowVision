@@ -37,7 +37,13 @@ local function MountList_GetButton(self, button)
     if button.active then
         label = label .. " (" .. L["Mounted"] .. ")"
     end
-    return { "ProxyButton", frame = button, dragFrame = button.DragButton, label = label, tooltip = {type = "Mount", spellID = button.spellID}}
+    return {
+        "ProxyButton",
+        frame = button,
+        dragFrame = button.DragButton,
+        label = label,
+        tooltip = { type = "Mount", spellID = button.spellID },
+    }
 end
 
 gen:Element("collections/MountJournal/MountList", function(props)

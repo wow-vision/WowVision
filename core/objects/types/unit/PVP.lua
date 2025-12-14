@@ -15,9 +15,16 @@ pvp:addField({
     end,
 })
 
+pvp:addField({
+    key = "status",
+    get = function(params)
+        if UnitExists(params.unit) and UnitIsPVP(params.unit) then
+            return L["Enabled"]
+        end
+        return L["Disabled"]
+    end,
+})
+
 function pvp:getFocusString(params)
-    if self:get(params, "active") then
-        return L["PVP"] .. ": " .. L["Enabled"]
-    end
-    return L["PVP"] .. ": " .. L["Disabled"]
+    return self:renderTemplate("[PVP]: {status}", params)
 end

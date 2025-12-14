@@ -64,5 +64,5 @@ function Health:onEvent(event, unit)
 end
 
 function Health:getFocusString(params)
-    return self:get(params, "current") .. "/" .. self:get(params, "maximum") .. " " .. L["Health"]
+    return self:renderTemplate("{current}/{maximum} [Health]", params)
 end

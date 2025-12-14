@@ -26,14 +26,5 @@ PlayerXP:addField({
 })
 
 function PlayerXP:getFocusString(params)
-    return L["XP"]
-        .. ": "
-        .. self:get(params, "percent")
-        .. "% ("
-        .. self:get(params, "current")
-        .. " "
-        .. L["of"]
-        .. " "
-        .. self:get(params, "maximum")
-        .. ")"
+    return self:renderTemplate("[XP]: {percent}% ({current} [of] {maximum})", params)
 end

@@ -11,6 +11,13 @@ PlayerMoney:addField({
     end,
 })
 
+PlayerMoney:addField({
+    key = "formatted",
+    get = function(params)
+        return C_CurrencyInfo.GetCoinText(GetMoney())
+    end,
+})
+
 function PlayerMoney:getFocusString(params)
-    return C_CurrencyInfo.GetCoinText(self:get(params, "current"))
+    return self:renderTemplate("{formatted}", params)
 end

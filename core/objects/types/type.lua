@@ -49,6 +49,14 @@ function ObjectType:getFocusString(params)
     return self:getLabel(params)
 end
 
+function ObjectType:renderTemplate(template, params)
+    local context = {}
+    for key, field in pairs(self.fields.fields or {}) do
+        context[key] = self:get(params, key)
+    end
+    return WowVision.Template.render(template, context, WowVision:getLocale())
+end
+
 function ObjectType:track(info)
     local set = WowVision.objects.ObjectTracker:new()
     local obj = WowVision.objects.Object:new(self, info.params or {})

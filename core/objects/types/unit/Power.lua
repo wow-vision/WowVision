@@ -122,15 +122,18 @@ function Power:onEvent(event, unit, powerType)
     end
 end
 
-local function getPowerLabel(params)
-    if params.powerType then
-        local powerType = powersDB:get(params.powerType)
-        return powerType.label
-    end
-    local _, name = UnitPowerType(params.unit)
-    return name
-end
+Power:addField({
+    key = "label",
+    get = function(params)
+        if params.powerType then
+            local powerType = powersDB:get(params.powerType)
+            return powerType.label
+        end
+        local _, name = UnitPowerType(params.unit)
+        return name
+    end,
+})
 
 function Power:getFocusString(params)
-    return self:get(params, "current") .. "/" .. self:get(params, "maximum") .. " " .. getPowerLabel(params)
+    return self:renderTemplate("{current}/{maximum} {label}", params)
 end
