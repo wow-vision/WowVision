@@ -17,6 +17,18 @@ function Field:initialize(info)
     self.required = info.required or false
     self.once = info.once or false
     self.default = info.default
+    local strategy = info.getStrategy
+    if strategy then
+        if type(strategy) == "string" then
+            strategy = { strategy }
+        end
+        if strategy[1] ~= "key" and strategy[1] ~= "adaptive" then
+            error("getStrategy, if specified, must be one of {key, adaptive}.")
+        end
+        self.getStrategy = strategy
+    else
+        self.getStrategy = "adaptive"
+    end
     self.getFunc = info.get
     self.setFunc = info.set
     self.compareMode = info.compareMode or "deep" -- "deep" or "direct"
@@ -29,6 +41,7 @@ function Field:getInfo()
         required = self.required,
         once = self.once,
         default = self.default,
+        getStrategy = self.getStrategy,
         get = self.getFunc,
         set = self.setFunc,
         compareMode = self.compareMode,
@@ -66,6 +79,10 @@ function Field:getLabel(obj, value)
 end
 
 function Field:get(obj)
+    local strategy = self.getStrategy
+    if strategy[1] == "key" then
+        return obj[strategy[2] or self.key]
+    end
     if self.getFunc then
         return self.getFunc(obj, self.key)
     end
