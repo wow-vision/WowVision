@@ -8,15 +8,25 @@ function devTools.tpairs(t)
     print(table.concat(tbl, "\n"))
 end
 
-function devTools.printRegions(element)
+function devTools.printRegions(element, regionType)
     local regions = { element:GetRegions() }
     local tbl = {}
     for i, v in ipairs(regions) do
         local objType = v:GetObjectType()
-        if objType == "Texture" then
-            tinsert(tbl, "texture " .. tostring(v:GetTexture()))
-        elseif objType == "FontString" then
-            tinsert(tbl, "FontString " .. tostring(v:GetText()))
+        if (regionType ~= nil and objType == regionType) or regionType == nil then
+            local result
+            if objType == "Texture" then
+                result = "texture " .. tostring(v:GetTexture())
+            elseif objType == "FontString" then
+                result = "FontString " .. tostring(v:GetText())
+            end
+            if result then
+                local name = v:GetName()
+                if name then
+                    result = result .. " name " .. name
+                end
+                tinsert(tbl, result)
+            end
         end
     end
     print(table.concat(tbl, "\n"))

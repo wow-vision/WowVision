@@ -5,7 +5,7 @@ local gen = module:hasUI()
 
 gen:Element("socketing", function(props)
     local frame = props.frame.SocketingContainer
-        return {
+    return {
         "Panel",
         label = L["Socketing"],
         wrap = true,
