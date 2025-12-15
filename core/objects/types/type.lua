@@ -30,6 +30,10 @@ function ObjectType:exists(params)
     return true
 end
 
+--Returns if params are valid to retrieve one or more objects of the given type
+-- return valid, unique
+-- valid: One or more objects will be retrieved with these params
+-- unique: If true, a single object will be retrieved
 function ObjectType:validParams(params)
     return true, true
 end
