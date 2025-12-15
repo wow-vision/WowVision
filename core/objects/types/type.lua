@@ -4,6 +4,7 @@ function ObjectType:initialize(key)
     self.key = key
     self.parameters = WowVision.info.InfoManager:new()
     self.fields = WowVision.info.InfoManager:new()
+    self.templates = WowVision.Registry:new()
 end
 
 function ObjectType:addField(info)
@@ -27,6 +28,10 @@ end
 
 function ObjectType:exists(params)
     return true
+end
+
+function ObjectType:validParams(params)
+    return true, true
 end
 
 function ObjectType:get(params, field)
@@ -85,6 +90,13 @@ end
 
 function UnitType:exists(params)
     return UnitExists(params.unit)
+end
+
+function UnitType:validParams(params)
+    if params.unit then
+        return true, true
+    end
+    return false, false
 end
 
 function UnitType:getCache(params)

@@ -9,6 +9,13 @@ Power:addParameter({
     key = "powerType",
 })
 
+function Power:validParams(params)
+    if params.unit == nil then
+        return false, false
+    end
+    return true, params.powerType ~= nil
+end
+
 Power:addField({
     key = "minimum",
     getCached = function(cache)
