@@ -27,7 +27,7 @@ function Field:initialize(info)
         end
         self.getStrategy = strategy
     else
-        self.getStrategy = {"adaptive"}
+        self.getStrategy = { "adaptive" }
     end
     self.getFunc = info.get
     self.setFunc = info.set

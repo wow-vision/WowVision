@@ -1,5 +1,4 @@
 local L = WowVision:getLocale()
-local UnitType = WowVision.objects.UnitType
 local objects = WowVision.objects
 
 local Health = objects:createUnitType("Health")

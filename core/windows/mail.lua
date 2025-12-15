@@ -111,18 +111,18 @@ gen:Element("mail/inbox/open/list", function(props)
         })
         tinsert(
             result.children,
-            { "money/static", frame = OpenMailSalePriceMoneyFrame, label = OpenMailInvoiceSalePrice:GetText() }
+            { "money/MoneyFrame", frame = OpenMailSalePriceMoneyFrame, label = OpenMailInvoiceSalePrice:GetText() }
         )
         tinsert(
             result.children,
-            { "money/static", frame = OpenMailDepositMoneyFrame, label = OpenMailInvoiceDeposit:GetText() }
+            { "money/MoneyFrame", frame = OpenMailDepositMoneyFrame, label = OpenMailInvoiceDeposit:GetText() }
         )
         tinsert(
             result.children,
-            { "money/static", frame = OpenMailHouseCutMoneyFrame, label = OpenMailInvoiceHouseCut:GetText() }
+            { "money/MoneyFrame", frame = OpenMailHouseCutMoneyFrame, label = OpenMailInvoiceHouseCut:GetText() }
         )
         tinsert(result.children, {
-            "money/static",
+            "money/MoneyFrame",
             frame = OpenMailTransactionAmountMoneyFrame,
             label = OpenMailInvoiceAmountReceived:GetText(),
         })
