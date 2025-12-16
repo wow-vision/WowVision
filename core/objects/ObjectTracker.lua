@@ -31,7 +31,7 @@ function ObjectTracker:add(obj)
         return
     end
     self.items[obj] = true
-    self.events.add:emit(obj)
+    self.events.add:emit(self, obj)
 end
 
 function ObjectTracker:modify(obj)
@@ -47,7 +47,7 @@ function ObjectTracker:remove(obj)
         return
     end
     self.items[obj] = nil
-    self.events.remove:emit(obj)
+    self.events.remove:emit(self, obj)
 end
 
 function ObjectTracker:untrack()

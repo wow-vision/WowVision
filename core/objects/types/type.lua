@@ -10,13 +10,19 @@ end
 function ObjectType:addField(info)
     local getCached = info.getCached
     local get = info.get
+    local fieldKey = info.key
     if self.getCache and getCached then
         info.get = function(params, key)
             local cache = self:getCache(params)
             if cache then
-                return getCached(cache)
+                local result = getCached(cache)
+                return result
             end
-            return get(params)
+            if get then
+                local result = get(params)
+                return result
+            end
+            return nil
         end
     end
     self.fields:addField(info)
@@ -184,7 +190,7 @@ end
 
 function UnitType:addObject(unit, key, data)
     if unit.objects[key] then
-        error("Tried to cache object data for " .. key .. "; object already exists.")
+        return
     end
     local ref = {
         object = WowVision.objects:create(self.key, self:getObjectParams(unit, data)),
