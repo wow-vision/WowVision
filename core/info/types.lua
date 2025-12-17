@@ -52,3 +52,23 @@ Number:addOperator({
         return a < b
     end,
 })
+
+local String = info:createFieldType("String")
+
+String:addOperator({
+    key = "eq",
+    operands = { "String", "String" },
+    func = function(a, b)
+        return a == b
+    end,
+})
+
+local Bool = info:createFieldType("Bool")
+
+String:addOperator({
+    key = "eq",
+    operands = { "Bool", "Bool" },
+    func = function(a, b)
+        return a == b
+    end,
+})
