@@ -1,13 +1,13 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
 
+  <Script file="auction.lua" />
   <Script file="character.lua" />
   <Include file="collections/modules.xml" />
   <Script file="itemUpgrade.lua" />
-  <Include file="auction/modules.xml" />
-  <Script file="Spellbook.lua" />
   <Script file="QuestLog.lua" />
   <Script file="reforging.lua" />
+    <Script file="Spellbook.lua" />
   <Include file="talents/modules.xml" />
   <Script file="socketing.lua" />
   <Script file="TradeSkill.lua" />

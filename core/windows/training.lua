@@ -65,14 +65,25 @@ end
 
 gen:Element("training/List", function(props)
     local frame = props.frame
-    return {
-        "ProxyScrollFrame",
-        frame = frame,
-        getNumEntries = ListFrame_getNumEntries,
-        getElement = ListFrame_getButton,
-        getElementHeight = listFrame_getElementHeight,
-        getButtons = ListFrame_getButtons,
-    }
+    if frame:IsShown() then
+        return {
+            "ProxyScrollFrame",
+            frame = frame,
+            getNumEntries = ListFrame_getNumEntries,
+            getElement = ListFrame_getButton,
+            getElementHeight = listFrame_getElementHeight,
+            getButtons = ListFrame_getButtons,
+        }
+    end
+    local result = { "List", children = {} }
+    for i = 1, CLASS_TRAINER_SKILLS_DISPLAYED do
+        local button = _G["ClassTrainerSkill" .. i]
+        if button and button:IsShown() then
+            local element = ListFrame_getButton(nil, button)
+            tinsert(result.children, element)
+        end
+    end
+    return result
 end)
 
 gen:Element("training/Details", function(props)
@@ -80,13 +91,11 @@ gen:Element("training/Details", function(props)
     if not frame or not frame:IsVisible() then
         return nil
     end
-    local result = { "List", label = L["Details"], children = {} }
-    if ClassTrainerSkillIcon:IsVisible() then
-        tinsert(
-            result.children,
-            { "ProxyButton", frame = ClassTrainerSkillIcon, label = ClassTrainerSkillName:GetText() }
-        )
+    if not ClassTrainerSkillIcon:IsShown() then
+        return nil
     end
+    local result = { "List", label = L["Details"], children = {} }
+    tinsert(result.children, { "ProxyButton", frame = ClassTrainerSkillIcon, label = ClassTrainerSkillName:GetText() })
     if ClassTrainerSubSkillName:IsVisible() then
         tinsert(result.children, { "Text", text = ClassTrainerSubSkillName:GetText() })
     end
