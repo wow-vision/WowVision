@@ -9,6 +9,7 @@ function Buffer:initialize(obj)
     self.allowRefocus = true
     self.events = {
         add = WowVision.Event:new("add"),
+        modify = WowVision.Event:new("modify"),
         remove = WowVision.Event:new("remove"),
     }
 end
