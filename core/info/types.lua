@@ -29,46 +29,83 @@ function Number:validate(field, value)
     return number
 end
 
-Number:addOperator({
-    key = "eq",
-    operands = { "Number", "Number" },
-    func = function(a, b)
-        return a == b
-    end,
-})
-
-Number:addOperator({
-    key = "neq",
-    operands = { "Number", "Number" },
-    func = function(a, b)
-        return a ~= b
-    end,
-})
-
-Number:addOperator({
-    key = "lt",
-    operands = { "Number", "Number" },
-    func = function(a, b)
-        return a < b
-    end,
-})
-
 local String = info:createFieldType("String")
-
-String:addOperator({
-    key = "eq",
-    operands = { "String", "String" },
-    func = function(a, b)
-        return a == b
-    end,
-})
 
 local Bool = info:createFieldType("Bool")
 
-String:addOperator({
-    key = "eq",
-    operands = { "Bool", "Bool" },
-    func = function(a, b)
-        return a == b
-    end,
-})
+-- Operators are added after locale is available
+function info:addOperators()
+    local L = WowVision:getLocale()
+
+    Number:addOperator({
+        key = "eq",
+        label = L["equal to"],
+        operands = { "Number", "Number" },
+        func = function(a, b)
+            return a == b
+        end,
+    })
+
+    Number:addOperator({
+        key = "neq",
+        label = L["not equal to"],
+        operands = { "Number", "Number" },
+        func = function(a, b)
+            return a ~= b
+        end,
+    })
+
+    Number:addOperator({
+        key = "lt",
+        label = L["less than"],
+        operands = { "Number", "Number" },
+        func = function(a, b)
+            return a < b
+        end,
+    })
+
+    Number:addOperator({
+        key = "leq",
+        label = L["less than or equal to"],
+        operands = { "Number", "Number" },
+        func = function(a, b)
+            return a <= b
+        end,
+    })
+
+    Number:addOperator({
+        key = "gt",
+        label = L["greater than"],
+        operands = { "Number", "Number" },
+        func = function(a, b)
+            return a > b
+        end,
+    })
+
+    Number:addOperator({
+        key = "geq",
+        label = L["greater than or equal to"],
+        operands = { "Number", "Number" },
+        func = function(a, b)
+            return a >= b
+        end,
+    })
+
+    String:addOperator({
+        key = "eq",
+        label = L["equal to"],
+        operands = { "String", "String" },
+        func = function(a, b)
+            return a == b
+        end,
+    })
+
+    Bool:addOperator({
+        key = "eq",
+        label = L["equal to"],
+        operands = { "Bool", "Bool" },
+        func = function(a, b)
+            return a == b
+        end,
+    })
+end
