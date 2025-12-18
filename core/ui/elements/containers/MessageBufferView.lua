@@ -32,18 +32,16 @@ end
 
 function MessageBufferView:onFocus()
     if self.buffer then
-        self.buffer.events.remove:subscribe(self, function(self, event, source, message, index)
-            if type(index) == "table" then
+        self.buffer.events.remove:subscribe(self, function(self, event, source, item)
+            if self.index > #self.buffer.items then
+                self.index = #self.buffer.items
             end
-            if index < self.index then
-                self.index = self.index - 1
-            end
-            if index > #self.buffer.messages then
-                self.index = -1
+            if self.index < 1 and #self.buffer.items > 0 then
+                self.index = 1
             end
         end)
-        if #self.buffer.messages > 0 then
-            self.index = #self.buffer.messages
+        if #self.buffer.items > 0 then
+            self.index = #self.buffer.items
         end
         self:announceMessage()
     end
@@ -56,26 +54,26 @@ function MessageBufferView:onUnfocus()
 end
 
 function MessageBufferView:announceMessage()
-    local message = self.buffer:getMessageString(self.index)
-    if message then
-        WowVision:speak(message)
+    local item = self.buffer.items[self.index]
+    if item then
+        WowVision:speak(item:getFocusString())
     end
 end
 
 function MessageBufferView:onBindingPressed(binding)
-    if binding.key == "home" and #self.buffer.messages > 0 and self.index > 1 then
+    if binding.key == "home" and #self.buffer.items > 0 and self.index > 1 then
         self.index = 1
         self:announceMessage()
         return true
-    elseif binding.key == "end" and self.index > 0 and self.index < #self.buffer.messages then
-        self.index = #self.buffer.messages
+    elseif binding.key == "end" and self.index > 0 and self.index < #self.buffer.items then
+        self.index = #self.buffer.items
         self:announceMessage()
         return true
     elseif binding.key == "up" and self.index > 1 then
         self.index = self.index - 1
         self:announceMessage()
         return true
-    elseif binding.key == "down" and self.index < #self.buffer.messages then
+    elseif binding.key == "down" and self.index < #self.buffer.items then
         self.index = self.index + 1
         self:announceMessage()
         return true

@@ -1,23 +1,23 @@
 local BufferItem = WowVision.Class("BufferItem")
 
-function BufferItem:initialize(object)
-    self.object = object
+function BufferItem:initialize()
+    -- Base class, override in subclasses
 end
 
 function BufferItem:getFocusString()
-    return self.object:getFocusString()
+    error("BufferItem:getFocusString must be implemented by subclass")
 end
 
 function BufferItem:getLabel()
-    return self.object:getLabel()
-end
-
-function BufferItem:deserialize(data)
-    self.object = WowVision.objects:deserialize(data)
+    return self:getFocusString()
 end
 
 function BufferItem:serialize()
-    return self.object:serialize()
+    return nil
+end
+
+function BufferItem:deserialize(data)
+    -- Override in subclasses that support serialization
 end
 
 WowVision.buffers.BufferItem = BufferItem

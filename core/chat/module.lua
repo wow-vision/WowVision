@@ -53,7 +53,7 @@ function module.onMessage(frame, message, r, g, b, typeID)
         chatType = chatType,
         datetime = date("%m/%d/%y %H:%M:%S"),
     }
-    ref.buffer:add(data)
+    ref.store:add(data)
     if frame:IsShown() then
         messageAlert:fire(data)
     end
@@ -73,13 +73,17 @@ function module:addFrame(frame, index)
         self.data[index] = { history = {} }
         data = self.data[index]
     end
+    local store = WowVision.buffers.MessageStore:new({
+        messages = data.history,
+        maxMessages = 5000,
+    })
     local ref = {
         frame = frame,
         exists = true,
         data = data,
+        store = store,
         buffer = WowVision.buffers:create("Message", {
-            messages = data.history,
-            maxMessages = 5000,
+            source = store,
             getDataString = self.getMessageString,
         }),
     }

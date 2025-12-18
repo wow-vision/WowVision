@@ -2,35 +2,41 @@ local MessageBuffer = WowVision.buffers:createType("Message")
 
 function MessageBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
-    self.messages = obj.messages or {}
-    self.maxMessages = obj.maxMessages or nil
     self.getDataString = obj.getDataString
+    self.source = obj.source
+
+    if self.source then
+        -- Populate from existing messages
+        for _, data in ipairs(self.source.messages) do
+            local item = WowVision.buffers.MessageItem:new(data, self.getDataString)
+            WowVision.ViewList.add(self, item)
+        end
+
+        -- Subscribe to future changes
+        self.source.events.add:subscribe(self, function(subscriber, event, source, data)
+            subscriber:onSourceAdd(source, data)
+        end)
+        self.source.events.remove:subscribe(self, function(subscriber, event, source, data, index)
+            subscriber:onSourceRemove(source, data, index)
+        end)
+    end
 end
 
-function MessageBuffer:add(message)
-    if self.maxMessages and #self.messages > self.maxMessages then
-        self:removeMessage(1)
-    end
-    tinsert(self.messages, message)
-    self.events.add:emit(self, message)
+function MessageBuffer:onSourceAdd(source, data)
+    local item = WowVision.buffers.MessageItem:new(data, self.getDataString)
+    WowVision.buffers.Buffer.add(self, item)
 end
 
-function MessageBuffer:removeMessage(index)
-    if index < 1 or index > #self.messages then
-        return
+function MessageBuffer:onSourceRemove(source, data, index)
+    local item = self.items[index]
+    if item then
+        WowVision.buffers.Buffer.remove(self, item)
     end
-    self.events.remove:emit(self, self.messages[index], index)
-    table.remove(self.messages, index)
 end
 
-function MessageBuffer:getMessageString(index)
-    if index < 1 or index > #self.messages then
-        return nil
-    end
-    local data = self.messages[index]
-    if type(data) == "table" then
-        return self.getDataString(data)
-    else
-        return data
+function MessageBuffer:unsubscribe()
+    if self.source then
+        self.source.events.add:unsubscribe(self)
+        self.source.events.remove:unsubscribe(self)
     end
 end
