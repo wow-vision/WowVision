@@ -32,6 +32,12 @@ function ObjectType:addParameter(obj)
     self.parameters:addField(obj)
 end
 
+function ObjectType:registerTemplate(info)
+    local template = WowVision.templates.Template:new(info)
+    self.templates:register(info.key, template)
+    return template
+end
+
 function ObjectType:exists(params)
     return true
 end
@@ -61,6 +67,14 @@ function ObjectType:setLabel(label)
 end
 
 function ObjectType:getFocusString(params)
+    local template = self.templates:get("default")
+    if template then
+        local context = {}
+        for key, field in pairs(self.fields.fields or {}) do
+            context[key] = self:get(params, key)
+        end
+        return template:render(context)
+    end
     return self:getLabel(params)
 end
 
@@ -69,7 +83,7 @@ function ObjectType:renderTemplate(template, params)
     for key, field in pairs(self.fields.fields or {}) do
         context[key] = self:get(params, key)
     end
-    return WowVision.Template.render(template, context, WowVision:getLocale())
+    return WowVision.templates.render(template, context, WowVision:getLocale())
 end
 
 function ObjectType:track(info)

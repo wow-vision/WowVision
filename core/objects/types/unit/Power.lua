@@ -141,6 +141,8 @@ Power:addField({
     end,
 })
 
-function Power:getFocusString(params)
-    return self:renderTemplate("{current}/{maximum} {label}", params)
-end
+Power:registerTemplate({
+    key = "default",
+    name = "Default",
+    format = "{current}/{maximum} {label}",
+})

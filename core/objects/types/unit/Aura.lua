@@ -214,6 +214,8 @@ function Aura:onEvent(event, unit, data)
     end
 end
 
-function Aura:getFocusString(params)
-    return self:renderTemplate("{name} stacks {applications}", params)
-end
+Aura:registerTemplate({
+    key = "default",
+    name = "Default",
+    format = "{name} stacks {applications}",
+})

@@ -1,10 +1,12 @@
-local Template = {}
-
 -- Placeholders for escaped characters
 local ESCAPE_LEFT_BRACE = "\001"
 local ESCAPE_RIGHT_BRACE = "\002"
 local ESCAPE_LEFT_BRACKET = "\003"
 local ESCAPE_RIGHT_BRACKET = "\004"
+
+local templates = {
+    registry = WowVision.Registry:new(),
+}
 
 -- Render a template string with variable and locale substitutions
 -- Template syntax:
@@ -16,7 +18,7 @@ local ESCAPE_RIGHT_BRACKET = "\004"
 --   ]]       - Literal ]
 --
 -- Example: "[XP]: {percent}% ({current} [of] {maximum})"
-function Template.render(template, context, locale)
+function templates.render(template, context, locale)
     -- Replace escape sequences with placeholders
     local result = template
     result = string.gsub(result, "{{", ESCAPE_LEFT_BRACE)
@@ -51,4 +53,4 @@ function Template.render(template, context, locale)
     return result
 end
 
-WowVision.Template = Template
+WowVision.templates = templates

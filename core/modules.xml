@@ -8,7 +8,7 @@
   <Include file="commands/modules.xml" />
   <Include file="../locale/modules.xml" />
   <Script file="utils.lua" />
-  <Script file="Template.lua" />
+  <Include file="templates/modules.xml" />
   <Script file="Profiler.lua" />
   <Script file="dev.lua" />
   <Script file="json.lua" />

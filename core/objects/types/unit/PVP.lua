@@ -25,6 +25,8 @@ pvp:addField({
     end,
 })
 
-function pvp:getFocusString(params)
-    return self:renderTemplate("[PVP]: {status}", params)
-end
+pvp:registerTemplate({
+    key = "default",
+    name = "Default",
+    format = "[PVP]: {status}",
+})

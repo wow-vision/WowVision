@@ -62,6 +62,8 @@ function Health:onEvent(event, unit)
     end
 end
 
-function Health:getFocusString(params)
-    return self:renderTemplate("{current}/{maximum} [Health]", params)
-end
+Health:registerTemplate({
+    key = "default",
+    name = "Default",
+    format = "{current}/{maximum} [Health]",
+})
