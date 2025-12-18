@@ -5,10 +5,6 @@ function MessageBuffer:initialize(obj)
     self.messages = obj.messages or {}
     self.maxMessages = obj.maxMessages or nil
     self.getDataString = obj.getDataString
-    self.events = {
-        add = WowVision.Event:new("add"),
-        remove = WowVision.Event:new("remove"),
-    }
 end
 
 function MessageBuffer:add(message)

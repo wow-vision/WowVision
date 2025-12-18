@@ -7,6 +7,27 @@ function Buffer:initialize(obj)
     self.label = obj.label
     self:setupViewList()
     self.allowRefocus = true
+    self.events = {
+        add = WowVision.Event:new("add"),
+        remove = WowVision.Event:new("remove"),
+    }
+end
+
+function Buffer:add(index, item)
+    local result = WowVision.ViewList.add(self, index, item)
+    if result then
+        local addedItem = item or index
+        self.events.add:emit(self, addedItem)
+    end
+    return result
+end
+
+function Buffer:remove(item)
+    local result = WowVision.ViewList.remove(self, item)
+    if result then
+        self.events.remove:emit(self, item)
+    end
+    return result
 end
 
 function Buffer:getLabel()
