@@ -1,5 +1,6 @@
 local Field = WowVision.Class("InfoField")
 WowVision.info.Field = Field
+local fieldKeys = {}
 
 function Field:initialize(info)
     if not info.key then
@@ -33,6 +34,7 @@ function Field:initialize(info)
     self.setFunc = info.set
     self.compareMode = info.compareMode or "deep" -- "deep" or "direct"
     self.getLabelFunc = info.getLabel
+    self.persist = info.persist or false
 end
 
 function Field:getInfo()
@@ -46,6 +48,7 @@ function Field:getInfo()
         set = self.setFunc,
         compareMode = self.compareMode,
         getLabel = self.getLabelFunc,
+        persist = self.persist,
     }
     if self.type then
         result.type = self.type.key

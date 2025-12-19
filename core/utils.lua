@@ -14,6 +14,3 @@ function utils.splitString(str, delim)
 end
 
 WowVision.utils = utils
-
--- Initialize operators now that locale is available
-WowVision.info:addOperators()
