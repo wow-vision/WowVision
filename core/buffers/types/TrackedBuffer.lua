@@ -3,7 +3,7 @@ local TrackedBuffer = WowVision.buffers:createType("Tracked")
 function TrackedBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
     self.source = obj.source
-    self.objectToItem = {}  -- Maps Object -> ObjectItem for removal
+    self.objectToItem = {} -- Maps Object -> ObjectItem for removal
 
     if self.source then
         -- Populate from existing tracked objects

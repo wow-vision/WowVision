@@ -1,5 +1,10 @@
 # Changes
 
+## V0.5.3
+
+* Fixed a number of mailbox errors related to blank money amounts from auction invoices.
+* Fixed the trainer frame sometimes not having a list of skills to train.
+
 ## V0.5.2
 
 * The socketing frame now works again (apparently Blizzard really like changing it for some reason.)
