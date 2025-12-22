@@ -5,6 +5,7 @@
   <Script file="character.lua" />
   <Include file="collections/modules.xml" />
   <Script file="itemUpgrade.lua" />
+  <Script file="QuestChoice.lua" />
   <Script file="QuestLog.lua" />
   <Script file="reforging.lua" />
     <Script file="Spellbook.lua" />

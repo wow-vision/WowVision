@@ -24,6 +24,12 @@ function FieldType:validate(field, value)
     return value
 end
 
+function FieldType:setDB(field, obj, db)
+    self.db = db
+    local value = db[field.key]
+    field:set(obj, value)
+end
+
 local Operator = WowVision.Class("InfoFieldOperator"):include(WowVision.InfoClass)
 WowVision.info.Operator = Operator
 Operator.info:addFields({
