@@ -1,4 +1,4 @@
-## V0.5.3
+## V0.5.4
 
-* Fixed a number of mailbox errors related to blank money amounts from auction invoices.
-* Fixed the trainer frame sometimes not having a list of skills to train.
+* Added support for quest choices (for example the assignment map on The Isle of Thunder.)
+* Added support for the item text frame (letters, books, etc.)

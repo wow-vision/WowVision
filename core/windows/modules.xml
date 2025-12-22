@@ -6,6 +6,7 @@
   <Script file="containers.lua" />
 <Script file="GameMenu.lua" />
   <Script file="gossip.lua" />
+  <Script file="itemText.lua" />
   <Script file="loot.lua" />
 <Script file="Macros.lua" />
 <Script file="mail.lua" />
