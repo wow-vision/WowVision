@@ -1,9 +1,9 @@
 local info = WowVision.info
 local L = WowVision:getLocale()
 
-local Bool = info:createFieldType("Bool")
+local BoolField, parent = info:CreateFieldClass("Bool")
 
-Bool:addOperator({
+BoolField:addOperator({
     key = "eq",
     label = L["equal to"],
     operands = { "Bool", "Bool" },

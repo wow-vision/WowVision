@@ -2,14 +2,25 @@ local InfoManager = WowVision.Class("InfoManager")
 
 local info = {
     InfoManager = InfoManager,
-    fieldTypes = WowVision.Registry:new(),
+    fieldTypes = WowVision.Registry:new(),  -- Stores Field subclasses by type key
 }
 
-function info:createFieldType(key, parentKey)
-    local parent = self.fieldTypes:get(key)
-    local instance = self.FieldType:new(key, parent)
-    self.fieldTypes:register(key, instance)
-    return instance
+-- Creates a new Field subclass and registers it
+function info:CreateFieldClass(key, parentKey)
+    local parentClass = parentKey and self.fieldTypes:get(parentKey) or self.Field
+    local newClass = WowVision.Class(key .. "Field", parentClass)
+    newClass.typeKey = key
+
+    -- Copy parent operators to child
+    newClass.operators = {}
+    if parentClass.operators then
+        for opKey, operator in pairs(parentClass.operators) do
+            newClass.operators[opKey] = operator
+        end
+    end
+
+    self.fieldTypes:register(key, newClass)
+    return newClass, parentClass
 end
 
 WowVision.info = info
@@ -22,7 +33,14 @@ function InfoManager:initialize()
 end
 
 function InfoManager:addField(info)
-    local field = WowVision.info.Field:new(info)
+    local FieldClass = WowVision.info.Field
+    if info.type then
+        local registeredClass = WowVision.info.fieldTypes:get(info.type)
+        if registeredClass then
+            FieldClass = registeredClass
+        end
+    end
+    local field = FieldClass:new(info)
     self.fields[field.key] = field
     return field
 end
@@ -51,8 +69,15 @@ function InfoManager:updateField(updates)
         existingInfo[k] = v
     end
 
-    -- Create new field with merged info
-    local newField = WowVision.info.Field:new(existingInfo)
+    -- Create new field with merged info using appropriate class
+    local FieldClass = WowVision.info.Field
+    if existingInfo.type then
+        local registeredClass = WowVision.info.fieldTypes:get(existingInfo.type)
+        if registeredClass then
+            FieldClass = registeredClass
+        end
+    end
+    local newField = FieldClass:new(existingInfo)
     self.fields[updates.key] = newField
     return newField
 end

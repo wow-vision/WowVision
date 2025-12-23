@@ -1,9 +1,9 @@
 local info = WowVision.info
 local L = WowVision:getLocale()
 
-local String = info:createFieldType("String")
+local StringField, parent = info:CreateFieldClass("String")
 
-String:addOperator({
+StringField:addOperator({
     key = "eq",
     label = L["equal to"],
     operands = { "String", "String" },

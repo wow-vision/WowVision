@@ -2,8 +2,7 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="Info.lua" />
-    <Script file="Field.lua" />
-  <Script file="FieldType.lua" />
+  <Script file="Field.lua" />
   <Include file="types/modules.xml" />
 
 </Ui>

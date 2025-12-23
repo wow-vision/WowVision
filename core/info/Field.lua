@@ -1,19 +1,22 @@
 local Field = WowVision.Class("InfoField")
 WowVision.info.Field = Field
 
+-- Class-level operators table (subclasses get their own via CreateFieldClass)
+Field.operators = {}
+
+-- Static method to add operators to a Field class
+function Field.static:addOperator(info)
+    local operator = WowVision.info.Operator:new(info)
+    self.operators[info.key] = operator
+    return operator
+end
+
 function Field:initialize(info)
     if not info.key then
         error("All info fields must have a key.")
     end
     self.key = info.key
-    if info.type then
-        local fieldType = WowVision.info.fieldTypes:get(info.type)
-        if fieldType == nil then
-            error("Unknown field type " .. info.type .. ".")
-        end
-        self.type = fieldType
-        fieldType.parameters:set(self, info)
-    end
+    self.typeKey = info.type
     self.required = info.required or false
     self.once = info.once or false
     self.default = info.default
@@ -39,6 +42,7 @@ end
 function Field:getInfo()
     local result = {
         key = self.key,
+        type = self.typeKey,
         required = self.required,
         once = self.once,
         default = self.default,
@@ -49,17 +53,25 @@ function Field:getInfo()
         getLabel = self.getLabelFunc,
         persist = self.persist,
     }
-    if self.type then
-        result.type = self.type.key
-    end
     return result
 end
 
+-- Base validate - subclasses override
 function Field:validate(value)
-    if self.type then
-        return self.type:validate(self, value)
-    end
     return value
+end
+
+-- Base getDefaultDB - subclasses can override
+function Field:getDefaultDB(obj)
+    return self:getDefault(obj)
+end
+
+-- Base setDB - subclasses can override
+function Field:setDB(obj, db)
+    obj.db = nil
+    local value = db[self.key]
+    self:set(obj, value)
+    obj.db = db
 end
 
 function Field:compare(a, b)
@@ -144,4 +156,29 @@ function Field:setInfo(obj, info, ignoreRequired, applyMode)
             self:set(obj, newValue)
         end
     end
+end
+
+-- Operator class for field comparisons
+local Operator = WowVision.Class("InfoFieldOperator"):include(WowVision.InfoClass)
+WowVision.info.Operator = Operator
+Operator.info:addFields({
+    { key = "key", required = true },
+    { key = "label" },
+    { key = "symbol" },
+    {
+        key = "operands",
+        required = true,
+        default = function()
+            return {}
+        end,
+    },
+    { key = "func", required = true },
+})
+
+function Operator:initialize(info)
+    self:setInfo(info)
+end
+
+function Operator:evaluate(...)
+    return self.func(...)
 end
