@@ -7,7 +7,8 @@ Widget.info:addFields({
         default = nil,
         compareMode = "direct",
         set = function(obj, key, value)
-            obj.bind = value
+            obj.bind = value  -- Keep raw config for reconciliation comparison
+            obj._binding = WowVision.dataBinding:create(value)
             obj:setValue(obj:getBoundValue())
         end,
     },
@@ -116,69 +117,17 @@ function Widget:setValue(value)
 end
 
 function Widget:getBoundValue()
-    if not self.bind then
+    if not self._binding then
         return self.value
     end
-    local tbl = self.bind[1]
-    if not tbl then
-        error("Missing table for bind prop")
-    end
-    if self.bind.type then
-        if self.bind.type == "name" then
-            return tbl[self.bind.name]
-        elseif type == "function" then
-            return tbl[self.bind.name](tbl)
-        else
-            error("Unknown bind type")
-        end
-    end
-    if self.bind.getType then
-        if self.bind.getType == "name" then
-            return tbl[self.bind.getName]
-        elseif self.bind.getType == "function" then
-            return tbl[self.bind.getName](tbl)
-        else
-            error("Unknown bind getType")
-        end
-    end
-    return self.value
+    return self._binding:get()
 end
 
 function Widget:setBoundValue(value)
-    if not self.bind then
-        return nil
+    if not self._binding then
+        return
     end
-    local value = value
-    if self.bind.value then
-        value = self.bind.value
-    end
-    local tbl = self.bind[1]
-    if not tbl then
-        error("Missing table for bind prop")
-    end
-    if self.bind.type then
-        if self.bind.type == "name" then
-            tbl[self.bind.name] = value
-            return
-        elseif type == "function" then
-            tbl[self.bind.name](tbl, value)
-            return
-        else
-            error("Unknown bind type")
-        end
-    end
-    if self.bind.setType then
-        if self.bind.setType == "name" then
-            tbl[self.bind.setName] = value
-            return
-        elseif self.bind.setType == "function" then
-            tbl[self.bind.setName](tbl, value)
-            return
-        else
-            error("Unknown bind setType")
-        end
-    end
-    error("Bind missing either type or setType value.")
+    self._binding:set(value)
 end
 
 function Widget:onFocus()

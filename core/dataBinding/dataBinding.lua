@@ -1,0 +1,63 @@
+local dataBinding = {
+    types = WowVision.Registry:new(),
+}
+
+WowVision.dataBinding = dataBinding
+
+-- Base DataBinding class
+local DataBinding = WowVision.Class("DataBinding"):include(WowVision.InfoClass)
+dataBinding.DataBinding = DataBinding
+
+DataBinding.info:addFields({
+    { key = "target", required = true },
+    { key = "fixedValue" },
+})
+
+function DataBinding:initialize(config)
+    -- Normalize config: map positional/alternate keys to expected field names
+    local normalized = {
+        target = config[1] or config.target,
+        fixedValue = config.value or config.fixedValue,
+    }
+    self:setInfo(normalized)
+end
+
+function DataBinding:get()
+    error("DataBinding:get() must be overridden")
+end
+
+function DataBinding:set(value)
+    if self.fixedValue ~= nil then
+        value = self.fixedValue
+    end
+    self:_set(value)
+end
+
+function DataBinding:_set(value)
+    error("DataBinding:_set() must be overridden")
+end
+
+-- Creates a new DataBinding subclass and registers it
+function dataBinding:createType(key, parentKey)
+    local parentClass = parentKey and self.types:get(parentKey) or self.DataBinding
+    local newClass = WowVision.Class(key .. "DataBinding", parentClass):include(WowVision.InfoClass)
+    newClass.typeKey = key
+    self.types:register(key, newClass)
+    return newClass, parentClass
+end
+
+-- Factory that creates the right binding type from config
+function dataBinding:create(config)
+    if not config then
+        return nil
+    end
+    local bindingType = config.type or config.getType
+    if not bindingType then
+        error("DataBinding config requires a type or getType field")
+    end
+    local BindingClass = self.types:get(bindingType)
+    if not BindingClass then
+        error("Unknown binding type: " .. tostring(bindingType))
+    end
+    return BindingClass:new(config)
+end

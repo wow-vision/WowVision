@@ -17,7 +17,7 @@ end
 function ChoiceDropdownButton:getDropdown()
     local result = { "List", displayType = "", label = self.L["Dropdown"], children = {} }
     for _, v in ipairs(self.choices) do
-        tinsert(result.children, { "Button", label = v.label, bind = { self, "value", v.key } })
+        tinsert(result.children, { "Button", label = v.label, bind = { self, type = "name", name = "value", value = v.key } })
     end
     return result
 end
