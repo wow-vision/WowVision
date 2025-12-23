@@ -24,10 +24,15 @@ function FieldType:validate(field, value)
     return value
 end
 
+function FieldType:getDefaultDB(field, obj)
+    return field:getDefault(obj)
+end
+
 function FieldType:setDB(field, obj, db)
-    self.db = db
+    obj.db = nil
     local value = db[field.key]
     field:set(obj, value)
+        obj.db = db
 end
 
 local Operator = WowVision.Class("InfoFieldOperator"):include(WowVision.InfoClass)
