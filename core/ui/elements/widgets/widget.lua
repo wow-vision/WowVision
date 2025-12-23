@@ -9,7 +9,8 @@ Widget.info:addFields({
         set = function(obj, key, value)
             obj.bind = value  -- Keep raw config for reconciliation comparison
             obj._binding = WowVision.dataBinding:create(value)
-            obj:setValue(obj:getBoundValue())
+            -- Don't call setValue here - getValue already reads from binding,
+            -- and setValue would trigger fixedValue logic during initialization
         end,
     },
     {

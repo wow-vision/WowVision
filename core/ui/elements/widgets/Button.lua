@@ -9,12 +9,6 @@ Button.info:updateFields({
             return nil
         end,
     },
-    {
-        key = "bind",
-        set = function(obj, key, value)
-            obj.bind = value
-        end,
-    },
 })
 
 -- Remove value from liveFields (equivalent to live = false)
