@@ -157,13 +157,7 @@ function BoolParameter:getGenerator()
         "Checkbox",
         label = self.label,
         enabled = not self.static,
-        bind = {
-            self,
-            getType = "function",
-            getName = "getValue",
-            setType = "function",
-            setName = "setValue",
-        },
+        bind = { type = "method", target = self, getter = "getValue", setter = "setValue" },
     }
 end
 
@@ -175,7 +169,7 @@ function StringParameter:getGenerator()
         label = self.label,
         autoInputOnFocus = false,
         enabled = not self.static,
-        bind = { self.db, type = "name", name = self.key },
+        bind = { type = "property", target = self.db, property = self.key },
     }
 end
 
@@ -188,7 +182,7 @@ function NumberParameter:getGenerator()
         autoInputOnFocus = false,
         type = "decimal",
         enabled = not self.static,
-        bind = { self.db, type = "name", name = self.key },
+        bind = { type = "property", target = self.db, property = self.key },
     }
 end
 
@@ -216,14 +210,7 @@ function ChoiceParameter:buildDropdown()
         tinsert(result.children, {
             "Button",
             label = v.label,
-            bind = {
-                self,
-                getType = "function",
-                getName = "getValue",
-                setType = "function",
-                setName = "setValue",
-                value = v.value,
-            },
+            bind = { type = "method", target = self, getter = "getValue", setter = "setValue", fixedValue = v.value },
             events = {
                 click = choiceButton_Click,
             },
@@ -294,14 +281,7 @@ function VoicePackParameter:buildDropdown()
         tinsert(result.children, {
             "Button",
             label = v:getLabel(),
-            bind = {
-                self,
-                getType = "function",
-                getName = "getValue",
-                setType = "function",
-                setName = "setValue",
-                value = v.key,
-            },
+            bind = { type = "method", target = self, getter = "getValue", setter = "setValue", fixedValue = v.key },
             events = {
                 click = VoicePack_Click,
             },

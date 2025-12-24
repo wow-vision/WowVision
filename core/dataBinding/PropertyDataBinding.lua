@@ -1,21 +1,15 @@
 local dataBinding = WowVision.dataBinding
 
-local PropertyDataBinding, parent = dataBinding:createType("name")
+local PropertyDataBinding, parent = dataBinding:createType("property")
 
 PropertyDataBinding.info:addFields({
-    { key = "key" },
+    { key = "property", required = true },
 })
 
-function PropertyDataBinding:initialize(config)
-    parent.initialize(self, config)
-    -- Handle both old format (name) and new format (getName)
-    self.key = config.name or config.getName or config.key
-end
-
 function PropertyDataBinding:get()
-    return self.target[self.key]
+    return self.target[self.property]
 end
 
 function PropertyDataBinding:_set(value)
-    self.target[self.key] = value
+    self.target[self.property] = value
 end

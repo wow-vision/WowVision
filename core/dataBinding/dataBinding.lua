@@ -14,12 +14,7 @@ DataBinding.info:addFields({
 })
 
 function DataBinding:initialize(config)
-    -- Normalize config: map positional/alternate keys to expected field names
-    local normalized = {
-        target = config[1] or config.target,
-        fixedValue = config.value or config.fixedValue,
-    }
-    self:setInfo(normalized)
+    self:setInfo(config)
 end
 
 function DataBinding:get()
@@ -51,9 +46,9 @@ function dataBinding:create(config)
     if not config then
         return nil
     end
-    local bindingType = config.type or config.getType
+    local bindingType = config.type
     if not bindingType then
-        error("DataBinding config requires a type or getType field")
+        error("DataBinding config requires a 'type' field")
     end
     local BindingClass = self.types:get(bindingType)
     if not BindingClass then

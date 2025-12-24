@@ -22,13 +22,7 @@ gen:Element("ModulePanel", function(props)
         tinsert(result.children, {
             "Checkbox",
             label = L["Enabled"],
-            bind = {
-                module,
-                getType = "function",
-                getName = "getEnabled",
-                setType = "function",
-                setName = "setEnabled",
-            },
+            bind = { type = "method", target = module, getter = "getEnabled", setter = "setEnabled" },
         })
     end
     local submodules = {}
