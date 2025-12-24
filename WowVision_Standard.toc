@@ -1,0 +1,10 @@
+## Title: WowVision
+## Version: @project-version@
+## Author: bradjrenshaw
+## Interface: 110207
+## OptionalDeps: Sku, BlindSlash
+## Notes: Provides accessibility for the visually impaired.
+## SavedVariablesPerCharacter: WowVisionDB
+
+libs.xml
+modules.xml
