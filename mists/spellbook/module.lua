@@ -6,16 +6,19 @@ local gen = module:hasUI()
 gen:Element("spellbook", function(props)
     local frame = props.frame
     local tab = SpellBookFrame.currentTab
+    local title = frame:GetTitleText():GetText()
     local result = {
         "Panel",
-        label = frame.TitleText:GetText(),
+        label = title,
         wrap = true,
         children = {
             { "spellbook/Tabs", frame = frame, tab = tab },
         },
     }
     if tab.bookType == "spell" then
-        tinsert(result.children, { "spellbook/SpellBook", frame = frame })
+        tinsert(result.children, { "spellbook/SpellBook", frame = frame, title = title })
+    elseif tab.bookType == "professions" then
+        tinsert(result.children, { "spellbook/Professions", frame = SpellBookProfessionFrame, title = title })
     end
     return result
 end)

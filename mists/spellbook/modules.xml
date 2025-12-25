@@ -3,5 +3,6 @@
 
   <Script file="module.lua" />
   <Script file="spellbook.lua" />
+  <Script file="professions.lua" />
 
 </Ui>
