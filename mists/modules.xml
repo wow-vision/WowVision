@@ -8,7 +8,7 @@
   <Script file="QuestChoice.lua" />
   <Script file="QuestLog.lua" />
   <Script file="reforging.lua" />
-    <Script file="Spellbook.lua" />
+    <Include file="spellbook/modules.xml" />
   <Include file="talents/modules.xml" />
   <Script file="socketing.lua" />
   <Script file="TradeSkill.lua" />

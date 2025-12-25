@@ -1,39 +1,6 @@
-local module = WowVision.base.windows:createModule("spellbook")
+local module = WowVision.base.windows.spellbook
 local L = module.L
-module:setLabel(L["Spellbook"])
 local gen = module:hasUI()
-
-gen:Element("spellbook", function(props)
-    local frame = SpellBookFrame
-    local result = {
-        "Panel",
-        label = frame.TitleText:GetText(),
-        wrap = true,
-        children = {
-            { "spellbook/Tabs", frame = frame },
-        },
-    }
-    local tab = SpellBookFrame.currentTab
-    if tab.bookType == "spell" then
-        tinsert(result.children, { "spellbook/SpellBook", frame = frame })
-    end
-    return result
-end)
-
-gen:Element("spellbook/Tabs", function(props)
-    local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
-    for i = 1, props.frame.numTabs do
-        local button = _G["SpellBookFrameTabButton" .. i]
-        if button and button:IsShown() then
-            tinsert(result.children, {
-                "ProxyButton",
-                frame = button,
-                selected = button == props.frame.currentTab,
-            })
-        end
-    end
-    return result
-end)
 
 gen:Element("spellbook/SpellBook", function(props)
     return {
@@ -109,34 +76,3 @@ gen:Element("spellbook/SpellBookPageNavigation", function(props)
         },
     }
 end)
-
-module:registerWindow({
-    type = "FrameWindow",
-    name = "spellbook",
-    generated = true,
-    rootElement = "spellbook",
-    frameName = "SpellBookFrame",
-})
-
-gen:Element("SpellFlyout", function(props)
-    local result = { "Panel", label = L["Spell Flyout"], wrap = true, children = {} }
-    local children = { SpellFlyout:GetChildren() }
-    for _, v in ipairs(children) do
-        if v:IsVisible() then
-            tinsert(result.children, { "ProxyButton", frame = v, label = GetSpellInfo(v.spellID) })
-        end
-    end
-    return result
-end)
-
-module:registerWindow({
-    type = "FrameWindow",
-    name = "SpellFlyout",
-    generated = true,
-    rootElement = "SpellFlyout",
-    frameName = "SpellFlyout",
-    hookEscape = true,
-    onClose = function()
-        SpellFlyout:Hide()
-    end,
-})

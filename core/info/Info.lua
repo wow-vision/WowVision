@@ -2,7 +2,7 @@ local InfoManager = WowVision.Class("InfoManager")
 
 local info = {
     InfoManager = InfoManager,
-    fieldTypes = WowVision.Registry:new(),  -- Stores Field subclasses by type key
+    fieldTypes = WowVision.Registry:new(), -- Stores Field subclasses by type key
 }
 
 -- Creates a new Field subclass and registers it

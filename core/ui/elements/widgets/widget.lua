@@ -7,7 +7,7 @@ Widget.info:addFields({
         default = nil,
         compareMode = "direct",
         set = function(obj, key, value)
-            obj.bind = value  -- Keep raw config for reconciliation comparison
+            obj.bind = value -- Keep raw config for reconciliation comparison
             obj._binding = WowVision.dataBinding:create(value)
             -- Initialize value from binding, but only if there's no fixedValue
             -- (fixedValue bindings are write-only, e.g., choice buttons)

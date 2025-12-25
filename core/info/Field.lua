@@ -112,10 +112,14 @@ end
 
 function Field:set(obj, value)
     local value = self:validate(value)
+    local persistValue = value
     if self.setFunc then
-        self.setFunc(obj, self.key, value)
+        persistValue = self.setFunc(obj, self.key, value) or value
     else
         obj[self.key] = value
+    end
+    if self.persist and obj.db then
+        obj.db[self.key] = persistValue
     end
 end
 
