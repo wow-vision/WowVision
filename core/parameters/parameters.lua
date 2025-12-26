@@ -157,7 +157,7 @@ function BoolParameter:getGenerator()
         "Checkbox",
         label = self.label,
         enabled = not self.static,
-        bind = { type = "method", target = self, getter = "getValue", setter = "setValue" },
+        bind = { type = "Method", target = self, getter = "getValue", setter = "setValue" },
     }
 end
 
@@ -169,7 +169,7 @@ function StringParameter:getGenerator()
         label = self.label,
         autoInputOnFocus = false,
         enabled = not self.static,
-        bind = { type = "property", target = self.db, property = self.key },
+        bind = { type = "Property", target = self.db, property = self.key },
     }
 end
 
@@ -182,7 +182,7 @@ function NumberParameter:getGenerator()
         autoInputOnFocus = false,
         type = "decimal",
         enabled = not self.static,
-        bind = { type = "property", target = self.db, property = self.key },
+        bind = { type = "Property", target = self.db, property = self.key },
     }
 end
 
@@ -210,7 +210,7 @@ function ChoiceParameter:buildDropdown()
         tinsert(result.children, {
             "Button",
             label = v.label,
-            bind = { type = "method", target = self, getter = "getValue", setter = "setValue", fixedValue = v.value },
+            bind = { type = "Method", target = self, getter = "getValue", setter = "setValue", fixedValue = v.value },
             events = {
                 click = choiceButton_Click,
             },
@@ -281,7 +281,7 @@ function VoicePackParameter:buildDropdown()
         tinsert(result.children, {
             "Button",
             label = v:getLabel(),
-            bind = { type = "method", target = self, getter = "getValue", setter = "setValue", fixedValue = v.key },
+            bind = { type = "Method", target = self, getter = "getValue", setter = "setValue", fixedValue = v.key },
             events = {
                 click = VoicePack_Click,
             },

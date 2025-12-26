@@ -9,7 +9,6 @@ local DataBinding = WowVision.Class("DataBinding"):include(WowVision.InfoClass)
 dataBinding.DataBinding = DataBinding
 
 DataBinding.info:addFields({
-    { key = "target", required = true },
     { key = "fixedValue" },
 })
 
@@ -17,19 +16,23 @@ function DataBinding:initialize(config)
     self:setInfo(config)
 end
 
+function DataBinding:readValue()
+    error("DataBinding:readValue() must be overridden")
+end
+
 function DataBinding:get()
-    error("DataBinding:get() must be overridden")
+    return self:readValue()
+end
+
+function DataBinding:writeValue(value)
+    error("DataBinding:writeValue() must be overridden")
 end
 
 function DataBinding:set(value)
     if self.fixedValue ~= nil then
         value = self.fixedValue
     end
-    self:_set(value)
-end
-
-function DataBinding:_set(value)
-    error("DataBinding:_set() must be overridden")
+    self:writeValue(value)
 end
 
 -- Creates a new DataBinding subclass and registers it

@@ -2,7 +2,9 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="dataBinding.lua" />
+  <Script file="FieldDataBinding.lua" />
+    <Script file="FunctionDataBinding.lua" />
+    <Script file="MethodDataBinding.lua" />
   <Script file="PropertyDataBinding.lua" />
-  <Script file="MethodDataBinding.lua" />
 
 </Ui>

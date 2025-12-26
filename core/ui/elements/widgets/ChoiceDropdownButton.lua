@@ -20,7 +20,7 @@ function ChoiceDropdownButton:getDropdown()
         tinsert(result.children, {
             "Button",
             label = v.label,
-            bind = { type = "property", target = self, property = "value", fixedValue = v.key },
+            bind = { type = "Property", target = self, property = "value", fixedValue = v.key },
         })
     end
     return result

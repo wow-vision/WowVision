@@ -1,15 +1,15 @@
 local dataBinding = WowVision.dataBinding
 
-local PropertyDataBinding, parent = dataBinding:createType("property")
-
+local PropertyDataBinding, parent = dataBinding:createType("Property")
 PropertyDataBinding.info:addFields({
+    { key = "target", required = true },
     { key = "property", required = true },
 })
 
-function PropertyDataBinding:get()
+function PropertyDataBinding:readValue()
     return self.target[self.property]
 end
 
-function PropertyDataBinding:_set(value)
+function PropertyDataBinding:writeValue(value)
     self.target[self.property] = value
 end

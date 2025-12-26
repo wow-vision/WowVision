@@ -1,17 +1,17 @@
 local dataBinding = WowVision.dataBinding
 
-local MethodDataBinding, parent = dataBinding:createType("method")
+local MethodDataBinding, parent = dataBinding:createType("Method")
 
 MethodDataBinding.info:addFields({
+    { key = "target", required = true },
     { key = "getter", required = true },
-    { key = "setter" }, -- Optional, defaults to getter
+    { key = "setter", required = true },
 })
 
-function MethodDataBinding:get()
+function MethodDataBinding:readValue()
     return self.target[self.getter](self.target)
 end
 
-function MethodDataBinding:_set(value)
-    local setter = self.setter or self.getter
-    self.target[setter](self.target, value)
+function MethodDataBinding:writeValue(value)
+    self.target[self.setter](self.target, value)
 end

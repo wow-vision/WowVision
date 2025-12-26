@@ -198,7 +198,7 @@ gen:Element("settings/frames/SettingsSliderControlTemplate", function(props)
         type = "decimal",
         autoInputOnFocus = false,
         tooltip = getTooltip(props.frame),
-        bind = { type = "method", target = props.frame:GetSetting(), getter = "GetValue", setter = "SetValue" },
+        bind = { type = "Method", target = props.frame:GetSetting(), getter = "GetValue", setter = "SetValue" },
     }
 end)
 
@@ -283,7 +283,7 @@ gen:Element("settings/frames/SettingsCheckboxSliderControlTemplate", function(pr
             type = "decimal",
             autoInputOnFocus = false,
             bind = {
-                type = "method",
+                type = "Method",
                 target = props.frame:GetData():GetData().sliderSetting,
                 getter = "GetValue",
                 setter = "SetValue",
