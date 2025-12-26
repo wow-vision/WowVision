@@ -137,7 +137,7 @@ function NavigatorNode:reconcileFields()
                 self.fieldValues[k] = newValue
                 local liveMode = liveFields[k]
                 if liveMode then
-                    local label = field:getLabel(self.element, newValue)
+                    local label = field:getValueString(self.element, newValue)
                     if label then
                         if liveMode == "always" then
                             self.alwaysUpdates[k] = label

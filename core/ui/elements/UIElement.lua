@@ -15,9 +15,6 @@ UIElement.info:addFields({
         set = function(obj, key, value)
             obj:setLabel(value)
         end,
-        getLabel = function(obj, value)
-            return tostring(value)
-        end,
     },
     {
         key = "events",

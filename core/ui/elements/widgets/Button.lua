@@ -5,7 +5,7 @@ local L = WowVision:getLocale()
 Button.info:updateFields({
     {
         key = "value",
-        getLabel = function(obj, value)
+        getValueString = function(obj, value)
             return nil
         end,
     },

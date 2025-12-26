@@ -3,6 +3,10 @@ local L = WowVision:getLocale()
 
 local BoolField, parent = info:CreateFieldClass("Bool")
 
+function BoolField:getGenerator(obj)
+    return { "Checkbox", label = self:getLabel(), bind = { type = "Field", field = self } }
+end
+
 BoolField:addOperator({
     key = "eq",
     label = L["equal to"],

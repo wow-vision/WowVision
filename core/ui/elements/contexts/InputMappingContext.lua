@@ -5,7 +5,7 @@ Context.info:addFields({
     {
         key = "currentMapping",
         default = "",
-        getLabel = function(obj, value)
+        getValueString = function(obj, value)
             return value
         end,
     },

@@ -34,8 +34,9 @@ function Field:initialize(info)
     end
     self.getFunc = info.get
     self.setFunc = info.set
+    self.getValueStringFunc = info.getValueString
     self.compareMode = info.compareMode or "deep" -- "deep" or "direct"
-    self.getLabelFunc = info.getLabel
+    self.label = info.label
     self.persist = info.persist or false
 end
 
@@ -49,8 +50,9 @@ function Field:getInfo()
         getStrategy = self.getStrategy,
         get = self.getFunc,
         set = self.setFunc,
+        getValueString = self.getValueStringFunc,
         compareMode = self.compareMode,
-        getLabel = self.getLabelFunc,
+        label = self.label,
         persist = self.persist,
     }
     return result
@@ -82,9 +84,13 @@ function Field:compare(a, b)
     return WowVision:recursiveComp(a, b)
 end
 
-function Field:getLabel(obj, value)
-    if self.getLabelFunc then
-        return self.getLabelFunc(obj, value)
+function Field:getLabel()
+    return self.label
+end
+
+function Field:getValueString(obj, value)
+    if self.getValueStringFunc then
+        return self.getValueStringFunc(obj, value)
     end
     if value == nil then
         return nil

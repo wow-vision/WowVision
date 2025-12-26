@@ -29,7 +29,7 @@ Widget.info:addFields({
             end
             obj:setValue(value)
         end,
-        getLabel = function(obj, value)
+        getValueString = function(obj, value)
             return obj:getValueString()
         end,
     },
@@ -37,7 +37,7 @@ Widget.info:addFields({
     {
         key = "enabled",
         default = true,
-        getLabel = function(obj, value)
+        getValueString = function(obj, value)
             if value == false then
                 return obj.L["Disabled"]
             end
@@ -46,7 +46,7 @@ Widget.info:addFields({
     {
         key = "selected",
         default = false,
-        getLabel = function(obj, value)
+        getValueString = function(obj, value)
             if value then
                 return obj.L["selected"]
             end
@@ -159,7 +159,7 @@ function Widget:getExtras()
     end
     local valueField = self.class.info:getField("value")
     if valueField then
-        local label = valueField:getLabel(self, self:getValue())
+        local label = valueField:getValueString(self, self:getValue())
         if label then
             tinsert(extras, label)
         end
