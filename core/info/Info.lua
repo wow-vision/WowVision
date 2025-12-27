@@ -42,6 +42,7 @@ function InfoManager:addField(info)
     end
     local field = FieldClass:new(info)
     self.fields[field.key] = field
+    tinsert(self.fields, field)
     return field
 end
 
@@ -89,7 +90,7 @@ function InfoManager:clone()
         clone.config[k] = v
     end
     -- Copy fields
-    for k, field in pairs(self.fields) do
+    for _, field in ipairs(self.fields) do
         clone:addField(field:getInfo())
     end
     return clone
@@ -112,27 +113,19 @@ function InfoManager:setFieldValue(obj, key, value)
     if field == nil then
         error("Info has no field " .. key .. ".")
     end
-    field:set(obj, key, value)
-end
-
-function InfoManager:get(obj)
-    local result = {}
-    for k, field in pairs(self.fields) do
-        result[k] = field:get(self)
-    end
-    return result
+    field:set(obj, value)
 end
 
 function InfoManager:set(obj, info, ignoreRequired)
     local applyMode = self.config.applyMode or "merge"
-    for _, field in pairs(self.fields) do
+    for _, field in ipairs(self.fields) do
         field:setInfo(obj, info, ignoreRequired, applyMode)
     end
 end
 
 function InfoManager:getGenerator(obj)
     local result = { "List", children = {} }
-    for _, field in pairs(self.fields) do
+    for _, field in ipairs(self.fields) do
         tinsert(result.children, field:getGenerator(obj))
     end
     return result
@@ -150,10 +143,6 @@ function InfoClass:included(class)
     else
         class.info = InfoManager:new()
     end
-end
-
-function InfoClass:getInfo()
-    return self.class.info:get(self)
 end
 
 function InfoClass:setInfo(info, ignoreRequired)
