@@ -3,6 +3,15 @@ local L = WowVision:getLocale()
 
 local StringField, parent = info:CreateFieldClass("String")
 
+function StringField:getGenerator(obj)
+    return {
+        "EditBox",
+        label = self:getLabel(),
+        autoInputOnFocus = false,
+        bind = { type = "Field", target = obj, field = self },
+    }
+end
+
 StringField:addOperator({
     key = "eq",
     label = L["equal to"],

@@ -12,6 +12,10 @@ function Field.static:addOperator(info)
 end
 
 function Field:initialize(info)
+    self:setup(info)
+end
+
+function Field:setup(info)
     if not info.key then
         error("All info fields must have a key.")
     end

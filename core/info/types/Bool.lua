@@ -4,7 +4,7 @@ local L = WowVision:getLocale()
 local BoolField, parent = info:CreateFieldClass("Bool")
 
 function BoolField:getGenerator(obj)
-    return { "Checkbox", label = self:getLabel(), bind = { type = "Field", field = self } }
+    return { "Checkbox", label = self:getLabel(), bind = { type = "Field", target = obj, field = self } }
 end
 
 BoolField:addOperator({

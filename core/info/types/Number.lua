@@ -3,8 +3,8 @@ local L = WowVision:getLocale()
 
 local NumberField, parent = info:CreateFieldClass("Number")
 
-function NumberField:initialize(config)
-    parent.initialize(self, config)
+function NumberField:setup(config)
+    parent.setup(self, config)
     self.minimum = config.minimum
     self.maximum = config.maximum
 end
@@ -36,6 +36,16 @@ function NumberField:validate(value)
         number = maximum
     end
     return number
+end
+
+function NumberField:getGenerator(obj)
+    return {
+        "EditBox",
+        label = self:getLabel(),
+        autoInputOnFocus = false,
+        type = "decimal",
+        bind = { type = "Field", target = obj, field = self },
+    }
 end
 
 NumberField:addOperator({

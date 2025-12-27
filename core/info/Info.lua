@@ -69,17 +69,8 @@ function InfoManager:updateField(updates)
         existingInfo[k] = v
     end
 
-    -- Create new field with merged info using appropriate class
-    local FieldClass = WowVision.info.Field
-    if existingInfo.type then
-        local registeredClass = WowVision.info.fieldTypes:get(existingInfo.type)
-        if registeredClass then
-            FieldClass = registeredClass
-        end
-    end
-    local newField = FieldClass:new(existingInfo)
-    self.fields[updates.key] = newField
-    return newField
+    existingField:setup(existingInfo)
+    return existingField
 end
 
 function InfoManager:updateFields(fields)
@@ -137,6 +128,14 @@ function InfoManager:set(obj, info, ignoreRequired)
     for _, field in pairs(self.fields) do
         field:setInfo(obj, info, ignoreRequired, applyMode)
     end
+end
+
+function InfoManager:getGenerator(obj)
+    local result = { "List", children = {} }
+    for _, field in pairs(self.fields) do
+        tinsert(result.children, field:getGenerator(obj))
+    end
+    return result
 end
 
 --Mixin for info classes
