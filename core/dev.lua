@@ -52,6 +52,21 @@ function devTools.tprint(obj, depth)
     print(tString(obj, depth))
 end
 
+local info = WowVision.info.InfoManager:new()
+info:addFields({
+    { type = "String", key = "name", label = "name", default = "Bob" },
+    { type = "Number", key = "age", name = "age", default = 25 },
+})
+
+function devTools.testInfo(obj)
+    local root = info:getGenerator(obj)
+    WowVision.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = root,
+        hookEscape = true,
+    })
+end
+
 function WowVision:globalizeDevTools()
     for k, v in pairs(devTools) do
         _G[k] = v

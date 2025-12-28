@@ -1,6 +1,6 @@
 local dataBinding = WowVision.dataBinding
 
-local FieldDataBinding, parent = dataBinding:createType("field")
+local FieldDataBinding, parent = dataBinding:createType("Field")
 FieldDataBinding.info:addFields({
     { key = "target", required = true },
     { key = "field", required = true },

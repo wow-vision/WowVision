@@ -91,6 +91,7 @@ function ProxyScrollFrame:setFrame(frame)
 end
 
 function ProxyScrollFrame:onSetInfo()
+    parent.onSetInfo(self)
     if self.frame then
         self:updateButtons()
     end

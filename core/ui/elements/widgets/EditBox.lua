@@ -44,8 +44,7 @@ function EditBox:setValue(value)
     local setValue = nil
     if self.type == "decimal" then
         setValue = tostring(value)
-    end
-    if self.frame:IsNumeric() then
+    elseif self.frame:IsNumeric() then
         setValue = tonumber(value)
     else
         setValue = tostring(value)
@@ -55,10 +54,10 @@ function EditBox:setValue(value)
     end
 
     if not self.frame:HasFocus() then
-        if self.type == "string" or self.type == "decimal" then
-            self.frame:SetText(setValue)
-        else
+        if self.type == "number" then
             self.frame:SetNumber(setValue)
+        else
+            self.frame:SetText(setValue)
         end
     end
 
