@@ -149,4 +149,7 @@ function InfoClass:setInfo(info, ignoreRequired)
     if info then
         self.class.info:set(self, info, ignoreRequired)
     end
+    if self.onSetInfo then
+        self:onSetInfo()
+    end
 end

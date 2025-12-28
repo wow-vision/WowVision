@@ -88,7 +88,12 @@ function ProxyScrollFrame:setFrame(frame)
     if not self.scrollBar then
         error("ProxyScrollFrame does not have scroll bar.")
     end
-    self:updateButtons()
+end
+
+function ProxyScrollFrame:onSetInfo()
+    if self.frame then
+        self:updateButtons()
+    end
 end
 
 function ProxyScrollFrame:getInitialScrollOffset()
