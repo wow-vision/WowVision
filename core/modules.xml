@@ -5,6 +5,7 @@
     <Include file="../locale/modules.xml" />
               <Script file="Registry.lua" />
   <Script file="db.lua" />
+    <Script file="Event.lua" />
   <Include file="info/modules.xml" />
   <Include file="dataBinding/modules.xml" />
   <Include file="commands/modules.xml" />
@@ -21,7 +22,6 @@
     <Include file="audio/modules.xml" />
     <Include file="../audio/modules.xml" />
     <Include file="alerts/modules.xml" />
-  <Script file="Event.lua" />
   <Include file="ui/modules.xml" />
     <Script file="UIHost.lua" />
       <include file="module/modules.xml" />

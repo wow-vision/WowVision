@@ -55,7 +55,16 @@ end
 local info = WowVision.info.InfoManager:new()
 info:addFields({
     { type = "String", key = "name", label = "name", default = "Bob" },
-    { type = "Number", key = "age", name = "age", default = 25 },
+    { type = "Number", key = "age", label = "age", default = 25 },
+    {
+        type = "Choice",
+        key = "class",
+        label = "Class",
+        choices = {
+            { key = "warrior", label = "Warrior", value = 1 },
+            { key = "mage", label = "Mage", value = 2 },
+        },
+    },
 })
 
 function devTools.testInfo(obj)

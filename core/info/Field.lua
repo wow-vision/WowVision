@@ -12,6 +12,7 @@ function Field.static:addOperator(info)
 end
 
 function Field:initialize(info)
+    self.events = { valueChange = WowVision.Event:new("valueChange") }
     self:setup(info)
 end
 
@@ -131,6 +132,7 @@ function Field:set(obj, value)
     if self.persist and obj.db then
         obj.db[self.key] = persistValue
     end
+    self.events.valueChange:emit(obj, self.key, persistValue)
 end
 
 function Field:setInfo(obj, info, ignoreRequired, applyMode)
