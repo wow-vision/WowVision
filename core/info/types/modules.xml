@@ -4,5 +4,6 @@
   <Script file="Number.lua" />
   <Script file="String.lua" />
   <Script file="Bool.lua" />
+  <Script file="Choice.lua" />
 
 </Ui>
