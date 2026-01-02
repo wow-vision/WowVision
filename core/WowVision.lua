@@ -197,6 +197,15 @@ function WowVision:registerCommands()
         end,
     })
 
+    self.base:registerCommand({
+        name = "tests",
+        description = "Run test cases. Usage: /wv tests [suite]",
+        func = function(args)
+            local suiteName = args ~= "" and args or nil
+            WowVision.testing.runAndShow(suiteName)
+        end,
+    })
+
     -- Register global commands (/<name>)
     self.base:registerCommand({
         name = "uiinsp",
