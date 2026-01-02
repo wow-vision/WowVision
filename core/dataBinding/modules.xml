@@ -6,5 +6,6 @@
     <Script file="FunctionDataBinding.lua" />
     <Script file="MethodDataBinding.lua" />
   <Script file="PropertyDataBinding.lua" />
+  <Script file="tests.lua" />
 
 </Ui>
