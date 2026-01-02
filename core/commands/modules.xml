@@ -3,5 +3,6 @@
 
     <Script file="SlashCommand.lua" />
     <Script file="SlashCommandManager.lua" />
+    <Script file="tests.lua" />
 
 </Ui>

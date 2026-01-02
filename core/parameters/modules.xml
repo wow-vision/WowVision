@@ -2,5 +2,6 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="parameters.lua" />
+  <Script file="tests.lua" />
 
 </Ui>

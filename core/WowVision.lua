@@ -199,10 +199,9 @@ function WowVision:registerCommands()
 
     self.base:registerCommand({
         name = "tests",
-        description = "Run test cases. Usage: /wv tests [suite]",
+        description = "Run test cases. Usage: /wv tests [suite] [--verbose]",
         func = function(args)
-            local suiteName = args ~= "" and args or nil
-            WowVision.testing.runAndShow(suiteName)
+            WowVision.testing.runAndShow(args)
         end,
     })
 

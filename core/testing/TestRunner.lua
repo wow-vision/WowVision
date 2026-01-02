@@ -15,23 +15,58 @@ function TestRunner:log(message)
     tinsert(self.output, message)
 end
 
-function TestRunner:run(filterSuite)
+function TestRunner:run(filterSuite, verbose)
     self.output = {}
     self.passed = 0
     self.failed = 0
 
     for suiteName, suite in pairs(self.suites) do
         if not filterSuite or suiteName == filterSuite then
-            self:log("Suite: " .. suiteName)
+            local suitePassed = 0
+            local suiteFailed = 0
+            local suiteFailures = {}
+
             for testName, testFunc in pairs(suite) do
                 local success, err = pcall(testFunc, self)
                 if success then
                     self.passed = self.passed + 1
-                    self:log("  PASS: " .. testName)
+                    suitePassed = suitePassed + 1
                 else
                     self.failed = self.failed + 1
-                    self:log("  FAIL: " .. testName)
-                    self:log("    " .. tostring(err))
+                    suiteFailed = suiteFailed + 1
+                    tinsert(suiteFailures, { name = testName, err = err })
+                end
+            end
+
+            -- Build suite header with counts
+            local suiteHeader = "Suite: " .. suiteName .. " (" .. suitePassed .. " passed"
+            if suiteFailed > 0 then
+                suiteHeader = suiteHeader .. ", " .. suiteFailed .. " failed)"
+            else
+                suiteHeader = suiteHeader .. ")"
+            end
+            self:log(suiteHeader)
+
+            -- Show individual results only if verbose or there are failures
+            if verbose or suiteFailed > 0 then
+                for testName, testFunc in pairs(suite) do
+                    -- Check if this test failed
+                    local failed = false
+                    local failErr = nil
+                    for _, failure in ipairs(suiteFailures) do
+                        if failure.name == testName then
+                            failed = true
+                            failErr = failure.err
+                            break
+                        end
+                    end
+
+                    if failed then
+                        self:log("  FAIL: " .. testName)
+                        self:log("    " .. tostring(failErr))
+                    elseif verbose then
+                        self:log("  PASS: " .. testName)
+                    end
                 end
             end
         end
@@ -148,8 +183,22 @@ function testing.showResults(text)
     resultsFrame:Show()
 end
 
-function testing.runAndShow(filterSuite)
-    local results = testing.testRunner:run(filterSuite)
+function testing.runAndShow(args)
+    -- Parse args for suite name and verbose flag
+    local filterSuite = nil
+    local verbose = false
+
+    if args and args ~= "" then
+        for word in string.gmatch(args, "%S+") do
+            if word == "--verbose" or word == "--full" or word == "-v" then
+                verbose = true
+            else
+                filterSuite = word
+            end
+        end
+    end
+
+    local results = testing.testRunner:run(filterSuite, verbose)
     testing.showResults(results)
     WowVision.base.speech:speak(results)
 end
