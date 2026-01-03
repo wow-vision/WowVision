@@ -6,9 +6,10 @@
   <Script file="WindowManager.lua" />
   <Script file="Window.lua" />
   <Script file="MenuManager.lua" />
-<Script file="UIManager.lua" />
+  <Script file="UIManager.lua" />
   <Include file="tooltip/modules.xml" />
   <Include file="elements/modules.xml" />
   <Include file="navigators/modules.xml" />
+  <Script file="tests.lua" />
 
 </Ui>
