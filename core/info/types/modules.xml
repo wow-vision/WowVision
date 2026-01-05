@@ -6,5 +6,6 @@
   <Script file="Bool.lua" />
   <Script file="Choice.lua" />
   <Script file="Category.lua" />
+  <Script file="Reference.lua" />
 
 </Ui>

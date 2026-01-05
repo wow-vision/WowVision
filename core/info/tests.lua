@@ -61,6 +61,49 @@ testRunner:addSuite("InfoManager", {
     end,
 })
 
+testRunner:addSuite("Field", {
+    ["getDefaultDB returns default value"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "name", default = "DefaultName" })
+        local field = info:getField("name")
+        t:assertEqual(field:getDefaultDB({}), "DefaultName")
+    end,
+
+    ["getDefaultDB calls default function with obj"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            key = "computed",
+            default = function(obj) return obj.base .. "_suffix" end,
+        })
+        local field = info:getField("computed")
+        t:assertEqual(field:getDefaultDB({ base = "test" }), "test_suffix")
+    end,
+
+    ["setDB restores value to object"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "name" })
+        local field = info:getField("name")
+
+        local obj = {}
+        local db = { name = "RestoredValue" }
+        field:setDB(obj, db)
+
+        t:assertEqual(obj.name, "RestoredValue")
+    end,
+
+    ["setDB sets obj.db after restoring"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "name" })
+        local field = info:getField("name")
+
+        local obj = {}
+        local db = { name = "Value" }
+        field:setDB(obj, db)
+
+        t:assertEqual(obj.db, db)
+    end,
+})
+
 testRunner:addSuite("Field.String", {
     ["getGenerator returns EditBox"] = function(t)
         local info = WowVision.info.InfoManager:new()
@@ -224,5 +267,211 @@ testRunner:addSuite("Field.Category", {
         local field = info:getField("settings")
         field:addField({ key = "newField", default = "test" })
         t:assertNotNil(field:getField("newField"))
+    end,
+
+    ["getDefaultDB builds nested structure"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Category",
+            key = "settings",
+            fields = {
+                { key = "volume", type = "Number", default = 75 },
+                { key = "enabled", type = "Bool", default = true },
+            },
+        })
+        local field = info:getField("settings")
+        local db = field:getDefaultDB({})
+        t:assertEqual(db.volume, 75)
+        t:assertEqual(db.enabled, true)
+    end,
+
+    ["setDB restores nested values"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Category",
+            key = "settings",
+            fields = {
+                { key = "volume", type = "Number" },
+                { key = "muted", type = "Bool" },
+            },
+        })
+        local field = info:getField("settings")
+
+        local obj = {}
+        local db = { settings = { volume = 50, muted = true } }
+        field:setDB(obj, db)
+
+        t:assertNotNil(obj.settings)
+        t:assertEqual(obj.settings.volume, 50)
+        t:assertEqual(obj.settings.muted, true)
+    end,
+
+    ["setDB creates nested object if missing"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Category",
+            key = "config",
+            fields = {
+                { key = "name", default = "test" },
+            },
+        })
+        local field = info:getField("config")
+
+        local obj = {} -- No obj.config initially
+        local db = { config = { name = "restored" } }
+        field:setDB(obj, db)
+
+        t:assertNotNil(obj.config)
+        t:assertEqual(obj.config.name, "restored")
+    end,
+})
+
+testRunner:addSuite("Field.Reference", {
+    ["requires field property"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        t:assertError(function()
+            info:addField({
+                type = "Reference",
+                key = "ref",
+                -- Missing field property
+            })
+        end)
+    end,
+
+    ["get delegates to referenced field"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "source", default = "hello" })
+        local sourceField = info:getField("source")
+
+        info:addField({
+            type = "Reference",
+            key = "ref",
+            field = sourceField,
+        })
+        local refField = info:getField("ref")
+
+        local obj = { source = "world" }
+        t:assertEqual(refField:get(obj), "world")
+    end,
+
+    ["set does nothing (read-only)"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "source", default = "original" })
+        local sourceField = info:getField("source")
+
+        info:addField({
+            type = "Reference",
+            key = "ref",
+            field = sourceField,
+        })
+        local refField = info:getField("ref")
+
+        local obj = { source = "original" }
+        refField:set(obj, "modified")
+        t:assertEqual(obj.source, "original")
+    end,
+
+    ["getDefaultDB returns nil"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "source", default = "value" })
+        local sourceField = info:getField("source")
+
+        info:addField({
+            type = "Reference",
+            key = "ref",
+            field = sourceField,
+        })
+        local refField = info:getField("ref")
+
+        t:assertNil(refField:getDefaultDB({}))
+    end,
+
+    ["setDB does nothing"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "source", default = "original" })
+        local sourceField = info:getField("source")
+
+        info:addField({
+            type = "Reference",
+            key = "ref",
+            field = sourceField,
+        })
+        local refField = info:getField("ref")
+
+        local obj = { source = "original" }
+        local db = { ref = "should_be_ignored" }
+        refField:setDB(obj, db)
+        -- Source should remain unchanged
+        t:assertEqual(obj.source, "original")
+        -- ref key should not be set on obj
+        t:assertNil(obj.ref)
+    end,
+
+    ["getDefault delegates to referenced field"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "source", default = "defaultValue" })
+        local sourceField = info:getField("source")
+
+        info:addField({
+            type = "Reference",
+            key = "ref",
+            field = sourceField,
+        })
+        local refField = info:getField("ref")
+
+        t:assertEqual(refField:getDefault({}), "defaultValue")
+    end,
+
+    ["getLabel uses own label if set"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "source", label = "Source Label" })
+        local sourceField = info:getField("source")
+
+        info:addField({
+            type = "Reference",
+            key = "ref",
+            field = sourceField,
+            label = "Reference Label",
+        })
+        local refField = info:getField("ref")
+
+        t:assertEqual(refField:getLabel(), "Reference Label")
+    end,
+
+    ["getLabel falls back to referenced field label"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ key = "source", label = "Source Label" })
+        local sourceField = info:getField("source")
+
+        info:addField({
+            type = "Reference",
+            key = "ref",
+            field = sourceField,
+        })
+        local refField = info:getField("ref")
+
+        t:assertEqual(refField:getLabel(), "Source Label")
+    end,
+
+    ["getValueString delegates to referenced field"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Choice",
+            key = "source",
+            choices = {
+                { key = "a", label = "Option A", value = 1 },
+                { key = "b", label = "Option B", value = 2 },
+            },
+        })
+        local sourceField = info:getField("source")
+
+        info:addField({
+            type = "Reference",
+            key = "ref",
+            field = sourceField,
+        })
+        local refField = info:getField("ref")
+
+        t:assertEqual(refField:getValueString({}, 2), "Option B")
     end,
 })
