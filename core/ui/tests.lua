@@ -142,7 +142,9 @@ local function createCustomWindow(config)
     local defaults = {
         name = "test_" .. math.random(10000),
         rootElement = "Panel",
-        isOpenFunc = function() return false end,
+        isOpenFunc = function()
+            return false
+        end,
     }
     for k, v in pairs(config or {}) do
         defaults[k] = v
@@ -163,7 +165,9 @@ testRunner:addSuite("Window", {
         -- which means it can never detect a state change on its own
         local isOpenValue = false
         local window = createCustomWindow({
-            isOpenFunc = function() return isOpenValue end,
+            isOpenFunc = function()
+                return isOpenValue
+            end,
         })
         -- Initially closed, checkState should return no change
         local changed1, _ = window:checkState()

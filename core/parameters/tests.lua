@@ -12,7 +12,9 @@ testRunner:addSuite("Parameter", {
         local param = category:add({
             type = "Bool",
             key = "enabled",
-            default = function() return false end,
+            default = function()
+                return false
+            end,
         })
         t:assertEqual(param:getDefaultDB(), false)
     end,

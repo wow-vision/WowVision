@@ -73,7 +73,9 @@ testRunner:addSuite("Field", {
         local info = WowVision.info.InfoManager:new()
         info:addField({
             key = "computed",
-            default = function(obj) return obj.base .. "_suffix" end,
+            default = function(obj)
+                return obj.base .. "_suffix"
+            end,
         })
         local field = info:getField("computed")
         t:assertEqual(field:getDefaultDB({ base = "test" }), "test_suffix")

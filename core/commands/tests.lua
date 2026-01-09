@@ -5,7 +5,9 @@ testRunner:addSuite("SlashCommand", {
         local called = false
         local cmd = WowVision.SlashCommandClass:new({
             name = "test",
-            func = function() called = true end,
+            func = function()
+                called = true
+            end,
         })
         t:assertEqual(cmd.name, "test")
         t:assertNotNil(cmd.func)
@@ -15,7 +17,9 @@ testRunner:addSuite("SlashCommand", {
         local receivedArgs = nil
         local cmd = WowVision.SlashCommandClass:new({
             name = "test",
-            func = function(args) receivedArgs = args end,
+            func = function(args)
+                receivedArgs = args
+            end,
         })
         cmd:execute("hello world")
         t:assertEqual(receivedArgs, "hello world")
@@ -26,7 +30,9 @@ testRunner:addSuite("SlashCommand", {
         local testModule = { name = "TestModule" }
         local cmd = WowVision.SlashCommandClass:new({
             name = "test",
-            func = function(args, module) receivedModule = module end,
+            func = function(args, module)
+                receivedModule = module
+            end,
         }, testModule)
         cmd:execute("")
         t:assertEqual(receivedModule, testModule)
@@ -152,7 +158,9 @@ testRunner:addSuite("SlashCommandManager", {
         local called = false
         local cmd = manager:createCommand({
             name = "test",
-            func = function() called = true end,
+            func = function()
+                called = true
+            end,
         })
         manager:registerCommand(cmd)
         local result = manager:dispatch("test")
@@ -165,7 +173,9 @@ testRunner:addSuite("SlashCommandManager", {
         local receivedArgs = nil
         local cmd = manager:createCommand({
             name = "test",
-            func = function(args) receivedArgs = args end,
+            func = function(args)
+                receivedArgs = args
+            end,
         })
         manager:registerCommand(cmd)
         manager:dispatch("test hello world")
@@ -189,7 +199,9 @@ testRunner:addSuite("SlashCommandManager", {
         local called = false
         local cmd = manager:createCommand({
             name = "Test",
-            func = function() called = true end,
+            func = function()
+                called = true
+            end,
         })
         manager:registerCommand(cmd)
         local result = manager:dispatch("TEST")

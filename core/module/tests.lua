@@ -128,7 +128,9 @@ testRunner:addSuite("Module", {
         local defaults = module:getDefaultSettings()
         t:assertNotNil(defaults)
         local count = 0
-        for _ in pairs(defaults) do count = count + 1 end
+        for _ in pairs(defaults) do
+            count = count + 1
+        end
         t:assertEqual(count, 0)
     end,
 
@@ -151,7 +153,9 @@ testRunner:addSuite("Module", {
         local data = module:getDefaultData()
         t:assertNotNil(data)
         local count = 0
-        for _ in pairs(data) do count = count + 1 end
+        for _ in pairs(data) do
+            count = count + 1
+        end
         t:assertEqual(count, 0)
     end,
 
@@ -261,7 +265,9 @@ testRunner:addSuite("Module", {
     ["module starts with empty alerts"] = function(t)
         local module = createTestModule("test")
         local count = 0
-        for _ in pairs(module.alerts) do count = count + 1 end
+        for _ in pairs(module.alerts) do
+            count = count + 1
+        end
         t:assertEqual(count, 0)
     end,
 })

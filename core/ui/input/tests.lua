@@ -190,7 +190,9 @@ testRunner:addSuite("BindingSet", {
         local db = set:getDefaultDB()
         -- Should be empty since binding has no key
         local count = 0
-        for _ in pairs(db) do count = count + 1 end
+        for _ in pairs(db) do
+            count = count + 1
+        end
         t:assertEqual(count, 0)
     end,
 
@@ -199,7 +201,7 @@ testRunner:addSuite("BindingSet", {
         local binding = createTestBinding({ key = "test", type = "Function" })
         set:add(binding)
         local db = {
-            test = { inputs = { _type = "array", "X", "Y" } }
+            test = { inputs = { _type = "array", "X", "Y" } },
         }
         set:setDB(db)
         t:assertEqual(#binding.inputs, 2)
@@ -254,7 +256,7 @@ testRunner:addSuite("ActivationSet", {
         local set = input.ActivationSet:new()
         -- Create mock bindings with deactivate methods
         local mockBinding = {
-            deactivate = function(self, activated) end
+            deactivate = function(self, activated) end,
         }
         local info1 = { binding = mockBinding, activated = { {}, {} } }
         local info2 = { binding = mockBinding, activated = { {} } }
