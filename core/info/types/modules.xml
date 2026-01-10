@@ -7,5 +7,6 @@
   <Script file="Choice.lua" />
   <Script file="Category.lua" />
   <Script file="Reference.lua" />
+  <Script file="Array.lua" />
 
 </Ui>

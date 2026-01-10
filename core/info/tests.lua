@@ -477,3 +477,268 @@ testRunner:addSuite("Field.Reference", {
         t:assertEqual(refField:getValueString({}, 2), "Option B")
     end,
 })
+
+testRunner:addSuite("Field.Array", {
+    ["requires elementField property"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        t:assertError(function()
+            info:addField({
+                type = "Array",
+                key = "items",
+                -- Missing elementField
+            })
+        end)
+    end,
+
+    ["accepts inline field definition"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "numbers",
+            elementField = { type = "Number", minimum = 0 },
+        })
+        local field = info:getField("numbers")
+        t:assertNotNil(field)
+        t:assertNotNil(field:getElementField())
+    end,
+
+    ["accepts Field object as elementField"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({ type = "Number", key = "template", minimum = 0 })
+        local templateField = info:getField("template")
+
+        info:addField({
+            type = "Array",
+            key = "numbers",
+            elementField = templateField,
+        })
+        local field = info:getField("numbers")
+        t:assertEqual(field:getElementField(), templateField)
+    end,
+
+    ["get returns entire array when no index"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 1, 2, 3 } }
+        local arr = field:get(obj)
+        t:assertEqual(#arr, 3)
+        t:assertEqual(arr[2], 2)
+    end,
+
+    ["get returns element at index"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 10, 20, 30 } }
+        t:assertEqual(field:get(obj, 1), 10)
+        t:assertEqual(field:get(obj, 2), 20)
+        t:assertEqual(field:get(obj, 3), 30)
+    end,
+
+    ["set replaces entire array when no index"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 1, 2, 3 } }
+        field:set(obj, { 4, 5 })
+        t:assertEqual(#obj.items, 2)
+        t:assertEqual(obj.items[1], 4)
+        t:assertEqual(obj.items[2], 5)
+    end,
+
+    ["set updates element at index"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 1, 2, 3 } }
+        field:set(obj, 99, 2)
+        t:assertEqual(obj.items[1], 1)
+        t:assertEqual(obj.items[2], 99)
+        t:assertEqual(obj.items[3], 3)
+    end,
+
+    ["set validates elements using elementField"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number", minimum = 0, maximum = 100 },
+        })
+        local field = info:getField("items")
+
+        local obj = {}
+        field:set(obj, { -5, 50, 150 })
+        t:assertEqual(obj.items[1], 0) -- clamped to min
+        t:assertEqual(obj.items[2], 50) -- unchanged
+        t:assertEqual(obj.items[3], 100) -- clamped to max
+    end,
+
+    ["getDefault returns empty array"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+        local default = field:getDefault({})
+        t:assertNotNil(default)
+        t:assertEqual(#default, 0)
+    end,
+
+    ["addElement appends to array"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 1, 2 } }
+        local index = field:addElement(obj, 3)
+        t:assertEqual(index, 3)
+        t:assertEqual(obj.items[3], 3)
+    end,
+
+    ["addElement creates array if missing"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = {}
+        field:addElement(obj, 42)
+        t:assertNotNil(obj.items)
+        t:assertEqual(obj.items[1], 42)
+    end,
+
+    ["removeElement removes at index"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 1, 2, 3 } }
+        local removed = field:removeElement(obj, 2)
+        t:assertEqual(removed, 2)
+        t:assertEqual(#obj.items, 2)
+        t:assertEqual(obj.items[2], 3)
+    end,
+
+    ["getLength returns array length"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 1, 2, 3, 4, 5 } }
+        t:assertEqual(field:getLength(obj), 5)
+    end,
+
+    ["getLength returns 0 for missing array"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = {}
+        t:assertEqual(field:getLength(obj), 0)
+    end,
+
+    ["getDefaultDB returns empty array"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+        local db = field:getDefaultDB({})
+        t:assertNotNil(db)
+        t:assertEqual(#db, 0)
+    end,
+
+    ["setDB restores array with validation"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number", minimum = 0 },
+        })
+        local field = info:getField("items")
+
+        local obj = {}
+        local db = { items = { -10, 20, 30 } }
+        field:setDB(obj, db)
+
+        t:assertNotNil(obj.items)
+        t:assertEqual(obj.items[1], 0) -- clamped
+        t:assertEqual(obj.items[2], 20)
+        t:assertEqual(obj.items[3], 30)
+    end,
+
+    ["setDB creates empty array when missing from db"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = {}
+        local db = {}
+        field:setDB(obj, db)
+
+        t:assertNotNil(obj.items)
+        t:assertEqual(#obj.items, 0)
+    end,
+
+    ["getValueString returns item count"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        t:assertEqual(field:getValueString({}, { 1, 2, 3 }), "3 items")
+        t:assertEqual(field:getValueString({}, {}), "0 items")
+        t:assertEqual(field:getValueString({}, nil), "0 items")
+    end,
+})

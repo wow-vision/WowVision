@@ -273,6 +273,18 @@ function WowVision:registerCommands()
     })
 end
 
+-- Find addon index by name (case-insensitive)
+local function findAddonIndex(name)
+    local lowerName = name:lower()
+    for i = 1, C_AddOns.GetNumAddOns() do
+        local addonName = C_AddOns.GetAddOnInfo(i)
+        if addonName and addonName:lower() == lowerName then
+            return i
+        end
+    end
+    return nil
+end
+
 local function setAddonStates(state, ...)
     local addons = { ... }
     local action = C_AddOns.DisableAddOn
@@ -280,9 +292,9 @@ local function setAddonStates(state, ...)
         action = C_AddOns.EnableAddOn
     end
     for _, v in ipairs(addons) do
-        local v = string.lower(v)
         local addonList = { v }
-        if v == "sku" then
+        -- Special case: "sku" disables all Sku-related addons
+        if string.lower(v) == "sku" then
             addonList = {
                 "Sku",
                 "SkuAudioData_en",
@@ -293,7 +305,10 @@ local function setAddonStates(state, ...)
             }
         end
         for _, addon in ipairs(addonList) do
-            action(addon)
+            local index = findAddonIndex(addon)
+            if index then
+                action(index)
+            end
         end
     end
     ReloadUI()
@@ -309,7 +324,7 @@ end
 
 function WowVision:DisableAddon(name)
     if name == nil or name == "" then
-        print("Syntax: /disableaddon <name")
+        print("Syntax: /disableaddon <name>")
         return
     end
     setAddonStates(false, name)

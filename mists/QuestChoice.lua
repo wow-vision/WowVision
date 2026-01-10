@@ -96,17 +96,17 @@ gen:Element("QuestChoice/Rewards/Currencies", function(props)
     end
     local result = { "List", layout = true, shouldAnnounce = false, children = {} }
     for _, child in ipairs(children) do
-        local id = child.currencyID
+        local id = child.CurrencyID
         local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(id)
         if currencyInfo then
-            label = info.name
+            label = currencyInfo.name
             if child.Quantity:IsShown() then
                 label = label .. " x" .. child.Quantity:GetText()
             end
             tinsert(result.children, { "Text", text = label })
         end
     end
-    return nil
+    return result
 end)
 
 module:registerWindow({

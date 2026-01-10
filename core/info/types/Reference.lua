@@ -17,12 +17,12 @@ function ReferenceField:getInfo()
 end
 
 -- Delegate get to the referenced field
-function ReferenceField:get(obj)
-    return self.field:get(obj)
+function ReferenceField:get(obj, ...)
+    return self.field:get(obj, ...)
 end
 
 -- Read-only: set does nothing
-function ReferenceField:set(obj, value)
+function ReferenceField:set(obj, ...)
     -- No-op: Reference fields are read-only
 end
 

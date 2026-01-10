@@ -55,12 +55,13 @@ function CategoryField:setFieldValue(obj, key, value)
 end
 
 -- Get the nested object
-function CategoryField:get(obj)
+function CategoryField:get(obj, ...)
     return obj[self.key]
 end
 
 -- Set the nested object
-function CategoryField:set(obj, value)
+function CategoryField:set(obj, ...)
+    local value = ...
     obj[self.key] = value or {}
 end
 

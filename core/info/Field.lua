@@ -103,7 +103,7 @@ function Field:getValueString(obj, value)
     return tostring(value)
 end
 
-function Field:get(obj)
+function Field:get(obj, ...)
     local strategy = self.getStrategy
     if strategy[1] == "key" then
         return obj[strategy[2] or self.key]
@@ -121,8 +121,9 @@ function Field:getDefault(obj)
     return self.default
 end
 
-function Field:set(obj, value)
-    local value = self:validate(value)
+function Field:set(obj, ...)
+    local value = ...
+    value = self:validate(value)
     local persistValue = value
     if self.setFunc then
         persistValue = self.setFunc(obj, self.key, value) or value
