@@ -107,11 +107,12 @@ function Binding:addInput(input)
         error("Conflicting input: " .. input .. ".")
     end
 
+
     -- Add to our source of truth
     tinsert(self.inputs, input)
 
     -- Sync to DB if it exists
-    if self.db then
+    if self.db and self.db.inputs ~= self.inputs then
         tinsert(self.db.inputs, input)
     end
 end
