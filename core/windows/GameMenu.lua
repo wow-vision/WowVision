@@ -8,7 +8,16 @@ gen:Element("GameMenu", {
         return {}
     end, -- Static menu, never changes
 }, function(props)
-    local buttons = { GameMenuFrame:GetChildren() }
+    local children = { GameMenuFrame:GetChildren() }
+    local buttons = {}
+    for _, child in ipairs(children) do
+        if child:GetObjectType() == "Button" then
+            tinsert(buttons, child)
+        end
+    end
+    table.sort(buttons, function(a, b)
+        return a:GetTop() > b:GetTop()
+    end)
     local result = { "Panel", label = L["Menu"], wrap = true, children = {} }
     for i, v in ipairs(buttons) do
         tinsert(result.children, { "ProxyButton", key = "btn_" .. i, frame = v })
