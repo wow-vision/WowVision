@@ -1,8 +1,10 @@
 local TrackedBuffer = WowVision.buffers:createType("Tracked")
+TrackedBuffer.info:addFields({
+    { key = "source" },
+})
 
 function TrackedBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
-    self.source = obj.source
     self.objectToItem = {} -- Maps Object -> ObjectItem for removal
 
     if self.source then

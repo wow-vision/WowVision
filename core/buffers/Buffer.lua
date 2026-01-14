@@ -1,10 +1,12 @@
-local Buffer = WowVision.Class("Buffer")
+local Buffer = WowVision.Class("Buffer"):include(WowVision.InfoClass)
 Buffer:include(WowVision.ViewList)
+Buffer.info:addFields({
+    { key = "key" },
+    { key = "label", type = "String" },
+})
 
 function Buffer:initialize(obj)
     obj = obj or {}
-    self.key = obj.key
-    self.label = obj.label
     self:setupViewList()
     self.allowRefocus = true
     self.events = {
@@ -12,6 +14,7 @@ function Buffer:initialize(obj)
         modify = WowVision.Event:new("modify"),
         remove = WowVision.Event:new("remove"),
     }
+    self:setInfo(obj)
 end
 
 function Buffer:add(index, item)
@@ -56,28 +59,15 @@ function Buffer:getFocusString()
     return result
 end
 
-function Buffer:deserialize(data)
-    self:setLabel(data.label or "")
-    self:setEnabled(data.enabled or true)
-    self:clear()
-end
-
-function Buffer:serialize()
-    return {
-        label = self:getLabel(),
-        enabled = self:getEnabled(),
-    }
-end
-
 local buffers = {
     Buffer = Buffer,
     types = WowVision.Registry:new(),
 }
 
 function buffers:createType(key)
-    local class = WowVision.Class(key .. "Buffer", self.Buffer)
+    local class = WowVision.Class(key .. "Buffer", self.Buffer):include(WowVision.InfoClass)
     self.types:register(key, class)
-    return class
+    return class, self.Buffer
 end
 
 function buffers:create(typeKey, params)

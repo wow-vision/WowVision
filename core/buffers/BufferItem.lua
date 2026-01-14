@@ -12,12 +12,4 @@ function BufferItem:getLabel()
     return self:getFocusString()
 end
 
-function BufferItem:serialize()
-    return nil
-end
-
-function BufferItem:deserialize(data)
-    -- Override in subclasses that support serialization
-end
-
 WowVision.buffers.BufferItem = BufferItem

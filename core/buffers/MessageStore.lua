@@ -40,15 +40,4 @@ function MessageStore:clear()
     end
 end
 
-function MessageStore:serialize()
-    return self.messages
-end
-
-function MessageStore:deserialize(data)
-    self:clear()
-    for _, msg in ipairs(data or {}) do
-        self:add(msg)
-    end
-end
-
 WowVision.buffers.MessageStore = MessageStore

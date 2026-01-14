@@ -1,9 +1,11 @@
 local MessageBuffer = WowVision.buffers:createType("Message")
+MessageBuffer.info:addFields({
+    { key = "source" },
+    { key = "getDataString" },
+})
 
 function MessageBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
-    self.getDataString = obj.getDataString
-    self.source = obj.source
 
     if self.source then
         -- Populate from existing messages

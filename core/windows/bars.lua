@@ -117,7 +117,6 @@ gen:Element("bars/PetActionBar", function(props)
         return nil
     end
     local result = { "List", label = L["Pet Bar"], direction = "horizontal", children = {} }
-    local children = { PetActionBarFrame:GetChildren() }
     for i = 1, NUM_PET_ACTION_SLOTS do
         local button = _G["PetActionButton" .. i]
         local name, texture, isToken, isActive, autoCastAllowed, autoCastEnabled, spellID = GetPetActionInfo(i)
@@ -180,9 +179,13 @@ module:registerWindow({
 })
 
 module:registerBinding({
-    type = "Script",
+    type = "Function",
     key = "bars/openWindow",
     inputs = { "SHIFT-F4" },
     label = L["Action Bars"],
-    script = "/run WowVision.UIHost:openWindow('bars')",
+    delay = 0.01,
+    interruptSpeech = true,
+    func = function()
+        WowVision.UIHost:openWindow("bars")
+    end,
 })

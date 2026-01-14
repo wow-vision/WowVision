@@ -107,7 +107,6 @@ function Binding:addInput(input)
         error("Conflicting input: " .. input .. ".")
     end
 
-
     -- Add to our source of truth
     tinsert(self.inputs, input)
 

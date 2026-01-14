@@ -16,12 +16,4 @@ function ObjectItem:getObject()
     return self.object
 end
 
-function ObjectItem:deserialize(data)
-    self.object = WowVision.objects:deserialize(data)
-end
-
-function ObjectItem:serialize()
-    return self.object:serialize()
-end
-
 WowVision.buffers.ObjectItem = ObjectItem

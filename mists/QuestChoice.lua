@@ -98,18 +98,18 @@ gen:Element("QuestChoice/Rewards/Currencies", function(props)
     for _, child in ipairs(children) do
         local id = child.currencyID
         if id then
-        local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(id)
-        if currencyInfo then
-            label = currencyInfo.name
-            if child.Quantity:IsShown() then
-                label = label .. " x " .. child.Quantity:GetText()
+            local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(id)
+            if currencyInfo then
+                label = currencyInfo.name
+                if child.Quantity:IsShown() then
+                    label = label .. " x " .. child.Quantity:GetText()
+                end
+                tinsert(result.children, { "Text", text = label })
             end
-            tinsert(result.children, { "Text", text = label })
-        end
         end
     end
     if #result.children > 0 then
-    return result
+        return result
     end
 end)
 
