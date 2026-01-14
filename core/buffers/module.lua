@@ -3,23 +3,42 @@ local L = module.L
 module:setLabel(L["Buffers"])
 
 function module:onFullEnable()
-    local group = WowVision.buffers.BufferGroup:new()
-    group:setLabel(L["Buffers"])
+    -- Root group contains child groups
+    local root = WowVision.buffers.BufferGroup:new()
+    root:setLabel(L["Buffers"])
 
-    local general = WowVision.buffers:create("Static", {
+    -- General group
+    local generalGroup = WowVision.buffers.BufferGroup:new()
+    generalGroup:setLabel(L["General"])
+
+    local generalBuffer = WowVision.buffers:create("Static", {
         key = "general",
         label = L["General"],
     })
-    general:addObject("Health", { unit = "player" })
-    general:addObject("Power", { unit = "player" })
-    general:addObject("PlayerXP", {})
-    general:addObject("PlayerMoney", {})
-    general:addObject("PVP", { unit = "player" })
+    generalBuffer:addObject("Health", { unit = "player" })
+    generalBuffer:addObject("Power", { unit = "player" })
+    generalBuffer:addObject("PlayerXP", {})
+    generalBuffer:addObject("PlayerMoney", {})
+    generalBuffer:addObject("PVP", { unit = "player" })
 
-    group:add(general)
-    self.group = group
+    generalGroup:add(generalBuffer)
+    root:add(generalGroup)
+
+    self.root = root
 end
 
+-- Helper to get current group
+function module:getCurrentGroup()
+    return self.root and self.root:getFocus()
+end
+
+-- Helper to get current buffer
+function module:getCurrentBuffer()
+    local group = self:getCurrentGroup()
+    return group and group:getFocus()
+end
+
+-- Item navigation (Alt-Up/Down)
 module:registerBinding({
     type = "Function",
     key = "buffers/previousItem",
@@ -28,7 +47,7 @@ module:registerBinding({
     delay = 0.01,
     interruptSpeech = true,
     func = function()
-        local buffer = module.group:getFocus()
+        local buffer = module:getCurrentBuffer()
         if buffer then
             buffer:UIFocusDirection(1)
         end
@@ -43,13 +62,14 @@ module:registerBinding({
     delay = 0.01,
     interruptSpeech = true,
     func = function()
-        local buffer = module.group:getFocus()
+        local buffer = module:getCurrentBuffer()
         if buffer then
             buffer:UIFocusDirection(-1)
         end
     end,
 })
 
+-- Buffer navigation (Alt-Left/Right)
 module:registerBinding({
     type = "Function",
     key = "buffers/nextBuffer",
@@ -58,7 +78,10 @@ module:registerBinding({
     delay = 0.01,
     interruptSpeech = true,
     func = function()
-        module.group:UIFocusDirection(1)
+        local group = module:getCurrentGroup()
+        if group then
+            group:UIFocusDirection(1)
+        end
     end,
 })
 
@@ -70,6 +93,38 @@ module:registerBinding({
     delay = 0.01,
     interruptSpeech = true,
     func = function()
-        module.group:UIFocusDirection(-1)
+        local group = module:getCurrentGroup()
+        if group then
+            group:UIFocusDirection(-1)
+        end
+    end,
+})
+
+-- Group navigation (Alt-Ctrl-Left/Right)
+module:registerBinding({
+    type = "Function",
+    key = "buffers/nextGroup",
+    inputs = { "ALT-CTRL-RIGHT" },
+    label = L["Next Buffer Group"],
+    delay = 0.01,
+    interruptSpeech = true,
+    func = function()
+        if module.root then
+            module.root:UIFocusDirection(1)
+        end
+    end,
+})
+
+module:registerBinding({
+    type = "Function",
+    key = "buffers/previousGroup",
+    inputs = { "ALT-CTRL-LEFT" },
+    label = L["Previous Buffer Group"],
+    delay = 0.01,
+    interruptSpeech = true,
+    func = function()
+        if module.root then
+            module.root:UIFocusDirection(-1)
+        end
     end,
 })

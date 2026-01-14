@@ -25,6 +25,15 @@ function BufferGroup:setEnabled(enabled)
     self.enabled = enabled
 end
 
+function BufferGroup:getFocusString()
+    local result = self:getLabel()
+    local focus = self:getFocus()
+    if focus then
+        result = result .. " " .. focus:getFocusString()
+    end
+    return result
+end
+
 function BufferGroup:deserialize(data)
     self:setLabel(data.label or "")
     self:setEnabled(data.enabled or true)
@@ -49,3 +58,4 @@ function BufferGroup:serialize()
 end
 
 WowVision.buffers.BufferGroup = BufferGroup
+WowVision.buffers.types:register("Group", BufferGroup)
