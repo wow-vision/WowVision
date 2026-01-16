@@ -1,7 +1,8 @@
-local BufferItem = WowVision.Class("BufferItem")
+local BufferItem = WowVision.Class("BufferItem"):include(WowVision.InfoClass)
 
-function BufferItem:initialize()
+function BufferItem:initialize(info)
     -- Base class, override in subclasses
+    self:setInfo(info)
 end
 
 function BufferItem:getFocusString()

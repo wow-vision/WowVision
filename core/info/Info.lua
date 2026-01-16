@@ -131,6 +131,20 @@ function InfoManager:getGenerator(obj)
     return result
 end
 
+function InfoManager:getDefaultDB(obj)
+    local result = {}
+    for _, field in ipairs(self.fields) do
+        result[field.key] = field:getDefaultDB(obj)
+    end
+    return result
+end
+
+function InfoManager:setDB(obj, db)
+    for _, field in ipairs(self.fields) do
+        field:setDB(obj, db)
+    end
+end
+
 --Mixin for info classes
 local InfoClass = {}
 WowVision.InfoClass = InfoClass

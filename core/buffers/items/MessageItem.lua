@@ -1,9 +1,8 @@
-local MessageItem = WowVision.Class("MessageItem", WowVision.buffers.BufferItem)
-
-function MessageItem:initialize(data, getDataString)
-    self.data = data
-    self.getDataString = getDataString
-end
+local MessageItem = WowVision.Class("MessageItem", WowVision.buffers.BufferItem):include(WowVision.InfoClass)
+MessageItem.info:addFields({
+    { key = "data" },
+    { key = "getDataString" },
+})
 
 function MessageItem:getFocusString()
     if self.getDataString then

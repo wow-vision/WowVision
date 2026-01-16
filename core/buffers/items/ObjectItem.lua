@@ -1,8 +1,7 @@
-local ObjectItem = WowVision.Class("ObjectItem", WowVision.buffers.BufferItem)
-
-function ObjectItem:initialize(object)
-    self.object = object
-end
+local ObjectItem = WowVision.Class("ObjectItem", WowVision.buffers.BufferItem):include(WowVision.InfoClass)
+ObjectItem.info:addFields({
+    { key = "object" },
+})
 
 function ObjectItem:getFocusString()
     return self.object:getFocusString()

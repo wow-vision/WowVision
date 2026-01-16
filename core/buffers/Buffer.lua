@@ -2,6 +2,7 @@ local Buffer = WowVision.Class("Buffer"):include(WowVision.InfoClass)
 Buffer:include(WowVision.ViewList)
 Buffer.info:addFields({
     { key = "key" },
+    { key = "enabled", default = true, required = true },
     { key = "label", type = "String" },
 })
 
@@ -57,6 +58,14 @@ function Buffer:getFocusString()
         result = result .. " " .. focus:getFocusString()
     end
     return result
+end
+
+function Buffer:getDefaultDB()
+    return self.info:getDefaultDB(self)
+end
+
+function Buffer:setDB(db)
+    self.info:setDB(self, db)
 end
 
 local buffers = {

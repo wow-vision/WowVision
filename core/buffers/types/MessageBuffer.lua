@@ -10,7 +10,7 @@ function MessageBuffer:initialize(obj)
     if self.source then
         -- Populate from existing messages
         for _, data in ipairs(self.source.messages) do
-            local item = WowVision.buffers.MessageItem:new(data, self.getDataString)
+            local item = WowVision.buffers.MessageItem:new({ data = data, getDataString = self.getDataString })
             WowVision.ViewList.add(self, item)
         end
 
@@ -25,7 +25,7 @@ function MessageBuffer:initialize(obj)
 end
 
 function MessageBuffer:onSourceAdd(source, data)
-    local item = WowVision.buffers.MessageItem:new(data, self.getDataString)
+    local item = WowVision.buffers.MessageItem:new({ data = data, getDataString = self.getDataString })
     WowVision.buffers.Buffer.add(self, item)
 end
 

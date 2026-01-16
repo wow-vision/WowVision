@@ -27,7 +27,7 @@ function TrackedBuffer:initialize(obj)
 end
 
 function TrackedBuffer:onSourceAdd(source, object)
-    local item = WowVision.buffers.ObjectItem:new(object)
+    local item = WowVision.buffers.ObjectItem:new({ object = object })
     self.objectToItem[object] = item
     WowVision.buffers.Buffer.add(self, item)
 end
