@@ -77,11 +77,7 @@ local function buildReputationElement(i)
     end
 end
 
-gen:Element("character/Reputation", {
-    regenerateOn = {
-        events = { "UPDATE_FACTION" },
-    },
-}, function(props)
+gen:Element("character/Reputation", function(props)
     local children = {}
 
     for i = 1, NUM_FACTIONS_DISPLAYED do
@@ -102,11 +98,7 @@ gen:Element("character/Reputation", {
     }
 end)
 
-gen:Element("character/ReputationDetail", {
-    regenerateOn = {
-        events = { "UPDATE_FACTION" },
-    },
-}, function(props)
+gen:Element("character/ReputationDetail", function(props)
     local frame = ReputationDetailFrame
     if not frame or not frame:IsShown() then
         return nil
@@ -121,7 +113,7 @@ gen:Element("character/ReputationDetail", {
     if description and description ~= "" then
         tinsert(children, {
             "Text",
-            label = description,
+            text = description,
         })
     end
 
