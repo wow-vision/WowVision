@@ -9,3 +9,4 @@
 libs.xml
 modules.xml
 classic/modules.xml
+tbc/modules.xml
