@@ -1,7 +1,6 @@
-local module = WowVision.base.windows:createModule("character")
-local L = module.L
-module:setLabel(L["Character"])
-local gen = module:hasUI()
+local char = WowVision.tbc.character
+local gen = char.gen
+local L = char.L
 
 -- Slot ID to localized name mapping for empty slots
 local SLOT_NAMES = {
@@ -50,47 +49,15 @@ local EQUIPMENT_SLOTS = {
     "CharacterAmmoSlot",
 }
 
-gen:Element("character", {
-    regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
-        values = function(props)
-            return { selectedTab = CharacterFrame.selectedTab }
-        end,
-    },
-}, function(props)
-    local result = { "Panel", label = L["Character"], wrap = true, children = {} }
-    local tab = CharacterFrame.selectedTab
-    if tab == 1 then
-        tinsert(result.children, { "character/PaperDoll", frame = PaperDollFrame })
-    else
-        tinsert(result.children, { "Text", text = "Not yet implemented" })
-    end
-    tinsert(result.children, { "character/Tabs" })
-    return result
-end)
-
-gen:Element("character/Tabs", {
-    regenerateOn = {
-        values = function(props)
-            return { selectedTab = CharacterFrame.selectedTab }
-        end,
-    },
-}, function(props)
-    local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
-    -- TBC has 5 tabs
-    for i = 1, 5 do
-        local tab = _G["CharacterFrameTab" .. i]
-        if tab and tab:IsShown() then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "tab_" .. i,
-                frame = tab,
-                selected = CharacterFrame.selectedTab == i,
-            })
-        end
-    end
-    return result
-end)
+-- Resistance frame names
+-- MagicResFrame1-5, each has a .tooltip property with localized name and value
+local RESISTANCE_FRAMES = {
+    "MagicResFrame1", -- Fire
+    "MagicResFrame2", -- Frost
+    "MagicResFrame3", -- Nature
+    "MagicResFrame4", -- Shadow
+    "MagicResFrame5", -- Arcane
+}
 
 gen:Element("character/PaperDoll", {
     regenerateOn = {
@@ -231,16 +198,6 @@ gen:Element("character/StatsColumn", function(props)
     return result
 end)
 
--- Resistance frame names
--- MagicResFrame1-5, each has a .tooltip property with localized name and value
-local RESISTANCE_FRAMES = {
-    "MagicResFrame1", -- Fire
-    "MagicResFrame2", -- Frost
-    "MagicResFrame3", -- Nature
-    "MagicResFrame4", -- Shadow
-    "MagicResFrame5", -- Arcane
-}
-
 gen:Element("character/Resistances", {
     regenerateOn = {
         events = { "UNIT_RESISTANCES" },
@@ -271,12 +228,3 @@ gen:Element("character/Resistances", {
 
     return result
 end)
-
-module:registerWindow({
-    type = "FrameWindow",
-    name = "character",
-    generated = true,
-    rootElement = "character",
-    frameName = "CharacterFrame",
-    conflictingAddons = { "Sku" },
-})
