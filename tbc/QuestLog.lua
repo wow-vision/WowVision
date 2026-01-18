@@ -83,11 +83,13 @@ gen:Element("QuestLog/QuestList", {
 }, function(props)
     local frame = props.frame
 
-    -- If scroll frame is shown, use ProxyScrollFrame
+    -- If scroll frame is shown, use ProxyFauxScrollFrame
     if frame and frame:IsShown() then
         return {
-            "ProxyScrollFrame",
+            "ProxyFauxScrollFrame",
             frame = frame,
+            buttonHeight = QUESTLOG_QUEST_HEIGHT,
+            updateFunction = QuestLog_Update,
             getNumEntries = getNumEntries,
             getElement = getQuestListButton,
             getElementIndex = getQuestListButtonIndex,

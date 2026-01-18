@@ -6,8 +6,9 @@ local NUM_FACTIONS_DISPLAYED = 15
 
 -- Build a single element for a reputation row
 -- Each row has ReputationBar[i] (StatusBar) and ReputationHeader[i] (Button for headers)
-local function buildReputationElement(i)
-    local bar = _G["ReputationBar" .. i]
+local function buildReputationElement(self, frame)
+    local i = frame:GetID()
+    local bar = frame  -- frame IS ReputationBar[i]
     local header = _G["ReputationHeader" .. i]
 
     local isHeader = header and header:IsShown()
@@ -77,13 +78,51 @@ local function buildReputationElement(i)
     end
 end
 
-gen:Element("character/Reputation", function(props)
-    local children = {}
+local function getNumFactions()
+    return GetNumFactions()
+end
 
+local function getReputationIndex(self, frame)
+    local offset = FauxScrollFrame_GetOffset(ReputationListScrollFrame) or 0
+    return frame:GetID() + offset
+end
+
+-- Return the ReputationBar frames (used for positioning even if headers use different frames)
+local function getReputationRows()
+    local rows = {}
     for i = 1, NUM_FACTIONS_DISPLAYED do
-        local element = buildReputationElement(i)
-        if element then
-            tinsert(children, element)
+        local frame = _G["ReputationBar" .. i]
+        if frame then
+            tinsert(rows, frame)
+        end
+    end
+    return rows
+end
+
+gen:Element("character/Reputation", function(props)
+    -- If scroll frame is shown, use ProxyFauxScrollFrame
+    if ReputationListScrollFrame and ReputationListScrollFrame:IsShown() then
+        return {
+            "ProxyFauxScrollFrame",
+            frame = ReputationListScrollFrame,
+            buttonHeight = REPUTATIONFRAME_FACTIONHEIGHT,
+            updateFunction = ReputationFrame_Update,
+            getNumEntries = getNumFactions,
+            getElement = buildReputationElement,
+            getElementIndex = getReputationIndex,
+            getButtons = getReputationRows,
+        }
+    end
+
+    -- Scroll frame is hidden (not enough factions to scroll), render rows directly
+    local children = {}
+    for i = 1, NUM_FACTIONS_DISPLAYED do
+        local frame = _G["ReputationBar" .. i]
+        if frame then
+            local element = buildReputationElement(nil, frame)
+            if element then
+                tinsert(children, element)
+            end
         end
     end
 
