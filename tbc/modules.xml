@@ -2,5 +2,6 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="QuestLog.lua" />
+  <Script file="character.lua" />
 
 </Ui>
