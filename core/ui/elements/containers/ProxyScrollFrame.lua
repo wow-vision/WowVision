@@ -113,6 +113,7 @@ function ProxyScrollFrame:setCurrentIndex(index)
     self:unfocusCurrent()
     local originalScroll = self.scrollBar:GetValue()
     local offset = self:getInitialScrollOffset() + self:getElementHeight() * (index - 1)
+    local originalIndex = self.currentIndex
     self.scrollBar:SetValue(offset)
     self:updateButtons()
     local newElement = self:findElementByIndex(index)
@@ -128,10 +129,10 @@ function ProxyScrollFrame:setCurrentIndex(index)
     --Element with matching index is not here, return to original position
     self.scrollBar:SetValue(originalScroll)
     self:updateButtons()
-    newElement = self:findElementByIndex(index)
+    newElement = self:findElementByIndex(originalIndex)
     if newElement then
         self.currentElement = newElement.index
-        self.currentIndex = index
+        self.currentIndex = originalIndex
         self:setChild(self:getElement(newElement))
         return self.currentElement
     end
@@ -141,7 +142,7 @@ end
 function ProxyScrollFrame:findElementByIndex(index)
     for i = 1, #self.buttons do
         local button = self.buttons[i]
-        if button and button:IsShown() and button:IsVisible() then
+        if button  then
             local elementIndex = self:getElementIndex(button)
             if elementIndex == index then
                 return button

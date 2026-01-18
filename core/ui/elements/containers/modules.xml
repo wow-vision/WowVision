@@ -5,6 +5,7 @@
   <Script file="List.lua" />
   <Script file="Panel.lua" />
   <Script file="ProxyScrollFrame.lua" />
+  <Script file="ProxyFauxScrollFrame.lua" />
   <Script file="ProxyScrollBox.lua" />
   <Script file = "ProxyScrollTable.lua" />
   <Script file="GeneratorPanel.lua" />

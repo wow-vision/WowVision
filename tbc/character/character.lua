@@ -11,27 +11,24 @@ WowVision.tbc.character = {
     L = L,
 }
 
-gen:Element("character", {
-    regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED", "UPDATE_FACTION" },
-        values = function(props)
-            return { selectedTab = CharacterFrame.selectedTab }
-        end,
-    },
-}, function(props)
+gen:Element("character", function(props)
     local result = { "Panel", label = L["Character"], wrap = true, children = {} }
     local tab = CharacterFrame.selectedTab
     if tab == 1 then
         tinsert(result.children, { "character/PaperDoll", frame = PaperDollFrame })
     elseif tab == 3 then
         tinsert(result.children, { "character/Reputation", frame = ReputationFrame })
+    elseif tab == 4 then
+        tinsert(result.children, { "character/Skills", frame = SkillFrame })
     else
         tinsert(result.children, { "Text", text = "Not yet implemented" })
     end
     tinsert(result.children, { "character/Tabs" })
-    -- Add reputation detail after tabs (only shows when a faction is selected)
+    -- Add detail panels after tabs (only shows when applicable)
     if tab == 3 then
         tinsert(result.children, { "character/ReputationDetail" })
+    elseif tab == 4 then
+        tinsert(result.children, { "character/SkillsDetail" })
     end
     return result
 end)
