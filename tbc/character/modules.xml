@@ -3,6 +3,7 @@
 
   <Script file="character.lua" />
   <Script file="PaperDoll.lua" />
+  <Script file="Pet.lua" />
   <Script file="Skills.lua" />
   <Script file="Reputation.lua" />
   <Script file="PVP.lua" />

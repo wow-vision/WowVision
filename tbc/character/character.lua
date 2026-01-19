@@ -16,6 +16,8 @@ gen:Element("character", function(props)
     local tab = CharacterFrame.selectedTab
     if tab == 1 then
         tinsert(result.children, { "character/PaperDoll", frame = PaperDollFrame })
+    elseif tab == 2 then
+        tinsert(result.children, { "character/Pet", frame = PetPaperDollFrame })
     elseif tab == 3 then
         tinsert(result.children, { "character/Reputation", frame = ReputationFrame })
     elseif tab == 4 then
