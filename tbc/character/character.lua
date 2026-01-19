@@ -20,6 +20,8 @@ gen:Element("character", function(props)
         tinsert(result.children, { "character/Reputation", frame = ReputationFrame })
     elseif tab == 4 then
         tinsert(result.children, { "character/Skills", frame = SkillFrame })
+    elseif tab == 5 then
+        tinsert(result.children, { "character/PVP", frame = PVPFrame })
     else
         tinsert(result.children, { "Text", text = "Not yet implemented" })
     end
