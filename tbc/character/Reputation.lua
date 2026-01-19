@@ -4,10 +4,22 @@ local L = char.L
 
 local NUM_FACTIONS_DISPLAYED = 15
 
+-- Map ReputationBar frames to their display indices (since GetID() returns 0)
+local reputationBarIndices = {}
+for i = 1, NUM_FACTIONS_DISPLAYED do
+    local frame = _G["ReputationBar" .. i]
+    if frame then
+        reputationBarIndices[frame] = i
+    end
+end
+
 -- Build a single element for a reputation row
 -- Each row has ReputationBar[i] (StatusBar) and ReputationHeader[i] (Button for headers)
 local function buildReputationElement(self, frame)
-    local i = frame:GetID()
+    local i = reputationBarIndices[frame]
+    if not i then
+        return nil
+    end
     local bar = frame  -- frame IS ReputationBar[i]
     local header = _G["ReputationHeader" .. i]
 
@@ -84,7 +96,8 @@ end
 
 local function getReputationIndex(self, frame)
     local offset = FauxScrollFrame_GetOffset(ReputationListScrollFrame) or 0
-    return frame:GetID() + offset
+    local displayIndex = reputationBarIndices[frame] or 0
+    return displayIndex + offset
 end
 
 -- Return the ReputationBar frames (used for positioning even if headers use different frames)
