@@ -76,10 +76,16 @@ end
 
 function ProxyWidget:onFocus()
     parent.onFocus(self)
+    if self.frame and self.frame:HasScript("OnEnter") then
+        ExecuteFrameScript(self.frame, "OnEnter")
+    end
 end
 
 function ProxyWidget:onUnfocus()
     parent.onUnfocus(self)
+    if self.frame and self.frame:HasScript("OnLeave") then
+        ExecuteFrameScript(self.frame, "OnLeave")
+    end
 end
 
 function ProxyWidget:getValue()

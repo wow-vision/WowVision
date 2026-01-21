@@ -17,7 +17,7 @@ gen:Element("talents", function(props)
     -- Spec tabs (right side - player spec 1/2)
     tinsert(result.children, { "talents/SpecTabs" })
 
-        -- Tabs (bottom - talent tree tabs)
+    -- Tabs (bottom - talent tree tabs)
     tinsert(result.children, { "talents/Tabs" })
 
     -- Points display
@@ -34,7 +34,6 @@ gen:Element("talents", function(props)
 
     -- Talent grid
     tinsert(result.children, { "talents/Grid" })
-
 
     -- Close button
     if PlayerTalentFrameCloseButton then

@@ -1,7 +1,8 @@
 ### All Versions
 * Added support for the item text frame (letters, books, etc.)
 * Fixed a bug where adding an input to a binding with no inputs set would add the input twice.
-* Fixed an issue where additional non-functioning elements would be listed for the options/game menu (escape menu.)
+* Fixed an issue where additional non-functioning elements would be listed for the options/game menu for versions of the game using newer Blizzard code (currently Retail and BCC Anniversary.)
+* Reverted the change to UI tooltip processing made in the previous version. This should fix tooltips not being fully loaded before they are read out.
 
 ### The Burning Crusade Anniversary
 * Added support for the quest log frame
