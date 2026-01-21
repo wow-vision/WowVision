@@ -14,8 +14,11 @@ WowVision.tbc.talents = {
 gen:Element("talents", function(props)
     local result = { "Panel", label = L["Talents"], wrap = true, children = {} }
 
-    -- Spec tabs (right side - player spec 1/2 and pet spec for hunters)
+    -- Spec tabs (right side - player spec 1/2)
     tinsert(result.children, { "talents/SpecTabs" })
+
+        -- Tabs (bottom - talent tree tabs)
+    tinsert(result.children, { "talents/Tabs" })
 
     -- Points display
     local pointsText = PlayerTalentFrameTalentPointsText
@@ -32,8 +35,6 @@ gen:Element("talents", function(props)
     -- Talent grid
     tinsert(result.children, { "talents/Grid" })
 
-    -- Tabs (bottom - talent tree tabs)
-    tinsert(result.children, { "talents/Tabs" })
 
     -- Close button
     if PlayerTalentFrameCloseButton then
