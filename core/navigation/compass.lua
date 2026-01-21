@@ -192,10 +192,10 @@ function module:onEnable()
     self.isSwimming = IsSwimming()
     self.isSubmerged = IsSubmerged()
     self:hasUpdate(function(self)
-        if IsInInstance() then
+        local angle = GetPlayerFacing()
+        if not angle then
             return
         end
-        local angle = GetPlayerFacing()
         local direction = self:getDirection(angle)
         if direction and direction ~= self.direction then
             directionAlert:fire({
