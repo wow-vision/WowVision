@@ -138,9 +138,8 @@ gen:Element("character/SkillsDetail", function(props)
         return nil
     end
 
-    local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier,
-          skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType,
-          skillDescription = GetSkillLineInfo(selectedSkill)
+    local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType, skillDescription =
+        GetSkillLineInfo(selectedSkill)
 
     -- Don't show detail for headers or empty
     if not skillName or skillName == "" or header then

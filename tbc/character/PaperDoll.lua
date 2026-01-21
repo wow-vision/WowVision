@@ -4,6 +4,7 @@ local L = char.L
 
 -- Slot ID to localized name mapping for empty slots
 local SLOT_NAMES = {
+    [INVSLOT_AMMO] = L["Ammo"],
     [INVSLOT_HEAD] = L["Head"],
     [INVSLOT_NECK] = L["Neck"],
     [INVSLOT_SHOULDER] = L["Shoulders"],

@@ -142,7 +142,7 @@ end
 function ProxyScrollFrame:findElementByIndex(index)
     for i = 1, #self.buttons do
         local button = self.buttons[i]
-        if button  then
+        if button then
             local elementIndex = self:getElementIndex(button)
             if elementIndex == index then
                 return button

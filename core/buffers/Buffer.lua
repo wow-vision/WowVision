@@ -1,11 +1,17 @@
 local Buffer = WowVision.Class("Buffer"):include(WowVision.InfoClass)
 Buffer:include(WowVision.ViewList)
 Buffer.info:addFields({
-    { key = "enabled", default = true, required = true, get = function(obj, key)
-    return obj:getEnabled()
-    end, set = function(obj, key, value)
-        obj:setEnabled(value)
-    end},
+    {
+        key = "enabled",
+        default = true,
+        required = true,
+        get = function(obj, key)
+            return obj:getEnabled()
+        end,
+        set = function(obj, key, value)
+            obj:setEnabled(value)
+        end,
+    },
     { key = "label", type = "String" },
 })
 

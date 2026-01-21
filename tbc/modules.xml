@@ -2,6 +2,8 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="QuestLog.lua" />
+  <Script file="talents.lua" />
+  <Script file="spellbook.lua" />
   <Include file="character\modules.xml" />
 
 </Ui>

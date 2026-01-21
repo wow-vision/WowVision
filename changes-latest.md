@@ -6,6 +6,8 @@
 ### The Burning Crusade Anniversary
 * Added support for the quest log frame
 * Added support for the character frame.
+* Added support for the talents frame.
+* Added support for the Spellbook.
 
 ### Mists of Pandaria Classic
 * Added support for quest choices (for example the assignment map on The Isle of Thunder.)

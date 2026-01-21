@@ -20,7 +20,7 @@ local function buildReputationElement(self, frame)
     if not i then
         return nil
     end
-    local bar = frame  -- frame IS ReputationBar[i]
+    local bar = frame -- frame IS ReputationBar[i]
     local header = _G["ReputationHeader" .. i]
 
     local isHeader = header and header:IsShown()
