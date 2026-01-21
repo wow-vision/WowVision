@@ -4,6 +4,7 @@
   <Script file="QuestLog.lua" />
   <Script file="talents.lua" />
   <Script file="spellbook.lua" />
+  <Script file="tradeskill.lua" />
   <Include file="character\modules.xml" />
 
 </Ui>

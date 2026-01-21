@@ -9,6 +9,7 @@
 * Added support for the character frame.
 * Added support for the talents frame.
 * Added support for the Spellbook.
+* Added support for the trade skill (crafting) frame.
 
 ### Mists of Pandaria Classic
 * Added support for quest choices (for example the assignment map on The Isle of Thunder.)
