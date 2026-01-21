@@ -14,3 +14,11 @@
 ### Mists of Pandaria Classic
 * Added support for quest choices (for example the assignment map on The Isle of Thunder.)
 * Added support for the professions tab of the spellbook.
+
+### Retail
+Note that these changes apply specifically to retail; any removed functionality in the retail version of the addon still exists in the classic versions.
+
+* Updated to use the latest interface version. WowVision will once again be detected by the game.
+* Speech should work in retail once again.
+* Unfortunately I had to remove the hard target health monitor due to the addon changes in Midnight. This functionality should be available in the combat audio assist section of settings however.
+* Speech should feel significantly smoother due to the speech API updates.

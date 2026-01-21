@@ -52,20 +52,11 @@ function module:onDisable()
 end
 
 function module:speak(text)
-    local text = string.gsub(text, "/", " / ")
-    local destination = Enum.VoiceTtsDestination.QueuedLocalPlayback
-    C_VoiceChat.SpeakText(
-        self.settings.voiceID,
-        text,
-        destination,
-        self.settings.speechRate,
-        self.settings.speechVolume
-    )
+    C_VoiceChat.SpeakText(self.settings.voiceID, text, self.settings.speechRate, self.settings.speechVolume, false)
 end
 
 function module:stop()
     C_VoiceChat.StopSpeakingText()
-    self.queue = {}
 end
 
 function module:uiStop()

@@ -29,12 +29,10 @@
       <include file="module/modules.xml" />
           <Include file="ui modules/modules.xml" />
     <Include file="objects/modules.xml" />
-    <Include file="speech/modules.xml" />
     <Include file="buffers/modules.xml" />
     <Include file="windows/modules.xml" />
   <Include file="chat/modules.xml" />
   <Script file="errors.lua" />
   <Include file="navigation/modules.xml" />
-  <Include file="targeting/modules.xml" />
 
 </Ui>
