@@ -184,10 +184,20 @@ function module:getDirection(angle)
     error("Malformed player angle")
 end
 
+function module:getOutdoorsIndoors()
+    if IsOutdoors() then
+        return "outdoors"
+    end
+    if IsIndoors() then
+        return "indoors"
+    end
+    return nil
+end
+
 function module:onEnable()
     self.angle = GetPlayerFacing()
     self.direction = self:getDirection(self.angle)
-    self.isOutdoors = IsOutdoors()
+    self.outdoorsIndoors = self:getOutdoorsIndoors()
     self.isFlying = IsFlying()
     self.isSwimming = IsSwimming()
     self.isSubmerged = IsSubmerged()
@@ -205,14 +215,14 @@ function module:onEnable()
         end
         self.angle, self.direction = angle, direction
 
-        local isOutdoors = IsOutdoors()
-        if isOutdoors ~= self.isOutdoors then
-            if isOutdoors then
+        local outdoorsIndoors = self:getOutdoorsIndoors()
+        if outdoorsIndoors ~= self.outdoorsIndoors and outdoorsIndoors ~= nil then
+            if outdoorsIndoors == "outdoors" then
                 outdoorsAlert:fire({})
-            else
+            elseif outdoorsIndoors == "indoors" then
                 indoorsAlert:fire({})
             end
-            self.isOutdoors = isOutdoors
+            self.outdoorsIndoors = outdoorsIndoors
         end
 
         local isFlying = IsFlying()

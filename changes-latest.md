@@ -4,6 +4,7 @@
 * Fixed an issue where additional non-functioning elements would be listed for the options/game menu for versions of the game using newer Blizzard code (currently Retail and BCC Anniversary.)
 * Reverted the change to UI tooltip processing made in the previous version. This should fix tooltips not being fully loaded before they are read out.
 * Compass direction announcements will now work properly in instances that allow for it (for example Mists of Pandaria scenarios.)
+* Hopefully fixed eronious indoors alerts in certain rare situations.
 
 ### The Burning Crusade Anniversary
 * Added support for the quest log frame
