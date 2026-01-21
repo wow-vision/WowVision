@@ -3,11 +3,7 @@ local L = module.L
 module:setLabel(L["Gossip"])
 local gen = module:hasUI()
 
-gen:Element("gossip", {
-    regenerateOn = {
-        events = { "GOSSIP_SHOW" },
-    },
-}, function(props)
+gen:Element("gossip", function(props)
     local npcName = UnitName("npc") or L["Gossip"]
     local result = {
         "Panel",
