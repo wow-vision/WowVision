@@ -19,6 +19,7 @@ This patch adds support for BCC Anniversary. Note that many of these screens wer
 * Added support for the talents frame.
 * Added support for the Spellbook.
 * Added support for the trade skill (crafting) frame.
+* Known Issue: Certain scroll frames announce the current item twice when arrowing through them (primarily the skills tab of the character pane.) This doesn't effect their functionality but is a little annoying. This is an issue that will be fixed in a future UI refactor update.
 
 ### Mists of Pandaria Classic
 * Added support for quest choices (for example the assignment map on The Isle of Thunder.)
