@@ -2,6 +2,8 @@ local module = WowVision.base.windows:createModule("bars")
 local L = module.L
 module:setLabel(L["Bars"])
 local gen = module:hasUI()
+
+-- Stance buttons compatibility
 local stanceButtons = {}
 if StanceBarFrame and StanceBarFrame.StanceButtons then
     stanceButtons = StanceBarFrame.StanceButtons
@@ -10,9 +12,10 @@ else
         tinsert(stanceButtons, _G["StanceButton" .. i])
     end
 end
-local StanceBarFrame = StanceBarFrame or StanceBar
+module.stanceButtons = stanceButtons
+module.StanceBarFrame = StanceBarFrame or StanceBar
 
---Code borrowed from LibRangeCheck
+-- Code borrowed from LibRangeCheck
 local GetSpellInfo = GetSpellInfo
     or function(spellID)
         if not spellID then
@@ -31,8 +34,10 @@ local GetSpellInfo = GetSpellInfo
                 spellInfo.originalIconID
         end
     end
+module.GetSpellInfo = GetSpellInfo
 
-local function getActionButtonLabel(button)
+-- Shared utility for getting action button labels
+function module.getActionButtonLabel(button)
     local actionType, actionID, actionSubtype = GetActionInfo(button.action)
     if not actionType then
         return L["Empty"]
@@ -77,95 +82,66 @@ local function getActionButtonLabel(button)
     return label
 end
 
+-- Base class for all action bar types
+local ActionBar = WowVision.Class("ActionBar"):include(WowVision.InfoClass)
+ActionBar.info:addFields({
+    { key = "key", required = true },
+    { key = "type", required = true },
+    { key = "label", required = true },
+})
+
+function ActionBar:initialize(info)
+    self:setInfo(info)
+end
+
+function ActionBar:isVisible()
+    return true
+end
+
+function ActionBar:getGenerator()
+    error("ActionBar:getGenerator must be implemented by subclass")
+end
+
+module.ActionBar = ActionBar
+
+-- Create component registry for action bars
+local bars = module:createComponentRegistry({
+    key = "bars",
+    path = "bars",
+    type = "class",
+    baseClass = ActionBar,
+    classNamePrefix = "ActionBar_",
+})
+
+-- Generator for individual action button
 gen:Element("bars/ActionButton", function(props)
     return {
         "ProxyButton",
         frame = props.frame,
-        label = getActionButtonLabel(props.frame),
+        label = module.getActionButtonLabel(props.frame),
         ignoreRequiresFrameShown = true,
     }
 end)
 
-gen:Element("bars/MainActionBar", function(props)
-    local result = { "List", direction = "horizontal", label = L["Action Bar"], children = {} }
-    for i = 1, 12 do
-        local button = _G["ActionButton" .. i]
-        if button then
-            tinsert(result.children, { "bars/ActionButton", frame = button })
-        else
-            print("Warning: ActionButton" .. i .. " doesn't exist.")
-        end
-    end
-
-    return result
-end)
-
-gen:Element("bars/ActionBar", function(props)
-    local result = { "List", direction = "horizontal", label = props.label, children = {} }
-    local children = props.frame.actionButtons
-    if not children then
-        children = { props.frame:GetChildren() }
-    end
-    for _, v in ipairs(children) do
-        tinsert(result.children, { "bars/ActionButton", frame = v })
-    end
-    return result
-end)
-
-gen:Element("bars/PetActionBar", function(props)
-    if not PetHasActionBar() then
+-- Generator for a bar component
+gen:Element("bars/Bar", function(props)
+    local bar = props.bar
+    if not bar:isVisible() then
         return nil
     end
-    local result = { "List", label = L["Pet Bar"], direction = "horizontal", children = {} }
-    for i = 1, NUM_PET_ACTION_SLOTS do
-        local button = _G["PetActionButton" .. i]
-        local name, texture, isToken, isActive, autoCastAllowed, autoCastEnabled, spellID = GetPetActionInfo(i)
-        local label = button.tooltipName or L["Empty"]
-        if autoCastAllowed then
-            if autoCastEnabled then
-                label = label .. " " .. L["Auto Casting"]
-            else
-                label = label .. " " .. L["Not Auto Casting"]
-            end
-        end
-        tinsert(result.children, {
-            "ProxyButton",
-            frame = button,
-            label = label,
-            ignoreRequiresFrameShown = true,
-        })
-    end
-    return result
+    return bar:getGenerator()
 end)
 
-gen:Element("bars/StanceBar", function(props)
-    if not StanceBarFrame:IsShown() then
-        return nil
-    end
-    local result = { "List", label = L["Stance Bar"], direction = "horizontal", children = {} }
-    for i, v in ipairs(stanceButtons) do
-        if v:IsShown() then
-            local _, _, _, spellID = GetShapeshiftFormInfo(i)
-            local label = GetSpellInfo(spellID)
-            tinsert(result.children, { "ProxyButton", frame = v, label = label })
-        end
-    end
-    return result
-end)
-
+-- Main bars generator
 gen:Element("bars", function(props)
+    local children = {}
+    bars:forEachComponent(function(bar)
+        tinsert(children, { "bars/Bar", bar = bar })
+    end)
     return {
         "List",
         label = L["Bars"],
-        children = {
-            { "bars/MainActionBar" },
-            { "bars/PetActionBar" },
-            { "bars/StanceBar" },
-            { "bars/ActionBar", frame = MultiBarBottomLeft, label = L["Bottom Left Bar"] },
-            { "bars/ActionBar", frame = MultiBarBottomRight, label = "Bottom Right Bar" },
-            { "bars/ActionBar", frame = MultiBarRight, label = L["Right Bar"] },
-            { "bars/ActionBar", frame = MultiBarLeft, label = L["Right Bar 2"] },
-        },
+        children = children,
     }
 end)
 

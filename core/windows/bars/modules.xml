@@ -1,0 +1,11 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\FrameXML\UI.xsd">
+
+  <Script file="bars.lua" />
+  <Script file="MainActionBar.lua" />
+  <Script file="PetActionBar.lua" />
+  <Script file="GenericActionBar.lua" />
+  <Script file="StanceBar.lua" />
+  <Script file="instances.lua" />
+
+</Ui>

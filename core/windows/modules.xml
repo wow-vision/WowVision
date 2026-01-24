@@ -2,7 +2,7 @@
 ..\FrameXML\UI.xsd">
 
 <Script file="module.lua" />
-  <Script file="bars.lua" />
+  <Include file="bars/modules.xml" />
   <Script file="containers.lua" />
 <Script file="GameMenu.lua" />
   <Script file="gossip.lua" />
