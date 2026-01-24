@@ -37,4 +37,46 @@ function ComponentRegistry:createComponent(config)
     return component
 end
 
+function ComponentRegistry:getComponents()
+    local result = {}
+    for _, component in ipairs(self.components.items) do
+        tinsert(result, component)
+    end
+    return result
+end
+
+function ComponentRegistry:getComponentsOfType(typeName)
+    local typeClass = self.types:get(typeName)
+    if not typeClass then
+        error("ComponentRegistry: Unknown type '" .. typeName .. "'")
+    end
+
+    local result = {}
+    for _, component in ipairs(self.components.items) do
+        if self.registryType:isComponentOfType(component, typeClass) then
+            tinsert(result, component)
+        end
+    end
+    return result
+end
+
+function ComponentRegistry:forEachComponent(callback)
+    for i, component in ipairs(self.components.items) do
+        callback(component, self.components.itemKeys[i])
+    end
+end
+
+function ComponentRegistry:forEachComponentOfType(typeName, callback)
+    local typeClass = self.types:get(typeName)
+    if not typeClass then
+        error("ComponentRegistry: Unknown type '" .. typeName .. "'")
+    end
+
+    for i, component in ipairs(self.components.items) do
+        if self.registryType:isComponentOfType(component, typeClass) then
+            callback(component, self.components.itemKeys[i])
+        end
+    end
+end
+
 WowVision.components.ComponentRegistry = ComponentRegistry

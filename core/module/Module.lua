@@ -73,6 +73,12 @@ function Module:hasSettings()
     return self.settingsRoot
 end
 
+function Module:createComponentRegistry(config)
+    local registry = WowVision.components.createRegistry(config)
+    self[config.key] = registry
+    return registry
+end
+
 function Module:getDefaultSettings()
     if self.settingsRoot then
         return self.settingsRoot:getDefaultDB()

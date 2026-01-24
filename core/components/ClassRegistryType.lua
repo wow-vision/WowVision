@@ -34,5 +34,9 @@ function ClassRegistryType:createComponent(typeClass, config)
     return typeClass:new(config)
 end
 
+function ClassRegistryType:isComponentOfType(component, typeClass)
+    return component:isInstanceOf(typeClass)
+end
+
 WowVision.components.registryTypes:register("class", ClassRegistryType)
 WowVision.components.ClassRegistryType = ClassRegistryType

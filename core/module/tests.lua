@@ -270,4 +270,37 @@ testRunner:addSuite("Module", {
         end
         t:assertEqual(count, 0)
     end,
+
+    ["createComponentRegistry creates registry"] = function(t)
+        local module = createTestModule("test")
+        local TestBase = WowVision.Class("TestBase"):include(WowVision.InfoClass)
+        TestBase.info:addFields({ { key = "key", required = true } })
+        function TestBase:initialize(config)
+            self:setInfo(config)
+        end
+
+        local registry = module:createComponentRegistry({
+            key = "widgets",
+            type = "class",
+            baseClass = TestBase,
+        })
+        t:assertNotNil(registry)
+        t:assertTrue(registry:isInstanceOf(WowVision.components.ComponentRegistry))
+    end,
+
+    ["createComponentRegistry assigns to module key"] = function(t)
+        local module = createTestModule("test")
+        local TestBase = WowVision.Class("TestBase2"):include(WowVision.InfoClass)
+        TestBase.info:addFields({ { key = "key", required = true } })
+        function TestBase:initialize(config)
+            self:setInfo(config)
+        end
+
+        local registry = module:createComponentRegistry({
+            key = "elements",
+            type = "class",
+            baseClass = TestBase,
+        })
+        t:assertEqual(module.elements, registry)
+    end,
 })

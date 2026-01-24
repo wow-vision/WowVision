@@ -77,6 +77,137 @@ testRunner:addSuite("ComponentRegistry", {
             registry:createComponent({ key = "test", type = "Unknown" })
         end)
     end,
+
+    ["getComponents returns all components"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.ComponentRegistry:new({
+            type = "class",
+            baseClass = TestBase,
+        })
+        registry:createType({ key = "Widget" })
+        local w1 = registry:createComponent({ key = "widget1", type = "Widget" })
+        local w2 = registry:createComponent({ key = "widget2", type = "Widget" })
+
+        local components = registry:getComponents()
+        t:assertEqual(#components, 2)
+        t:assertEqual(components[1], w1)
+        t:assertEqual(components[2], w2)
+    end,
+
+    ["getComponentsOfType filters by type"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.ComponentRegistry:new({
+            type = "class",
+            baseClass = TestBase,
+        })
+        registry:createType({ key = "Widget" })
+        registry:createType({ key = "Button" })
+        local w1 = registry:createComponent({ key = "widget1", type = "Widget" })
+        local b1 = registry:createComponent({ key = "button1", type = "Button" })
+        local w2 = registry:createComponent({ key = "widget2", type = "Widget" })
+
+        local widgets = registry:getComponentsOfType("Widget")
+        t:assertEqual(#widgets, 2)
+        t:assertEqual(widgets[1], w1)
+        t:assertEqual(widgets[2], w2)
+    end,
+
+    ["getComponentsOfType includes subclasses"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.ComponentRegistry:new({
+            type = "class",
+            baseClass = TestBase,
+        })
+        registry:createType({ key = "Widget" })
+        registry:createType({ key = "Button", parent = "Widget" })
+        local w1 = registry:createComponent({ key = "widget1", type = "Widget" })
+        local b1 = registry:createComponent({ key = "button1", type = "Button" })
+
+        local widgets = registry:getComponentsOfType("Widget")
+        t:assertEqual(#widgets, 2)
+    end,
+
+    ["getComponentsOfType errors on unknown type"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.ComponentRegistry:new({
+            type = "class",
+            baseClass = TestBase,
+        })
+        t:assertError(function()
+            registry:getComponentsOfType("Unknown")
+        end)
+    end,
+
+    ["forEachComponent iterates all components"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.ComponentRegistry:new({
+            type = "class",
+            baseClass = TestBase,
+        })
+        registry:createType({ key = "Widget" })
+        registry:createComponent({ key = "widget1", type = "Widget" })
+        registry:createComponent({ key = "widget2", type = "Widget" })
+        registry:createComponent({ key = "widget3", type = "Widget" })
+
+        local count = 0
+        local keys = {}
+        registry:forEachComponent(function(component, key)
+            count = count + 1
+            tinsert(keys, key)
+        end)
+        t:assertEqual(count, 3)
+        t:assertEqual(keys[1], "widget1")
+        t:assertEqual(keys[2], "widget2")
+        t:assertEqual(keys[3], "widget3")
+    end,
+
+    ["forEachComponentOfType filters by type"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.ComponentRegistry:new({
+            type = "class",
+            baseClass = TestBase,
+        })
+        registry:createType({ key = "Widget" })
+        registry:createType({ key = "Button" })
+        registry:createComponent({ key = "widget1", type = "Widget" })
+        registry:createComponent({ key = "button1", type = "Button" })
+        registry:createComponent({ key = "widget2", type = "Widget" })
+
+        local count = 0
+        registry:forEachComponentOfType("Widget", function(component, key)
+            count = count + 1
+        end)
+        t:assertEqual(count, 2)
+    end,
+
+    ["forEachComponentOfType includes subclasses"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.ComponentRegistry:new({
+            type = "class",
+            baseClass = TestBase,
+        })
+        registry:createType({ key = "Widget" })
+        registry:createType({ key = "Button", parent = "Widget" })
+        registry:createComponent({ key = "widget1", type = "Widget" })
+        registry:createComponent({ key = "button1", type = "Button" })
+
+        local count = 0
+        registry:forEachComponentOfType("Widget", function(component, key)
+            count = count + 1
+        end)
+        t:assertEqual(count, 2) -- Both Widget and Button (which extends Widget)
+    end,
+
+    ["forEachComponentOfType errors on unknown type"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.ComponentRegistry:new({
+            type = "class",
+            baseClass = TestBase,
+        })
+        t:assertError(function()
+            registry:forEachComponentOfType("Unknown", function() end)
+        end)
+    end,
 })
 
 -- ClassRegistryType tests
@@ -186,5 +317,129 @@ testRunner:addSuite("ClassRegistryType", {
         local instance = registry:createComponent({ key = "myWidget", type = "Widget", label = "My Label" })
         t:assertEqual(instance.key, "myWidget")
         t:assertEqual(instance.label, "My Label")
+    end,
+})
+
+-- WowVision.components namespace tests
+testRunner:addSuite("components namespace", {
+    ["createRegistry returns ComponentRegistry instance"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.createRegistry({
+            type = "class",
+            baseClass = TestBase,
+        })
+        t:assertNotNil(registry)
+        t:assertTrue(registry:isInstanceOf(WowVision.components.ComponentRegistry))
+    end,
+
+    ["createRegistry registers by path when provided"] = function(t)
+        local TestBase = createTestBaseClass()
+        local registry = WowVision.components.createRegistry({
+            type = "class",
+            baseClass = TestBase,
+            path = "test.widgets",
+        })
+        local retrieved = WowVision.components.registries:get("test.widgets")
+        t:assertEqual(registry, retrieved)
+        -- Cleanup
+        WowVision.components.registries.items["test.widgets"] = nil
+    end,
+
+    ["createRegistry without path does not register"] = function(t)
+        local TestBase = createTestBaseClass()
+        local initialCount = #WowVision.components.registries.items
+        WowVision.components.createRegistry({
+            type = "class",
+            baseClass = TestBase,
+        })
+        -- Registry count should increase but no path-based lookup
+        t:assertEqual(#WowVision.components.registries.items, initialCount)
+    end,
+
+    ["createType creates type via path"] = function(t)
+        local TestBase = createTestBaseClass()
+        WowVision.components.createRegistry({
+            type = "class",
+            baseClass = TestBase,
+            path = "test.elements",
+        })
+        local typeClass = WowVision.components.createType("test.elements", { key = "Button" })
+        t:assertNotNil(typeClass)
+        t:assertTrue(typeClass:isSubclassOf(TestBase))
+        -- Cleanup
+        WowVision.components.registries.items["test.elements"] = nil
+    end,
+
+    ["createType errors on unknown path"] = function(t)
+        t:assertError(function()
+            WowVision.components.createType("nonexistent.path", { key = "Widget" })
+        end)
+    end,
+
+    ["createComponent creates component via path"] = function(t)
+        local TestBase = createTestBaseClass()
+        WowVision.components.createRegistry({
+            type = "class",
+            baseClass = TestBase,
+            path = "test.items",
+        })
+        WowVision.components.createType("test.items", { key = "Item" })
+        local component = WowVision.components.createComponent("test.items", {
+            key = "sword",
+            type = "Item",
+            label = "Sword",
+        })
+        t:assertNotNil(component)
+        t:assertEqual(component.key, "sword")
+        t:assertEqual(component.label, "Sword")
+        -- Cleanup
+        WowVision.components.registries.items["test.items"] = nil
+    end,
+
+    ["createComponent errors on unknown path"] = function(t)
+        t:assertError(function()
+            WowVision.components.createComponent("nonexistent.path", { key = "test", type = "Widget" })
+        end)
+    end,
+
+    ["full workflow via namespace methods"] = function(t)
+        local TestBase = createTestBaseClass()
+
+        -- Create registry with path
+        local registry = WowVision.components.createRegistry({
+            type = "class",
+            baseClass = TestBase,
+            path = "test.full",
+        })
+
+        -- Create types via path
+        WowVision.components.createType("test.full", { key = "Widget" })
+        WowVision.components.createType("test.full", { key = "Button", parent = "Widget" })
+
+        -- Create components via path
+        local widget = WowVision.components.createComponent("test.full", {
+            key = "myWidget",
+            type = "Widget",
+        })
+        local button = WowVision.components.createComponent("test.full", {
+            key = "myButton",
+            type = "Button",
+        })
+
+        -- Verify via registry methods
+        t:assertEqual(registry:getComponent("myWidget"), widget)
+        t:assertEqual(registry:getComponent("myButton"), button)
+
+        local allComponents = registry:getComponents()
+        t:assertEqual(#allComponents, 2)
+
+        local widgets = registry:getComponentsOfType("Widget")
+        t:assertEqual(#widgets, 2) -- Both Widget and Button (extends Widget)
+
+        local buttons = registry:getComponentsOfType("Button")
+        t:assertEqual(#buttons, 1)
+
+        -- Cleanup
+        WowVision.components.registries.items["test.full"] = nil
     end,
 })
