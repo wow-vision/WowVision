@@ -22,7 +22,8 @@ end
 
 local function getQuestListButton(self, button)
     local buttonId = button:GetID()
-    local questIndex = buttonId
+    local offset = FauxScrollFrame_GetOffset(QuestLogListScrollFrame) or 0
+    local questIndex = buttonId + offset
     local label = ""
     local questLogTitleText, level, questTag, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling =
         GetQuestLogTitle(questIndex)
@@ -76,11 +77,7 @@ local function getQuestListButtons(self)
     return buttons
 end
 
-gen:Element("QuestLog/QuestList", {
-    regenerateOn = {
-        events = { "QUEST_LOG_UPDATE" },
-    },
-}, function(props)
+gen:Element("QuestLog/QuestList", function(props)
     local frame = props.frame
 
     -- If scroll frame is shown, use ProxyFauxScrollFrame

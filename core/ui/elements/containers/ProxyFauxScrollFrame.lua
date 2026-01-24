@@ -81,13 +81,6 @@ function ProxyFauxScrollFrame:setFrame(frame)
         error("Tried to pass non-scroll frame to a ProxyFauxScrollFrame.")
     end
     parent.setFrame(self, frame)
-
-    -- Get scrollbar using FauxScrollFrame's method
-    local scrollBar = FauxScrollFrame_GetChildFrames(frame)
-    if not scrollBar then
-        error("ProxyFauxScrollFrame could not find scrollbar.")
-    end
-    self.scrollBar = scrollBar
 end
 
 function ProxyFauxScrollFrame:onSetInfo()
@@ -98,17 +91,8 @@ function ProxyFauxScrollFrame:onSetInfo()
 end
 
 function ProxyFauxScrollFrame:scrollToIndex(index)
-    -- FauxScrollFrame offset is 0-based, so item 1 is at offset 0
     local pixelOffset = (index - 1) * self.buttonHeight
-    self.scrollBar:SetValue(pixelOffset)
-
-    -- Update the frame's offset property
-    self.frame.offset = index - 1
-
-    -- Call the update function to refresh the display
-    if self.updateFunction then
-        self.updateFunction()
-    end
+    FauxScrollFrame_OnVerticalScroll(self.frame, pixelOffset, self.buttonHeight, self.updateFunction)
 end
 
 function ProxyFauxScrollFrame:setCurrentIndex(index)

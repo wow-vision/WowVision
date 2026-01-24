@@ -8,6 +8,7 @@
   <Script file="db.lua" />
     <Script file="Event.lua" />
   <Include file="info/modules.xml" />
+    <Include file="components/modules.xml" />
   <Include file="dataBinding/modules.xml" />
   <Include file="commands/modules.xml" />
   <Script file="utils.lua" />
