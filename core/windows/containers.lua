@@ -3,36 +3,39 @@ local L = module.L
 module:setLabel(L["Containers"])
 local gen = module:hasUI()
 
-module.containerTypes = WowVision.Registry:new()
-module.containers = {}
-
-local Container = WowVision.Class("Container")
+-- Base class for all container types
+local Container = WowVision.Class("Container"):include(WowVision.InfoClass)
+Container.info:addFields({
+    { key = "key", required = true },
+    { key = "type", required = true },
+})
 
 function Container:initialize(info)
-    self.type = info.type
     self:setInfo(info)
 end
 
+-- Create component registry for containers
+local containers = module:createComponentRegistry({
+    key = "containers",
+    path = "containers",
+    type = "class",
+    baseClass = Container,
+    classNamePrefix = "Container",
+})
+
 function module:createContainerType(typeKey)
-    local class = WowVision.Class("Container" .. typeKey, Container):include(WowVision.InfoClass)
-    self.containerTypes:register(typeKey, class)
-    return class
+    return containers:createType({ key = typeKey })
 end
 
 function module:addContainer(info)
-    local class = self.containerTypes:get(info.type)
-    if not class then
-        error("Container type " .. info.type .. " not found.")
-    end
-    local instance = class:new(info)
-    tinsert(self.containers, instance)
+    return containers:createComponent(info)
 end
 
 gen:Element("bags", function(props)
     local result = { "Panel", label = L["Bags"], wrap = true, children = {} }
-    for _, v in ipairs(module.containers) do
-        tinsert(result.children, { "bags/Container", container = v })
-    end
+    containers:forEachComponent(function(container)
+        tinsert(result.children, { "bags/Container", container = container })
+    end)
     return result
 end)
 
@@ -49,8 +52,8 @@ module:registerWindow({
     generated = true,
     rootElement = "bags",
     isOpen = function(self)
-        for _, v in ipairs(module.containers) do
-            if v.isOpen and v:isOpen() then
+        for _, container in ipairs(containers:getComponents()) do
+            if container.isOpen and container:isOpen() then
                 return true
             end
         end

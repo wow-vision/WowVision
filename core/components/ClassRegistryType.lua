@@ -22,6 +22,9 @@ function ClassRegistryType:createType(config)
     local className = self.classNamePrefix .. config.key .. self.classNameSuffix
     local newClass = WowVision.Class(className, parentClass)
 
+    -- Always include InfoClass so each type gets its own info object
+    newClass:include(WowVision.InfoClass)
+
     -- Apply mixins
     for _, mixin in ipairs(self.mixins) do
         newClass:include(mixin)
