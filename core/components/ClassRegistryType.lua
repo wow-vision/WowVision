@@ -1,4 +1,5 @@
 local ClassRegistryType = WowVision.Class("ClassRegistryType", WowVision.components.RegistryType)
+    :include(WowVision.InfoClass)
 ClassRegistryType.info:addFields({
     { key = "baseClass", required = true },
     { key = "mixins", default = {} },
