@@ -21,7 +21,7 @@ function ComponentRegistry:getComponent(key)
 end
 
 function ComponentRegistry:createType(config)
-    local created = self.registryType:create(config)
+    local created = self.registryType:createType(config)
     self.types:register(config.key, created)
     return created
 end

@@ -2,6 +2,9 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="components.lua" />
+  <Script file="RegistryType.lua" />
+  <Script file="ClassRegistryType.lua" />
   <Script file="ComponentRegistry.lua" />
+  <Script file="tests.lua" />
 
 </Ui>
