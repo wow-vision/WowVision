@@ -77,6 +77,7 @@ function module:addFrame(frame, index)
     local store = WowVision.createMessageStore(storeKey, {
         messages = data.history,
         maxMessages = 5000,
+        getDataString = self.getMessageString,
     })
     local ref = {
         frame = frame,
@@ -86,7 +87,6 @@ function module:addFrame(frame, index)
         storeKey = storeKey,
         buffer = WowVision.buffers:create("Message", {
             sourceKey = storeKey,
-            getDataString = self.getMessageString,
         }),
     }
     WowVision.UIHost:hookFunc(frame, "AddMessage", self.onMessage)

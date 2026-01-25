@@ -1,38 +1,61 @@
 local TrackedBuffer = WowVision.buffers:createType("Tracked")
 TrackedBuffer.info:addFields({
-    { key = "source" },
+    { key = "source" },  -- Tracking config: { type = "...", params = {...} }
 })
 
 function TrackedBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
     self.objectToItem = {} -- Maps Object -> ObjectItem for removal
+end
 
+function TrackedBuffer:onSetInfo()
+    -- Clean up existing tracker if there is one
+    if self.tracker then
+        self:cleanupTracker()
+    end
+
+    -- Create new tracker from source config
     if self.source then
+        self.tracker = WowVision.objects:track(self.source)
+
         -- Populate from existing tracked objects
-        for object, _ in pairs(self.source.items) do
-            self:onSourceAdd(self.source, object)
+        for object, _ in pairs(self.tracker.items) do
+            self:onTrackerAdd(self.tracker, object)
         end
 
         -- Subscribe to future changes
-        self.source.events.add:subscribe(self, function(subscriber, event, source, object)
-            subscriber:onSourceAdd(source, object)
+        self.tracker.events.add:subscribe(self, function(subscriber, event, tracker, object)
+            subscriber:onTrackerAdd(tracker, object)
         end)
-        self.source.events.remove:subscribe(self, function(subscriber, event, source, object)
-            subscriber:onSourceRemove(source, object)
+        self.tracker.events.remove:subscribe(self, function(subscriber, event, tracker, object)
+            subscriber:onTrackerRemove(tracker, object)
         end)
-        self.source.events.modify:subscribe(self, function(subscriber, event, source, object)
-            subscriber:onSourceModify(source, object)
+        self.tracker.events.modify:subscribe(self, function(subscriber, event, tracker, object)
+            subscriber:onTrackerModify(tracker, object)
         end)
     end
 end
 
-function TrackedBuffer:onSourceAdd(source, object)
+function TrackedBuffer:cleanupTracker()
+    if self.tracker then
+        self.tracker.events.add:unsubscribe(self)
+        self.tracker.events.remove:unsubscribe(self)
+        self.tracker.events.modify:unsubscribe(self)
+        self.tracker:untrack()
+        self.tracker = nil
+    end
+    -- Clear existing items
+    self.objectToItem = {}
+    self.items = {}
+end
+
+function TrackedBuffer:onTrackerAdd(tracker, object)
     local item = WowVision.buffers.ObjectItem:new({ object = object })
     self.objectToItem[object] = item
     WowVision.buffers.Buffer.add(self, item)
 end
 
-function TrackedBuffer:onSourceRemove(source, object)
+function TrackedBuffer:onTrackerRemove(tracker, object)
     local item = self.objectToItem[object]
     if item then
         self.objectToItem[object] = nil
@@ -40,7 +63,7 @@ function TrackedBuffer:onSourceRemove(source, object)
     end
 end
 
-function TrackedBuffer:onSourceModify(source, object)
+function TrackedBuffer:onTrackerModify(tracker, object)
     -- Object data changed, emit modify event if we have one
     local item = self.objectToItem[object]
     if item and self.events.modify then
@@ -49,13 +72,9 @@ function TrackedBuffer:onSourceModify(source, object)
 end
 
 function TrackedBuffer:unsubscribe()
-    if self.source then
-        self.source.events.add:unsubscribe(self)
-        self.source.events.remove:unsubscribe(self)
-        self.source.events.modify:unsubscribe(self)
-    end
+    self:cleanupTracker()
 end
 
-function TrackedBuffer:getSource()
-    return self.source
+function TrackedBuffer:getTracker()
+    return self.tracker
 end
