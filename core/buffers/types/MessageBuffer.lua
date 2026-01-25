@@ -1,11 +1,17 @@
 local MessageBuffer = WowVision.buffers:createType("Message")
 MessageBuffer.info:addFields({
     { key = "source" },
+    { key = "sourceKey" },
     { key = "getDataString" },
 })
 
 function MessageBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
+
+    -- Look up source by key if sourceKey is provided
+    if self.sourceKey and not self.source then
+        self.source = WowVision.getMessageStore(self.sourceKey)
+    end
 
     if self.source then
         -- Populate from existing messages

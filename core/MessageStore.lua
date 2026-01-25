@@ -1,3 +1,6 @@
+-- MessageStore: A simple store for messages with event-based notifications
+-- Stores can be registered globally by key for lookup by buffers
+
 local MessageStore = WowVision.Class("MessageStore")
 
 function MessageStore:initialize(obj)
@@ -40,4 +43,19 @@ function MessageStore:clear()
     end
 end
 
-WowVision.buffers.MessageStore = MessageStore
+WowVision.MessageStore = MessageStore
+
+-- Global registry for MessageStores
+WowVision.messageStores = WowVision.Registry:new()
+
+-- Helper to create and register a MessageStore
+function WowVision.createMessageStore(key, config)
+    local store = MessageStore:new(config)
+    WowVision.messageStores:register(key, store)
+    return store
+end
+
+-- Helper to get a MessageStore by key
+function WowVision.getMessageStore(key)
+    return WowVision.messageStores:get(key)
+end

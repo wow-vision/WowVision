@@ -4,7 +4,6 @@
   <Script file="Buffer.lua" />
   <Script file="BufferItem.lua" />
   <Include file="items/modules.xml" />
-  <Script file="MessageStore.lua" />
   <Script file="BufferGroup.lua" />
   <Include file="types/modules.xml" />
   <Script file="module.lua" />

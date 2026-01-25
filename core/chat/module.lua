@@ -73,7 +73,8 @@ function module:addFrame(frame, index)
         self.data[index] = { history = {} }
         data = self.data[index]
     end
-    local store = WowVision.buffers.MessageStore:new({
+    local storeKey = "chat." .. index
+    local store = WowVision.createMessageStore(storeKey, {
         messages = data.history,
         maxMessages = 5000,
     })
@@ -82,8 +83,9 @@ function module:addFrame(frame, index)
         exists = true,
         data = data,
         store = store,
+        storeKey = storeKey,
         buffer = WowVision.buffers:create("Message", {
-            source = store,
+            sourceKey = storeKey,
             getDataString = self.getMessageString,
         }),
     }
