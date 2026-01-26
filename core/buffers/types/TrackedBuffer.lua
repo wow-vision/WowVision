@@ -1,6 +1,6 @@
 local TrackedBuffer = WowVision.buffers:createType("Tracked")
 TrackedBuffer.info:addFields({
-    { key = "source" },  -- Tracking config: { type = "...", params = {...} }
+    { key = "source" }, -- Tracking config: { type = "...", params = {...} }
 })
 
 function TrackedBuffer:initialize(obj)

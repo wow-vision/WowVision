@@ -7,8 +7,8 @@
               <Script file="Registry.lua" />
   <Script file="db.lua" />
     <Script file="Event.lua" />
-  <Script file="MessageStore.lua" />
   <Include file="info/modules.xml" />
+    <Script file="MessageStore.lua" />
     <Include file="components/modules.xml" />
   <Include file="dataBinding/modules.xml" />
   <Include file="commands/modules.xml" />

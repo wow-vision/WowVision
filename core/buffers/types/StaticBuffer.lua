@@ -1,6 +1,6 @@
 local StaticBuffer = WowVision.buffers:createType("Static")
 StaticBuffer.info:addFields({
-    { key = "objects", default = {} },  -- Array of { type = "...", params = {...} }
+    { key = "objects", default = {} }, -- Array of { type = "...", params = {...} }
 })
 
 function StaticBuffer:onSetInfo()
