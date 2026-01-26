@@ -77,23 +77,30 @@ function Buffer:setDB(db)
     self.info:setDB(self, db)
 end
 
+-- Create component registry for buffer types
+local registry = WowVision.components.createRegistry({
+    path = "buffers/buffer",
+    type = "class",
+    baseClass = Buffer,
+    classNameSuffix = "Buffer",
+})
+
 local buffers = {
     Buffer = Buffer,
-    types = WowVision.Registry:new(),
+    registry = registry,
 }
 
+-- Convenience method to create buffer types
 function buffers:createType(key)
-    local class = WowVision.Class(key .. "Buffer", self.Buffer):include(WowVision.InfoClass)
-    self.types:register(key, class)
-    return class, self.Buffer
+    local typeClass = registry:createType({ key = key })
+    return typeClass, self.Buffer
 end
 
+-- Convenience method to create buffer instances
 function buffers:create(typeKey, params)
-    local bufferType = self.types:get(typeKey)
-    if not bufferType then
-        error("Unknown buffer type: " .. typeKey)
-    end
-    return bufferType:new(params)
+    params = params or {}
+    params.type = typeKey
+    return registry:createComponent(params)
 end
 
 WowVision.buffers = buffers

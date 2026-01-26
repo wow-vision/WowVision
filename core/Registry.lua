@@ -16,6 +16,17 @@ function Registry:initialize(info)
 end
 
 function Registry:register(key, item)
+    -- Keyless registration: only one parameter, or key is nil
+    if item == nil or key == nil then
+        local itemToRegister = item or key
+        if itemToRegister then
+            tinsert(self.items, itemToRegister)
+            tinsert(self.itemKeys, nil)
+        end
+        return
+    end
+
+    -- Keyed registration: both key and item are non-nil
     if self.items[key] then
         if self.allowReplace == false then
             error("Cannot replace registered item as an item with key " .. key .. " already exists.")
