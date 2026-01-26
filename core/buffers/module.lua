@@ -14,12 +14,14 @@ function module:onFullEnable()
     local generalBuffer = WowVision.buffers:create("Static", {
         key = "general",
         label = L["General"],
+        objects = {
+            { type = "Health", params = { unit = "player" } },
+            { type = "Power", params = { unit = "player" } },
+            { type = "PlayerXP" },
+            { type = "PlayerMoney" },
+            { type = "PVP", params = { unit = "player" } },
+        },
     })
-    generalBuffer:addObject("Health", { unit = "player" })
-    generalBuffer:addObject("Power", { unit = "player" })
-    generalBuffer:addObject("PlayerXP", {})
-    generalBuffer:addObject("PlayerMoney", {})
-    generalBuffer:addObject("PVP", { unit = "player" })
 
     generalGroup:add(generalBuffer)
     root:add(generalGroup)
