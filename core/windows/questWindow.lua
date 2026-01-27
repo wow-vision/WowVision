@@ -12,6 +12,12 @@ end
 
 gen:Element("QuestWindow", function(props)
     local result = { "Panel", label = getWindowTitle(), wrap = true, children = {} }
+
+    -- Check if greeting panel is shown (NPC with only quests, no other gossip)
+    if QuestFrameGreetingPanel and QuestFrameGreetingPanel:IsShown() then
+        tinsert(result.children, { "QuestWindow/greeting" })
+    end
+
     if QuestFrameDetailPanel:IsShown() then
         tinsert(result.children, { "QuestWindow/detail", frame = QuestFrameDetailPanel })
     end
@@ -21,6 +27,38 @@ gen:Element("QuestWindow", function(props)
     if QuestFrameRewardPanel:IsShown() then
         tinsert(result.children, { "QuestWindow/reward", frame = QuestFrameRewardPanel })
     end
+    return result
+end)
+
+gen:Element("QuestWindow/greeting", function(props)
+    local result = { "Panel", label = L["Quests"], wrap = true, children = {} }
+
+    -- Greeting text
+    if GreetingText and GreetingText:IsShown() then
+        local greetingContent = GreetingText:GetText()
+        if greetingContent and greetingContent ~= "" then
+            tinsert(result.children, { "Text", text = greetingContent })
+        end
+    end
+
+    -- Add quest buttons in a flat list like gossip window
+    for i = 1, 25 do
+        local button = _G["QuestTitleButton" .. i]
+        if button and button:IsShown() then
+            local questTitle = button:GetText() or ""
+            local label
+            if button.isActive == 1 then
+                label = L["Accepted Quest"] .. ": " .. questTitle
+            else
+                label = L["Available Quest"] .. ": " .. questTitle
+            end
+            tinsert(result.children, { "ProxyButton", frame = button, label = label })
+        end
+    end
+
+    -- Goodbye button
+    tinsert(result.children, { "ProxyButton", frame = QuestFrameGreetingGoodbyeButton })
+
     return result
 end)
 
