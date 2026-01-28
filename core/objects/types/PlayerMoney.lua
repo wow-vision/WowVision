@@ -6,6 +6,8 @@ PlayerMoney:setLabel(L["Money"])
 
 PlayerMoney:addField({
     key = "current",
+    type = "Number",
+    label = L["Current"],
     get = function(params)
         return GetMoney()
     end,
@@ -13,6 +15,8 @@ PlayerMoney:addField({
 
 PlayerMoney:addField({
     key = "formatted",
+    type = "String",
+    label = L["Formatted"],
     get = function(params)
         return C_CurrencyInfo.GetCoinText(GetMoney())
     end,

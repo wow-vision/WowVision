@@ -31,6 +31,8 @@ end
 
 Power:addField({
     key = "minimum",
+    type = "Number",
+    label = L["Minimum"],
     getCached = function(cache)
         return cache.minimum
     end,
@@ -48,6 +50,8 @@ Power:addField({
 
 Power:addField({
     key = "current",
+    type = "Number",
+    label = L["Current"],
     getCached = function(cache)
         return cache.current
     end,
@@ -65,6 +69,8 @@ Power:addField({
 
 Power:addField({
     key = "maximum",
+    type = "Number",
+    label = L["Maximum"],
     getCached = function(cache)
         return cache.maximum
     end,
@@ -144,6 +150,8 @@ end
 
 Power:addField({
     key = "label",
+    type = "String",
+    label = L["Label"],
     get = function(params)
         if params.powerType then
             local powerType = powersDB:get(params.powerType)

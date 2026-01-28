@@ -7,6 +7,8 @@ pvp:setLabel("PVP")
 
 pvp:addField({
     key = "active",
+    type = "Bool",
+    label = L["Active"],
     get = function(params)
         if UnitExists(params.unit) then
             return UnitIsPVP(params.unit)
@@ -17,6 +19,8 @@ pvp:addField({
 
 pvp:addField({
     key = "status",
+    type = "String",
+    label = L["Status"],
     get = function(params)
         if UnitExists(params.unit) and UnitIsPVP(params.unit) then
             return L["Enabled"]

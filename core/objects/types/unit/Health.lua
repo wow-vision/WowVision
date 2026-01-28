@@ -5,6 +5,8 @@ local Health = objects:createUnitType("Health")
 
 Health:addField({
     key = "current",
+    type = "Number",
+    label = L["Current"],
     getCached = function(cache)
         return cache.current
     end,
@@ -15,11 +17,15 @@ Health:addField({
 
 Health:addField({
     key = "minimum",
+    type = "Number",
+    label = L["Minimum"],
     default = 0,
 })
 
 Health:addField({
     key = "maximum",
+    type = "Number",
+    label = L["Maximum"],
     getCached = function(cache)
         return cache.maximum
     end,
