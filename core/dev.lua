@@ -76,6 +76,51 @@ function devTools.testInfo(obj)
     })
 end
 
+-- Array field test with people (name, age, class)
+local arrayInfo = WowVision.info.InfoManager:new()
+arrayInfo:addFields({
+    {
+        type = "Array",
+        key = "people",
+        label = "People",
+        elementField = {
+            type = "Category",
+            label = "Person",
+            fields = {
+                { type = "String", key = "name", label = "Name", default = "New Person" },
+                { type = "Number", key = "age", label = "Age", default = 25, minimum = 0, maximum = 150 },
+                {
+                    type = "Choice",
+                    key = "class",
+                    label = "Class",
+                    choices = {
+                        { key = "warrior", label = "Warrior", value = "warrior" },
+                        { key = "mage", label = "Mage", value = "mage" },
+                        { key = "rogue", label = "Rogue", value = "rogue" },
+                        { key = "priest", label = "Priest", value = "priest" },
+                    },
+                },
+            },
+        },
+    },
+})
+
+function devTools.testArrayInfo(obj)
+    obj = obj or {
+        people = {
+            { name = "Alice", age = 30, class = "mage" },
+            { name = "Bob", age = 25, class = "warrior" },
+        },
+    }
+    local root = arrayInfo:getGenerator(obj)
+    WowVision.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = root,
+        hookEscape = true,
+    })
+    return obj
+end
+
 function WowVision:globalizeDevTools()
     for k, v in pairs(devTools) do
         _G[k] = v

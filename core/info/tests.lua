@@ -741,4 +741,276 @@ testRunner:addSuite("Field.Array", {
         t:assertEqual(field:getValueString({}, {}), "0 items")
         t:assertEqual(field:getValueString({}, nil), "0 items")
     end,
+
+    ["getGenerator returns Button"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            label = "Items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 1, 2, 3 } }
+        local gen = field:getGenerator(obj)
+        t:assertEqual(gen[1], "Button")
+        t:assertEqual(gen.label, "Items (3 items)")
+    end,
+
+    ["getGenerator shows 0 items for empty array"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            label = "Items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = {} }
+        local gen = field:getGenerator(obj)
+        t:assertEqual(gen.label, "Items (0 items)")
+    end,
+
+    ["buildArrayList creates list with elements and add button"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            label = "Items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 10, 20 } }
+        local list = field:buildArrayList(obj)
+        t:assertEqual(list[1], "List")
+        t:assertEqual(list.label, "Items")
+        -- 2 elements + 1 add button = 3 children
+        t:assertEqual(#list.children, 3)
+        -- Last child should be Add button
+        t:assertEqual(list.children[3][1], "Button")
+        t:assertEqual(list.children[3].label, "Add")
+    end,
+
+    ["createElementProxy reads from array"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 10, 20, 30 } }
+        local proxy = field:createElementProxy(obj, 2)
+        -- elementField.key defaults to "_element"
+        t:assertEqual(proxy._element, 20)
+    end,
+
+    ["createElementProxy writes to array"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 10, 20, 30 } }
+        local proxy = field:createElementProxy(obj, 2)
+        proxy._element = 99
+        t:assertEqual(obj.items[2], 99)
+        -- Other elements unchanged
+        t:assertEqual(obj.items[1], 10)
+        t:assertEqual(obj.items[3], 30)
+    end,
+
+    ["createElementProxy validates on write"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number", minimum = 0, maximum = 100 },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 50 } }
+        local proxy = field:createElementProxy(obj, 1)
+        proxy._element = 150
+        t:assertEqual(obj.items[1], 100) -- clamped to max
+    end,
+
+    ["buildArrayItem contains element generator and remove button"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number", label = "Value" },
+        })
+        local field = info:getField("items")
+
+        local obj = { items = { 42 } }
+        local item = field:buildArrayItem(obj, 1)
+        t:assertEqual(item[1], "List")
+        t:assertEqual(#item.children, 2)
+        -- First child is the element editor (EditBox for Number)
+        t:assertEqual(item.children[1][1], "EditBox")
+        -- Second child is Remove button
+        t:assertEqual(item.children[2][1], "Button")
+        t:assertEqual(item.children[2].label, "Remove")
+    end,
+
+    ["set persists to db when persist is true"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            persist = true,
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local db = { items = {} }
+        local obj = { items = {}, db = db }
+        field:set(obj, { 1, 2, 3 })
+        t:assertEqual(#db.items, 3)
+        t:assertEqual(db.items[1], 1)
+        t:assertEqual(db.items[2], 2)
+        t:assertEqual(db.items[3], 3)
+    end,
+
+    ["set element persists to db"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            persist = true,
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local db = { items = { 10, 20, 30 } }
+        local obj = { items = { 10, 20, 30 }, db = db }
+        field:set(obj, 99, 2)
+        t:assertEqual(db.items[2], 99)
+    end,
+
+    ["addElement persists to db"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            persist = true,
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local db = { items = { 1, 2 } }
+        local obj = { items = { 1, 2 }, db = db }
+        field:addElement(obj, 3)
+        t:assertEqual(#db.items, 3)
+        t:assertEqual(db.items[3], 3)
+    end,
+
+    ["removeElement persists to db"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            persist = true,
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local db = { items = { 1, 2, 3 } }
+        local obj = { items = { 1, 2, 3 }, db = db }
+        field:removeElement(obj, 2)
+        t:assertEqual(#db.items, 2)
+        t:assertEqual(db.items[1], 1)
+        t:assertEqual(db.items[2], 3)
+    end,
+
+    ["set emits valueChange event"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local eventFired = false
+        local eventObj, eventKey, eventValue
+        field.events.valueChange:subscribe(nil, function(eventName, obj, key, value)
+            eventFired = true
+            eventObj = obj
+            eventKey = key
+            eventValue = value
+        end)
+
+        local obj = { items = {} }
+        field:set(obj, { 1, 2, 3 })
+        t:assertTrue(eventFired)
+        t:assertEqual(eventObj, obj)
+        t:assertEqual(eventKey, "items")
+        t:assertEqual(#eventValue, 3)
+    end,
+
+    ["addElement emits valueChange event"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local eventFired = false
+        field.events.valueChange:subscribe(nil, function()
+            eventFired = true
+        end)
+
+        local obj = { items = { 1 } }
+        field:addElement(obj, 2)
+        t:assertTrue(eventFired)
+    end,
+
+    ["removeElement emits valueChange event"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local eventFired = false
+        field.events.valueChange:subscribe(nil, function()
+            eventFired = true
+        end)
+
+        local obj = { items = { 1, 2 } }
+        field:removeElement(obj, 1)
+        t:assertTrue(eventFired)
+    end,
+
+    ["does not persist when persist is false"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Array",
+            key = "items",
+            persist = false,
+            elementField = { type = "Number" },
+        })
+        local field = info:getField("items")
+
+        local db = { items = { 99 } }
+        local obj = { items = {}, db = db }
+        field:set(obj, { 1, 2, 3 })
+        -- db should remain unchanged
+        t:assertEqual(#db.items, 1)
+        t:assertEqual(db.items[1], 99)
+    end,
 })

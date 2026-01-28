@@ -1,4 +1,5 @@
 local info = WowVision.info
+local L = WowVision:getLocale()
 
 local ArrayField, parent = info:CreateFieldClass("Array")
 
@@ -11,7 +12,10 @@ function ArrayField:setup(config)
         error("Array field must have an 'elementField' property.")
     end
 
-    if type(elementField) == "table" and not elementField.isInstanceOf then
+    local isFieldInstance = type(elementField) == "table"
+        and type(elementField.isInstanceOf) == "function"
+        and elementField:isInstanceOf(info.Field)
+    if not isFieldInstance then
         -- It's a definition table, create a Field from it
         local FieldClass = info.Field
         if elementField.type then
@@ -57,6 +61,22 @@ function ArrayField:get(obj, index)
     return arr
 end
 
+-- Helper to persist array to db and emit change event
+function ArrayField:onArrayChanged(obj)
+    local arr = obj[self.key]
+    if self.persist and obj.db then
+        -- Deep copy array to db for persistence
+        local dbArr = {}
+        if arr then
+            for i, v in ipairs(arr) do
+                dbArr[i] = v
+            end
+        end
+        obj.db[self.key] = dbArr
+    end
+    self.events.valueChange:emit(obj, self.key, arr)
+end
+
 -- Set array or element at index
 function ArrayField:set(obj, value, index)
     if index then
@@ -79,6 +99,7 @@ function ArrayField:set(obj, value, index)
             obj[self.key] = {}
         end
     end
+    self:onArrayChanged(obj)
 end
 
 -- Validate a single element using the elementField
@@ -98,17 +119,14 @@ end
 
 -- Restore array from DB
 function ArrayField:setDB(obj, db)
+    obj.db = nil -- Temporarily disable db to avoid re-persisting during restore
     local arr = db[self.key]
     if not arr then
-        obj[self.key] = {}
-        return
+        self:set(obj, {})
+    else
+        self:set(obj, arr)
     end
-    -- Validate each element during restore
-    local validated = {}
-    for i, v in ipairs(arr) do
-        validated[i] = self:validateElement(v)
-    end
-    obj[self.key] = validated
+    obj.db = db -- Re-enable db
 end
 
 -- Add element to end of array
@@ -119,6 +137,7 @@ function ArrayField:addElement(obj, value)
         obj[self.key] = arr
     end
     tinsert(arr, self:validateElement(value))
+    self:onArrayChanged(obj)
     return #arr
 end
 
@@ -126,7 +145,9 @@ end
 function ArrayField:removeElement(obj, index)
     local arr = obj[self.key]
     if arr and arr[index] then
-        return tremove(arr, index)
+        local removed = tremove(arr, index)
+        self:onArrayChanged(obj)
+        return removed
     end
     return nil
 end
@@ -151,4 +172,111 @@ function ArrayField:getValueString(obj, value)
         return "0 items"
     end
     return #value .. " items"
+end
+
+-- UI Generation
+
+-- Creates a proxy object that redirects reads/writes to a specific array index
+-- This allows elementField:getGenerator() to work with array elements
+function ArrayField:createElementProxy(obj, index)
+    local arrayField = self
+    local elementKey = self.elementField.key
+    return setmetatable({}, {
+        __index = function(t, k)
+            if k == elementKey then
+                return arrayField:get(obj, index)
+            end
+        end,
+        __newindex = function(t, k, v)
+            if k == elementKey then
+                arrayField:set(obj, v, index)
+            end
+        end,
+    })
+end
+
+-- Click handler for opening the array editor
+local function arrayButton_Click(event, button)
+    local arrayField = button.userdata.arrayField
+    local obj = button.userdata.obj
+    button.context:addGenerated(arrayField:buildArrayList(obj))
+end
+
+-- Click handler for removing an element
+local function removeButton_Click(event, button)
+    local arrayField = button.userdata.arrayField
+    local obj = button.userdata.obj
+    local index = button.userdata.index
+    arrayField:removeElement(obj, index)
+end
+
+-- Click handler for adding a new element
+local function addButton_Click(event, button)
+    local arrayField = button.userdata.arrayField
+    local obj = button.userdata.obj
+    local defaultValue = arrayField.elementField:getDefault({})
+    arrayField:addElement(obj, defaultValue)
+end
+
+-- Builds a single array item row (element editor + remove button)
+function ArrayField:buildArrayItem(obj, index)
+    local proxy = self:createElementProxy(obj, index)
+    local elementGen = self.elementField:getGenerator(proxy)
+    elementGen.key = "element"
+
+    return {
+        "List",
+        key = "item_" .. index,
+        children = {
+            elementGen,
+            {
+                "Button",
+                key = "remove",
+                label = L["Remove"],
+                userdata = { arrayField = self, obj = obj, index = index },
+                events = { click = removeButton_Click },
+            },
+        },
+    }
+end
+
+-- Builds the full array editor list
+function ArrayField:buildArrayList(obj)
+    local arr = self:get(obj) or {}
+    local label = self:getLabel() or self.key
+    local result = {
+        "List",
+        label = label,
+        children = {},
+    }
+
+    -- Add each element
+    for i = 1, #arr do
+        tinsert(result.children, self:buildArrayItem(obj, i))
+    end
+
+    -- Add button at the end
+    tinsert(result.children, {
+        "Button",
+        key = "add",
+        label = L["Add"],
+        userdata = { arrayField = self, obj = obj },
+        events = { click = addButton_Click },
+    })
+
+    return result
+end
+
+-- Returns a button that opens the array editor
+function ArrayField:getGenerator(obj)
+    local arr = self:get(obj) or {}
+    local label = self:getLabel() or self.key
+    local countStr = self:getValueString(obj, arr)
+
+    return {
+        "Button",
+        label = label .. " (" .. countStr .. ")",
+        userdata = { arrayField = self, obj = obj },
+        events = { click = arrayButton_Click },
+    }
 end
