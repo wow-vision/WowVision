@@ -6,6 +6,7 @@ local Aura = objects:createUnitType("Aura")
 Aura:addParameter({
     type = "Number",
     key = "instanceID",
+    label = L["Instance ID"],
 })
 
 function Aura:validParams(params)

@@ -7,6 +7,19 @@ local Power = objects:createUnitType("Power")
 
 Power:addParameter({
     key = "powerType",
+    type = "Choice",
+    label = L["Power Type"],
+    choices = function()
+        local result = {}
+        for _, power in ipairs(powersDB.items) do
+            tinsert(result, {
+                key = power.key,
+                label = power.label,
+                value = power.key,
+            })
+        end
+        return result
+    end,
 })
 
 function Power:validParams(params)

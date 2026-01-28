@@ -8,5 +8,6 @@
   <Script file="Category.lua" />
   <Script file="Reference.lua" />
   <Script file="Array.lua" />
+  <Script file="Object.lua" />
 
 </Ui>

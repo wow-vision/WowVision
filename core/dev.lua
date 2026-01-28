@@ -121,6 +121,29 @@ function devTools.testArrayInfo(obj)
     return obj
 end
 
+-- Object field test
+local objectInfo = WowVision.info.InfoManager:new()
+objectInfo:addFields({
+    {
+        type = "Object",
+        key = "trackedObject",
+        label = "Tracked Object",
+    },
+})
+
+function devTools.testObjectInfo(obj)
+    obj = obj or {
+        trackedObject = { type = "Health", params = { unit = "player" } },
+    }
+    local root = objectInfo:getGenerator(obj)
+    WowVision.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = root,
+        hookEscape = true,
+    })
+    return obj
+end
+
 function WowVision:globalizeDevTools()
     for k, v in pairs(devTools) do
         _G[k] = v

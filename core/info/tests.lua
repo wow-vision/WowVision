@@ -1014,3 +1014,170 @@ testRunner:addSuite("Field.Array", {
         t:assertEqual(db.items[1], 99)
     end,
 })
+
+testRunner:addSuite("Field.Object", {
+    ["getDefault returns empty object config"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+        })
+        local field = info:getField("obj")
+        local default = field:getDefault({})
+        t:assertNotNil(default)
+        t:assertNil(default.type)
+        t:assertNotNil(default.params)
+    end,
+
+    ["validate normalizes nil to default structure"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+        })
+        local field = info:getField("obj")
+        local result = field:validate(nil)
+        t:assertNotNil(result)
+        t:assertNil(result.type)
+        t:assertNotNil(result.params)
+    end,
+
+    ["validate preserves type and params"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+        })
+        local field = info:getField("obj")
+        local result = field:validate({ type = "Health", params = { unit = "player" } })
+        t:assertEqual(result.type, "Health")
+        t:assertEqual(result.params.unit, "player")
+    end,
+
+    ["set stores validated value"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+        })
+        local field = info:getField("obj")
+
+        local obj = {}
+        field:set(obj, { type = "Health", params = { unit = "target" } })
+        t:assertEqual(obj.obj.type, "Health")
+        t:assertEqual(obj.obj.params.unit, "target")
+    end,
+
+    ["setType changes type and resets params"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+        })
+        local field = info:getField("obj")
+
+        local obj = { obj = { type = "Aura", params = { unit = "player", instanceID = 123 } } }
+        field:setType(obj, "Health")
+        t:assertEqual(obj.obj.type, "Health")
+        -- Params should be reset (instanceID should be gone)
+        t:assertNil(obj.obj.params.instanceID)
+    end,
+
+    ["setParam updates specific param"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+        })
+        local field = info:getField("obj")
+
+        local obj = { obj = { type = "Health", params = { unit = "player" } } }
+        field:setParam(obj, "unit", "target")
+        t:assertEqual(obj.obj.params.unit, "target")
+    end,
+
+    ["getGenerator returns Button"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+            label = "My Object",
+        })
+        local field = info:getField("obj")
+
+        local obj = { obj = { type = nil, params = {} } }
+        local gen = field:getGenerator(obj)
+        t:assertEqual(gen[1], "Button")
+    end,
+
+    ["set persists to db when persist is true"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+            persist = true,
+        })
+        local field = info:getField("obj")
+
+        local db = {}
+        local obj = { db = db }
+        field:set(obj, { type = "Health", params = { unit = "player" } })
+        t:assertNotNil(db.obj)
+        t:assertEqual(db.obj.type, "Health")
+        t:assertEqual(db.obj.params.unit, "player")
+    end,
+
+    ["set emits valueChange event"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+        })
+        local field = info:getField("obj")
+
+        local eventFired = false
+        field.events.valueChange:subscribe(nil, function()
+            eventFired = true
+        end)
+
+        local obj = {}
+        field:set(obj, { type = "Health", params = {} })
+        t:assertTrue(eventFired)
+    end,
+
+    ["setType emits valueChange event"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+        })
+        local field = info:getField("obj")
+
+        local eventFired = false
+        field.events.valueChange:subscribe(nil, function()
+            eventFired = true
+        end)
+
+        local obj = { obj = { type = nil, params = {} } }
+        field:setType(obj, "Health")
+        t:assertTrue(eventFired)
+    end,
+
+    ["setParam emits valueChange event"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "Object",
+            key = "obj",
+        })
+        local field = info:getField("obj")
+
+        local eventFired = false
+        field.events.valueChange:subscribe(nil, function()
+            eventFired = true
+        end)
+
+        local obj = { obj = { type = "Health", params = {} } }
+        field:setParam(obj, "unit", "player")
+        t:assertTrue(eventFired)
+    end,
+})

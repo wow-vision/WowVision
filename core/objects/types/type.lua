@@ -66,6 +66,26 @@ function ObjectType:setLabel(label)
     self.label = label
 end
 
+-- Returns a label describing the object definition (type + params)
+-- e.g., "Health (player)", "Power (player, Energy)", "Money"
+function ObjectType:getDefinitionLabel(params)
+    params = params or {}
+    local paramParts = {}
+    -- Use parameters InfoManager to maintain consistent order
+    for _, field in ipairs(self.parameters.fields) do
+        local value = params[field.key]
+        if value ~= nil then
+            tinsert(paramParts, tostring(value))
+        end
+    end
+
+    local label = self.label or self.key
+    if #paramParts > 0 then
+        return label .. " (" .. table.concat(paramParts, ", ") .. ")"
+    end
+    return label
+end
+
 function ObjectType:getFocusString(params)
     local template = self.templates:get("default")
     if template then
@@ -104,10 +124,13 @@ WowVision.objects.ObjectType = ObjectType
 local UnitType = WowVision.Class("UnitType", ObjectType)
 
 function UnitType:initialize(key)
+    local L = WowVision:getLocale()
     ObjectType.initialize(self, key)
     self.units = {}
     self:addParameter({
         key = "unit",
+        type = "String",
+        label = L["Unit"],
         required = true,
     })
 end
