@@ -196,6 +196,7 @@ function ObjectField:buildEditor(obj)
             local paramsProxy = objectField:createParamsProxy(obj)
             local paramsGen = objectType.parameters:getGenerator(paramsProxy)
             paramsGen.key = "params"
+            paramsGen.label = L["Parameters"]
             tinsert(children, paramsGen)
         end
     end
