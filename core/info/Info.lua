@@ -123,10 +123,14 @@ function InfoManager:set(obj, info, ignoreRequired)
     end
 end
 
-function InfoManager:getGenerator(obj)
+function InfoManager:getGenerator(obj, options)
+    options = options or {}
+    local excludedFields = options.excludedFields or {}
     local result = { "List", children = {} }
     for _, field in ipairs(self.fields) do
-        tinsert(result.children, field:getGenerator(obj))
+        if not excludedFields[field.key] then
+            tinsert(result.children, field:getGenerator(obj))
+        end
     end
     return result
 end
