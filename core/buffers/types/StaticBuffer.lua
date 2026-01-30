@@ -1,6 +1,13 @@
+local L = WowVision:getLocale()
+
 local StaticBuffer = WowVision.buffers:createType("Static")
 StaticBuffer.info:addFields({
-    { key = "objects", default = {} }, -- Array of { type = "...", params = {...} }
+    {
+        key = "objects",
+        type = "Array",
+        label = L["Objects"],
+        elementField = { type = "Object" },
+    },
 })
 
 function StaticBuffer:onSetInfo()
@@ -8,8 +15,12 @@ function StaticBuffer:onSetInfo()
     self.items = {}
 
     -- Create objects from config
-    for _, objectConfig in ipairs(self.objects) do
-        self:addObject(objectConfig.type, objectConfig.params)
+    if self.objects then
+        for _, objectConfig in ipairs(self.objects) do
+            if objectConfig.type then
+                self:addObject(objectConfig.type, objectConfig.params)
+            end
+        end
     end
 end
 

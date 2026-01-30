@@ -144,6 +144,208 @@ function devTools.testObjectInfo(obj)
     return obj
 end
 
+-- TrackingConfig field test
+local trackingConfigInfo = WowVision.info.InfoManager:new()
+trackingConfigInfo:addFields({
+    {
+        type = "TrackingConfig",
+        key = "source",
+        label = "Tracking Source",
+    },
+})
+
+function devTools.testTrackingConfigInfo(obj)
+    obj = obj or {
+        source = { type = "Health", units = { "player" } },
+    }
+    local root = trackingConfigInfo:getGenerator(obj)
+    WowVision.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = root,
+        hookEscape = true,
+    })
+    return obj
+end
+
+-- Tracking generator test
+function devTools.testTrackingGenerator(typeKey, config)
+    typeKey = typeKey or "Health"
+    local objectType = WowVision.objects.types:get(typeKey)
+    if not objectType then
+        print("Unknown object type: " .. typeKey)
+        return
+    end
+
+    local gen, trackingConfig = objectType:getTrackingGenerator(config)
+    WowVision.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = gen,
+        hookEscape = true,
+    })
+    return trackingConfig
+end
+
+-- Lazily register virtual elements for tracking config UI
+local trackingConfigElementsRegistered = false
+local function ensureTrackingConfigElements()
+    if trackingConfigElementsRegistered then
+        return
+    end
+    trackingConfigElementsRegistered = true
+
+    local gen = WowVision.ui.generator
+    local L = WowVision:getLocale()
+
+    gen:Element("TrackingConfig/editor", function(props)
+        local config = props.config
+        local children = {}
+
+        -- Type selector button
+        local typeLabel = config.type and (WowVision.objects.types:get(config.type).label or config.type) or L["None"]
+        tinsert(children, {
+            "Button",
+            key = "type",
+            label = L["Type"] .. ": " .. typeLabel,
+            events = {
+                click = function(event, button)
+                    button.context:addGenerated({
+                        "TrackingConfig/typeSelector",
+                        config = config,
+                    })
+                end,
+            },
+        })
+
+        -- Show tracking parameters if type is selected
+        if config.type then
+            local objectType = WowVision.objects.types:get(config.type)
+            if objectType then
+                local trackingGen, _ = objectType:getTrackingGenerator(config)
+                trackingGen.key = "tracking"
+                tinsert(children, trackingGen)
+            end
+        end
+
+        return {
+            "List",
+            label = "Tracking Config",
+            children = children,
+        }
+    end)
+
+    gen:Element("TrackingConfig/typeSelector", function(props)
+        local config = props.config
+        local children = {}
+
+        -- "None" option
+        tinsert(children, {
+            "Button",
+            key = "none",
+            label = L["None"],
+            events = {
+                click = function(event, button)
+                    config.type = nil
+                    button.context:pop()
+                end,
+            },
+        })
+
+        -- Add all registered object types
+        for _, objectType in ipairs(WowVision.objects.types.items) do
+            tinsert(children, {
+                "Button",
+                key = objectType.key,
+                label = objectType.label or objectType.key,
+                events = {
+                    click = function(event, button)
+                        -- Reset config when type changes
+                        local newType = objectType.key
+                        for k in pairs(config) do
+                            config[k] = nil
+                        end
+                        config.type = newType
+                        button.context:pop()
+                    end,
+                },
+            })
+        end
+
+        return {
+            "List",
+            label = L["Select Type"],
+            children = children,
+        }
+    end)
+end
+
+-- Test with unified type selector and parameters panel
+function devTools.testTrackingGeneratorWithSelector(config)
+    ensureTrackingConfigElements()
+
+    config = config or {}
+
+    WowVision.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = {
+            "TrackingConfig/editor",
+            config = config,
+        },
+        hookEscape = true,
+    })
+
+    return config
+end
+
+-- Buffer management test
+function devTools.testBufferGroup(group)
+    group = group or WowVision.buffers.BufferGroup:new({
+        label = "Test Group",
+    })
+
+    -- Add some sample buffers if empty
+    if #group.items == 0 then
+        group:add(WowVision.buffers:create("Static", {
+            label = "General Info",
+            objects = {
+                { type = "Health", params = { unit = "player" } },
+                { type = "PlayerMoney" },
+            },
+        }))
+        group:add(WowVision.buffers:create("Tracked", {
+            label = "Player Powers",
+            source = { type = "Power", units = { "player" } },
+        }))
+    end
+
+    local gen = group:getSettingsGenerator()
+    WowVision.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = gen,
+        hookEscape = true,
+    })
+
+    return group
+end
+
+-- Test individual buffer settings
+function devTools.testBufferSettings(buffer)
+    buffer = buffer or WowVision.buffers:create("Static", {
+        label = "Test Buffer",
+        objects = {
+            { type = "Health", params = { unit = "player" } },
+        },
+    })
+
+    local gen = buffer:getSettingsGenerator()
+    WowVision.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = gen,
+        hookEscape = true,
+    })
+
+    return buffer
+end
+
 function WowVision:globalizeDevTools()
     for k, v in pairs(devTools) do
         _G[k] = v

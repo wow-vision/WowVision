@@ -1,11 +1,17 @@
+local L = WowVision:getLocale()
+
 local TrackedBuffer = WowVision.buffers:createType("Tracked")
 TrackedBuffer.info:addFields({
-    { key = "source" }, -- Tracking config: { type = "...", params = {...} }
+    {
+        key = "source",
+        type = "TrackingConfig",
+        label = L["Source"],
+    },
 })
 
 function TrackedBuffer:initialize(obj)
+    self.objectToItem = {} -- Maps Object -> ObjectItem for removal (must be before parent.initialize which calls onSetInfo)
     WowVision.buffers.Buffer.initialize(self, obj)
-    self.objectToItem = {} -- Maps Object -> ObjectItem for removal
 end
 
 function TrackedBuffer:onSetInfo()

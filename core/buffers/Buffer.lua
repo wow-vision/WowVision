@@ -1,8 +1,12 @@
+local L = WowVision:getLocale()
+
 local Buffer = WowVision.Class("Buffer"):include(WowVision.InfoClass)
 Buffer:include(WowVision.ViewList)
 Buffer.info:addFields({
     {
         key = "enabled",
+        type = "Bool",
+        label = L["Enabled"],
         default = true,
         required = true,
         get = function(obj, key)
@@ -12,7 +16,11 @@ Buffer.info:addFields({
             obj:setEnabled(value)
         end,
     },
-    { key = "label", type = "String" },
+    {
+        key = "label",
+        type = "String",
+        label = L["Label"],
+    },
 })
 
 function Buffer:initialize(obj)
@@ -75,6 +83,36 @@ end
 
 function Buffer:setDB(db)
     self.info:setDB(self, db)
+end
+
+-- UI Generation
+
+-- Lazily register virtual elements on first use
+function Buffer:ensureVirtualElements()
+    local gen = WowVision.ui.generator
+    if gen:hasElement("Buffer/settings") then
+        return
+    end
+
+    gen:Element("Buffer/settings", function(props)
+        return props.buffer:buildSettings()
+    end)
+end
+
+-- Build the settings UI
+function Buffer:buildSettings()
+    return self.class.info:getGenerator(self)
+end
+
+-- Returns UI generator for editing this buffer's settings
+function Buffer:getSettingsGenerator()
+    self:ensureVirtualElements()
+    local buffer = self
+
+    return {
+        "Buffer/settings",
+        buffer = buffer,
+    }
 end
 
 -- Create component registry for buffer types

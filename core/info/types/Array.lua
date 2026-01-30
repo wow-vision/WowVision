@@ -176,6 +176,22 @@ end
 
 -- UI Generation
 
+-- Lazily register virtual elements on first use
+function ArrayField:ensureVirtualElements()
+    local gen = WowVision.ui.generator
+    if gen:hasElement("ArrayField/list") then
+        return
+    end
+
+    gen:Element("ArrayField/list", function(props)
+        return props.arrayField:buildArrayList(props.obj)
+    end)
+
+    gen:Element("ArrayField/item", function(props)
+        return props.arrayField:buildArrayItem(props.obj, props.index)
+    end)
+end
+
 -- Creates a proxy object that redirects reads/writes to a specific array index
 -- This allows elementField:getGenerator() to work with array elements
 function ArrayField:createElementProxy(obj, index)
@@ -199,7 +215,11 @@ end
 local function arrayButton_Click(event, button)
     local arrayField = button.userdata.arrayField
     local obj = button.userdata.obj
-    button.context:addGenerated(arrayField:buildArrayList(obj))
+    button.context:addGenerated({
+        "ArrayField/list",
+        arrayField = arrayField,
+        obj = obj,
+    })
 end
 
 -- Click handler for removing an element
@@ -224,9 +244,16 @@ function ArrayField:buildArrayItem(obj, index)
     local elementGen = self.elementField:getGenerator(proxy)
     elementGen.key = "element"
 
+    -- Get a label for this item
+    local elementValue = self:get(obj, index)
+    local itemLabel = self.elementField:getValueString(proxy, elementValue)
+    if not itemLabel or itemLabel == "" then
+        itemLabel = "Item " .. index
+    end
+
     return {
         "List",
-        key = "item_" .. index,
+        label = itemLabel,
         children = {
             elementGen,
             {
@@ -250,9 +277,15 @@ function ArrayField:buildArrayList(obj)
         children = {},
     }
 
-    -- Add each element
+    -- Add each element using virtual element references
     for i = 1, #arr do
-        tinsert(result.children, self:buildArrayItem(obj, i))
+        tinsert(result.children, {
+            "ArrayField/item",
+            key = "item_" .. i,
+            arrayField = self,
+            obj = obj,
+            index = i,
+        })
     end
 
     -- Add button at the end
@@ -269,6 +302,7 @@ end
 
 -- Returns a button that opens the array editor
 function ArrayField:getGenerator(obj)
+    self:ensureVirtualElements()
     local arr = self:get(obj) or {}
     local label = self:getLabel() or self.key
     local countStr = self:getValueString(obj, arr)

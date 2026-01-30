@@ -1181,3 +1181,210 @@ testRunner:addSuite("Field.Object", {
         t:assertTrue(eventFired)
     end,
 })
+
+testRunner:addSuite("Field.TrackingConfig", {
+    ["getDefault returns empty tracking config"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+        local default = field:getDefault({})
+        t:assertNotNil(default)
+        t:assertNil(default.type)
+    end,
+
+    ["validate normalizes nil to default structure"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+        local result = field:validate(nil)
+        t:assertNotNil(result)
+        t:assertNil(result.type)
+    end,
+
+    ["validate preserves type and other fields"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+        local result = field:validate({ type = "Health", units = { "player" } })
+        t:assertEqual(result.type, "Health")
+        t:assertNotNil(result.units)
+        t:assertEqual(result.units[1], "player")
+    end,
+
+    ["set stores validated value"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+
+        local obj = {}
+        field:set(obj, { type = "Health", units = { "target" } })
+        t:assertEqual(obj.source.type, "Health")
+        t:assertEqual(obj.source.units[1], "target")
+    end,
+
+    ["setType changes type and initializes defaults"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+
+        local obj = { source = { type = "Power", units = { "focus" } } }
+        field:setType(obj, "Health")
+        t:assertEqual(obj.source.type, "Health")
+        -- Should have new defaults from getTrackingGenerator
+        t:assertNotNil(obj.source.units)
+    end,
+
+    ["setType to nil clears config"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+
+        local obj = { source = { type = "Health", units = { "player" } } }
+        field:setType(obj, nil)
+        t:assertNil(obj.source.type)
+    end,
+
+    ["getValueString returns None when no type"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+
+        local L = WowVision:getLocale()
+        t:assertEqual(field:getValueString({}, { type = nil }), L["None"])
+    end,
+
+    ["getValueString returns type label with units"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+
+        local result = field:getValueString({}, { type = "Health", units = { "player", "target" } })
+        t:assertTrue(result:find("Health"))
+        t:assertTrue(result:find("player"))
+        t:assertTrue(result:find("target"))
+    end,
+
+    ["getGenerator returns Button"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+            label = "Source",
+        })
+        local field = info:getField("source")
+
+        local obj = { source = { type = nil } }
+        local gen = field:getGenerator(obj)
+        t:assertEqual(gen[1], "Button")
+    end,
+
+    ["set persists to db when persist is true"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+            persist = true,
+        })
+        local field = info:getField("source")
+
+        local db = {}
+        local obj = { db = db }
+        field:set(obj, { type = "Health", units = { "player" } })
+        t:assertNotNil(db.source)
+        t:assertEqual(db.source.type, "Health")
+        t:assertEqual(db.source.units[1], "player")
+    end,
+
+    ["set emits valueChange event"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+
+        local eventFired = false
+        field.events.valueChange:subscribe(nil, function()
+            eventFired = true
+        end)
+
+        local obj = {}
+        field:set(obj, { type = "Health", units = { "player" } })
+        t:assertTrue(eventFired)
+    end,
+
+    ["setType emits valueChange event"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+
+        local eventFired = false
+        field.events.valueChange:subscribe(nil, function()
+            eventFired = true
+        end)
+
+        local obj = { source = { type = nil } }
+        field:setType(obj, "Health")
+        t:assertTrue(eventFired)
+    end,
+
+    ["setDB restores config from database"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+
+        local obj = {}
+        local db = { source = { type = "Power", units = { "focus" } } }
+        field:setDB(obj, db)
+
+        t:assertNotNil(obj.source)
+        t:assertEqual(obj.source.type, "Power")
+        t:assertEqual(obj.source.units[1], "focus")
+    end,
+
+    ["setDB sets default when missing from db"] = function(t)
+        local info = WowVision.info.InfoManager:new()
+        info:addField({
+            type = "TrackingConfig",
+            key = "source",
+        })
+        local field = info:getField("source")
+
+        local obj = {}
+        local db = {}
+        field:setDB(obj, db)
+
+        t:assertNotNil(obj.source)
+        t:assertNil(obj.source.type)
+    end,
+})

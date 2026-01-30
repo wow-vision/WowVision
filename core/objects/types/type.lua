@@ -119,6 +119,31 @@ end
 
 function ObjectType:onUpdate() end
 
+-- Returns UI generator for configuring tracking
+-- config: optional existing config for editing
+-- Returns a generator spec and the config object being edited
+function ObjectType:getTrackingGenerator(config)
+    local L = WowVision:getLocale()
+    config = config or {}
+    config.params = config.params or {}
+
+    local children = {}
+
+    -- Add parameters UI
+    if #self.parameters.fields > 0 then
+        local paramsGen = self.parameters:getGenerator(config.params)
+        paramsGen.key = "params"
+        paramsGen.label = L["Parameters"]
+        tinsert(children, paramsGen)
+    end
+
+    return {
+        "List",
+        label = self.label or self.key,
+        children = children,
+    }, config
+end
+
 WowVision.objects.ObjectType = ObjectType
 
 local UnitType = WowVision.Class("UnitType", ObjectType)
@@ -303,6 +328,59 @@ function UnitType:onUpdate()
             self:changeUnit(unitTable, newGUID)
         end
     end
+end
+
+-- Override tracking generator for unit-based objects
+-- For now, uses single unit string that gets converted to units array
+function UnitType:getTrackingGenerator(config)
+    local L = WowVision:getLocale()
+    config = config or {}
+    -- Initialize unit from units array if editing existing config
+    if config.units and config.units[1] then
+        config.unit = config.units[1]
+    end
+    config.unit = config.unit or "player"
+
+    local children = {}
+
+    -- Create a proxy that updates config.units when unit changes
+    local unitProxy = setmetatable({}, {
+        __index = function(t, k)
+            if k == "unit" then
+                return config.unit
+            end
+        end,
+        __newindex = function(t, k, v)
+            if k == "unit" then
+                config.unit = v
+                config.units = { v }
+            end
+        end,
+    })
+
+    -- Unit field
+    local unitField = WowVision.info.fieldTypes:get("String"):new({
+        key = "unit",
+        label = L["Unit"],
+    })
+    tinsert(children, unitField:getGenerator(unitProxy))
+
+    -- Add other parameters excluding unit
+    if #self.parameters.fields > 1 then
+        local paramsGen = self.parameters:getGenerator(config, { excludedFields = { unit = true } })
+        paramsGen.key = "params"
+        paramsGen.label = L["Parameters"]
+        tinsert(children, paramsGen)
+    end
+
+    -- Ensure units array is initialized
+    config.units = { config.unit }
+
+    return {
+        "List",
+        label = self.label or self.key,
+        children = children,
+    }, config
 end
 
 WowVision.objects.UnitType = UnitType
