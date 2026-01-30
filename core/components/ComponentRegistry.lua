@@ -26,13 +26,18 @@ function ComponentRegistry:createType(config)
     return created
 end
 
-function ComponentRegistry:createComponent(config)
+function ComponentRegistry:createTemporaryComponent(config)
     local typeClass = self.types:get(config.type)
     if not typeClass then
         error("ComponentRegistry: Unknown type '" .. config.type .. "'")
     end
 
     local component = self.registryType:createComponent(typeClass, config)
+    return component
+end
+
+function ComponentRegistry:createComponent(config)
+    local component = self:createTemporaryComponent(config)
     self.components:register(config.key, component)
     return component
 end

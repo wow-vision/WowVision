@@ -33,7 +33,9 @@ end
 function ComponentArrayField:getData(obj)
     local result = {}
     for _, item in ipairs(obj[self.key] or {}) do
-        tinsert(result, item.info:getData(item))
+        local config = item.info:getData(item)
+        config.type = self.getTypeKey(item)
+        tinsert(result, config)
     end
     return result
 end

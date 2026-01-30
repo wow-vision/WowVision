@@ -2,7 +2,7 @@ local module = WowVision.base:createModule("buffers")
 local L = module.L
 module:setLabel(L["Buffers"])
 
-function module:onFullEnable()
+function module:getDefaultData()
     -- Root group contains child groups
     local root = WowVision.buffers.BufferGroup:new()
     root:setLabel(L["Buffers"])
@@ -12,7 +12,36 @@ function module:onFullEnable()
     generalGroup:setLabel(L["General"])
 
     local generalBuffer = WowVision.buffers:create("Static", {
-        key = "general",
+        label = L["General"],
+        objects = {
+            { type = "Health", params = { unit = "player" } },
+            { type = "Power", params = { unit = "player" } },
+            { type = "PlayerXP" },
+            { type = "PlayerMoney" },
+            { type = "PVP", params = { unit = "player" } },
+        },
+    })
+
+    generalGroup:add(generalBuffer)
+    root:add(generalGroup)
+    return root.info:getData(root)
+end
+
+function module:onFullEnable()
+    local root = WowVision.buffers.BufferGroup:new(self.db.data)
+    self.root = root
+end
+
+function module:onFullEnable2()
+    -- Root group contains child groups
+    local root = WowVision.buffers.BufferGroup:new()
+    root:setLabel(L["Buffers"])
+
+    -- General group
+    local generalGroup = WowVision.buffers.BufferGroup:new()
+    generalGroup:setLabel(L["General"])
+
+    local generalBuffer = WowVision.buffers:create("Static", {
         label = L["General"],
         objects = {
             { type = "Health", params = { unit = "player" } },
