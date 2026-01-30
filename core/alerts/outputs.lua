@@ -36,9 +36,13 @@ function tts:onFire(message)
     end
     if self.db.interrupt then
         WowVision.base.speech:uiStop()
-        C_Timer.After(0.05, function()
+        if WowVision.consts.UI_DELAY > 0 then
+            C_Timer.After(0.05, function()
+                WowVision:speak(message)
+            end)
+        else
             WowVision:speak(message)
-        end)
+        end
     else
         WowVision:speak(message)
     end

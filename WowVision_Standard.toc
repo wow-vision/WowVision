@@ -7,5 +7,6 @@
 ## SavedVariablesPerCharacter: WowVisionDB
 
 libs.xml
+retail/setup.lua
 modules.xml
 retail/modules.xml

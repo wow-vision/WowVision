@@ -173,7 +173,6 @@ local function addSoftTarget(info)
         type = "Function",
         key = "targeting/" .. info.key,
         label = info.label,
-        delay = 0.01,
         interruptSpeech = true,
         func = function()
             local value = enabled:toggle()

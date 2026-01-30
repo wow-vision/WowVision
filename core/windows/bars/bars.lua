@@ -159,7 +159,6 @@ module:registerBinding({
     key = "bars/openWindow",
     inputs = { "SHIFT-F4" },
     label = L["Action Bars"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         WowVision.UIHost:openWindow("bars")

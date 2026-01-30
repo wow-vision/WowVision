@@ -74,7 +74,6 @@ module:registerBinding({
     key = "buffers/previousItem",
     inputs = { "ALT-UP" },
     label = L["Previous Buffer Item"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         local buffer = module:getCurrentBuffer()
@@ -89,7 +88,6 @@ module:registerBinding({
     key = "buffers/nextItem",
     inputs = { "ALT-DOWN" },
     label = L["Next Buffer Item"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         local buffer = module:getCurrentBuffer()
@@ -105,7 +103,6 @@ module:registerBinding({
     key = "buffers/nextBuffer",
     inputs = { "ALT-RIGHT" },
     label = L["Next Buffer"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         local group = module:getCurrentGroup()
@@ -120,7 +117,6 @@ module:registerBinding({
     key = "buffers/previousBuffer",
     inputs = { "ALT-LEFT" },
     label = L["Previous Buffer"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         local group = module:getCurrentGroup()
@@ -136,7 +132,6 @@ module:registerBinding({
     key = "buffers/nextGroup",
     inputs = { "ALT-CTRL-RIGHT" },
     label = L["Next Buffer Group"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         if module.root then
@@ -150,7 +145,6 @@ module:registerBinding({
     key = "buffers/previousGroup",
     inputs = { "ALT-CTRL-LEFT" },
     label = L["Previous Buffer Group"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         if module.root then

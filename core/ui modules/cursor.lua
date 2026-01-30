@@ -8,7 +8,6 @@ module:registerBinding({
     label = L["Destroy Cursor Item"],
     inputs = { "ALT-CTRL-\\", "DELETE" },
     interruptSpeech = true,
-    delay = 0.01,
     func = function()
         local cursorType, id, _ = GetCursorInfo()
         if cursorType ~= "item" then

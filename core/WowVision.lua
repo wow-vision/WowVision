@@ -1,6 +1,7 @@
 local addonName, WowVisionNamespace = ...
 WowVision = LibStub("AceAddon-3.0"):NewAddon("WowVision", "AceConsole-3.0")
 WowVision.Class = WowVisionNamespace.Class
+WowVision.consts = WowVisionNamespace.consts
 
 -- Cache loaded addons immediately at file load time (before any modules register windows)
 -- This must happen before Window:initialize() calls checkConflictingAddons()

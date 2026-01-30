@@ -26,7 +26,6 @@ module:registerBinding({
     key = "loot/readItem",
     inputs = { "ALT-CTRL-Y" },
     label = L["Roll Tooltip"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         rollLoot("info")
@@ -38,7 +37,6 @@ module:registerBinding({
     key = "loot/rollNeed",
     inputs = { "ALT-CTRL-U" },
     label = L["Roll Need"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         rollLoot("need")
@@ -50,7 +48,6 @@ module:registerBinding({
     key = "loot/rollGreed",
     inputs = { "ALT-CTRL-I" },
     label = L["Roll Greed"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         rollLoot("greed")
@@ -62,7 +59,6 @@ module:registerBinding({
     key = "loot/rollPass",
     inputs = { "ALT-CTRL-O" },
     label = L["Roll Pass"],
-    delay = 0.01,
     interruptSpeech = true,
     func = function()
         rollLoot("pass")

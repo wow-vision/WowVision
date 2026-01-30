@@ -45,9 +45,13 @@ function UIHost:onBindingPressed(binding)
             return
         end
         --necessary due to bugs with the implementation of tts
-        C_Timer.After(0.01, function()
+        if WowVision.consts.UI_DELAY > 0 then
+            C_Timer.After(WowVision.consts.UI_DELAY, function()
+                self.navigator:onBindingPressed(binding)
+            end)
+        else
             self.navigator:onBindingPressed(binding)
-        end)
+        end
     end
 end
 

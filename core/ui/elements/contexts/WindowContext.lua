@@ -70,9 +70,13 @@ end
 function Context:onBindingPressed(binding)
     if self.hookEscape and binding.key == "close" then
         WowVision.base.speech:stop()
-        C_Timer.After(0.01, function()
+        if WowVision.consts.UI_DELAY > 0 then
+            C_Timer.After(0.01, function()
+                self:handleEscape()
+            end)
+        else
             self:handleEscape()
-        end)
+        end
         return true
     end
     return false

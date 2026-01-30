@@ -48,7 +48,13 @@ local Function = input:createBindingType("Function")
 Function.info:addFields({
     { key = "func", required = true },
     { key = "interruptSpeech", required = true, default = false },
-    { key = "delay", required = true, default = 0.0 },
+    {
+        key = "delay",
+        required = true,
+        default = function()
+            return WowVision.consts.UI_DELAY or 0
+        end,
+    },
 })
 
 function Function:onActivate(frame, info)
@@ -66,6 +72,14 @@ function Function:onActivate(frame, info)
                 C_Timer.After(info.delay, function()
                     info.func()
                 end)
+            end
+        end
+    else
+        if info.interruptSpeech then
+            print(info.delay, " for binding", info.key)
+            func = function()
+                WowVision.base.speech:stop()
+                info.func()
             end
         end
     end

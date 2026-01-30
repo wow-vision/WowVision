@@ -65,7 +65,6 @@ function Widget:initialize()
         binding = "tooltip",
         type = "Function",
         interruptSpeech = true,
-        delay = 0.01,
         func = function()
             self:announceTooltip()
         end,
@@ -84,7 +83,6 @@ function Widget:setupUniqueBindings()
         binding = "leftClick",
         type = "Function",
         interruptSpeech = true,
-        delay = 0.01,
         func = function()
             self:click()
         end,
