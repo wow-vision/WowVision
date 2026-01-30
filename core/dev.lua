@@ -106,12 +106,13 @@ arrayInfo:addFields({
 })
 
 function devTools.testArrayInfo(obj)
-    obj = obj or {
-        people = {
-            { name = "Alice", age = 30, class = "mage" },
-            { name = "Bob", age = 25, class = "warrior" },
-        },
-    }
+    obj = obj
+        or {
+            people = {
+                { name = "Alice", age = 30, class = "mage" },
+                { name = "Bob", age = 25, class = "warrior" },
+            },
+        }
     local root = arrayInfo:getGenerator(obj)
     WowVision.UIHost:openTemporaryWindow({
         generated = true,
@@ -329,12 +330,13 @@ end
 
 -- Test individual buffer settings
 function devTools.testBufferSettings(buffer)
-    buffer = buffer or WowVision.buffers:create("Static", {
-        label = "Test Buffer",
-        objects = {
-            { type = "Health", params = { unit = "player" } },
-        },
-    })
+    buffer = buffer
+        or WowVision.buffers:create("Static", {
+            label = "Test Buffer",
+            objects = {
+                { type = "Health", params = { unit = "player" } },
+            },
+        })
 
     local gen = buffer:getSettingsGenerator()
     WowVision.UIHost:openTemporaryWindow({

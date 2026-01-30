@@ -25,7 +25,6 @@ function module:onFullEnable()
 
     generalGroup:add(generalBuffer)
     root:add(generalGroup)
-
     self.root = root
 end
 

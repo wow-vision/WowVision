@@ -108,6 +108,14 @@ function InfoManager:getFieldValue(obj, key)
     return field:get(obj)
 end
 
+function InfoManager:getData(obj)
+    local data = {}
+    for _, field in ipairs(self.fields) do
+        data[field.key] = field:getData(obj)
+    end
+    return data
+end
+
 function InfoManager:setFieldValue(obj, key, value)
     local field = self.fields[key]
     if field == nil then

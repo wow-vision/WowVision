@@ -114,6 +114,10 @@ function Field:get(obj, ...)
     return obj[self.key]
 end
 
+function Field:getData(obj)
+    return self:get(obj)
+end
+
 function Field:getDefault(obj)
     if type(self.default) == "function" then
         return self.default(obj)
