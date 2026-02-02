@@ -13,24 +13,41 @@ function ObjectItem:initialize(config)
     WowVision.buffers.BufferItem.initialize(self, config)
 end
 
--- Create the Object instance from the TrackingConfig (no caching for now)
+-- Check if self.object is an Object instance (from TrackedBuffer) or TrackingConfig (from StaticBuffer)
+function ObjectItem:isObjectInstance()
+    return self.object and self.object.class ~= nil
+end
+
+-- Get the Object instance
+-- If self.object is already an Object (from TrackedBuffer), return it directly
+-- If self.object is a TrackingConfig (from StaticBuffer), create an Object from it
 function ObjectItem:getObject()
-    local config = self.object
-    if not config or not config.type then
+    local obj = self.object
+    if not obj then
+        return nil
+    end
+
+    -- If it's already an Object instance (has a class), return it directly
+    if obj.class then
+        return obj
+    end
+
+    -- Otherwise it's a TrackingConfig, create Object from it
+    if not obj.type then
         return nil
     end
     -- Convert TrackingConfig to Object params
     local params = {}
-    if config.units and config.units[1] then
+    if obj.units and obj.units[1] then
         -- UnitType uses units array
-        params.unit = config.units[1]
+        params.unit = obj.units[1]
     end
-    if config.params then
-        for k, v in pairs(config.params) do
+    if obj.params then
+        for k, v in pairs(obj.params) do
             params[k] = v
         end
     end
-    return WowVision.objects:create(config.type, params)
+    return WowVision.objects:create(obj.type, params)
 end
 
 function ObjectItem:getFocusString()
@@ -42,23 +59,33 @@ function ObjectItem:getFocusString()
 end
 
 function ObjectItem:getLabel()
-    local config = self.object
-    if config and config.type then
-        local objectType = WowVision.objects.types:get(config.type)
+    local obj = self.object
+    if not obj then
+        return L["Empty Object"]
+    end
+
+    -- If it's an Object instance, use its getLabel method
+    if obj.class then
+        return obj:getLabel()
+    end
+
+    -- Otherwise it's a TrackingConfig
+    if obj.type then
+        local objectType = WowVision.objects.types:get(obj.type)
         if objectType then
             -- Use getDefinitionLabel for a descriptive label
             local params = {}
-            if config.units and config.units[1] then
-                params.unit = config.units[1]
+            if obj.units and obj.units[1] then
+                params.unit = obj.units[1]
             end
-            if config.params then
-                for k, v in pairs(config.params) do
+            if obj.params then
+                for k, v in pairs(obj.params) do
                     params[k] = v
                 end
             end
             return objectType:getDefinitionLabel(params)
         end
-        return config.type
+        return obj.type
     end
     return L["Empty Object"]
 end

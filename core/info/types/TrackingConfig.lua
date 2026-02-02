@@ -20,6 +20,10 @@ function TrackingConfigField:validate(value)
     if type(value) ~= "table" then
         return { type = nil }
     end
+    -- If it's an Object instance (has a class), pass through directly
+    if value.class then
+        return value
+    end
     -- Keep all fields from value, just ensure type exists
     local result = {}
     for k, v in pairs(value) do

@@ -12,34 +12,69 @@ TrackedBuffer.info:addFields({
 function TrackedBuffer:initialize(obj)
     self.objectToItem = {} -- Maps Object -> ObjectItem for removal (must be before parent.initialize which calls onSetInfo)
     WowVision.buffers.Buffer.initialize(self, obj)
+
+    -- Subscribe to source field changes to restart tracking
+    local sourceField = self.class.info:getField("source")
+    sourceField.events.valueChange:subscribe(self, function(subscriber, event, target, key, value)
+        if target == self then
+            subscriber:restartTracking()
+        end
+    end)
 end
 
-function TrackedBuffer:onSetInfo()
-    -- Clean up existing tracker if there is one
+-- Deep copy a table
+local function deepCopy(tbl)
+    if type(tbl) ~= "table" then
+        return tbl
+    end
+    local copy = {}
+    for k, v in pairs(tbl) do
+        copy[k] = deepCopy(v)
+    end
+    return copy
+end
+
+function TrackedBuffer:restartTracking()
+    -- Clean up existing tracker
     if self.tracker then
         self:cleanupTracker()
     end
 
-    -- Create new tracker from source config
-    if self.source then
-        self.tracker = WowVision.objects:track(self.source)
-
-        -- Populate from existing tracked objects
-        for object, _ in pairs(self.tracker.items) do
-            self:onTrackerAdd(self.tracker, object)
-        end
-
-        -- Subscribe to future changes
-        self.tracker.events.add:subscribe(self, function(subscriber, event, tracker, object)
-            subscriber:onTrackerAdd(tracker, object)
-        end)
-        self.tracker.events.remove:subscribe(self, function(subscriber, event, tracker, object)
-            subscriber:onTrackerRemove(tracker, object)
-        end)
-        self.tracker.events.modify:subscribe(self, function(subscriber, event, tracker, object)
-            subscriber:onTrackerModify(tracker, object)
-        end)
+    -- Validate source config before tracking
+    if not self.source or not self.source.type then
+        return
     end
+    -- For UnitTypes, need valid units array
+    if self.source.units then
+        if #self.source.units == 0 or (self.source.units[1] == nil or self.source.units[1] == "") then
+            return
+        end
+    end
+
+    -- Deep copy config so tracker has stable reference
+    local configCopy = deepCopy(self.source)
+    self.tracker = WowVision.objects:track(configCopy)
+
+    -- Populate from existing tracked objects
+    for object, _ in pairs(self.tracker.items) do
+        self:onTrackerAdd(self.tracker, object)
+    end
+
+    -- Subscribe to future changes
+    self.tracker.events.add:subscribe(self, function(subscriber, event, tracker, object)
+        subscriber:onTrackerAdd(tracker, object)
+    end)
+    self.tracker.events.remove:subscribe(self, function(subscriber, event, tracker, object)
+        subscriber:onTrackerRemove(tracker, object)
+    end)
+    self.tracker.events.modify:subscribe(self, function(subscriber, event, tracker, object)
+        subscriber:onTrackerModify(tracker, object)
+    end)
+end
+
+function TrackedBuffer:onSetInfo()
+    -- Use restartTracking to set up the tracker
+    self:restartTracking()
 end
 
 function TrackedBuffer:cleanupTracker()
