@@ -13,12 +13,12 @@ function module:getDefaultData()
 
     local generalBuffer = WowVision.buffers:create("Static", {
         label = L["General"],
-        objects = {
-            { type = "Health", params = { unit = "player" } },
-            { type = "Power", params = { unit = "player" } },
-            { type = "PlayerXP" },
-            { type = "PlayerMoney" },
-            { type = "PVP", params = { unit = "player" } },
+        items = {
+            { object = { type = "Health", units = { "player" } } },
+            { object = { type = "Power", units = { "player" } } },
+            { object = { type = "PlayerXP" } },
+            { object = { type = "PlayerMoney" } },
+            { object = { type = "PVP", units = { "player" } } },
         },
     })
 
@@ -32,29 +32,10 @@ function module:onFullEnable()
     self.root = root
 end
 
-function module:onFullEnable2()
-    -- Root group contains child groups
-    local root = WowVision.buffers.BufferGroup:new()
-    root:setLabel(L["Buffers"])
-
-    -- General group
-    local generalGroup = WowVision.buffers.BufferGroup:new()
-    generalGroup:setLabel(L["General"])
-
-    local generalBuffer = WowVision.buffers:create("Static", {
-        label = L["General"],
-        objects = {
-            { type = "Health", params = { unit = "player" } },
-            { type = "Power", params = { unit = "player" } },
-            { type = "PlayerXP" },
-            { type = "PlayerMoney" },
-            { type = "PVP", params = { unit = "player" } },
-        },
-    })
-
-    generalGroup:add(generalBuffer)
-    root:add(generalGroup)
-    self.root = root
+function module:getAdditionalMenuUI()
+    if self.root then
+        return self.root.class.info:getGenerator(self.root)
+    end
 end
 
 -- Helper to get current group

@@ -335,6 +335,7 @@ end
 function UnitType:getTrackingGenerator(config)
     local L = WowVision:getLocale()
     config = config or {}
+    config.params = config.params or {}
     -- Initialize unit from units array if editing existing config
     if config.units and config.units[1] then
         config.unit = config.units[1]
@@ -367,7 +368,7 @@ function UnitType:getTrackingGenerator(config)
 
     -- Add other parameters excluding unit
     if #self.parameters.fields > 1 then
-        local paramsGen = self.parameters:getGenerator(config, { excludedFields = { unit = true } })
+        local paramsGen = self.parameters:getGenerator(config.params, { excludedFields = { unit = true } })
         paramsGen.key = "params"
         paramsGen.label = L["Parameters"]
         tinsert(children, paramsGen)

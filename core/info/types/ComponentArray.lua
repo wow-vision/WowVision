@@ -270,12 +270,20 @@ function ComponentArrayField:buildList(obj)
     }
 end
 
+-- Get available types (handles both table and function)
+function ComponentArrayField:getAvailableTypes()
+    if type(self.availableTypes) == "function" then
+        return self.availableTypes()
+    end
+    return self.availableTypes
+end
+
 -- Type selector for adding new component
 function ComponentArrayField:buildTypeSelector(obj)
     local field = self
     local children = {}
 
-    for _, typeEntry in ipairs(self.availableTypes) do
+    for _, typeEntry in ipairs(self:getAvailableTypes()) do
         local typeKey = self:getTypeKeyFromEntry(typeEntry)
         local typeLabel = self:getTypeLabel(typeEntry)
         tinsert(children, {

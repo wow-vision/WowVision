@@ -212,13 +212,46 @@ end
 function TrackingConfigField:createConfigProxy(obj)
     local field = self
     local value = obj[field.key] or { type = nil }
+    local nestedProxies = {}
+    local PROXY_MARKER = {} -- Unique marker to identify our proxies
+
+    local function createNestedProxy(tbl, key)
+        local proxy = setmetatable({}, {
+            __index = function(nt, nk)
+                return tbl[nk]
+            end,
+            __newindex = function(nt, nk, nv)
+                tbl[nk] = nv
+                field:onConfigChanged(obj)
+            end,
+            __pairs = function(nt)
+                return pairs(tbl)
+            end,
+        })
+        rawset(proxy, PROXY_MARKER, true)
+        return proxy
+    end
 
     return setmetatable({}, {
         __index = function(t, k)
-            return value[k]
+            local v = value[k]
+            -- Return nested proxy for table values to capture nested writes
+            if type(v) == "table" and not rawget(v, PROXY_MARKER) then
+                if not nestedProxies[k] then
+                    nestedProxies[k] = createNestedProxy(v, k)
+                end
+                return nestedProxies[k]
+            end
+            return v
         end,
         __newindex = function(t, k, v)
+            -- If assigning a proxy, extract the underlying value
+            if type(v) == "table" and rawget(v, PROXY_MARKER) then
+                -- Don't store proxies, the value is already in place
+                return
+            end
             value[k] = v
+            nestedProxies[k] = nil  -- Clear cached proxy if value replaced
             field:onConfigChanged(obj)
         end,
         -- Allow pairs() iteration
