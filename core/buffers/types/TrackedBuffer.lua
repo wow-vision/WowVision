@@ -22,18 +22,6 @@ function TrackedBuffer:initialize(obj)
     end)
 end
 
--- Deep copy a table
-local function deepCopy(tbl)
-    if type(tbl) ~= "table" then
-        return tbl
-    end
-    local copy = {}
-    for k, v in pairs(tbl) do
-        copy[k] = deepCopy(v)
-    end
-    return copy
-end
-
 function TrackedBuffer:restartTracking()
     -- Clean up existing tracker
     if self.tracker then
@@ -52,7 +40,7 @@ function TrackedBuffer:restartTracking()
     end
 
     -- Deep copy config so tracker has stable reference
-    local configCopy = deepCopy(self.source)
+    local configCopy = WowVision.info.deepCopy(self.source)
     self.tracker = WowVision.objects:track(configCopy)
 
     -- Populate from existing tracked objects

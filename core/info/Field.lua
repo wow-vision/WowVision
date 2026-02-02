@@ -24,8 +24,25 @@ local function valuesEqual(a, b)
     return false
 end
 
+-- Deep copy a table (handles nested tables, preserves non-table values)
+local function deepCopy(value)
+    if type(value) ~= "table" then
+        return value
+    end
+    -- Skip class instances (have metatable with class)
+    if value.class then
+        return value
+    end
+    local copy = {}
+    for k, v in pairs(value) do
+        copy[k] = deepCopy(v)
+    end
+    return copy
+end
+
 -- Export for use by other field types
 WowVision.info.valuesEqual = valuesEqual
+WowVision.info.deepCopy = deepCopy
 
 -- Class-level operators table (subclasses get their own via CreateFieldClass)
 Field.operators = {}

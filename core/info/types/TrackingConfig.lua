@@ -54,22 +54,7 @@ end
 function TrackingConfigField:onConfigChanged(obj)
     local value = obj[self.key]
     if self.persist and obj.db then
-        -- Deep copy for persistence
-        local dbValue = nil
-        if value then
-            dbValue = {}
-            for k, v in pairs(value) do
-                if type(v) == "table" then
-                    dbValue[k] = {}
-                    for k2, v2 in pairs(v) do
-                        dbValue[k][k2] = v2
-                    end
-                else
-                    dbValue[k] = v
-                end
-            end
-        end
-        obj.db[self.key] = dbValue
+        obj.db[self.key] = WowVision.info.deepCopy(value)
     end
     self.events.valueChange:emit(obj, self.key, value)
 end

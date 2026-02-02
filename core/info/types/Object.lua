@@ -40,20 +40,7 @@ end
 function ObjectField:onObjectChanged(obj)
     local value = obj[self.key]
     if self.persist and obj.db then
-        -- Deep copy for persistence
-        local dbValue = nil
-        if value then
-            dbValue = {
-                type = value.type,
-                params = {},
-            }
-            if value.params then
-                for k, v in pairs(value.params) do
-                    dbValue.params[k] = v
-                end
-            end
-        end
-        obj.db[self.key] = dbValue
+        obj.db[self.key] = WowVision.info.deepCopy(value)
     end
     self.events.valueChange:emit(obj, self.key, value)
 end
