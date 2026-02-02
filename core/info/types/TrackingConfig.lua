@@ -76,12 +76,27 @@ end
 
 -- Set the tracking config value
 function TrackingConfigField:set(obj, value)
-    obj[self.key] = self:validate(value)
+    local oldValue = obj[self.key]
+    local newValue = self:validate(value)
+
+    -- Check if value actually changed
+    if WowVision.info.valuesEqual(oldValue, newValue) then
+        return false
+    end
+
+    obj[self.key] = newValue
     self:onConfigChanged(obj)
+    return true
 end
 
 -- Set just the type, resetting config to defaults
 function TrackingConfigField:setType(obj, typeKey)
+    local oldValue = obj[self.key]
+    -- If type isn't changing, don't reset config
+    if oldValue and oldValue.type == typeKey then
+        return false
+    end
+
     local value = { type = typeKey }
     if typeKey then
         local objectType = WowVision.objects.types:get(typeKey)
@@ -96,6 +111,7 @@ function TrackingConfigField:setType(obj, typeKey)
     end
     obj[self.key] = value
     self:onConfigChanged(obj)
+    return true
 end
 
 -- Restore from DB
@@ -225,6 +241,10 @@ function TrackingConfigField:createConfigProxy(obj)
                 return tbl[nk]
             end,
             __newindex = function(nt, nk, nv)
+                local oldValue = tbl[nk]
+                if WowVision.info.valuesEqual(oldValue, nv) then
+                    return
+                end
                 tbl[nk] = nv
                 field:onConfigChanged(obj)
             end,
@@ -252,6 +272,11 @@ function TrackingConfigField:createConfigProxy(obj)
             -- If assigning a proxy, extract the underlying value
             if type(v) == "table" and rawget(v, PROXY_MARKER) then
                 -- Don't store proxies, the value is already in place
+                return
+            end
+            -- Check if value actually changed
+            local oldValue = value[k]
+            if WowVision.info.valuesEqual(oldValue, v) then
                 return
             end
             value[k] = v

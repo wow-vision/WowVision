@@ -1,6 +1,32 @@
 local Field = WowVision.Class("InfoField")
 WowVision.info.Field = Field
 
+-- Helper to compare two values for equality (shallow for tables)
+local function valuesEqual(a, b)
+    if a == b then
+        return true
+    end
+    -- For tables, do shallow comparison
+    if type(a) == "table" and type(b) == "table" then
+        -- Check if same keys and values (one level deep)
+        for k, v in pairs(a) do
+            if b[k] ~= v then
+                return false
+            end
+        end
+        for k, v in pairs(b) do
+            if a[k] ~= v then
+                return false
+            end
+        end
+        return true
+    end
+    return false
+end
+
+-- Export for use by other field types
+WowVision.info.valuesEqual = valuesEqual
+
 -- Class-level operators table (subclasses get their own via CreateFieldClass)
 Field.operators = {}
 
@@ -128,6 +154,13 @@ end
 function Field:set(obj, ...)
     local value = ...
     value = self:validate(value)
+    local oldValue = self:get(obj)
+
+    -- Check if value actually changed
+    if valuesEqual(oldValue, value) then
+        return false
+    end
+
     local persistValue = value
     if self.setFunc then
         persistValue = self.setFunc(obj, self.key, value) or value
@@ -138,6 +171,7 @@ function Field:set(obj, ...)
         obj.db[self.key] = persistValue
     end
     self.events.valueChange:emit(obj, self.key, persistValue)
+    return true
 end
 
 function Field:setInfo(obj, info, ignoreRequired, applyMode)
