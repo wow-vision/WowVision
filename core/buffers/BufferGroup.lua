@@ -59,8 +59,6 @@ local RootBufferGroup = WowVision.buffers.registry:createType({ key = "RootGroup
 RootBufferGroup.info:updateField({
     key = "items",
     availableTypes = {
-        { key = "Static", label = L["Static Buffer"] },
-        { key = "Tracked", label = L["Tracked Buffer"] },
         { key = "Group", label = L["Buffer Group"] },
     },
 })
