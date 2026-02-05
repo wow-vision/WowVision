@@ -6,6 +6,7 @@ TrackedBuffer.info:addFields({
         key = "source",
         type = "TrackingConfig",
         label = L["Source"],
+        persist = true,
     },
 })
 

@@ -31,7 +31,7 @@ function ComponentArrayField:getInfo()
 end
 
 function ComponentArrayField:getData(obj)
-    local result = {}
+    local result = { _type = "array" }
     for _, item in ipairs(obj[self.key] or {}) do
         local config = item.info:getData(item)
         config.type = self.getTypeKey(item)
@@ -77,7 +77,7 @@ end
 
 -- Convert instances array to config array for persistence
 function ComponentArrayField:instancesToConfigs(instances)
-    local result = {}
+    local result = { _type = "array" }
     for _, instance in ipairs(instances) do
         local config = instance.class.info:getDefaultDB(instance)
         config.type = self.getTypeKey(instance)

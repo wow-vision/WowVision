@@ -7,6 +7,7 @@ BufferGroup.info:addFields({
         key = "items",
         type = "ComponentArray",
         label = L["Buffers"],
+        persist = true,
         factory = function(config)
             return WowVision.buffers:create(config.type, config)
         end,
