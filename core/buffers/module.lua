@@ -34,7 +34,8 @@ end
 
 function module:getAdditionalMenuUI()
     if self.root then
-        return self.root.class.info:getGenerator(self.root)
+        local field = self.root.class.info:getField("items")
+        return field:getGenerator(self.root)
     end
 end
 
