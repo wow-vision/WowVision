@@ -76,7 +76,6 @@ function Function:onActivate(frame, info)
         end
     else
         if info.interruptSpeech then
-            print(info.delay, " for binding", info.key)
             func = function()
                 WowVision.base.speech:stop()
                 info.func()

@@ -9,6 +9,7 @@ function Tooltip:initialize(name)
     self.activeFrame = nil
     self.widget = nil
     self.tooltipData = nil
+    self.currentLine = nil
 end
 
 function Tooltip:set(widget, data)
@@ -39,6 +40,7 @@ function Tooltip:reset()
     self.activeFrame = nil
     self.widget = nil
     self.tooltipData = nil
+    self.currentLine = nil
 end
 
 function Tooltip:onFocus()
@@ -78,6 +80,109 @@ function Tooltip:speak(lineNumber)
     local text = self:getText(lineNumber)
     if text and text ~= "" then
         WowVision:speak(text)
+    end
+end
+
+function Tooltip:getNumLines()
+    if not self.activeFrame then
+        return 0
+    end
+    return self.activeFrame:NumLines()
+end
+
+function Tooltip:prepareRead()
+    if self.activeType then
+        self.activeType:beforeRead()
+    end
+end
+
+function Tooltip:finishRead()
+    if self.activeType then
+        self.activeType:afterRead()
+    end
+end
+
+function Tooltip:nextLine()
+    if not self.activeFrame then return end
+    self:prepareRead()
+    local numLines = self:getNumLines()
+    if numLines == 0 then
+        self:finishRead()
+        return
+    end
+
+    if self.currentLine == nil then
+        self.currentLine = 1
+    elseif self.currentLine < numLines then
+        self.currentLine = self.currentLine + 1
+    end
+
+    local left, right = self.reader:getLine(self.activeFrame, self.currentLine)
+    self:finishRead()
+    local text = self.reader:formatLine(left, right)
+    if text and text ~= "" then
+        WowVision:speak(text)
+    end
+end
+
+function Tooltip:previousLine()
+    if not self.activeFrame then return end
+    self:prepareRead()
+    local numLines = self:getNumLines()
+    if numLines == 0 then
+        self:finishRead()
+        return
+    end
+
+    if self.currentLine == nil then
+        self.currentLine = numLines
+    elseif self.currentLine > 1 then
+        self.currentLine = self.currentLine - 1
+    end
+
+    local left, right = self.reader:getLine(self.activeFrame, self.currentLine)
+    self:finishRead()
+    local text = self.reader:formatLine(left, right)
+    if text and text ~= "" then
+        WowVision:speak(text)
+    end
+end
+
+function Tooltip:speakCurrentLeft()
+    if not self.activeFrame then return end
+    self:prepareRead()
+    local numLines = self:getNumLines()
+    if numLines == 0 then
+        self:finishRead()
+        return
+    end
+    if self.currentLine == nil then
+        self.currentLine = 1
+    end
+
+    local left, _ = self.reader:getLine(self.activeFrame, self.currentLine)
+    self:finishRead()
+    if left and left ~= "" then
+        WowVision:speak(left)
+    end
+end
+
+function Tooltip:speakCurrentRight()
+    if not self.activeFrame then return end
+    self:prepareRead()
+    local numLines = self:getNumLines()
+    if numLines == 0 then
+        self:finishRead()
+        return
+    end
+    if self.currentLine == nil then
+        self.currentLine = 1
+    end
+
+    local _, right = self.reader:getLine(self.activeFrame, self.currentLine)
+    self:finishRead()
+    if right and right ~= "" then
+        WowVision:speak(right)
     end
 end
 
