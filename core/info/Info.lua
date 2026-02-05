@@ -136,7 +136,7 @@ function InfoManager:getGenerator(obj, options)
     local excludedFields = options.excludedFields or {}
     local result = { "List", children = {} }
     for _, field in ipairs(self.fields) do
-        if not excludedFields[field.key] then
+        if field.showInUI and not excludedFields[field.key] then
             tinsert(result.children, field:getGenerator(obj))
         end
     end

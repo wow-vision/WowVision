@@ -86,6 +86,7 @@ function Field:setup(info)
     self.compareMode = info.compareMode or "deep" -- "deep" or "direct"
     self.label = info.label
     self.persist = info.persist or false
+    self.showInUI = info.showInUI ~= false
 end
 
 function Field:getInfo()
@@ -102,6 +103,7 @@ function Field:getInfo()
         compareMode = self.compareMode,
         label = self.label,
         persist = self.persist,
+        showInUI = self.showInUI,
     }
     return result
 end

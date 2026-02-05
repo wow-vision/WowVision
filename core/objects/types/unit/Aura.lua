@@ -7,6 +7,7 @@ Aura:addParameter({
     type = "Number",
     key = "instanceID",
     label = L["Instance ID"],
+    showInUI = false,
 })
 
 function Aura:validParams(params)
