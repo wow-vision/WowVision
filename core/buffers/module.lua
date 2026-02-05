@@ -4,7 +4,7 @@ module:setLabel(L["Buffers"])
 
 function module:getDefaultData()
     -- Root group contains child groups
-    local root = WowVision.buffers.BufferGroup:new()
+    local root = WowVision.buffers.RootBufferGroup:new()
     root:setLabel(L["Buffers"])
 
     -- General group
@@ -28,7 +28,7 @@ function module:getDefaultData()
 end
 
 function module:onFullEnable()
-    local root = WowVision.buffers.BufferGroup:new(self.db.data)
+    local root = WowVision.buffers.RootBufferGroup:new(self.db.data)
     self.root = root
 end
 

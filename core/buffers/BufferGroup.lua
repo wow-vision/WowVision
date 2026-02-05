@@ -20,7 +20,6 @@ BufferGroup.info:addFields({
         availableTypes = {
             { key = "Static", label = L["Static Buffer"] },
             { key = "Tracked", label = L["Tracked Buffer"] },
-            { key = "Group", label = L["Buffer Group"] },
         },
     },
 })
@@ -52,3 +51,17 @@ function BufferGroup:getBufferTypeKey(buffer)
 end
 
 WowVision.buffers.BufferGroup = BufferGroup
+
+-- Root group allows adding child groups (one level of nesting only)
+local RootBufferGroup = WowVision.buffers.registry:createType({ key = "RootGroup", parent = "Group" })
+
+RootBufferGroup.info:updateField({
+    key = "items",
+    availableTypes = {
+        { key = "Static", label = L["Static Buffer"] },
+        { key = "Tracked", label = L["Tracked Buffer"] },
+        { key = "Group", label = L["Buffer Group"] },
+    },
+})
+
+WowVision.buffers.RootBufferGroup = RootBufferGroup
