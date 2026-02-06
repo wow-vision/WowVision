@@ -102,6 +102,15 @@ function Tooltip:finishRead()
     end
 end
 
+function Tooltip:isLineBlank(lineNumber)
+    local left, right = self.reader:getLine(self.activeFrame, lineNumber)
+    local text = self.reader:formatLine(left, right)
+    if not text then return true end
+    -- Strip WoW escape sequences: color codes, reset, textures, atlas, hyperlinks
+    local stripped = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("|A.-|a", ""):gsub("|H.-|h", "")
+    return strtrim(stripped) == ""
+end
+
 function Tooltip:nextLine()
     if not self.activeFrame then return end
     self:prepareRead()
@@ -111,10 +120,13 @@ function Tooltip:nextLine()
         return
     end
 
-    if self.currentLine == nil then
-        self.currentLine = 1
-    elseif self.currentLine < numLines then
-        self.currentLine = self.currentLine + 1
+    local start = self.currentLine or 0
+    local target = start + 1
+    while target <= numLines and self:isLineBlank(target) do
+        target = target + 1
+    end
+    if target <= numLines then
+        self.currentLine = target
     end
 
     local left, right = self.reader:getLine(self.activeFrame, self.currentLine)
@@ -134,10 +146,13 @@ function Tooltip:previousLine()
         return
     end
 
-    if self.currentLine == nil then
-        self.currentLine = numLines
-    elseif self.currentLine > 1 then
-        self.currentLine = self.currentLine - 1
+    local start = self.currentLine or (numLines + 1)
+    local target = start - 1
+    while target >= 1 and self:isLineBlank(target) do
+        target = target - 1
+    end
+    if target >= 1 then
+        self.currentLine = target
     end
 
     local left, right = self.reader:getLine(self.activeFrame, self.currentLine)
