@@ -33,7 +33,6 @@ settings:add({
 })
 
 function module:onEnable()
-    self.speechDelay = 0.1
     if not self.interruptFrame then
         self.interruptFrame = CreateFrame("Frame")
         self.interruptFrame:EnableKeyboard(true)
