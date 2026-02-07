@@ -6,6 +6,7 @@ ObjectItem.info:addFields({
         key = "object",
         type = "TrackingConfig",
         label = L["Object"],
+        persist = true,
     },
 })
 

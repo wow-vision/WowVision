@@ -79,7 +79,7 @@ end
 function ComponentArrayField:instancesToConfigs(instances)
     local result = { _type = "array" }
     for _, instance in ipairs(instances) do
-        local config = instance.class.info:getDefaultDB(instance)
+        local config = instance.class.info:getData(instance)
         config.type = self.getTypeKey(instance)
         tinsert(result, config)
     end
@@ -142,7 +142,7 @@ function ComponentArrayField:addElement(obj, instanceOrConfig)
             dbArr = {}
             obj.db[self.key] = dbArr
         end
-        local config = instance.class.info:getDefaultDB(instance)
+        local config = instance.class.info:getData(instance)
         config.type = self.getTypeKey(instance)
         tinsert(dbArr, config)
         instance.db = dbArr[#dbArr]
