@@ -9,6 +9,9 @@ Widget.info:addFields({
         set = function(obj, key, value)
             obj.bind = value -- Keep raw config for reconciliation comparison
             obj._binding = WowVision.dataBinding:create(value)
+            if obj._binding and obj._binding.fixedValue == nil then
+                obj:setValue(obj:getBoundValue())
+            end
         end,
     },
     {
@@ -90,11 +93,6 @@ function Widget:setupUniqueBindings()
 end
 
 function Widget:onSetInfo()
-    -- Initialize value from binding after all fields are set
-    -- (ensures child class fields like EditBox.type are available)
-    if self._binding and self._binding.fixedValue == nil then
-        self:setValue(self:getBoundValue())
-    end
 end
 
 function Widget:getValue()
