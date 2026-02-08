@@ -2,24 +2,27 @@ local templates = {
     registry = WowVision.Registry:new(),
 }
 
--- Render a template string with variable and locale substitutions
 -- Template syntax:
 --   {field}  - Replaced with context[field]
---   [key]    - Replaced with locale[key]
+--   [key]    - Replaced with locale[key] (resolved at parse time)
 --   {{       - Literal {
 --   }}       - Literal }
 --   [[       - Literal [
 --   ]]       - Literal ]
 --
 -- Example: "[XP]: {percent}% ({current} [of] {maximum})"
---
--- Note: This implementation uses manual parsing and string concatenation
--- instead of gsub to support WoW's "secret values" which cannot be used
--- with most Lua operations but can be concatenated.
-function templates.render(template, context, locale)
-    local result = ""
+
+-- Parse a template string into an AST (array of nodes) and a set of required field keys.
+-- Locale values are resolved at parse time into literal nodes.
+-- Node types:
+--   { type = "literal", value = "some text" }
+--   { type = "field", key = "fieldName" }
+function templates.parse(template, locale)
+    local nodes = {}
+    local fields = {}
     local pos = 1
     local len = #template
+    local literal = ""
 
     while pos <= len do
         -- Find next special character
@@ -39,13 +42,13 @@ function templates.render(template, context, locale)
 
         if not nextSpecial then
             -- No more special chars, append rest of string
-            result = result .. string.sub(template, pos)
+            literal = literal .. string.sub(template, pos)
             break
         end
 
-        -- Append literal text before the special char
+        -- Accumulate literal text before the special char
         if nextSpecial > pos then
-            result = result .. string.sub(template, pos, nextSpecial - 1)
+            literal = literal .. string.sub(template, pos, nextSpecial - 1)
         end
 
         local char = string.sub(template, nextSpecial, nextSpecial)
@@ -54,73 +57,105 @@ function templates.render(template, context, locale)
         if char == "{" then
             if nextChar == "{" then
                 -- Escaped {{ -> literal {
-                result = result .. "{"
+                literal = literal .. "{"
                 pos = nextSpecial + 2
             else
                 -- Find closing }
                 local closePos = string.find(template, "}", nextSpecial + 1, true)
                 if closePos then
-                    local field = string.sub(template, nextSpecial + 1, closePos - 1)
-                    local value = context[field]
-                    if value ~= nil then
-                        result = result .. value
-                    else
-                        result = result .. "{" .. field .. "}"
+                    -- Flush accumulated literal before field node
+                    if #literal > 0 then
+                        tinsert(nodes, { type = "literal", value = literal })
+                        literal = ""
                     end
+                    local fieldKey = string.sub(template, nextSpecial + 1, closePos - 1)
+                    tinsert(nodes, { type = "field", key = fieldKey })
+                    fields[fieldKey] = true
                     pos = closePos + 1
                 else
                     -- No closing brace, treat as literal
-                    result = result .. "{"
+                    literal = literal .. "{"
                     pos = nextSpecial + 1
                 end
             end
         elseif char == "}" then
             if nextChar == "}" then
                 -- Escaped }} -> literal }
-                result = result .. "}"
+                literal = literal .. "}"
                 pos = nextSpecial + 2
             else
                 -- Standalone }, just output it
-                result = result .. "}"
+                literal = literal .. "}"
                 pos = nextSpecial + 1
             end
         elseif char == "[" then
             if nextChar == "[" then
                 -- Escaped [[ -> literal [
-                result = result .. "["
+                literal = literal .. "["
                 pos = nextSpecial + 2
             else
                 -- Find closing ]
                 local closePos = string.find(template, "]", nextSpecial + 1, true)
                 if closePos then
+                    -- Resolve locale at parse time into literal
                     local key = string.sub(template, nextSpecial + 1, closePos - 1)
-                    local value = locale[key]
+                    local value = locale and locale[key]
                     if value ~= nil then
-                        result = result .. value
+                        literal = literal .. value
                     else
-                        result = result .. "[" .. key .. "]"
+                        literal = literal .. "[" .. key .. "]"
                     end
                     pos = closePos + 1
                 else
                     -- No closing bracket, treat as literal
-                    result = result .. "["
+                    literal = literal .. "["
                     pos = nextSpecial + 1
                 end
             end
         elseif char == "]" then
             if nextChar == "]" then
                 -- Escaped ]] -> literal ]
-                result = result .. "]"
+                literal = literal .. "]"
                 pos = nextSpecial + 2
             else
                 -- Standalone ], just output it
-                result = result .. "]"
+                literal = literal .. "]"
                 pos = nextSpecial + 1
             end
         end
     end
 
+    -- Flush remaining literal
+    if #literal > 0 then
+        tinsert(nodes, { type = "literal", value = literal })
+    end
+
+    return nodes, fields
+end
+
+-- Render from pre-parsed AST nodes.
+-- Uses concatenation (not table.concat) to support WoW's "secret values"
+-- which cannot be used with most Lua operations but can be concatenated.
+function templates.renderNodes(nodes, context)
+    local result = ""
+    for i = 1, #nodes do
+        local node = nodes[i]
+        if node.type == "literal" then
+            result = result .. node.value
+        elseif node.type == "field" then
+            local value = context[node.key]
+            if value ~= nil then
+                result = result .. value
+            end
+        end
+    end
     return result
+end
+
+-- Convenience: parse and render in one call (for one-off usage)
+function templates.render(template, context, locale)
+    local nodes = templates.parse(template, locale)
+    return templates.renderNodes(nodes, context)
 end
 
 WowVision.templates = templates

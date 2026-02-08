@@ -90,7 +90,8 @@ function ObjectType:getFocusString(params)
     local template = self.templates:get("default")
     if template then
         local context = {}
-        for key, field in pairs(self.fields.fields or {}) do
+        -- Only fetch fields the template actually uses
+        for key in pairs(template.fields) do
             context[key] = self:get(params, key)
         end
         return template:render(context)
@@ -98,12 +99,22 @@ function ObjectType:getFocusString(params)
     return self:getLabel(params)
 end
 
-function ObjectType:renderTemplate(template, params)
+function ObjectType:renderTemplate(formatStr, params)
+    -- Cache parsed ASTs by format string
+    if not self._templateCache then
+        self._templateCache = {}
+    end
+    local cached = self._templateCache[formatStr]
+    if not cached then
+        local nodes, fields = WowVision.templates.parse(formatStr, WowVision:getLocale())
+        cached = { nodes = nodes, fields = fields }
+        self._templateCache[formatStr] = cached
+    end
     local context = {}
-    for key, field in pairs(self.fields.fields or {}) do
+    for key in pairs(cached.fields) do
         context[key] = self:get(params, key)
     end
-    return WowVision.templates.render(template, context, WowVision:getLocale())
+    return WowVision.templates.renderNodes(cached.nodes, context)
 end
 
 function ObjectType:track(info)

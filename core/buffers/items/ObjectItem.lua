@@ -73,14 +73,15 @@ function ObjectItem:getFocusString()
     if templateValue then
         local objectType = obj.type
         if templateValue.format then
-            -- Custom format string
+            -- Custom format string (parsed + cached by ObjectType)
             return objectType:renderTemplate(templateValue.format, obj.params)
         elseif templateValue.key then
             -- Registered template by key
             local template = objectType.templates:get(templateValue.key)
             if template then
                 local context = {}
-                for key, field in pairs(objectType.fields.fields or {}) do
+                -- Only fetch fields the template actually uses
+                for key in pairs(template.fields) do
                     context[key] = objectType:get(obj.params, key)
                 end
                 return template:render(context)
