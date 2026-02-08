@@ -5,6 +5,7 @@ local TrackingConfigField, parent = info:CreateFieldClass("TrackingConfig")
 
 function TrackingConfigField:setup(config)
     parent.setup(self, config)
+    self.requireUnique = config.requireUnique or false
 end
 
 -- Value is { type = "Health", units = { "player" }, ... }
@@ -193,6 +194,20 @@ function TrackingConfigField:buildTypeButton(obj)
     }
 end
 
+-- Build flat params table from a TrackingConfig for validation
+local function buildParamsFromConfig(config)
+    local params = {}
+    if config.units and config.units[1] then
+        params.unit = config.units[1]
+    end
+    if config.params then
+        for k, v in pairs(config.params) do
+            params[k] = v
+        end
+    end
+    return params
+end
+
 -- Build a button that pushes to the params editor, or nil if no params
 function TrackingConfigField:buildParamsButton(obj)
     local field = self
@@ -200,15 +215,45 @@ function TrackingConfigField:buildParamsButton(obj)
     if not value.type then return nil end
     local objectType = WowVision.objects.types:get(value.type)
     if not objectType then return nil end
-    local configProxy = field:createConfigProxy(obj)
-    local trackingGen, _ = objectType:getTrackingGenerator(configProxy)
-    if not trackingGen.children or #trackingGen.children == 0 then return nil end
+
+    -- Check if there are any params to edit
+    local checkCopy = WowVision.info.deepCopy(value)
+    local checkGen, _ = objectType:getTrackingGenerator(checkCopy)
+    if not checkGen.children or #checkGen.children == 0 then return nil end
+
     return {
         "Button",
         key = "params",
         label = L["Parameters"],
         events = {
             click = function(event, button)
+                -- Deep copy current config for editing (not live proxy)
+                local editCopy = WowVision.info.deepCopy(value)
+                local trackingGen, _ = objectType:getTrackingGenerator(editCopy)
+
+                -- Add save button with validation
+                tinsert(trackingGen.children, {
+                    "Button",
+                    key = "save",
+                    label = L["Save"],
+                    events = {
+                        click = function(event, saveButton)
+                            local params = buildParamsFromConfig(editCopy)
+                            local valid, unique = objectType:validParams(params)
+                            if not valid then
+                                WowVision:speak(L["Invalid parameters"])
+                                return
+                            end
+                            if field.requireUnique and not unique then
+                                WowVision:speak(L["Parameters must identify a single object"])
+                                return
+                            end
+                            field:set(obj, editCopy)
+                            saveButton.context:pop()
+                        end,
+                    },
+                })
+
                 button.context:addGenerated(trackingGen)
             end,
         },

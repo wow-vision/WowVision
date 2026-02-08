@@ -7,6 +7,7 @@ ObjectItem.info:addFields({
         type = "TrackingConfig",
         label = L["Object"],
         persist = true,
+        requireUnique = true,
     },
     {
         key = "template",
