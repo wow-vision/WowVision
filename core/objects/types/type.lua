@@ -86,14 +86,23 @@ function ObjectType:getDefinitionLabel(params)
     return label
 end
 
+function ObjectType:buildContext(params, fieldKeys)
+    local context = {}
+    for key in pairs(fieldKeys) do
+        local value = self:get(params, key)
+        local field = self.fields:getField(key)
+        if field and field.formatForDisplay then
+            value = field:formatForDisplay(value)
+        end
+        context[key] = value
+    end
+    return context
+end
+
 function ObjectType:getFocusString(params)
     local template = self.templates:get("default")
     if template then
-        local context = {}
-        -- Only fetch fields the template actually uses
-        for key in pairs(template.fields) do
-            context[key] = self:get(params, key)
-        end
+        local context = self:buildContext(params, template.fields)
         return template:render(context)
     end
     return self:getLabel(params)
@@ -110,10 +119,7 @@ function ObjectType:renderTemplate(formatStr, params)
         cached = { nodes = nodes, fields = fields }
         self._templateCache[formatStr] = cached
     end
-    local context = {}
-    for key in pairs(cached.fields) do
-        context[key] = self:get(params, key)
-    end
+    local context = self:buildContext(params, cached.fields)
     return WowVision.templates.renderNodes(cached.nodes, context)
 end
 

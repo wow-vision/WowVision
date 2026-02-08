@@ -79,11 +79,7 @@ function ObjectItem:getFocusString()
             -- Registered template by key
             local template = objectType.templates:get(templateValue.key)
             if template then
-                local context = {}
-                -- Only fetch fields the template actually uses
-                for key in pairs(template.fields) do
-                    context[key] = objectType:get(obj.params, key)
-                end
+                local context = objectType:buildContext(obj.params, template.fields)
                 return template:render(context)
             end
         end

@@ -131,8 +131,23 @@ addAuraFields({
             { label = L["Enrage"], value = "" },
         },
     },
-    { type = "Number", key = "duration", label = L["Duration"] },
+    { type = "Time", key = "duration", timeType = "duration", label = L["Duration"] },
     { type = "Number", key = "expirationTime", label = L["Expiration Time"] },
+    {
+        type = "Time",
+        key = "remainingDuration",
+        timeType = "duration",
+        label = L["Remaining Duration"],
+        getCached = function(cache)
+            if cache.duration == 0 then return nil end
+            return cache.expirationTime - GetTime()
+        end,
+        get = function(params)
+            local aura = getAuraFromParams(params)
+            if aura == nil or aura.duration == 0 then return nil end
+            return aura.expirationTime - GetTime()
+        end,
+    },
     { type = "Number", key = "icon", label = L["Icon"] },
     { type = "Bool", key = "isBossAura", label = L["Is Boss Aura"] },
     { type = "Bool", key = "isFromPlayerOrPlayerPet", label = L["Is From Player Or Pet"] },
@@ -231,5 +246,5 @@ end
 Aura:registerTemplate({
     key = "default",
     name = "Default",
-    format = "{name} stacks {applications}",
+    format = "{name} stacks {applications} {remainingDuration}",
 })

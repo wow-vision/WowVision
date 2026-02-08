@@ -66,7 +66,7 @@ function ViewList:focusDirection(direction)
     if self.reverse then
         direction = direction * -1
     end
-    if self.index < 0 or self.index > #self.items then
+    if self.index < 1 or self.index > #self.items then
         if direction > 0 then
             target = 1
         end
