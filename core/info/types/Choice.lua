@@ -39,15 +39,6 @@ function ChoiceField:getDefault(obj)
     return nil
 end
 
-function ChoiceField:getChoiceByKey(obj, key)
-    for _, choice in ipairs(self:getChoices(obj)) do
-        if choice.key == key then
-            return choice
-        end
-    end
-    return nil
-end
-
 function ChoiceField:getChoiceByValue(obj, value)
     for _, choice in ipairs(self:getChoices(obj)) do
         if choice.value == value then
@@ -84,6 +75,7 @@ function ChoiceField:buildDropdown(obj)
     for _, choice in ipairs(self:getChoices(obj)) do
         tinsert(result.children, {
             "Button",
+            key = tostring(choice.value),
             label = choice.label,
             bind = { type = "Field", target = obj, field = self, fixedValue = choice.value },
             events = {
@@ -95,9 +87,12 @@ function ChoiceField:buildDropdown(obj)
 end
 
 function ChoiceField:getGenerator(obj)
+    local value = self:get(obj)
+    local valueStr = self:getValueString(obj, value)
     return {
         "Button",
         label = self:getLabel(),
+        extras = valueStr,
         userdata = self:buildDropdown(obj),
         events = {
             click = dropdownButton_Click,

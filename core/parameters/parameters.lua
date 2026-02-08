@@ -224,10 +224,24 @@ local function dropdownButton_Click(event, button)
     button.context:addGenerated(button.userdata)
 end
 
+function ChoiceParameter:getValueLabel()
+    local value = self:getValue()
+    for _, v in ipairs(self.choices) do
+        if v.value == value then
+            return v.label
+        end
+    end
+    if value ~= nil then
+        return tostring(value)
+    end
+    return nil
+end
+
 function ChoiceParameter:getGenerator()
     return {
         "Button",
         label = self.label,
+        extras = self:getValueLabel(),
         userdata = self:buildDropdown(),
         enabled = not self.static,
         events = {
@@ -290,10 +304,23 @@ function VoicePackParameter:buildDropdown()
     return result
 end
 
+function VoicePackParameter:getValueLabel()
+    local value = self:getValue()
+    if value then
+        local voicePacks = WowVision.audio.packs:get("Voice")
+        local pack = voicePacks.packs:get(value)
+        if pack then
+            return pack:getLabel()
+        end
+    end
+    return nil
+end
+
 function VoicePackParameter:getGenerator()
     return {
         "Button",
         label = self:getLabel(),
+        extras = self:getValueLabel(),
         userdata = self:buildDropdown(),
         enabled = not self.static,
         events = {

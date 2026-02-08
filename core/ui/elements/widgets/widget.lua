@@ -163,6 +163,9 @@ function Widget:getExtras()
             tinsert(extras, label)
         end
     end
+    if self.extras then
+        tinsert(extras, self.extras)
+    end
     return extras
 end
 

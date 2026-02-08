@@ -114,6 +114,9 @@ function ProxyWidget:getExtras()
     if value then
         tinsert(props, value)
     end
+    if self.extras then
+        tinsert(props, self.extras)
+    end
     return props
 end
 

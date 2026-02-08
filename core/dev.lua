@@ -61,8 +61,8 @@ info:addFields({
         key = "class",
         label = "Class",
         choices = {
-            { key = "warrior", label = "Warrior", value = 1 },
-            { key = "mage", label = "Mage", value = 2 },
+            { label = "Warrior", value = 1 },
+            { label = "Mage", value = 2 },
         },
     },
 })
@@ -94,10 +94,10 @@ arrayInfo:addFields({
                     key = "class",
                     label = "Class",
                     choices = {
-                        { key = "warrior", label = "Warrior", value = "warrior" },
-                        { key = "mage", label = "Mage", value = "mage" },
-                        { key = "rogue", label = "Rogue", value = "rogue" },
-                        { key = "priest", label = "Priest", value = "priest" },
+                        { label = "Warrior", value = "warrior" },
+                        { label = "Mage", value = "mage" },
+                        { label = "Rogue", value = "rogue" },
+                        { label = "Priest", value = "priest" },
                     },
                 },
             },

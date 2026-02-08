@@ -156,9 +156,9 @@ testRunner:addSuite("Field.Choice", {
             type = "Choice",
             key = "size",
             choices = {
-                { key = "small", label = "Small", value = 1 },
-                { key = "medium", label = "Medium", value = 2 },
-                { key = "large", label = "Large", value = 3 },
+                { label = "Small", value = 1 },
+                { label = "Medium", value = 2 },
+                { label = "Large", value = 3 },
             },
         })
         local field = info:getField("size")
@@ -172,28 +172,12 @@ testRunner:addSuite("Field.Choice", {
             key = "size",
             default = 2,
             choices = {
-                { key = "small", label = "Small", value = 1 },
-                { key = "medium", label = "Medium", value = 2 },
+                { label = "Small", value = 1 },
+                { label = "Medium", value = 2 },
             },
         })
         local field = info:getField("size")
         t:assertEqual(field:getDefault({}), 2)
-    end,
-
-    ["getChoiceByKey finds correct choice"] = function(t)
-        local info = WowVision.info.InfoManager:new()
-        info:addField({
-            type = "Choice",
-            key = "size",
-            choices = {
-                { key = "small", label = "Small", value = 1 },
-                { key = "medium", label = "Medium", value = 2 },
-            },
-        })
-        local field = info:getField("size")
-        local choice = field:getChoiceByKey({}, "medium")
-        t:assertNotNil(choice)
-        t:assertEqual(choice.value, 2)
     end,
 
     ["getChoiceByValue finds correct choice"] = function(t)
@@ -202,14 +186,14 @@ testRunner:addSuite("Field.Choice", {
             type = "Choice",
             key = "size",
             choices = {
-                { key = "small", label = "Small", value = 1 },
-                { key = "medium", label = "Medium", value = 2 },
+                { label = "Small", value = 1 },
+                { label = "Medium", value = 2 },
             },
         })
         local field = info:getField("size")
         local choice = field:getChoiceByValue({}, 2)
         t:assertNotNil(choice)
-        t:assertEqual(choice.key, "medium")
+        t:assertEqual(choice.label, "Medium")
     end,
 
     ["getValueString returns label for value"] = function(t)
@@ -218,8 +202,8 @@ testRunner:addSuite("Field.Choice", {
             type = "Choice",
             key = "size",
             choices = {
-                { key = "small", label = "Small", value = 1 },
-                { key = "medium", label = "Medium", value = 2 },
+                { label = "Small", value = 1 },
+                { label = "Medium", value = 2 },
             },
         })
         local field = info:getField("size")
@@ -461,8 +445,8 @@ testRunner:addSuite("Field.Reference", {
             type = "Choice",
             key = "source",
             choices = {
-                { key = "a", label = "Option A", value = 1 },
-                { key = "b", label = "Option B", value = 2 },
+                { label = "Option A", value = 1 },
+                { label = "Option B", value = 2 },
             },
         })
         local sourceField = info:getField("source")

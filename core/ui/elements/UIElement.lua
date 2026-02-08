@@ -30,6 +30,7 @@ UIElement.info:addFields({
     { key = "key", default = nil },
     { key = "displayType", default = nil },
     { key = "sync", default = false },
+    { key = "extras", default = nil },
 })
 
 -- Initialize liveFields for base class (child classes will get copies via CreateElementType)
@@ -202,6 +203,9 @@ function UIElement:getTypeString()
 end
 
 function UIElement:getExtras()
+    if self.extras then
+        return { self.extras }
+    end
     return {}
 end
 

@@ -13,7 +13,6 @@ Power:addParameter({
         local result = {}
         for _, power in ipairs(powersDB.items) do
             tinsert(result, {
-                key = power.key,
                 label = power.label,
                 value = power.key,
             })
