@@ -8,6 +8,18 @@ ObjectItem.info:addFields({
         label = L["Object"],
         persist = true,
     },
+    {
+        key = "template",
+        type = "Template",
+        label = L["Template"],
+        persist = true,
+        getTemplates = function(obj)
+            if obj.object and obj.object.type then
+                local objectType = WowVision.objects.types:get(obj.object.type)
+                if objectType then return objectType.templates end
+            end
+        end,
+    },
 })
 
 function ObjectItem:initialize(config)
@@ -53,10 +65,31 @@ end
 
 function ObjectItem:getFocusString()
     local obj = self:getObject()
-    if obj then
-        return obj:getFocusString()
+    if not obj then
+        return L["No object configured"]
     end
-    return L["No object configured"]
+
+    local templateValue = self.template
+    if templateValue then
+        local objectType = obj.type
+        if templateValue.format then
+            -- Custom format string
+            return objectType:renderTemplate(templateValue.format, obj.params)
+        elseif templateValue.key then
+            -- Registered template by key
+            local template = objectType.templates:get(templateValue.key)
+            if template then
+                local context = {}
+                for key, field in pairs(objectType.fields.fields or {}) do
+                    context[key] = objectType:get(obj.params, key)
+                end
+                return template:render(context)
+            end
+        end
+    end
+
+    -- Fallback to default
+    return obj:getFocusString()
 end
 
 function ObjectItem:getLabel()
@@ -93,7 +126,23 @@ end
 
 -- For ComponentArray: returns UI for editing this item's settings
 function ObjectItem:getSettingsGenerator()
-    return self.class.info:getGenerator(self)
+    local objectField = self.class.info:getField("object")
+    local templateField = self.class.info:getField("template")
+    local children = {}
+
+    -- Type dropdown
+    tinsert(children, objectField:buildTypeButton(self))
+
+    -- Parameters button (only if type has params)
+    local paramsButton = objectField:buildParamsButton(self)
+    if paramsButton then
+        tinsert(children, paramsButton)
+    end
+
+    -- Template selector
+    tinsert(children, templateField:getGenerator(self))
+
+    return { "List", label = self:getLabel(), children = children }
 end
 
 WowVision.buffers.ObjectItem = ObjectItem

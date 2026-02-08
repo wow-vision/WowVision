@@ -171,15 +171,13 @@ function TrackingConfigField:buildTypeSelector(obj)
     }
 end
 
--- Build the editor panel
-function TrackingConfigField:buildEditor(obj)
+-- Build just the type dropdown button
+function TrackingConfigField:buildTypeButton(obj)
+    self:ensureVirtualElements()
     local field = self
     local value = field:get(obj) or { type = nil }
-    local children = {}
-
-    -- Type selector button (label is computed fresh each regeneration)
     local typeLabel = value.type and (WowVision.objects.types:get(value.type).label or value.type) or L["None"]
-    tinsert(children, {
+    return {
         "Button",
         key = "type",
         label = L["Type"] .. ": " .. typeLabel,
@@ -192,18 +190,41 @@ function TrackingConfigField:buildEditor(obj)
                 })
             end,
         },
-    })
+    }
+end
 
-    -- Tracking config UI (if type is selected)
-    if value.type then
-        local objectType = WowVision.objects.types:get(value.type)
-        if objectType then
-            -- Create a proxy that writes back to our field
-            local configProxy = field:createConfigProxy(obj)
-            local trackingGen, _ = objectType:getTrackingGenerator(configProxy)
-            trackingGen.key = "config"
-            tinsert(children, trackingGen)
-        end
+-- Build a button that pushes to the params editor, or nil if no params
+function TrackingConfigField:buildParamsButton(obj)
+    local field = self
+    local value = field:get(obj) or { type = nil }
+    if not value.type then return nil end
+    local objectType = WowVision.objects.types:get(value.type)
+    if not objectType then return nil end
+    local configProxy = field:createConfigProxy(obj)
+    local trackingGen, _ = objectType:getTrackingGenerator(configProxy)
+    if not trackingGen.children or #trackingGen.children == 0 then return nil end
+    return {
+        "Button",
+        key = "params",
+        label = L["Parameters"],
+        events = {
+            click = function(event, button)
+                button.context:addGenerated(trackingGen)
+            end,
+        },
+    }
+end
+
+-- Build the editor panel
+function TrackingConfigField:buildEditor(obj)
+    local field = self
+    local children = {}
+
+    tinsert(children, field:buildTypeButton(obj))
+
+    local paramsButton = field:buildParamsButton(obj)
+    if paramsButton then
+        tinsert(children, paramsButton)
     end
 
     return {

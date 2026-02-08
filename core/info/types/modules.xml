@@ -10,6 +10,7 @@
   <Script file="Array.lua" />
   <Script file="Object.lua" />
   <Script file="TrackingConfig.lua" />
+  <Script file="Template.lua" />
   <Script file="ComponentArray.lua" />
 
 </Ui>
