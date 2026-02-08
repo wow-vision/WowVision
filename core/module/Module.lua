@@ -65,7 +65,7 @@ end
 
 function Module:hasSettings()
     if not self.settingsRoot then
-        self.settingsRoot = WowVision.parameters.Category:new({
+        self.settingsRoot = WowVision.info.InfoFrame:new({
             key = "settings",
             label = "Settings",
         })
