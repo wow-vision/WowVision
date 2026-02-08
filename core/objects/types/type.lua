@@ -267,7 +267,7 @@ end
 function UnitType:modifyObject(unit, key, newData)
     local ref = unit.objects[key]
     if ref == nil then
-        error("Tried to update object (" .. unit.id .. ", " .. key .. ").")
+        return
     end
     local data = ref.data
     for k, v in pairs(newData) do
@@ -281,7 +281,7 @@ end
 function UnitType:removeObject(unit, key)
     local ref = unit.objects[key]
     if ref == nil then
-        error("Tried to remove object with key " .. key .. " which does not exist.")
+        return
     end
     unit.objects[key] = nil
     for tracker, _ in pairs(unit.trackers) do

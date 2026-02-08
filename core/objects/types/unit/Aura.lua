@@ -215,9 +215,10 @@ function Aura:onEvent(event, unit, data)
         for _, id in pairs(data.updatedAuraInstanceIDs) do
             local aura = C_UnitAuras.GetAuraDataByAuraInstanceID(unit.id, id)
             if aura == nil then
-                error("This should be impossible, nil aura in UNIT_AURA update event.")
+                self:removeObject(unit, id)
+            else
+                self:modifyObject(unit, id, aura)
             end
-            self:modifyObject(unit, id, aura)
         end
     end
     if data.removedAuraInstanceIDs then
