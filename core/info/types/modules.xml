@@ -11,6 +11,7 @@
   <Script file="Object.lua" />
   <Script file="TrackingConfig.lua" />
   <Script file="Template.lua" />
+  <Script file="VoicePack.lua" />
   <Script file="ComponentArray.lua" />
 
 </Ui>

@@ -4,6 +4,7 @@
   <Script file="Info.lua" />
   <Script file="Field.lua" />
   <Include file="types/modules.xml" />
+  <Script file="InfoFrame.lua" />
   <Script file="tests.lua" />
 
 </Ui>
