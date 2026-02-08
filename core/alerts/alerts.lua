@@ -19,7 +19,7 @@ Alert.info:addFields({
 
 function Alert:initialize(info)
     self.outputs = {}
-    self.parameters = WowVision.parameters.Category:new({
+    self.parameters = WowVision.info.InfoFrame:new({
         key = info.key,
         label = info.label,
     })
@@ -123,7 +123,7 @@ Output.info:addFields({
 })
 
 function Output:initialize(info)
-    self.parameters = WowVision.parameters.Category:new({
+    self.parameters = WowVision.info.InfoFrame:new({
         key = info.key,
         label = info.label,
     })

@@ -22,7 +22,6 @@
     <Include file="gameDB/modules.xml" />
     <Script file="ViewList.lua" />
   <Script file="tests.lua" />
-    <Include file="parameters/modules.xml" />
     <Include file="audio/modules.xml" />
     <Include file="../audio/modules.xml" />
     <Include file="alerts/modules.xml" />
