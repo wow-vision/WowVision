@@ -93,6 +93,17 @@ function TrackingConfigField:setType(obj, typeKey)
                 value[k] = v
             end
             value.type = typeKey
+            -- Populate parameter field defaults for params not already at top level
+            if objectType.parameters and value.params then
+                for _, paramField in ipairs(objectType.parameters.fields) do
+                    if value[paramField.key] == nil and value.params[paramField.key] == nil then
+                        local default = paramField:getDefault(value.params)
+                        if default ~= nil then
+                            value.params[paramField.key] = default
+                        end
+                    end
+                end
+            end
         end
     end
     obj[self.key] = value
@@ -114,6 +125,20 @@ end
 
 -- UI Generation
 
+-- Build flat params table from a TrackingConfig for validation
+local function buildParamsFromConfig(config)
+    local params = {}
+    if config.units and config.units[1] then
+        params.unit = config.units[1]
+    end
+    if config.params then
+        for k, v in pairs(config.params) do
+            params[k] = v
+        end
+    end
+    return params
+end
+
 -- Lazily register virtual elements on first use (UI must be loaded by then)
 function TrackingConfigField:ensureVirtualElements()
     local gen = WowVision.ui.generator
@@ -127,6 +152,34 @@ function TrackingConfigField:ensureVirtualElements()
 
     gen:Element("TrackingConfigField/typeSelector", function(props)
         return props.field:buildTypeSelector(props.obj)
+    end)
+
+    gen:Element("TrackingConfigField/paramsEditor", function(props)
+        local trackingGen, _ = props.objectType:getTrackingGenerator(props.editCopy)
+
+        tinsert(trackingGen.children, {
+            "Button",
+            key = "save",
+            label = L["Save"],
+            events = {
+                click = function(event, saveButton)
+                    local params = buildParamsFromConfig(props.editCopy)
+                    local valid, unique = props.objectType:validParams(params)
+                    if not valid then
+                        WowVision:speak(L["Invalid parameters"])
+                        return
+                    end
+                    if props.field.requireUnique and not unique then
+                        WowVision:speak(L["Parameters must identify a single object"])
+                        return
+                    end
+                    props.field:set(props.obj, props.editCopy)
+                    saveButton.context:pop()
+                end,
+            },
+        })
+
+        return trackingGen
     end)
 end
 
@@ -194,22 +247,9 @@ function TrackingConfigField:buildTypeButton(obj)
     }
 end
 
--- Build flat params table from a TrackingConfig for validation
-local function buildParamsFromConfig(config)
-    local params = {}
-    if config.units and config.units[1] then
-        params.unit = config.units[1]
-    end
-    if config.params then
-        for k, v in pairs(config.params) do
-            params[k] = v
-        end
-    end
-    return params
-end
-
 -- Build a button that pushes to the params editor, or nil if no params
 function TrackingConfigField:buildParamsButton(obj)
+    self:ensureVirtualElements()
     local field = self
     local value = field:get(obj) or { type = nil }
     if not value.type then return nil end
@@ -227,34 +267,14 @@ function TrackingConfigField:buildParamsButton(obj)
         label = L["Parameters"],
         events = {
             click = function(event, button)
-                -- Deep copy current config for editing (not live proxy)
                 local editCopy = WowVision.info.deepCopy(value)
-                local trackingGen, _ = objectType:getTrackingGenerator(editCopy)
-
-                -- Add save button with validation
-                tinsert(trackingGen.children, {
-                    "Button",
-                    key = "save",
-                    label = L["Save"],
-                    events = {
-                        click = function(event, saveButton)
-                            local params = buildParamsFromConfig(editCopy)
-                            local valid, unique = objectType:validParams(params)
-                            if not valid then
-                                WowVision:speak(L["Invalid parameters"])
-                                return
-                            end
-                            if field.requireUnique and not unique then
-                                WowVision:speak(L["Parameters must identify a single object"])
-                                return
-                            end
-                            field:set(obj, editCopy)
-                            saveButton.context:pop()
-                        end,
-                    },
+                button.context:addGenerated({
+                    "TrackingConfigField/paramsEditor",
+                    objectType = objectType,
+                    editCopy = editCopy,
+                    field = field,
+                    obj = obj,
                 })
-
-                button.context:addGenerated(trackingGen)
             end,
         },
     }
