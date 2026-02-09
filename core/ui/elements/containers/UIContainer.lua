@@ -64,16 +64,11 @@ end
 
 function Container:getNavigatorChildren()
     local children = self:getChildren()
-    local navigatorChildren = {}
-    for i, v in ipairs(children) do
-        tinsert(navigatorChildren, {
-            index = i,
-            element = v,
-            active = true,
-        })
-        navigatorChildren[v] = i
+    local result = {}
+    for i, child in ipairs(children) do
+        result[i] = { index = i, element = child }
     end
-    return navigatorChildren
+    return result
 end
 
 function Container:updateIndexes()

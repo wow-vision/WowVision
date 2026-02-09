@@ -1,4 +1,5 @@
 local ProxyFauxScrollFrame, parent = WowVision.ui:CreateElementType("ProxyFauxScrollFrame", "ProxyWidget")
+ProxyFauxScrollFrame:include(WowVision.SyncedContainer)
 
 -- Define InfoClass fields at class level
 ProxyFauxScrollFrame.info:addFields({
@@ -41,39 +42,10 @@ ProxyFauxScrollFrame.info:addFields({
     },
 })
 
--- Override inherited defaults
-ProxyFauxScrollFrame.info:updateFields({
-    { key = "displayType", default = "List" },
-    { key = "sync", default = true },
-})
-
 function ProxyFauxScrollFrame:initialize()
     parent.initialize(self)
-    self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", { generator = WowVision.ui.generator })
+    self:initSyncedContainer()
     self.buttons = {}
-    self.currentElement = nil
-    self.currentIndex = -1
-    self.direction = "vertical"
-end
-
-function ProxyFauxScrollFrame:getFocus()
-    if self.childPanel and self.childPanel:getFocused() then
-        return self.childPanel
-    end
-    return nil
-end
-
-function ProxyFauxScrollFrame:focusCurrent()
-    if self.currentElement then
-        self.childPanel:focus()
-    end
-end
-
-function ProxyFauxScrollFrame:unfocusCurrent()
-    if self.focus then
-        self.childPanel:unfocus()
-        self.focus = nil
-    end
 end
 
 function ProxyFauxScrollFrame:setFrame(frame)
@@ -117,7 +89,6 @@ function ProxyFauxScrollFrame:setCurrentIndex(index)
     local button = self:findButtonByIndex(index)
     if button then
         self.currentIndex = index
-        self.currentElement = button
         local child = self:getElement(button)
         self:setChild(child)
         self.childPanel:onUpdate()
@@ -145,11 +116,7 @@ function ProxyFauxScrollFrame:updateButtons()
 end
 
 function ProxyFauxScrollFrame:onUpdate()
-    self.childPanel:onUpdate()
-end
-
-function ProxyFauxScrollFrame:setChild(root)
-    self.childPanel:setStartingElement(root)
+    self:onSyncedUpdate()
 end
 
 function ProxyFauxScrollFrame:onFocus()
@@ -167,25 +134,5 @@ function ProxyFauxScrollFrame:onFocus()
 end
 
 function ProxyFauxScrollFrame:onUnfocus()
-    self.childPanel:unfocus()
-    self:setChild(nil)
-    self.currentElement = nil
-    self.currentIndex = -1
-end
-
-function ProxyFauxScrollFrame:getDirectionKeys()
-    if self.direction == "vertical" then
-        return "up", "down"
-    elseif self.direction == "horizontal" then
-        return "left", "right"
-    elseif self.direction == "tab" then
-        return "previous", "next"
-    elseif self.direction == "grid" then
-        return "up", "right", "down", "left"
-    end
-    return nil
-end
-
-function ProxyFauxScrollFrame:isContainer()
-    return true
+    self:onSyncedUnfocus()
 end

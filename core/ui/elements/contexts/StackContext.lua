@@ -5,20 +5,11 @@ function Context:initialize()
 end
 
 function Context:getNavigatorChildren()
-    if #self.children == 0 then
-        return {}
+    local result = {}
+    for i, child in ipairs(self.children) do
+        result[i] = { index = i, element = child }
     end
-    local navigatorChildren = {}
-    for i = 1, #self.children do
-        local v = self.children[i]
-        tinsert(navigatorChildren, {
-            index = i,
-            element = v,
-            active = i == #self.children,
-        })
-        navigatorChildren[v] = i
-    end
-    return navigatorChildren
+    return result
 end
 
 function Context:add(element, index)

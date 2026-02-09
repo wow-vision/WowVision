@@ -4,6 +4,7 @@
   <Script file="UIContainer.lua" />
   <Script file="List.lua" />
   <Script file="Panel.lua" />
+  <Script file="SyncedContainer.lua" />
   <Script file="ProxyScrollFrame.lua" />
   <Script file="ProxyFauxScrollFrame.lua" />
   <Script file="ProxyScrollBox.lua" />

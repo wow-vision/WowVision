@@ -289,9 +289,16 @@ function NavigatorContainerNode:reconcile()
     end
     local children = self.element:getNavigatorChildren()
     if self.selectedElement then
-        local newIndex = children[self.selectedElement]
+        -- Find the current index of the selected element
+        local newIndex = nil
+        for i, v in ipairs(children) do
+            if v.element == self.selectedElement then
+                newIndex = i
+                break
+            end
+        end
         if newIndex then
-            --Selected element still exists; update new index
+            --Selected element still exists; update index
             self.selectedIndex = newIndex
         else
             --Selected element no longer exists. Find the closest element and select it.
@@ -341,11 +348,6 @@ function NavigatorContainerNode:reconcileChildNode(direction)
         return
     end
 
-    if not self.childNode.shouldRebuild then
-        f = self.childNode
-        error("Missing method on childNode rebuild")
-    end
-
     if self.childNode:shouldRebuild(focus) then
         self.childNode = self.navigator:createNode(self, focus, direction)
         return
@@ -361,25 +363,20 @@ function SyncedContainerNode:selectIndex(index, direction)
     if index < 1 or index > self:getNumEntries() then
         return
     end
-    local element = self.element:setCurrentIndex(index)
-    if element and element ~= self.selectedElement then
+    self.element:setCurrentIndex(index)
+    local newIndex = self.element.currentIndex
+    if newIndex >= 1 then
         self:deselect()
-        self:select(element, direction)
-        return element
+        self.selectedIndex = newIndex
+        self:onSelect(nil, direction)
     end
-end
-
-function SyncedContainerNode:select(element, direction)
-    self.selectedElement = element
-    self:onSelect(element, direction)
 end
 
 function SyncedContainerNode:deselect()
-    if self.selectedElement then
-        self:onDeselect(self.selectedElement)
+    if self.selectedIndex and self.selectedIndex >= 1 then
+        self:onDeselect(nil)
     end
-    self.selectedElement = nil
-    self.selectedIndex = -1
+    self.selectedIndex = nil
 end
 
 function SyncedContainerNode:getNumEntries()
@@ -387,7 +384,7 @@ function SyncedContainerNode:getNumEntries()
 end
 
 function SyncedContainerNode:focusSelected(direction)
-    if self.selectedElement then
+    if self.selectedIndex and self.selectedIndex >= 1 then
         self.element:focusCurrent()
         self.focusChange = true
     end
@@ -403,8 +400,7 @@ function SyncedContainerNode:unfocusSelected()
     self:reconcileChildNode()
 end
 
--- Synced container reconcile - handles navigation/selection and conditional field reconciliation
--- Only reconciles fields if the element has "always" mode liveFields (optimization)
+-- Synced container reconcile - uses currentIndex for state tracking
 function SyncedContainerNode:reconcile()
     if self:hasAlwaysFields() then
         self:reconcileFields()
@@ -414,14 +410,15 @@ function SyncedContainerNode:reconcile()
     end
 
     local initialFocus = self.element:getFocus()
-    local current = self.element.currentElement
-    if current ~= self.selectedElement then
+    local currentIndex = self.element.currentIndex
+    if currentIndex ~= self.selectedIndex then
         self:deselect()
-        if current then
-            self:select(current, self.initialDirection)
+        if currentIndex >= 1 then
+            self.selectedIndex = currentIndex
+            self:onSelect(nil, self.initialDirection)
         end
     end
-    if not self.selectedElement then
+    if not self.selectedIndex or self.selectedIndex < 1 then
         local targetIndex = 1
         local prevKey, nextKey = self.element:getDirectionKeys()
         if self.initialDirection == prevKey or self.initialDirection == "END" then
@@ -450,5 +447,10 @@ function SyncedContainerNode:reconcileChildNode(direction)
         return
     end
 
-    self.childNode:reconcile(focus)
+    if self.childNode:shouldRebuild(focus) then
+        self.childNode = self.navigator:createNode(self, focus, direction)
+        return
+    end
+
+    self.childNode:reconcile()
 end

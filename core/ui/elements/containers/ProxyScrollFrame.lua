@@ -1,4 +1,5 @@
 local ProxyScrollFrame, parent = WowVision.ui:CreateElementType("ProxyScrollFrame", "ProxyWidget")
+ProxyScrollFrame:include(WowVision.SyncedContainer)
 
 -- Define InfoClass fields at class level
 ProxyScrollFrame.info:addFields({
@@ -39,39 +40,10 @@ ProxyScrollFrame.info:addFields({
     },
 })
 
--- Override inherited defaults
-ProxyScrollFrame.info:updateFields({
-    { key = "displayType", default = "List" },
-    { key = "sync", default = true },
-})
-
 function ProxyScrollFrame:initialize()
     parent.initialize(self)
-    self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", { generator = WowVision.ui.generator })
+    self:initSyncedContainer()
     self.buttons = {}
-    self.currentElement = nil
-    self.currentIndex = -1
-    self.direction = "vertical"
-end
-
-function ProxyScrollFrame:getFocus()
-    if self.childPanel and self.childPanel:getFocused() then
-        return self.childPanel
-    end
-    return nil
-end
-
-function ProxyScrollFrame:focusCurrent()
-    if self.currentElement then
-        self.childPanel:focus()
-    end
-end
-
-function ProxyScrollFrame:unfocusCurrent()
-    if self.focus then
-        self.childPanel:unfocus()
-        self.focus = nil
-    end
 end
 
 function ProxyScrollFrame:setFrame(frame)
@@ -118,12 +90,11 @@ function ProxyScrollFrame:setCurrentIndex(index)
     self:updateButtons()
     local newElement = self:findElementByIndex(index)
     if newElement then
-        self.currentElement = index
         self.currentIndex = index
         local child = self:getElement(newElement)
         self:setChild(child)
         self.childPanel:onUpdate()
-        return self.currentElement
+        return index
     end
 
     --Element with matching index is not here, return to original position
@@ -131,10 +102,9 @@ function ProxyScrollFrame:setCurrentIndex(index)
     self:updateButtons()
     newElement = self:findElementByIndex(originalIndex)
     if newElement then
-        self.currentElement = newElement.index
         self.currentIndex = originalIndex
         self:setChild(self:getElement(newElement))
-        return self.currentElement
+        return originalIndex
     end
     error("Error retrieving original scroll element after failed scroll to index.")
 end
@@ -156,44 +126,14 @@ function ProxyScrollFrame:updateButtons()
 end
 
 function ProxyScrollFrame:onUpdate()
-    self.childPanel:onUpdate()
-end
-
-function ProxyScrollFrame:setChild(root)
-    self.childPanel:setStartingElement(root)
+    self:onSyncedUpdate()
 end
 
 function ProxyScrollFrame:onFocus()
     self:updateButtons()
-    local numEntries = self:getNumEntries()
-    if numEntries < 1 then
-        return
-    end
-    if self.currentIndex < 1 or self.currentIndex > numEntries then
-        self:setCurrentIndex(1)
-    end
+    self:onSyncedFocus()
 end
 
 function ProxyScrollFrame:onUnfocus()
-    self.childPanel:unfocus()
-    self:setChild(nil)
-    self.currentElement = nil
-    self.currentIndex = -1
-end
-
-function ProxyScrollFrame:getDirectionKeys()
-    if self.direction == "vertical" then
-        return "up", "down"
-    elseif self.direction == "horizontal" then
-        return "left", "right"
-    elseif self.direction == "tab" then
-        return "previous", "next"
-    elseif self.direction == "grid" then
-        return "up", "right", "down", "left"
-    end
-    return nil
-end
-
-function ProxyScrollFrame:isContainer()
-    return true
+    self:onSyncedUnfocus()
 end

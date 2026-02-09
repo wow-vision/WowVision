@@ -1,4 +1,5 @@
 local ProxyScrollBox, parent = WowVision.ui:CreateElementType("ProxyScrollBox", "ProxyWidget")
+ProxyScrollBox:include(WowVision.SyncedContainer)
 
 -- Define InfoClass fields at class level
 ProxyScrollBox.info:addFields({
@@ -32,40 +33,10 @@ ProxyScrollBox.info:addFields({
     { key = "ordered", default = true },
 })
 
--- Override inherited defaults
-ProxyScrollBox.info:updateFields({
-    { key = "displayType", default = "List" },
-    { key = "sync", default = true },
-})
-
 function ProxyScrollBox:initialize()
     parent.initialize(self)
-    self.childPanel = WowVision.ui:CreateElement("GeneratorPanel", { generator = WowVision.ui.generator })
+    self:initSyncedContainer()
     self.buttons = {}
-    self.currentElement = nil
-    self.currentIndex = -1
-    self.direction = "vertical"
-    self.focus = nil
-end
-
-function ProxyScrollBox:getFocus()
-    if self.childPanel and self.childPanel:getFocused() then
-        return self.childPanel
-    end
-    return nil
-end
-
-function ProxyScrollBox:focusCurrent()
-    if self.currentElement then
-        self.childPanel:focus()
-    end
-end
-
-function ProxyScrollBox:unfocusCurrent()
-    if self.focus then
-        self.childPanel:unfocus()
-        self.focus = nil
-    end
 end
 
 function ProxyScrollBox:getGameButton(index)
@@ -92,10 +63,6 @@ function ProxyScrollBox:getChildRoot(gameButton)
     return childRoot
 end
 
-function ProxyScrollBox:setChild(root)
-    self.childPanel:setStartingElement(root)
-end
-
 function ProxyScrollBox:updateButtons()
     self.buttons = { self.frame.ScrollTarget:GetChildren() }
 end
@@ -103,20 +70,18 @@ end
 function ProxyScrollBox:setCurrentIndex(index)
     if index == self.currentIndex then
         return nil
-        --return self.currentElement
     end
     self:unfocusCurrent()
     if index < 1 or index > self:getNumEntries() then
-        self.currentElement = nil
         self.currentIndex = -1
         return nil
     end
     local element = self:findElement(index)
     if element then
-        self.currentElement = element:GetData()
         self.currentIndex = index
         local child = self:getChildRoot(element)
         self:setChild(child)
+        self.childPanel:onUpdate()
     end
 end
 
@@ -158,41 +123,18 @@ end
 
 function ProxyScrollBox:onFocus(key, newlyFocused)
     self:updateButtons()
-    if self.currentIndex < 1 or self.currentIndex > self:getNumEntries() then
-        self:setCurrentIndex(1)
-    end
+    self:onSyncedFocus()
 end
 
 function ProxyScrollBox:onUnfocus()
-    self.childPanel:unfocus()
-    self:setChild(nil)
-    self.currentElement = nil
-    self.currentIndex = -1
+    self:onSyncedUnfocus()
 end
 
 function ProxyScrollBox:setFrame(frame)
     parent.setFrame(self, frame)
-    self.currentElement = nil
     self.currentIndex = -1
 end
 
 function ProxyScrollBox:onUpdate()
-    self.childPanel:onUpdate()
-end
-
-function ProxyScrollBox:getDirectionKeys()
-    if self.direction == "vertical" then
-        return "up", "down"
-    elseif self.direction == "horizontal" then
-        return "left", "right"
-    elseif self.direction == "tab" then
-        return "previous", "next"
-    elseif self.direction == "grid" then
-        return "up", "right", "down", "left"
-    end
-    return nil
-end
-
-function ProxyScrollBox:isContainer()
-    return true
+    self:onSyncedUpdate()
 end
