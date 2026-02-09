@@ -3,6 +3,7 @@
 * Refactored the UI code to better handle required delays in the WoW Speech APIs. Essentially this speeds up speech responsiveness for all versions of the game when navigating through UI elements.
 * You can now use shift and the arrow keys to read tooltips line by line.
 * Fixed a bug where dropdown buttons for addon settings would not list their currently selected value after the button type.
+* Fixed a bug where navigating through certain types of scroll frame would repeat the newly reached element twice.
 
 ### Burning Crusade Anniversary
 * Fixed a bug where the quest log frame would not scroll correctly and report incorrect information for various buttons.
