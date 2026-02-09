@@ -615,6 +615,7 @@ end
 -- Non-keyed children reconciliation (index-based)
 function Generator:reconcileNonKeyedChildrenDirect(realParent, tree1, tree2)
     local i1, i2 = 1, 1
+    local needsReorder = false
     while i1 <= #tree1.children or i2 <= #tree2.children do
         local oldChild = tree1.children[i1]
         local newChild = tree2.children[i2]
@@ -627,6 +628,9 @@ function Generator:reconcileNonKeyedChildrenDirect(realParent, tree1, tree2)
             self:unbuild(realParent, oldChild)
         else
             -- Both exist - reconcile
+            if oldChild.elementType ~= newChild.elementType then
+                needsReorder = true
+            end
             self:reconcileDirect(realParent, oldChild, newChild)
         end
 
@@ -636,6 +640,16 @@ function Generator:reconcileNonKeyedChildrenDirect(realParent, tree1, tree2)
         if newChild then
             i2 = i2 + 1
         end
+    end
+
+    -- When a type change causes unbuild+build, the new element is appended at the
+    -- end instead of replacing at the original position. Reorder to match tree2's order.
+    if needsReorder and realParent.reorderChildren then
+        local orderedChildren = {}
+        for _, newChild in ipairs(tree2.children) do
+            self:collectRealElements(newChild, orderedChildren)
+        end
+        realParent:reorderChildren(orderedChildren)
     end
 end
 
