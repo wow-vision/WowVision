@@ -458,199 +458,239 @@ function Generator:generateNode(parent, props, previousNode, panel)
     return node
 end
 
--- Combined compare + reconcile in a single pass
-function Generator:reconcileDirect(realParent, tree1, tree2)
-    if tree1 == nil and tree2 == nil then
-        return
+-- Walk through virtual wrappers to find the real tree node
+function Generator:resolveVirtual(node)
+    while node and node.virtualElement do
+        node = node.children[1]
     end
-
-    -- Case: Node is new (add)
-    if not tree1 and tree2 then
-        self:build(realParent, tree2)
-        return
-    end
-
-    -- Case: Node was removed
-    if tree1 and not tree2 then
-        self:unbuild(realParent, tree1)
-        return
-    end
-
-    -- Case: Element type changed (replace entire subtree)
-    if tree1.elementType ~= tree2.elementType then
-        self:unbuild(realParent, tree1)
-        self:build(realParent, tree2)
-        return
-    end
-
-    -- Same element type - compare props and reconcile children
-    local real = realParent
-    if not tree1.virtualElement then
-        real = tree1.realElement
-        tree2.realElement = real
-
-        -- Apply prop changes directly
-        for k, v in pairs(tree1.props) do
-            if k ~= "children" and tree2.props[k] == nil then
-                real:setProp(k, nil)
-            end
-        end
-
-        for k, v in pairs(tree2.props) do
-            if k ~= "children" then
-                local oldValue = tree1.props[k]
-                if oldValue ~= v then
-                    -- Check if actually changed using InfoClass field comparison
-                    local field = real.class.info:getField(k)
-                    if field then
-                        if not field:compare(real:getProp(k), v) then
-                            real:setProp(k, v)
-                        end
-                    else
-                        real:setProp(k, v)
-                    end
-                end
-            end
-        end
-    end
-
-    -- Reconcile children
-    self:reconcileChildrenDirect(real, tree1, tree2)
+    return node
 end
 
--- Helper to collect real elements from a node (traversing through virtual wrappers)
-function Generator:collectRealElements(node, result)
-    result = result or {}
-    if not node then
-        return result
-    end
-    if node.realElement then
-        -- This is a real element, add it
-        tinsert(result, node.realElement)
-    else
-        -- Virtual element - collect from children
-        for _, child in ipairs(node.children) do
-            self:collectRealElements(child, result)
+-- Get the direct real children of a tree node, resolving virtual wrappers
+function Generator:getDirectRealChildren(treeNode)
+    local result = {}
+    for _, child in ipairs(treeNode.children) do
+        local realNode = self:resolveVirtual(child)
+        if realNode then
+            tinsert(result, {
+                treeNode = child,
+                realNode = realNode,
+                key = child.props.key,
+            })
         end
     end
     return result
 end
 
--- Reconcile children, choosing keyed or non-keyed strategy
-function Generator:reconcileChildrenDirect(realParent, tree1, tree2)
-    -- Try keyed comparison if first child has a key
-    if tree2.children[1] and tree2.children[1].props.key ~= nil then
-        local success = self:reconcileKeyedChildrenDirect(realParent, tree1, tree2)
+-- Apply prop changes to a real element
+function Generator:updateProps(realElement, oldProps, newProps)
+    for k, v in pairs(oldProps) do
+        if k ~= "children" and newProps[k] == nil then
+            realElement:setProp(k, nil)
+        end
+    end
+    for k, v in pairs(newProps) do
+        if k ~= "children" then
+            local oldValue = oldProps[k]
+            if oldValue ~= v then
+                local field = realElement.class.info:getField(k)
+                if field then
+                    if not field:compare(realElement:getProp(k), v) then
+                        realElement:setProp(k, v)
+                    end
+                else
+                    realElement:setProp(k, v)
+                end
+            end
+        end
+    end
+end
+
+-- Reorder a real container's children to match the entry order
+function Generator:reorderRealChildren(realContainer, entries)
+    if not realContainer.reorderChildren then
+        return
+    end
+    local orderedChildren = {}
+    for _, entry in ipairs(entries) do
+        if entry.realNode.realElement then
+            tinsert(orderedChildren, entry.realNode.realElement)
+        end
+    end
+    realContainer:reorderChildren(orderedChildren)
+end
+
+-- Main reconciliation entry point
+-- Resolves virtual wrappers first, then reconciles at real element boundaries
+function Generator:reconcile(realParent, oldTree, newTree)
+    if not oldTree and not newTree then
+        return
+    end
+
+    if not oldTree and newTree then
+        self:build(realParent, newTree)
+        return
+    end
+
+    if oldTree and not newTree then
+        self:unbuild(realParent, oldTree)
+        return
+    end
+
+    -- Resolve both trees to their real nodes
+    local oldReal = self:resolveVirtual(oldTree)
+    local newReal = self:resolveVirtual(newTree)
+
+    if not oldReal and not newReal then
+        return
+    end
+    if not oldReal and newReal then
+        self:build(realParent, newTree)
+        return
+    end
+    if oldReal and not newReal then
+        self:unbuild(realParent, oldTree)
+        return
+    end
+
+    -- Compare real types
+    if oldReal.elementType ~= newReal.elementType then
+        self:unbuild(realParent, oldTree)
+        self:build(realParent, newTree)
+        return
+    end
+
+    -- Same real type - reuse element and update props
+    newReal.realElement = oldReal.realElement
+    self:updateProps(oldReal.realElement, oldReal.props, newReal.props)
+
+    -- Reconcile children at this real element
+    self:reconcileChildren(oldReal.realElement, oldReal, newReal)
+end
+
+-- Reconcile children of a real container, choosing keyed or non-keyed
+function Generator:reconcileChildren(realContainer, oldNode, newNode)
+    local oldEntries = self:getDirectRealChildren(oldNode)
+    local newEntries = self:getDirectRealChildren(newNode)
+
+    if #newEntries > 0 and newEntries[1].key ~= nil then
+        local success = self:reconcileKeyed(realContainer, oldEntries, newEntries)
         if success then
             return
         end
     end
-    self:reconcileNonKeyedChildrenDirect(realParent, tree1, tree2)
+    self:reconcileNonKeyed(realContainer, oldEntries, newEntries)
 end
 
 -- Keyed children reconciliation
-function Generator:reconcileKeyedChildrenDirect(realParent, tree1, tree2)
-    -- Validate all children have keys
-    for _, child in ipairs(tree1.children) do
-        if child.props.key == nil then
-            return false
-        end
+function Generator:reconcileKeyed(realContainer, oldEntries, newEntries)
+    -- Validate all entries have keys
+    for _, entry in ipairs(oldEntries) do
+        if entry.key == nil then return false end
     end
-    for _, child in ipairs(tree2.children) do
-        if child.props.key == nil then
-            return false
-        end
+    for _, entry in ipairs(newEntries) do
+        if entry.key == nil then return false end
     end
 
     -- Build key maps
     local oldByKey = {}
-    for i, child in ipairs(tree1.children) do
-        if oldByKey[child.props.key] then
-            error("Duplicate key " .. child.props.key .. ".")
+    for _, entry in ipairs(oldEntries) do
+        if oldByKey[entry.key] then
+            error("Duplicate key " .. entry.key .. ".")
         end
-        oldByKey[child.props.key] = child
+        oldByKey[entry.key] = entry
     end
 
     local newByKey = {}
-    for i, child in ipairs(tree2.children) do
-        if newByKey[child.props.key] then
-            error("Duplicate key " .. child.props.key .. ".")
+    for _, entry in ipairs(newEntries) do
+        if newByKey[entry.key] then
+            error("Duplicate key " .. entry.key .. ".")
         end
-        newByKey[child.props.key] = child
+        newByKey[entry.key] = entry
     end
 
-    -- Remove nodes that no longer exist
-    for key, oldChild in pairs(oldByKey) do
-        if not newByKey[key] then
-            self:unbuild(realParent, oldChild)
+    -- Remove entries no longer present
+    for _, oldEntry in ipairs(oldEntries) do
+        if not newByKey[oldEntry.key] then
+            self:unbuild(realContainer, oldEntry.treeNode)
         end
     end
 
-    -- Add or update nodes (following tree2 order)
-    for _, newChild in ipairs(tree2.children) do
-        local key = newChild.props.key
-        local oldChild = oldByKey[key]
-        if not oldChild then
-            -- New node
-            self:build(realParent, newChild)
+    -- Add or update entries (following new order)
+    for _, newEntry in ipairs(newEntries) do
+        local oldEntry = oldByKey[newEntry.key]
+        if not oldEntry then
+            self:build(realContainer, newEntry.treeNode)
+            -- After build, explicitly ensure realElement is set on the realNode
+            local builtReal = self:resolveVirtual(newEntry.treeNode)
+            if builtReal and builtReal.realElement then
+                newEntry.realNode.realElement = builtReal.realElement
+            end
         else
-            -- Existing node - reconcile
-            self:reconcileDirect(realParent, oldChild, newChild)
+            self:reconcileEntry(realContainer, oldEntry, newEntry)
         end
     end
 
-    -- Reorder real children to match tree2's order
-    -- Must traverse through virtual wrappers to find the actual real elements
-    if realParent.reorderChildren then
-        local orderedChildren = {}
-        for _, newChild in ipairs(tree2.children) do
-            self:collectRealElements(newChild, orderedChildren)
-        end
-        realParent:reorderChildren(orderedChildren)
-    end
+    -- Reorder to match new order
+    self:reorderRealChildren(realContainer, newEntries)
 
     return true
 end
 
 -- Non-keyed children reconciliation (index-based)
-function Generator:reconcileNonKeyedChildrenDirect(realParent, tree1, tree2)
-    local i1, i2 = 1, 1
+function Generator:reconcileNonKeyed(realContainer, oldEntries, newEntries)
+    local maxLen = math.max(#oldEntries, #newEntries)
     local needsReorder = false
-    while i1 <= #tree1.children or i2 <= #tree2.children do
-        local oldChild = tree1.children[i1]
-        local newChild = tree2.children[i2]
 
-        if oldChild == nil and newChild then
-            -- New child
-            self:build(realParent, newChild)
-        elseif oldChild and not newChild then
-            -- Removed child
-            self:unbuild(realParent, oldChild)
+    for i = 1, maxLen do
+        local oldEntry = oldEntries[i]
+        local newEntry = newEntries[i]
+
+        if not oldEntry and newEntry then
+            self:build(realContainer, newEntry.treeNode)
+            -- After build, explicitly ensure realElement is set on the realNode
+            local builtReal = self:resolveVirtual(newEntry.treeNode)
+            if builtReal and builtReal.realElement then
+                newEntry.realNode.realElement = builtReal.realElement
+            end
+            needsReorder = true
+        elseif oldEntry and not newEntry then
+            self:unbuild(realContainer, oldEntry.treeNode)
         else
-            -- Both exist - reconcile
-            if oldChild.elementType ~= newChild.elementType then
+            if oldEntry.realNode.elementType ~= newEntry.realNode.elementType then
                 needsReorder = true
             end
-            self:reconcileDirect(realParent, oldChild, newChild)
-        end
-
-        if oldChild then
-            i1 = i1 + 1
-        end
-        if newChild then
-            i2 = i2 + 1
+            self:reconcileEntry(realContainer, oldEntry, newEntry)
         end
     end
 
-    -- When a type change causes unbuild+build, the new element is appended at the
-    -- end instead of replacing at the original position. Reorder to match tree2's order.
-    if needsReorder and realParent.reorderChildren then
-        local orderedChildren = {}
-        for _, newChild in ipairs(tree2.children) do
-            self:collectRealElements(newChild, orderedChildren)
-        end
-        realParent:reorderChildren(orderedChildren)
+    if needsReorder then
+        self:reorderRealChildren(realContainer, newEntries)
     end
+end
+
+-- Reconcile a matched pair of entries
+function Generator:reconcileEntry(realContainer, oldEntry, newEntry)
+    if oldEntry.realNode.elementType ~= newEntry.realNode.elementType then
+        -- Different real types - replace
+        self:unbuild(realContainer, oldEntry.treeNode)
+        self:build(realContainer, newEntry.treeNode)
+        -- After build, explicitly ensure realElement is set on the realNode
+        -- (build sets it on the tree node, need to propagate to resolved realNode)
+        local builtReal = self:resolveVirtual(newEntry.treeNode)
+        if builtReal and builtReal.realElement then
+            newEntry.realNode.realElement = builtReal.realElement
+        end
+        return
+    end
+
+    -- Same real type - reuse element and update props
+    local realElement = oldEntry.realNode.realElement
+    newEntry.realNode.realElement = realElement
+    self:updateProps(realElement, oldEntry.realNode.props, newEntry.realNode.props)
+
+    -- Recurse into children of this real element
+    self:reconcileChildren(realElement, oldEntry.realNode, newEntry.realNode)
 end
 
 function Generator:unbuild(parent, root)

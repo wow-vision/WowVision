@@ -27,23 +27,17 @@ gen:Element("character", function(props)
     else
         tinsert(result.children, { "Text", text = "Not yet implemented" })
     end
-    tinsert(result.children, { "character/Tabs" })
     -- Add detail panels after tabs (only shows when applicable)
     if tab == 3 then
         tinsert(result.children, { "character/ReputationDetail" })
     elseif tab == 4 then
         tinsert(result.children, { "character/SkillsDetail" })
     end
+        tinsert(result.children, { "character/Tabs" })
     return result
 end)
 
-gen:Element("character/Tabs", {
-    regenerateOn = {
-        values = function(props)
-            return { selectedTab = CharacterFrame.selectedTab }
-        end,
-    },
-}, function(props)
+gen:Element("character/Tabs", function(props)
     local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
     -- TBC has 5 tabs
     for i = 1, 5 do
