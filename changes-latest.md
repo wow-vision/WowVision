@@ -10,7 +10,7 @@
 * Fixed a performance issue for spoken announcements that use templates (primarily announcement of buffer items.) Templates are now precompiled. This wasn't too noticeable unless you were rapidly arrowing through buffers.
 * Removed a few unused files (the old speech module.)
 
-
 ### Burning Crusade Anniversary
 * Fixed a bug where the quest log frame would not scroll correctly and report incorrect information for various buttons.
-* Fixed a bug in the character frame where the skill and reputation detail could be wrongly positioned (before the skills list instead of after.)
+* Fixed a bug in the character frame where the skill and reputation detail could be wrongly positioned (before their list instead of after.)
+* Fixed a bug in the equipment list where the ammo slot would always be labeled "Ammo" whether or not an item was in the ammo slot.

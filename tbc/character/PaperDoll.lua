@@ -84,6 +84,14 @@ local function getEquipmentLabel(frame)
         local itemName = GetItemInfo(itemLink)
         return itemName or itemLink
     end
+    -- Fallback for slots where GetInventoryItemLink returns nil (e.g. ammo slot)
+    local itemId = GetInventoryItemID("player", slotId)
+    if itemId then
+        local itemName = GetItemInfo(itemId)
+        if itemName then
+            return itemName
+        end
+    end
     return SLOT_NAMES[slotId] or L["Empty"]
 end
 
