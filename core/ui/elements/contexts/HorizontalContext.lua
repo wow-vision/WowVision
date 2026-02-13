@@ -10,9 +10,15 @@ function Context:initialize()
     parent.initialize(self)
 end
 
+function Context:getDesiredFocus()
+    if #self.children > 0 then
+        return self.children[#self.children]
+    end
+    return nil
+end
+
 function Context:add(element, index)
     parent.add(self, element, index)
-    self:setFocus(element)
 end
 
 function Context:onRemove()

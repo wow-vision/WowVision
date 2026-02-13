@@ -1,7 +1,16 @@
 local Context, parent = WowVision.ui:CreateElementType("StackContext", "Context")
 
+Context.preserveChildNodes = true
+
 function Context:initialize()
     parent.initialize(self)
+end
+
+function Context:getDesiredFocus()
+    if #self.children > 0 then
+        return self.children[#self.children]
+    end
+    return nil
 end
 
 function Context:getNavigatorChildren()
@@ -15,8 +24,6 @@ end
 function Context:add(element, index)
     parent.add(self, element, index)
     element:setContext(self)
-    local peak = self.children[#self.children]
-    self:setFocus(element)
 end
 
 function Context:addGenerated(element, index, generator)
@@ -35,8 +42,6 @@ function Context:remove(element)
         return
     end
     parent.remove(self, element)
-    local peak = self.children[#self.children]
-    self:setFocus(peak)
 end
 
 function Context:pop()

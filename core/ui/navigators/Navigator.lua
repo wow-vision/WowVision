@@ -7,6 +7,7 @@ function Navigator:initialize(root)
     self.nodes = {}
     self.containerNodeType = WowVision.NavigatorContainerNode
     self.syncedContainerNodeType = WowVision.NavigatorSyncedContainerNode
+    self.preservingContainerNodeType = WowVision.NavigatorPreservingContainerNode
     self.elementNodeType = WowVision.NavigatorElementNode
     self:setNodeTypes()
     self.rootNode = self:createNode(nil, root)
@@ -48,6 +49,9 @@ function Navigator:createNode(parent, element, direction)
     if element:isContainer() then
         if element.sync then
             return self.syncedContainerNodeType:new(parent, self, element, direction)
+        end
+        if element.preserveChildNodes then
+            return self.preservingContainerNodeType:new(parent, self, element, direction)
         end
         return self.containerNodeType:new(parent, self, element, direction)
     end
@@ -252,20 +256,17 @@ function NavigatorContainerNode:focusSelected(direction)
     if not self.selectedElement then
         return
     end
-    local elementFocus = self.element:getFocus()
-    if elementFocus then
-        if elementFocus == self.selectedElement then
-            return
-        end
+    if self.selectedElement:getFocused() then
+        return
     end
-    self.element:setFocus(self.selectedElement)
+    self.selectedElement:focus()
     self.focusChange = true
     self:reconcileChildNode(direction)
 end
 
 function NavigatorContainerNode:unfocusSelected()
-    if self.selectedElement and self.element:getFocus() == self.selectedElement then
-        self.element:setFocus(nil)
+    if self.selectedElement and self.selectedElement:getFocused() then
+        self.selectedElement:unfocus()
         self.focusChange = true
     end
 end
@@ -281,12 +282,16 @@ function NavigatorContainerNode:reconcile()
         self.alwaysUpdates = {}
     end
 
-    local initialFocusedElement = self.element:getFocus()
-    if initialFocusedElement ~= nil and initialFocusedElement ~= self.selectedElement then
-        self:select(initialFocusedElement, self.initialDirection)
-        self.focusChange = true
-        return
+    -- Check if getDesiredFocus() changed (e.g., HorizontalContext added a new window)
+    local desiredFocus = self.element:getDesiredFocus()
+    if desiredFocus ~= nil and desiredFocus ~= self.lastDesiredFocus then
+        self.lastDesiredFocus = desiredFocus
+        if desiredFocus ~= self.selectedElement then
+            self:select(desiredFocus, self.initialDirection)
+            self.focusChange = true
+        end
     end
+
     local children = self.element:getNavigatorChildren()
     if self.selectedElement then
         -- Find the current index of the selected element
@@ -300,6 +305,10 @@ function NavigatorContainerNode:reconcile()
         if newIndex then
             --Selected element still exists; update index
             self.selectedIndex = newIndex
+            -- Re-focus if element was unfocused externally (e.g., by Container:onUnfocus cascade)
+            if self.element:getFocused() and not self.selectedElement:getFocused() then
+                self:onSelect(self.selectedElement, self.initialDirection)
+            end
         else
             --Selected element no longer exists. Find the closest element and select it.
             local foundSelection = false
@@ -318,26 +327,28 @@ function NavigatorContainerNode:reconcile()
     end
 
     if not self.selectedElement and #children > 0 then
-        local targetIndex = 1
-        local prevKey, nextKey = self.element:getDirectionKeys()
-        if self.initialDirection == prevKey or self.initialDirection == "END" then
-            targetIndex = #children
+        local desired = self.element:getDesiredFocus()
+        if desired then
+            self:select(desired, self.initialDirection)
+        else
+            local targetIndex = 1
+            local prevKey, nextKey = self.element:getDirectionKeys()
+            if self.initialDirection == prevKey or self.initialDirection == "END" then
+                targetIndex = #children
+            end
+            self:selectIndex(targetIndex, self.initialDirection)
         end
-        self:selectIndex(targetIndex, self.initialDirection)
     end
 
-    local focusedElement = self.element:getFocus()
-    if focusedElement ~= initialFocusedElement then
-        self.focusChange = true
-    end
     self:reconcileChildNode(self.initialDirection)
     self.initialDirection = nil
 end
 
 function NavigatorContainerNode:reconcileChildNode(direction)
-    local focus = self.element:getFocus()
+    local focus = self.selectedElement
     if not focus then
         if self.childNode then
+            self.childNode:destroy()
             self.childNode = nil
         end
         return
@@ -349,11 +360,116 @@ function NavigatorContainerNode:reconcileChildNode(direction)
     end
 
     if self.childNode:shouldRebuild(focus) then
+        self.childNode:destroy()
         self.childNode = self.navigator:createNode(self, focus, direction)
         return
     end
 
     self.childNode:reconcile()
+end
+
+-- PreservingContainerNode: caches child nodes when focus moves away (for StackContext, WindowContext)
+local PreservingContainerNode = WowVision.Class("NavigatorPreservingContainerNode", NavigatorContainerNode)
+WowVision.NavigatorPreservingContainerNode = PreservingContainerNode
+
+function PreservingContainerNode:initialize(parent, navigator, element, direction)
+    self.cachedNodes = {}
+    NavigatorContainerNode.initialize(self, parent, navigator, element, direction)
+end
+
+function PreservingContainerNode:reconcile()
+    if self:hasAlwaysFields() then
+        self:reconcileFields()
+    else
+        self.liveUpdates = {}
+        self.alwaysUpdates = {}
+    end
+
+    local desiredFocus = self.element:getDesiredFocus()
+
+    if desiredFocus == nil then
+        if self.selectedElement then
+            self:cacheCurrentChild()
+            self:deselect()
+            self.focusChange = true
+        end
+        self:pruneCache()
+        return
+    end
+
+    if desiredFocus ~= self.selectedElement then
+        -- Focus target changed (push/pop)
+        self:cacheCurrentChild()
+        self:deselect()
+
+        self.selectedElement = desiredFocus
+
+        -- Find index in children
+        local children = self.element:getNavigatorChildren()
+        for i, v in ipairs(children) do
+            if v.element == desiredFocus then
+                self.selectedIndex = i
+                break
+            end
+        end
+
+        -- Try to restore from cache
+        local cached = self.cachedNodes[desiredFocus]
+        if cached then
+            self.childNode = cached
+            self.cachedNodes[desiredFocus] = nil
+        else
+            self.childNode = nil
+        end
+
+        self:onSelect(desiredFocus, nil)
+        self.focusChange = true
+    else
+        -- Same focus target, update index in case children reordered
+        local children = self.element:getNavigatorChildren()
+        for i, v in ipairs(children) do
+            if v.element == self.selectedElement then
+                self.selectedIndex = i
+                break
+            end
+        end
+        -- Re-focus if element was unfocused externally (e.g., by Container:onUnfocus cascade)
+        if self.element:getFocused() and self.selectedElement and not self.selectedElement:getFocused() then
+            self:onSelect(self.selectedElement, nil)
+        end
+    end
+
+    self:pruneCache()
+    self:reconcileChildNode(nil)
+end
+
+function PreservingContainerNode:cacheCurrentChild()
+    if self.selectedElement and self.childNode then
+        self.cachedNodes[self.selectedElement] = self.childNode
+        self.childNode = nil
+    end
+end
+
+function PreservingContainerNode:pruneCache()
+    local children = self.element:getNavigatorChildren()
+    local childSet = {}
+    for _, v in ipairs(children) do
+        childSet[v.element] = true
+    end
+    for element, node in pairs(self.cachedNodes) do
+        if not childSet[element] then
+            node:destroy()
+            self.cachedNodes[element] = nil
+        end
+    end
+end
+
+function PreservingContainerNode:destroy()
+    for _, node in pairs(self.cachedNodes) do
+        node:destroy()
+    end
+    self.cachedNodes = {}
+    NavigatorContainerNode.destroy(self)
 end
 
 local SyncedContainerNode = WowVision.Class("NavigatorSyncedContainerNode", NavigatorContainerNode)
@@ -392,8 +508,7 @@ function SyncedContainerNode:focusSelected(direction)
 end
 
 function SyncedContainerNode:unfocusSelected()
-    local focus = self.element:getFocus()
-    if focus then
+    if self.selectedIndex and self.selectedIndex >= 1 and self.element.childPanel:getFocused() then
         self.element:unfocusCurrent()
         self.focusChange = true
     end
@@ -409,7 +524,6 @@ function SyncedContainerNode:reconcile()
         self.alwaysUpdates = {}
     end
 
-    local initialFocus = self.element:getFocus()
     local currentIndex = self.element.currentIndex
     if currentIndex ~= self.selectedIndex then
         self:deselect()
@@ -417,6 +531,13 @@ function SyncedContainerNode:reconcile()
             self.selectedIndex = currentIndex
             self:onSelect(nil, self.initialDirection)
         end
+        self.focusChange = true
+    end
+    -- Re-focus if element was unfocused externally (e.g., by Container:onUnfocus cascade)
+    if self.selectedIndex and self.selectedIndex >= 1
+        and self.element:getFocused()
+        and not self.element.childPanel:getFocused() then
+        self:onSelect(nil, self.initialDirection)
     end
     if not self.selectedIndex or self.selectedIndex < 1 then
         local targetIndex = 1
@@ -426,17 +547,18 @@ function SyncedContainerNode:reconcile()
         end
         self:selectIndex(targetIndex, self.initialDirection)
     end
-    if initialFocus ~= self.element:getFocus() then
-        self.focusChange = true
-    end
     self:reconcileChildNode(self.initialDirection)
     self.initialDirection = nil
 end
 
 function SyncedContainerNode:reconcileChildNode(direction)
-    local focus = self.element:getFocus()
+    local focus = nil
+    if self.selectedIndex and self.selectedIndex >= 1 then
+        focus = self.element.childPanel
+    end
     if not focus then
         if self.childNode then
+            self.childNode:destroy()
             self.childNode = nil
         end
         return
@@ -448,6 +570,7 @@ function SyncedContainerNode:reconcileChildNode(direction)
     end
 
     if self.childNode:shouldRebuild(focus) then
+        self.childNode:destroy()
         self.childNode = self.navigator:createNode(self, focus, direction)
         return
     end

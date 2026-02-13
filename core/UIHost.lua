@@ -110,6 +110,7 @@ function UIHost:open(context)
     local navigatorClass = WowVision.navigators:get("Windowed")
     self.navigator = navigatorClass:new(self.context)
     self._open = true
+    self._deferNavigatorUpdate = true
     WowVision.base.speech:uiStop()
     self:show()
 end
@@ -146,7 +147,14 @@ function UIHost:update()
         self.context:update()
     end
     if self.navigator then
-        self.navigator:update()
+        -- Defer the first navigator update after opening by one frame.
+        -- uiStop() (StopSpeakingText) called during open() must be processed
+        -- by the TTS engine before the navigator's first announce (SpeakText).
+        if self._deferNavigatorUpdate then
+            self._deferNavigatorUpdate = false
+        else
+            self.navigator:update()
+        end
     end
 end
 

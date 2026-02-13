@@ -22,13 +22,6 @@ function SyncedContainer:initSyncedContainer()
     self.direction = "vertical"
 end
 
-function SyncedContainer:getFocus()
-    if self.childPanel and self.childPanel:getFocused() then
-        return self.childPanel
-    end
-    return nil
-end
-
 function SyncedContainer:focusCurrent()
     if self.currentIndex >= 1 then
         self.childPanel:focus()
@@ -68,14 +61,15 @@ function SyncedContainer:onSyncedFocus()
         return
     end
     if self.currentIndex < 1 or self.currentIndex > numEntries then
-        self:setCurrentIndex(1)
+        -- Clamp to valid range (preserves approximate position if list shrank)
+        self:setCurrentIndex(math.max(1, math.min(self.currentIndex, numEntries)))
     end
 end
 
 function SyncedContainer:onSyncedUnfocus()
     self:unfocusCurrent()
     self:setChild(nil)
-    self.currentIndex = -1
+    -- Do NOT reset currentIndex - Navigator preserves and restores it
 end
 
 function SyncedContainer:onSyncedUpdate()

@@ -4,6 +4,13 @@
 * You can now use shift and the arrow keys to read tooltips line by line.
 * Fixed a bug where dropdown buttons for addon settings would not list their currently selected value after the button type.
 * Fixed a bug where navigating through certain types of scroll frame would repeat the newly reached element twice.
+* Finally fixed the bug where your position in certain lists wouldn't save when certain windows opened. For example, after entering an input mapping in the bindings menu, the cursor would jump to the top of the input bindings list. Now it will remain on the binding bar you were last at.
+* The buffers system can now be configured to add any number of buffers and buffer groups. For example, you can now add a buffer to list auras on the player.
+* Fixed a bug where the view cursor on ViewList objects (for example buffers) would not reset to the beginning if all items in them were deleted.
+* Fixed a performance issue for spoken announcements that use templates (primarily announcement of buffer items.) Templates are now precompiled. This wasn't too noticeable unless you were rapidly arrowing through buffers.
+* Removed a few unused files (the old speech module.)
+
 
 ### Burning Crusade Anniversary
 * Fixed a bug where the quest log frame would not scroll correctly and report incorrect information for various buttons.
+* Fixed a bug in the character frame where the skill and reputation detail could be wrongly positioned (before the skills list instead of after.)

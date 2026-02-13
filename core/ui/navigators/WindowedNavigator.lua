@@ -80,6 +80,27 @@ function WindowedSyncedContainerNode:onBindingPressed(binding)
     )
 end
 
+local WindowedPreservingContainerNode =
+    WowVision.Class("WindowedPreservingContainerNode", WowVision.NavigatorPreservingContainerNode)
+
+function WindowedPreservingContainerNode:onSelect(element, direction)
+    if element and element.shouldAnnounce then
+        element:announce()
+    end
+    self:focusSelected(direction)
+end
+
+function WindowedPreservingContainerNode:onDeselect(element)
+    self:unfocusSelected()
+end
+
+function WindowedPreservingContainerNode:onBindingPressed(binding)
+    if self.childNode and self.childNode:onBindingPressed(binding) then
+        return true
+    end
+    return false
+end
+
 local WindowedNavigator = WowVision.Class("WindowedNavigator", WowVision.Navigator)
 
 function WindowedNavigator:initialize(root)
@@ -95,6 +116,7 @@ end
 function WindowedNavigator:setNodeTypes()
     self.containerNodeType = WindowedContainerNode
     self.syncedContainerNodeType = WindowedSyncedContainerNode
+    self.preservingContainerNodeType = WindowedPreservingContainerNode
 end
 
 function WindowedNavigator:onBindingPressed(binding)

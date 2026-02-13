@@ -9,7 +9,6 @@ Container.info:addFields({
 function Container:initialize()
     parent.initialize(self)
     self.children = {}
-    self.focused = nil
 end
 
 function Container:setupUniqueBindings() end
@@ -47,9 +46,6 @@ function Container:remove(child)
         child:onRemove()
     end
     child:unfocus()
-    if self:getFocus() == child then
-        self:setFocus(nil)
-    end
 
     if not self:getBatching() then
         self:updateIndexes()
@@ -116,44 +112,17 @@ function Container:endBatch()
     end
 end
 
-function Container:getFocus()
-    return self.focused
-end
-
-function Container:setFocus(focus, key)
-    local currentFocus = self:getFocus()
-    if currentFocus == focus then
-        return
-    end
-    if currentFocus then
-        currentFocus:unfocus()
-    end
-    self.focused = focus
-    if self.focused and self:getFocused() then
-        self.focused:focus(key)
-    end
-end
-
-function Container:focusIndex(index, key)
-    local newFocus = self.children[index]
-    if newFocus then
-        self:setFocus(newFocus, key)
-    end
-end
-
 function Container:onFocus(key, newlyFocused)
-    local focus = self:getFocus()
-    if focus then
-        focus:focus(key)
-    end
+    -- Container's own activation only; child focus is managed by Navigator
 end
 
 function Container:onUnfocus()
-    local focus = self:getFocus()
-    if focus then
-        focus:unfocus()
+    -- Cascade unfocus to all focused children for binding cleanup
+    for _, child in ipairs(self.children) do
+        if child:getFocused() then
+            child:unfocus()
+        end
     end
-    self:setFocus(nil)
 end
 
 function Container:onUpdate() end
@@ -177,6 +146,10 @@ function Container:getDirectionKeys()
     elseif self.direction == "grid" then
         return "up", "right", "down", "left"
     end
+    return nil
+end
+
+function Container:getDesiredFocus()
     return nil
 end
 
