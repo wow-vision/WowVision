@@ -36,6 +36,7 @@ function Context:add(element, index)
 end
 
 function Context:onUnfocus()
+    parent.onUnfocus(self)
     if self.innate and self._open then
         self:closeWindow()
     end

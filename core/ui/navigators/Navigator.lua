@@ -41,6 +41,8 @@ function Navigator:destroy()
     end
     self.nodes = {}
     self.root = nil
+    self._lastFocusPath = nil
+    self._lastFocusKeys = nil
 end
 
 function Navigator:setNodeTypes() end
@@ -66,30 +68,59 @@ function Navigator:update()
     if not self.rootNode then
         return
     end
+
     self:reconcile()
+
+    -- Build new focus path and handle alwaysUpdates in one walk
+    -- Keys track extra identity (e.g. currentIndex for synced containers)
+    -- so that index changes are detected even when element references stay the same
+    local newPath = {}
+    local newKeys = {}
     local node = self.rootNode
-    local focusChanged = false
+    local leafNode = node
     while node do
-        if node.focusChange then
-            focusChanged = true
-            node.focusChange = false
-        end
-        -- Announce "always" mode updates regardless of focus change
+        tinsert(newPath, node.element)
+        tinsert(newKeys, node.element.currentIndex)
         for k, v in pairs(node.alwaysUpdates or {}) do
             WowVision:speak(v)
         end
-        if node.childNode then
-            node = node.childNode
-        else
+        leafNode = node
+        node = node.childNode
+    end
+
+    -- Find divergence between old and new focus paths
+    local oldPath = self._lastFocusPath or {}
+    local oldKeys = self._lastFocusKeys or {}
+    local divergence = nil
+    local contentChanged = false
+    for i = 1, math.max(#oldPath, #newPath) do
+        if oldPath[i] ~= newPath[i] then
+            divergence = i
             break
+        elseif oldKeys[i] ~= newKeys[i] then
+            contentChanged = true
         end
     end
-    -- Announce "focus" mode updates only if focus didn't change
-    if not focusChanged then
-        for k, v in pairs(node.liveUpdates) do
+
+    if divergence then
+        -- Structure changed: announce each shouldAnnounce element from divergence to leaf
+        for i = divergence, #newPath do
+            if newPath[i].shouldAnnounce then
+                newPath[i]:announce()
+            end
+        end
+    elseif contentChanged then
+        -- Content changed (e.g. synced container scrolled): announce the leaf
+        newPath[#newPath]:announce()
+    else
+        -- No focus change: speak leaf's live field updates
+        for k, v in pairs(leafNode.liveUpdates) do
             WowVision:speak(v)
         end
     end
+
+    self._lastFocusPath = newPath
+    self._lastFocusKeys = newKeys
 end
 
 WowVision.NavigatorElementNode = WowVision.Class("NavigatorElementNode")
@@ -260,14 +291,12 @@ function NavigatorContainerNode:focusSelected(direction)
         return
     end
     self.selectedElement:focus()
-    self.focusChange = true
     self:reconcileChildNode(direction)
 end
 
 function NavigatorContainerNode:unfocusSelected()
     if self.selectedElement and self.selectedElement:getFocused() then
         self.selectedElement:unfocus()
-        self.focusChange = true
     end
 end
 
@@ -288,7 +317,6 @@ function NavigatorContainerNode:reconcile()
         self.lastDesiredFocus = desiredFocus
         if desiredFocus ~= self.selectedElement then
             self:select(desiredFocus, self.initialDirection)
-            self.focusChange = true
         end
     end
 
@@ -391,7 +419,6 @@ function PreservingContainerNode:reconcile()
         if self.selectedElement then
             self:cacheCurrentChild()
             self:deselect()
-            self.focusChange = true
         end
         self:pruneCache()
         return
@@ -423,7 +450,6 @@ function PreservingContainerNode:reconcile()
         end
 
         self:onSelect(desiredFocus, nil)
-        self.focusChange = true
     else
         -- Same focus target, update index in case children reordered
         local children = self.element:getNavigatorChildren()
@@ -502,7 +528,6 @@ end
 function SyncedContainerNode:focusSelected(direction)
     if self.selectedIndex and self.selectedIndex >= 1 then
         self.element:focusCurrent()
-        self.focusChange = true
     end
     self:reconcileChildNode(direction)
 end
@@ -510,7 +535,6 @@ end
 function SyncedContainerNode:unfocusSelected()
     if self.selectedIndex and self.selectedIndex >= 1 and self.element.childPanel:getFocused() then
         self.element:unfocusCurrent()
-        self.focusChange = true
     end
     self:reconcileChildNode()
 end
@@ -531,7 +555,6 @@ function SyncedContainerNode:reconcile()
             self.selectedIndex = currentIndex
             self:onSelect(nil, self.initialDirection)
         end
-        self.focusChange = true
     end
     -- Re-focus if element was unfocused externally (e.g., by Container:onUnfocus cascade)
     if self.selectedIndex and self.selectedIndex >= 1

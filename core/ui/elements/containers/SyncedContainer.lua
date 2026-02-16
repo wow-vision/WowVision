@@ -60,10 +60,13 @@ function SyncedContainer:onSyncedFocus()
     if numEntries < 1 then
         return
     end
-    if self.currentIndex < 1 or self.currentIndex > numEntries then
-        -- Clamp to valid range (preserves approximate position if list shrank)
-        self:setCurrentIndex(math.max(1, math.min(self.currentIndex, numEntries)))
-    end
+    -- Clamp to valid range, then force setCurrentIndex to run.
+    -- onSyncedUnfocus clears startingElement, and subsequent iterate() calls
+    -- empty the childPanel. Reset currentIndex to bypass setCurrentIndex's
+    -- equality guard so the childPanel is repopulated.
+    local targetIndex = math.max(1, math.min(self.currentIndex, numEntries))
+    self.currentIndex = -1
+    self:setCurrentIndex(targetIndex)
 end
 
 function SyncedContainer:onSyncedUnfocus()

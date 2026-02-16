@@ -1,5 +1,7 @@
 local Context, parent = WowVision.ui:CreateElementType("HorizontalContext", "Context")
 
+Context.preserveChildNodes = true
+
 -- Override defaults for HorizontalContext
 Context.info:updateFields({
     { key = "direction", default = "control-tab" },

@@ -45,9 +45,6 @@ end
 local WindowedContainerNode = WowVision.Class("WindowedContainerNode", WowVision.NavigatorContainerNode)
 
 function WindowedContainerNode:onSelect(element, direction)
-    if element.shouldAnnounce then
-        element:announce()
-    end
     self:focusSelected(direction)
 end
 
@@ -84,9 +81,6 @@ local WindowedPreservingContainerNode =
     WowVision.Class("WindowedPreservingContainerNode", WowVision.NavigatorPreservingContainerNode)
 
 function WindowedPreservingContainerNode:onSelect(element, direction)
-    if element and element.shouldAnnounce then
-        element:announce()
-    end
     self:focusSelected(direction)
 end
 
