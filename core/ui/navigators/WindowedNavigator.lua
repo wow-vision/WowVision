@@ -89,10 +89,10 @@ function WindowedPreservingContainerNode:onDeselect(element)
 end
 
 function WindowedPreservingContainerNode:onBindingPressed(binding)
-    if self.childNode and self.childNode:onBindingPressed(binding) then
-        return true
-    end
-    return false
+    return handleNavigationBinding(self, binding,
+        function() return #self.element:getNavigatorChildren() end,
+        function() return self.selectedIndex end
+    )
 end
 
 local WindowedNavigator = WowVision.Class("WindowedNavigator", WowVision.Navigator)

@@ -405,6 +405,39 @@ function PreservingContainerNode:initialize(parent, navigator, element, directio
     NavigatorContainerNode.initialize(self, parent, navigator, element, direction)
 end
 
+function PreservingContainerNode:select(element, direction)
+    if element == self.selectedElement then
+        return
+    end
+    -- Cache current child node before switching
+    self:cacheCurrentChild()
+    -- Deselect without destroying (child is cached)
+    if self.selectedElement then
+        self:onDeselect(self.selectedElement)
+        self.selectedElement = nil
+        self.selectedIndex = nil
+        self.childNode = nil
+    end
+    -- Find element in children
+    for i, v in ipairs(self.element:getNavigatorChildren()) do
+        if v.element == element then
+            self.selectedIndex = i
+            self.selectedElement = v.element
+            break
+        end
+    end
+    if not self.selectedElement then
+        return
+    end
+    -- Restore cached child node if available
+    local cached = self.cachedNodes[element]
+    if cached then
+        self.childNode = cached
+        self.cachedNodes[element] = nil
+    end
+    self:onSelect(element, direction)
+end
+
 function PreservingContainerNode:reconcile()
     if self:hasAlwaysFields() then
         self:reconcileFields()
@@ -420,53 +453,74 @@ function PreservingContainerNode:reconcile()
             self:cacheCurrentChild()
             self:deselect()
         end
+        self.lastDesiredFocus = nil
         self:pruneCache()
         return
     end
 
-    if desiredFocus ~= self.selectedElement then
-        -- Focus target changed (push/pop)
-        self:cacheCurrentChild()
-        self:deselect()
-
-        self.selectedElement = desiredFocus
-
-        -- Find index in children
-        local children = self.element:getNavigatorChildren()
-        for i, v in ipairs(children) do
-            if v.element == desiredFocus then
-                self.selectedIndex = i
-                break
-            end
+    -- Only react to desiredFocus CHANGES (e.g., new window opened, context pushed/popped).
+    -- Don't continuously enforce it — allow user navigation to persist.
+    if desiredFocus ~= self.lastDesiredFocus then
+        self.lastDesiredFocus = desiredFocus
+        if desiredFocus ~= self.selectedElement then
+            self:select(desiredFocus, self.initialDirection)
         end
+    end
 
-        -- Try to restore from cache
-        local cached = self.cachedNodes[desiredFocus]
-        if cached then
-            self.childNode = cached
-            self.cachedNodes[desiredFocus] = nil
-        else
-            self.childNode = nil
-        end
-
-        self:onSelect(desiredFocus, nil)
-    else
-        -- Same focus target, update index in case children reordered
+    -- Validate current selection still exists in children
+    if self.selectedElement then
         local children = self.element:getNavigatorChildren()
+        local newIndex = nil
         for i, v in ipairs(children) do
             if v.element == self.selectedElement then
-                self.selectedIndex = i
+                newIndex = i
                 break
             end
         end
-        -- Re-focus if element was unfocused externally (e.g., by Container:onUnfocus cascade)
-        if self.element:getFocused() and self.selectedElement and not self.selectedElement:getFocused() then
-            self:onSelect(self.selectedElement, nil)
+        if newIndex then
+            self.selectedIndex = newIndex
+            -- Re-focus if element was unfocused externally (e.g., by Container:onUnfocus cascade)
+            if self.element:getFocused() and not self.selectedElement:getFocused() then
+                self:onSelect(self.selectedElement, self.initialDirection)
+            end
+        else
+            -- Selected element removed, find closest
+            local foundSelection = false
+            for i = (self.selectedIndex or 1), 1, -1 do
+                local newSelection = children[i]
+                if newSelection then
+                    self:select(newSelection.element, self.initialDirection)
+                    foundSelection = true
+                    break
+                end
+            end
+            if not foundSelection then
+                self:cacheCurrentChild()
+                self:deselect()
+            end
+        end
+    end
+
+    -- Initial selection if nothing selected
+    if not self.selectedElement then
+        local children = self.element:getNavigatorChildren()
+        if #children > 0 then
+            if desiredFocus then
+                self:select(desiredFocus, self.initialDirection)
+            else
+                local targetIndex = 1
+                local prevKey, nextKey = self.element:getDirectionKeys()
+                if self.initialDirection == prevKey or self.initialDirection == "END" then
+                    targetIndex = #children
+                end
+                self:selectIndex(targetIndex, self.initialDirection)
+            end
         end
     end
 
     self:pruneCache()
-    self:reconcileChildNode(nil)
+    self:reconcileChildNode(self.initialDirection)
+    self.initialDirection = nil
 end
 
 function PreservingContainerNode:cacheCurrentChild()
