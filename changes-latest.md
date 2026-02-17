@@ -10,6 +10,9 @@
 * Fixed a performance issue for spoken announcements that use templates (primarily announcement of buffer items.) Templates are now precompiled. This wasn't too noticeable unless you were rapidly arrowing through buffers.
 * Removed a few unused files (the old speech module.)
 
+### Classic Versions
+* Added a Speech Style dropdown to the speech module. This allows you to configure how speech output is queued, potentially leading to more consistent interrupts. The direct style is the style WowVision used before; buffered is similar to Sku's method (using an explicit speech queue with an artificial delay.)
+
 ### Burning Crusade Anniversary
 * Fixed a bug where the quest log frame would not scroll correctly and report incorrect information for various buttons.
 * Fixed a bug in the character frame where the skill and reputation detail could be wrongly positioned (before their list instead of after.)
