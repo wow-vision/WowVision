@@ -147,24 +147,27 @@ function Queued:onUpdate(elapsed)
         end
     end
 
-    -- Wait after stop before speaking
+    -- Wait after stop before speaking (skip wait if multiple items are queued)
     if self.waitTimer > 0 then
-        self.waitTimer = self.waitTimer - elapsed
-        return
+        if #self.queue <= 1 then
+            self.waitTimer = self.waitTimer - elapsed
+            return
+        end
+        self.waitTimer = 0
     end
 
-    -- Process front of queue
-    local front = self.queue[1]
-    if not front then
-        return
-    end
-    tremove(self.queue, 1)
+    -- Drain all ready items
+    while #self.queue > 0 do
+        local front = self.queue[1]
+        tremove(self.queue, 1)
 
-    if front == QUEUE_RESET then
-        C_VoiceChat.StopSpeakingText()
-        self.waitTimer = 0.1
-    else
-        self:output(front)
+        if front == QUEUE_RESET then
+            C_VoiceChat.StopSpeakingText()
+            self.waitTimer = 0.1
+            return
+        else
+            self:output(front)
+        end
     end
 end
 
