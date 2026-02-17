@@ -34,6 +34,8 @@ settings:add({
 
 function module:onEnable()
     self.speechDelay = 0.1
+    self.pendingInterrupt = false
+    self.speechQueue = {}
     if not self.interruptFrame then
         self.interruptFrame = CreateFrame("Frame")
         self.interruptFrame:EnableKeyboard(true)
@@ -52,6 +54,10 @@ function module:onDisable()
 end
 
 function module:speak(text)
+    if self.pendingInterrupt then
+        tinsert(self.speechQueue, text)
+        return
+    end
     local text = string.gsub(text, "/", " / ")
     local destination = Enum.VoiceTtsDestination.QueuedLocalPlayback
     C_VoiceChat.SpeakText(
@@ -63,11 +69,25 @@ function module:speak(text)
     )
 end
 
+function module:flushSpeechQueue()
+    self.pendingInterrupt = false
+    local queue = self.speechQueue
+    self.speechQueue = {}
+    for _, text in ipairs(queue) do
+        self:speak(text)
+    end
+end
+
 function module:stop()
     C_VoiceChat.StopSpeakingText()
 end
 
 function module:uiStop()
     self:stop()
+    self.pendingInterrupt = true
+    self.speechQueue = {}
+    C_Timer.After(0, function()
+        self:flushSpeechQueue()
+    end)
     return true
 end
