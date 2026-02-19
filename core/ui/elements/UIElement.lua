@@ -8,6 +8,7 @@ UIElement.info:addFields({
     { key = "userdata", default = nil, compareMode = "direct" },
     {
         key = "label",
+        type = "String",
         default = "",
         get = function(obj)
             return obj:getLabel()
@@ -185,6 +186,9 @@ function UIElement:onBindingPressed(binding)
 end
 
 function UIElement:getLabel()
+    if type(self.label) == "function" then
+        return self.label()
+    end
     return self.label
 end
 

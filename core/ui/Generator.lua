@@ -264,18 +264,84 @@ function Generator:getVirtualElement(path)
     return nil
 end
 
+-- Check if a virtual element's entire previous subtree can be reused.
+-- When true, generateNode returns previousNode directly — zero allocation,
+-- zero recursion, zero reconciliation for the entire subtree.
+function Generator:canReuseSubtree(elementDef, previousNode, props, panel)
+    if not previousNode
+        or not previousNode.virtualElement
+        or previousNode.elementType ~= props[1]
+        or not previousNode.cachedGeneratorOutput
+        or elementDef.alwaysRun
+    then
+        return false
+    end
+
+    -- Can't reuse if any element types are dirty — a dirty child might be nested in this subtree
+    if panel and next(panel.dirtyElements) then
+        return false
+    end
+
+    -- Check frameFields
+    for _, fieldConfig in ipairs(elementDef.frameFields) do
+        local frameRef, field = fieldConfig[1], fieldConfig[2]
+        local frame = type(frameRef) == "string" and _G[frameRef] or frameRef
+        if frame then
+            local currentValue = frame[field]
+            local cacheKey = (type(frameRef) == "string" and frameRef or tostring(frame)) .. "." .. field
+            local cachedValue = previousNode.frameCache and previousNode.frameCache[cacheKey]
+            if currentValue ~= cachedValue then
+                return false
+            end
+        end
+    end
+
+    -- Check framePredicates
+    for _, predicateConfig in ipairs(elementDef.framePredicates) do
+        local frameRef, method = predicateConfig[1], predicateConfig[2]
+        local frame = type(frameRef) == "string" and _G[frameRef] or frameRef
+        if frame and frame[method] then
+            local currentValue = frame[method](frame)
+            local cacheKey = (type(frameRef) == "string" and frameRef or tostring(frame)) .. ":" .. method
+            local cachedValue = previousNode.frameCache and previousNode.frameCache[cacheKey]
+            if currentValue ~= cachedValue then
+                return false
+            end
+        end
+    end
+
+    -- Check dynamicValues
+    if elementDef.valuesFunc then
+        local currentValues = elementDef.valuesFunc(props)
+        if not self:valuesEqual(currentValues, previousNode.lastDynamicValues) then
+            return false
+        end
+    end
+
+    return true
+end
+
 function Generator:generateNode(parent, props, previousNode, panel)
     if props == nil or props[1] == nil then
         return nil
     end
-    local node = GeneratorNode:new(parent)
-    node.elementType = props[1]
+
+    -- Look up element definition before creating node (needed for subtree reuse check)
     local elementDef = self:getVirtualElementDef(props[1])
     -- Fallback to global generator if not found (submodule elements are registered on separate generators)
     if not elementDef and self ~= WowVision.ui.generator then
         elementDef = WowVision.ui.generator:getVirtualElementDef(props[1])
     end
     local virtualElement = elementDef and elementDef.func
+
+    -- Subtree reuse: return the previous node directly when nothing has changed.
+    -- Skips all node allocation, function calls, child recursion, and reconciliation.
+    if virtualElement and self:canReuseSubtree(elementDef, previousNode, props, panel) then
+        return previousNode
+    end
+
+    local node = GeneratorNode:new(parent)
+    node.elementType = props[1]
     for k, v in pairs(props) do
         if k == "hooks" then
             node.hooks = v
@@ -358,7 +424,7 @@ function Generator:generateNode(parent, props, previousNode, panel)
                 else
                     -- Values changed, regenerate
                     node.lastDynamicValues = currentValues
-                    root = virtualElement(node.props)
+                    root = virtualElement(node.props, currentValues)
                     didRegenerate = true
                 end
             else
@@ -370,7 +436,7 @@ function Generator:generateNode(parent, props, previousNode, panel)
             if elementDef.valuesFunc then
                 node.lastDynamicValues = elementDef.valuesFunc(node.props)
             end
-            root = virtualElement(node.props)
+            root = virtualElement(node.props, node.lastDynamicValues)
             didRegenerate = true
         end
 
@@ -523,6 +589,11 @@ end
 -- Main reconciliation entry point
 -- Resolves virtual wrappers first, then reconciles at real element boundaries
 function Generator:reconcile(realParent, oldTree, newTree)
+    -- Subtree reuse: identical references mean nothing changed
+    if oldTree == newTree then
+        return
+    end
+
     if not oldTree and not newTree then
         return
     end
@@ -671,6 +742,11 @@ end
 
 -- Reconcile a matched pair of entries
 function Generator:reconcileEntry(realContainer, oldEntry, newEntry)
+    -- Subtree reuse: identical tree nodes mean nothing changed
+    if oldEntry.treeNode == newEntry.treeNode then
+        return
+    end
+
     if oldEntry.realNode.elementType ~= newEntry.realNode.elementType then
         -- Different real types - replace
         self:unbuild(realContainer, oldEntry.treeNode)

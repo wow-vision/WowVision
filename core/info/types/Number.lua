@@ -2,6 +2,7 @@ local info = WowVision.info
 local L = WowVision:getLocale()
 
 local NumberField, parent = info:CreateFieldClass("Number")
+NumberField.resolveFunctions = true
 
 function NumberField:setup(config)
     parent.setup(self, config)

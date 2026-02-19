@@ -127,6 +127,10 @@ function Field:setDB(obj, db)
 end
 
 function Field:compare(a, b)
+    if self.resolveFunctions then
+        if type(a) == "function" then a = a() end
+        if type(b) == "function" then b = b() end
+    end
     if self.compareMode == "direct" then
         return a == b
     end
@@ -148,7 +152,7 @@ function Field:getValueString(obj, value)
     return tostring(value)
 end
 
-function Field:get(obj, ...)
+function Field:getRaw(obj, ...)
     local strategy = self.getStrategy
     if strategy[1] == "key" then
         return obj[strategy[2] or self.key]
@@ -157,6 +161,14 @@ function Field:get(obj, ...)
         return self.getFunc(obj, self.key)
     end
     return obj[self.key]
+end
+
+function Field:get(obj, ...)
+    local value = self:getRaw(obj, ...)
+    if self.resolveFunctions and type(value) == "function" then
+        return value()
+    end
+    return value
 end
 
 function Field:getData(obj)
@@ -172,12 +184,21 @@ end
 
 function Field:set(obj, ...)
     local value = ...
-    value = self:validate(value)
-    local oldValue = self:get(obj)
+    local isFunc = self.resolveFunctions and type(value) == "function"
+    if not isFunc then
+        value = self:validate(value)
+    end
 
     -- Check if value actually changed
-    if valuesEqual(oldValue, value) then
-        return false
+    local oldRaw = self:getRaw(obj)
+    if isFunc then
+        -- Compare raw function references
+        if oldRaw == value then return false end
+    else
+        -- Resolve old value if it was a function, then compare
+        local oldResolved = (self.resolveFunctions and type(oldRaw) == "function")
+            and oldRaw() or oldRaw
+        if valuesEqual(oldResolved, value) then return false end
     end
 
     local persistValue = value
@@ -186,7 +207,8 @@ function Field:set(obj, ...)
     else
         obj[self.key] = value
     end
-    if self.persist and obj.db then
+    -- Don't persist function values (can't serialize to SavedVariables)
+    if not isFunc and self.persist and obj.db then
         obj.db[self.key] = persistValue
     end
     self.events.valueChange:emit(obj, self.key, persistValue)

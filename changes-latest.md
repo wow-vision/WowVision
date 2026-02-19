@@ -9,9 +9,10 @@
 * Fixed a bug where the view cursor on ViewList objects (for example buffers) would not reset to the beginning if all items in them were deleted.
 * Fixed a performance issue for spoken announcements that use templates (primarily announcement of buffer items.) Templates are now precompiled. This wasn't too noticeable unless you were rapidly arrowing through buffers.
 * Removed a few unused files (the old speech module.)
+* Greatly improved UI performance on most screens.
 
 ### Classic Versions
-* Added a Speech Style dropdown to the speech module. This allows you to configure how speech output is queued, potentially leading to more consistent interrupts. The direct style is the style WowVision used before; buffered is similar to Sku's method (using an explicit speech queue with an artificial delay.)
+* Added a Speech Style dropdown to the speech module. This allows you to configure how speech output is queued, potentially leading to more consistent interrupts. The direct style is the style WowVision used before; buffered is similar to Sku's method (using a speech queue with an artificial delay.)
 
 ### Burning Crusade Anniversary
 * Fixed a bug where the quest log frame would not scroll correctly and report incorrect information for various buttons.
