@@ -1,4 +1,5 @@
 local dbManager = {}
+local DB_VERSION = 1
 
 function dbManager:reconcileArray(default, db)
     local db = db
@@ -39,6 +40,22 @@ function dbManager:reconcile(default, db)
         return default
     end
     return db
+end
+
+function migrateDB(db)
+    --a more robust solution to this will be added later
+    local buffers = db.submodules.buffers
+    buffers.data = nil
+    db._version = DB_VERSION
+end
+
+function dbManager:beginReconcile(default, db)
+    if next(db) then
+        if db._version == nil or db._version < DB_VERSION then
+            migrateDB(db)
+        end
+    end
+    return dbManager:reconcile(default, db)
 end
 
 WowVision.dbManager = dbManager

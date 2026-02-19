@@ -21,7 +21,7 @@ function WowVision:OnInitialize()
     if WowVisionDB == nil or WowVision.profiles ~= nil then
         WowVisionDB = {}
     end
-    self.db = WowVision.dbManager:reconcile(defaultDB, WowVisionDB)
+    self.db = WowVision.dbManager:beginReconcile(defaultDB, WowVisionDB)
     self.base:setDBObj(self.db)
 end
 
