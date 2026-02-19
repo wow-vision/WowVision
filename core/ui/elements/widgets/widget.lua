@@ -92,8 +92,7 @@ function Widget:setupUniqueBindings()
     })
 end
 
-function Widget:onSetInfo()
-end
+function Widget:onSetInfo() end
 
 function Widget:getValue()
     if self.bind then

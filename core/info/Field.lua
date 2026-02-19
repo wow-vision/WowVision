@@ -128,8 +128,12 @@ end
 
 function Field:compare(a, b)
     if self.resolveFunctions then
-        if type(a) == "function" then a = a() end
-        if type(b) == "function" then b = b() end
+        if type(a) == "function" then
+            a = a()
+        end
+        if type(b) == "function" then
+            b = b()
+        end
     end
     if self.compareMode == "direct" then
         return a == b
@@ -193,12 +197,15 @@ function Field:set(obj, ...)
     local oldRaw = self:getRaw(obj)
     if isFunc then
         -- Compare raw function references
-        if oldRaw == value then return false end
+        if oldRaw == value then
+            return false
+        end
     else
         -- Resolve old value if it was a function, then compare
-        local oldResolved = (self.resolveFunctions and type(oldRaw) == "function")
-            and oldRaw() or oldRaw
-        if valuesEqual(oldResolved, value) then return false end
+        local oldResolved = (self.resolveFunctions and type(oldRaw) == "function") and oldRaw() or oldRaw
+        if valuesEqual(oldResolved, value) then
+            return false
+        end
     end
 
     local persistValue = value

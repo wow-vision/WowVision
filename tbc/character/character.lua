@@ -33,7 +33,7 @@ gen:Element("character", function(props)
     elseif tab == 4 then
         tinsert(result.children, { "character/SkillsDetail" })
     end
-        tinsert(result.children, { "character/Tabs" })
+    tinsert(result.children, { "character/Tabs" })
     return result
 end)
 

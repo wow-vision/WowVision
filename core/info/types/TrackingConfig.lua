@@ -252,14 +252,20 @@ function TrackingConfigField:buildParamsButton(obj)
     self:ensureVirtualElements()
     local field = self
     local value = field:get(obj) or { type = nil }
-    if not value.type then return nil end
+    if not value.type then
+        return nil
+    end
     local objectType = WowVision.objects.types:get(value.type)
-    if not objectType then return nil end
+    if not objectType then
+        return nil
+    end
 
     -- Check if there are any params to edit
     local checkCopy = WowVision.info.deepCopy(value)
     local checkGen, _ = objectType:getTrackingGenerator(checkCopy)
-    if not checkGen.children or #checkGen.children == 0 then return nil end
+    if not checkGen.children or #checkGen.children == 0 then
+        return nil
+    end
 
     return {
         "Button",
@@ -351,7 +357,7 @@ function TrackingConfigField:createConfigProxy(obj)
                 return
             end
             value[k] = v
-            nestedProxies[k] = nil  -- Clear cached proxy if value replaced
+            nestedProxies[k] = nil -- Clear cached proxy if value replaced
             field:onConfigChanged(obj)
         end,
         -- Allow pairs() iteration

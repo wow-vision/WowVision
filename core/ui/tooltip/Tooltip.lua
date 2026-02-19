@@ -105,14 +105,19 @@ end
 function Tooltip:isLineBlank(lineNumber)
     local left, right = self.reader:getLine(self.activeFrame, lineNumber)
     local text = self.reader:formatLine(left, right)
-    if not text then return true end
+    if not text then
+        return true
+    end
     -- Strip WoW escape sequences: color codes, reset, textures, atlas, hyperlinks
-    local stripped = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("|A.-|a", ""):gsub("|H.-|h", "")
+    local stripped =
+        text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("|A.-|a", ""):gsub("|H.-|h", "")
     return strtrim(stripped) == ""
 end
 
 function Tooltip:nextLine()
-    if not self.activeFrame then return end
+    if not self.activeFrame then
+        return
+    end
     self:prepareRead()
     local numLines = self:getNumLines()
     if numLines == 0 then
@@ -138,7 +143,9 @@ function Tooltip:nextLine()
 end
 
 function Tooltip:previousLine()
-    if not self.activeFrame then return end
+    if not self.activeFrame then
+        return
+    end
     self:prepareRead()
     local numLines = self:getNumLines()
     if numLines == 0 then
@@ -164,7 +171,9 @@ function Tooltip:previousLine()
 end
 
 function Tooltip:speakCurrentLeft()
-    if not self.activeFrame then return end
+    if not self.activeFrame then
+        return
+    end
     self:prepareRead()
     local numLines = self:getNumLines()
     if numLines == 0 then
@@ -183,7 +192,9 @@ function Tooltip:speakCurrentLeft()
 end
 
 function Tooltip:speakCurrentRight()
-    if not self.activeFrame then return end
+    if not self.activeFrame then
+        return
+    end
     self:prepareRead()
     local numLines = self:getNumLines()
     if numLines == 0 then

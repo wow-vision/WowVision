@@ -139,12 +139,16 @@ addAuraFields({
         timeType = "duration",
         label = L["Remaining Duration"],
         getCached = function(cache)
-            if cache.duration == 0 then return nil end
+            if cache.duration == 0 then
+                return nil
+            end
             return cache.expirationTime - GetTime()
         end,
         get = function(params)
             local aura = getAuraFromParams(params)
-            if aura == nil or aura.duration == 0 then return nil end
+            if aura == nil or aura.duration == 0 then
+                return nil
+            end
             return aura.expirationTime - GetTime()
         end,
     },

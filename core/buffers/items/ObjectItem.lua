@@ -17,7 +17,9 @@ ObjectItem.info:addFields({
         getTemplates = function(obj)
             if obj.object and obj.object.type then
                 local objectType = WowVision.objects.types:get(obj.object.type)
-                if objectType then return objectType.templates end
+                if objectType then
+                    return objectType.templates
+                end
             end
         end,
     },

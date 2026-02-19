@@ -268,7 +268,8 @@ end
 -- When true, generateNode returns previousNode directly — zero allocation,
 -- zero recursion, zero reconciliation for the entire subtree.
 function Generator:canReuseSubtree(elementDef, previousNode, props, panel)
-    if not previousNode
+    if
+        not previousNode
         or not previousNode.virtualElement
         or previousNode.elementType ~= props[1]
         or not previousNode.cachedGeneratorOutput
@@ -657,10 +658,14 @@ end
 function Generator:reconcileKeyed(realContainer, oldEntries, newEntries)
     -- Validate all entries have keys
     for _, entry in ipairs(oldEntries) do
-        if entry.key == nil then return false end
+        if entry.key == nil then
+            return false
+        end
     end
     for _, entry in ipairs(newEntries) do
-        if entry.key == nil then return false end
+        if entry.key == nil then
+            return false
+        end
     end
 
     -- Build key maps

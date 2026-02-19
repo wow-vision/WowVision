@@ -611,9 +611,12 @@ function SyncedContainerNode:reconcile()
         end
     end
     -- Re-focus if element was unfocused externally (e.g., by Container:onUnfocus cascade)
-    if self.selectedIndex and self.selectedIndex >= 1
+    if
+        self.selectedIndex
+        and self.selectedIndex >= 1
         and self.element:getFocused()
-        and not self.element.childPanel:getFocused() then
+        and not self.element.childPanel:getFocused()
+    then
         self:onSelect(nil, self.initialDirection)
     end
     if not self.selectedIndex or self.selectedIndex < 1 then

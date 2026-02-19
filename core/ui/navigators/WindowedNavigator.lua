@@ -53,10 +53,11 @@ function WindowedContainerNode:onDeselect(element)
 end
 
 function WindowedContainerNode:onBindingPressed(binding)
-    return handleNavigationBinding(self, binding,
-        function() return #self.element:getNavigatorChildren() end,
-        function() return self.selectedIndex end
-    )
+    return handleNavigationBinding(self, binding, function()
+        return #self.element:getNavigatorChildren()
+    end, function()
+        return self.selectedIndex
+    end)
 end
 
 local WindowedSyncedContainerNode =
@@ -71,10 +72,11 @@ function WindowedSyncedContainerNode:onDeselect(element)
 end
 
 function WindowedSyncedContainerNode:onBindingPressed(binding)
-    return handleNavigationBinding(self, binding,
-        function() return self:getNumEntries() end,
-        function() return self.element.currentIndex end
-    )
+    return handleNavigationBinding(self, binding, function()
+        return self:getNumEntries()
+    end, function()
+        return self.element.currentIndex
+    end)
 end
 
 local WindowedPreservingContainerNode =
@@ -89,10 +91,11 @@ function WindowedPreservingContainerNode:onDeselect(element)
 end
 
 function WindowedPreservingContainerNode:onBindingPressed(binding)
-    return handleNavigationBinding(self, binding,
-        function() return #self.element:getNavigatorChildren() end,
-        function() return self.selectedIndex end
-    )
+    return handleNavigationBinding(self, binding, function()
+        return #self.element:getNavigatorChildren()
+    end, function()
+        return self.selectedIndex
+    end)
 end
 
 local WindowedNavigator = WowVision.Class("WindowedNavigator", WowVision.Navigator)
