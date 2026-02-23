@@ -38,7 +38,7 @@ end
 
 gen:Element("socketing/Socket", function(props)
     local frame = props.frame
-    return { "ProxyButton", frame = frame, label = getSocketLabel(frame) }
+    return { "ItemButton", frame = frame, label = getSocketLabel(frame) }
 end)
 
 gen:Element("socketing/Sockets", function(props)
