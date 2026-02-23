@@ -236,7 +236,7 @@ function Module:setEnabled(enabled)
     end
 end
 
-function Module:subscribeContextTag(tag, handler)
+function Module:registerContextMenuHook(tag, handler)
     if not self._contextTagSubscriptions then
         self._contextTagSubscriptions = {}
     end
