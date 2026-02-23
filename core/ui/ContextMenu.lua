@@ -64,7 +64,7 @@ function ContextMenu:buildMenuDef()
                     click = function(_, source)
                         menuItem.events.click:emit(self.element)
                         if menuItem.popOnClick then
-                            source.context:pop()
+                            source.context:handleEscape()
                         end
                     end,
                 },
@@ -80,7 +80,7 @@ function ContextMenu:buildMenuDef()
                         local newValue = not source:getValue()
                         menuItem.events.valueChange:emit(self.element, newValue)
                         if menuItem.popOnClick then
-                            source.context:pop()
+                            source.context:handleEscape()
                         end
                     end,
                 },
