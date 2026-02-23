@@ -31,6 +31,7 @@ gen:Element("macros/MainPanel", function(props)
                 "ProxyButton",
                 frame = MacroFrame.SelectedMacroButton,
                 label = L["Drag to pick up macro"],
+                draggable = true
             },
             { "ProxyButton", frame = MacroEditButton },
             { "ProxyEditBox", label = "Macro Text", frame = MacroFrameText },
