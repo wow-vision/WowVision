@@ -43,6 +43,7 @@ function Navigator:destroy()
     self.root = nil
     self._lastFocusPath = nil
     self._lastFocusKeys = nil
+    self._lastFocusLabels = nil
 end
 
 function Navigator:setNodeTypes() end
@@ -76,11 +77,13 @@ function Navigator:update()
     -- so that index changes are detected even when element references stay the same
     local newPath = {}
     local newKeys = {}
+    local newLabels = {}
     local node = self.rootNode
     local leafNode = node
     while node do
         tinsert(newPath, node.element)
         tinsert(newKeys, node.element.currentIndex)
+        tinsert(newLabels, node.element:getLabel())
         for k, v in pairs(node.alwaysUpdates or {}) do
             WowVision:speak(v)
         end
@@ -91,6 +94,7 @@ function Navigator:update()
     -- Find divergence between old and new focus paths
     local oldPath = self._lastFocusPath or {}
     local oldKeys = self._lastFocusKeys or {}
+    local oldLabels = self._lastFocusLabels or {}
     local divergence = nil
     local contentChanged = false
     for i = 1, math.max(#oldPath, #newPath) do
@@ -110,7 +114,13 @@ function Navigator:update()
             end
         end
     elseif contentChanged then
-        -- Content changed (e.g. synced container scrolled): announce the leaf
+        -- Content changed (e.g. synced container scrolled): announce the leaf,
+        -- plus any reused elements whose labels changed
+        for i = 1, #newPath - 1 do
+            if newPath[i].shouldAnnounce and newLabels[i] ~= oldLabels[i] then
+                newPath[i]:announce()
+            end
+        end
         newPath[#newPath]:announce()
     else
         -- No focus change: speak leaf's live field updates
@@ -121,6 +131,7 @@ function Navigator:update()
 
     self._lastFocusPath = newPath
     self._lastFocusKeys = newKeys
+    self._lastFocusLabels = newLabels
 end
 
 WowVision.NavigatorElementNode = WowVision.Class("NavigatorElementNode")
