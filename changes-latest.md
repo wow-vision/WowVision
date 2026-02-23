@@ -11,6 +11,7 @@
 * Removed a few unused files (the old speech module.)
 * Greatly improved UI performance on most screens.
 * Improved labeling for various lists for clarity. Horizontal lists (such as tabs) will be labeled as a "Bar" to denote their navigation direction.
+* Fixed a bug in the trade frame where your trades were always labeled as "Empty" even when not empty.
 
 ### Classic Versions
 * Added a Speech Style dropdown to the speech module. This allows you to configure how speech output is queued, potentially leading to more consistent interrupts. The direct style is the style WowVision used before; buffered is similar to Sku's method (using a speech queue with an artificial delay.)

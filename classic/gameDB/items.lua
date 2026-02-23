@@ -13,7 +13,7 @@ end
 db:register("TradePlayer", {
     getLabel = function(button, props)
         local name, _, count, _, _, _ = GetTradePlayerItemInfo(props.id)
-        local label = label or L["Empty"]
+        local label = name or L["Empty"]
         if label and count and count > 0 then
             label = label .. " x" .. count
         end
