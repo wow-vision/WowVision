@@ -101,7 +101,11 @@ function ContextMenu:open()
         return
     end
     local menuDef = self:buildMenuDef()
-    self.element.context:addGenerated(menuDef)
+    WowVision.UIHost:openTemporaryWindow({
+        generated = true,
+        rootElement = menuDef,
+        hookEscape = true,
+    })
 end
 
 WowVision.ContextMenu = ContextMenu

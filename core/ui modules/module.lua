@@ -167,5 +167,6 @@ module:registerBindings({
         dorment = true,
         label = L["Context Menu"],
         inputs = { "SHIFT-F10" },
+        func = function() end,
     },
 })
