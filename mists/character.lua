@@ -107,7 +107,7 @@ gen:Element("character/Equipment", {
     for i, v in ipairs(children) do
         local slotId = v:GetID()
         tinsert(result.children, {
-            "ProxyButton",
+            "ItemButton",
             key = "slot_" .. slotId,
             frame = v,
             label = getEquipmentLabel(v),

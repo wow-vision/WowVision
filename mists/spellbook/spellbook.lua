@@ -56,6 +56,7 @@ gen:Element("spellbook/SpellIcons", function(props)
                 "ProxyButton",
                 frame = v,
                 label = getSpellLabel(v),
+                draggable = true
             })
         end
     end

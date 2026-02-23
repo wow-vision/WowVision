@@ -2,14 +2,19 @@ local L = LibStub("AceLocale-3.0"):GetLocale("WowVision")
 local gen = WowVision.ui.generator
 local itemsDB = WowVision.gameDB:get("Item")
 
-local function getButtonLabel(props)
-    local button = props.frame
-    local itemType = itemsDB:get(props.itemType)
-    if itemType and itemType.getLabel then
-        return itemType.getLabel(button, props)
-    end
-end
-
 gen:Element("ItemButton", function(props)
-    return { "ProxyButton", label = getButtonLabel(props), frame = props.frame }
+    local button = props.frame
+        local itemType = itemsDB:get(props.itemType)
+        local label = props.label or ""
+        local tags = {}
+        if itemType then
+            if props.label == nil and itemType.getLabel then
+                label = itemType.getLabel(button, props)
+            end
+            if itemType.getTags then
+                tags = itemType.getTags(button, props)
+            end
+        end
+                        tinsert(tags, "ItemButton")
+    return { "ProxyButton", label = label, frame = button, tags = tags, draggable = true }
 end)

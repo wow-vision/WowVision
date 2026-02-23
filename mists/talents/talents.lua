@@ -189,6 +189,7 @@ gen:Element("talents/TalentsTier", {
                 key = "talent_" .. i,
                 frame = button,
                 label = button.name:GetText(),
+                draggable = true
             })
         end
     end

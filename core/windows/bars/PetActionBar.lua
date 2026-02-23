@@ -25,6 +25,7 @@ function PetActionBar:getGenerator()
             frame = button,
             label = label,
             ignoreRequiresFrameShown = true,
+            draggable = true
         })
     end
     return result

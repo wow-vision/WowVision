@@ -19,7 +19,7 @@ function Bank:getGenerator()
     for i = 1, frame.size do
         local button = _G["BankFrameItem" .. i]
         if button then
-            tinsert(items.children, { "ProxyButton", frame = button, label = module.getBagItemLabel(button) })
+            tinsert(items.children, { "ItemButton", frame = button, label = module.getBagItemLabel(button) })
         end
     end
     for i = 1, NUM_BANKBAGSLOTS do
@@ -27,7 +27,7 @@ function Bank:getGenerator()
         if button and button:IsShown() then
             local label = C_Container.GetBagName(i + 4) or L["Empty"]
             label = label .. " " .. button.tooltipText
-            tinsert(slots.children, { "ProxyButton", frame = button, label = label })
+            tinsert(slots.children, { "ItemButton", frame = button, label = label })
         else
             break
         end

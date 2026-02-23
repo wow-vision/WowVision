@@ -13,7 +13,7 @@ function StanceBar:getGenerator()
         if button:IsShown() then
             local _, _, _, spellID = GetShapeshiftFormInfo(i)
             local label = module.GetSpellInfo(spellID)
-            tinsert(result.children, { "ProxyButton", frame = button, label = label })
+            tinsert(result.children, { "ProxyButton", frame = button, label = label, draggable = true})
         end
     end
     return result

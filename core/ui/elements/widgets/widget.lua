@@ -50,6 +50,7 @@ Widget.info:addFields({
             end
         end,
     },
+    {key = "draggable", default = false}
 })
 
 -- Add to liveFields (inherits label from UIElement)
@@ -188,8 +189,12 @@ end
 
 function Widget:onClick() end
 
+function Widget:isDraggable()   
+    return self.draggable
+end
+
 function Widget:drag()
-    if self.enabled then
+    if self.enabled and self:isDraggable() then
         self:emitEvent("drag", self)
         self:onDrag()
     end
@@ -199,8 +204,10 @@ function Widget:onDrag() end
 
 function Widget:buildContextMenu(menu)
     parent.buildContextMenu(self, menu)
+    if self:isDraggable() then
     local dragBtn = menu:addButton({ label = self.L["Drag"] })
     dragBtn.events.click:subscribe(nil, function()
         self:drag()
-    end)
+    end)        
+    end
 end

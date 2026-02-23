@@ -62,7 +62,7 @@ gen:Element("itemUpgrade/ItemButton", function(props)
     else
         label = button.ItemName:GetText()
     end
-    return { "ProxyButton", frame = button, label = label }
+    return { "ItemButton", frame = button, label = label }
 end)
 
 gen:Element("itemUpgrade/Stats", function(props)

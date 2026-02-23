@@ -48,5 +48,5 @@ gen:Element("spellbook/Professions/ProfessionSpell", function(props)
     if substring and substring ~= "" then
         label = label .. "(" .. substring .. ")"
     end
-    return { "ProxyCheckButton", frame = frame, label = label }
+    return { "ProxyCheckButton", frame = frame, label = label, draggable = true }
 end)

@@ -40,7 +40,7 @@ gen:Element("reforging/ItemButton", function(props)
     else
         label = button.name:GetText()
     end
-    return { "ProxyButton", frame = button, label = label }
+    return { "ItemButton", frame = button, label = label }
 end)
 
 gen:Element("reforging/Stats", function(props)

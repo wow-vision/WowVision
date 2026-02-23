@@ -128,6 +128,7 @@ gen:Element("spellbook/Spells", function(props)
                 key = "spell_" .. button:GetID(),
                 frame = button,
                 label = label,
+                draggable = true,
                 tooltip = {
                     type = "Game",
                     mode = "immediate",

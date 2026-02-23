@@ -120,6 +120,7 @@ gen:Element("bars/ActionButton", function(props)
         frame = props.frame,
         label = module.getActionButtonLabel(props.frame),
         ignoreRequiresFrameShown = true,
+        draggable = true
     }
 end)
 

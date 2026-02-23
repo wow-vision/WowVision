@@ -45,12 +45,12 @@ function Bag:getGenerator()
     end
     local result = { "List", label = label, children = {} }
     if button then
-        tinsert(result.children, { "ProxyButton", frame = button, label = L["Bag Slot"] .. " " .. bagName })
+        tinsert(result.children, { "ItemButton", frame = button, label = L["Bag Slot"] .. " " .. bagName })
     end
     for i = frame.size, 1, -1 do
         local itemButton = _G[frame:GetName() .. "Item" .. i]
         tinsert(result.children, {
-            "ProxyButton",
+            "ItemButton",
             frame = itemButton,
             label = module.getBagItemLabel(itemButton),
         })

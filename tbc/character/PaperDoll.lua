@@ -110,6 +110,7 @@ gen:Element("character/Equipment", {
                 key = "slot_" .. slotId,
                 frame = slot,
                 label = getEquipmentLabel(slot),
+                draggable = true,
                 tooltip = {
                     type = "Game",
                     mode = "immediate",
