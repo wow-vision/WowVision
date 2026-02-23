@@ -1,5 +1,4 @@
 local dbManager = {}
-local DB_VERSION = 2
 
 function dbManager:reconcileArray(default, db)
     local db = db
@@ -56,24 +55,43 @@ local function migrateBindings(submodules, target)
     end
 end
 
-function migrateDB(db)
-    if db._version == nil or db._version < 2 then
-        local buffers = db.submodules.buffers
-        buffers.data = nil
+local migrations = {
+    {
+        version = 1,
+        migrate = function(db)
+            db.submodules.buffers.data = nil
+        end,
+    },
+    {
+        version = 2,
+        migrate = function(db)
+            if db.bindings == nil then
+                db.bindings = {}
+            end
+            migrateBindings(db.submodules, db.bindings)
+        end,
+    },
+}
 
-        if db.bindings == nil then
-            db.bindings = {}
+local DB_VERSION = migrations[#migrations].version
+
+local function migrateDB(db)
+    local dbVersion = db._version or 0
+    for _, migration in ipairs(migrations) do
+        if dbVersion < migration.version then
+            migration.migrate(db)
         end
-        migrateBindings(db.submodules, db.bindings)
     end
     db._version = DB_VERSION
 end
 
 function dbManager:beginReconcile(default, db)
     if next(db) then
-        if db._version == nil or db._version < DB_VERSION then
+        if (db._version or 0) < DB_VERSION then
             migrateDB(db)
         end
+    else
+        db._version = DB_VERSION
     end
     return dbManager:reconcile(default, db)
 end
