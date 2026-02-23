@@ -32,7 +32,7 @@ UIElement.info:addFields({
     { key = "displayType", default = nil },
     { key = "sync", default = false },
     { key = "extras", default = nil },
-    { key = "contextTags", default = nil },
+    { key = "tags", default = nil },
 })
 
 -- Initialize liveFields for base class (child classes will get copies via CreateElementType)
@@ -282,7 +282,7 @@ function UIElement:buildContextMenu(menu) end
 function UIElement:openContextMenu()
     local menu = WowVision.ContextMenu:new()
     self:buildContextMenu(menu)
-    menu:open(self.contextTags, self)
+    menu:open(self.tags, self)
 end
 
 function UIElement:onAdd() end
