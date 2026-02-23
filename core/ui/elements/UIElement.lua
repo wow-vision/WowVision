@@ -280,10 +280,9 @@ end
 function UIElement:buildContextMenu(menu) end
 
 function UIElement:openContextMenu()
-    local menu = WowVision.ContextMenu:new(self)
+    local menu = WowVision.ContextMenu:new()
     self:buildContextMenu(menu)
-    WowVision.contextMenuManager:build(self.contextTags, menu, self)
-    menu:open()
+    menu:open(self.contextTags, self)
 end
 
 function UIElement:onAdd() end

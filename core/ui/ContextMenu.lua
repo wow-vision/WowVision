@@ -10,6 +10,22 @@ function ContextMenuButton:initialize(config)
     self.events = { click = WowVision.Event:new("click") }
 end
 
+function ContextMenuButton:getElement()
+    local menuItem = self
+    return {
+        "Button",
+        label = self.label,
+        events = {
+            click = function(_, source)
+                menuItem.events.click:emit()
+                if menuItem.popOnClick then
+                    source.context:handleEscape()
+                end
+            end,
+        },
+    }
+end
+
 local ContextMenuCheckbox = WowVision.Class("ContextMenuCheckbox")
 
 function ContextMenuCheckbox:initialize(config)
@@ -19,18 +35,43 @@ function ContextMenuCheckbox:initialize(config)
     self.events = { valueChange = WowVision.Event:new("valueChange") }
 end
 
+function ContextMenuCheckbox:getElement()
+    local menuItem = self
+    return {
+        "Checkbox",
+        label = self.label,
+        value = self.value,
+        events = {
+            click = function(_, source)
+                local newValue = not source:getValue()
+                menuItem.events.valueChange:emit(newValue)
+                if menuItem.popOnClick then
+                    source.context:handleEscape()
+                end
+            end,
+        },
+    }
+end
+
 local ContextMenuSeparator = WowVision.Class("ContextMenuSeparator")
 
 function ContextMenuSeparator:initialize(label)
     self.label = label
 end
 
+function ContextMenuSeparator:getElement()
+    return {
+        "Text",
+        label = self.label or "",
+        displayType = "Separator",
+    }
+end
+
 -- ContextMenu builder (created fresh each time the menu opens)
 
 local ContextMenu = WowVision.Class("ContextMenu")
 
-function ContextMenu:initialize(element)
-    self.element = element
+function ContextMenu:initialize()
     self.items = {}
 end
 
@@ -55,48 +96,13 @@ end
 function ContextMenu:buildMenuDef()
     local children = {}
     for _, item in ipairs(self.items) do
-        if item:isInstanceOf(ContextMenuButton) then
-            local menuItem = item
-            tinsert(children, {
-                "Button",
-                label = item.label,
-                events = {
-                    click = function(_, source)
-                        menuItem.events.click:emit(self.element)
-                        if menuItem.popOnClick then
-                            source.context:handleEscape()
-                        end
-                    end,
-                },
-            })
-        elseif item:isInstanceOf(ContextMenuCheckbox) then
-            local menuItem = item
-            tinsert(children, {
-                "Checkbox",
-                label = item.label,
-                value = item.value,
-                events = {
-                    click = function(_, source)
-                        local newValue = not source:getValue()
-                        menuItem.events.valueChange:emit(self.element, newValue)
-                        if menuItem.popOnClick then
-                            source.context:handleEscape()
-                        end
-                    end,
-                },
-            })
-        elseif item:isInstanceOf(ContextMenuSeparator) then
-            tinsert(children, {
-                "Text",
-                label = item.label or "",
-                displayType = "Separator",
-            })
-        end
+        tinsert(children, item:getElement())
     end
     return { "List", displayType = "", label = L["Context Menu"], children = children }
 end
 
-function ContextMenu:open()
+function ContextMenu:open(contextTags, element)
+    WowVision.contextMenuManager:build(contextTags, self, element)
     if #self.items == 0 then
         return
     end
