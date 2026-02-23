@@ -197,6 +197,10 @@ function UIElement:setLabel(label)
     self.label = label
 end
 
+function UIElement:getDisplayType()
+    return nil
+end
+
 function UIElement:getTypeString()
     if self.displayType then
         if self.displayType == "" then
@@ -204,7 +208,8 @@ function UIElement:getTypeString()
         end
         return self.L[self.displayType]
     end
-    return self.L[self.typeKey]
+    local displayString = self:getDisplayType()
+    return displayString or self.L[self.typeKey] or ""
 end
 
 function UIElement:getExtras()
