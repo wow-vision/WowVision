@@ -377,6 +377,7 @@ gen:Element("auction/SellTabItemPlacement", function(props)
             {
                 "Button",
                 label = L["Place Item Here"],
+                draggable = true,
                 events = {
                     click = SellItem_Click,
                 },
