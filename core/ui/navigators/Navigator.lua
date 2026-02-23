@@ -83,7 +83,7 @@ function Navigator:update()
     while node do
         tinsert(newPath, node.element)
         tinsert(newKeys, node.element.currentIndex)
-        tinsert(newLabels, node.element:getLabel())
+        newLabels[#newLabels + 1] = node.element:getLabel()
         for k, v in pairs(node.alwaysUpdates or {}) do
             WowVision:speak(v)
         end
