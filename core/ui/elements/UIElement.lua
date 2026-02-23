@@ -32,6 +32,7 @@ UIElement.info:addFields({
     { key = "displayType", default = nil },
     { key = "sync", default = false },
     { key = "extras", default = nil },
+    { key = "contextTags", default = nil },
 })
 
 -- Initialize liveFields for base class (child classes will get copies via CreateElementType)
@@ -269,6 +270,15 @@ end
 
 function UIElement:isContainer()
     return false
+end
+
+function UIElement:buildContextMenu(menu) end
+
+function UIElement:openContextMenu()
+    local menu = WowVision.ContextMenu:new(self)
+    self:buildContextMenu(menu)
+    WowVision.contextMenuManager:build(self.contextTags, menu, self)
+    menu:open()
 end
 
 function UIElement:onAdd() end

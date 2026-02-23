@@ -236,6 +236,13 @@ function Module:setEnabled(enabled)
     end
 end
 
+function Module:subscribeContextTag(tag, handler)
+    if not self._contextTagSubscriptions then
+        self._contextTagSubscriptions = {}
+    end
+    tinsert(self._contextTagSubscriptions, { tag = tag, handler = handler })
+end
+
 function Module:registerBinding(info)
     local instance = WowVision.input:createBinding(info)
     self.bindings:add(instance)
@@ -272,6 +279,12 @@ function Module:enable()
     if self.registeredCommands then
         for _, command in pairs(self.registeredCommands) do
             WowVision.SlashCommandManager:registerCommand(command)
+        end
+    end
+
+    if self._contextTagSubscriptions then
+        for _, sub in ipairs(self._contextTagSubscriptions) do
+            WowVision.contextMenuManager:subscribe(sub.tag, sub.handler, self)
         end
     end
 
@@ -323,6 +336,8 @@ function Module:disable()
             WowVision.SlashCommandManager:unregisterCommand(command)
         end
     end
+
+    WowVision.contextMenuManager:unsubscribe(self)
 
     self.eventsFrame:UnregisterAllEvents()
     self:onDisable()

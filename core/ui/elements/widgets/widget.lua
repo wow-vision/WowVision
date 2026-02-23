@@ -79,6 +79,13 @@ function Widget:initialize()
             self:drag()
         end,
     })
+    self:addBinding({
+        binding = "contextMenu",
+        type = "Function",
+        func = function()
+            self:openContextMenu()
+        end,
+    })
 end
 
 function Widget:setupUniqueBindings()
@@ -189,3 +196,15 @@ function Widget:drag()
 end
 
 function Widget:onDrag() end
+
+function Widget:buildContextMenu(menu)
+    parent.buildContextMenu(self, menu)
+    local clickBtn = menu:addButton({ label = self.L["Left Click"] })
+    clickBtn.events.click:subscribe(nil, function()
+        self:click()
+    end)
+    local dragBtn = menu:addButton({ label = self.L["Drag"] })
+    dragBtn.events.click:subscribe(nil, function()
+        self:drag()
+    end)
+end

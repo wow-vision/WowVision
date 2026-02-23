@@ -160,4 +160,12 @@ module:registerBindings({
         inputs = { "SPACE" },
         emulatedKey = "SPACE",
     },
+    {
+        type = "Function",
+        key = "contextMenu",
+        vital = true,
+        dorment = true,
+        label = L["Context Menu"],
+        inputs = { "SHIFT-F10" },
+    },
 })
