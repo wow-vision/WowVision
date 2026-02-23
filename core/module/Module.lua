@@ -99,7 +99,6 @@ function Module:getDefaultDBRecursive()
         enabled = self.enabled,
         submodules = {},
         alerts = self:getDefaultAlerts(),
-        bindings = self:getDefaultBindings(),
         settings = self:getDefaultSettings(),
         data = self:getDefaultData(),
     }
@@ -115,7 +114,6 @@ function Module:setDBObj(db)
     if db.alerts == nil then
         error("No alerts db found for module " .. self.key .. ".")
     end
-    self.bindings:setDB(db.bindings)
     for k, v in pairs(self.alerts) do
         local alertDB = db.alerts[k]
         if not alertDB then

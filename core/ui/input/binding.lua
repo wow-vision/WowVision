@@ -94,55 +94,36 @@ end
 
 function Binding:setDB(db)
     self.db = db
-    -- Copy inputs from db to our own table (self.inputs is source of truth)
-    self.inputs = { _type = "array" }
-    for _, input in ipairs(db.inputs) do
-        tinsert(self.inputs, input)
-    end
+    self.inputs = db.inputs
 end
 
 function Binding:addInput(input)
-    -- Check if input conflicts with other bindings (or this one)
     if self:doesInputConflict(input) then
         error("Conflicting input: " .. input .. ".")
     end
-
-    -- Add to our source of truth
     tinsert(self.inputs, input)
-
-    -- Sync to DB if it exists
-    if self.db and self.db.inputs ~= self.inputs then
-        tinsert(self.db.inputs, input)
-    end
 end
 
 function Binding:removeInput(input)
     for i, bindingInput in ipairs(self.inputs) do
         if input == bindingInput then
-            -- Remove from our source of truth
             table.remove(self.inputs, i)
-
-            -- Sync to DB if it exists
-            self:setDBInputs()
             return
         end
     end
 end
 
-function Binding:setDBInputs()
-    if self.db then
-        self.db.inputs = self.inputs
-    end
-end
-
 function Binding:setInputs(inputs)
-    self.inputs = { _type = "array" }
-    if self.db then
-        -- Clear existing entries without replacing the table
-        self.db.inputs = { _type = "array" }
-    end
+    local newInputs = { _type = "array" }
     for _, input in ipairs(inputs) do
-        self:addInput(input) -- This will sync to db.inputs via addInput
+        if self:doesInputConflict(input) then
+            error("Conflicting input: " .. input .. ".")
+        end
+        tinsert(newInputs, input)
+    end
+    self.inputs = newInputs
+    if self.db then
+        self.db.inputs = newInputs
     end
 end
 

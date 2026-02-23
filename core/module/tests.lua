@@ -234,10 +234,10 @@ testRunner:addSuite("Module", {
         t:assertNotNil(db.alerts)
     end,
 
-    ["getDefaultDBRecursive includes bindings"] = function(t)
+    ["getDefaultDBRecursive does not include bindings"] = function(t)
         local module = createTestModule("test")
         local db = module:getDefaultDBRecursive()
-        t:assertNotNil(db.bindings)
+        t:assertNil(db.bindings)
     end,
 
     ["getDefaultDBRecursive includes settings"] = function(t)

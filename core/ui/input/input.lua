@@ -73,4 +73,12 @@ function InputManager:getBinding(key)
     return self.bindingRefs[key]
 end
 
+function InputManager:getDefaultDB()
+    return self.bindings:getDefaultDB()
+end
+
+function InputManager:setDB(db)
+    self.bindings:setDB(db)
+end
+
 WowVision.input = InputManager:new("WowVisionInputManager")

@@ -53,7 +53,7 @@ testRunner:addSuite("Binding", {
         t:assertEqual(db.inputs[2], "B")
     end,
 
-    ["setDB copies inputs from db"] = function(t)
+    ["setDB uses same reference as db.inputs"] = function(t)
         local binding = createTestBinding({ key = "test", type = "Function" })
         local db = { inputs = { _type = "array", "X", "Y", "Z" } }
         binding:setDB(db)
@@ -61,6 +61,7 @@ testRunner:addSuite("Binding", {
         t:assertEqual(binding.inputs[1], "X")
         t:assertEqual(binding.inputs[2], "Y")
         t:assertEqual(binding.inputs[3], "Z")
+        t:assertEqual(binding.inputs, db.inputs)
     end,
 
     ["addInput adds to inputs array"] = function(t)
@@ -73,7 +74,7 @@ testRunner:addSuite("Binding", {
         t:assertEqual(binding.inputs[2], "B")
     end,
 
-    ["addInput syncs to db when present"] = function(t)
+    ["addInput mutates shared db.inputs"] = function(t)
         local binding = createTestBinding({ key = "test", type = "Function" })
         binding.inputManager = nil
         local db = { inputs = { _type = "array" } }
@@ -81,6 +82,7 @@ testRunner:addSuite("Binding", {
         binding:addInput("NEW")
         t:assertEqual(#db.inputs, 1)
         t:assertEqual(db.inputs[1], "NEW")
+        t:assertEqual(binding.inputs, db.inputs)
     end,
 
     ["removeInput removes from inputs array"] = function(t)
@@ -103,6 +105,18 @@ testRunner:addSuite("Binding", {
         t:assertEqual(#binding.inputs, 2)
         t:assertEqual(binding.inputs[1], "NEW1")
         t:assertEqual(binding.inputs[2], "NEW2")
+    end,
+
+    ["setInputs updates both binding.inputs and db.inputs"] = function(t)
+        local binding = createTestBinding({ key = "test", type = "Function" })
+        binding.inputManager = nil
+        local db = { inputs = { _type = "array", "OLD" } }
+        binding:setDB(db)
+        binding:setInputs({ "NEW1", "NEW2" })
+        t:assertEqual(#binding.inputs, 2)
+        t:assertEqual(binding.inputs[1], "NEW1")
+        t:assertEqual(binding.inputs[2], "NEW2")
+        t:assertEqual(binding.inputs, db.inputs)
     end,
 
     ["doesInputConflict returns nil without inputManager"] = function(t)

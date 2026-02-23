@@ -1,5 +1,5 @@
 local dbManager = {}
-local DB_VERSION = 1
+local DB_VERSION = 2
 
 function dbManager:reconcileArray(default, db)
     local db = db
@@ -42,10 +42,30 @@ function dbManager:reconcile(default, db)
     return db
 end
 
+local function migrateBindings(submodules, target)
+    for key, moduleDB in pairs(submodules) do
+        if moduleDB.bindings then
+            for bindingKey, bindingData in pairs(moduleDB.bindings) do
+                target[bindingKey] = bindingData
+            end
+            moduleDB.bindings = nil
+        end
+        if moduleDB.submodules then
+            migrateBindings(moduleDB.submodules, target)
+        end
+    end
+end
+
 function migrateDB(db)
-    --a more robust solution to this will be added later
-    local buffers = db.submodules.buffers
-    buffers.data = nil
+    if db._version == nil or db._version < 2 then
+        local buffers = db.submodules.buffers
+        buffers.data = nil
+
+        if db.bindings == nil then
+            db.bindings = {}
+        end
+        migrateBindings(db.submodules, db.bindings)
+    end
     db._version = DB_VERSION
 end
 

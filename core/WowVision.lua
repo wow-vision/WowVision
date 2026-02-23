@@ -23,6 +23,14 @@ function WowVision:OnInitialize()
     end
     self.db = WowVision.dbManager:beginReconcile(defaultDB, WowVisionDB)
     self.base:setDBObj(self.db)
+
+    -- Global binding DB (profile-independent)
+    local bindingDefaults = WowVision.input:getDefaultDB()
+    if WowVisionDB.bindings == nil then
+        WowVisionDB.bindings = {}
+    end
+    WowVisionDB.bindings = WowVision.dbManager:reconcile(bindingDefaults, WowVisionDB.bindings)
+    WowVision.input:setDB(WowVisionDB.bindings)
 end
 
 function WowVision:OnEnable()
