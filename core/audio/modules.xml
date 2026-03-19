@@ -4,5 +4,6 @@
   <Script file="audio.lua" />
   <Script file="AudioDataSource.lua" />
   <Script file="AudioPack.lua" />
+  <Script file="LibSharedMedia.lua" />
 
 </Ui>
