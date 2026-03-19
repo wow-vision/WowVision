@@ -13,8 +13,17 @@ function AudioDataSource:play(channel)
     if not path then
         return nil
     end
+    -- Stop previous preview sound
+    if WowVision.audio._previewHandle then
+        StopSound(WowVision.audio._previewHandle, 0)
+        WowVision.audio._previewHandle = nil
+    end
     local channel = channel or "SFX"
-    return PlaySoundFile(path, channel)
+    local willPlay, soundHandle = PlaySoundFile(path, channel)
+    if willPlay then
+        WowVision.audio._previewHandle = soundHandle
+    end
+    return willPlay, soundHandle
 end
 
 function AudioDataSource:getElement()
