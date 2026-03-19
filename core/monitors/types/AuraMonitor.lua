@@ -113,28 +113,56 @@ end
 
 -- Override updateRules to handle per-rule thresholds
 function AuraMonitor:updateRules()
-    for rule, objects in pairs(self.ruleMatches) do
-        if rule.enabled then
-            for object, _ in pairs(objects) do
-                local duration = object:get("duration")
-                local remaining = object:get("remainingDuration")
+    local rules = self.rules
+    if not rules then
+        return
+    end
 
-                local state
-                if not duration or duration == 0 then
-                    state = "applied"
-                elseif not remaining then
-                    state = "applied"
-                elseif remaining <= (rule.expiringThreshold or 5) then
-                    state = "expiring"
-                elseif duration > 0 and (remaining / duration) * 100 <= (rule.pandemicThreshold or 30) then
-                    state = "pandemic"
-                else
-                    state = "applied"
-                end
-                if rule.setObjectState then
-                    rule:setObjectState(object, state)
+    for _, rule in ipairs(rules) do
+        if rule.enabled then
+            local matched = self.ruleMatches[rule]
+            local hasMatch = false
+
+            if matched then
+                for object, _ in pairs(matched) do
+                    hasMatch = true
+                    local duration = object:get("duration")
+                    local remaining = object:get("remainingDuration")
+
+                    local state
+                    if not duration or duration == 0 then
+                        state = "applied"
+                    elseif not remaining then
+                        state = "applied"
+                    elseif remaining <= (rule.expiringThreshold or 5) then
+                        state = "expiring"
+                    elseif duration > 0 and (remaining / duration) * 100 <= (rule.pandemicThreshold or 30) then
+                        state = "pandemic"
+                    else
+                        state = "applied"
+                    end
+                    if rule.setObjectState then
+                        rule:setObjectState(object, state)
+                    end
                 end
             end
+
+            -- Clean up stale object states
+            if rule.objectStates then
+                for object, _ in pairs(rule.objectStates) do
+                    if not matched or not matched[object] then
+                        rule.objectStates[object] = nil
+                    end
+                end
+            end
+
+            -- Detect missing: had matches last frame, none this frame
+            if not hasMatch and rule._hadMatch then
+                if rule.onMissing then
+                    rule:onMissing()
+                end
+            end
+            rule._hadMatch = hasMatch
         end
     end
 end

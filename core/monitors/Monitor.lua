@@ -120,12 +120,7 @@ end
 
 function Monitor:unmatchObject(object)
     for rule, objects in pairs(self.ruleMatches) do
-        if objects[object] then
-            objects[object] = nil
-            if rule.removeObject then
-                rule:removeObject(object)
-            end
-        end
+        objects[object] = nil
     end
 end
 

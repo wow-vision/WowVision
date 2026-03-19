@@ -97,25 +97,21 @@ function StateRule:setObjectState(object, stateKey)
 end
 
 function StateRule:removeObject(object)
-    local previous = self.objectStates[object]
-    if not previous then
-        return
+    if self.objectStates[object] then
+        self.objectStates[object] = nil
     end
+end
 
-    local message = {
-        text = "missing",
-        state = "missing",
-        object = object,
-        rule = self,
-    }
-
-    -- Fire missing alert if we have one
+function StateRule:onMissing()
     local missingAlert = self:getStateAlert("missing")
     if missingAlert then
+        local message = {
+            text = "missing",
+            state = "missing",
+            rule = self,
+        }
         missingAlert:fire(message)
     end
-
-    self.objectStates[object] = nil
 end
 
 function StateRule:clearObjectStates()
