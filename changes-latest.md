@@ -12,6 +12,8 @@
 * Greatly improved UI performance on most screens.
 * Improved labeling for various lists for clarity. Horizontal lists (such as tabs) will be labeled as a "Bar" to denote their navigation direction.
 * Fixed a bug in the trade frame where your trades were always labeled as "Empty" even when not empty.
+* Fixed a rare Mailbox issue that caused lua errors when opening all mail and you had a letter open.
+* Fixed a bug where buyback items on the merchant frame would have the wrong price label; they were being labeled with the prices of what the button would correspond to on the merchant tab, not the buyback tab. This may also fix some rare mislabeling of stack/stock amounts.
 
 ### Classic Versions
 * Added a Speech Style dropdown to the speech module. This allows you to configure how speech output is queued, potentially leading to more consistent interrupts. The direct style is the style WowVision used before; buffered is similar to Sku's method (using a speech queue with an artificial delay.)

@@ -1,0 +1,11 @@
+[book]
+title = "WowVision"
+authors = ["Bradley Renshaw"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+
+[output.html]
+git-repository-url = "https://github.com/wow-vision/WowVision"

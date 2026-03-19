@@ -50,6 +50,9 @@ release.sh
 # VS Code
 .vscode/
 
+# mdBook build output
+docs/book/
+
 # External libs (fetched by packager)
 libs/LibStub/
 libs/CallbackHandler-1.0/

@@ -4,21 +4,24 @@ module:setLabel(L["Merchant"])
 local gen = module:hasUI()
 
 gen:Element("merchant", function(props)
+    local frame = MerchantFrame
+    local selectedTab = frame.selectedTab
     return {
         "Panel",
         label = L["Merchant"],
         wrap = true,
         children = {
-            { "merchant/Tabs", frame = MerchantFrame },
-            { "merchant/Items", frame = MerchantFrame },
+            { "merchant/Tabs", frame = MerchantFrame, selectedTab = selectedTab },
+            { "merchant/Items", frame = MerchantFrame, buyback = selectedTab == 2 },
             { "ProxyButton", frame = MerchantPrevPageButton, label = L["Previous Page"] },
             { "ProxyButton", frame = MerchantNextPageButton, label = L["Next Page"] },
-            { "merchant/Repair", frame = MerchantFrame },
+            { "merchant/Repair", frame = MerchantFrame, buyback = selectedTab == 2 },
         },
     }
 end)
 
 gen:Element("merchant/Tabs", function(props)
+    local selectedTab = props.selectedTab
     return {
         "List",
         label = L["Tabs"],
@@ -27,9 +30,9 @@ gen:Element("merchant/Tabs", function(props)
             {
                 "ProxyButton",
                 frame = MerchantFrameTab1,
-                selected = MerchantFrame.selectedTab == 1,
+                selected = selectedTab == 1,
             },
-            { "ProxyButton", frame = MerchantFrameTab2, selected = MerchantFrame.selectedTab == 2 },
+            { "ProxyButton", frame = MerchantFrameTab2, selected = selectedTab == 2 },
         },
     }
 end)
@@ -37,25 +40,25 @@ end)
 gen:Element("merchant/Items", function(props)
     local result = { "List", label = L["Items"], children = {} }
     local itemCount = MERCHANT_ITEMS_PER_PAGE
-    if props.frame.selectedTab == 2 then
-        itemCount = 12
+    if props.buyback then
+        itemCount = GetNumBuybackItems()
     end
     for i = 1, itemCount do
         local item = _G["MerchantItem" .. i]
         if not item or not item.ItemButton or not item.ItemButton:IsShown() then
             break
         end
-        tinsert(result.children, { "merchant/Item", frame = item })
+        tinsert(result.children, { "merchant/Item", frame = item, buyback = props.buyback })
     end
     return result
 end)
 
 gen:Element("merchant/Item", function(props)
-    return { "ItemButton", frame = props.frame.ItemButton, itemType = "Merchant" }
+    return { "ItemButton", frame = props.frame.ItemButton, itemType = "Merchant", buyback = props.buyback }
 end)
 
 gen:Element("merchant/Repair", function(props)
-    if not CanMerchantRepair() then
+    if props.buyback or not CanMerchantRepair() then
         return nil
     end
     return {
