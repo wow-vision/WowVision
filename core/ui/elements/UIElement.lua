@@ -159,7 +159,15 @@ function UIElement:focus(key)
     end
     self._focused = true
     self.activationSet:activateAll(self.activationInfo)
+    local hoverSound = self:getHoverSound()
+    if hoverSound then
+        WowVision:play(hoverSound)
+    end
     self:onFocus(key)
+end
+
+function UIElement:getHoverSound()
+    return nil
 end
 
 function UIElement:unfocus()
