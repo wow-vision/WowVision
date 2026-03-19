@@ -30,7 +30,6 @@ Monitor.info:addFields({
 
 function Monitor:initialize(config)
     self.trackedObjects = {}
-    self.ruleMatches = {} -- rule → { object → true }
     self.tracker = nil
     self:setInfo(config)
 
@@ -82,15 +81,17 @@ function Monitor:restartTracking()
     -- Subscribe to future changes
     self.tracker.events.add:subscribe(self, function(self, event, tracker, object)
         self.trackedObjects[object] = true
-        self:matchObject(object)
     end)
     self.tracker.events.remove:subscribe(self, function(self, event, tracker, object)
         self.trackedObjects[object] = nil
-        self:unmatchObject(object)
     end)
 
-    -- Build initial rule matches
-    self:rebuildRuleMatches()
+    -- Clear rule states since tracked objects changed
+    for _, rule in ipairs(self.rules or {}) do
+        if rule.clearObjectStates then
+            rule:clearObjectStates()
+        end
+    end
 end
 
 function Monitor:cleanupTracker()
@@ -101,34 +102,6 @@ function Monitor:cleanupTracker()
         self.tracker = nil
     end
     self.trackedObjects = {}
-end
-
-function Monitor:matchObject(object)
-    local rules = self.rules
-    if not rules then
-        return
-    end
-    for _, rule in ipairs(rules) do
-        if rule:matches(object) then
-            if not self.ruleMatches[rule] then
-                self.ruleMatches[rule] = {}
-            end
-            self.ruleMatches[rule][object] = true
-        end
-    end
-end
-
-function Monitor:unmatchObject(object)
-    for rule, objects in pairs(self.ruleMatches) do
-        objects[object] = nil
-    end
-end
-
-function Monitor:rebuildRuleMatches()
-    self.ruleMatches = {}
-    for object, _ in pairs(self.trackedObjects) do
-        self:matchObject(object)
-    end
 end
 
 function Monitor:computeObjectState(object)
@@ -146,13 +119,37 @@ function Monitor:update()
 end
 
 function Monitor:updateRules()
-    -- Use cached rule matches — iterate only matched objects per rule
-    for rule, objects in pairs(self.ruleMatches) do
-        if rule.enabled then
-            for object, _ in pairs(objects) do
-                local state = self:computeObjectState(object)
-                if state and rule.setObjectState then
-                    rule:setObjectState(object, state)
+    local rules = self.rules
+    if not rules then
+        return
+    end
+
+    -- For each object, compute state and pass to matching rules
+    -- Track which rules matched at least one object this frame
+    local rulesMatched = {}
+
+    for object, _ in pairs(self.trackedObjects) do
+        local state = self:computeObjectState(object)
+        if state then
+            for _, rule in ipairs(rules) do
+                if rule.enabled and rule:matches(object) then
+                    rulesMatched[rule] = true
+                    if rule.setObjectState then
+                        rule:setObjectState(object, state)
+                    end
+                end
+            end
+        end
+    end
+
+    -- For rules that didn't match any object this frame, check for removals
+    for _, rule in ipairs(rules) do
+        if rule.enabled and rule.objectStates then
+            for object, _ in pairs(rule.objectStates) do
+                if not self.trackedObjects[object] then
+                    if rule.removeObject then
+                        rule:removeObject(object)
+                    end
                 end
             end
         end

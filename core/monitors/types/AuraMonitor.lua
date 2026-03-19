@@ -118,51 +118,58 @@ function AuraMonitor:updateRules()
         return
     end
 
-    for _, rule in ipairs(rules) do
-        if rule.enabled then
-            local matched = self.ruleMatches[rule]
-            local hasMatch = false
+    -- Track which rules matched at least one object this frame
+    local rulesMatched = {}
 
-            if matched then
-                for object, _ in pairs(matched) do
-                    hasMatch = true
-                    local duration = object:get("duration")
-                    local remaining = object:get("remainingDuration")
+    for object, _ in pairs(self.trackedObjects) do
+        local duration = object:get("duration")
+        local remaining = object:get("remainingDuration")
 
-                    local state
-                    if not duration or duration == 0 then
-                        state = "applied"
-                    elseif not remaining then
-                        state = "applied"
-                    elseif remaining <= (rule.expiringThreshold or 5) then
-                        state = "expiring"
-                    elseif duration > 0 and (remaining / duration) * 100 <= (rule.pandemicThreshold or 30) then
-                        state = "pandemic"
-                    else
-                        state = "applied"
-                    end
-                    if rule.setObjectState then
-                        rule:setObjectState(object, state)
-                    end
+        for _, rule in ipairs(rules) do
+            if rule.enabled and rule:matches(object) then
+                rulesMatched[rule] = true
+                local state
+                if not duration or duration == 0 then
+                    state = "applied"
+                elseif not remaining then
+                    state = "applied"
+                elseif remaining <= (rule.expiringThreshold or 5) then
+                    state = "expiring"
+                elseif duration > 0 and (remaining / duration) * 100 <= (rule.pandemicThreshold or 30) then
+                    state = "pandemic"
+                else
+                    state = "applied"
+                end
+                if rule.setObjectState then
+                    rule:setObjectState(object, state)
                 end
             end
+        end
+    end
 
-            -- Clean up stale object states
+    for _, rule in ipairs(rules) do
+        if rule.enabled then
+            -- Clean up stale object states silently
             if rule.objectStates then
                 for object, _ in pairs(rule.objectStates) do
-                    if not matched or not matched[object] then
+                    if not self.trackedObjects[object] then
                         rule.objectStates[object] = nil
                     end
                 end
             end
 
-            -- Detect missing: had matches last frame, none this frame
-            if not hasMatch and rule._hadMatch then
-                if rule.onMissing then
-                    rule:onMissing()
+            -- Fire missing only when rule has no matches at all
+            if not rulesMatched[rule] then
+                if rule.objectStates and not next(rule.objectStates) and rule._hadMatch then
+                    local missingAlert = rule:getStateAlert("missing")
+                    if missingAlert then
+                        missingAlert:fire({ text = "missing", state = "missing", rule = rule })
+                    end
                 end
+                rule._hadMatch = false
+            else
+                rule._hadMatch = true
             end
-            rule._hadMatch = hasMatch
         end
     end
 end

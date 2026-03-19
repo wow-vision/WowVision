@@ -60,12 +60,6 @@ end
 
 function StateRule:setObjectState(object, stateKey)
     local previous = self.objectStates[object]
-
-    -- Early out if raw state hasn't changed — resolved states will be identical
-    if previous and previous.state == stateKey then
-        return
-    end
-
     local previousResolved = previous and previous.resolved or {}
     local newResolved = self:resolveOutputStates(stateKey)
 
@@ -97,21 +91,25 @@ function StateRule:setObjectState(object, stateKey)
 end
 
 function StateRule:removeObject(object)
-    if self.objectStates[object] then
-        self.objectStates[object] = nil
+    local previous = self.objectStates[object]
+    if not previous then
+        return
     end
-end
 
-function StateRule:onMissing()
+    local message = {
+        text = "missing",
+        state = "missing",
+        object = object,
+        rule = self,
+    }
+
+    -- Fire missing alert if we have one
     local missingAlert = self:getStateAlert("missing")
     if missingAlert then
-        local message = {
-            text = "missing",
-            state = "missing",
-            rule = self,
-        }
         missingAlert:fire(message)
     end
+
+    self.objectStates[object] = nil
 end
 
 function StateRule:clearObjectStates()
