@@ -280,6 +280,37 @@ function WowVision:registerCommands()
             WowVision.UIHost:close()
         end,
     })
+
+    self.base:registerCommand({
+        name = "browse",
+        description = "Test: browse audio data sources",
+        func = function(args)
+            WowVision.UIHost:openTemporaryWindow({
+                hookEscape = true,
+                generated = true,
+                rootElement = { "Panel", label = "Audio Browser", children = {
+                    { "Button", label = "Browse Sounds", events = {
+                        click = function(event, button)
+                            local browseContext = WowVision.ui:CreateElement("DataBrowseContext", {
+                                directory = WowVision.audio.directory,
+                            })
+                            browseContext.events.confirm:subscribe(nil, function(event, context, source, path)
+                                print("Selected: " .. tostring(path))
+                                if source.play then
+                                    source:play()
+                                end
+                                button.context:pop()
+                            end)
+                            browseContext.events.cancel:subscribe(nil, function(event, context)
+                                button.context:pop()
+                            end)
+                            button.context:add(browseContext)
+                        end,
+                    }},
+                }},
+            })
+        end,
+    })
 end
 
 -- Find addon index by name (case-insensitive)

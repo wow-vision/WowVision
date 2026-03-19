@@ -50,13 +50,31 @@ end
 
 local Sound = WowVision.alerts:createOutput("Sound")
 Sound.info:addFields({
-    { key = "getPath", required = true },
+    { key = "getPath" },
+    { key = "path" },
 })
+
+function Sound:initialize(info)
+    Output.initialize(self, info)
+    if not self.getPath then
+        self:addParameter({
+            key = "path",
+            type = "DataBrowse",
+            label = L["Sound"],
+            directory = WowVision.audio.directory,
+            default = function()
+                return self.path
+            end,
+        })
+    end
+end
 
 function Sound:onFire(message)
     local path
     if self.getPath then
         path = self:getPath(message)
+    elseif self.db and self.db.path then
+        path = self.db.path
     else
         return
     end

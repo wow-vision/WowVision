@@ -6,6 +6,7 @@
   <Script file="HorizontalContext.lua" />
   <Script file="WindowContext.lua" />
   <Script file="ConfirmationContext.lua" />
+  <Script file="DataBrowseContext.lua" />
   <Script file="InputMappingContext.lua" />
 
 </Ui>
