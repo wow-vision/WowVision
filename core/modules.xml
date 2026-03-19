@@ -25,12 +25,14 @@
     <Include file="audio/modules.xml" />
     <Include file="../audio/modules.xml" />
     <Include file="alerts/modules.xml" />
+    <Script file="info/types/Alert.lua" />
   <Include file="ui/modules.xml" />
     <Script file="UIHost.lua" />
       <include file="module/modules.xml" />
           <Include file="ui modules/modules.xml" />
     <Include file="objects/modules.xml" />
     <Include file="buffers/modules.xml" />
+    <Include file="monitors/modules.xml" />
     <Include file="windows/modules.xml" />
   <Include file="chat/modules.xml" />
   <Script file="errors.lua" />

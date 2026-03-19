@@ -3,6 +3,7 @@ local Output = WowVision.alerts.Output
 local tts = WowVision.alerts:createOutput("TTS")
 tts.info:addFields({
     { key = "buildMessage" },
+    { key = "message" },
     {
         key = "interrupt",
         default = false,
@@ -25,26 +26,41 @@ function tts:initialize(info)
             return self.defaultInterrupt
         end,
     })
+    if not self.buildMessage then
+        self:addParameter({
+            key = "message",
+            type = "String",
+            label = L["Message"],
+            default = function()
+                return self.message
+            end,
+        })
+    end
 end
 
 function tts:onFire(message)
-    local message = message
+    local text
     if self.buildMessage then
-        message = self:buildMessage(message)
+        text = self:buildMessage(message)
+    elseif self.db and self.db.message and self.db.message ~= "" then
+        text = self.db.message
     else
-        message = message.text
+        text = message.text
+    end
+    if not text then
+        return
     end
     if self.db.interrupt then
         WowVision.base.speech:uiStop()
         if WowVision.consts.UI_DELAY > 0 then
             C_Timer.After(0.05, function()
-                WowVision:speak(message)
+                WowVision:speak(text)
             end)
         else
-            WowVision:speak(message)
+            WowVision:speak(text)
         end
     else
-        WowVision:speak(message)
+        WowVision:speak(text)
     end
 end
 
