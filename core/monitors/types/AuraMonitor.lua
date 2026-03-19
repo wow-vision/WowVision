@@ -113,17 +113,12 @@ end
 
 -- Override updateRules to handle per-rule thresholds
 function AuraMonitor:updateRules()
-    local rules = self.rules
-    if not rules then
-        return
-    end
+    for rule, objects in pairs(self.ruleMatches) do
+        if rule.enabled then
+            for object, _ in pairs(objects) do
+                local duration = object:get("duration")
+                local remaining = object:get("remainingDuration")
 
-    for object, _ in pairs(self.trackedObjects) do
-        local duration = object:get("duration")
-        local remaining = object:get("remainingDuration")
-
-        for _, rule in ipairs(rules) do
-            if rule.enabled and rule:matches(object) then
                 local state
                 if not duration or duration == 0 then
                     state = "applied"
@@ -138,19 +133,6 @@ function AuraMonitor:updateRules()
                 end
                 if rule.setObjectState then
                     rule:setObjectState(object, state)
-                end
-            end
-        end
-    end
-
-    -- Check for removed objects in each rule
-    for _, rule in ipairs(rules) do
-        if rule.enabled and rule.objectStates then
-            for object, _ in pairs(rule.objectStates) do
-                if not self.trackedObjects[object] then
-                    if rule.removeObject then
-                        rule:removeObject(object)
-                    end
                 end
             end
         end

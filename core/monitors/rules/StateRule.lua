@@ -60,6 +60,12 @@ end
 
 function StateRule:setObjectState(object, stateKey)
     local previous = self.objectStates[object]
+
+    -- Early out if raw state hasn't changed — resolved states will be identical
+    if previous and previous.state == stateKey then
+        return
+    end
+
     local previousResolved = previous and previous.resolved or {}
     local newResolved = self:resolveOutputStates(stateKey)
 
