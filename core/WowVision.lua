@@ -31,6 +31,12 @@ function WowVision:OnInitialize()
     end
     WowVisionDB.bindings = WowVision.dbManager:reconcile(bindingDefaults, WowVisionDB.bindings)
     WowVision.input:setDB(WowVisionDB.bindings)
+
+    -- Global spell history (profile-independent)
+    if WowVisionDB.spellHistory == nil then
+        WowVisionDB.spellHistory = {}
+    end
+    WowVision.spellHistory:setDB(WowVisionDB.spellHistory)
 end
 
 function WowVision:OnEnable()

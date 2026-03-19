@@ -20,6 +20,7 @@
   <Script file="Dataset.lua" />
     <Script file="data.lua" />
     <Include file="gameDB/modules.xml" />
+    <Script file="SpellHistory.lua" />
     <Script file="ViewList.lua" />
   <Script file="tests.lua" />
     <Include file="audio/modules.xml" />

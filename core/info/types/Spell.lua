@@ -83,41 +83,67 @@ end
 
 function SpellField:buildSelector(obj, parentButton)
     local field = self
+    local children = {
+        {
+            "EditBox",
+            label = L["Spell Name"],
+            autoInputOnFocus = false,
+            events = {
+                valueChange = function(event, editBox)
+                    local text = editBox:getValue()
+                    local spellID = getSpellID(text)
+                    if spellID then
+                        field:set(obj, spellID)
+                        parentButton.context:pop()
+                    end
+                end,
+            },
+        },
+        {
+            "EditBox",
+            label = L["Spell ID"],
+            autoInputOnFocus = false,
+            type = "decimal",
+            events = {
+                valueChange = function(event, editBox)
+                    local text = editBox:getValue()
+                    local id = tonumber(text)
+                    if id then
+                        field:set(obj, id)
+                        parentButton.context:pop()
+                    end
+                end,
+            },
+        },
+    }
+
+    -- Add spell history entries
+    local history = WowVision.spellHistory
+    if history then
+        local sorted = {}
+        for spellID, entry in pairs(history.spells) do
+            tinsert(sorted, { spellID = spellID, name = entry.name })
+        end
+        table.sort(sorted, function(a, b)
+            return a.name < b.name
+        end)
+        for _, spell in ipairs(sorted) do
+            tinsert(children, {
+                "Button",
+                label = spell.name .. " (" .. spell.spellID .. ")",
+                events = {
+                    click = function(event, button)
+                        field:set(obj, spell.spellID)
+                        parentButton.context:pop()
+                    end,
+                },
+            })
+        end
+    end
+
     return {
         "List",
         label = self:getLabel() or self.key,
-        children = {
-            {
-                "EditBox",
-                label = L["Spell Name"],
-                autoInputOnFocus = false,
-                events = {
-                    valueChange = function(event, editBox)
-                        local text = editBox:getValue()
-                        local spellID = getSpellID(text)
-                        if spellID then
-                            field:set(obj, spellID)
-                            parentButton.context:pop()
-                        end
-                    end,
-                },
-            },
-            {
-                "EditBox",
-                label = L["Spell ID"],
-                autoInputOnFocus = false,
-                type = "decimal",
-                events = {
-                    valueChange = function(event, editBox)
-                        local text = editBox:getValue()
-                        local id = tonumber(text)
-                        if id then
-                            field:set(obj, id)
-                            parentButton.context:pop()
-                        end
-                    end,
-                },
-            },
-        },
+        children = children,
     }
 end

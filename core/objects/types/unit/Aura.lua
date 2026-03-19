@@ -170,6 +170,12 @@ addAuraFields({
     { type = "Number", key = "timeMod", label = L["Time Mod"] },
 })
 
+local function recordSpell(data)
+    if data.spellId and data.name then
+        WowVision.spellHistory:add(data.spellId, data.name, "aura")
+    end
+end
+
 local function fullUpdate(unit)
     local changes = {
         added = {},
@@ -196,6 +202,7 @@ local function fullUpdate(unit)
         Aura:modifyObject(unit, id, data)
     end
     for id, data in pairs(changes.added) do
+        recordSpell(data)
         Aura:addObject(unit, id, data)
     end
 end
@@ -227,6 +234,7 @@ function Aura:onEvent(event, unit, data)
     end
     if data.addedAuras then
         for _, aura in pairs(data.addedAuras) do
+            recordSpell(aura)
             self:addObject(unit, aura.auraInstanceID, aura)
         end
     end
