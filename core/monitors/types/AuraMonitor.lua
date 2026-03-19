@@ -9,8 +9,7 @@ local stateOutputs = {
 local AuraStateRule = WowVision.monitors.ruleRegistry:createType({ key = "AuraState", parent = "State" })
 
 AuraStateRule.info:addFields({
-    { key = "auraName", type = "String", persist = true, label = L["Aura Name"] },
-    { key = "spellId", type = "Number", persist = true, label = L["Spell ID"], showInUI = false },
+    { key = "spell", type = "Spell", persist = true, label = L["Spell"] },
     { key = "pandemicThreshold", type = "Number", persist = true, default = 30, label = L["Pandemic Window (%)"] },
     { key = "expiringThreshold", type = "Number", persist = true, default = 5, label = L["Expiry Threshold (seconds)"] },
     {
@@ -57,23 +56,27 @@ function AuraStateRule:getStates()
 end
 
 function AuraStateRule:matches(object)
-    if self.spellId then
-        local objSpellId = object:get("spellId")
-        if objSpellId == self.spellId then
-            return true
-        end
+    if not self.spell then
+        return false
     end
-    if self.auraName then
-        local name = object:get("name")
-        if name and strlower(name) == strlower(self.auraName) then
-            return true
-        end
-    end
-    return false
+    local objSpellId = object:get("spellId")
+    return objSpellId == self.spell
 end
 
 function AuraStateRule:getLabel()
-    return self.label or self.auraName or L["Aura State Rule"]
+    if self.label and self.label ~= "" then
+        return self.label
+    end
+    if self.spell then
+        local spellField = self.class.info:getField("spell")
+        if spellField then
+            local valueStr = spellField:getValueString(self, self.spell)
+            if valueStr then
+                return valueStr
+            end
+        end
+    end
+    return L["Aura State Rule"]
 end
 
 -- AuraMonitor: extends Monitor with unit tracking for auras

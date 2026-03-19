@@ -40,7 +40,12 @@ function module:onFullEnable()
 end
 
 function module:getAdditionalMenuUI()
-    return monitorsField:getGenerator(container)
+    monitorsField:ensureVirtualElements()
+    return {
+        "ComponentArrayField/list",
+        field = monitorsField,
+        obj = container,
+    }
 end
 
 module:hasUpdate(function(self)
