@@ -45,6 +45,13 @@ zoneChanged:addOutput({
     end,
 })
 
+zoneChanged:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
+})
+
 local subzoneChanged = module:addAlert({
     key = "subzoneChanged",
     label = L["Subzone Changed Alert"],
@@ -62,6 +69,13 @@ subzoneChanged:addOutput({
     end,
 })
 
+subzoneChanged:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
+})
+
 local outdoorsAlert = module:addAlert({
     key = "outdoors",
     label = L["Outdoors Alert"],
@@ -74,6 +88,13 @@ outdoorsAlert:addOutput({
     buildMessage = function(self, message)
         return L["outdoors"]
     end,
+})
+
+outdoorsAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
 })
 
 local indoorsAlert = module:addAlert({
@@ -90,6 +111,13 @@ indoorsAlert:addOutput({
     end,
 })
 
+indoorsAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
+})
+
 local flyingStartedAlert = module:addAlert({
     key = "flyingStarted",
     label = L["Flying Started Alert"],
@@ -102,6 +130,13 @@ flyingStartedAlert:addOutput({
     buildMessage = function(self, message)
         return L["flying"]
     end,
+})
+
+flyingStartedAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
 })
 
 local flyingEndedAlert = module:addAlert({
@@ -118,6 +153,13 @@ flyingEndedAlert:addOutput({
     end,
 })
 
+flyingEndedAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
+})
+
 local swimmingAlert = module:addAlert({
     key = "swimming",
     label = L["Swimming Alert"],
@@ -132,6 +174,13 @@ swimmingAlert:addOutput({
     end,
 })
 
+swimmingAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
+})
+
 local divingAlert = module:addAlert({
     key = "diving",
     label = L["Diving Alert"],
@@ -144,6 +193,13 @@ divingAlert:addOutput({
     buildMessage = function(self, message)
         return L["diving"]
     end,
+})
+
+divingAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
 })
 
 module:registerEvent("event", "ZONE_CHANGED_NEW_AREA")
