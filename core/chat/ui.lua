@@ -24,7 +24,7 @@ gen:Element("chat/Tabs", function(props)
     end
     for i = 1, 10 do
         local frame = _G["ChatFrame" .. i .. "Tab"]
-        if frame:IsShown() then
+        if frame and frame:IsShown() then
             tinsert(result.children, { "ProxyButton", frame = frame, selected = _G["ChatFrame" .. i]:IsShown() })
             count = count - 1
             if count < 1 then
@@ -83,7 +83,8 @@ gen:Element("ChatConfig/ChatConfigCategoryFrame", function(props)
     for i = 2, #children do
         local button = children[i]
         local regions = { button:GetRegions() }
-        tinsert(result.children, { "ProxyButton", frame = button, label = regions[1]:GetText() })
+        local label = regions[1] and regions[1]:GetText() or nil
+        tinsert(result.children, { "ProxyButton", frame = button, label = label })
     end
     return result
 end)

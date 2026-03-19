@@ -112,7 +112,7 @@ function WowVision:recursiveComp(a, b, level)
     if level == 0 then
         return nil, "level"
     end
-    local level = 10 or level
+    local level = level or 10
     if a == nil or b == nil then
         return a == b
     end
