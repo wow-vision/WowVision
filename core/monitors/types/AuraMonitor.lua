@@ -83,6 +83,12 @@ end
 
 function AuraStateRule:onObjectAdd(object)
     self.trackedObjects[object] = true
+    -- Store the initial duration for pandemic calculation
+    -- WoW's duration field can change on aura updates
+    local duration = object:get("duration")
+    if duration and duration > 0 then
+        self._baseDuration = duration
+    end
 end
 
 function AuraStateRule:onObjectRemove(object)
@@ -93,11 +99,12 @@ end
 
 function AuraStateRule:reset()
     self.trackedObjects = {}
+    self._baseDuration = nil
     WowVision.monitors.StateRule.reset(self)
 end
 
 function AuraStateRule:computeState(object)
-    local duration = object:get("duration")
+    local duration = self._baseDuration
     local remaining = object:get("remainingDuration")
 
     if not duration or duration == 0 then
@@ -106,10 +113,10 @@ function AuraStateRule:computeState(object)
     if not remaining then
         return "applied"
     end
-    if remaining <= (self.expiringThreshold or 5) then
-        return "expiring"
-    end
-    if duration > 0 and (remaining / duration) * 100 <= (self.pandemicThreshold or 30) then
+    if (remaining / duration) * 100 <= (self.pandemicThreshold or 30) then
+        if remaining <= (self.expiringThreshold or 5) then
+            return "expiring"
+        end
         return "pandemic"
     end
     return "applied"
