@@ -15,6 +15,10 @@ function StateRule:getStates()
 end
 
 function StateRule:getStateAlert(stateKey)
+    local field = self.class.info:getField(stateKey)
+    if field and field.getAlert then
+        return field:getAlert(self)
+    end
     return self[stateKey]
 end
 
@@ -53,12 +57,12 @@ function StateRule:resolveOutputStates(stateKey)
     return resolved
 end
 
--- Transition to a new state, firing only the outputs whose resolved state changed
-function StateRule:transitionTo(stateKey, message)
-    local previousResolved = self._resolvedStates or {}
+-- Check resolved output states and fire any that changed
+-- Called every frame, not just on state transitions
+function StateRule:updateResolved(stateKey)
     local newResolved = self:resolveOutputStates(stateKey)
-
-    message = message or { text = stateKey, state = stateKey, rule = self }
+    local previousResolved = self._resolvedStates or {}
+    local message = { text = stateKey, state = stateKey, rule = self }
 
     for outputKey, resolvedState in pairs(newResolved) do
         if previousResolved[outputKey] ~= resolvedState then
@@ -73,8 +77,12 @@ function StateRule:transitionTo(stateKey, message)
         end
     end
 
-    self._currentState = stateKey
     self._resolvedStates = newResolved
+end
+
+function StateRule:transitionTo(stateKey, message)
+    self._currentState = stateKey
+    self:updateResolved(stateKey)
 end
 
 function StateRule:getCurrentState()

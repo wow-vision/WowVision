@@ -56,6 +56,10 @@ function AuraStateRule:initialize(config)
     WowVision.monitors.StateRule.initialize(self, config)
 end
 
+function AuraStateRule:getTrackingFields()
+    return { "spell", "playerOnly" }
+end
+
 function AuraStateRule:getStates()
     return {
         { key = "applied" },
@@ -141,10 +145,14 @@ function AuraStateRule:update()
     if hasObjects then
         if bestState ~= self:getCurrentState() then
             self:transitionTo(bestState)
+        else
+            self:updateResolved(bestState)
         end
     else
         if self:getCurrentState() ~= "missing" and (self:getCurrentState() ~= nil or self._announceRequested) then
             self:transitionTo("missing")
+        else
+            self:updateResolved("missing")
         end
         self._announceRequested = false
     end

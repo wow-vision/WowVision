@@ -37,6 +37,7 @@ function WowVision:OnInitialize()
         WowVisionDB.spellHistory = {}
     end
     WowVision.spellHistory:setDB(WowVisionDB.spellHistory)
+    WowVision.spellHistory:startListening()
 end
 
 function WowVision:OnEnable()
@@ -284,6 +285,59 @@ function WowVision:registerCommands()
         description = "Force close WowVision UI",
         func = function(args)
             WowVision.UIHost:close()
+        end,
+    })
+
+    self.base:registerCommand({
+        name = "testcd",
+        description = "Test cooldown monitor with Starsurge",
+        func = function(args)
+            -- Create a full monitor with a rule, enable sound on ready and on_cooldown
+            local monitor = WowVision.monitors:create("Cooldown", {
+                label = "Test CD",
+                rules = {
+                    {
+                        type = "CooldownState",
+                        spell = 78674,
+                    },
+                },
+            })
+
+            local rule = WowVision.monitors.ruleRegistry:createTemporaryComponent({
+                type = "CooldownState",
+                spell = 78674,
+            })
+
+            -- Check DB state of alerts
+            for _, key in ipairs({"ready", "on_cooldown"}) do
+                local alert = rule[key]
+                if alert then
+                    print(key, "alert.db:", alert.db and "linked" or "NIL")
+                    for _, output in ipairs(alert.outputs) do
+                        print("  ", output.key, "output.db:", output.db and "linked" or "NIL")
+                    end
+                end
+            end
+
+            -- Now simulate what addElement does
+            local config = rule.class.info:getData(rule)
+            config.type = "CooldownState"
+            -- Pretend we have a DB array
+            local dbArr = { config }
+            rule.db = dbArr[1]
+            print("--- After setting rule.db ---")
+
+            -- Now check if lazy link works
+            for _, key in ipairs({"ready", "on_cooldown"}) do
+                local alertField = rule.class.info:getField(key)
+                if alertField then
+                    local alert = alertField:getAlert(rule)
+                    print(key, "alert.db:", alert.db and "linked" or "NIL")
+                    for _, output in ipairs(alert.outputs) do
+                        print("  ", output.key, "output.db:", output.db and "linked" or "NIL")
+                    end
+                end
+            end
         end,
     })
 

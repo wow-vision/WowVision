@@ -64,6 +64,10 @@ function CooldownStateRule:initialize(config)
     WowVision.monitors.StateRule.initialize(self, config)
 end
 
+function CooldownStateRule:getTrackingFields()
+    return { "spell" }
+end
+
 function CooldownStateRule:getStates()
     return {
         { key = "ready" },
@@ -129,6 +133,8 @@ function CooldownStateRule:update()
     local state = self:computeState(object)
     if state ~= self:getCurrentState() then
         self:transitionTo(state)
+    else
+        self:updateResolved(state)
     end
 
     -- Check for charge changes (independent of state)

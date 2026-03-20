@@ -8,7 +8,31 @@ Rule.info:addFields({
 })
 
 function Rule:initialize(config)
+    self.events = {
+        trackingDirty = WowVision.Event:new("trackingDirty"),
+    }
     self:setInfo(config)
+
+    -- Subscribe to own tracking-relevant fields
+    for _, key in ipairs(self:getTrackingFields()) do
+        local field = self.class.info:getField(key)
+        if field then
+            field.events.valueChange:subscribe(self, function(self, event, target, fieldKey, value)
+                if target == self then
+                    self.events.trackingDirty:emit(self)
+                end
+            end)
+        end
+    end
+end
+
+-- Cascade DB to nested fields (Alert/Output linking)
+function Rule:setDB(db)
+    self.class.info:setDB(self, db)
+end
+
+function Rule:getTrackingFields()
+    return {}
 end
 
 function Rule:matches(object)

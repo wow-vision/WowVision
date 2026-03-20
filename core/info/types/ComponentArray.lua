@@ -145,7 +145,11 @@ function ComponentArrayField:addElement(obj, instanceOrConfig)
         local config = instance.class.info:getData(instance)
         config.type = self.getTypeKey(instance)
         tinsert(dbArr, config)
-        instance.db = dbArr[#dbArr]
+        if instance.setDB then
+            instance:setDB(dbArr[#dbArr])
+        else
+            instance.db = dbArr[#dbArr]
+        end
     end
 
     self.events.valueChange:emit(obj, self.key, arr)

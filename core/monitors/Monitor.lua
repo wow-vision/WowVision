@@ -44,10 +44,40 @@ function Monitor:initialize(config)
             end)
         end
     end
+
+    -- Subscribe to rules array changes (add/remove)
+    local rulesField = self.class.info:getField("rules")
+    if rulesField then
+        rulesField.events.valueChange:subscribe(self, function(self, event, target, fieldKey, value)
+            if target == self then
+                self:onRulesChanged(value)
+            end
+        end)
+    end
+
+    -- Subscribe to initial rules' trackingDirty events
+    if self.rules and #self.rules > 0 then
+        self:onRulesChanged(self.rules)
+    end
 end
 
 function Monitor:onSetInfo()
     -- Mark that tracking needs to be started/restarted on next update
+    self._trackingDirty = true
+end
+
+function Monitor:onRulesChanged(rules)
+    -- Unsubscribe from old rules
+    for _, rule in ipairs(self._subscribedRules or {}) do
+        rule.events.trackingDirty:unsubscribe(self)
+    end
+    -- Subscribe to new rules
+    for _, rule in ipairs(rules or {}) do
+        rule.events.trackingDirty:subscribe(self, function(self, event, rule)
+            self._trackingDirty = true
+        end)
+    end
+    self._subscribedRules = rules
     self._trackingDirty = true
 end
 
@@ -177,7 +207,7 @@ end
 function Monitor:setDB(db)
     self.db = db
     self.class.info:setDB(self, db)
-    self._trackingDirty = true
+    self:onRulesChanged(self.rules or {})
 end
 
 function Monitor:getSettingsGenerator()

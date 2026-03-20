@@ -96,4 +96,33 @@ function SpellHistory:hasSource(spellID, sourceType)
     return entry.sources[sourceType] == true
 end
 
+local GetSpellInfo = GetSpellInfo
+    or function(spellID)
+        if not spellID or not C_Spell or not C_Spell.GetSpellInfo then
+            return nil
+        end
+        local info = C_Spell.GetSpellInfo(spellID)
+        if info then
+            return info.name
+        end
+        return nil
+    end
+
+function SpellHistory:startListening()
+    if self._frame then
+        return
+    end
+    self._frame = CreateFrame("Frame")
+    self._frame:RegisterEvent("UNIT_SPELLCAST_SENT")
+    self._frame:SetScript("OnEvent", function(frame, event, unit, target, castGUID, spellID)
+        if unit ~= "player" then
+            return
+        end
+        local name = GetSpellInfo(spellID)
+        if name then
+            self:add(spellID, name, "cast")
+        end
+    end)
+end
+
 WowVision.spellHistory = SpellHistory:new()
