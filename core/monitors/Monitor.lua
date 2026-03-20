@@ -87,12 +87,20 @@ function Monitor:restartTracking()
         self.trackedObjects[object] = nil
         tinsert(self.pendingEvents, { type = "remove", object = object })
     end)
+    self.tracker.events.unitsChanged:subscribe(self, function(self, event, tracker, unitId, guid)
+        self:onUnitsChanged(unitId, guid)
+    end)
+end
+
+function Monitor:onUnitsChanged(unitId, guid)
+    -- Override in subclasses
 end
 
 function Monitor:cleanupTracker()
     if self.tracker then
         self.tracker.events.add:unsubscribe(self)
         self.tracker.events.remove:unsubscribe(self)
+        self.tracker.events.unitsChanged:unsubscribe(self)
         self.tracker:untrack()
         self.tracker = nil
     end

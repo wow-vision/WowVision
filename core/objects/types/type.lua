@@ -228,6 +228,10 @@ function UnitType:changeUnit(unit, guid)
     end
     unit.guid = guid
     self:onUnitChange(unit)
+    -- Notify trackers that the unit's GUID changed
+    for tracker, _ in pairs(unit.trackers) do
+        tracker.events.unitsChanged:emit(tracker, unit.id, guid)
+    end
 end
 
 function UnitType:removeUnit(id)

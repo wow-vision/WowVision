@@ -5,6 +5,7 @@ function ObjectTracker:initialize(trackingInfo)
         add = WowVision.Event:new("add"),
         modify = WowVision.Event:new("modify"),
         remove = WowVision.Event:new("remove"),
+        unitsChanged = WowVision.Event:new("unitsChanged"),
     }
     self.items = {}
     self.trackingInfo = trackingInfo or {}

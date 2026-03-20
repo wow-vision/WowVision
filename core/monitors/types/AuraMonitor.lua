@@ -132,9 +132,10 @@ function AuraStateRule:update()
             self:transitionTo(bestState)
         end
     else
-        if self:getCurrentState() ~= nil and self:getCurrentState() ~= "missing" then
+        if self:getCurrentState() ~= "missing" and (self:getCurrentState() ~= nil or self._announceRequested) then
             self:transitionTo("missing")
         end
+        self._announceRequested = false
     end
 end
 
@@ -159,6 +160,7 @@ local AuraMonitor = WowVision.monitors:createType("Aura")
 
 AuraMonitor.info:addFields({
     { key = "unit", type = "String", default = "target", persist = true, label = L["Unit"] },
+    { key = "announceOnUnitChange", type = "Bool", default = false, persist = true, label = L["Announce on Target Change"] },
 })
 
 AuraMonitor.info:updateFields({
@@ -183,6 +185,17 @@ function AuraMonitor:createTracker()
         type = "Aura",
         units = { unit },
     })
+end
+
+function AuraMonitor:onUnitsChanged(unitId, guid)
+    if self.announceOnUnitChange then
+        for _, rule in ipairs(self.rules or {}) do
+            if rule.reset then
+                rule:reset()
+            end
+            rule._announceRequested = true
+        end
+    end
 end
 
 function AuraMonitor:getLabel()
