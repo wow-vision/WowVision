@@ -7,6 +7,7 @@ StaticBuffer.info:addFields({
         type = "ComponentArray",
         label = L["Objects"],
         persist = true,
+        sortPriority = 3,
         factory = function(config)
             -- If config.object exists, use it directly (loading from DB)
             -- Otherwise, map top-level type to object.type (adding new item)

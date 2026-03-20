@@ -9,15 +9,16 @@ local stateOutputs = {
 local AuraStateRule = WowVision.monitors.ruleRegistry:createType({ key = "AuraState", parent = "State" })
 
 AuraStateRule.info:addFields({
-    { key = "spell", type = "Spell", persist = true, label = L["Spell"] },
-    { key = "playerOnly", type = "Bool", persist = true, default = true, label = L["Player Only"] },
-    { key = "pandemicThreshold", type = "Number", persist = true, default = 30, label = L["Pandemic Window (%)"] },
-    { key = "expiringThreshold", type = "Number", persist = true, default = 5, label = L["Expiry Threshold (seconds)"] },
+    { key = "spell", type = "Spell", persist = true, label = L["Spell"], sortPriority = 2 },
+    { key = "playerOnly", type = "Bool", persist = true, default = true, label = L["Player Only"], sortPriority = 2 },
+    { key = "pandemicThreshold", type = "Number", persist = true, default = 30, label = L["Pandemic Window (%)"], sortPriority = 2 },
+    { key = "expiringThreshold", type = "Number", persist = true, default = 5, label = L["Expiry Threshold (seconds)"], sortPriority = 2 },
     {
         key = "applied",
         type = "Alert",
         persist = true,
         label = L["Applied"],
+        sortPriority = 3,
         alert = { key = "applied", label = L["Applied"] },
         outputs = stateOutputs,
     },
@@ -26,6 +27,7 @@ AuraStateRule.info:addFields({
         type = "Alert",
         persist = true,
         label = L["Pandemic"],
+        sortPriority = 3,
         alert = { key = "pandemic", label = L["Pandemic"] },
         outputs = stateOutputs,
     },
@@ -34,6 +36,7 @@ AuraStateRule.info:addFields({
         type = "Alert",
         persist = true,
         label = L["Expiring"],
+        sortPriority = 3,
         alert = { key = "expiring", label = L["Expiring"] },
         outputs = stateOutputs,
     },
@@ -42,6 +45,7 @@ AuraStateRule.info:addFields({
         type = "Alert",
         persist = true,
         label = L["Missing"],
+        sortPriority = 3,
         alert = { key = "missing", label = L["Missing"] },
         outputs = stateOutputs,
     },
@@ -159,8 +163,8 @@ end
 local AuraMonitor = WowVision.monitors:createType("Aura")
 
 AuraMonitor.info:addFields({
-    { key = "unit", type = "String", default = "target", persist = true, label = L["Unit"] },
-    { key = "announceOnUnitChange", type = "Bool", default = false, persist = true, label = L["Announce on Target Change"] },
+    { key = "unit", type = "String", default = "target", persist = true, label = L["Unit"], sortPriority = 2 },
+    { key = "announceOnUnitChange", type = "Bool", default = false, persist = true, label = L["Announce on Target Change"], sortPriority = 2 },
 })
 
 AuraMonitor.info:updateFields({

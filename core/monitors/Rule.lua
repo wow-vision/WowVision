@@ -3,8 +3,8 @@ local L = WowVision:getLocale()
 local Rule = WowVision.Class("Rule"):include(WowVision.InfoClass)
 
 Rule.info:addFields({
-    { key = "enabled", type = "Bool", default = true, persist = true, label = L["Enabled"] },
-    { key = "label", type = "String", persist = true, label = L["Label"] },
+    { key = "enabled", type = "Bool", default = true, persist = true, label = L["Enabled"], sortPriority = 1 },
+    { key = "label", type = "String", persist = true, label = L["Label"], sortPriority = 1 },
 })
 
 function Rule:initialize(config)

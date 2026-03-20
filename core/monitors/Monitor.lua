@@ -3,13 +3,14 @@ local L = WowVision:getLocale()
 local Monitor = WowVision.Class("Monitor"):include(WowVision.InfoClass)
 
 Monitor.info:addFields({
-    { key = "enabled", type = "Bool", default = true, persist = true, label = L["Enabled"] },
-    { key = "label", type = "String", persist = true, label = L["Label"] },
+    { key = "enabled", type = "Bool", default = true, persist = true, label = L["Enabled"], sortPriority = 1 },
+    { key = "label", type = "String", persist = true, label = L["Label"], sortPriority = 1 },
     {
         key = "rules",
         type = "ComponentArray",
         persist = true,
         label = L["Rules"],
+        sortPriority = 3,
         factory = function(config)
             return WowVision.monitors.ruleRegistry:createTemporaryComponent(config)
         end,
