@@ -1,27 +1,23 @@
 local L = WowVision:getLocale()
 
 -- StateRule is a base class for state-machine rules.
--- It is NOT registered in the rule registry directly — subclasses register themselves.
--- We register it so subclasses can use parent = "State" in createType.
+-- Not registered directly — subclasses register themselves.
 local StateRule = WowVision.monitors.ruleRegistry:createType({ key = "State" })
 
 function StateRule:initialize(config)
-    self.objectStates = {}
+    self._currentState = nil
     WowVision.monitors.Rule.initialize(self, config)
 end
 
--- Override in subclasses to return list of state keys and their fallback order
--- Returns: { { key = "applied" }, { key = "pandemic", fallback = "applied" }, ... }
+-- Override in subclasses
 function StateRule:getStates()
     return {}
 end
 
--- Get the alert for a state key (alerts are InfoClass fields on the rule)
 function StateRule:getStateAlert(stateKey)
     return self[stateKey]
 end
 
--- Get the fallback chain for a state key
 function StateRule:getFallbackChain(stateKey)
     local states = self:getStates()
     local stateMap = {}
@@ -39,7 +35,6 @@ function StateRule:getFallbackChain(stateKey)
     return chain
 end
 
--- Resolve which state's alert to use for each output key
 function StateRule:resolveOutputStates(stateKey)
     local chain = self:getFallbackChain(stateKey)
     local resolved = {}
@@ -58,19 +53,13 @@ function StateRule:resolveOutputStates(stateKey)
     return resolved
 end
 
-function StateRule:setObjectState(object, stateKey)
-    local previous = self.objectStates[object]
-    local previousResolved = previous and previous.resolved or {}
+-- Transition to a new state, firing only the outputs whose resolved state changed
+function StateRule:transitionTo(stateKey, message)
+    local previousResolved = self._resolvedStates or {}
     local newResolved = self:resolveOutputStates(stateKey)
 
-    local message = {
-        text = stateKey,
-        state = stateKey,
-        object = object,
-        rule = self,
-    }
+    message = message or { text = stateKey, state = stateKey, rule = self }
 
-    -- Fire outputs where the resolved state changed
     for outputKey, resolvedState in pairs(newResolved) do
         if previousResolved[outputKey] ~= resolvedState then
             local alert = self:getStateAlert(resolvedState)
@@ -84,36 +73,17 @@ function StateRule:setObjectState(object, stateKey)
         end
     end
 
-    self.objectStates[object] = {
-        state = stateKey,
-        resolved = newResolved,
-    }
+    self._currentState = stateKey
+    self._resolvedStates = newResolved
 end
 
-function StateRule:removeObject(object)
-    local previous = self.objectStates[object]
-    if not previous then
-        return
-    end
-
-    local message = {
-        text = "missing",
-        state = "missing",
-        object = object,
-        rule = self,
-    }
-
-    -- Fire missing alert if we have one
-    local missingAlert = self:getStateAlert("missing")
-    if missingAlert then
-        missingAlert:fire(message)
-    end
-
-    self.objectStates[object] = nil
+function StateRule:getCurrentState()
+    return self._currentState
 end
 
-function StateRule:clearObjectStates()
-    self.objectStates = {}
+function StateRule:reset()
+    self._currentState = nil
+    self._resolvedStates = nil
 end
 
 WowVision.monitors.StateRule = StateRule

@@ -15,6 +15,18 @@ function Rule:matches(object)
     return false
 end
 
+-- Called when a matching object is added to the tracker
+function Rule:onObjectAdd(object) end
+
+-- Called when a matching object is removed from the tracker
+function Rule:onObjectRemove(object) end
+
+-- Called every frame to check time-based state changes
+function Rule:update() end
+
+-- Called when the tracker is restarted (target change, etc.)
+function Rule:reset() end
+
 function Rule:getLabel()
     return self.label or self.class.name
 end

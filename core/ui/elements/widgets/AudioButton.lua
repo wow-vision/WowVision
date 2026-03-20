@@ -13,8 +13,8 @@ function AudioButton:initialize()
 end
 
 function AudioButton:getHoverSound()
-    if self.source and self.source.play then
-        self.source:play()
+    if self.source and self.source.preview then
+        self.source:preview()
     end
     return nil
 end

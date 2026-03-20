@@ -10,6 +10,7 @@ local AuraStateRule = WowVision.monitors.ruleRegistry:createType({ key = "AuraSt
 
 AuraStateRule.info:addFields({
     { key = "spell", type = "Spell", persist = true, label = L["Spell"] },
+    { key = "playerOnly", type = "Bool", persist = true, default = true, label = L["Player Only"] },
     { key = "pandemicThreshold", type = "Number", persist = true, default = 30, label = L["Pandemic Window (%)"] },
     { key = "expiringThreshold", type = "Number", persist = true, default = 5, label = L["Expiry Threshold (seconds)"] },
     {
@@ -46,13 +47,17 @@ AuraStateRule.info:addFields({
     },
 })
 
+function AuraStateRule:initialize(config)
+    self.trackedObjects = {} -- objects currently matching this rule
+    WowVision.monitors.StateRule.initialize(self, config)
+end
+
 function AuraStateRule:getStates()
     return {
         { key = "applied" },
         { key = "pandemic", fallback = "applied" },
         { key = "expiring", fallback = "pandemic" },
     }
-    -- "missing" is independent, not in the fallback chain
 end
 
 function AuraStateRule:matches(object)
@@ -60,7 +65,77 @@ function AuraStateRule:matches(object)
         return false
     end
     local objSpellId = object:get("spellId")
-    return objSpellId == self.spell
+    if objSpellId ~= self.spell then
+        return false
+    end
+    if self.playerOnly then
+        local isFromPlayer = object:get("isFromPlayerOrPlayerPet")
+        if not isFromPlayer then
+            return false
+        end
+    end
+    return true
+end
+
+function AuraStateRule:onObjectAdd(object)
+    self.trackedObjects[object] = true
+end
+
+function AuraStateRule:onObjectRemove(object)
+    if self.trackedObjects[object] then
+        self.trackedObjects[object] = nil
+    end
+end
+
+function AuraStateRule:reset()
+    self.trackedObjects = {}
+    WowVision.monitors.StateRule.reset(self)
+end
+
+function AuraStateRule:computeState(object)
+    local duration = object:get("duration")
+    local remaining = object:get("remainingDuration")
+
+    if not duration or duration == 0 then
+        return "applied"
+    end
+    if not remaining then
+        return "applied"
+    end
+    if remaining <= (self.expiringThreshold or 5) then
+        return "expiring"
+    end
+    if duration > 0 and (remaining / duration) * 100 <= (self.pandemicThreshold or 30) then
+        return "pandemic"
+    end
+    return "applied"
+end
+
+function AuraStateRule:update()
+    local bestState = nil
+    local hasObjects = false
+
+    for object, _ in pairs(self.trackedObjects) do
+        hasObjects = true
+        local state = self:computeState(object)
+        if bestState == nil then
+            bestState = state
+        elseif state == "applied" then
+            bestState = "applied"
+        elseif state == "pandemic" and bestState == "expiring" then
+            bestState = "pandemic"
+        end
+    end
+
+    if hasObjects then
+        if bestState ~= self:getCurrentState() then
+            self:transitionTo(bestState)
+        end
+    else
+        if self:getCurrentState() ~= nil and self:getCurrentState() ~= "missing" then
+            self:transitionTo("missing")
+        end
+    end
 end
 
 function AuraStateRule:getLabel()
@@ -86,7 +161,6 @@ AuraMonitor.info:addFields({
     { key = "unit", type = "String", default = "target", persist = true, label = L["Unit"] },
 })
 
--- Override the rules ComponentArray to filter available types
 AuraMonitor.info:updateFields({
     {
         key = "rules",
@@ -109,69 +183,6 @@ function AuraMonitor:createTracker()
         type = "Aura",
         units = { unit },
     })
-end
-
--- Override updateRules to handle per-rule thresholds
-function AuraMonitor:updateRules()
-    local rules = self.rules
-    if not rules then
-        return
-    end
-
-    -- Track which rules matched at least one object this frame
-    local rulesMatched = {}
-
-    for object, _ in pairs(self.trackedObjects) do
-        local duration = object:get("duration")
-        local remaining = object:get("remainingDuration")
-
-        for _, rule in ipairs(rules) do
-            if rule.enabled and rule:matches(object) then
-                rulesMatched[rule] = true
-                local state
-                if not duration or duration == 0 then
-                    state = "applied"
-                elseif not remaining then
-                    state = "applied"
-                elseif remaining <= (rule.expiringThreshold or 5) then
-                    state = "expiring"
-                elseif duration > 0 and (remaining / duration) * 100 <= (rule.pandemicThreshold or 30) then
-                    state = "pandemic"
-                else
-                    state = "applied"
-                end
-                if rule.setObjectState then
-                    rule:setObjectState(object, state)
-                end
-            end
-        end
-    end
-
-    for _, rule in ipairs(rules) do
-        if rule.enabled then
-            -- Clean up stale object states silently
-            if rule.objectStates then
-                for object, _ in pairs(rule.objectStates) do
-                    if not self.trackedObjects[object] then
-                        rule.objectStates[object] = nil
-                    end
-                end
-            end
-
-            -- Fire missing only when rule has no matches at all
-            if not rulesMatched[rule] then
-                if rule.objectStates and not next(rule.objectStates) and rule._hadMatch then
-                    local missingAlert = rule:getStateAlert("missing")
-                    if missingAlert then
-                        missingAlert:fire({ text = "missing", state = "missing", rule = rule })
-                    end
-                end
-                rule._hadMatch = false
-            else
-                rule._hadMatch = true
-            end
-        end
-    end
 end
 
 function AuraMonitor:getLabel()

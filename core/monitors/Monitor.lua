@@ -14,8 +14,6 @@ Monitor.info:addFields({
             return WowVision.monitors.ruleRegistry:createTemporaryComponent(config)
         end,
         getTypeKey = function(instance)
-            -- ClassRegistryType names classes as key + suffix, e.g., "AuraStateRule"
-            -- The type key in the registry is just "AuraState"
             local className = instance.class.name
             if className:sub(-4) == "Rule" then
                 return className:sub(1, -5)
@@ -30,16 +28,17 @@ Monitor.info:addFields({
 
 function Monitor:initialize(config)
     self.trackedObjects = {}
+    self.pendingEvents = {}
     self.tracker = nil
     self:setInfo(config)
 
-    -- Subscribe to tracking field changes to restart tracking
+    -- Subscribe to tracking field changes to flag tracking for restart
     for _, key in ipairs(self:getTrackingFields()) do
         local field = self.class.info:getField(key)
         if field then
             field.events.valueChange:subscribe(self, function(self, event, target, fieldKey, value)
                 if target == self then
-                    self:restartTracking()
+                    self._trackingDirty = true
                 end
             end)
         end
@@ -47,7 +46,8 @@ function Monitor:initialize(config)
 end
 
 function Monitor:onSetInfo()
-    self:restartTracking()
+    -- Mark that tracking needs to be started/restarted on next update
+    self._trackingDirty = true
 end
 
 function Monitor:getTrackingFields()
@@ -63,7 +63,6 @@ function Monitor:restartTracking()
         self:cleanupTracker()
     end
 
-    -- Don't create a tracker if there are no rules to evaluate
     if not self.rules or #self.rules == 0 then
         return
     end
@@ -73,25 +72,21 @@ function Monitor:restartTracking()
         return
     end
 
-    -- Populate from existing tracked objects
+    -- Populate from existing tracked objects and notify rules
     for object, _ in pairs(self.tracker.items) do
         self.trackedObjects[object] = true
+        tinsert(self.pendingEvents, { type = "add", object = object })
     end
 
     -- Subscribe to future changes
     self.tracker.events.add:subscribe(self, function(self, event, tracker, object)
         self.trackedObjects[object] = true
+        tinsert(self.pendingEvents, { type = "add", object = object })
     end)
     self.tracker.events.remove:subscribe(self, function(self, event, tracker, object)
         self.trackedObjects[object] = nil
+        tinsert(self.pendingEvents, { type = "remove", object = object })
     end)
-
-    -- Clear rule states since tracked objects changed
-    for _, rule in ipairs(self.rules or {}) do
-        if rule.clearObjectStates then
-            rule:clearObjectStates()
-        end
-    end
 end
 
 function Monitor:cleanupTracker()
@@ -102,56 +97,54 @@ function Monitor:cleanupTracker()
         self.tracker = nil
     end
     self.trackedObjects = {}
-end
-
-function Monitor:computeObjectState(object)
-    return nil
+    self.pendingEvents = {}
+    -- Reset all rules
+    for _, rule in ipairs(self.rules or {}) do
+        if rule.reset then
+            rule:reset()
+        end
+    end
 end
 
 function Monitor:update()
     if not self.enabled then
         return
     end
+    if self._trackingDirty then
+        self._trackingDirty = false
+        self:restartTracking()
+    end
     if not self.tracker then
         return
     end
-    self:updateRules()
-end
 
-function Monitor:updateRules()
     local rules = self.rules
     if not rules then
         return
     end
 
-    -- For each object, compute state and pass to matching rules
-    -- Track which rules matched at least one object this frame
-    local rulesMatched = {}
-
-    for object, _ in pairs(self.trackedObjects) do
-        local state = self:computeObjectState(object)
-        if state then
+    -- Pass buffered events to rules
+    if #self.pendingEvents > 0 then
+        for _, evt in ipairs(self.pendingEvents) do
             for _, rule in ipairs(rules) do
-                if rule.enabled and rule:matches(object) then
-                    rulesMatched[rule] = true
-                    if rule.setObjectState then
-                        rule:setObjectState(object, state)
+                if rule.enabled then
+                    if evt.type == "add" and rule:matches(evt.object) then
+                        rule:onObjectAdd(evt.object)
+                    elseif evt.type == "remove" then
+                        -- Don't filter removes through matches() — object data may
+                        -- already be cleared. Let the rule decide if it was tracking it.
+                        rule:onObjectRemove(evt.object)
                     end
                 end
             end
         end
+        self.pendingEvents = {}
     end
 
-    -- For rules that didn't match any object this frame, check for removals
+    -- Let each rule update (time-based state transitions)
     for _, rule in ipairs(rules) do
-        if rule.enabled and rule.objectStates then
-            for object, _ in pairs(rule.objectStates) do
-                if not self.trackedObjects[object] then
-                    if rule.removeObject then
-                        rule:removeObject(object)
-                    end
-                end
-            end
+        if rule.enabled and rule.update then
+            rule:update()
         end
     end
 end
@@ -162,7 +155,6 @@ end
 
 function Monitor:getDefaultDBRecursive()
     local db = self.class.info:getData(self)
-    -- Include rule defaults with their alerts
     local rulesField = self.class.info:getField("rules")
     if rulesField and self.rules then
         db.rules = { _type = "array" }
@@ -176,6 +168,7 @@ end
 function Monitor:setDB(db)
     self.db = db
     self.class.info:setDB(self, db)
+    self._trackingDirty = true
 end
 
 function Monitor:getSettingsGenerator()
