@@ -77,8 +77,8 @@ function AuraStateRule:matches(object)
         return false
     end
     if self.playerOnly then
-        local isFromPlayer = object:get("isFromPlayerOrPlayerPet")
-        if not isFromPlayer then
+        local source = object:get("sourceUnit")
+        if not source or not (UnitIsUnit(source, "player") or UnitIsUnit(source, "pet")) then
             return false
         end
     end
