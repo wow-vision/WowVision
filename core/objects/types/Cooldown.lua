@@ -1,7 +1,7 @@
 local L = WowVision:getLocale()
 local objects = WowVision.objects
 
-local Cooldown = objects:createObjectType("Cooldown")
+local Cooldown = objects:createGlobalType("Cooldown")
 Cooldown:setLabel(L["Cooldown"])
 
 Cooldown:addParameter({
@@ -9,6 +9,12 @@ Cooldown:addParameter({
     type = "Spell",
     label = L["Spell ID"],
     required = true,
+})
+
+Cooldown:addParameter({
+    key = "onCooldown",
+    type = "Bool",
+    label = L["On Cooldown"],
 })
 
 -- GCD detection
@@ -95,8 +101,7 @@ local function getCooldownData(spellId)
     }
 end
 
--- Tracked spells: spellId → { trackers = {}, object = Object, data = {} }
-Cooldown.spells = {}
+-- Fields
 
 Cooldown:addField({
     key = "spellId",
@@ -189,15 +194,18 @@ function Cooldown:validParams(params)
     if params.spellId then
         return true, true
     end
+    if params.onCooldown ~= nil then
+        return true, false
+    end
     return false, false
 end
 
-function Cooldown:getCache(params)
-    local entry = self.spells[params.spellId]
-    if entry then
-        return entry.data
-    end
-    return nil
+function Cooldown:getObjectParams(key, data)
+    return { spellId = key, onCooldown = data and not data.isReady or false }
+end
+
+function Cooldown:getObjectKey(params)
+    return params.spellId
 end
 
 function Cooldown:getLabel(params)
@@ -223,19 +231,14 @@ function Cooldown:getFocusString(params)
     return name
 end
 
--- Spell tracking management (similar to UnitType unit management)
+-- Spell lifecycle
 
 function Cooldown:addSpell(spellId)
-    if self.spells[spellId] then
-        return self.spells[spellId]
+    if self.objects[spellId] then
+        return
     end
-    local entry = {
-        spellId = spellId,
-        trackers = {},
-        object = objects.Object:new(self, { spellId = spellId }),
-        data = getCooldownData(spellId),
-    }
-    self.spells[spellId] = entry
+    local data = getCooldownData(spellId)
+    self:addObject(spellId, data)
 
     -- Register events if this is the first spell
     if not self._eventsRegistered then
@@ -247,75 +250,63 @@ function Cooldown:addSpell(spellId)
         end)
         self._eventsRegistered = true
     end
-
-    return entry
 end
 
 function Cooldown:removeSpell(spellId)
-    self.spells[spellId] = nil
+    self:removeObject(spellId)
     -- Unregister events if no more spells tracked
-    if not next(self.spells) and self._frame then
+    if not next(self.objects) and self._frame then
         self._frame:UnregisterAllEvents()
         self._eventsRegistered = false
     end
 end
 
-function Cooldown:addTracker(spellId, tracker)
-    local entry = self.spells[spellId]
-    if not entry then
-        return
-    end
-    entry.trackers[tracker] = true
-    tracker:add(entry.object)
-end
-
-function Cooldown:removeTracker(spellId, tracker)
-    local entry = self.spells[spellId]
-    if not entry then
-        return
-    end
-    entry.trackers[tracker] = nil
-    tracker:remove(entry.object)
-    if not next(entry.trackers) then
-        self:removeSpell(spellId)
-    end
-end
-
 function Cooldown:track(info)
-    local tracker = objects.ObjectTracker:new(info)
-    tracker.manager = self
-    tracker._trackedSpells = {}
-
     -- Support single spellId or array of spellIds
     local spellIds = info.spellIds or {}
     if info.params and info.params.spellId then
         tinsert(spellIds, info.params.spellId)
     end
 
+    -- Add spell objects first (so they exist when tracker subscribes)
     for _, spellId in ipairs(spellIds) do
-        local entry = self:addSpell(spellId)
-        self:addTracker(spellId, tracker)
+        self:addSpell(spellId)
+    end
+
+    -- Create tracker (parent handles registration + replaying existing objects)
+    local tracker = objects.GlobalType.track(self, info)
+    tracker._trackedSpells = {}
+    for _, spellId in ipairs(spellIds) do
         tracker._trackedSpells[spellId] = true
     end
     return tracker
 end
 
 function Cooldown:untrack(tracker)
+    objects.GlobalType.untrack(self, tracker)
+    -- Remove spells no longer needed by any tracker
     for spellId, _ in pairs(tracker._trackedSpells or {}) do
-        self:removeTracker(spellId, tracker)
+        local stillNeeded = false
+        for otherTracker, _ in pairs(self.trackers) do
+            if otherTracker._trackedSpells and otherTracker._trackedSpells[spellId] then
+                stillNeeded = true
+                break
+            end
+        end
+        if not stillNeeded then
+            self:removeSpell(spellId)
+        end
     end
 end
 
 function Cooldown:onEvent(event)
-    -- Events are supplementary — onUpdate is the main driver
-    -- But we still refresh data on events for responsiveness
     self:refreshAll()
 end
 
 function Cooldown:refreshAll()
-    for spellId, entry in pairs(self.spells) do
+    for spellId, ref in pairs(self.objects) do
         local newData = getCooldownData(spellId)
-        local oldData = entry.data
+        local oldData = ref.data
 
         -- Detect meaningful state changes
         local changed = oldData.isReady ~= newData.isReady
@@ -323,12 +314,13 @@ function Cooldown:refreshAll()
             or oldData.duration ~= newData.duration
             or oldData.startTime ~= newData.startTime
 
-        entry.data = newData
+        -- Update dynamic param before modify so verify sees current state
+        ref.object.params.onCooldown = not newData.isReady
 
         if changed then
-            for tracker, _ in pairs(entry.trackers) do
-                tracker:modify(entry.object)
-            end
+            self:modifyObject(spellId, newData)
+        else
+            ref.data = newData
         end
     end
 end

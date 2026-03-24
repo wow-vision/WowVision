@@ -53,6 +53,12 @@ function Objects:createObjectType(key)
     return class
 end
 
+function Objects:createGlobalType(key)
+    local class = self.GlobalType:new(key)
+    self.types:register(key, class)
+    return class
+end
+
 function Objects:createUnitType(key)
     local class = self.UnitType:new(key)
     self.types:register(key, class)

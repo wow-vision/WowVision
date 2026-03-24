@@ -163,6 +163,90 @@ end
 
 WowVision.objects.ObjectType = ObjectType
 
+-- GlobalType: tracking lifecycle for non-unit object types.
+-- Provides type-wide tracker/object management (like UnitType but without units).
+local GlobalType = WowVision.Class("GlobalType", ObjectType)
+
+function GlobalType:initialize(key)
+    ObjectType.initialize(self, key)
+    self.trackers = {}
+    self.objects = {}
+end
+
+function GlobalType:getObjectParams(key, data)
+    return {}
+end
+
+function GlobalType:getObjectKey(params)
+    return nil
+end
+
+function GlobalType:getCache(params)
+    local key = self:getObjectKey(params)
+    if key then
+        local ref = self.objects[key]
+        if ref then return ref.data end
+    end
+    return nil
+end
+
+function GlobalType:addTracker(tracker)
+    self.trackers[tracker] = true
+    for _, ref in pairs(self.objects) do
+        tracker:add(ref.object)
+    end
+end
+
+function GlobalType:removeTracker(tracker)
+    self.trackers[tracker] = nil
+    for _, ref in pairs(self.objects) do
+        tracker:remove(ref.object)
+    end
+end
+
+function GlobalType:addObject(key, data)
+    if self.objects[key] then return end
+    local ref = {
+        object = WowVision.objects:create(self.key, self:getObjectParams(key, data)),
+        data = data or {},
+    }
+    self.objects[key] = ref
+    for tracker, _ in pairs(self.trackers) do
+        tracker:add(ref.object)
+    end
+end
+
+function GlobalType:modifyObject(key, newData)
+    local ref = self.objects[key]
+    if ref == nil then return end
+    ref.data = newData
+    for tracker, _ in pairs(self.trackers) do
+        tracker:modify(ref.object)
+    end
+end
+
+function GlobalType:removeObject(key)
+    local ref = self.objects[key]
+    if ref == nil then return end
+    self.objects[key] = nil
+    for tracker, _ in pairs(self.trackers) do
+        tracker:remove(ref.object)
+    end
+end
+
+function GlobalType:track(info)
+    local tracker = WowVision.objects.ObjectTracker:new(info)
+    tracker.manager = self
+    self:addTracker(tracker)
+    return tracker
+end
+
+function GlobalType:untrack(tracker)
+    self:removeTracker(tracker)
+end
+
+WowVision.objects.GlobalType = GlobalType
+
 local UnitType = WowVision.Class("UnitType", ObjectType)
 
 function UnitType:initialize(key)
