@@ -233,31 +233,34 @@ end
 
 -- Spell lifecycle
 
+function Cooldown:ensureEvents()
+    if self._eventsRegistered then
+        return
+    end
+    self._frame = CreateFrame("Frame")
+    self._frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+    self._frame:RegisterEvent("SPELL_UPDATE_USABLE")
+    self._frame:RegisterEvent("UNIT_SPELLCAST_SENT")
+    self._frame:SetScript("OnEvent", function(frame, event, ...)
+        self:onEvent(event, ...)
+    end)
+    self._eventsRegistered = true
+    self._pendingCasts = {}
+end
+
 function Cooldown:addSpell(spellId)
     if self.objects[spellId] then
         return
     end
     local data = getCooldownData(spellId)
     self:addObject(spellId, data)
-
-    -- Register events if this is the first spell
-    if not self._eventsRegistered then
-        self._frame = CreateFrame("Frame")
-        self._frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-        self._frame:RegisterEvent("SPELL_UPDATE_USABLE")
-        self._frame:SetScript("OnEvent", function(frame, event)
-            self:onEvent(event)
-        end)
-        self._eventsRegistered = true
-    end
+    self:ensureEvents()
 end
 
 function Cooldown:removeSpell(spellId)
     self:removeObject(spellId)
-    -- Unregister events if no more spells tracked
-    if not next(self.objects) and self._frame then
-        self._frame:UnregisterAllEvents()
-        self._eventsRegistered = false
+    if self._pendingCasts then
+        self._pendingCasts[spellId] = nil
     end
 end
 
@@ -272,6 +275,9 @@ function Cooldown:track(info)
     for _, spellId in ipairs(spellIds) do
         self:addSpell(spellId)
     end
+
+    -- Ensure events are registered for cast discovery even with no initial spells
+    self:ensureEvents()
 
     -- Create tracker (parent handles registration + replaying existing objects)
     local tracker = objects.GlobalType.track(self, info)
@@ -299,7 +305,29 @@ function Cooldown:untrack(tracker)
     end
 end
 
-function Cooldown:onEvent(event)
+function Cooldown:onEvent(event, ...)
+    if event == "UNIT_SPELLCAST_SENT" then
+        local unit, target, castGUID, spellID = ...
+        if unit == "player" and spellID and not self.objects[spellID] then
+            self._pendingCasts[spellID] = true
+        end
+        return
+    end
+
+    -- SPELL_UPDATE_COOLDOWN / SPELL_UPDATE_USABLE
+    -- Promote pending casts that have real cooldowns
+    if self._pendingCasts then
+        for spellId, _ in pairs(self._pendingCasts) do
+            if not self.objects[spellId] then
+                local startTime, duration = GetSpellCooldown(spellId)
+                if duration and duration > 0 and not isGCD(startTime, duration) then
+                    self:addSpell(spellId)
+                end
+            end
+        end
+        self._pendingCasts = {}
+    end
+
     self:refreshAll()
 end
 
