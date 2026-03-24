@@ -10,7 +10,7 @@ local AuraStateRule = WowVision.monitors.ruleRegistry:createType({ key = "AuraSt
 
 AuraStateRule.info:addFields({
     { key = "spell", type = "Spell", persist = true, label = L["Spell"], sortPriority = 2 },
-    { key = "playerOnly", type = "Bool", persist = true, default = true, label = L["Player Only"], sortPriority = 2 },
+    { key = "playerOnly", type = "Bool", persist = true, default = true, label = L["Applied by Player"], sortPriority = 2 },
     { key = "pandemicThreshold", type = "Number", persist = true, default = 30, label = L["Pandemic Window (%)"], sortPriority = 2 },
     { key = "expiringThreshold", type = "Number", persist = true, default = 5, label = L["Expiry Threshold (seconds)"], sortPriority = 2 },
     {
