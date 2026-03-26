@@ -17,7 +17,8 @@
 
 - [Architecture](./developer/architecture.md)
 - [Modules](./developer/modules.md)
-- [UI System](./developer/ui-system.md)
 - [InfoClass & Fields](./developer/infoclass.md)
 - [Object Tracking](./developer/object-tracking.md)
+- [Monitors](./developer/monitors.md)
 - [Alerts & Outputs](./developer/alerts.md)
+- [UI System](./developer/ui-system.md)
