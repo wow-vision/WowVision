@@ -35,4 +35,4 @@ This version also fixes numerous bugs and adds a large number of quality of life
 * Fixed a bug in the equipment list where the ammo slot would always be labeled "Ammo" whether or not an item was in the ammo slot.
 
 ### Mists of Pandaria Classic
-* Fixed an issue where the panel containing the info and buttons for the currently selected quest would not update when you clicked on a quest. Blizzard why do you like arbitrarily changing when events fire so much?
+* Fixed an issue in the quest log where the panel containing the info and buttons for the currently selected quest would not update when you clicked on a quest. Blizzard why do you like arbitrarily changing when events fire so much?
