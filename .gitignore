@@ -45,7 +45,6 @@ release.sh
 
 # Claude files
 .claude/
-**/CLAUDE.md
 
 # VS Code
 .vscode/
