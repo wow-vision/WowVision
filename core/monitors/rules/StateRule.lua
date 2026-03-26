@@ -61,7 +61,14 @@ end
 -- Called every frame, not just on state transitions
 function StateRule:updateResolved(stateKey)
     local newResolved = self:resolveOutputStates(stateKey)
-    local previousResolved = self._resolvedStates or {}
+    local previousResolved = self._resolvedStates
+
+    -- First-ever resolve: establish state silently without firing
+    if previousResolved == nil then
+        self._resolvedStates = newResolved
+        return
+    end
+
     local message = { text = stateKey, state = stateKey, rule = self }
 
     for outputKey, resolvedState in pairs(newResolved) do
@@ -91,7 +98,7 @@ end
 
 function StateRule:reset()
     self._currentState = nil
-    self._resolvedStates = nil
+    self._resolvedStates = {}
 end
 
 WowVision.monitors.StateRule = StateRule
