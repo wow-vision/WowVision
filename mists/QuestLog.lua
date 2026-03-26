@@ -3,11 +3,7 @@ local L = module.L
 module:setLabel(L["Quest Log"])
 local gen = module:hasUI()
 
-gen:Element("QuestLog", {
-    regenerateOn = {
-        events = { "QUEST_LOG_UPDATE" },
-    },
-}, function(props)
+gen:Element("QuestLog", function(props)
     return {
         "Panel",
         label = L["Quest Log"],
@@ -74,14 +70,7 @@ gen:Element("QuestLog/QuestList", function(props)
     }
 end)
 
-gen:Element("QuestLog/QuestDetails", {
-    regenerateOn = {
-        events = { "QUEST_LOG_UPDATE", "QUEST_WATCH_UPDATE", "UNIT_QUEST_LOG_CHANGED" },
-        values = function(props)
-            return { GetQuestLogSelection() }
-        end,
-    },
-}, function(props)
+gen:Element("QuestLog/QuestDetails", function(props)
     local frame = props.frame
     if not frame:IsShown() or not frame:IsVisible() then
         return nil
@@ -99,11 +88,7 @@ gen:Element("QuestLog/QuestDetails", {
     return result
 end)
 
-gen:Element("QuestLog/QuestObjectives", {
-    regenerateOn = {
-        events = { "QUEST_LOG_UPDATE", "QUEST_WATCH_UPDATE" },
-    },
-}, function(props)
+gen:Element("QuestLog/QuestObjectives", function(props)
     local frame = props.frame
     local result = { "List", label = L["Objectives"], children = {} }
     for i = 1, #frame.Objectives do
