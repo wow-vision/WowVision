@@ -23,13 +23,30 @@ end
 
 gen:Element("lfg", function(props)
     local result = { "Panel", label = L["Looking for Group"], wrap = true, children = {} }
+    tinsert(result.children, { "lfg/Tabs" })
     local tab = PanelTemplates_GetSelectedTab(LFGParentFrame)
     if tab == 1 then
-        tinsert(result.children, { "lfg/Listing" })
+        if LFGListingFrameLockedView:IsShown() then
+            tinsert(result.children, { "lfg/LockedView" })
+        else
+            if LFGListingFrameActivityView:IsShown() then
+                tinsert(result.children, { "lfg/ActivityList" })
+                tinsert(result.children, { "ProxyButton", frame = LFGListingFrameBackButton })
+            else
+                tinsert(result.children, { "lfg/CategoryList" })
+            end
+            tinsert(result.children, { "lfg/Roles" })
+            tinsert(result.children, { "lfg/Comment" })
+            tinsert(result.children, { "ProxyButton", frame = LFGListingFramePostButton })
+        end
     elseif tab == 2 then
-        tinsert(result.children, { "lfg/Browse" })
+        tinsert(result.children, { "ProxyDropdownButton", frame = LFGBrowseFrameCategoryDropdown })
+        tinsert(result.children, { "ProxyDropdownButton", frame = LFGBrowseFrameActivityDropdown })
+        tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameRefreshButton })
+        tinsert(result.children, { "lfg/BrowseResults" })
+        tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameSendMessageButton })
+        tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameGroupInviteButton })
     end
-    tinsert(result.children, { "lfg/Tabs" })
     return result
 end)
 
@@ -49,42 +66,21 @@ gen:Element("lfg/Tabs", function(props)
     return result
 end)
 
-gen:Element("lfg/Listing", function(props)
-    if LFGListingFrameLockedView:IsShown() then
-        local text = ""
-        local regions = { LFGListingFrameLockedView:GetRegions() }
-        for _, region in ipairs(regions) do
-            if region:GetObjectType() == "FontString" and region:IsShown() then
-                local str = region:GetText()
-                if str and str ~= "" then
-                    if text ~= "" then
-                        text = text .. " "
-                    end
-                    text = text .. str
+gen:Element("lfg/LockedView", function(props)
+    local text = ""
+    local regions = { LFGListingFrameLockedView:GetRegions() }
+    for _, region in ipairs(regions) do
+        if region:GetObjectType() == "FontString" and region:IsShown() then
+            local str = region:GetText()
+            if str and str ~= "" then
+                if text ~= "" then
+                    text = text .. " "
                 end
+                text = text .. str
             end
         end
-        return { "Panel", children = {
-            { "Text", text = text },
-        }}
     end
-
-    local result = { "List", children = {} }
-
-    tinsert(result.children, { "lfg/Roles" })
-    tinsert(result.children, { "lfg/NewPlayerFriendly" })
-
-    if LFGListingFrameActivityView:IsShown() then
-        tinsert(result.children, { "lfg/ActivityList" })
-        tinsert(result.children, { "ProxyButton", frame = LFGListingFrameBackButton })
-    else
-        tinsert(result.children, { "lfg/CategoryList" })
-    end
-
-    tinsert(result.children, { "lfg/Comment" })
-    tinsert(result.children, { "ProxyButton", frame = LFGListingFramePostButton })
-
-    return result
+    return { "Text", text = text }
 end)
 
 gen:Element("lfg/Roles", function(props)
@@ -113,16 +109,14 @@ gen:Element("lfg/Roles", function(props)
         })
     end
 
+    local newPlayerFriendly = findCheckButton(LFGListingFrameNewPlayerFriendlyButton)
+    if newPlayerFriendly then
+        tinsert(result.children, { "ProxyCheckButton", frame = newPlayerFriendly, label = L["New Player Friendly"] })
+    end
+
     return result
 end)
 
-gen:Element("lfg/NewPlayerFriendly", function(props)
-    local check = findCheckButton(LFGListingFrameNewPlayerFriendlyButton)
-    if check then
-        return { "ProxyCheckButton", frame = check, label = L["New Player Friendly"] }
-    end
-    return nil
-end)
 
 gen:Element("lfg/CategoryList", function(props)
     local result = { "List", label = L["Categories"], children = {} }
@@ -172,19 +166,6 @@ gen:Element("lfg/Comment", function(props)
     return nil
 end)
 
-gen:Element("lfg/Browse", function(props)
-    return {
-        "List",
-        children = {
-            { "ProxyDropdownButton", frame = LFGBrowseFrameCategoryDropdown },
-            { "ProxyDropdownButton", frame = LFGBrowseFrameActivityDropdown },
-            { "ProxyButton", frame = LFGBrowseFrameRefreshButton },
-            { "lfg/BrowseResults" },
-            { "ProxyButton", frame = LFGBrowseFrameSendMessageButton },
-            { "ProxyButton", frame = LFGBrowseFrameGroupInviteButton },
-        },
-    }
-end)
 
 local function BrowseResults_getElement(self, button)
     return { "ProxyButton", frame = button }
