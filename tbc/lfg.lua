@@ -168,6 +168,34 @@ end)
 
 
 local function getBrowseResultLabel(button)
+    local elemData = button.GetElementData and button:GetElementData()
+    if elemData and elemData.resultID then
+        local ok, info = pcall(C_LFGList.GetSearchResultInfo, elemData.resultID)
+        if ok and info then
+            local parts = {}
+            if info.leaderName and info.leaderName ~= "" then
+                tinsert(parts, info.leaderName)
+            end
+            local actInfo
+            if info.activityIDs and info.activityIDs[1] then
+                local aOk, aResult = pcall(C_LFGList.GetActivityInfoTable, info.activityIDs[1])
+                if aOk then actInfo = aResult end
+            end
+            if actInfo and actInfo.shortName then
+                tinsert(parts, actInfo.shortName)
+            end
+            if info.numMembers then
+                local maxPlayers = actInfo and actInfo.maxNumPlayers and ("/" .. actInfo.maxNumPlayers) or ""
+                tinsert(parts, info.numMembers .. maxPlayers .. " " .. L["Members"])
+            end
+            if info.comment and info.comment ~= "" then
+                tinsert(parts, info.comment)
+            end
+            if #parts > 0 then
+                return table.concat(parts, " - ")
+            end
+        end
+    end
     local parts = {}
     local regions = { button:GetRegions() }
     for _, region in ipairs(regions) do
