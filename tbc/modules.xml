@@ -6,5 +6,6 @@
   <Script file="spellbook.lua" />
   <Script file="tradeskill.lua" />
   <Include file="character\modules.xml" />
+  <Script file="socketing.lua" />
 
 </Ui>
