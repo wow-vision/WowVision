@@ -42,7 +42,7 @@ gen:Element("lfg", function(props)
     elseif tab == 2 then
         tinsert(result.children, { "ProxyDropdownButton", frame = LFGBrowseFrameCategoryDropdown })
         tinsert(result.children, { "ProxyDropdownButton", frame = LFGBrowseFrameActivityDropdown })
-        tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameRefreshButton })
+        tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameRefreshButton, label = L["Search"] })
         tinsert(result.children, { "lfg/BrowseResults" })
         tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameSendMessageButton })
         tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameGroupInviteButton })
@@ -167,8 +167,22 @@ gen:Element("lfg/Comment", function(props)
 end)
 
 
+local function getBrowseResultLabel(button)
+    local parts = {}
+    local regions = { button:GetRegions() }
+    for _, region in ipairs(regions) do
+        if region:GetObjectType() == "FontString" and region:IsShown() then
+            local text = region:GetText()
+            if text and text ~= "" then
+                tinsert(parts, text)
+            end
+        end
+    end
+    return table.concat(parts, " - ")
+end
+
 local function BrowseResults_getElement(self, button)
-    return { "ProxyButton", frame = button }
+    return { "ProxyButton", frame = button, label = getBrowseResultLabel(button) }
 end
 
 gen:Element("lfg/BrowseResults", function(props)
