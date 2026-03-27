@@ -11,11 +11,30 @@ function DropdownGeneratorPanel:initialize()
 end
 
 function DropdownGeneratorPanel:generateButton(frame, regions)
-    return { "ProxyButton", frame = frame, dropdown = true }
+    local label
+    local hasCheckbox = false
+    for _, region in ipairs(regions) do
+        if region:GetObjectType() == "FontString" and not label then
+            label = region:GetText()
+        elseif region:GetObjectType() == "Texture" and region:GetTexture() == 136810 then
+            hasCheckbox = true
+        end
+    end
+    if hasCheckbox then
+        return { "ProxyCheckButton", frame = frame, dropdown = true, label = label }
+    end
+    return { "ProxyButton", frame = frame, dropdown = true, label = label }
 end
 
 function DropdownGeneratorPanel:generateCheckbox(frame, regions)
-    return { "ProxyCheckButton", frame = frame, dropdown = true }
+    local label
+    for _, region in ipairs(regions) do
+        if region:GetObjectType() == "FontString" then
+            label = region:GetText()
+            break
+        end
+    end
+    return { "ProxyCheckButton", frame = frame, dropdown = true, label = label }
 end
 
 function DropdownGeneratorPanel:generateTitle(frame, regions)

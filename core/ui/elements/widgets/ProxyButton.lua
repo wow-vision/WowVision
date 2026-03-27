@@ -35,6 +35,9 @@ end
 
 function ProxyButton:getLabel()
     if self.dropdown and self.frame then
+        if self.label and self.label ~= "" then
+            return self.label
+        end
         local regions = { self.frame:GetRegions() }
         if regions[1]:GetObjectType() == "Texture" then
             if regions[1]:GetTexture() == 130940 then

@@ -28,7 +28,13 @@ function ProxyCheckButton:getValue()
     end
     if self.dropdown then
         local regions = { self.frame:GetRegions() }
-        return regions[2]:GetAtlas() == "common-dropdown-icon-checkmark-yellow-classic"
+        for _, region in ipairs(regions) do
+            local atlas = region:GetObjectType() == "Texture" and region:GetAtlas()
+            if atlas and atlas:find("common-dropdown-icon-checkmark", 1, true) then
+                return true
+            end
+        end
+        return false
     else
         return self.frame:GetChecked()
     end
@@ -36,8 +42,15 @@ end
 
 function ProxyCheckButton:getLabel()
     if self.dropdown and self.frame then
+        if self.label and self.label ~= "" then
+            return self.label
+        end
         local regions = { self.frame:GetRegions() }
-        return regions[3]:GetText()
+        for _, region in ipairs(regions) do
+            if region:GetObjectType() == "FontString" then
+                return region:GetText()
+            end
+        end
     end
     return parent.getLabel(self)
 end
