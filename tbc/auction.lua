@@ -3,6 +3,10 @@ local L = module.L
 module:setLabel(L["Auction House"])
 local gen = module:hasUI()
 
+-- Alert for item selection feedback
+local selectAlert = module:addAlert({ key = "itemSelected", label = L["Item Selected"] })
+selectAlert:addOutput({ type = "TTS", key = "tts", label = L["Item Selected"] })
+
 -- Button counts per tab (matching Blizzard's fixed button arrays)
 local NUM_BROWSE_BUTTONS = 8
 local NUM_BID_BUTTONS = 9
@@ -209,6 +213,21 @@ local function getBrowseNumEntries()
     return numBatch or 0
 end
 
+local hookedBrowseButtons = {}
+local function hookBrowseButton(button)
+    if hookedBrowseButtons[button] then return end
+    hookedBrowseButtons[button] = true
+    button:HookScript("OnClick", function()
+        local selected = GetSelectedAuctionItem("list")
+        if selected and selected > 0 then
+            local name = GetAuctionItemInfo("list", selected)
+            if name then
+                selectAlert:fire({ text = L["Selected"] .. ": " .. name })
+            end
+        end
+    end)
+end
+
 local function getBrowseElement(self, button)
     local offset = FauxScrollFrame_GetOffset(BrowseScrollFrame) or 0
     local index = button:GetID() + offset
@@ -219,6 +238,8 @@ local function getBrowseElement(self, button)
     if not name then
         return nil
     end
+
+    hookBrowseButton(button)
 
     local label = name
     if count and count > 1 then
@@ -292,10 +313,10 @@ end)
 gen:Element("auction/BrowsePageControls", function(props)
     local children = {}
     if BrowsePrevPageButton:IsShown() and BrowsePrevPageButton:IsEnabled() then
-        tinsert(children, { "ProxyButton", frame = BrowsePrevPageButton })
+        tinsert(children, { "ProxyButton", frame = BrowsePrevPageButton, label = L["Previous Page"] })
     end
     if BrowseNextPageButton:IsShown() and BrowseNextPageButton:IsEnabled() then
-        tinsert(children, { "ProxyButton", frame = BrowseNextPageButton })
+        tinsert(children, { "ProxyButton", frame = BrowseNextPageButton, label = L["Next Page"] })
     end
     if #children == 0 then
         return nil
@@ -628,9 +649,9 @@ gen:Element("auction/CreateAuction", function(props)
         "List",
         label = L["Duration"],
         children = {
-            { "ProxyCheckButton", frame = AuctionsShortAuctionButton },
-            { "ProxyCheckButton", frame = AuctionsMediumAuctionButton },
-            { "ProxyCheckButton", frame = AuctionsLongAuctionButton },
+            { "ProxyCheckButton", frame = AuctionsShortAuctionButton, label = L["12 Hours"] },
+            { "ProxyCheckButton", frame = AuctionsMediumAuctionButton, label = L["24 Hours"] },
+            { "ProxyCheckButton", frame = AuctionsLongAuctionButton, label = L["48 Hours"] },
         },
     })
 
