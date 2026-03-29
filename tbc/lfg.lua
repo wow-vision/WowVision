@@ -219,7 +219,10 @@ local function getBrowseResultLabel(button)
             end
         end
     end
-    return table.concat(parts, " - ")
+    if #parts > 0 then
+        return table.concat(parts, " - ")
+    end
+    return GROUP or "Group"
 end
 
 local function BrowseResults_getElement(self, button)
