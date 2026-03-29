@@ -50,7 +50,13 @@ gen:Element("lfg", function(props)
     return result
 end)
 
-gen:Element("lfg/Tabs", function(props)
+gen:Element("lfg/Tabs", {
+    regenerateOn = {
+        values = function(props)
+            return { selectedTab = PanelTemplates_GetSelectedTab(LFGParentFrame) }
+        end,
+    },
+}, function(props)
     local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
     for i = 1, 2 do
         local tab = _G["LFGParentFrameTab" .. i]
@@ -62,6 +68,9 @@ gen:Element("lfg/Tabs", function(props)
                 selected = PanelTemplates_GetSelectedTab(LFGParentFrame) == i,
             })
         end
+    end
+    if #result.children == 0 then
+        return nil
     end
     return result
 end)
@@ -114,9 +123,11 @@ gen:Element("lfg/Roles", function(props)
         tinsert(result.children, { "ProxyCheckButton", frame = newPlayerFriendly, label = L["New Player Friendly"] })
     end
 
+    if #result.children == 0 then
+        return nil
+    end
     return result
 end)
-
 
 gen:Element("lfg/CategoryList", function(props)
     local result = { "List", label = L["Categories"], children = {} }
@@ -125,6 +136,9 @@ gen:Element("lfg/CategoryList", function(props)
         if child:IsShown() and child:GetObjectType() == "Button" then
             tinsert(result.children, { "ProxyButton", frame = child })
         end
+    end
+    if #result.children == 0 then
+        return nil
     end
     return result
 end)
@@ -137,7 +151,7 @@ local function getActivityLabel(button)
             return data.name
         end
     end
-    return ""
+    return nil
 end
 
 local function ActivityList_getElement(self, button)
@@ -165,7 +179,6 @@ gen:Element("lfg/Comment", function(props)
     end
     return nil
 end)
-
 
 local function getBrowseResultLabel(button)
     local elemData = button.GetElementData and button:GetElementData()
