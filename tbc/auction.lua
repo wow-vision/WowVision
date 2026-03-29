@@ -628,15 +628,27 @@ end)
 gen:Element("auction/CreateAuction", function(props)
     local children = {}
 
-    -- Item placement button
-    tinsert(children, { "ProxyButton", frame = AuctionsItemButton, label = L["Place Item"] })
+    -- Item placement button (shows item name + stack size being sold)
+    local itemLabel = L["Place Item Here"]
+    local sellName, sellTexture, sellCount = GetAuctionSellItemInfo()
+    if sellName then
+        local stackSize = tonumber(AuctionsStackSizeEntry:GetText()) or sellCount
+        itemLabel = sellName
+        if stackSize and stackSize > 1 then
+            itemLabel = itemLabel .. " x" .. stackSize
+        end
+    end
+    tinsert(children, { "ProxyButton", frame = AuctionsItemButton, label = itemLabel })
 
-    -- Stack size and number of stacks (only shown when an item is placed)
-    if AuctionsStackSizeEntry:IsShown() then
+    -- Stack size and number of stacks (Blizzard hides these in TBC Anniversary
+    -- but the backend logic still populates them; force-show so they can receive focus)
+    if sellName then
+        AuctionsStackSizeEntry:Show()
+        AuctionsStackSizeMaxButton:Show()
+        AuctionsNumStacksEntry:Show()
+        AuctionsNumStacksMaxButton:Show()
         tinsert(children, { "ProxyEditBox", frame = AuctionsStackSizeEntry, label = L["Stack Size"] })
         tinsert(children, { "ProxyButton", frame = AuctionsStackSizeMaxButton })
-    end
-    if AuctionsNumStacksEntry:IsShown() then
         tinsert(children, { "ProxyEditBox", frame = AuctionsNumStacksEntry, label = L["Number of Stacks"] })
         tinsert(children, { "ProxyButton", frame = AuctionsNumStacksMaxButton })
     end
@@ -658,8 +670,8 @@ gen:Element("auction/CreateAuction", function(props)
     -- Buyout price
     tinsert(children, { "auction/MoneyInput", frame = BuyoutPrice, label = L["Buyout Price"] })
 
-    -- Deposit (only shown when an item is placed)
-    if AuctionsStackSizeEntry:IsShown() then
+    -- Deposit (shown when an item is placed)
+    if sellName then
         tinsert(children, { "money/MoneyFrame", frame = AuctionsDepositMoneyFrame, label = L["Deposit"] })
     end
 
