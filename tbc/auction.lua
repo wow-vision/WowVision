@@ -44,6 +44,7 @@ gen:Element("auction", function(props)
     elseif AuctionFrameAuctions:IsShown() then
         tinsert(children, { "auction/AuctionsTab" })
     end
+    tinsert(children, { "money/MoneyFrame", frame = AuctionFrameMoneyFrame, label = L["Your Gold"] })
     return {
         "Panel",
         label = L["Auction House"],
@@ -116,6 +117,8 @@ gen:Element("auction/BrowseTab", function(props)
         children = {
             { "auction/Categories" },
             { "auction/SearchFilters" },
+            { "auction/BrowseSortHeaders" },
+            { "auction/BrowsePriceOptions" },
             { "auction/BrowseResults" },
             { "auction/BrowsePageControls" },
             { "auction/BrowseActions" },
@@ -150,8 +153,41 @@ gen:Element("auction/SearchFilters", function(props)
             { "ProxyEditBox", frame = BrowseMaxLevel, label = L["Maximum Level"] },
             { "ProxyDropdownButton", frame = BrowseDropDown or BrowseDropdown },
             { "ProxyCheckButton", frame = IsUsableCheckButton },
+            { "ProxyCheckButton", frame = ShowOnPlayerCheckButton },
             { "ProxyButton", frame = BrowseSearchButton },
             { "ProxyButton", frame = BrowseResetButton },
+        },
+    }
+end)
+
+-- Browse sort headers
+gen:Element("auction/BrowseSortHeaders", function(props)
+    local children = {}
+    local buttons = { BrowseQualitySort, BrowseLevelSort, BrowseDurationSort, BrowseHighBidderSort, BrowseCurrentBidSort }
+    for _, button in ipairs(buttons) do
+        if button and button:IsShown() then
+            tinsert(children, { "ProxyButton", frame = button })
+        end
+    end
+    if #children == 0 then
+        return nil
+    end
+    return { "List", label = L["Sort"], direction = "horizontal", children = children }
+end)
+
+-- Browse price options (shown when price options frame is open)
+gen:Element("auction/BrowsePriceOptions", function(props)
+    if not BrowsePriceOptionsFrame:IsShown() then
+        return nil
+    end
+    return {
+        "List",
+        label = L["Price Options"],
+        children = {
+            { "ProxyCheckButton", frame = SortByBidPriceButton },
+            { "ProxyCheckButton", frame = SortByBuyoutPriceButton },
+            { "ProxyCheckButton", frame = SortByTotalPriceButton },
+            { "ProxyCheckButton", frame = SortByUnitPriceButton },
         },
     }
 end)
@@ -274,15 +310,19 @@ end)
 
 -- Bid/buyout actions on selected browse item
 gen:Element("auction/BrowseActions", function(props)
+    local children = {
+        { "auction/MoneyInput", frame = BrowseBidPrice, label = L["Bid Price"] },
+    }
+    if BrowseBuyoutPrice:IsShown() then
+        tinsert(children, { "money/MoneyFrame", frame = BrowseBuyoutPrice, label = L["Buyout Price"] })
+    end
+    tinsert(children, { "ProxyButton", frame = BrowseBidButton })
+    tinsert(children, { "ProxyButton", frame = BrowseBuyoutButton })
     return {
         "Panel",
         layout = true,
         shouldAnnounce = false,
-        children = {
-            { "auction/MoneyInput", frame = BrowseBidPrice, label = L["Bid Price"] },
-            { "ProxyButton", frame = BrowseBidButton },
-            { "ProxyButton", frame = BrowseBuyoutButton },
-        },
+        children = children,
     }
 end)
 
@@ -296,10 +336,26 @@ gen:Element("auction/BidsTab", function(props)
         layout = true,
         shouldAnnounce = false,
         children = {
+            { "auction/BidSortHeaders" },
             { "auction/BidResults" },
             { "auction/BidActions" },
         },
     }
+end)
+
+-- Bid sort headers
+gen:Element("auction/BidSortHeaders", function(props)
+    local children = {}
+    local buttons = { BidQualitySort, BidLevelSort, BidDurationSort, BidBuyoutSort, BidStatusSort, BidBidSort }
+    for _, button in ipairs(buttons) do
+        if button and button:IsShown() then
+            tinsert(children, { "ProxyButton", frame = button })
+        end
+    end
+    if #children == 0 then
+        return nil
+    end
+    return { "List", label = L["Sort"], direction = "horizontal", children = children }
 end)
 
 -- Bid list helpers
@@ -417,11 +473,27 @@ gen:Element("auction/AuctionsTab", function(props)
         layout = true,
         shouldAnnounce = false,
         children = {
+            { "auction/AuctionsSortHeaders" },
             { "auction/MyAuctionsList" },
             { "ProxyButton", frame = AuctionsCancelAuctionButton },
             { "auction/CreateAuction" },
         },
     }
+end)
+
+-- Auctions sort headers
+gen:Element("auction/AuctionsSortHeaders", function(props)
+    local children = {}
+    local buttons = { AuctionsQualitySort, AuctionsDurationSort, AuctionsHighBidderSort, AuctionsBidSort }
+    for _, button in ipairs(buttons) do
+        if button and button:IsShown() then
+            tinsert(children, { "ProxyButton", frame = button })
+        end
+    end
+    if #children == 0 then
+        return nil
+    end
+    return { "List", label = L["Sort"], direction = "horizontal", children = children }
 end)
 
 -- My auctions list helpers
@@ -544,15 +616,23 @@ gen:Element("auction/CreateAuction", function(props)
     tinsert(children, { "auction/MoneyInput", frame = StartPrice, label = L["Starting Price"] })
 
     -- Duration radio buttons
-    tinsert(children, { "ProxyCheckButton", frame = AuctionsShortAuctionButton })
-    tinsert(children, { "ProxyCheckButton", frame = AuctionsMediumAuctionButton })
-    tinsert(children, { "ProxyCheckButton", frame = AuctionsLongAuctionButton })
+    tinsert(children, {
+        "List",
+        label = L["Duration"],
+        children = {
+            { "ProxyCheckButton", frame = AuctionsShortAuctionButton },
+            { "ProxyCheckButton", frame = AuctionsMediumAuctionButton },
+            { "ProxyCheckButton", frame = AuctionsLongAuctionButton },
+        },
+    })
 
     -- Buyout price
     tinsert(children, { "auction/MoneyInput", frame = BuyoutPrice, label = L["Buyout Price"] })
 
-    -- Deposit
-    tinsert(children, { "money/MoneyFrame", frame = AuctionsDepositMoneyFrame, label = L["Deposit"] })
+    -- Deposit (only shown when an item is placed)
+    if AuctionsStackSizeEntry:IsShown() then
+        tinsert(children, { "money/MoneyFrame", frame = AuctionsDepositMoneyFrame, label = L["Deposit"] })
+    end
 
     -- Create auction button
     tinsert(children, { "ProxyButton", frame = AuctionsCreateAuctionButton })
