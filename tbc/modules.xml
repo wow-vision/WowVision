@@ -7,5 +7,6 @@
   <Script file="tradeskill.lua" />
   <Include file="character\modules.xml" />
   <Script file="socketing.lua" />
+  <Script file="auction.lua" />
 
 </Ui>
