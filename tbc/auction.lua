@@ -291,10 +291,10 @@ end)
 -- Pagination
 gen:Element("auction/BrowsePageControls", function(props)
     local children = {}
-    if BrowsePrevPageButton:IsShown() then
+    if BrowsePrevPageButton:IsShown() and BrowsePrevPageButton:IsEnabled() then
         tinsert(children, { "ProxyButton", frame = BrowsePrevPageButton })
     end
-    if BrowseNextPageButton:IsShown() then
+    if BrowseNextPageButton:IsShown() and BrowseNextPageButton:IsEnabled() then
         tinsert(children, { "ProxyButton", frame = BrowseNextPageButton })
     end
     if #children == 0 then
@@ -308,8 +308,12 @@ gen:Element("auction/BrowsePageControls", function(props)
     }
 end)
 
--- Bid/buyout actions on selected browse item
+-- Bid/buyout actions on selected browse item (only when an item is selected)
 gen:Element("auction/BrowseActions", function(props)
+    local selected = GetSelectedAuctionItem("list")
+    if not selected or selected == 0 then
+        return nil
+    end
     local children = {
         { "auction/MoneyInput", frame = BrowseBidPrice, label = L["Bid Price"] },
     }
@@ -449,8 +453,12 @@ gen:Element("auction/BidResults", function(props)
     return { "List", label = L["Bids"], children = children }
 end)
 
--- Bid actions
+-- Bid actions (only when an item is selected)
 gen:Element("auction/BidActions", function(props)
+    local selected = GetSelectedAuctionItem("bidder")
+    if not selected or selected == 0 then
+        return nil
+    end
     return {
         "Panel",
         layout = true,
