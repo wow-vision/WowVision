@@ -34,6 +34,110 @@ local function formatMoney(copper)
 end
 
 ------------------------------------------------------------
+-- AuctionSortButton element type
+------------------------------------------------------------
+
+local function getCurrentSort(sortTable)
+    local column, reversed = GetAuctionSort(sortTable, 1)
+    -- Normalize bid-related columns to "bid" for matching
+    if column == "totalbuyout" or column == "unitbid" or column == "unitprice" then
+        column = "bid"
+    end
+    return column, reversed -- reversed: true=descending, false=ascending
+end
+
+local AuctionSortButton, widgetParent = WowVision.ui:CreateElementType("AuctionSortButton", "Widget")
+
+AuctionSortButton.info:addFields({
+    { key = "sortTable", default = nil },
+    { key = "sortColumn", default = nil },
+    { key = "frame", default = nil, compareMode = "direct" },
+})
+
+AuctionSortButton.info:updateFields({
+    { key = "displayType", default = "Sort Column" },
+})
+
+function AuctionSortButton:initialize()
+    widgetParent.initialize(self)
+    self._pendingDescending = nil
+end
+
+function AuctionSortButton:setupUniqueBindings()
+    self:addBinding({
+        binding = "leftClick",
+        type = "Function",
+        interruptSpeech = true,
+        func = function()
+            self:click()
+        end,
+    })
+end
+
+function AuctionSortButton:getLabel()
+    if self.frame and self.frame.GetText then
+        local text = self.frame:GetText()
+        if text and text ~= "" then
+            return text
+        end
+    end
+    return self.label
+end
+
+function AuctionSortButton:onFocus()
+    widgetParent.onFocus(self)
+    local currentColumn, reversed = getCurrentSort(self.sortTable)
+    if currentColumn == self.sortColumn then
+        self._pendingDescending = reversed
+    else
+        self._pendingDescending = false
+    end
+end
+
+function AuctionSortButton:onUnfocus()
+    widgetParent.onUnfocus(self)
+    self._pendingDescending = nil
+end
+
+function AuctionSortButton:getExtras()
+    local extras = {}
+    local directionStr
+    if self._pendingDescending then
+        directionStr = self.L["Descending"]
+    else
+        directionStr = self.L["Ascending"]
+    end
+    tinsert(extras, directionStr)
+    local currentColumn = getCurrentSort(self.sortTable)
+    if currentColumn == self.sortColumn then
+        tinsert(extras, self.L["Active"])
+    end
+    return extras
+end
+
+function AuctionSortButton:onBindingPressed(binding)
+    if binding.key == "up" then
+        self._pendingDescending = false
+        WowVision:speak(self.L["Ascending"])
+        return true
+    elseif binding.key == "down" then
+        self._pendingDescending = true
+        WowVision:speak(self.L["Descending"])
+        return true
+    end
+    return false
+end
+
+function AuctionSortButton:onClick()
+    AuctionFrame_SetSort(self.sortTable, self.sortColumn, self._pendingDescending)
+    if self.sortTable == "list" then
+        AuctionFrameBrowse_Search()
+    else
+        SortAuctionApplySort(self.sortTable)
+    end
+end
+
+------------------------------------------------------------
 -- Root element
 ------------------------------------------------------------
 
@@ -167,10 +271,16 @@ end)
 -- Browse sort headers
 gen:Element("auction/BrowseSortHeaders", function(props)
     local children = {}
-    local buttons = { BrowseQualitySort, BrowseLevelSort, BrowseDurationSort, BrowseHighBidderSort, BrowseCurrentBidSort }
-    for _, button in ipairs(buttons) do
-        if button and button:IsShown() then
-            tinsert(children, { "ProxyButton", frame = button })
+    local buttons = {
+        { frame = BrowseQualitySort, column = "quality" },
+        { frame = BrowseLevelSort, column = "level" },
+        { frame = BrowseDurationSort, column = "duration" },
+        { frame = BrowseHighBidderSort, column = "seller" },
+        { frame = BrowseCurrentBidSort, column = "bid" },
+    }
+    for _, btn in ipairs(buttons) do
+        if btn.frame and btn.frame:IsShown() then
+            tinsert(children, { "AuctionSortButton", frame = btn.frame, sortTable = "list", sortColumn = btn.column })
         end
     end
     if #children == 0 then
@@ -371,10 +481,17 @@ end)
 -- Bid sort headers
 gen:Element("auction/BidSortHeaders", function(props)
     local children = {}
-    local buttons = { BidQualitySort, BidLevelSort, BidDurationSort, BidBuyoutSort, BidStatusSort, BidBidSort }
-    for _, button in ipairs(buttons) do
-        if button and button:IsShown() then
-            tinsert(children, { "ProxyButton", frame = button })
+    local buttons = {
+        { frame = BidQualitySort, column = "quality" },
+        { frame = BidLevelSort, column = "level" },
+        { frame = BidDurationSort, column = "duration" },
+        { frame = BidBuyoutSort, column = "buyout" },
+        { frame = BidStatusSort, column = "status" },
+        { frame = BidBidSort, column = "bid" },
+    }
+    for _, btn in ipairs(buttons) do
+        if btn.frame and btn.frame:IsShown() then
+            tinsert(children, { "AuctionSortButton", frame = btn.frame, sortTable = "bidder", sortColumn = btn.column })
         end
     end
     if #children == 0 then
@@ -513,10 +630,15 @@ end)
 -- Auctions sort headers
 gen:Element("auction/AuctionsSortHeaders", function(props)
     local children = {}
-    local buttons = { AuctionsQualitySort, AuctionsDurationSort, AuctionsHighBidderSort, AuctionsBidSort }
-    for _, button in ipairs(buttons) do
-        if button and button:IsShown() then
-            tinsert(children, { "ProxyButton", frame = button })
+    local buttons = {
+        { frame = AuctionsQualitySort, column = "quality" },
+        { frame = AuctionsDurationSort, column = "duration" },
+        { frame = AuctionsHighBidderSort, column = "status" },
+        { frame = AuctionsBidSort, column = "bid" },
+    }
+    for _, btn in ipairs(buttons) do
+        if btn.frame and btn.frame:IsShown() then
+            tinsert(children, { "AuctionSortButton", frame = btn.frame, sortTable = "owner", sortColumn = btn.column })
         end
     end
     if #children == 0 then
