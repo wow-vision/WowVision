@@ -41,6 +41,83 @@ local function formatMoney(copper)
 end
 
 ------------------------------------------------------------
+-- Shared factories for repeated scroll frame patterns
+------------------------------------------------------------
+
+-- Creates a gen:Element callback for ProxyFauxScrollFrame with List fallback.
+-- config: { buttonPrefix, numButtons, listType, scrollFrameName, label,
+--           updateFunctionName, getElement, emptyElement }
+local function makeResultsElement(config)
+    local cachedButtons
+    local function getButtons()
+        if not cachedButtons then
+            cachedButtons = {}
+            for i = 1, config.numButtons do
+                local button = _G[config.buttonPrefix .. i]
+                if button then
+                    tinsert(cachedButtons, button)
+                end
+            end
+        end
+        return cachedButtons
+    end
+    local function getNumEntries()
+        return GetNumAuctionItems(config.listType) or 0
+    end
+    local function getElementIndex(self, button)
+        return button:GetID() + (FauxScrollFrame_GetOffset(_G[config.scrollFrameName]) or 0)
+    end
+
+    return function(props)
+        if getNumEntries() == 0 then
+            return config.emptyElement
+        end
+        local scrollFrame = _G[config.scrollFrameName]
+        if scrollFrame and scrollFrame:IsShown() then
+            return {
+                "ProxyFauxScrollFrame",
+                frame = scrollFrame,
+                label = config.label,
+                buttonHeight = AUCTIONS_BUTTON_HEIGHT or 37,
+                updateFunction = _G[config.updateFunctionName],
+                getNumEntries = getNumEntries,
+                getElement = config.getElement,
+                getElementIndex = getElementIndex,
+                getButtons = getButtons,
+            }
+        end
+        local children = {}
+        for _, button in ipairs(getButtons()) do
+            if button:IsShown() then
+                local element = config.getElement(nil, button)
+                if element then
+                    tinsert(children, element)
+                end
+            end
+        end
+        if #children == 0 then
+            return nil
+        end
+        return { "List", label = config.label, children = children }
+    end
+end
+
+-- Builds a sort header element spec from a sortTable name and button definitions.
+-- Called inside gen:Element callbacks (where Blizzard frames are available).
+local function buildSortHeaders(sortTable, buttons)
+    local children = {}
+    for _, btn in ipairs(buttons) do
+        if btn.frame and btn.frame:IsShown() then
+            tinsert(children, { "AuctionSortButton", frame = btn.frame, sortTable = sortTable, sortColumn = btn.column })
+        end
+    end
+    if #children == 0 then
+        return nil
+    end
+    return { "List", label = L["Sort"], direction = "horizontal", children = children }
+end
+
+------------------------------------------------------------
 -- AuctionSortButton element type
 ------------------------------------------------------------
 
@@ -148,7 +225,13 @@ end
 -- Root element
 ------------------------------------------------------------
 
-gen:Element("auction", function(props)
+gen:Element("auction", {
+    regenerateOn = {
+        values = function(props)
+            return { tab = PanelTemplates_GetSelectedTab(AuctionFrame) }
+        end,
+    },
+}, function(props)
     local children = {}
     if AuctionFrameBrowse:IsShown() then
         tinsert(children, { "auction/BrowseTab" })
@@ -166,7 +249,13 @@ gen:Element("auction", function(props)
     }
 end)
 
-gen:Element("auction/Tabs", function(props)
+gen:Element("auction/Tabs", {
+    regenerateOn = {
+        values = function(props)
+            return { tab = PanelTemplates_GetSelectedTab(AuctionFrame) }
+        end,
+    },
+}, function(props)
     local result = {
         "List",
         label = L["Tabs"],
@@ -301,23 +390,13 @@ end)
 
 -- Browse sort headers
 gen:Element("auction/BrowseSortHeaders", function(props)
-    local children = {}
-    local buttons = {
+    return buildSortHeaders("list", {
         { frame = BrowseQualitySort, column = "quality" },
         { frame = BrowseLevelSort, column = "level" },
         { frame = BrowseDurationSort, column = "duration" },
         { frame = BrowseHighBidderSort, column = "seller" },
         { frame = BrowseCurrentBidSort, column = "bid" },
-    }
-    for _, btn in ipairs(buttons) do
-        if btn.frame and btn.frame:IsShown() then
-            tinsert(children, { "AuctionSortButton", frame = btn.frame, sortTable = "list", sortColumn = btn.column })
-        end
-    end
-    if #children == 0 then
-        return nil
-    end
-    return { "List", label = L["Sort"], direction = "horizontal", children = children }
+    })
 end)
 
 -- Browse price options (shown when price options frame is open)
@@ -337,23 +416,7 @@ gen:Element("auction/BrowsePriceOptions", function(props)
     }
 end)
 
--- Browse result list helpers
-local function getBrowseButtons()
-    local buttons = {}
-    for i = 1, NUM_BROWSE_BUTTONS do
-        local button = _G["BrowseButton" .. i]
-        if button then
-            tinsert(buttons, button)
-        end
-    end
-    return buttons
-end
-
-local function getBrowseNumEntries()
-    local numBatch = GetNumAuctionItems("list")
-    return numBatch or 0
-end
-
+-- Browse result item element builder
 local hookedBrowseButtons = {}
 local function hookBrowseButton(button)
     if hookedBrowseButtons[button] then return end
@@ -408,47 +471,19 @@ local function getBrowseElement(self, button)
     return { "ProxyButton", frame = button, label = label }
 end
 
-local function getBrowseElementIndex(self, button)
-    local offset = FauxScrollFrame_GetOffset(BrowseScrollFrame) or 0
-    return button:GetID() + offset
-end
-
-gen:Element("auction/BrowseResults", function(props)
-    local numBatch = GetNumAuctionItems("list")
-    if not numBatch or numBatch == 0 then
-        return nil
-    end
-
-    if BrowseScrollFrame:IsShown() then
-        return {
-            "ProxyFauxScrollFrame",
-            frame = BrowseScrollFrame,
-            label = L["Results"],
-            buttonHeight = AUCTIONS_BUTTON_HEIGHT or 37,
-            updateFunction = AuctionFrameBrowse_Update,
-            getNumEntries = getBrowseNumEntries,
-            getElement = getBrowseElement,
-            getElementIndex = getBrowseElementIndex,
-            getButtons = getBrowseButtons,
-        }
-    end
-
-    -- Scroll frame not shown, render visible buttons directly
-    local children = {}
-    for i = 1, NUM_BROWSE_BUTTONS do
-        local button = _G["BrowseButton" .. i]
-        if button and button:IsShown() then
-            local element = getBrowseElement(nil, button)
-            if element then
-                tinsert(children, element)
-            end
-        end
-    end
-    if #children == 0 then
-        return nil
-    end
-    return { "List", label = L["Results"], children = children }
-end)
+gen:Element("auction/BrowseResults", {
+    regenerateOn = {
+        events = { "AUCTION_ITEM_LIST_UPDATE" },
+    },
+}, makeResultsElement({
+    buttonPrefix = "BrowseButton",
+    numButtons = NUM_BROWSE_BUTTONS,
+    listType = "list",
+    scrollFrameName = "BrowseScrollFrame",
+    label = L["Results"],
+    updateFunctionName = "AuctionFrameBrowse_Update",
+    getElement = getBrowseElement,
+}))
 
 -- Pagination
 gen:Element("auction/BrowsePageControls", function(props)
@@ -511,43 +546,17 @@ end)
 
 -- Bid sort headers
 gen:Element("auction/BidSortHeaders", function(props)
-    local children = {}
-    local buttons = {
+    return buildSortHeaders("bidder", {
         { frame = BidQualitySort, column = "quality" },
         { frame = BidLevelSort, column = "level" },
         { frame = BidDurationSort, column = "duration" },
         { frame = BidBuyoutSort, column = "buyout" },
         { frame = BidStatusSort, column = "status" },
         { frame = BidBidSort, column = "bid" },
-    }
-    for _, btn in ipairs(buttons) do
-        if btn.frame and btn.frame:IsShown() then
-            tinsert(children, { "AuctionSortButton", frame = btn.frame, sortTable = "bidder", sortColumn = btn.column })
-        end
-    end
-    if #children == 0 then
-        return nil
-    end
-    return { "List", label = L["Sort"], direction = "horizontal", children = children }
+    })
 end)
 
--- Bid list helpers
-local function getBidButtons()
-    local buttons = {}
-    for i = 1, NUM_BID_BUTTONS do
-        local button = _G["BidButton" .. i]
-        if button then
-            tinsert(buttons, button)
-        end
-    end
-    return buttons
-end
-
-local function getBidNumEntries()
-    local numBatch = GetNumAuctionItems("bidder")
-    return numBatch or 0
-end
-
+-- Bid result item element builder
 local function getBidElement(self, button)
     local offset = FauxScrollFrame_GetOffset(BidScrollFrame) or 0
     local index = button:GetID() + offset
@@ -581,46 +590,20 @@ local function getBidElement(self, button)
     return { "ProxyButton", frame = button, label = label }
 end
 
-local function getBidElementIndex(self, button)
-    local offset = FauxScrollFrame_GetOffset(BidScrollFrame) or 0
-    return button:GetID() + offset
-end
-
-gen:Element("auction/BidResults", function(props)
-    local numBatch = GetNumAuctionItems("bidder")
-    if not numBatch or numBatch == 0 then
-        return { "Text", text = L["No Bids"] }
-    end
-
-    if BidScrollFrame:IsShown() then
-        return {
-            "ProxyFauxScrollFrame",
-            frame = BidScrollFrame,
-            label = L["Bids"],
-            buttonHeight = AUCTIONS_BUTTON_HEIGHT or 37,
-            updateFunction = AuctionFrameBid_Update,
-            getNumEntries = getBidNumEntries,
-            getElement = getBidElement,
-            getElementIndex = getBidElementIndex,
-            getButtons = getBidButtons,
-        }
-    end
-
-    local children = {}
-    for i = 1, NUM_BID_BUTTONS do
-        local button = _G["BidButton" .. i]
-        if button and button:IsShown() then
-            local element = getBidElement(nil, button)
-            if element then
-                tinsert(children, element)
-            end
-        end
-    end
-    if #children == 0 then
-        return nil
-    end
-    return { "List", label = L["Bids"], children = children }
-end)
+gen:Element("auction/BidResults", {
+    regenerateOn = {
+        events = { "AUCTION_BIDDER_LIST_UPDATE" },
+    },
+}, makeResultsElement({
+    buttonPrefix = "BidButton",
+    numButtons = NUM_BID_BUTTONS,
+    listType = "bidder",
+    scrollFrameName = "BidScrollFrame",
+    label = L["Bids"],
+    updateFunctionName = "AuctionFrameBid_Update",
+    getElement = getBidElement,
+    emptyElement = { "Text", text = L["No Bids"] },
+}))
 
 -- Bid actions (only when an item is selected)
 gen:Element("auction/BidActions", function(props)
@@ -673,41 +656,15 @@ end)
 
 -- Auctions sort headers
 gen:Element("auction/AuctionsSortHeaders", function(props)
-    local children = {}
-    local buttons = {
+    return buildSortHeaders("owner", {
         { frame = AuctionsQualitySort, column = "quality" },
         { frame = AuctionsDurationSort, column = "duration" },
         { frame = AuctionsHighBidderSort, column = "status" },
         { frame = AuctionsBidSort, column = "bid" },
-    }
-    for _, btn in ipairs(buttons) do
-        if btn.frame and btn.frame:IsShown() then
-            tinsert(children, { "AuctionSortButton", frame = btn.frame, sortTable = "owner", sortColumn = btn.column })
-        end
-    end
-    if #children == 0 then
-        return nil
-    end
-    return { "List", label = L["Sort"], direction = "horizontal", children = children }
+    })
 end)
 
--- My auctions list helpers
-local function getAuctionButtons()
-    local buttons = {}
-    for i = 1, NUM_AUCTION_BUTTONS do
-        local button = _G["AuctionsButton" .. i]
-        if button then
-            tinsert(buttons, button)
-        end
-    end
-    return buttons
-end
-
-local function getAuctionNumEntries()
-    local numBatch = GetNumAuctionItems("owner")
-    return numBatch or 0
-end
-
+-- My auction item element builder
 local function getAuctionElement(self, button)
     local offset = FauxScrollFrame_GetOffset(AuctionsScrollFrame) or 0
     local index = button:GetID() + offset
@@ -749,46 +706,19 @@ local function getAuctionElement(self, button)
     return { "ProxyButton", frame = button, label = label }
 end
 
-local function getAuctionElementIndex(self, button)
-    local offset = FauxScrollFrame_GetOffset(AuctionsScrollFrame) or 0
-    return button:GetID() + offset
-end
-
-gen:Element("auction/MyAuctionsList", function(props)
-    local numBatch = GetNumAuctionItems("owner")
-    if not numBatch or numBatch == 0 then
-        return nil
-    end
-
-    if AuctionsScrollFrame:IsShown() then
-        return {
-            "ProxyFauxScrollFrame",
-            frame = AuctionsScrollFrame,
-            label = L["Auctions"],
-            buttonHeight = AUCTIONS_BUTTON_HEIGHT or 37,
-            updateFunction = AuctionFrameAuctions_Update,
-            getNumEntries = getAuctionNumEntries,
-            getElement = getAuctionElement,
-            getElementIndex = getAuctionElementIndex,
-            getButtons = getAuctionButtons,
-        }
-    end
-
-    local children = {}
-    for i = 1, NUM_AUCTION_BUTTONS do
-        local button = _G["AuctionsButton" .. i]
-        if button and button:IsShown() then
-            local element = getAuctionElement(nil, button)
-            if element then
-                tinsert(children, element)
-            end
-        end
-    end
-    if #children == 0 then
-        return nil
-    end
-    return { "List", label = L["Auctions"], children = children }
-end)
+gen:Element("auction/MyAuctionsList", {
+    regenerateOn = {
+        events = { "AUCTION_OWNED_LIST_UPDATE" },
+    },
+}, makeResultsElement({
+    buttonPrefix = "AuctionsButton",
+    numButtons = NUM_AUCTION_BUTTONS,
+    listType = "owner",
+    scrollFrameName = "AuctionsScrollFrame",
+    label = L["Auctions"],
+    updateFunctionName = "AuctionFrameAuctions_Update",
+    getElement = getAuctionElement,
+}))
 
 -- Create auction form
 gen:Element("auction/CreateAuction", function(props)
