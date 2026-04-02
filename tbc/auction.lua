@@ -1,3 +1,10 @@
+-- Blizzard bug: deDE localization in Blizzard_AuctionUI tries to call
+-- PriceDropdown:SetWidth() but PriceDropdown doesn't exist in TBC Anniversary.
+-- Create a dummy to prevent the error.
+if not PriceDropdown then
+    PriceDropdown = CreateFrame("Frame")
+end
+
 local module = WowVision.base.windows:createModule("auction")
 local L = module.L
 module:setLabel(L["Auction House"])
