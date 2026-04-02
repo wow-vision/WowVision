@@ -227,12 +227,22 @@ gen:Element("auction/BrowseTab", function(props)
     }
 end)
 
--- Category filter buttons
+-- Category filter buttons — hook each to auto-search on click
+local hookedFilterButtons = {}
+local function hookFilterButton(button)
+    if hookedFilterButtons[button] then return end
+    hookedFilterButtons[button] = true
+    button:HookScript("OnClick", function()
+        AuctionFrameBrowse_Search()
+    end)
+end
+
 gen:Element("auction/Categories", function(props)
     local children = {}
     for i = 1, 15 do
         local button = _G["AuctionFilterButton" .. i]
         if button and button:IsShown() then
+            hookFilterButton(button)
             tinsert(children, { "ProxyButton", frame = button })
         end
     end
