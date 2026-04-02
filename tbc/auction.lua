@@ -223,11 +223,6 @@ gen:Element("auction/BrowseTab", function(props)
         children = {
             { "auction/Categories" },
             { "auction/SearchFilters" },
-            { "auction/BrowseSortHeaders" },
-            { "auction/BrowsePriceOptions" },
-            { "auction/BrowseResults" },
-            { "auction/BrowsePageControls" },
-            { "auction/BrowseActions" },
         },
     }
 end)
@@ -255,6 +250,11 @@ gen:Element("auction/SearchFilters", function(props)
         shouldAnnounce = false,
         children = {
             { "ProxyEditBox", frame = BrowseName, label = L["Search"] },
+            { "auction/BrowseResults" },
+            { "auction/BrowsePageControls" },
+            { "auction/BrowseActions" },
+            { "auction/BrowseSortHeaders" },
+            { "auction/BrowsePriceOptions" },
             {
                 "Button",
                 label = L["Filters"],
