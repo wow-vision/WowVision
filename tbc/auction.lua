@@ -143,10 +143,6 @@ end
 
 gen:Element("auction", function(props)
     local children = {}
-    if AuctionFrameAuctions:IsShown() then
-        tinsert(children, { "auction/AuctionsSortHeaders" })
-    end
-    tinsert(children, { "auction/Tabs" })
     if AuctionFrameBrowse:IsShown() then
         tinsert(children, { "auction/BrowseTab" })
     elseif AuctionFrameBid:IsShown() then
@@ -154,7 +150,7 @@ gen:Element("auction", function(props)
     elseif AuctionFrameAuctions:IsShown() then
         tinsert(children, { "auction/AuctionsTab" })
     end
-    tinsert(children, { "money/MoneyFrame", frame = AuctionFrameMoneyFrame, label = L["Your Gold"] })
+    tinsert(children, { "auction/Tabs" })
     return {
         "Panel",
         label = L["Auction House"],
@@ -632,13 +628,24 @@ end)
 ------------------------------------------------------------
 
 gen:Element("auction/AuctionsTab", function(props)
+    local itemLabel = L["Place Item Here"]
+    local sellName, sellTexture, sellCount = GetAuctionSellItemInfo()
+    if sellName then
+        local stackSize = tonumber(AuctionsStackSizeEntry:GetText()) or sellCount
+        itemLabel = sellName
+        if stackSize and stackSize > 1 then
+            itemLabel = itemLabel .. " x" .. stackSize
+        end
+    end
     local children = {
+        { "ProxyButton", frame = AuctionsItemButton, label = itemLabel },
+        { "auction/CreateAuction" },
         { "auction/MyAuctionsList" },
     }
     if AuctionsCancelAuctionButton:IsEnabled() then
         tinsert(children, { "ProxyButton", frame = AuctionsCancelAuctionButton })
     end
-    tinsert(children, { "auction/CreateAuction" })
+    tinsert(children, { "auction/AuctionsSortHeaders" })
     return {
         "Panel",
         layout = true,
@@ -769,18 +776,7 @@ end)
 -- Create auction form
 gen:Element("auction/CreateAuction", function(props)
     local children = {}
-
-    -- Item placement button (shows item name + stack size being sold)
-    local itemLabel = L["Place Item Here"]
     local sellName, sellTexture, sellCount = GetAuctionSellItemInfo()
-    if sellName then
-        local stackSize = tonumber(AuctionsStackSizeEntry:GetText()) or sellCount
-        itemLabel = sellName
-        if stackSize and stackSize > 1 then
-            itemLabel = itemLabel .. " x" .. stackSize
-        end
-    end
-    tinsert(children, { "ProxyButton", frame = AuctionsItemButton, label = itemLabel })
 
     -- Stack size and number of stacks (Blizzard hides these in TBC Anniversary
     -- but the backend logic still populates them; force-show so they can receive focus)
@@ -804,13 +800,13 @@ gen:Element("auction/CreateAuction", function(props)
     local startCopper = _G[StartPrice:GetName() .. "Copper"]
     tinsert(children, {
         "Button",
-        label = L["Starting Price"],
+        label = L["Starting Bid"],
         displayType = "Dropdown",
         events = {
             click = function(event, button)
                 button.context:addGenerated({
                     "Panel",
-                    label = L["Starting Price"],
+                    label = L["Starting Bid"],
                     layout = true,
                     children = {
                         { "ProxyEditBox", frame = startGold, autoInputOnFocus = false, hookEnter = true, label = L["Gold"] },
