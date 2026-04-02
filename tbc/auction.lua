@@ -142,9 +142,11 @@ end
 ------------------------------------------------------------
 
 gen:Element("auction", function(props)
-    local children = {
-        { "auction/Tabs" },
-    }
+    local children = {}
+    if AuctionFrameAuctions:IsShown() then
+        tinsert(children, { "auction/AuctionsSortHeaders" })
+    end
+    tinsert(children, { "auction/Tabs" })
     if AuctionFrameBrowse:IsShown() then
         tinsert(children, { "auction/BrowseTab" })
     elseif AuctionFrameBid:IsShown() then
@@ -630,16 +632,18 @@ end)
 ------------------------------------------------------------
 
 gen:Element("auction/AuctionsTab", function(props)
+    local children = {
+        { "auction/MyAuctionsList" },
+    }
+    if AuctionsCancelAuctionButton:IsEnabled() then
+        tinsert(children, { "ProxyButton", frame = AuctionsCancelAuctionButton })
+    end
+    tinsert(children, { "auction/CreateAuction" })
     return {
         "Panel",
         layout = true,
         shouldAnnounce = false,
-        children = {
-            { "auction/AuctionsSortHeaders" },
-            { "auction/MyAuctionsList" },
-            { "ProxyButton", frame = AuctionsCancelAuctionButton },
-            { "auction/CreateAuction" },
-        },
+        children = children,
     }
 end)
 
@@ -791,8 +795,32 @@ gen:Element("auction/CreateAuction", function(props)
         tinsert(children, { "ProxyButton", frame = AuctionsNumStacksMaxButton })
     end
 
-    -- Starting price
-    tinsert(children, { "auction/MoneyInput", frame = StartPrice, label = L["Starting Price"] })
+    -- Buyout price
+    tinsert(children, { "auction/MoneyInput", frame = BuyoutPrice, label = L["Buyout Price"] })
+
+    -- Starting price (behind expandable dropdown)
+    local startGold = _G[StartPrice:GetName() .. "Gold"]
+    local startSilver = _G[StartPrice:GetName() .. "Silver"]
+    local startCopper = _G[StartPrice:GetName() .. "Copper"]
+    tinsert(children, {
+        "Button",
+        label = L["Starting Price"],
+        displayType = "Dropdown",
+        events = {
+            click = function(event, button)
+                button.context:addGenerated({
+                    "Panel",
+                    label = L["Starting Price"],
+                    layout = true,
+                    children = {
+                        { "ProxyEditBox", frame = startGold, autoInputOnFocus = false, hookEnter = true, label = L["Gold"] },
+                        { "ProxyEditBox", frame = startSilver, autoInputOnFocus = false, hookEnter = true, label = L["Silver"] },
+                        { "ProxyEditBox", frame = startCopper, autoInputOnFocus = false, hookEnter = true, label = L["Copper"] },
+                    },
+                })
+            end,
+        },
+    })
 
     -- Duration radio buttons
     tinsert(children, {
@@ -804,9 +832,6 @@ gen:Element("auction/CreateAuction", function(props)
             { "ProxyCheckButton", frame = AuctionsLongAuctionButton, label = L["48 Hours"] },
         },
     })
-
-    -- Buyout price
-    tinsert(children, { "auction/MoneyInput", frame = BuyoutPrice, label = L["Buyout Price"] })
 
     -- Deposit (shown when an item is placed)
     if sellName then
