@@ -860,4 +860,7 @@ module:registerWindow({
     rootElement = "auction",
     frameName = "AuctionFrame",
     hookEscape = true,
+    onClose = function()
+        AuctionFrame:Hide()
+    end,
 })
