@@ -572,7 +572,7 @@ end
 gen:Element("auction/BidResults", function(props)
     local numBatch = GetNumAuctionItems("bidder")
     if not numBatch or numBatch == 0 then
-        return nil
+        return { "Text", text = L["No Bids"] }
     end
 
     if BidScrollFrame:IsShown() then
