@@ -847,6 +847,59 @@ gen:Element("auction/CreateAuction", function(props)
 end)
 
 ------------------------------------------------------------
+-- Enrich auction confirmation popups with item name + count.
+-- We wrap StaticPopup_Show so the dialog text already contains
+-- the item info BEFORE the frame becomes visible (and before
+-- WowVision's OnShow handler generates the element tree).
+------------------------------------------------------------
+
+local function getAuctionPopupItemSuffix(which)
+    local auctionType
+    if which == "BID_AUCTION" or which == "BUYOUT_AUCTION" then
+        for _, listType in ipairs({ "list", "bidder" }) do
+            local selected = GetSelectedAuctionItem(listType)
+            if selected and selected > 0 then
+                local name = GetAuctionItemInfo(listType, selected)
+                if name then
+                    auctionType = listType
+                    break
+                end
+            end
+        end
+    elseif which == "CANCEL_AUCTION" then
+        auctionType = "owner"
+    end
+    if not auctionType then return nil end
+    local selected = GetSelectedAuctionItem(auctionType)
+    if not selected or selected == 0 then return nil end
+    local name, _, count = GetAuctionItemInfo(auctionType, selected)
+    if not name then return nil end
+    local suffix = " " .. name
+    if count and count > 1 then
+        suffix = suffix .. " x" .. count
+    end
+    return suffix
+end
+
+local origStaticPopup_Show = StaticPopup_Show
+function StaticPopup_Show(which, text_arg1, text_arg2, data, ...)
+    local dialogEntry, origText
+    local suffix = getAuctionPopupItemSuffix(which)
+    if suffix then
+        dialogEntry = StaticPopupDialogs[which]
+        if dialogEntry then
+            origText = dialogEntry.text
+            dialogEntry.text = origText .. suffix
+        end
+    end
+    local dialog = origStaticPopup_Show(which, text_arg1, text_arg2, data, ...)
+    if origText and dialogEntry then
+        dialogEntry.text = origText
+    end
+    return dialog
+end
+
+------------------------------------------------------------
 -- Window registration
 ------------------------------------------------------------
 
