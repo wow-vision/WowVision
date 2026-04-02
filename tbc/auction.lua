@@ -841,6 +841,7 @@ gen:Element("auction/CreateAuction", function(props)
         "Panel",
         label = L["Create Auction"],
         layout = true,
+        shouldAnnounce = false,
         children = children,
     }
 end)
