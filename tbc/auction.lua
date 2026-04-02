@@ -257,11 +257,27 @@ gen:Element("auction/SearchFilters", function(props)
         shouldAnnounce = false,
         children = {
             { "ProxyEditBox", frame = BrowseName, label = L["Search"] },
-            { "ProxyEditBox", frame = BrowseMinLevel, label = L["Minimum Level"] },
-            { "ProxyEditBox", frame = BrowseMaxLevel, label = L["Maximum Level"] },
-            { "ProxyDropdownButton", frame = BrowseDropDown or BrowseDropdown },
-            { "ProxyCheckButton", frame = IsUsableCheckButton },
-            { "ProxyCheckButton", frame = ShowOnPlayerCheckButton },
+            {
+                "Button",
+                label = L["Filters"],
+                displayType = "Dropdown",
+                events = {
+                    click = function(event, button)
+                        button.context:addGenerated({
+                            "List",
+                            layout = true,
+                            label = L["Filters"],
+                            children = {
+                                { "ProxyEditBox", frame = BrowseMinLevel, autoInputOnFocus = false, hookEnter = true, label = L["Minimum Level"] },
+                                { "ProxyEditBox", frame = BrowseMaxLevel, autoInputOnFocus = false, hookEnter = true, label = L["Maximum Level"] },
+                                { "ProxyDropdownButton", frame = BrowseDropDown or BrowseDropdown },
+                                { "ProxyCheckButton", frame = IsUsableCheckButton },
+                                { "ProxyCheckButton", frame = ShowOnPlayerCheckButton },
+                            },
+                        })
+                    end,
+                },
+            },
             { "ProxyButton", frame = BrowseSearchButton },
             { "ProxyButton", frame = BrowseResetButton },
         },
@@ -818,4 +834,5 @@ module:registerWindow({
     generated = true,
     rootElement = "auction",
     frameName = "AuctionFrame",
+    hookEscape = true,
 })
