@@ -7,6 +7,7 @@ TrackedBuffer.info:addFields({
         type = "TrackingConfig",
         label = L["Source"],
         persist = true,
+        sortPriority = 2,
     },
 })
 

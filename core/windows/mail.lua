@@ -93,7 +93,7 @@ gen:Element("mail/inbox/open/list", function(props)
         "List",
         children = {
             { "Text", text = OpenMailSender.Name:GetText() },
-            { "Text", text = L["Subject"] .. ": " .. OpenMailSubject:GetText() },
+            { "Text", text = L["Subject"] .. ": " .. (OpenMailSubject:GetText() or "")},
         },
     }
     if OpenMailBodyText:IsShown() then

@@ -13,6 +13,8 @@
   <Script file="TrackingConfig.lua" />
   <Script file="Template.lua" />
   <Script file="VoicePack.lua" />
+  <Script file="Spell.lua" />
+  <Script file="DataBrowse.lua" />
   <Script file="ComponentArray.lua" />
 
 </Ui>

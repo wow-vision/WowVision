@@ -20,11 +20,13 @@
   <Script file="Dataset.lua" />
     <Script file="data.lua" />
     <Include file="gameDB/modules.xml" />
+    <Script file="SpellHistory.lua" />
     <Script file="ViewList.lua" />
   <Script file="tests.lua" />
     <Include file="audio/modules.xml" />
     <Include file="../audio/modules.xml" />
     <Include file="alerts/modules.xml" />
+    <Script file="info/types/Alert.lua" />
   <Include file="ui/modules.xml" />
     <Script file="UIHost.lua" />
       <include file="module/modules.xml" />

@@ -87,6 +87,7 @@ function Field:setup(info)
     self.label = info.label
     self.persist = info.persist or false
     self.showInUI = info.showInUI ~= false
+    self.sortPriority = info.sortPriority or 0
 end
 
 function Field:getInfo()
@@ -104,6 +105,7 @@ function Field:getInfo()
         label = self.label,
         persist = self.persist,
         showInUI = self.showInUI,
+        sortPriority = self.sortPriority,
     }
     return result
 end

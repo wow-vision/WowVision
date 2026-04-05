@@ -45,10 +45,12 @@ release.sh
 
 # Claude files
 .claude/
-**/CLAUDE.md
 
 # VS Code
 .vscode/
+
+# mdBook build output
+docs/book/
 
 # External libs (fetched by packager)
 libs/LibStub/

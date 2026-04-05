@@ -12,6 +12,7 @@
   <Script file = "ProxyCheckButton.lua" />
   <Script file="ProxyDropdownButton.lua" />
   <Script file="ProxyEditBox.lua" />
+  <Script file="AudioButton.lua" />
   <Script file="ItemButton.lua" />
 
 </Ui>

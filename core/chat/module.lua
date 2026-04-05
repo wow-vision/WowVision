@@ -21,9 +21,7 @@ messageAlert:addOutput({
     type = "Sound",
     key = "sound",
     label = L["Sound Alert"],
-    getPath = function(self, message)
-        return "Sound/WowVision/alerts/chat.mp3"
-    end,
+    path = "Sound/WowVision/alerts/chat.mp3",
 })
 
 settings:addRef("messageAlert", messageAlert.parameters)

@@ -34,19 +34,35 @@ db:register("TradeTarget", {
 
 db:register("Merchant", {
     getLabel = function(button, props)
-        local parent = button:GetParent()
-        local label = parent.Name:GetText() or ""
-        local count = getCountText(button)
         local id = button:GetID()
-        if count then
+        if id == nil then
+            return nil
+        end
+        local label, price, count
+        local numInStock = -1
+        if props.buyback then
+            label, _, price, count = GetBuybackItemInfo(id)
+        else
+            label, _, price, count, numInStock = GetMerchantItemInfo(id)
+        end
+
+        --Account for single frames where data isn't yet populated for label text
+        if label == nil or label == "" then
+            label = ""
+        end
+
+        if count > 1 then
             label = label .. " x " .. count
         end
-        if button.price then
-            label = label .. ", " .. C_CurrencyInfo.GetCoinText(button.price)
+
+        if price > 0 then
+            label = label .. ", " .. C_CurrencyInfo.GetCoinText(price)
         end
-        if button.numInStock and button.numInStock > 0 then
-            label = label .. ", " .. button.numInStock .. " " .. L["in stock"]
+
+        if numInStock >= 0 then
+            label = label .. ", " .. numInStock .. " " .. L["in stock"]
         end
+
         local alternativeCount = GetMerchantItemCostInfo(id)
         for i = 1, alternativeCount do
             local _, count, itemLink, currencyName = GetMerchantItemCostItem(id, i)

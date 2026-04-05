@@ -135,10 +135,25 @@ function InfoManager:getGenerator(obj, options)
     options = options or {}
     local excludedFields = options.excludedFields or {}
     local result = { "List", children = {} }
+
+    -- Collect visible fields and sort by priority then label
+    local sorted = {}
     for _, field in ipairs(self.fields) do
         if field.showInUI and not excludedFields[field.key] then
-            tinsert(result.children, field:getGenerator(obj))
+            tinsert(sorted, field)
         end
+    end
+    table.sort(sorted, function(a, b)
+        if a.sortPriority ~= b.sortPriority then
+            return a.sortPriority < b.sortPriority
+        end
+        local aLabel = a.label or a.key or ""
+        local bLabel = b.label or b.key or ""
+        return aLabel < bLabel
+    end)
+
+    for _, field in ipairs(sorted) do
+        tinsert(result.children, field:getGenerator(obj))
     end
     return result
 end

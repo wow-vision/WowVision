@@ -3,6 +3,7 @@
 
   <Include file="gameDB/modules.xml" />
   <Script file="speech.lua" />
+  <Include file="monitors/modules.xml" />
   <Include file="containers/modules.xml" />
   <Include file="targeting/modules.xml" />
   

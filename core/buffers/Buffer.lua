@@ -10,6 +10,7 @@ Buffer.info:addFields({
         default = true,
         required = true,
         persist = true,
+        sortPriority = 1,
         get = function(obj, key)
             return obj:getEnabled()
         end,
@@ -22,6 +23,7 @@ Buffer.info:addFields({
         type = "String",
         label = L["Label"],
         persist = true,
+        sortPriority = 1,
     },
 })
 

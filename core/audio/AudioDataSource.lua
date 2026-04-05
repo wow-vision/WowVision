@@ -16,3 +16,23 @@ function AudioDataSource:play(channel)
     local channel = channel or "SFX"
     return PlaySoundFile(path, channel)
 end
+
+function AudioDataSource:preview(channel)
+    -- Stop previous preview sound
+    if WowVision.audio._previewHandle then
+        StopSound(WowVision.audio._previewHandle, 0)
+        WowVision.audio._previewHandle = nil
+    end
+    local willPlay, soundHandle = self:play(channel)
+    if willPlay then
+        WowVision.audio._previewHandle = soundHandle
+    end
+    return willPlay, soundHandle
+end
+
+function AudioDataSource:getElement()
+    local button = WowVision.ui:CreateElement("AudioButton")
+    button:setLabel(self:getLabel() or self.key)
+    button:setProp("source", self)
+    return button
+end

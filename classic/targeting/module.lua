@@ -96,9 +96,7 @@ hardTargetChange:addOutput({
         --end
         return inCombatWith("target")
     end,
-    getPath = function(self, message)
-        return "Sound/WowVision/alerts/notification21.mp3"
-    end,
+    path = "Sound/WowVision/alerts/notification21.mp3",
 })
 
 local hardTargetHealth = module:addAlert({
@@ -208,9 +206,7 @@ local function addSoftTarget(info)
         key = "sound",
         type = "Sound",
         label = L["Sound Alert"],
-        getPath = function(self, message)
-            return info.sound
-        end,
+        path = info.sound,
     })
 end
 

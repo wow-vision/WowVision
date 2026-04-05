@@ -20,6 +20,12 @@ function DataSource:getValue()
     return self.value
 end
 
+function DataSource:getElement()
+    local button = WowVision.ui:CreateElement("Button")
+    button:setLabel(self:getLabel() or self.key)
+    return button
+end
+
 local DataDirectory = WowVision.Class("DataDirectory"):include(WowVision.InfoClass)
 WowVision.DataDirectory = DataDirectory
 DataDirectory.info:addFields({
