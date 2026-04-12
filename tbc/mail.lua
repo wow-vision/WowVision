@@ -43,6 +43,35 @@ SendMailFrame:HookScript("OnShow", function()
     end
 end)
 
+-- Override inbox list to regenerate when mail data arrives.
+-- On first open the MailItem buttons aren't shown yet because WoW fires
+-- MAIL_INBOX_UPDATE after the frame becomes visible.
+gen:Element("mail/inbox/MailList", {
+    regenerateOn = {
+        events = { "MAIL_INBOX_UPDATE" },
+    },
+}, function(props)
+    local result = { "Panel", label = L["Inbox"], children = {
+        { "ProxyButton", frame = OpenAllMail },
+    } }
+    local items = { "List", children = {} }
+    for i = 1, INBOXITEMS_TO_DISPLAY do
+        local item = _G["MailItem" .. i]
+        if item.Button:IsShown() then
+            tinsert(items.children, {
+                "ProxyButton",
+                frame = item.Button,
+                label = L["From"] .. ": " .. _G[item:GetName() .. "Sender"]:GetText()
+                    .. ", " .. L["Subject"] .. ": " .. _G[item:GetName() .. "Subject"]:GetText(),
+            })
+        end
+    end
+    tinsert(result.children, items)
+    tinsert(result.children, { "ProxyButton", frame = InboxPrevPageButton, label = L["Previous Page"] })
+    tinsert(result.children, { "ProxyButton", frame = InboxNextPageButton, label = L["Next Page"] })
+    return result
+end)
+
 -- Override core root element to also show the SendMail tab
 gen:Element("mail", {
     regenerateOn = {
