@@ -60,9 +60,16 @@ SendMailFrame:HookScript("OnShow", function()
         SEND_MAIL_TAB_LIST[4] = nil  -- SendMailMoneyGold
         SEND_MAIL_TAB_LIST[5] = nil  -- SendMailMoneyCopper
     end
-    -- Clear unwanted focus from Blizzard's OnShow SetFocus() call
+    -- Runs every show: Blizzard's OnShow calls SetFocus(), steal it back
     SendMailNameEditBox:ClearFocus()
 end)
+
+local function getInboxItemLabel(item)
+    local name = item:GetName()
+    local sender = _G[name .. "Sender"]:GetText()
+    local subject = _G[name .. "Subject"]:GetText()
+    return L["From"] .. ": " .. sender .. ", " .. L["Subject"] .. ": " .. subject
+end
 
 -- Override inbox list to regenerate when mail data arrives.
 -- On first open the MailItem buttons aren't shown yet because WoW fires
@@ -82,8 +89,7 @@ gen:Element("mail/inbox/MailList", {
             tinsert(items.children, {
                 "ProxyButton",
                 frame = item.Button,
-                label = L["From"] .. ": " .. _G[item:GetName() .. "Sender"]:GetText()
-                    .. ", " .. L["Subject"] .. ": " .. _G[item:GetName() .. "Subject"]:GetText(),
+                label = getInboxItemLabel(item),
             })
         end
     end
@@ -134,7 +140,8 @@ local function getFirstEmptySlot()
     for i = 1, ATTACHMENTS_MAX_SEND do
         if not HasSendMailItem(i) then
             local slot = SendMailFrame.SendMailAttachments[i]
-            if slot and slot:IsShown() then
+            -- Slot may not exist yet if Blizzard creates them lazily
+            if slot then
                 return slot
             end
         end
@@ -168,7 +175,7 @@ gen:Element("mail/send", {
                     "ProxyButton",
                     key = "attachment_" .. i,
                     frame = slot,
-                    label = getAttachmentLabel(i),
+                    label = getAttachmentLabel(i) or "",
                     draggable = true,
                 })
             end
@@ -188,14 +195,16 @@ gen:Element("mail/send", {
             draggable = true,
         })
     end
-    -- Money fields (flat, no wrapper panel)
+    -- Money options and input fields
     tinsert(children, { "ProxyCheckButton", key = "sendMoney", frame = SendMailSendMoneyButton, label = L["Send Money"] })
     if SendMailCODButton:IsEnabled() then
         tinsert(children, { "ProxyCheckButton", key = "cod", frame = SendMailCODButton, label = L["COD"] })
     end
-    tinsert(children, { "ProxyEditBox", key = "gold", frame = SendMailMoneyGold, label = L["Gold"] })
-    tinsert(children, { "ProxyEditBox", key = "silver", frame = SendMailMoneySilver, label = L["Silver"] })
-    tinsert(children, { "ProxyEditBox", key = "copper", frame = SendMailMoneyCopper, label = L["Copper"] })
+    tinsert(children, { "Panel", key = "money", label = L["Money"], layout = true, children = {
+        { "ProxyEditBox", key = "gold", frame = SendMailMoneyGold, label = L["Gold"] },
+        { "ProxyEditBox", key = "silver", frame = SendMailMoneySilver, label = L["Silver"] },
+        { "ProxyEditBox", key = "copper", frame = SendMailMoneyCopper, label = L["Copper"] },
+    } })
     -- Postage and action buttons
     tinsert(children, { "money/MoneyFrame", key = "postage", frame = SendMailCostMoneyFrame, label = L["Postage"] })
     tinsert(children, { "ProxyButton", key = "send", frame = SendMailMailButton })
