@@ -827,38 +827,16 @@ gen:Element("auction/BrowseResults", {
         return buildScanResultsList()
     end
 
-    -- Filtered browse: show current page filtered + scan button
+    -- Filtered browse: show current page filtered results
+    -- Scan button is handled by BrowsePageControls (replaces Next Page).
     if minStackSize > 1 then
-        local filtered = buildFilteredBrowseList()
-        local numBatch, totalAuctions = GetNumAuctionItems("list")
-        local hasResults = filtered and filtered[1] ~= "Text"
-        if (totalAuctions or 0) > 0 then
-            local children = {}
-            if hasResults then
-                -- Show filtered current page results
-                children = filtered.children or {}
-            else
-                tinsert(children, { "Text", text = L["No Results"] })
-            end
-            -- Always offer scan when there are auction pages to search
-            tinsert(children, {
-                "Button",
-                label = L["Scan"],
-                events = {
-                    click = function()
-                        startScan()
-                    end,
-                },
-            })
-            return { "List", label = L["Results"], children = children }
-        end
-        return filtered
+        return buildFilteredBrowseList()
     end
 
     return browseResultsCallback(props)
 end)
 
--- Pagination: show "Load More" when scan results exist, otherwise Blizzard page buttons.
+-- Pagination: show "Scan" or "Load More" when filters are active, otherwise Blizzard page buttons.
 gen:Element("auction/BrowsePageControls", function(props)
     -- When viewing scan results, replace Blizzard pagination with "Load More"
     if scanResults and not viewingScanItem and not scanInProgress then
@@ -877,6 +855,22 @@ gen:Element("auction/BrowsePageControls", function(props)
             }
         end
         return nil
+    end
+
+    -- Filtered browse without scan results yet: offer Scan button instead of page controls
+    if minStackSize > 1 and not scanResults and not scanInProgress then
+        local _, totalAuctions = GetNumAuctionItems("list")
+        if (totalAuctions or 0) > 0 then
+            return {
+                "Button",
+                label = L["Scan"],
+                events = {
+                    click = function()
+                        startScan()
+                    end,
+                },
+            }
+        end
     end
 
     -- Normal Blizzard page controls
