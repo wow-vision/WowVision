@@ -713,21 +713,68 @@ local function startPurchaseTracking()
     purchaseFrame:RegisterEvent("UI_ERROR_MESSAGE")
 end
 
+-- Verify that the auction at the given index matches the expected scan result.
+-- Compares name, stack count, buyout price, min bid, and owner.
+local function verifyAuctionItem(index, expectedItem)
+    local name, _, count, quality, canUse, level, levelColHeader,
+        minBid, minIncrement, buyoutPrice, bidAmount, highBidder,
+        bidderFullName, owner = GetAuctionItemInfo("list", index)
+    if not name then return false end
+    if name ~= expectedItem.name then return false end
+    if (count or 0) ~= (expectedItem.count or 0) then return false end
+    if (buyoutPrice or 0) ~= (expectedItem.buyoutPrice or 0) then return false end
+    if (minBid or 0) ~= (expectedItem.minBid or 0) then return false end
+    if owner and expectedItem.owner and owner ~= expectedItem.owner then return false end
+    return true
+end
+
+-- Search all items on the current page for one matching the expected scan result.
+-- Returns the 1-based page index if found, nil otherwise.
+local function findMatchingAuctionItem(expectedItem)
+    local numBatch = GetNumAuctionItems("list") or 0
+    for i = 1, numBatch do
+        if verifyAuctionItem(i, expectedItem) then
+            return i
+        end
+    end
+    return nil
+end
+
 -- Navigate to a scan result's page and select it, then show bid/buyout.
 -- scanResults is preserved so the user can return to the list.
 -- We delay the selection by one frame so Blizzard's AuctionFrameBrowse_Update()
 -- finishes first — otherwise BrowseButtons are still hidden when we try to Click().
+-- After re-querying, we verify the item at the expected index still matches.
+-- If it shifted, we search the full page. If gone entirely, we notify the user.
 local scanSelectFrame = CreateFrame("Frame")
 scanSelectFrame:SetScript("OnEvent", function()
     if pendingScanSelect then
-        local index = pendingScanSelect
+        local expectedIndex = pendingScanSelect
+        local expectedItem = pendingScanItem
         pendingScanSelect = nil
         scanSelectFrame:UnregisterAllEvents()
-        viewingScanItem = true
-        startPurchaseTracking()
-        C_Timer.After(0, function()
-            selectBrowseItem(index)
-        end)
+
+        -- Verify the item at the expected index still matches
+        local actualIndex
+        if verifyAuctionItem(expectedIndex, expectedItem) then
+            actualIndex = expectedIndex
+        else
+            -- Item shifted — search the full page
+            actualIndex = findMatchingAuctionItem(expectedItem)
+        end
+
+        if actualIndex then
+            viewingScanItem = true
+            startPurchaseTracking()
+            C_Timer.After(0, function()
+                selectBrowseItem(actualIndex)
+            end)
+        else
+            -- Item no longer on this page — remove from results and notify
+            removeScanItem(expectedItem)
+            pendingScanItem = nil
+            WowVision:speak(L["Item not found"])
+        end
     end
 end)
 
@@ -1243,8 +1290,27 @@ local function getAuctionPopupItemSuffix(which)
     return suffix
 end
 
+-- Return to scan results when the user cancels a bid/buyout confirmation popup.
+-- Installed lazily inside StaticPopup_Show because Blizzard_AuctionUI is LoadOnDemand
+-- and its dialog tables don't exist at addon load time.
+local hookedPopupCancel = {}
+
 hooksecurefunc("StaticPopup_Show", function(which)
     if not AUCTION_POPUP_TYPES[which] then return end
+
+    -- Lazily hook OnCancel for bid/buyout popups (now that Blizzard_AuctionUI is loaded)
+    if not hookedPopupCancel[which] and (which == "BUYOUT_AUCTION" or which == "BID_AUCTION") then
+        local dialog = StaticPopupDialogs[which]
+        if dialog and dialog.OnCancel then
+            hookedPopupCancel[which] = true
+            hooksecurefunc(dialog, "OnCancel", function()
+                if viewingScanItem and pendingScanItem then
+                    returnToScanResults()
+                end
+            end)
+        end
+    end
+
     local suffix = getAuctionPopupItemSuffix(which)
     if not suffix then return end
     for i = 1, STATICPOPUP_NUMDIALOGS or 4 do
