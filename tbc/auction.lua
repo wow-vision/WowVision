@@ -547,14 +547,14 @@ local function getBrowseElement(self, button)
         label = label .. ", " .. L["Seller"] .. ": " .. owner
     end
 
+    if buyoutPrice and buyoutPrice > 0 then
+        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
+    end
+
     local currentBid = bidAmount and bidAmount > 0 and bidAmount or minBid
     local bidText = formatMoney(currentBid)
     if bidText then
         label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-
-    if buyoutPrice and buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
     end
 
     local timeLeft = GetAuctionItemTimeLeft("list", index)
@@ -602,13 +602,13 @@ local function buildFilteredBrowseList()
             if owner then
                 label = label .. ", " .. L["Seller"] .. ": " .. owner
             end
+            if buyoutPrice and buyoutPrice > 0 then
+                label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
+            end
             local currentBid = bidAmount and bidAmount > 0 and bidAmount or minBid
             local bidText = formatMoney(currentBid)
             if bidText then
                 label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-            end
-            if buyoutPrice and buyoutPrice > 0 then
-                label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
             end
             local timeLeft = GetAuctionItemTimeLeft("list", i)
             if timeLeft then
@@ -651,13 +651,13 @@ local function buildScanResultLabel(item)
     if item.owner then
         label = label .. ", " .. L["Seller"] .. ": " .. item.owner
     end
+    if item.buyoutPrice and item.buyoutPrice > 0 then
+        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(item.buyoutPrice)
+    end
     local currentBid = item.bidAmount and item.bidAmount > 0 and item.bidAmount or item.minBid
     local bidText = formatMoney(currentBid)
     if bidText then
         label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-    if item.buyoutPrice and item.buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(item.buyoutPrice)
     end
     if item.timeLeft then
         label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(item.timeLeft)
@@ -958,14 +958,13 @@ gen:Element("auction/BrowseActions", function(props)
         end
         return nil
     end
-    local children = {
-        { "auction/MoneyInput", frame = BrowseBidPrice, label = L["Bid Price"] },
-    }
+    local children = {}
     if BrowseBuyoutPrice:IsShown() then
         tinsert(children, { "money/MoneyFrame", frame = BrowseBuyoutPrice, label = L["Buyout Price"] })
+        tinsert(children, { "ProxyButton", frame = BrowseBuyoutButton })
     end
+    tinsert(children, { "auction/MoneyInput", frame = BrowseBidPrice, label = L["Bid Price"] })
     tinsert(children, { "ProxyButton", frame = BrowseBidButton })
-    tinsert(children, { "ProxyButton", frame = BrowseBuyoutButton })
     if viewingScanItem and scanResults then
         tinsert(children, {
             "Button",
@@ -1031,13 +1030,13 @@ local function getBidElement(self, button)
         label = label .. " x" .. count
     end
 
+    if buyoutPrice and buyoutPrice > 0 then
+        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
+    end
+
     local bidText = formatMoney(bidAmount and bidAmount > 0 and bidAmount or minBid)
     if bidText then
         label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-
-    if buyoutPrice and buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
     end
 
     local timeLeft = GetAuctionItemTimeLeft("bidder", index)
@@ -1143,13 +1142,13 @@ local function getAuctionElement(self, button)
         label = "[" .. L["Sold"] .. "] " .. label
     end
 
+    if buyoutPrice and buyoutPrice > 0 then
+        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
+    end
+
     local bidText = formatMoney(bidAmount and bidAmount > 0 and bidAmount or minBid)
     if bidText then
         label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-
-    if buyoutPrice and buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
     end
 
     if highBidder then
