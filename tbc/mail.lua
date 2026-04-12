@@ -25,22 +25,43 @@ local function routeTabToWV(editBox)
     end)
 end
 
--- Blizzard's SendMailFrame OnShow calls SendMailNameEditBox:SetFocus(),
--- which steals keyboard input from WV. Clear focus on ALL mail EditBoxes
--- and pre-route their Tab handling to WV so Blizzard's tab chain
--- (Body → Gold → Silver → Copper → Name) can't consume Tab presses
--- before WV has focused those elements.
+local mailEditBoxesGuarded = false
 SendMailFrame:HookScript("OnShow", function()
-    local editBoxes = {
-        SendMailNameEditBox, SendMailSubjectEditBox,
-        SendMailMoneyGold, SendMailMoneySilver, SendMailMoneyCopper,
-    }
-    local body = getBodyEditBox()
-    if body then tinsert(editBoxes, body) end
-    for _, eb in ipairs(editBoxes) do
-        if eb.ClearFocus then eb:ClearFocus() end
-        routeTabToWV(eb)
+    if not mailEditBoxesGuarded then
+        mailEditBoxesGuarded = true
+        -- Disable autoFocus and route Tab to WV on all mail EditBoxes
+        local editBoxes = {
+            SendMailMoneyGold, SendMailMoneySilver, SendMailMoneyCopper,
+            SendMailNameEditBox, SendMailSubjectEditBox, getBodyEditBox(),
+        }
+        for _, editBox in ipairs(editBoxes) do
+            if editBox then
+                editBox:SetAutoFocus(false)
+                routeTabToWV(editBox)
+            end
+        end
+        -- Break Blizzard's Lua-level focus chain links on the money frame
+        SendMailMoney.previousFocus = nil
+        SendMailMoney.nextFocus = nil
+        -- Unregister the ScrollingEditBox wrapper's OnTabPressed callback.
+        -- MailEditBox is a ScrollingEditBoxTemplate (Frame, not EditBox).
+        -- Blizzard registers: MailEditBox:RegisterCallback("OnTabPressed", SendMailEditBox_OnTabPressed, MailEditBox)
+        -- This fires EditBox_HandleTabbing(self, SEND_MAIL_TAB_LIST) INDEPENDENTLY of the
+        -- inner EditBox's OnTabPressed (which WV overrides via routeTabToWV).  Both fire on
+        -- every Tab press, causing Blizzard's tab list to simultaneously set focus on
+        -- Gold (forward) or Subject (backward) while WV navigates elsewhere.
+        if MailEditBox.UnregisterCallback then
+            MailEditBox:UnregisterCallback("OnTabPressed", MailEditBox)
+        end
+        -- Remove body/money entries from the tab list as a safety net.
+        -- WV overrides OnTabPressed on all mail EditBoxes, so this list should
+        -- never be consulted, but nil the dangerous entries just in case.
+        SEND_MAIL_TAB_LIST[3] = nil  -- MailEditBox
+        SEND_MAIL_TAB_LIST[4] = nil  -- SendMailMoneyGold
+        SEND_MAIL_TAB_LIST[5] = nil  -- SendMailMoneyCopper
     end
+    -- Clear unwanted focus from Blizzard's OnShow SetFocus() call
+    SendMailNameEditBox:ClearFocus()
 end)
 
 -- Override inbox list to regenerate when mail data arrives.
