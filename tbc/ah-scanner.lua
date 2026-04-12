@@ -65,6 +65,10 @@ function AHScanner:getProgress()
     }
 end
 
+function AHScanner:getQuery()
+    return self._query
+end
+
 function AHScanner:_cleanup()
     self._state = "idle"
     self._frame:UnregisterAllEvents()
@@ -173,8 +177,10 @@ function AHScanner:_processPage()
 
     -- Check if done
     local endPage = self._options.endPage
+    local targetCount = self._options.targetCount
     local nextPage = self._page + 1
-    if nextPage >= self._totalPages or (endPage and nextPage > endPage) then
+    local hitTarget = targetCount and #self._results >= targetCount
+    if hitTarget or nextPage >= self._totalPages or (endPage and nextPage > endPage) then
         local results = self._results
         local progress = self:getProgress()
         self:_cleanup()

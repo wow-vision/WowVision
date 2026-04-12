@@ -19,10 +19,12 @@ local minStackSize = 0
 
 -- AH Scanner integration
 local scanner = WowVision.AHScanner:new()
-local scanResults = nil
+local scanResults = nil       -- array of result items, with .query/.lastPage/.totalPages metadata
 local scanInProgress = false
+local scanIsLoadMore = false   -- true when "Load More" triggered the scan (append results)
 local viewingScanItem = false
 local pendingScanSelect = nil
+local pendingScanItem = nil    -- the scan result item being purchased
 
 -- Capture the last query args so we can replay them for scanning.
 -- Also clear scan state when the user starts a genuinely new search.
@@ -48,7 +50,9 @@ end)
 
 scanner.events.scanStarted:subscribe(module, function(self, event, info)
     scanInProgress = true
-    scanResults = nil
+    if not scanIsLoadMore then
+        scanResults = nil
+    end
     local pages = info and info.totalPages or "?"
     WowVision:speak(L["Scanning"] .. ", " .. pages .. " " .. L["Page"])
 end)
@@ -59,21 +63,36 @@ scanner.events.pageScanned:subscribe(module, function(self, event, progress)
     end
 end)
 
+local function finalizeScanResults(results, progress)
+    if scanIsLoadMore and scanResults then
+        -- Append new results to existing
+        for _, item in ipairs(results) do
+            tinsert(scanResults, item)
+        end
+    else
+        scanResults = results
+    end
+    scanResults.query = scanner:getQuery()
+    scanResults.lastPage = progress.page
+    scanResults.totalPages = progress.totalPages
+    scanIsLoadMore = false
+end
+
 scanner.events.scanComplete:subscribe(module, function(self, event, results, progress)
     scanInProgress = false
-    scanResults = results
-    WowVision:speak(L["Scan complete"] .. ", " .. #results .. " " .. L["Results"] .. " / " .. progress.total)
+    finalizeScanResults(results, progress)
+    WowVision:speak(L["Scan complete"] .. ", " .. #scanResults .. " " .. L["Results"] .. " in " .. progress.total .. " " .. L["scanned"])
 end)
 
 scanner.events.scanAborted:subscribe(module, function(self, event, results, progress)
     scanInProgress = false
-    scanResults = results
-    WowVision:speak(L["Scan aborted"] .. ", " .. #results .. " " .. L["Results"])
+    finalizeScanResults(results, progress)
+    WowVision:speak(L["Scan aborted"] .. ", " .. #scanResults .. " " .. L["Results"])
 end)
 
 scanner.events.scanFailed:subscribe(module, function(self, event, reason)
     scanInProgress = false
-    scanResults = nil
+    scanIsLoadMore = false
     WowVision:speak(L["Scan failed"])
 end)
 
@@ -646,6 +665,54 @@ local function buildScanResultLabel(item)
     return label
 end
 
+-- Remove a purchased/gone item from the scan results list.
+local function removeScanItem(item)
+    if not scanResults or not item then return end
+    for i, entry in ipairs(scanResults) do
+        if entry == item then
+            tremove(scanResults, i)
+            return
+        end
+    end
+end
+
+-- Purchase tracking: auto-return to scan results after buy or item-not-found.
+local purchaseFrame = CreateFrame("Frame")
+
+local function stopPurchaseTracking()
+    purchaseFrame:UnregisterAllEvents()
+end
+
+local function returnToScanResults()
+    viewingScanItem = false
+    pendingScanItem = nil
+    stopPurchaseTracking()
+end
+
+purchaseFrame:SetScript("OnEvent", function(_, event, ...)
+    if not viewingScanItem or not pendingScanItem then return end
+    if event == "CHAT_MSG_SYSTEM" then
+        local message = ...
+        if message == ERR_AUCTION_BID_PLACED then
+            removeScanItem(pendingScanItem)
+            returnToScanResults()
+            WowVision:speak(L["Item purchased"])
+        end
+    elseif event == "UI_ERROR_MESSAGE" then
+        local _, message = ...
+        if message == ERR_ITEM_NOT_FOUND then
+            removeScanItem(pendingScanItem)
+            returnToScanResults()
+            WowVision:speak(L["Item not found"])
+        end
+    end
+end)
+
+local function startPurchaseTracking()
+    purchaseFrame:RegisterEvent("CHAT_MSG_SYSTEM")
+    purchaseFrame:RegisterEvent("UI_ERROR_MESSAGE")
+end
+
 -- Navigate to a scan result's page and select it, then show bid/buyout.
 -- scanResults is preserved so the user can return to the list.
 -- We delay the selection by one frame so Blizzard's AuctionFrameBrowse_Update()
@@ -657,6 +724,7 @@ scanSelectFrame:SetScript("OnEvent", function()
         pendingScanSelect = nil
         scanSelectFrame:UnregisterAllEvents()
         viewingScanItem = true
+        startPurchaseTracking()
         C_Timer.After(0, function()
             selectBrowseItem(index)
         end)
@@ -665,8 +733,9 @@ end)
 
 local function selectScanResult(item)
     pendingScanSelect = item.pageIndex
+    pendingScanItem = item
     scanSelectFrame:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
-    local q = lastQueryArgs
+    local q = scanResults and scanResults.query or lastQueryArgs
     QueryAuctionItems(
         q.name or "",
         q.minLevel or 0,
@@ -680,8 +749,23 @@ local function selectScanResult(item)
     )
 end
 
-local function returnToScanResults()
-    viewingScanItem = false
+local SCAN_TARGET_COUNT = 20
+
+-- Start a scan using the last captured query args.
+-- startPage: optional page to resume from (for "Load More").
+local function startScan(startPage)
+    local filter
+    if minStackSize > 1 then
+        local threshold = minStackSize
+        filter = function(name, texture, count)
+            return (count or 0) >= threshold
+        end
+    end
+    scanner:start(lastQueryArgs, {
+        filter = filter,
+        targetCount = SCAN_TARGET_COUNT,
+        startPage = startPage,
+    })
 end
 
 -- Build a List element from scan results.
@@ -703,18 +787,6 @@ local function buildScanResultsList()
         })
     end
     return { "List", label = L["Scan Results"], children = children }
-end
-
--- Start a scan using the last captured query args.
-local function startScan()
-    local filter
-    if minStackSize > 1 then
-        local threshold = minStackSize
-        filter = function(name, texture, count)
-            return (count or 0) >= threshold
-        end
-    end
-    scanner:start(lastQueryArgs, { filter = filter })
 end
 
 gen:Element("auction/BrowseResults", {
@@ -755,31 +827,30 @@ gen:Element("auction/BrowseResults", {
         return buildScanResultsList()
     end
 
-    -- Filtered browse: show scan button when no matches on current page
+    -- Filtered browse: show current page filtered + scan button
     if minStackSize > 1 then
         local filtered = buildFilteredBrowseList()
-        if filtered and filtered[1] ~= "Text" then
-            return filtered
-        end
-        -- No matches on this page — offer full scan
         local numBatch, totalAuctions = GetNumAuctionItems("list")
+        local hasResults = filtered and filtered[1] ~= "Text"
         if (totalAuctions or 0) > 0 then
-            return {
-                "List",
-                label = L["Results"],
-                children = {
-                    { "Text", text = L["No Results"] },
-                    {
-                        "Button",
-                        label = L["Scan All Pages"],
-                        events = {
-                            click = function()
-                                startScan()
-                            end,
-                        },
-                    },
+            local children = {}
+            if hasResults then
+                -- Show filtered current page results
+                children = filtered.children or {}
+            else
+                tinsert(children, { "Text", text = L["No Results"] })
+            end
+            -- Always offer scan when there are auction pages to search
+            tinsert(children, {
+                "Button",
+                label = L["Scan"],
+                events = {
+                    click = function()
+                        startScan()
+                    end,
                 },
-            }
+            })
+            return { "List", label = L["Results"], children = children }
         end
         return filtered
     end
@@ -787,8 +858,28 @@ gen:Element("auction/BrowseResults", {
     return browseResultsCallback(props)
 end)
 
--- Pagination
+-- Pagination: show "Load More" when scan results exist, otherwise Blizzard page buttons.
 gen:Element("auction/BrowsePageControls", function(props)
+    -- When viewing scan results, replace Blizzard pagination with "Load More"
+    if scanResults and not viewingScanItem and not scanInProgress then
+        local hasMore = scanResults.lastPage and scanResults.totalPages
+            and (scanResults.lastPage + 1) < scanResults.totalPages
+        if hasMore then
+            return {
+                "Button",
+                label = L["Load More"],
+                events = {
+                    click = function()
+                        scanIsLoadMore = true
+                        startScan(scanResults.lastPage + 1)
+                    end,
+                },
+            }
+        end
+        return nil
+    end
+
+    -- Normal Blizzard page controls
     local children = {}
     if BrowsePrevPageButton:IsShown() and BrowsePrevPageButton:IsEnabled() then
         tinsert(children, { "ProxyButton", frame = BrowsePrevPageButton, label = L["Previous Page"] })
