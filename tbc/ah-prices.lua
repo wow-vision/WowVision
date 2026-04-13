@@ -190,10 +190,7 @@ end)
 -- Tooltip hook
 -----------------------------------------------------------------------
 
-local function onTooltipSetItem(tooltip)
-    if not db or not module.settings.tooltipPrices then return end
-    if tooltip._wvPricesAdded then return end
-
+local function addPriceLines(tooltip)
     local _, link = tooltip:GetItem()
     local itemId = extractItemId(link)
     if not itemId then return end
@@ -233,6 +230,13 @@ local function onTooltipSetItem(tooltip)
     tooltip:Show()
 end
 
+local function afterTooltipSet(tooltip)
+    if not db or not module.settings.tooltipPrices then return end
+    if tooltip._wvPricesAdded then return end
+    if not tooltip:GetItem() then return end
+    addPriceLines(tooltip)
+end
+
 -----------------------------------------------------------------------
 -- AH open/close tracking
 -----------------------------------------------------------------------
@@ -266,7 +270,24 @@ end)
 function module:onEnable()
     db = ensureDB()
     fullScanner:setLastScanTime(db.lastScan)
-    GameTooltip:HookScript("OnTooltipSetItem", onTooltipSetItem)
+
+    -- Hook all Set* methods that display item tooltips. hooksecurefunc runs
+    -- AFTER the C function returns, so the tooltip is fully built (including
+    -- reagent lines on recipes) before we append price lines.
+    local itemSetMethods = {
+        "SetHyperlink", "SetAuctionItem", "SetAuctionSellItem",
+        "SetBagItem", "SetInventoryItem", "SetMerchantItem",
+        "SetTradeSkillItem", "SetLootItem", "SetQuestItem",
+        "SetQuestLogItem", "SetSendMailItem", "SetInboxItem",
+        "SetTradePlayerItem", "SetTradeTargetItem",
+        "SetGuildBankItem", "SetItemByID",
+    }
+    for _, method in ipairs(itemSetMethods) do
+        if GameTooltip[method] then
+            hooksecurefunc(GameTooltip, method, afterTooltipSet)
+        end
+    end
+
     GameTooltip:HookScript("OnTooltipCleared", function(tooltip)
         tooltip._wvPricesAdded = nil
     end)
