@@ -128,12 +128,13 @@ function AHFullScanner:_onEvent(event)
 
     if event == "AUCTION_ITEM_LIST_UPDATE" and self._state == "waiting" then
         local numBatch, totalAuctions = GetNumAuctionItems("list")
-        self._totalAuctions = totalAuctions or numBatch or 0
-        if self._totalAuctions == 0 then
-            self:_cleanup()
-            self.events.scanFailed:emit("empty")
+        -- A getAll response delivers all auctions in one batch, so numBatch
+        -- is always larger than a single page.  Skip stale page data or
+        -- cleared-list events that fire before the real response arrives.
+        if numBatch <= (NUM_AUCTION_ITEMS_PER_PAGE or 50) then
             return
         end
+        self._totalAuctions = totalAuctions or numBatch or 0
         self._state = "processing"
         self.events.scanStarted:emit(self._totalAuctions)
         self:_startBatchProcessing()

@@ -63,7 +63,8 @@ local pendingScanItem = nil    -- the scan result item being purchased
 -- Also clear scan state when the user starts a genuinely new search.
 local lastQueryArgs = {}
 hooksecurefunc("QueryAuctionItems", function(name, minLevel, maxLevel, page, usable, rarity, getAll, exactMatch, filterData)
-    if scanner:isScanning() or pendingScanSelect then
+    if scanner:isScanning() or pendingScanSelect or getAll
+        or (fullScanner and fullScanner:isScanning()) then
         return
     end
     lastQueryArgs = {
@@ -703,9 +704,12 @@ local function selectBrowseItem(realIndex)
 end
 
 -- Build a flat List of browse results filtered by minStackSize.
+local MAX_FILTERED_BROWSE = 10000 -- ~200 pages, safety cap against getAll data in list
+
 local function buildFilteredBrowseList()
     local numBatch = GetNumAuctionItems("list") or 0
     if numBatch == 0 then return nil end
+    if numBatch > MAX_FILTERED_BROWSE then return nil end
     local children = {}
     for i = 1, numBatch do
         local name, _, count, quality, canUse, level, levelColHeader,
