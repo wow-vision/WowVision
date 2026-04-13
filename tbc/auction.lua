@@ -98,14 +98,6 @@ end)
 
 -- Full AH scanner integration (price database)
 local fullScanner = WowVision.ahPrices and WowVision.ahPrices.fullScanner
-local lastFullScanStart = 0
-local FULL_SCAN_COOLDOWN = 900
-
-if fullScanner then
-    fullScanner.events.scanStarted:subscribe(module, function(self, event, totalAuctions)
-        lastFullScanStart = GetTime()
-    end)
-end
 
 local function formatCooldownTime(seconds)
     local mins = math.floor(seconds / 60)
@@ -117,6 +109,20 @@ local function formatCooldownTime(seconds)
     else
         return secs .. " sec"
     end
+end
+
+local function fullScanScanningLabel()
+    if not fullScanner then return "" end
+    local state = fullScanner:getState()
+    if state == "waiting" then
+        return L["Scanning"] .. ", " .. math.floor(fullScanner:getWaitElapsed()) .. " sec"
+    elseif state == "processing" then
+        local p = fullScanner:getProgress()
+        if p.total > 0 then
+            return L["Scanning"] .. ", " .. math.floor(p.processed * 100 / p.total) .. "%"
+        end
+    end
+    return L["Scanning"]
 end
 
 gen:Element("auction/FullScanButton", {
@@ -135,7 +141,7 @@ gen:Element("auction/FullScanButton", {
     if fullScanner:isScanning() then
         return {
             "Button",
-            label = L["Abort Full Scan"],
+            label = fullScanScanningLabel,
             events = {
                 click = function()
                     fullScanner:abort()
@@ -157,30 +163,13 @@ gen:Element("auction/FullScanButton", {
         }
     end
 
-    -- Cooldown: show remaining time if known
-    local label = L["Full Scan"]
-    if lastFullScanStart > 0 then
-        local remaining = math.max(0, FULL_SCAN_COOLDOWN - (GetTime() - lastFullScanStart))
-        if remaining > 0 then
-            label = label .. ", " .. formatCooldownTime(remaining)
-        else
-            label = label .. ", " .. L["Cooldown active"]
-        end
-    else
-        label = label .. ", " .. L["Cooldown active"]
-    end
-
+    -- Cooldown: click speaks remaining time
     return {
         "Button",
-        label = label,
+        label = L["Full Scan"] .. ", " .. L["Cooldown active"],
         events = {
             click = function()
-                if lastFullScanStart > 0 then
-                    local remaining = math.max(0, FULL_SCAN_COOLDOWN - (GetTime() - lastFullScanStart))
-                    WowVision:speak(L["Cooldown active"] .. ", " .. formatCooldownTime(remaining))
-                else
-                    WowVision:speak(L["Cooldown active"])
-                end
+                WowVision:speak(formatCooldownTime(fullScanner:getCooldownRemaining()))
             end,
         },
     }

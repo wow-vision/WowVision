@@ -1,6 +1,7 @@
 local AHFullScanner = WowVision.Class("AHFullScanner")
 
 local BATCH_SIZE = 250
+local COOLDOWN = 900 -- 15 minutes
 
 function AHFullScanner:initialize()
     self.events = {
@@ -14,6 +15,7 @@ function AHFullScanner:initialize()
     self._processed = 0
     self._results = {}
     self._hijackedFrames = {}
+    self._scanStartTime = 0
 
     self._frame = CreateFrame("Frame")
     self._frame:SetScript("OnEvent", function(_, event)
@@ -22,11 +24,31 @@ function AHFullScanner:initialize()
 end
 
 function AHFullScanner:canScan()
-    local canQuery, canGetAll = CanSendAuctionQuery()
-    if not canGetAll then
-        return false, "cooldown"
+    return self:getCooldownRemaining() <= 0, "cooldown"
+end
+
+function AHFullScanner:getCooldownRemaining()
+    if self._scanStartTime <= 0 then return 0 end
+    return math.max(0, COOLDOWN - (GetTime() - self._scanStartTime))
+end
+
+-- Seed cooldown from a persisted unix timestamp (e.g. after reload).
+-- Converts wall-clock time() to session-relative GetTime().
+function AHFullScanner:setLastScanTime(unixTime)
+    if not unixTime or unixTime <= 0 then return end
+    local elapsed = time() - unixTime
+    if elapsed < COOLDOWN then
+        self._scanStartTime = GetTime() - elapsed
     end
-    return true, nil
+end
+
+function AHFullScanner:getState()
+    return self._state
+end
+
+function AHFullScanner:getWaitElapsed()
+    if self._state ~= "waiting" or self._scanStartTime <= 0 then return 0 end
+    return GetTime() - self._scanStartTime
 end
 
 function AHFullScanner:start()
@@ -44,6 +66,7 @@ function AHFullScanner:start()
     self._processed = 0
     self._totalAuctions = 0
     self._results = {}
+    self._scanStartTime = GetTime()
 
     self._frame:RegisterEvent("AUCTION_HOUSE_CLOSED")
     self:_hijackEvent()

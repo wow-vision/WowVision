@@ -139,22 +139,8 @@ api.formatPrice = formatPrice
 local fullScanner = WowVision.AHFullScanner:new()
 api.fullScanner = fullScanner
 
-local lastProgressMilestone = 0
-
 fullScanner.events.scanStarted:subscribe(module, function(self, event, totalAuctions)
-    lastProgressMilestone = 0
     WowVision:speak(L["Full scan started"] .. ", " .. totalAuctions .. " " .. L["auctions"])
-end)
-
-fullScanner.events.scanProgress:subscribe(module, function(self, event, processed, total)
-    if total > 0 then
-        local pct = math.floor(processed * 100 / total)
-        local milestone = pct - (pct % 25)
-        if milestone > lastProgressMilestone and milestone < 100 then
-            lastProgressMilestone = milestone
-            WowVision:speak(milestone .. "%")
-        end
-    end
 end)
 
 fullScanner.events.scanComplete:subscribe(module, function(self, event, results)
@@ -277,6 +263,7 @@ end)
 
 function module:onEnable()
     db = ensureDB()
+    fullScanner:setLastScanTime(db.lastScan)
     GameTooltip:HookScript("OnTooltipSetItem", onTooltipSetItem)
 end
 
