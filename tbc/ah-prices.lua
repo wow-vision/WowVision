@@ -192,6 +192,7 @@ end)
 
 local function onTooltipSetItem(tooltip)
     if not db or not module.settings.tooltipPrices then return end
+    if tooltip._wvPricesAdded then return end
 
     local _, link = tooltip:GetItem()
     local itemId = extractItemId(link)
@@ -228,6 +229,7 @@ local function onTooltipSetItem(tooltip)
         end
     end
 
+    tooltip._wvPricesAdded = true
     tooltip:Show()
 end
 
@@ -265,6 +267,9 @@ function module:onEnable()
     db = ensureDB()
     fullScanner:setLastScanTime(db.lastScan)
     GameTooltip:HookScript("OnTooltipSetItem", onTooltipSetItem)
+    GameTooltip:HookScript("OnTooltipCleared", function(tooltip)
+        tooltip._wvPricesAdded = nil
+    end)
 end
 
 WowVision.ahPrices = api

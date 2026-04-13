@@ -166,6 +166,7 @@ function AHScanner:_processPage()
                     owner = owner,
                     timeLeft = GetAuctionItemTimeLeft("list", i),
                     itemId = itemId,
+                    link = GetAuctionItemLink("list", i),
                     page = self._page,
                     pageIndex = i,
                 })

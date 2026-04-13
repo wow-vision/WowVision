@@ -10,6 +10,39 @@ local L = module.L
 module:setLabel(L["Auction House"])
 local gen = module:hasUI()
 
+-- Tooltip type for auction items: populates GameTooltip via SetAuctionItem.
+local AuctionItemTooltipType = WowVision.tooltips:createType("AuctionItem")
+
+function AuctionItemTooltipType:initialize(tooltip)
+    WowVision.TooltipType.initialize(self, tooltip)
+end
+
+function AuctionItemTooltipType:activate(widget, data)
+    self.tooltip.activeFrame = GameTooltip
+    self.listType = data.listType
+    self.index = data.index
+    self.link = data.link
+end
+
+function AuctionItemTooltipType:deactivate()
+    self.listType = nil
+    self.index = nil
+    self.link = nil
+end
+
+function AuctionItemTooltipType:beforeRead()
+    GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+    if self.link then
+        GameTooltip:SetHyperlink(self.link)
+    else
+        GameTooltip:SetAuctionItem(self.listType, self.index)
+    end
+end
+
+function AuctionItemTooltipType:afterRead()
+    GameTooltip:Hide()
+end
+
 -- Alert for item selection feedback
 local selectAlert = module:addAlert({ key = "itemSelected", label = L["Item Selected"] })
 selectAlert:addOutput({ type = "TTS", key = "tts", label = L["Item Selected"] })
@@ -642,7 +675,12 @@ local function getBrowseElement(self, button)
         label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(timeLeft)
     end
 
-    return { "ProxyButton", frame = button, label = label }
+    return {
+        "ProxyButton",
+        frame = button,
+        label = label,
+        tooltip = { type = "AuctionItem", listType = "list", index = index },
+    }
 end
 
 -- Select a browse item by its 1-based index in the auction list.
@@ -698,6 +736,7 @@ local function buildFilteredBrowseList()
             tinsert(children, {
                 "Button",
                 label = label,
+                tooltip = { type = "AuctionItem", listType = "list", index = realIndex },
                 events = {
                     click = function()
                         selectBrowseItem(realIndex)
@@ -906,6 +945,7 @@ local function buildScanResultsList()
         tinsert(children, {
             "Button",
             label = buildScanResultLabel(item),
+            tooltip = item.link and { type = "AuctionItem", link = item.link } or nil,
             events = {
                 click = function()
                     selectScanResult(capturedItem)
