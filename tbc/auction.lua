@@ -96,6 +96,96 @@ scanner.events.scanFailed:subscribe(module, function(self, event, reason)
     WowVision:speak(L["Scan failed"])
 end)
 
+-- Full AH scanner integration (price database)
+local fullScanner = WowVision.ahPrices and WowVision.ahPrices.fullScanner
+local lastFullScanStart = 0
+local FULL_SCAN_COOLDOWN = 900
+
+if fullScanner then
+    fullScanner.events.scanStarted:subscribe(module, function(self, event, totalAuctions)
+        lastFullScanStart = GetTime()
+    end)
+end
+
+local function formatCooldownTime(seconds)
+    local mins = math.floor(seconds / 60)
+    local secs = math.floor(seconds % 60)
+    if mins > 0 and secs > 0 then
+        return mins .. " min " .. secs .. " sec"
+    elseif mins > 0 then
+        return mins .. " min"
+    else
+        return secs .. " sec"
+    end
+end
+
+gen:Element("auction/FullScanButton", {
+    regenerateOn = {
+        values = function()
+            if not fullScanner then return {} end
+            return {
+                scanning = fullScanner:isScanning(),
+                canScan = select(1, fullScanner:canScan()),
+            }
+        end,
+    },
+}, function(props)
+    if not fullScanner then return nil end
+
+    if fullScanner:isScanning() then
+        return {
+            "Button",
+            label = L["Abort Full Scan"],
+            events = {
+                click = function()
+                    fullScanner:abort()
+                end,
+            },
+        }
+    end
+
+    local canScan = fullScanner:canScan()
+    if canScan then
+        return {
+            "Button",
+            label = L["Full Scan"],
+            events = {
+                click = function()
+                    fullScanner:start()
+                end,
+            },
+        }
+    end
+
+    -- Cooldown: show remaining time if known
+    local label = L["Full Scan"]
+    if lastFullScanStart > 0 then
+        local remaining = math.max(0, FULL_SCAN_COOLDOWN - (GetTime() - lastFullScanStart))
+        if remaining > 0 then
+            label = label .. ", " .. formatCooldownTime(remaining)
+        else
+            label = label .. ", " .. L["Cooldown active"]
+        end
+    else
+        label = label .. ", " .. L["Cooldown active"]
+    end
+
+    return {
+        "Button",
+        label = label,
+        events = {
+            click = function()
+                if lastFullScanStart > 0 then
+                    local remaining = math.max(0, FULL_SCAN_COOLDOWN - (GetTime() - lastFullScanStart))
+                    WowVision:speak(L["Cooldown active"] .. ", " .. formatCooldownTime(remaining))
+                else
+                    WowVision:speak(L["Cooldown active"])
+                end
+            end,
+        },
+    }
+end)
+
 -- Button counts per tab (matching Blizzard's fixed button arrays)
 local NUM_BROWSE_BUTTONS = 8
 local NUM_BID_BUTTONS = 9
@@ -477,6 +567,7 @@ gen:Element("auction/SearchFilters", function(props)
                 },
             },
             { "ProxyButton", frame = BrowseSearchButton },
+            { "auction/FullScanButton" },
             { "ProxyButton", frame = BrowseResetButton },
         },
     }

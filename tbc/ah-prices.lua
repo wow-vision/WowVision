@@ -1,0 +1,283 @@
+local module = WowVision.base:createModule("ahPrices")
+local L = module.L
+module:setLabel(L["Auction Prices"])
+
+local settings = module:hasSettings()
+settings:add({ type = "Number", key = "historyDays", label = L["History Days"], default = 21 })
+settings:add({ type = "Bool", key = "tooltipPrices", label = L["Tooltip Prices"], default = true })
+settings:add({ type = "Bool", key = "autoScan", label = L["Auto Scan"], default = false })
+
+-----------------------------------------------------------------------
+-- Helpers
+-----------------------------------------------------------------------
+
+local DAY_EPOCH = 1577836800 -- 2020-01-01 00:00:00 UTC
+
+local function today()
+    return math.floor((time() - DAY_EPOCH) / 86400)
+end
+
+local function realmKey()
+    local realm = GetNormalizedRealmName() or GetRealmName():gsub("%s+", "")
+    local faction = UnitFactionGroup("player")
+    return realm .. "-" .. faction
+end
+
+local function formatPrice(copper)
+    if not copper or copper <= 0 then return nil end
+    return C_CurrencyInfo.GetCoinText(copper)
+end
+
+local function extractItemId(link)
+    if not link then return nil end
+    local id = link:match("item:(%d+)")
+    return id and tonumber(id) or nil
+end
+
+-----------------------------------------------------------------------
+-- Database access
+-----------------------------------------------------------------------
+
+local db -- set in onEnable
+
+local function ensureDB()
+    if not WowVisionPriceDB then
+        WowVisionPriceDB = {}
+    end
+    local key = realmKey()
+    if not WowVisionPriceDB[key] then
+        WowVisionPriceDB[key] = { prices = {}, vendors = {}, lastScan = 0 }
+    end
+    return WowVisionPriceDB[key]
+end
+
+local function pruneEntry(entry, maxAge)
+    local cutoff = today() - maxAge
+    for _, tbl in ipairs({ entry.h, entry.l, entry.a }) do
+        if tbl then
+            for day in pairs(tbl) do
+                if day <= cutoff then
+                    tbl[day] = nil
+                end
+            end
+        end
+    end
+end
+
+local function setPrice(itemId, minBuyout, auctionCount)
+    local d = today()
+    local prices = db.prices
+    local entry = prices[itemId]
+    if not entry then
+        entry = { m = minBuyout, d = d, h = {}, l = {}, a = {} }
+        prices[itemId] = entry
+    end
+
+    entry.m = minBuyout
+    entry.d = d
+
+    -- Update daily high/low/count
+    local prevHigh = entry.h[d]
+    entry.h[d] = prevHigh and math.max(prevHigh, minBuyout) or minBuyout
+
+    local prevLow = entry.l[d]
+    entry.l[d] = prevLow and math.min(prevLow, minBuyout) or minBuyout
+
+    entry.a[d] = auctionCount
+
+    pruneEntry(entry, module.settings.historyDays or 21)
+end
+
+-----------------------------------------------------------------------
+-- Public API
+-----------------------------------------------------------------------
+
+local api = {}
+
+function api.getPrice(itemId)
+    if not db then return nil end
+    return db.prices[itemId]
+end
+
+function api.getVendorPrice(itemId)
+    if not db then return nil end
+    return db.vendors[itemId]
+end
+
+function api.getMeanPrice(itemId, days)
+    if not db then return nil end
+    local entry = db.prices[itemId]
+    if not entry then return nil end
+    days = days or 7
+    local d = today()
+    local total, count = 0, 0
+    for i = 0, days - 1 do
+        local dayKey = d - i
+        local val = entry.l and entry.l[dayKey] or entry.h and entry.h[dayKey]
+        if val then
+            total = total + val
+            count = count + 1
+        end
+    end
+    if count == 0 then return nil end
+    return math.floor(total / count)
+end
+
+function api.getPriceAge(itemId)
+    if not db then return nil end
+    local entry = db.prices[itemId]
+    if not entry or not entry.d then return nil end
+    return today() - entry.d
+end
+
+api.formatPrice = formatPrice
+
+-----------------------------------------------------------------------
+-- Full Scanner
+-----------------------------------------------------------------------
+
+local fullScanner = WowVision.AHFullScanner:new()
+api.fullScanner = fullScanner
+
+local lastProgressMilestone = 0
+
+fullScanner.events.scanStarted:subscribe(module, function(self, event, totalAuctions)
+    lastProgressMilestone = 0
+    WowVision:speak(L["Full scan started"] .. ", " .. totalAuctions .. " " .. L["auctions"])
+end)
+
+fullScanner.events.scanProgress:subscribe(module, function(self, event, processed, total)
+    if total > 0 then
+        local pct = math.floor(processed * 100 / total)
+        local milestone = pct - (pct % 25)
+        if milestone > lastProgressMilestone and milestone < 100 then
+            lastProgressMilestone = milestone
+            WowVision:speak(milestone .. "%")
+        end
+    end
+end)
+
+fullScanner.events.scanComplete:subscribe(module, function(self, event, results)
+    local count = 0
+    for itemId, data in pairs(results) do
+        setPrice(itemId, data.minBuyout, data.totalSeen)
+        count = count + 1
+    end
+    db.lastScan = time()
+    WowVision:speak(L["Full scan complete"] .. ", " .. count .. " " .. L["items updated"])
+end)
+
+fullScanner.events.scanFailed:subscribe(module, function(self, event, reason)
+    if reason == "aborted" then
+        WowVision:speak(L["Full scan aborted"])
+    elseif reason == "cooldown" then
+        WowVision:speak(L["Cooldown active"])
+    elseif reason == "ah_closed" then
+        WowVision:speak(L["Auction not open"])
+    else
+        WowVision:speak(L["Full scan failed"])
+    end
+end)
+
+-----------------------------------------------------------------------
+-- Vendor price caching
+-----------------------------------------------------------------------
+
+local vendorFrame = CreateFrame("Frame")
+vendorFrame:RegisterEvent("MERCHANT_SHOW")
+vendorFrame:SetScript("OnEvent", function()
+    if not db then return end
+    local numItems = GetMerchantNumItems()
+    for i = 1, numItems do
+        local _, _, price, quantity, numAvailable = GetMerchantItemInfo(i)
+        if numAvailable == -1 and price and price > 0 and quantity and quantity > 0 then
+            local link = GetMerchantItemLink(i)
+            local itemId = extractItemId(link)
+            if itemId then
+                db.vendors[itemId] = math.floor(price / quantity)
+            end
+        end
+    end
+end)
+
+-----------------------------------------------------------------------
+-- Tooltip hook
+-----------------------------------------------------------------------
+
+local function onTooltipSetItem(tooltip)
+    if not db or not module.settings.tooltipPrices then return end
+
+    local _, link = tooltip:GetItem()
+    local itemId = extractItemId(link)
+    if not itemId then return end
+
+    local entry = db.prices[itemId]
+    if entry and entry.m then
+        local priceText = formatPrice(entry.m)
+        if priceText then
+            local line = L["Auction Price"] .. ": " .. priceText
+            local age = today() - (entry.d or 0)
+            if age > 0 then
+                line = line .. " (" .. age .. " " .. L["days ago"] .. ")"
+            end
+            tooltip:AddLine(line, 1, 1, 1)
+        end
+    end
+
+    -- Vendor sell price from GetItemInfo
+    local _, _, _, _, _, _, _, _, _, _, sellPrice = GetItemInfo(itemId)
+    if sellPrice and sellPrice > 0 then
+        local sellText = formatPrice(sellPrice)
+        if sellText then
+            tooltip:AddLine(L["Vendor Sell"] .. ": " .. sellText, 1, 1, 1)
+        end
+    end
+
+    -- Vendor buy price from cache
+    local vendorPrice = db.vendors[itemId]
+    if vendorPrice then
+        local buyText = formatPrice(vendorPrice)
+        if buyText then
+            tooltip:AddLine(L["Vendor Buy"] .. ": " .. buyText, 1, 1, 1)
+        end
+    end
+
+    tooltip:Show()
+end
+
+-----------------------------------------------------------------------
+-- AH open/close tracking
+-----------------------------------------------------------------------
+
+local ahOpen = false
+
+local eventFrame = CreateFrame("Frame")
+eventFrame:RegisterEvent("AUCTION_HOUSE_SHOW")
+eventFrame:RegisterEvent("AUCTION_HOUSE_CLOSED")
+eventFrame:SetScript("OnEvent", function(_, event)
+    if event == "AUCTION_HOUSE_SHOW" then
+        ahOpen = true
+        if module.settings.autoScan then
+            local canScan = fullScanner:canScan()
+            if canScan then
+                fullScanner:start()
+            end
+        end
+    elseif event == "AUCTION_HOUSE_CLOSED" then
+        ahOpen = false
+        if fullScanner:isScanning() then
+            fullScanner:abort()
+        end
+    end
+end)
+
+-----------------------------------------------------------------------
+-- Module lifecycle
+-----------------------------------------------------------------------
+
+function module:onEnable()
+    db = ensureDB()
+    GameTooltip:HookScript("OnTooltipSetItem", onTooltipSetItem)
+end
+
+WowVision.ahPrices = api
