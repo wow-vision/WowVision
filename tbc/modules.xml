@@ -11,6 +11,7 @@
   <Script file="ah-scanner.lua" />
   <Script file="ah-full-scanner.lua" />
   <Script file="ah-prices.lua" />
+  <Script file="ah-scan-session.lua" />
   <Script file="auction.lua" />
 
 </Ui>
