@@ -25,7 +25,7 @@ function ScanSession:initialize(config)
     self.pendingItem = nil
     self.pendingIndex = nil
     self.lastQuery = {}
-    self._pendingAppend = false
+    self.pendingAppend = false
 
     self.purchaseFrame = CreateFrame("Frame")
     self.purchaseFrame:SetScript("OnEvent", function(_, event, ...)
@@ -59,7 +59,7 @@ end
 
 function ScanSession:startScan(options)
     options = options or {}
-    self._pendingAppend = options.append or false
+    self.pendingAppend = options.append or false
     if not options.append then
         self.pendingItem = nil
         self.pendingIndex = nil
@@ -105,17 +105,7 @@ function ScanSession:selectResult(item)
     self.state = "selectingItem"
     self.selectFrame:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
     local q = (self.results and self.results.query) or self.lastQuery
-    QueryAuctionItems(
-        q.name or "",
-        q.minLevel or 0,
-        q.maxLevel or 0,
-        item.page,
-        q.usable or false,
-        q.rarity or -1,
-        false,
-        q.exactMatch or false,
-        q.filterData
-    )
+    WowVision.tbcAH.sendPageQuery(q, item.page)
 end
 
 function ScanSession:returnToResults()
@@ -139,7 +129,7 @@ end
 
 function ScanSession:_subscribeToScanner()
     self.scanner.events.scanStarted:subscribe(self, function(_, _, info)
-        if not self._pendingAppend then
+        if not self.pendingAppend then
             self.results = nil
         end
         self.state = "scanning"
@@ -162,14 +152,14 @@ function ScanSession:_subscribeToScanner()
         WowVision:speak(self.L["Scan aborted"] .. ", " .. #self.results .. " " .. self.L["Results"])
     end)
     self.scanner.events.scanFailed:subscribe(self, function(_, _, reason)
-        self._pendingAppend = false
+        self.pendingAppend = false
         self.state = (self.results and #self.results > 0) and "browsingResults" or "idle"
         WowVision:speak(self.L["Scan failed"])
     end)
 end
 
 function ScanSession:_finalize(results, progress)
-    if self._pendingAppend and self.results then
+    if self.pendingAppend and self.results then
         for _, item in ipairs(results) do
             tinsert(self.results, item)
         end
@@ -179,7 +169,7 @@ function ScanSession:_finalize(results, progress)
     self.results.query = self.scanner:getQuery()
     self.results.lastPage = progress.page
     self.results.totalPages = progress.totalPages
-    self._pendingAppend = false
+    self.pendingAppend = false
 end
 
 -- Verify the auction at the given index still matches the expected scan result.

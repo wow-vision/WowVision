@@ -1,10 +1,3 @@
--- Blizzard bug: deDE localization in Blizzard_AuctionUI tries to call
--- PriceDropdown:SetWidth() but PriceDropdown doesn't exist in TBC Anniversary.
--- Create a dummy to prevent the error.
-if not PriceDropdown then
-    PriceDropdown = CreateFrame("Frame")
-end
-
 local module = WowVision.base.windows:createModule("auction")
 local L = module.L
 module:setLabel(L["Auction House"])
@@ -507,12 +500,23 @@ gen:Element("auction/BrowseTab", function(props)
     }
 end)
 
+-- HookScript each frame at most once. We touch category/browse buttons repeatedly
+-- during UI regeneration; without this, we'd stack duplicate handlers every redraw.
+local hookedFrames = setmetatable({}, { __mode = "k" })
+local function hookOnce(frame, script, handler)
+    local key = hookedFrames[frame]
+    if not key then
+        key = {}
+        hookedFrames[frame] = key
+    end
+    if key[script] then return end
+    key[script] = true
+    frame:HookScript(script, handler)
+end
+
 -- Category filter buttons — hook each to auto-search on click
-local hookedFilterButtons = {}
 local function hookFilterButton(button)
-    if hookedFilterButtons[button] then return end
-    hookedFilterButtons[button] = true
-    button:HookScript("OnClick", function()
+    hookOnce(button, "OnClick", function()
         AuctionFrameBrowse_Search()
     end)
 end
@@ -614,11 +618,8 @@ gen:Element("auction/BrowsePriceOptions", function(props)
 end)
 
 -- Browse result item element builder
-local hookedBrowseButtons = {}
 local function hookBrowseButton(button)
-    if hookedBrowseButtons[button] then return end
-    hookedBrowseButtons[button] = true
-    button:HookScript("OnClick", function()
+    hookOnce(button, "OnClick", function()
         local selected = GetSelectedAuctionItem("list")
         if selected and selected > 0 then
             local name = GetAuctionItemInfo("list", selected)

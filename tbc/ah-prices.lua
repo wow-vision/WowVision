@@ -37,6 +37,16 @@ end
 
 -----------------------------------------------------------------------
 -- Database access
+--
+-- Per-realm shape: { prices = { [itemId] = entry }, vendors = { [itemId] = copper }, lastScan = unixTime }
+--
+-- Entry keys are short to keep WowVisionPriceDB.lua small; there can be
+-- thousands of entries on a well-populated realm.
+--   m = last-seen minimum buyout (per-unit copper)
+--   d = day index when m was recorded (days since DAY_EPOCH)
+--   h = { [day] = daily high per-unit copper }
+--   l = { [day] = daily low per-unit copper }
+--   a = { [day] = auction count sampled that day }
 -----------------------------------------------------------------------
 
 local db -- set in onEnable
@@ -65,7 +75,7 @@ local function pruneEntry(entry, maxAge)
     end
 end
 
-local function setPrice(itemId, minBuyout, auctionCount)
+local function setPrice(itemId, minBuyout, auctionCount, maxAge)
     local d = today()
     local prices = db.prices
     local entry = prices[itemId]
@@ -77,7 +87,6 @@ local function setPrice(itemId, minBuyout, auctionCount)
     entry.m = minBuyout
     entry.d = d
 
-    -- Update daily high/low/count
     local prevHigh = entry.h[d]
     entry.h[d] = prevHigh and math.max(prevHigh, minBuyout) or minBuyout
 
@@ -86,7 +95,7 @@ local function setPrice(itemId, minBuyout, auctionCount)
 
     entry.a[d] = auctionCount
 
-    pruneEntry(entry, module.settings.historyDays or 21)
+    pruneEntry(entry, maxAge)
 end
 
 -----------------------------------------------------------------------
@@ -151,9 +160,10 @@ fullScanner.events.scanStarted:subscribe(module, function(self, event, totalAuct
 end)
 
 fullScanner.events.scanComplete:subscribe(module, function(self, event, results)
+    local maxAge = module.settings.historyDays or 21
     local count = 0
     for itemId, data in pairs(results) do
-        setPrice(itemId, data.minBuyout, data.totalSeen)
+        setPrice(itemId, data.minBuyout, data.totalSeen, maxAge)
         count = count + 1
     end
     db.lastScan = time()

@@ -8,6 +8,7 @@
   <Include file="character\modules.xml" />
   <Script file="lfg.lua" />
   <Script file="socketing.lua" />
+  <Script file="ah-compat.lua" />
   <Script file="ah-scanner.lua" />
   <Script file="ah-full-scanner.lua" />
   <Script file="ah-prices.lua" />
