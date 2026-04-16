@@ -1,3 +1,10 @@
+-- Realm-scoped price database for auction items.
+-- Owns the AHFullScanner instance that writes entries, exposes getPrice /
+-- getMeanPrice / getVendorPrice for tooltip rendering, and caches vendor
+-- buy prices from MERCHANT_SHOW. Auto-scan on AH open is opt-in via the
+-- ahPrices.autoScan setting. Persists to WowVisionPriceDB keyed by
+-- realm + faction.
+
 local module = WowVision.base:createModule("ahPrices")
 local L = module.L
 module:setLabel(L["Auction Prices"])

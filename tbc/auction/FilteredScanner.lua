@@ -1,4 +1,10 @@
-local AHScanner = WowVision.Class("AHScanner")
+-- Paginated scanner for a user-filtered browse query (name / level / rarity / ...).
+-- Walks pages one at a time, optionally applies a client-side filter, and stops
+-- at targetCount or the last page. Emits per-page progress events so the UI can
+-- announce "Page 5 / 12" while scanning. Contrast with AHFullScanner, which
+-- fires a single getAll query for the price database.
+
+local AHFilteredScanner = WowVision.Class("AHFilteredScanner")
 
 local NUM_AUCTION_ITEMS_PER_PAGE = NUM_AUCTION_ITEMS_PER_PAGE or 50
 local QUERY_TIMEOUT = 10
@@ -22,7 +28,7 @@ end
 WowVision.tbcAH = WowVision.tbcAH or {}
 WowVision.tbcAH.sendPageQuery = sendPageQuery
 
-function AHScanner:initialize()
+function AHFilteredScanner:initialize()
     self.events = {
         scanStarted = WowVision.Event:new("scanStarted"),
         pageScanned = WowVision.Event:new("pageScanned"),
@@ -45,7 +51,7 @@ function AHScanner:initialize()
     end)
 end
 
-function AHScanner:start(query, options)
+function AHFilteredScanner:start(query, options)
     if self.state ~= "idle" then
         self:abort()
     end
@@ -63,7 +69,7 @@ function AHScanner:start(query, options)
     self:_sendQuery()
 end
 
-function AHScanner:abort()
+function AHFilteredScanner:abort()
     if self.state == "idle" then return end
     local results = self.results
     local progress = self:getProgress()
@@ -71,11 +77,11 @@ function AHScanner:abort()
     self.events.scanAborted:emit(results, progress)
 end
 
-function AHScanner:isScanning()
+function AHFilteredScanner:isScanning()
     return self.state ~= "idle"
 end
 
-function AHScanner:getProgress()
+function AHFilteredScanner:getProgress()
     return {
         page = self.page,
         totalPages = self.totalPages,
@@ -84,17 +90,17 @@ function AHScanner:getProgress()
     }
 end
 
-function AHScanner:getQuery()
+function AHFilteredScanner:getQuery()
     return self.query
 end
 
-function AHScanner:_cleanup()
+function AHFilteredScanner:_cleanup()
     self.state = "idle"
     self.frame:UnregisterAllEvents()
     self.frame:SetScript("OnUpdate", nil)
 end
 
-function AHScanner:_sendQuery()
+function AHFilteredScanner:_sendQuery()
     if CanSendAuctionQuery() then
         self.state = "querying"
         sendPageQuery(self.query, self.page)
@@ -107,7 +113,7 @@ function AHScanner:_sendQuery()
     end
 end
 
-function AHScanner:_onUpdate()
+function AHFilteredScanner:_onUpdate()
     if self.state ~= "waiting" then
         self.frame:SetScript("OnUpdate", nil)
         return
@@ -122,7 +128,7 @@ function AHScanner:_onUpdate()
     end
 end
 
-function AHScanner:_onEvent(event)
+function AHFilteredScanner:_onEvent(event)
     if event == "AUCTION_HOUSE_CLOSED" then
         if self.state ~= "idle" then
             self:abort()
@@ -136,7 +142,7 @@ function AHScanner:_onEvent(event)
     end
 end
 
-function AHScanner:_processPage()
+function AHFilteredScanner:_processPage()
     local numBatch, totalAuctions = GetNumAuctionItems("list")
     numBatch = numBatch or 0
     totalAuctions = totalAuctions or 0
@@ -201,4 +207,4 @@ function AHScanner:_processPage()
 end
 
 WowVision.tbcAH = WowVision.tbcAH or {}
-WowVision.tbcAH.AHScanner = AHScanner
+WowVision.tbcAH.AHFilteredScanner = AHFilteredScanner

@@ -1,3 +1,10 @@
+-- Whole-AH scan used to seed the price database.
+-- Fires a single QueryAuctionItems(getAll=true) which returns every auction in
+-- one batch, then processes the batch frame-by-frame in BATCH_SIZE chunks so
+-- the client doesn't freeze. Hijacks AUCTION_ITEM_LIST_UPDATE off Blizzard's
+-- frames for the duration of the scan (see _hijackEvent). Rate-limited to one
+-- scan per COOLDOWN seconds because getAll is itself server-throttled.
+
 local AHFullScanner = WowVision.Class("AHFullScanner")
 
 local BATCH_SIZE = 250

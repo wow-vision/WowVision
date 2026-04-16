@@ -4,7 +4,7 @@
 --
 -- States:
 --   idle            - no scan done, no results
---   scanning        - AHScanner running
+--   scanning        - AHFilteredScanner running
 --   browsingResults - results available, user browsing the WV result list
 --   selectingItem   - user picked a result; re-querying the AH page
 --   viewingItem     - AH shows the real item; user can bid/buyout
@@ -20,7 +20,7 @@ function ScanSession:initialize(config)
     self.L = config.L or setmetatable({}, { __index = function(_, k) return k end })
 
     self.state = "idle"
-    self.scanner = WowVision.tbcAH.AHScanner:new()
+    self.scanner = WowVision.tbcAH.AHFilteredScanner:new()
     self.results = nil
     self.pendingItem = nil
     self.pendingIndex = nil

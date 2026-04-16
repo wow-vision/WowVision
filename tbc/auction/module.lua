@@ -321,7 +321,7 @@ AuctionSortButton.info:updateFields({
 
 function AuctionSortButton:initialize()
     widgetParent.initialize(self)
-    self._pendingDescending = nil
+    self.pendingDescending = nil
 end
 
 function AuctionSortButton:setupUniqueBindings()
@@ -349,21 +349,21 @@ function AuctionSortButton:onFocus()
     widgetParent.onFocus(self)
     local currentColumn, reversed = getCurrentSort(self.sortTable)
     if currentColumn == self.sortColumn then
-        self._pendingDescending = reversed
+        self.pendingDescending = reversed
     else
-        self._pendingDescending = false
+        self.pendingDescending = false
     end
 end
 
 function AuctionSortButton:onUnfocus()
     widgetParent.onUnfocus(self)
-    self._pendingDescending = nil
+    self.pendingDescending = nil
 end
 
 function AuctionSortButton:getExtras()
     local extras = {}
     local directionStr
-    if self._pendingDescending then
+    if self.pendingDescending then
         directionStr = self.L["Descending"]
     else
         directionStr = self.L["Ascending"]
@@ -378,11 +378,11 @@ end
 
 function AuctionSortButton:onBindingPressed(binding)
     if binding.key == "up" then
-        self._pendingDescending = false
+        self.pendingDescending = false
         WowVision:speak(self.L["Ascending"])
         return true
     elseif binding.key == "down" then
-        self._pendingDescending = true
+        self.pendingDescending = true
         WowVision:speak(self.L["Descending"])
         return true
     end
@@ -390,7 +390,7 @@ function AuctionSortButton:onBindingPressed(binding)
 end
 
 function AuctionSortButton:onClick()
-    AuctionFrame_SetSort(self.sortTable, self.sortColumn, self._pendingDescending)
+    AuctionFrame_SetSort(self.sortTable, self.sortColumn, self.pendingDescending)
     if self.sortTable == "list" then
         AuctionFrameBrowse_Search()
     else
