@@ -51,7 +51,7 @@ selectAlert:addOutput({ type = "TTS", key = "tts", label = L["Item Selected"] })
 local minStackSize = 0
 
 -- AH Scanner integration
-local scanner = WowVision.AHScanner:new()
+local scanner = WowVision.tbcAH.AHScanner:new()
 local scanResults = nil       -- array of result items, with .query/.lastPage/.totalPages metadata
 local scanInProgress = false
 local scanIsLoadMore = false   -- true when "Load More" triggered the scan (append results)
@@ -64,7 +64,7 @@ local pendingScanItem = nil    -- the scan result item being purchased
 local lastQueryArgs = {}
 hooksecurefunc("QueryAuctionItems", function(name, minLevel, maxLevel, page, usable, rarity, getAll, exactMatch, filterData)
     if scanner:isScanning() or pendingScanSelect or getAll
-        or (fullScanner and fullScanner:isScanning()) then
+        or WowVision.ahPrices.isFullScanning() then
         return
     end
     lastQueryArgs = {
@@ -131,7 +131,7 @@ scanner.events.scanFailed:subscribe(module, function(self, event, reason)
 end)
 
 -- Full AH scanner integration (price database)
-local fullScanner = WowVision.ahPrices and WowVision.ahPrices.fullScanner
+local ahPrices = WowVision.ahPrices
 
 local function formatCooldownTime(seconds)
     local mins = math.floor(seconds / 60)
@@ -146,12 +146,11 @@ local function formatCooldownTime(seconds)
 end
 
 local function fullScanScanningLabel()
-    if not fullScanner then return "" end
-    local state = fullScanner:getState()
+    local state = ahPrices.getFullScanState()
     if state == "waiting" then
-        return L["Scanning"] .. ", " .. math.floor(fullScanner:getWaitElapsed()) .. " sec"
+        return L["Scanning"] .. ", " .. math.floor(ahPrices.getFullScanWaitElapsed()) .. " sec"
     elseif state == "processing" then
-        local p = fullScanner:getProgress()
+        local p = ahPrices.getFullScanProgress()
         if p.total > 0 then
             return L["Scanning"] .. ", " .. math.floor(p.processed * 100 / p.total) .. "%"
         end
@@ -162,36 +161,32 @@ end
 gen:Element("auction/FullScanButton", {
     regenerateOn = {
         values = function()
-            if not fullScanner then return {} end
             return {
-                scanning = fullScanner:isScanning(),
-                canScan = select(1, fullScanner:canScan()),
+                scanning = ahPrices.isFullScanning(),
+                canScan = select(1, ahPrices.canFullScan()),
             }
         end,
     },
 }, function(props)
-    if not fullScanner then return nil end
-
-    if fullScanner:isScanning() then
+    if ahPrices.isFullScanning() then
         return {
             "Button",
             label = fullScanScanningLabel,
             events = {
                 click = function()
-                    fullScanner:abort()
+                    ahPrices.abortFullScan()
                 end,
             },
         }
     end
 
-    local canScan = fullScanner:canScan()
-    if canScan then
+    if ahPrices.canFullScan() then
         return {
             "Button",
             label = L["Full Scan"],
             events = {
                 click = function()
-                    fullScanner:start()
+                    ahPrices.startFullScan()
                 end,
             },
         }
@@ -203,7 +198,7 @@ gen:Element("auction/FullScanButton", {
         label = L["Full Scan"] .. ", " .. L["Cooldown active"],
         events = {
             click = function()
-                WowVision:speak(formatCooldownTime(fullScanner:getCooldownRemaining()))
+                WowVision:speak(formatCooldownTime(ahPrices.getFullScanCooldownRemaining()))
             end,
         },
     }
@@ -233,6 +228,57 @@ local function formatMoney(copper)
         return nil
     end
     return C_CurrencyInfo.GetCoinText(copper)
+end
+
+-- Normalize GetAuctionItemInfo into a flat table with only the fields we label with.
+-- Scan results already come in this shape, so formatItemLabel accepts both.
+local function readAuctionItem(listType, index)
+    local name, _, count, _, _, _, _,
+        minBid, _, buyoutPrice, bidAmount, highBidder,
+        _, owner, _, saleStatus = GetAuctionItemInfo(listType, index)
+    if not name then return nil end
+    return {
+        name = name,
+        count = count,
+        minBid = minBid,
+        buyoutPrice = buyoutPrice,
+        bidAmount = bidAmount,
+        highBidder = highBidder,
+        owner = owner,
+        saleStatus = saleStatus,
+        timeLeft = GetAuctionItemTimeLeft(listType, index),
+    }
+end
+
+-- Build a display label for an auction item (browse/bid/owner/scan-result).
+-- opts: { showSeller, showBidder, showSold }
+local function formatItemLabel(item, opts)
+    opts = opts or {}
+    local label = item.name
+    if item.count and item.count > 1 then
+        label = label .. " x" .. item.count
+    end
+    if opts.showSold and item.saleStatus == 1 then
+        label = "[" .. L["Sold"] .. "] " .. label
+    end
+    if opts.showSeller and item.owner then
+        label = label .. ", " .. L["Seller"] .. ": " .. item.owner
+    end
+    if item.buyoutPrice and item.buyoutPrice > 0 then
+        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(item.buyoutPrice)
+    end
+    local currentBid = item.bidAmount and item.bidAmount > 0 and item.bidAmount or item.minBid
+    local bidText = formatMoney(currentBid)
+    if bidText then
+        label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
+    end
+    if opts.showBidder and item.highBidder then
+        label = label .. ", " .. L["Bidder"] .. ": " .. item.highBidder
+    end
+    if item.timeLeft then
+        label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(item.timeLeft)
+    end
+    return label
 end
 
 ------------------------------------------------------------
@@ -643,43 +689,13 @@ end
 local function getBrowseElement(self, button)
     local offset = FauxScrollFrame_GetOffset(BrowseScrollFrame) or 0
     local index = button:GetID() + offset
-    local name, _, count, quality, canUse, level, levelColHeader,
-        minBid, minIncrement, buyoutPrice, bidAmount, highBidder,
-        bidderFullName, owner, ownerFullName, saleStatus, itemId, hasAllInfo =
-        GetAuctionItemInfo("list", index)
-    if not name then
-        return nil
-    end
-
+    local item = readAuctionItem("list", index)
+    if not item then return nil end
     hookBrowseButton(button)
-
-    local label = name
-    if count and count > 1 then
-        label = label .. " x" .. count
-    end
-    if owner then
-        label = label .. ", " .. L["Seller"] .. ": " .. owner
-    end
-
-    if buyoutPrice and buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
-    end
-
-    local currentBid = bidAmount and bidAmount > 0 and bidAmount or minBid
-    local bidText = formatMoney(currentBid)
-    if bidText then
-        label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-
-    local timeLeft = GetAuctionItemTimeLeft("list", index)
-    if timeLeft then
-        label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(timeLeft)
-    end
-
     return {
         "ProxyButton",
         frame = button,
-        label = label,
+        label = formatItemLabel(item, { showSeller = true }),
         tooltip = { type = "AuctionItem", listType = "list", index = index },
     }
 end
@@ -712,34 +728,12 @@ local function buildFilteredBrowseList()
     if numBatch > MAX_FILTERED_BROWSE then return nil end
     local children = {}
     for i = 1, numBatch do
-        local name, _, count, quality, canUse, level, levelColHeader,
-            minBid, minIncrement, buyoutPrice, bidAmount, highBidder,
-            bidderFullName, owner, ownerFullName, saleStatus, itemId, hasAllInfo =
-            GetAuctionItemInfo("list", i)
-        if name and (count or 0) >= minStackSize then
-            local label = name
-            if count and count > 1 then
-                label = label .. " x" .. count
-            end
-            if owner then
-                label = label .. ", " .. L["Seller"] .. ": " .. owner
-            end
-            if buyoutPrice and buyoutPrice > 0 then
-                label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
-            end
-            local currentBid = bidAmount and bidAmount > 0 and bidAmount or minBid
-            local bidText = formatMoney(currentBid)
-            if bidText then
-                label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-            end
-            local timeLeft = GetAuctionItemTimeLeft("list", i)
-            if timeLeft then
-                label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(timeLeft)
-            end
+        local item = readAuctionItem("list", i)
+        if item and (item.count or 0) >= minStackSize then
             local realIndex = i
             tinsert(children, {
                 "Button",
-                label = label,
+                label = formatItemLabel(item, { showSeller = true }),
                 tooltip = { type = "AuctionItem", listType = "list", index = realIndex },
                 events = {
                     click = function()
@@ -764,29 +758,6 @@ local browseResultsCallback = makeResultsElement({
     updateFunctionName = "AuctionFrameBrowse_Update",
     getElement = getBrowseElement,
 })
-
--- Build a label string for a scan result entry (same format as browse items).
-local function buildScanResultLabel(item)
-    local label = item.name
-    if item.count and item.count > 1 then
-        label = label .. " x" .. item.count
-    end
-    if item.owner then
-        label = label .. ", " .. L["Seller"] .. ": " .. item.owner
-    end
-    if item.buyoutPrice and item.buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(item.buyoutPrice)
-    end
-    local currentBid = item.bidAmount and item.bidAmount > 0 and item.bidAmount or item.minBid
-    local bidText = formatMoney(currentBid)
-    if bidText then
-        label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-    if item.timeLeft then
-        label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(item.timeLeft)
-    end
-    return label
-end
 
 -- Remove a purchased/gone item from the scan results list.
 local function removeScanItem(item)
@@ -948,7 +919,7 @@ local function buildScanResultsList()
         local capturedItem = item
         tinsert(children, {
             "Button",
-            label = buildScanResultLabel(item),
+            label = formatItemLabel(item, { showSeller = true }),
             tooltip = item.link and { type = "AuctionItem", link = item.link } or nil,
             events = {
                 click = function()
@@ -1141,34 +1112,9 @@ end)
 local function getBidElement(self, button)
     local offset = FauxScrollFrame_GetOffset(BidScrollFrame) or 0
     local index = button:GetID() + offset
-    local name, _, count, quality, canUse, level, levelColHeader,
-        minBid, minIncrement, buyoutPrice, bidAmount, highBidder,
-        bidderFullName, owner, ownerFullName, saleStatus, itemId, hasAllInfo =
-        GetAuctionItemInfo("bidder", index)
-    if not name then
-        return nil
-    end
-
-    local label = name
-    if count and count > 1 then
-        label = label .. " x" .. count
-    end
-
-    if buyoutPrice and buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
-    end
-
-    local bidText = formatMoney(bidAmount and bidAmount > 0 and bidAmount or minBid)
-    if bidText then
-        label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-
-    local timeLeft = GetAuctionItemTimeLeft("bidder", index)
-    if timeLeft then
-        label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(timeLeft)
-    end
-
-    return { "ProxyButton", frame = button, label = label }
+    local item = readAuctionItem("bidder", index)
+    if not item then return nil end
+    return { "ProxyButton", frame = button, label = formatItemLabel(item) }
 end
 
 gen:Element("auction/BidResults", {
@@ -1249,42 +1195,9 @@ end)
 local function getAuctionElement(self, button)
     local offset = FauxScrollFrame_GetOffset(AuctionsScrollFrame) or 0
     local index = button:GetID() + offset
-    local name, _, count, quality, canUse, level, levelColHeader,
-        minBid, minIncrement, buyoutPrice, bidAmount, highBidder,
-        bidderFullName, owner, ownerFullName, saleStatus, itemId, hasAllInfo =
-        GetAuctionItemInfo("owner", index)
-    if not name then
-        return nil
-    end
-
-    local label = name
-    if count and count > 1 then
-        label = label .. " x" .. count
-    end
-
-    if saleStatus == 1 then
-        label = "[" .. L["Sold"] .. "] " .. label
-    end
-
-    if buyoutPrice and buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
-    end
-
-    local bidText = formatMoney(bidAmount and bidAmount > 0 and bidAmount or minBid)
-    if bidText then
-        label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-
-    if highBidder then
-        label = label .. ", " .. L["Bidder"] .. ": " .. highBidder
-    end
-
-    local timeLeft = GetAuctionItemTimeLeft("owner", index)
-    if timeLeft then
-        label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(timeLeft)
-    end
-
-    return { "ProxyButton", frame = button, label = label }
+    local item = readAuctionItem("owner", index)
+    if not item then return nil end
+    return { "ProxyButton", frame = button, label = formatItemLabel(item, { showBidder = true, showSold = true }) }
 end
 
 gen:Element("auction/MyAuctionsList", {

@@ -131,14 +131,20 @@ function api.getPriceAge(itemId)
     return today() - entry.d
 end
 
-api.formatPrice = formatPrice
-
 -----------------------------------------------------------------------
 -- Full Scanner
 -----------------------------------------------------------------------
 
-local fullScanner = WowVision.AHFullScanner:new()
-api.fullScanner = fullScanner
+local fullScanner = WowVision.tbcAH.AHFullScanner:new()
+
+function api.startFullScan() fullScanner:start() end
+function api.abortFullScan() fullScanner:abort() end
+function api.isFullScanning() return fullScanner:isScanning() end
+function api.canFullScan() return fullScanner:canScan() end
+function api.getFullScanState() return fullScanner:getState() end
+function api.getFullScanProgress() return fullScanner:getProgress() end
+function api.getFullScanWaitElapsed() return fullScanner:getWaitElapsed() end
+function api.getFullScanCooldownRemaining() return fullScanner:getCooldownRemaining() end
 
 fullScanner.events.scanStarted:subscribe(module, function(self, event, totalAuctions)
     WowVision:speak(L["Full scan started"] .. ", " .. totalAuctions .. " " .. L["auctions"])

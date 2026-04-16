@@ -192,4 +192,5 @@ function AHScanner:_processPage()
     end
 end
 
-WowVision.AHScanner = AHScanner
+WowVision.tbcAH = WowVision.tbcAH or {}
+WowVision.tbcAH.AHScanner = AHScanner

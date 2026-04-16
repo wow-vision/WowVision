@@ -185,4 +185,5 @@ function AHFullScanner:_processBatch()
     end
 end
 
-WowVision.AHFullScanner = AHFullScanner
+WowVision.tbcAH = WowVision.tbcAH or {}
+WowVision.tbcAH.AHFullScanner = AHFullScanner
