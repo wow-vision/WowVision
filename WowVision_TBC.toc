@@ -4,6 +4,7 @@
 ## Interface: 20505
 ## OptionalDeps: Sku
 ## Notes: Provides accessibility for the visually impaired.
+## SavedVariables: WowVisionPriceDB
 ## SavedVariablesPerCharacter: WowVisionDB
 
 libs.xml
