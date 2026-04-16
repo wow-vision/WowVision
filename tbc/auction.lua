@@ -14,6 +14,88 @@ local gen = module:hasUI()
 local selectAlert = module:addAlert({ key = "itemSelected", label = L["Item Selected"] })
 selectAlert:addOutput({ type = "TTS", key = "tts", label = L["Item Selected"] })
 
+-- Client-side filter: hide browse results below this stack size
+local minStackSize = 0
+
+-- AH Scanner integration
+local scanner = WowVision.AHScanner:new()
+local scanResults = nil       -- array of result items, with .query/.lastPage/.totalPages metadata
+local scanInProgress = false
+local scanIsLoadMore = false   -- true when "Load More" triggered the scan (append results)
+local viewingScanItem = false
+local pendingScanSelect = nil
+local pendingScanItem = nil    -- the scan result item being purchased
+
+-- Capture the last query args so we can replay them for scanning.
+-- Also clear scan state when the user starts a genuinely new search.
+local lastQueryArgs = {}
+hooksecurefunc("QueryAuctionItems", function(name, minLevel, maxLevel, page, usable, rarity, getAll, exactMatch, filterData)
+    if scanner:isScanning() or pendingScanSelect then
+        return
+    end
+    lastQueryArgs = {
+        name = name,
+        minLevel = minLevel,
+        maxLevel = maxLevel,
+        usable = usable,
+        rarity = rarity,
+        exactMatch = exactMatch,
+        filterData = filterData,
+    }
+    -- New manual search — discard old scan results
+    if not viewingScanItem then
+        scanResults = nil
+    end
+end)
+
+scanner.events.scanStarted:subscribe(module, function(self, event, info)
+    scanInProgress = true
+    if not scanIsLoadMore then
+        scanResults = nil
+    end
+    local pages = info and info.totalPages or "?"
+    WowVision:speak(L["Scanning"] .. ", " .. pages .. " " .. L["Page"])
+end)
+
+scanner.events.pageScanned:subscribe(module, function(self, event, progress)
+    if progress.page > 0 and progress.page % 5 == 0 then
+        WowVision:speak(L["Page"] .. " " .. progress.page .. " / " .. progress.totalPages)
+    end
+end)
+
+local function finalizeScanResults(results, progress)
+    if scanIsLoadMore and scanResults then
+        -- Append new results to existing
+        for _, item in ipairs(results) do
+            tinsert(scanResults, item)
+        end
+    else
+        scanResults = results
+    end
+    scanResults.query = scanner:getQuery()
+    scanResults.lastPage = progress.page
+    scanResults.totalPages = progress.totalPages
+    scanIsLoadMore = false
+end
+
+scanner.events.scanComplete:subscribe(module, function(self, event, results, progress)
+    scanInProgress = false
+    finalizeScanResults(results, progress)
+    WowVision:speak(L["Scan complete"] .. ", " .. #scanResults .. " " .. L["Results"] .. " in " .. progress.total .. " " .. L["scanned"])
+end)
+
+scanner.events.scanAborted:subscribe(module, function(self, event, results, progress)
+    scanInProgress = false
+    finalizeScanResults(results, progress)
+    WowVision:speak(L["Scan aborted"] .. ", " .. #scanResults .. " " .. L["Results"])
+end)
+
+scanner.events.scanFailed:subscribe(module, function(self, event, reason)
+    scanInProgress = false
+    scanIsLoadMore = false
+    WowVision:speak(L["Scan failed"])
+end)
+
 -- Button counts per tab (matching Blizzard's fixed button arrays)
 local NUM_BROWSE_BUTTONS = 8
 local NUM_BID_BUTTONS = 9
@@ -372,6 +454,18 @@ gen:Element("auction/SearchFilters", function(props)
                             layout = true,
                             label = L["Filters"],
                             children = {
+                                {
+                                    "EditBox",
+                                    label = L["Min Stack Size"],
+                                    type = "number",
+                                    autoInputOnFocus = false,
+                                    value = minStackSize > 0 and minStackSize or nil,
+                                    events = {
+                                        valueChange = function(event, widget, value)
+                                            minStackSize = tonumber(value) or 0
+                                        end,
+                                    },
+                                },
                                 { "ProxyEditBox", frame = BrowseMinLevel, autoInputOnFocus = false, hookEnter = true, label = L["Minimum Level"] },
                                 { "ProxyEditBox", frame = BrowseMaxLevel, autoInputOnFocus = false, hookEnter = true, label = L["Maximum Level"] },
                                 { "ProxyDropdownButton", frame = BrowseDropDown or BrowseDropdown },
@@ -453,14 +547,14 @@ local function getBrowseElement(self, button)
         label = label .. ", " .. L["Seller"] .. ": " .. owner
     end
 
+    if buyoutPrice and buyoutPrice > 0 then
+        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
+    end
+
     local currentBid = bidAmount and bidAmount > 0 and bidAmount or minBid
     local bidText = formatMoney(currentBid)
     if bidText then
         label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-
-    if buyoutPrice and buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
     end
 
     local timeLeft = GetAuctionItemTimeLeft("list", index)
@@ -471,11 +565,74 @@ local function getBrowseElement(self, button)
     return { "ProxyButton", frame = button, label = label }
 end
 
-gen:Element("auction/BrowseResults", {
-    regenerateOn = {
-        events = { "AUCTION_ITEM_LIST_UPDATE" },
-    },
-}, makeResultsElement({
+-- Select a browse item by its 1-based index in the auction list.
+-- Scrolls Blizzard's FauxScrollFrame to make the item visible, then clicks it.
+local function selectBrowseItem(realIndex)
+    local total = GetNumAuctionItems("list") or 0
+    local maxOffset = math.max(0, total - NUM_BROWSE_BUTTONS)
+    local targetOffset = math.min(math.max(0, realIndex - 1), maxOffset)
+    FauxScrollFrame_SetOffset(BrowseScrollFrame, targetOffset)
+    AuctionFrameBrowse_Update()
+    local offset = FauxScrollFrame_GetOffset(BrowseScrollFrame) or 0
+    for i = 1, NUM_BROWSE_BUTTONS do
+        local button = _G["BrowseButton" .. i]
+        if button and button:GetID() + offset == realIndex then
+            hookBrowseButton(button)
+            button:Click()
+            break
+        end
+    end
+end
+
+-- Build a flat List of browse results filtered by minStackSize.
+local function buildFilteredBrowseList()
+    local numBatch = GetNumAuctionItems("list") or 0
+    if numBatch == 0 then return nil end
+    local children = {}
+    for i = 1, numBatch do
+        local name, _, count, quality, canUse, level, levelColHeader,
+            minBid, minIncrement, buyoutPrice, bidAmount, highBidder,
+            bidderFullName, owner, ownerFullName, saleStatus, itemId, hasAllInfo =
+            GetAuctionItemInfo("list", i)
+        if name and (count or 0) >= minStackSize then
+            local label = name
+            if count and count > 1 then
+                label = label .. " x" .. count
+            end
+            if owner then
+                label = label .. ", " .. L["Seller"] .. ": " .. owner
+            end
+            if buyoutPrice and buyoutPrice > 0 then
+                label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
+            end
+            local currentBid = bidAmount and bidAmount > 0 and bidAmount or minBid
+            local bidText = formatMoney(currentBid)
+            if bidText then
+                label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
+            end
+            local timeLeft = GetAuctionItemTimeLeft("list", i)
+            if timeLeft then
+                label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(timeLeft)
+            end
+            local realIndex = i
+            tinsert(children, {
+                "Button",
+                label = label,
+                events = {
+                    click = function()
+                        selectBrowseItem(realIndex)
+                    end,
+                },
+            })
+        end
+    end
+    if #children == 0 then
+        return { "Text", text = L["No Results"] }
+    end
+    return { "List", label = L["Results"], children = children }
+end
+
+local browseResultsCallback = makeResultsElement({
     buttonPrefix = "BrowseButton",
     numButtons = NUM_BROWSE_BUTTONS,
     listType = "list",
@@ -483,10 +640,287 @@ gen:Element("auction/BrowseResults", {
     label = L["Results"],
     updateFunctionName = "AuctionFrameBrowse_Update",
     getElement = getBrowseElement,
-}))
+})
 
--- Pagination
+-- Build a label string for a scan result entry (same format as browse items).
+local function buildScanResultLabel(item)
+    local label = item.name
+    if item.count and item.count > 1 then
+        label = label .. " x" .. item.count
+    end
+    if item.owner then
+        label = label .. ", " .. L["Seller"] .. ": " .. item.owner
+    end
+    if item.buyoutPrice and item.buyoutPrice > 0 then
+        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(item.buyoutPrice)
+    end
+    local currentBid = item.bidAmount and item.bidAmount > 0 and item.bidAmount or item.minBid
+    local bidText = formatMoney(currentBid)
+    if bidText then
+        label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
+    end
+    if item.timeLeft then
+        label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(item.timeLeft)
+    end
+    return label
+end
+
+-- Remove a purchased/gone item from the scan results list.
+local function removeScanItem(item)
+    if not scanResults or not item then return end
+    for i, entry in ipairs(scanResults) do
+        if entry == item then
+            tremove(scanResults, i)
+            return
+        end
+    end
+end
+
+-- Purchase tracking: auto-return to scan results after buy or item-not-found.
+local purchaseFrame = CreateFrame("Frame")
+
+local function stopPurchaseTracking()
+    purchaseFrame:UnregisterAllEvents()
+end
+
+local function returnToScanResults()
+    viewingScanItem = false
+    pendingScanItem = nil
+    stopPurchaseTracking()
+end
+
+purchaseFrame:SetScript("OnEvent", function(_, event, ...)
+    if not viewingScanItem or not pendingScanItem then return end
+    if event == "CHAT_MSG_SYSTEM" then
+        local message = ...
+        if message == ERR_AUCTION_BID_PLACED then
+            removeScanItem(pendingScanItem)
+            returnToScanResults()
+            WowVision:speak(L["Item purchased"])
+        end
+    elseif event == "UI_ERROR_MESSAGE" then
+        local _, message = ...
+        if message == ERR_ITEM_NOT_FOUND then
+            removeScanItem(pendingScanItem)
+            returnToScanResults()
+            WowVision:speak(L["Item not found"])
+        end
+    end
+end)
+
+local function startPurchaseTracking()
+    purchaseFrame:RegisterEvent("CHAT_MSG_SYSTEM")
+    purchaseFrame:RegisterEvent("UI_ERROR_MESSAGE")
+end
+
+-- Verify that the auction at the given index matches the expected scan result.
+-- Compares name, stack count, buyout price, min bid, and owner.
+local function verifyAuctionItem(index, expectedItem)
+    local name, _, count, quality, canUse, level, levelColHeader,
+        minBid, minIncrement, buyoutPrice, bidAmount, highBidder,
+        bidderFullName, owner = GetAuctionItemInfo("list", index)
+    if not name then return false end
+    if name ~= expectedItem.name then return false end
+    if (count or 0) ~= (expectedItem.count or 0) then return false end
+    if (buyoutPrice or 0) ~= (expectedItem.buyoutPrice or 0) then return false end
+    if (minBid or 0) ~= (expectedItem.minBid or 0) then return false end
+    if owner and expectedItem.owner and owner ~= expectedItem.owner then return false end
+    return true
+end
+
+-- Search all items on the current page for one matching the expected scan result.
+-- Returns the 1-based page index if found, nil otherwise.
+local function findMatchingAuctionItem(expectedItem)
+    local numBatch = GetNumAuctionItems("list") or 0
+    for i = 1, numBatch do
+        if verifyAuctionItem(i, expectedItem) then
+            return i
+        end
+    end
+    return nil
+end
+
+-- Navigate to a scan result's page and select it, then show bid/buyout.
+-- scanResults is preserved so the user can return to the list.
+-- We delay the selection by one frame so Blizzard's AuctionFrameBrowse_Update()
+-- finishes first — otherwise BrowseButtons are still hidden when we try to Click().
+-- After re-querying, we verify the item at the expected index still matches.
+-- If it shifted, we search the full page. If gone entirely, we notify the user.
+local scanSelectFrame = CreateFrame("Frame")
+scanSelectFrame:SetScript("OnEvent", function()
+    if pendingScanSelect then
+        local expectedIndex = pendingScanSelect
+        local expectedItem = pendingScanItem
+        pendingScanSelect = nil
+        scanSelectFrame:UnregisterAllEvents()
+
+        -- Verify the item at the expected index still matches
+        local actualIndex
+        if verifyAuctionItem(expectedIndex, expectedItem) then
+            actualIndex = expectedIndex
+        else
+            -- Item shifted — search the full page
+            actualIndex = findMatchingAuctionItem(expectedItem)
+        end
+
+        if actualIndex then
+            viewingScanItem = true
+            startPurchaseTracking()
+            C_Timer.After(0, function()
+                selectBrowseItem(actualIndex)
+            end)
+        else
+            -- Item no longer on this page — remove from results and notify
+            removeScanItem(expectedItem)
+            pendingScanItem = nil
+            WowVision:speak(L["Item not found"])
+        end
+    end
+end)
+
+local function selectScanResult(item)
+    pendingScanSelect = item.pageIndex
+    pendingScanItem = item
+    scanSelectFrame:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+    local q = scanResults and scanResults.query or lastQueryArgs
+    QueryAuctionItems(
+        q.name or "",
+        q.minLevel or 0,
+        q.maxLevel or 0,
+        item.page,
+        q.usable or false,
+        q.rarity or -1,
+        false,
+        q.exactMatch or false,
+        q.filterData
+    )
+end
+
+local SCAN_TARGET_COUNT = 20
+
+-- Start a scan using the last captured query args.
+-- startPage: optional page to resume from (for "Load More").
+local function startScan(startPage)
+    local filter
+    if minStackSize > 1 then
+        local threshold = minStackSize
+        filter = function(name, texture, count)
+            return (count or 0) >= threshold
+        end
+    end
+    scanner:start(lastQueryArgs, {
+        filter = filter,
+        targetCount = SCAN_TARGET_COUNT,
+        startPage = startPage,
+    })
+end
+
+-- Build a List element from scan results.
+local function buildScanResultsList()
+    if not scanResults or #scanResults == 0 then
+        return { "Text", text = L["No Results"] }
+    end
+    local children = {}
+    for _, item in ipairs(scanResults) do
+        local capturedItem = item
+        tinsert(children, {
+            "Button",
+            label = buildScanResultLabel(item),
+            events = {
+                click = function()
+                    selectScanResult(capturedItem)
+                end,
+            },
+        })
+    end
+    return { "List", label = L["Scan Results"], children = children }
+end
+
+gen:Element("auction/BrowseResults", {
+    regenerateOn = {
+        events = { "AUCTION_ITEM_LIST_UPDATE" },
+        values = function()
+            return {
+                minStack = minStackSize,
+                scanning = scanInProgress,
+                scanCount = scanResults and #scanResults or 0,
+                viewingItem = viewingScanItem,
+            }
+        end,
+    },
+}, function(props)
+    -- Show abort button during scan
+    if scanInProgress then
+        local progress = scanner:getProgress()
+        return {
+            "Button",
+            label = L["Abort Scan"] .. " (" .. progress.page .. "/" .. progress.totalPages .. ")",
+            events = {
+                click = function()
+                    scanner:abort()
+                end,
+            },
+        }
+    end
+
+    -- Viewing a single item from scan results — hide the full browse list.
+    -- BrowseActions handles bid/buyout controls for the selected item.
+    if viewingScanItem and scanResults then
+        return nil
+    end
+
+    -- Show scan results list if we have them
+    if scanResults then
+        return buildScanResultsList()
+    end
+
+    -- Filtered browse: show current page filtered results
+    -- Scan button is handled by BrowsePageControls (replaces Next Page).
+    if minStackSize > 1 then
+        return buildFilteredBrowseList()
+    end
+
+    return browseResultsCallback(props)
+end)
+
+-- Pagination: show "Scan" or "Load More" when filters are active, otherwise Blizzard page buttons.
 gen:Element("auction/BrowsePageControls", function(props)
+    -- When viewing scan results, replace Blizzard pagination with "Load More"
+    if scanResults and not viewingScanItem and not scanInProgress then
+        local hasMore = scanResults.lastPage and scanResults.totalPages
+            and (scanResults.lastPage + 1) < scanResults.totalPages
+        if hasMore then
+            return {
+                "Button",
+                label = L["Load More"],
+                events = {
+                    click = function()
+                        scanIsLoadMore = true
+                        startScan(scanResults.lastPage + 1)
+                    end,
+                },
+            }
+        end
+        return nil
+    end
+
+    -- Filtered browse without scan results yet: offer Scan button instead of page controls
+    if minStackSize > 1 and not scanResults and not scanInProgress then
+        local _, totalAuctions = GetNumAuctionItems("list")
+        if (totalAuctions or 0) > 0 then
+            return {
+                "Button",
+                label = L["Scan"],
+                events = {
+                    click = function()
+                        startScan()
+                    end,
+                },
+            }
+        end
+    end
+
+    -- Normal Blizzard page controls
     local children = {}
     if BrowsePrevPageButton:IsShown() and BrowsePrevPageButton:IsEnabled() then
         tinsert(children, { "ProxyButton", frame = BrowsePrevPageButton, label = L["Previous Page"] })
@@ -509,16 +943,39 @@ end)
 gen:Element("auction/BrowseActions", function(props)
     local selected = GetSelectedAuctionItem("list")
     if not selected or selected == 0 then
+        -- If we came from scan results but nothing is selected (e.g. after buying),
+        -- offer to go back to the list
+        if viewingScanItem and scanResults then
+            return {
+                "Button",
+                label = L["Scan Results"],
+                events = {
+                    click = function()
+                        returnToScanResults()
+                    end,
+                },
+            }
+        end
         return nil
     end
-    local children = {
-        { "auction/MoneyInput", frame = BrowseBidPrice, label = L["Bid Price"] },
-    }
+    local children = {}
     if BrowseBuyoutPrice:IsShown() then
         tinsert(children, { "money/MoneyFrame", frame = BrowseBuyoutPrice, label = L["Buyout Price"] })
+        tinsert(children, { "ProxyButton", frame = BrowseBuyoutButton })
     end
+    tinsert(children, { "auction/MoneyInput", frame = BrowseBidPrice, label = L["Bid Price"] })
     tinsert(children, { "ProxyButton", frame = BrowseBidButton })
-    tinsert(children, { "ProxyButton", frame = BrowseBuyoutButton })
+    if viewingScanItem and scanResults then
+        tinsert(children, {
+            "Button",
+            label = L["Scan Results"],
+            events = {
+                click = function()
+                    returnToScanResults()
+                end,
+            },
+        })
+    end
     return {
         "Panel",
         layout = true,
@@ -573,13 +1030,13 @@ local function getBidElement(self, button)
         label = label .. " x" .. count
     end
 
+    if buyoutPrice and buyoutPrice > 0 then
+        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
+    end
+
     local bidText = formatMoney(bidAmount and bidAmount > 0 and bidAmount or minBid)
     if bidText then
         label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-
-    if buyoutPrice and buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
     end
 
     local timeLeft = GetAuctionItemTimeLeft("bidder", index)
@@ -685,13 +1142,13 @@ local function getAuctionElement(self, button)
         label = "[" .. L["Sold"] .. "] " .. label
     end
 
+    if buyoutPrice and buyoutPrice > 0 then
+        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
+    end
+
     local bidText = formatMoney(bidAmount and bidAmount > 0 and bidAmount or minBid)
     if bidText then
         label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
-    end
-
-    if buyoutPrice and buyoutPrice > 0 then
-        label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
     end
 
     if highBidder then
@@ -791,6 +1248,81 @@ gen:Element("auction/CreateAuction", function(props)
         shouldAnnounce = false,
         children = children,
     }
+end)
+
+------------------------------------------------------------
+-- Enrich auction confirmation popups with item name + count.
+-- Uses hooksecurefunc (post-hook) so we never replace the
+-- original function.  We modify the text FontString on the
+-- popup frame instance, not the shared StaticPopupDialogs
+-- template, so other addons and non-auction popups are
+-- unaffected.
+------------------------------------------------------------
+
+local AUCTION_POPUP_TYPES = {
+    BID_AUCTION = true,
+    BUYOUT_AUCTION = true,
+    CANCEL_AUCTION = true,
+}
+
+local function getAuctionPopupItemSuffix(which)
+    local name, count
+    if which == "BID_AUCTION" or which == "BUYOUT_AUCTION" then
+        for _, lt in ipairs({ "list", "bidder" }) do
+            local selected = GetSelectedAuctionItem(lt)
+            if selected and selected > 0 then
+                name, _, count = GetAuctionItemInfo(lt, selected)
+                if name then break end
+            end
+        end
+    elseif which == "CANCEL_AUCTION" then
+        local selected = GetSelectedAuctionItem("owner")
+        if selected and selected > 0 then
+            name, _, count = GetAuctionItemInfo("owner", selected)
+        end
+    end
+    if not name then return nil end
+    local suffix = " " .. name
+    if count and count > 1 then
+        suffix = suffix .. " x" .. count
+    end
+    return suffix
+end
+
+-- Return to scan results when the user cancels a bid/buyout confirmation popup.
+-- Installed lazily inside StaticPopup_Show because Blizzard_AuctionUI is LoadOnDemand
+-- and its dialog tables don't exist at addon load time.
+local hookedPopupCancel = {}
+
+hooksecurefunc("StaticPopup_Show", function(which)
+    if not AUCTION_POPUP_TYPES[which] then return end
+
+    -- Lazily hook OnCancel for bid/buyout popups (now that Blizzard_AuctionUI is loaded)
+    if not hookedPopupCancel[which] and (which == "BUYOUT_AUCTION" or which == "BID_AUCTION") then
+        local dialog = StaticPopupDialogs[which]
+        if dialog and dialog.OnCancel then
+            hookedPopupCancel[which] = true
+            hooksecurefunc(dialog, "OnCancel", function()
+                if viewingScanItem and pendingScanItem then
+                    returnToScanResults()
+                end
+            end)
+        end
+    end
+
+    local suffix = getAuctionPopupItemSuffix(which)
+    if not suffix then return end
+    for i = 1, STATICPOPUP_NUMDIALOGS or 4 do
+        local frame = _G["StaticPopup" .. i]
+        if frame and frame.which == which and frame:IsShown() then
+            local textObj = frame.text or (frame.GetTextFontString and frame:GetTextFontString())
+            if textObj then
+                local current = textObj:GetText() or ""
+                textObj:SetText(current .. suffix)
+            end
+            break
+        end
+    end
 end)
 
 ------------------------------------------------------------
