@@ -4,6 +4,7 @@ module:setLabel(L["Auction Prices"])
 
 local settings = module:hasSettings()
 settings:add({ type = "Number", key = "historyDays", label = L["History Days"], default = 21 })
+settings:add({ type = "Number", key = "meanDays", label = L["Mean Days"], default = 7 })
 settings:add({ type = "Bool", key = "tooltipPrices", label = L["Tooltip Prices"], default = true })
 settings:add({ type = "Bool", key = "autoScan", label = L["Auto Scan"], default = false })
 
@@ -205,6 +206,15 @@ local function addPriceLines(tooltip)
                 line = line .. " (" .. age .. " " .. L["days ago"] .. ")"
             end
             tooltip:AddLine(line, 1, 1, 1)
+        end
+
+        local meanDays = module.settings.meanDays or 7
+        local mean = api.getMeanPrice(itemId, meanDays)
+        if mean then
+            local meanText = formatPrice(mean)
+            if meanText then
+                tooltip:AddLine(meanDays .. "-" .. L["Day Mean"] .. ": " .. meanText, 1, 1, 1)
+            end
         end
     end
 
