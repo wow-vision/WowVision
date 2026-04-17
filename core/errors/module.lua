@@ -113,21 +113,12 @@ function module.onMessage(frame, message, r, g, b, alpha, messageType)
     alert:fire({ text = message, messageType = messageType })
 end
 
-function module.onFlash(frame, fontString)
-    local text = fontString:GetText()
-    if text then
-        WowVision:speak(text)
-    end
-end
-
 function module:onEnable()
     WowVision.UIHost:hookFunc(UIErrorsFrame, "AddMessage", self.onMessage)
-    WowVision.UIHost:hookFunc(UIErrorsFrame, "FlashFontString", self.onFlash)
 end
 
 function module:onDisable()
     WowVision.UIHost:unhookFunc(UIErrorsFrame, "AddMessage", self.onMessage)
-    WowVision.UIHost:unhookFunc(UIErrorsFrame, "FlashFontString", self.onFlash)
 end
 
 local function buildList(showAll)
