@@ -2,43 +2,15 @@ local module = WowVision.base:createModule("errors")
 local L = module.L
 module:setLabel(L["Errors"])
 local settings = module:hasSettings()
-
-local baseAlert = module:addAlert({
-    key = "announce",
-    label = L["Announce Errors"],
-})
-
-baseAlert:addOutput({
-    type = "TTS",
-    key = "tts",
-    label = L["TTS Alert"],
-    buildMessage = function(self, message)
-        return message.text
-    end,
-})
-
-baseAlert:addOutput({
-    type = "Sound",
-    key = "sound",
-    label = L["Sound Alert"],
-})
-
-settings:addRef("announce", baseAlert.parameters)
+local utils = WowVision.errors.utils
 
 function module:getDefaultData()
-    return {
-        errorLabels = {},
-        errorAlerts = {},
-    }
+    return { errors = {} }
 end
 
 local perErrorAlerts = {}
 
-local function makeKey(messageType, message)
-    return tostring(messageType) .. ":" .. tostring(message)
-end
-
-local function getTemplateForType(messageType)
+local function lookupTemplate(messageType)
     if not GetGameMessageInfo or not messageType then
         return nil
     end
@@ -47,26 +19,6 @@ local function getTemplateForType(messageType)
         return nil
     end
     return _G[stringId]
-end
-
-local function templateLiteral(template)
-    if not template then return "" end
-    local stripped = template:gsub("%%[%-%+%d%.%$]*[sdfioxXcug]", "")
-    stripped = stripped:gsub("%s+", "")
-    return stripped
-end
-
-local function prettifyTemplate(template)
-    if not template then return template end
-    return (template:gsub("%%[%-%+%d%.%$]*[sdfioxXcug]", "…"))
-end
-
-local function normalizeMessage(messageType, message)
-    local template = getTemplateForType(messageType)
-    if template and templateLiteral(template) ~= "" then
-        return prettifyTemplate(template)
-    end
-    return message
 end
 
 local function buildAlertFor(key, label)
@@ -91,6 +43,21 @@ local function buildAlertFor(key, label)
     return alert
 end
 
+local function getErrorEntry(key, label)
+    local data = module.data
+    if not data.errors then
+        data.errors = {}
+    end
+    local entry = data.errors[key]
+    if not entry then
+        entry = { label = label }
+        data.errors[key] = entry
+    elseif label and entry.label ~= label then
+        entry.label = label
+    end
+    return entry
+end
+
 local function getOrCreateAlert(key, label)
     local existing = perErrorAlerts[key]
     if existing then
@@ -102,13 +69,11 @@ local function getOrCreateAlert(key, label)
     end
     local alert = buildAlertFor(key, label)
     perErrorAlerts[key] = alert
-    local data = module.data
-    local alertDB = data.errorAlerts[key]
-    if not alertDB then
-        alertDB = alert:getDefaultDBRecursive()
-        data.errorAlerts[key] = alertDB
+    local entry = getErrorEntry(key, label)
+    if not entry.alert then
+        entry.alert = alert:getDefaultDBRecursive()
     end
-    alert:setDB(alertDB)
+    alert:setDB(entry.alert)
     return alert
 end
 
@@ -126,9 +91,9 @@ local function getPrefilledLabels()
             local stringId = GetGameMessageInfo(value)
             if stringId then
                 local text = _G[stringId]
-                if text and templateLiteral(text) ~= "" then
-                    local pretty = prettifyTemplate(text)
-                    prefilledLabels[makeKey(value, pretty)] = pretty
+                if text and utils.templateLiteral(text) ~= "" then
+                    local pretty = utils.prettifyTemplate(text)
+                    prefilledLabels[utils.makeKey(value, pretty)] = pretty
                 end
             end
         end
@@ -137,22 +102,22 @@ local function getPrefilledLabels()
 end
 
 function module.onMessage(frame, message, r, g, b, alpha, messageType)
-    if not messageType or not module.data then
-        baseAlert:fire({ text = message })
+    if not module.data then
         return
     end
-    local data = module.data
-    local normalized = normalizeMessage(messageType, message)
-    local key = makeKey(messageType, normalized)
-    if not data.errorLabels[key] then
-        data.errorLabels[key] = normalized
-    end
-    local alert = getOrCreateAlert(key, data.errorLabels[key])
+    local template = lookupTemplate(messageType)
+    local normalized = utils.normalizeMessage(template, message)
+    local key = utils.makeKey(messageType, normalized)
+    local entry = getErrorEntry(key, normalized)
+    local alert = getOrCreateAlert(key, entry.label)
     alert:fire({ text = message, messageType = messageType })
 end
 
 function module.onFlash(frame, fontString)
-    baseAlert:fire({ text = fontString:GetText() })
+    local text = fontString:GetText()
+    if text then
+        WowVision:speak(text)
+    end
 end
 
 function module:onEnable()
@@ -167,15 +132,16 @@ end
 
 local function buildList(showAll)
     local data = module.data
-    local seen = data.errorLabels
-    local source = seen
+    local seen = (data and data.errors) or {}
+    local source = {}
+    for key, entry in pairs(seen) do
+        source[key] = entry.label
+    end
     if showAll then
-        source = {}
-        for id, lbl in pairs(getPrefilledLabels()) do
-            source[id] = lbl
-        end
-        for id, lbl in pairs(seen) do
-            source[id] = lbl
+        for key, label in pairs(getPrefilledLabels()) do
+            if source[key] == nil then
+                source[key] = label
+            end
         end
     end
 
@@ -184,7 +150,7 @@ local function buildList(showAll)
         tinsert(entries, { id = id, label = label })
     end
     table.sort(entries, function(a, b)
-        return (a.label or "") < (b.label or "")
+        return (a.label or ""):lower() < (b.label or ""):lower()
     end)
 
     local children = {
@@ -220,9 +186,10 @@ local function buildList(showAll)
     return { "List", label = L["Per-Error Filter"], children = children }
 end
 
-settings:addRef("filter", {
+settings:addCustomView({
+    key = "filter",
     label = L["Per-Error Filter"],
-    getGenerator = function(self)
+    generator = function()
         return buildList(false)
     end,
 })
