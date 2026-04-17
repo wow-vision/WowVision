@@ -34,9 +34,13 @@ end
 
 local perErrorAlerts = {}
 
-local function buildAlertFor(messageType, label)
+local function makeKey(messageType, message)
+    return tostring(messageType) .. ":" .. tostring(message)
+end
+
+local function buildAlertFor(key, label)
     local alert = WowVision.alerts.Alert:new({
-        key = "err_" .. messageType,
+        key = "err_" .. key,
         label = label,
     })
     alert:addOutput({
@@ -56,8 +60,8 @@ local function buildAlertFor(messageType, label)
     return alert
 end
 
-local function getOrCreateAlert(messageType, label)
-    local existing = perErrorAlerts[messageType]
+local function getOrCreateAlert(key, label)
+    local existing = perErrorAlerts[key]
     if existing then
         if label and existing.label ~= label then
             existing.label = label
@@ -65,13 +69,13 @@ local function getOrCreateAlert(messageType, label)
         end
         return existing
     end
-    local alert = buildAlertFor(messageType, label)
-    perErrorAlerts[messageType] = alert
+    local alert = buildAlertFor(key, label)
+    perErrorAlerts[key] = alert
     local data = module.data
-    local alertDB = data.errorAlerts[messageType]
+    local alertDB = data.errorAlerts[key]
     if not alertDB then
         alertDB = alert:getDefaultDBRecursive()
-        data.errorAlerts[messageType] = alertDB
+        data.errorAlerts[key] = alertDB
     end
     alert:setDB(alertDB)
     return alert
@@ -92,7 +96,7 @@ local function getPrefilledLabels()
             if stringId then
                 local text = _G[stringId]
                 if text then
-                    prefilledLabels[value] = text
+                    prefilledLabels[makeKey(value, text)] = text
                 end
             end
         end
@@ -106,10 +110,11 @@ function module.onMessage(frame, message, r, g, b, alpha, messageType)
         return
     end
     local data = module.data
-    if not data.errorLabels[messageType] then
-        data.errorLabels[messageType] = message
+    local key = makeKey(messageType, message)
+    if not data.errorLabels[key] then
+        data.errorLabels[key] = message
     end
-    local alert = getOrCreateAlert(messageType, data.errorLabels[messageType])
+    local alert = getOrCreateAlert(key, data.errorLabels[key])
     alert:fire({ text = message, messageType = messageType })
 end
 
