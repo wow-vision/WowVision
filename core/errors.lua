@@ -56,10 +56,15 @@ local function templateLiteral(template)
     return stripped
 end
 
+local function prettifyTemplate(template)
+    if not template then return template end
+    return (template:gsub("%%[%-%+%d%.%$]*[sdfioxXcug]", "…"))
+end
+
 local function normalizeMessage(messageType, message)
     local template = getTemplateForType(messageType)
     if template and templateLiteral(template) ~= "" then
-        return template
+        return prettifyTemplate(template)
     end
     return message
 end
@@ -122,7 +127,8 @@ local function getPrefilledLabels()
             if stringId then
                 local text = _G[stringId]
                 if text and templateLiteral(text) ~= "" then
-                    prefilledLabels[makeKey(value, text)] = text
+                    local pretty = prettifyTemplate(text)
+                    prefilledLabels[makeKey(value, pretty)] = pretty
                 end
             end
         end
