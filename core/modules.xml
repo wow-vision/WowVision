@@ -35,7 +35,7 @@
     <Include file="buffers/modules.xml" />
     <Include file="windows/modules.xml" />
   <Include file="chat/modules.xml" />
-  <Script file="errors.lua" />
+  <Include file="errors/modules.xml" />
   <Include file="navigation/modules.xml" />
 
 </Ui>

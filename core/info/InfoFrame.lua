@@ -98,9 +98,19 @@ function InfoFrame:addChild(childFrame)
     return childFrame
 end
 
--- Add a reference to another InfoFrame or ParameterCategory (UI only, no db involvement)
+-- Add a reference to an external target (UI only, no db involvement).
+-- Target must expose `.label` and `:getGenerator()` — typically an InfoFrame or ParameterCategory.
 function InfoFrame:addRef(key, target)
     tinsert(self.children, { key = key, label = target.label, ref = true, target = target })
+end
+
+-- Add a UI-only child backed by a custom generator function (no db involvement).
+-- Use when the child doesn't have a backing InfoFrame — e.g. a dynamically built list.
+function InfoFrame:addCustomView(config)
+    self:addRef(config.key, {
+        label = config.label,
+        getGenerator = config.generator,
+    })
 end
 
 -- Database connection
