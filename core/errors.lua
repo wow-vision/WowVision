@@ -38,6 +38,32 @@ local function makeKey(messageType, message)
     return tostring(messageType) .. ":" .. tostring(message)
 end
 
+local function getTemplateForType(messageType)
+    if not GetGameMessageInfo or not messageType then
+        return nil
+    end
+    local stringId = GetGameMessageInfo(messageType)
+    if not stringId then
+        return nil
+    end
+    return _G[stringId]
+end
+
+local function templateLiteral(template)
+    if not template then return "" end
+    local stripped = template:gsub("%%[%-%+%d%.%$]*[sdfioxXcug]", "")
+    stripped = stripped:gsub("%s+", "")
+    return stripped
+end
+
+local function normalizeMessage(messageType, message)
+    local template = getTemplateForType(messageType)
+    if template and templateLiteral(template) ~= "" then
+        return template
+    end
+    return message
+end
+
 local function buildAlertFor(key, label)
     local alert = WowVision.alerts.Alert:new({
         key = "err_" .. key,
@@ -95,7 +121,7 @@ local function getPrefilledLabels()
             local stringId = GetGameMessageInfo(value)
             if stringId then
                 local text = _G[stringId]
-                if text then
+                if text and templateLiteral(text) ~= "" then
                     prefilledLabels[makeKey(value, text)] = text
                 end
             end
@@ -110,9 +136,10 @@ function module.onMessage(frame, message, r, g, b, alpha, messageType)
         return
     end
     local data = module.data
-    local key = makeKey(messageType, message)
+    local normalized = normalizeMessage(messageType, message)
+    local key = makeKey(messageType, normalized)
     if not data.errorLabels[key] then
-        data.errorLabels[key] = message
+        data.errorLabels[key] = normalized
     end
     local alert = getOrCreateAlert(key, data.errorLabels[key])
     alert:fire({ text = message, messageType = messageType })
