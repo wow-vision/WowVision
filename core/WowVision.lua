@@ -342,6 +342,80 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
+        name = "dump",
+        description = "Dump Sku waypoint cache to SavedVariables. Usage: /wv dump waypoints or /wv dump links. Then /reload to flush to disk.",
+        func = function(args)
+            if not WaypointCache then
+                print("WaypointCache not found. Is Sku loaded?")
+                return
+            end
+
+            WowVisionDump = WowVisionDump or {}
+            local dumpType = strtrim(args)
+
+            if dumpType == "links" then
+                local buf = {}
+                tinsert(buf, "fromIndex|toIndex")
+                for i, wp in pairs(WaypointCache) do
+                    if wp.links and wp.links.byId then
+                        for targetIndex, _ in pairs(wp.links.byId) do
+                            tinsert(buf, i .. "|" .. targetIndex)
+                        end
+                    end
+                end
+                WowVisionDump.links = table.concat(buf, "\n")
+                print("Links saved to WowVisionDump. /reload to flush to disk.")
+                self:speak("Done")
+
+            elseif dumpType == "waypoints" then
+                local buf = {}
+                tinsert(buf, "index|typeId|dbIndex|spawn|worldX|worldY|continentId|areaId|uiMapId|size|createdBy|name|role|comments")
+
+                local keys = {}
+                for k, _ in pairs(WaypointCache) do
+                    tinsert(keys, k)
+                end
+                table.sort(keys)
+
+                for _, k in ipairs(keys) do
+                    local wp = WaypointCache[k]
+                    local comments = ""
+                    if wp.comments then
+                        for locale, entries in pairs(wp.comments) do
+                            for ci, text in ipairs(entries) do
+                                if text and text ~= "" then
+                                    comments = comments .. locale .. ":" .. ci .. ":" .. tostring(text) .. "~"
+                                end
+                            end
+                        end
+                    end
+                    tinsert(buf, k
+                        .. "|" .. (wp.typeId or "")
+                        .. "|" .. (wp.dbIndex or "")
+                        .. "|" .. (wp.spawn or "")
+                        .. "|" .. (wp.worldX or "")
+                        .. "|" .. (wp.worldY or "")
+                        .. "|" .. (wp.contintentId or "")
+                        .. "|" .. (wp.areaId or "")
+                        .. "|" .. (wp.uiMapId or "")
+                        .. "|" .. (wp.size or "")
+                        .. "|" .. (wp.createdBy or "")
+                        .. "|" .. (wp.name or "")
+                        .. "|" .. (wp.role or "")
+                        .. "|" .. comments
+                    )
+                end
+
+                WowVisionDump.waypoints = table.concat(buf, "\n")
+                print("Waypoints saved to WowVisionDump (" .. (#keys) .. " entries). /reload to flush to disk.")
+                self:speak("Done")
+            else
+                print("Usage: /wv dump waypoints or /wv dump links. Then /reload to flush to disk.")
+            end
+        end,
+    })
+
+    self.base:registerCommand({
         name = "browse",
         description = "Test: browse audio data sources",
         func = function(args)
@@ -371,6 +445,53 @@ function WowVision:registerCommands()
             })
         end,
     })
+end
+
+function WowVision:showDumpFrame(text)
+    if self._dumpFrame then
+        self._dumpFrame:Show()
+        self._dumpFrame.editBox:SetText(text)
+        self._dumpFrame.editBox:HighlightText()
+        self._dumpFrame.editBox:SetFocus()
+        self:speak("Ready")
+        return
+    end
+
+    local f = CreateFrame("Frame", "WowVisionDumpFrame", UIParent, "BackdropTemplate")
+    f:SetSize(600, 400)
+    f:SetPoint("CENTER")
+    f:SetBackdrop({ bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border", tile = true, tileSize = 32, edgeSize = 32, insets = { left = 8, right = 8, top = 8, bottom = 8 } })
+    f:SetMovable(true)
+    f:EnableMouse(true)
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", f.StartMoving)
+    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+
+    local editBox = CreateFrame("EditBox", nil, f)
+    editBox:SetMultiLine(true)
+    editBox:SetFontObject(ChatFontNormal)
+    editBox:SetPoint("TOPLEFT", 12, -12)
+    editBox:SetPoint("BOTTOMRIGHT", -12, 40)
+    editBox:SetMaxLetters(0)
+    editBox:SetAutoFocus(false)
+    editBox:SetScript("OnEscapePressed", function()
+        editBox:ClearFocus()
+        f:Hide()
+    end)
+
+    local close = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    close:SetSize(80, 22)
+    close:SetPoint("BOTTOM", 0, 12)
+    close:SetText("Close")
+    close:SetScript("OnClick", function() f:Hide() end)
+
+    f.editBox = editBox
+    self._dumpFrame = f
+
+    editBox:SetText(text)
+    editBox:SetFocus()
+    editBox:HighlightText()
+    self:speak("Ready")
 end
 
 -- Find addon index by name (case-insensitive)

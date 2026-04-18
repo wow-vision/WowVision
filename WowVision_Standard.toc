@@ -5,6 +5,7 @@
 ## OptionalDeps: Sku, BlindSlash
 ## Notes: Provides accessibility for the visually impaired.
 ## SavedVariablesPerCharacter: WowVisionDB
+## SavedVariables: WowVisionDump
 
 libs.xml
 retail/setup.lua

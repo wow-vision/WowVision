@@ -46,6 +46,9 @@ release.sh
 # Claude files
 .claude/
 
+# Extracted map data (not part of the addon)
+/data/
+
 # VS Code
 .vscode/
 
