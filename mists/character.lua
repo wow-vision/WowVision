@@ -219,9 +219,11 @@ gen:Element("character/Currency", {
 end)
 
 ------------------------------------------------------------
--- Reputation tab (tab 3). Mists uses the Cata ReputationFrame: ReputationBar[i]
--- rows, ReputationHeader[i] header buttons, a ReputationListScrollFrame
--- FauxScrollFrame, and a ReputationDetailFrame side panel.
+-- Reputation tab (tab 3). Mists uses the Cata ReputationFrame, where each
+-- ReputationBar[i] is itself a clickable row Button (sub-frames: FactionName,
+-- ReputationBarFactionStanding, ExpandOrCollapseButton for headers), shown via
+-- the ReputationListScrollFrame FauxScrollFrame, with a ReputationDetailFrame
+-- side panel.
 ------------------------------------------------------------
 
 local NUM_FACTIONS_DISPLAYED = NUM_FACTIONS_DISPLAYED or 15
@@ -234,59 +236,45 @@ local function repBarIndex(frame)
     return n and tonumber(n:match("^ReputationBar(%d+)$"))
 end
 
-local function buildReputationElement(self, frame)
-    local i = repBarIndex(frame)
-    if not i then
+local function buildReputationElement(self, row)
+    -- In the Cata/Mists reputation UI, ReputationBar[i] is itself a clickable
+    -- Button (its OnClick runs ReputationBar_OnClick -> opens ReputationDetailFrame),
+    -- with sub-frames for the name, standing, and a header expand/collapse button.
+    local i = repBarIndex(row)
+    if not i or not row:IsShown() then
         return nil
     end
-    local bar = frame
-    local header = _G["ReputationHeader" .. i]
-    local isHeader = header and header:IsShown()
-    local isBar = bar and bar:IsShown()
-    if not isHeader and not isBar then
-        return nil
-    end
+    local base = "ReputationBar" .. i
 
-    local name
-    if isHeader and header.Text then
-        name = header.Text:GetText() or ""
-    else
-        local nameText = _G["ReputationBar" .. i .. "FactionName"]
-        name = nameText and nameText:GetText() or ""
-    end
-    if not name or name == "" then
+    local nameText = _G[base .. "FactionName"]
+    local name = nameText and nameText:GetText() or ""
+    if name == "" then
         return nil
     end
 
     local label = name
-    local standingFrame = _G["ReputationBar" .. i .. "FactionStanding"]
-    local standingText = standingFrame and standingFrame:GetText() or ""
-    if standingText and standingText ~= "" then
-        label = label .. " - " .. standingText
+    local standingFrame = _G[base .. "ReputationBarFactionStanding"]
+    local standing = standingFrame and standingFrame:GetText() or ""
+    if standing and standing ~= "" then
+        label = label .. " - " .. standing
     end
-    if bar.tooltip and bar.tooltip ~= "" then
-        label = label .. bar.tooltip
+    if row.tooltip and row.tooltip ~= "" then
+        label = label .. " " .. row.tooltip
     end
 
-    if isHeader then
-        return {
-            "ProxyButton",
-            frame = header,
-            label = label,
-            header = header.isCollapsed and "collapsed" or "expanded",
-        }
+    -- Header rows show an ExpandOrCollapseButton; clicking it toggles the section.
+    local expandButton = _G[base .. "ExpandOrCollapseButton"]
+    if expandButton and expandButton:IsShown() then
+        local headerState
+        if row.index then
+            local isCollapsed = select(10, GetFactionInfo(row.index))
+            headerState = isCollapsed and "collapsed" or "expanded"
+        end
+        return { "ProxyButton", frame = expandButton, label = label, header = headerState }
     end
-    -- Regular rows are StatusBars (OnMouseUp, not OnClick), so use a Button that
-    -- calls ReputationBar_OnClick directly.
-    return {
-        "Button",
-        label = label,
-        events = {
-            click = function()
-                ReputationBar_OnClick(bar)
-            end,
-        },
-    }
+
+    -- Faction row: the row Button's own OnClick opens/closes the detail frame.
+    return { "ProxyButton", frame = row, label = label }
 end
 
 local function getNumFactions()
