@@ -38,6 +38,9 @@ gen:Element("character", {
     local tab = CharacterFrame.selectedTab
     if tab == 1 then
         tinsert(result.children, { "character/PaperDoll", frame = PaperDollFrame })
+    elseif tab == 3 then
+        tinsert(result.children, { "character/Reputation", frame = ReputationFrame })
+        tinsert(result.children, { "character/ReputationDetail" })
     elseif tab == 4 then
         tinsert(result.children, { "character/Currency", frame = TokenFrame })
     else
@@ -213,6 +216,160 @@ gen:Element("character/Currency", {
         },
     }
     return result
+end)
+
+------------------------------------------------------------
+-- Reputation tab (tab 3). Mists uses the Cata ReputationFrame: ReputationBar[i]
+-- rows, ReputationHeader[i] header buttons, a ReputationListScrollFrame
+-- FauxScrollFrame, and a ReputationDetailFrame side panel.
+------------------------------------------------------------
+
+local NUM_FACTIONS_DISPLAYED = NUM_FACTIONS_DISPLAYED or 15
+
+-- ReputationBar frames report GetID() == 0; derive the display index from the
+-- frame name ("ReputationBar3" -> 3) at use time, so we don't depend on the
+-- frames existing at addon-load time.
+local function repBarIndex(frame)
+    local n = frame and frame.GetName and frame:GetName()
+    return n and tonumber(n:match("^ReputationBar(%d+)$"))
+end
+
+local function buildReputationElement(self, frame)
+    local i = repBarIndex(frame)
+    if not i then
+        return nil
+    end
+    local bar = frame
+    local header = _G["ReputationHeader" .. i]
+    local isHeader = header and header:IsShown()
+    local isBar = bar and bar:IsShown()
+    if not isHeader and not isBar then
+        return nil
+    end
+
+    local name
+    if isHeader and header.Text then
+        name = header.Text:GetText() or ""
+    else
+        local nameText = _G["ReputationBar" .. i .. "FactionName"]
+        name = nameText and nameText:GetText() or ""
+    end
+    if not name or name == "" then
+        return nil
+    end
+
+    local label = name
+    local standingFrame = _G["ReputationBar" .. i .. "FactionStanding"]
+    local standingText = standingFrame and standingFrame:GetText() or ""
+    if standingText and standingText ~= "" then
+        label = label .. " - " .. standingText
+    end
+    if bar.tooltip and bar.tooltip ~= "" then
+        label = label .. bar.tooltip
+    end
+
+    if isHeader then
+        return {
+            "ProxyButton",
+            frame = header,
+            label = label,
+            header = header.isCollapsed and "collapsed" or "expanded",
+        }
+    end
+    -- Regular rows are StatusBars (OnMouseUp, not OnClick), so use a Button that
+    -- calls ReputationBar_OnClick directly.
+    return {
+        "Button",
+        label = label,
+        events = {
+            click = function()
+                ReputationBar_OnClick(bar)
+            end,
+        },
+    }
+end
+
+local function getNumFactions()
+    return GetNumFactions()
+end
+
+local function getReputationIndex(self, frame)
+    local offset = FauxScrollFrame_GetOffset(ReputationListScrollFrame) or 0
+    return (repBarIndex(frame) or 0) + offset
+end
+
+local function getReputationRows()
+    local rows = {}
+    for i = 1, NUM_FACTIONS_DISPLAYED do
+        local frame = _G["ReputationBar" .. i]
+        if frame then
+            tinsert(rows, frame)
+        end
+    end
+    return rows
+end
+
+gen:Element("character/Reputation", {
+    regenerateOn = {
+        events = { "UPDATE_FACTION" },
+    },
+}, function(props)
+    if ReputationListScrollFrame and ReputationListScrollFrame:IsShown() then
+        return {
+            "ProxyFauxScrollFrame",
+            frame = ReputationListScrollFrame,
+            buttonHeight = REPUTATIONFRAME_FACTIONHEIGHT,
+            updateFunction = ReputationFrame_Update,
+            getNumEntries = getNumFactions,
+            getElement = buildReputationElement,
+            getElementIndex = getReputationIndex,
+            getButtons = getReputationRows,
+        }
+    end
+
+    -- Scroll frame hidden (few factions): render rows directly.
+    local children = {}
+    for i = 1, NUM_FACTIONS_DISPLAYED do
+        local frame = _G["ReputationBar" .. i]
+        if frame then
+            local element = buildReputationElement(nil, frame)
+            if element then
+                tinsert(children, element)
+            end
+        end
+    end
+    if #children == 0 then
+        return nil
+    end
+    return { "List", label = L["Reputation"], children = children }
+end)
+
+gen:Element("character/ReputationDetail", function(props)
+    local frame = ReputationDetailFrame
+    if not frame or not frame:IsShown() then
+        return nil
+    end
+
+    local children = {}
+    local factionName = ReputationDetailFactionName and ReputationDetailFactionName:GetText() or ""
+    local description = ReputationDetailFactionDescription and ReputationDetailFactionDescription:GetText() or ""
+    if description and description ~= "" then
+        tinsert(children, { "Text", text = description })
+    end
+    if ReputationDetailAtWarCheckbox and ReputationDetailAtWarCheckbox:IsShown() then
+        tinsert(children, { "ProxyCheckButton", frame = ReputationDetailAtWarCheckbox, label = L["At War"] })
+    end
+    if ReputationDetailInactiveCheckbox and ReputationDetailInactiveCheckbox:IsShown() then
+        tinsert(children, { "ProxyCheckButton", frame = ReputationDetailInactiveCheckbox, label = MOVE_TO_INACTIVE or "Move to Inactive" })
+    end
+    if ReputationDetailMainScreenCheckbox and ReputationDetailMainScreenCheckbox:IsShown() then
+        tinsert(children, { "ProxyCheckButton", frame = ReputationDetailMainScreenCheckbox, label = L["Watched"] })
+    end
+    if ReputationDetailCloseButton then
+        tinsert(children, { "ProxyButton", frame = ReputationDetailCloseButton, label = CLOSE or "Close" })
+    end
+
+    return { "List", label = factionName, children = children }
 end)
 
 module:registerWindow({
