@@ -4,6 +4,7 @@ local Container, parent = WowVision.ui:CreateElementType("Container", "Widget")
 Container.info:addFields({
     { key = "direction", default = "vertical" },
     { key = "wrap", default = false },
+    { key = "focusIndex" },
 })
 
 function Container:initialize()
@@ -150,6 +151,9 @@ function Container:getDirectionKeys()
 end
 
 function Container:getDesiredFocus()
+    if self.focusIndex and self.children[self.focusIndex] then
+        return self.children[self.focusIndex]
+    end
     return nil
 end
 
