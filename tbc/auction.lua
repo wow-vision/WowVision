@@ -14,6 +14,9 @@ local gen = module:hasUI()
 local selectAlert = module:addAlert({ key = "itemSelected", label = L["Item Selected"] })
 selectAlert:addOutput({ type = "TTS", key = "tts", label = L["Item Selected"] })
 
+-- Client-side filter: hide browse results below this stack size
+local minStackSize = 0
+
 -- Button counts per tab (matching Blizzard's fixed button arrays)
 local NUM_BROWSE_BUTTONS = 8
 local NUM_BID_BUTTONS = 9
@@ -372,6 +375,18 @@ gen:Element("auction/SearchFilters", function(props)
                             layout = true,
                             label = L["Filters"],
                             children = {
+                                {
+                                    "EditBox",
+                                    label = L["Min Stack Size"],
+                                    type = "number",
+                                    autoInputOnFocus = false,
+                                    value = minStackSize > 0 and minStackSize or nil,
+                                    events = {
+                                        valueChange = function(event, widget, value)
+                                            minStackSize = tonumber(value) or 0
+                                        end,
+                                    },
+                                },
                                 { "ProxyEditBox", frame = BrowseMinLevel, autoInputOnFocus = false, hookEnter = true, label = L["Minimum Level"] },
                                 { "ProxyEditBox", frame = BrowseMaxLevel, autoInputOnFocus = false, hookEnter = true, label = L["Maximum Level"] },
                                 { "ProxyDropdownButton", frame = BrowseDropDown or BrowseDropdown },
@@ -471,11 +486,74 @@ local function getBrowseElement(self, button)
     return { "ProxyButton", frame = button, label = label }
 end
 
-gen:Element("auction/BrowseResults", {
-    regenerateOn = {
-        events = { "AUCTION_ITEM_LIST_UPDATE" },
-    },
-}, makeResultsElement({
+-- Select a browse item by its 1-based index in the auction list.
+-- Scrolls Blizzard's FauxScrollFrame to make the item visible, then clicks it.
+local function selectBrowseItem(realIndex)
+    local total = GetNumAuctionItems("list") or 0
+    local maxOffset = math.max(0, total - NUM_BROWSE_BUTTONS)
+    local targetOffset = math.min(math.max(0, realIndex - 1), maxOffset)
+    FauxScrollFrame_SetOffset(BrowseScrollFrame, targetOffset)
+    AuctionFrameBrowse_Update()
+    local offset = FauxScrollFrame_GetOffset(BrowseScrollFrame) or 0
+    for i = 1, NUM_BROWSE_BUTTONS do
+        local button = _G["BrowseButton" .. i]
+        if button and button:GetID() + offset == realIndex then
+            hookBrowseButton(button)
+            button:Click()
+            break
+        end
+    end
+end
+
+-- Build a flat List of browse results filtered by minStackSize.
+local function buildFilteredBrowseList()
+    local numBatch = GetNumAuctionItems("list") or 0
+    if numBatch == 0 then return nil end
+    local children = {}
+    for i = 1, numBatch do
+        local name, _, count, quality, canUse, level, levelColHeader,
+            minBid, minIncrement, buyoutPrice, bidAmount, highBidder,
+            bidderFullName, owner, ownerFullName, saleStatus, itemId, hasAllInfo =
+            GetAuctionItemInfo("list", i)
+        if name and (count or 0) >= minStackSize then
+            local label = name
+            if count and count > 1 then
+                label = label .. " x" .. count
+            end
+            if owner then
+                label = label .. ", " .. L["Seller"] .. ": " .. owner
+            end
+            local currentBid = bidAmount and bidAmount > 0 and bidAmount or minBid
+            local bidText = formatMoney(currentBid)
+            if bidText then
+                label = label .. ", " .. L["Current Bid"] .. ": " .. bidText
+            end
+            if buyoutPrice and buyoutPrice > 0 then
+                label = label .. ", " .. L["Buyout"] .. ": " .. formatMoney(buyoutPrice)
+            end
+            local timeLeft = GetAuctionItemTimeLeft("list", i)
+            if timeLeft then
+                label = label .. ", " .. L["Time Left"] .. ": " .. getTimeLeftString(timeLeft)
+            end
+            local realIndex = i
+            tinsert(children, {
+                "Button",
+                label = label,
+                events = {
+                    click = function()
+                        selectBrowseItem(realIndex)
+                    end,
+                },
+            })
+        end
+    end
+    if #children == 0 then
+        return { "Text", text = L["No Results"] }
+    end
+    return { "List", label = L["Results"], children = children }
+end
+
+local browseResultsCallback = makeResultsElement({
     buttonPrefix = "BrowseButton",
     numButtons = NUM_BROWSE_BUTTONS,
     listType = "list",
@@ -483,7 +561,21 @@ gen:Element("auction/BrowseResults", {
     label = L["Results"],
     updateFunctionName = "AuctionFrameBrowse_Update",
     getElement = getBrowseElement,
-}))
+})
+
+gen:Element("auction/BrowseResults", {
+    regenerateOn = {
+        events = { "AUCTION_ITEM_LIST_UPDATE" },
+        values = function()
+            return { minStack = minStackSize }
+        end,
+    },
+}, function(props)
+    if minStackSize > 1 then
+        return buildFilteredBrowseList()
+    end
+    return browseResultsCallback(props)
+end)
 
 -- Pagination
 gen:Element("auction/BrowsePageControls", function(props)
