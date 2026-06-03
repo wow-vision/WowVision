@@ -2,6 +2,13 @@ local module = WowVision.base.windows.mail
 local L = module.L
 local gen = module:hasUI()
 
+-- Shared by TBC and Mists, which use the same Classic SendMail UI. Bail out on
+-- any client whose mail frames differ so we neither error at load nor when the
+-- mail window opens; that client keeps core's basic mail handling.
+if not SendMailFrame then
+    return
+end
+
 -- Safe accessor: MailEditBox may be a ScrollingEditBox wrapper or a plain EditBox
 local function getBodyEditBox()
     if MailEditBox.GetEditBox then

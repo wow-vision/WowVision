@@ -10,6 +10,5 @@
   <Script file="lfg.lua" />
   <Script file="socketing.lua" />
   <Include file="auction\modules.xml" />
-  <Script file="mail.lua" />
 
 </Ui>
