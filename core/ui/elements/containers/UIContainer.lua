@@ -151,7 +151,13 @@ function Container:getDirectionKeys()
 end
 
 function Container:getDesiredFocus()
-    if self.focusIndex and self.children[self.focusIndex] then
+    -- focusIndex sets the INITIAL focus once, on first entry. getDesiredFocus is
+    -- the navigator's "move focus now" channel and is re-checked every reconcile
+    -- (by object identity), so returning the child unconditionally would snap
+    -- focus back to focusIndex whenever a dynamic list regenerates its children,
+    -- fighting the user. Latch it to fire exactly once.
+    if self.focusIndex and not self._focusIndexApplied and self.children[self.focusIndex] then
+        self._focusIndexApplied = true
         return self.children[self.focusIndex]
     end
     return nil
