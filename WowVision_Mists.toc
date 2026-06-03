@@ -1,7 +1,7 @@
 ## Title: WowVision
 ## Version: @project-version@
 ## Author: bradjrenshaw
-## Interface: 50500
+## Interface: 50503, 50504
 ## OptionalDeps: Sku, BlindSlash
 ## Notes: Provides accessibility for the visually impaired.
 ## SavedVariablesPerCharacter: WowVisionDB
