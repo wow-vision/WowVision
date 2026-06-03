@@ -8,7 +8,7 @@
   <Include file="character\modules.xml" />
   <Script file="lfg.lua" />
   <Script file="socketing.lua" />
-  <Script file="auction.lua" />
+  <Include file="auction\modules.xml" />
   <Script file="mail.lua" />
 
 </Ui>
