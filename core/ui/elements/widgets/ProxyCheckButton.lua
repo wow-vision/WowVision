@@ -36,7 +36,11 @@ function ProxyCheckButton:getValue()
         end
         return false
     else
+        if self.frame.GetChecked then
         return self.frame:GetChecked()
+        else
+            error("Checkbox " .. (self.frame:GetName() or "unnamed") .. " has no GetChecked.")
+        end
     end
 end
 
