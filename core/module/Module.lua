@@ -208,7 +208,15 @@ function Module:registerWindow(config)
 end
 
 function Module:unregisterWindow(name)
-    self.windows[name] = nil
+    if not self.registeredWindows[name] then
+        return
+    end
+    self.registeredWindows[name] = nil
+    -- If the module is already enabled, the window is live in the window manager
+    -- (registered in fullEnable), so remove it there too.
+    if self.elementGenerator and self:getEnabled() then
+        WowVision.UIHost.windowManager:UnregisterWindow(name)
+    end
 end
 
 function Module:registerDropdownMenu(menu, description)
