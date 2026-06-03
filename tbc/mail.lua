@@ -212,13 +212,10 @@ gen:Element("mail/send", {
     return { "Panel", label = L["Send Mail"], children = children }
 end)
 
--- Override core's PlayerInteractionWindow with TBC-standard FrameWindow.
+-- Override core's PlayerInteractionWindow with a TBC-standard FrameWindow.
 -- PlayerInteractionWindow opens on event before frames are fully initialized;
 -- FrameWindow polls visibility, matching all other TBC modules.
-local oldWindow = module.registeredWindows["mail"]
-if oldWindow then
-    oldWindow._hasConflictingAddon = true
-end
+module:unregisterWindow("mail")
 
 module:registerWindow({
     type = "FrameWindow",
