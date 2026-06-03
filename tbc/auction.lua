@@ -794,6 +794,62 @@ gen:Element("auction/CreateAuction", function(props)
 end)
 
 ------------------------------------------------------------
+-- Enrich auction confirmation popups with item name + count.
+-- Uses hooksecurefunc (post-hook) so we never replace the
+-- original function.  We modify the text FontString on the
+-- popup frame instance, not the shared StaticPopupDialogs
+-- template, so other addons and non-auction popups are
+-- unaffected.
+------------------------------------------------------------
+
+local AUCTION_POPUP_TYPES = {
+    BID_AUCTION = true,
+    BUYOUT_AUCTION = true,
+    CANCEL_AUCTION = true,
+}
+
+local function getAuctionPopupItemSuffix(which)
+    local name, count
+    if which == "BID_AUCTION" or which == "BUYOUT_AUCTION" then
+        for _, lt in ipairs({ "list", "bidder" }) do
+            local selected = GetSelectedAuctionItem(lt)
+            if selected and selected > 0 then
+                name, _, count = GetAuctionItemInfo(lt, selected)
+                if name then break end
+            end
+        end
+    elseif which == "CANCEL_AUCTION" then
+        local selected = GetSelectedAuctionItem("owner")
+        if selected and selected > 0 then
+            name, _, count = GetAuctionItemInfo("owner", selected)
+        end
+    end
+    if not name then return nil end
+    local suffix = " " .. name
+    if count and count > 1 then
+        suffix = suffix .. " x" .. count
+    end
+    return suffix
+end
+
+hooksecurefunc("StaticPopup_Show", function(which)
+    if not AUCTION_POPUP_TYPES[which] then return end
+    local suffix = getAuctionPopupItemSuffix(which)
+    if not suffix then return end
+    for i = 1, STATICPOPUP_NUMDIALOGS or 4 do
+        local frame = _G["StaticPopup" .. i]
+        if frame and frame.which == which and frame:IsShown() then
+            local textObj = frame.text or (frame.GetTextFontString and frame:GetTextFontString())
+            if textObj then
+                local current = textObj:GetText() or ""
+                textObj:SetText(current .. suffix)
+            end
+            break
+        end
+    end
+end)
+
+------------------------------------------------------------
 -- Window registration
 ------------------------------------------------------------
 
