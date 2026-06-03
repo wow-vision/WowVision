@@ -10,7 +10,9 @@ externals:
   libs/AceEvent-3.0: https://github.com/WoWUIDev/Ace3/AceEvent-3.0
   libs/AceLocale-3.0: https://github.com/WoWUIDev/Ace3/AceLocale-3.0
   libs/LibSharedMedia-3.0: https://github.com/wowace-clone/LibSharedMedia-3.0/LibSharedMedia-3.0
-  libs/LibRangeCheck-3.0: https://github.com/WeakAuras/LibRangeCheck-3.0/LibRangeCheck-3.0
+  # LibRangeCheck-3.0 is no longer maintained upstream and needs local patches
+  # for Mists Classic (spell-ID range checking), so we vendor it directly
+  # instead of fetching it. See libs/LibRangeCheck-3.0/LibRangeCheck-3.0.lua.
 
 ignore:
   - .stylua.toml
