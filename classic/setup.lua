@@ -1,3 +1,3 @@
 local _, addon = ...
 
-addon.consts = { UI_DELAY = 0.01 }
+addon.consts = { UI_DELAY = 0 }
