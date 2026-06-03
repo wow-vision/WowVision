@@ -9,5 +9,6 @@
   <Script file="lfg.lua" />
   <Script file="socketing.lua" />
   <Script file="auction.lua" />
+  <Script file="mail.lua" />
 
 </Ui>
