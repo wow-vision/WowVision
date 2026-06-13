@@ -6,20 +6,13 @@ module.Beacon = Beacon
 local atan2 = math.atan2
 local sqrt = math.sqrt
 local deg = math.deg
-local floor = math.floor
 local abs = math.abs
 
--- Alignment feedback: one cue when you turn to within ALIGN_DEGREES of dead
--- ahead, another when you turn back out. (The asset names are counterintuitive:
--- clack.mp3 is the "locked on" cue, click.mp3 the "turned off it" cue.)
+-- How close to dead-ahead (degrees) counts as aligned for the click/clack cue.
 local ALIGN_DEGREES = 10
-local ALIGNED_SOUND = "Sound/WowVision/alerts/clack.mp3"
-local UNALIGNED_SOUND = "Sound/WowVision/alerts/click.mp3"
 
 function Beacon:initialize(waypoint)
     self.waypoint = waypoint
-    -- Resolved lazily so the beacon audio pack is registered by the time we play.
-    self.source = module:getBeaconSource()
     self.nextPlay = 0
 end
 
@@ -56,25 +49,22 @@ function Beacon:compute()
     return distance, relative
 end
 
--- Edge-triggered alignment cue. Initialized silently so a click/clack only
--- fires when the player actually crosses the alignment threshold by turning.
+-- Edge-triggered alignment cue. Initialized silently so a cue only fires when the
+-- player actually crosses the alignment threshold by turning.
 function Beacon:updateAlignment(relative)
     local within = abs(relative) <= ALIGN_DEGREES
     if self.aligned == nil then
         self.aligned = within
     elseif within and not self.aligned then
         self.aligned = true
-        WowVision:play(ALIGNED_SOUND)
+        module:fireAlert("aligned", {})
     elseif not within and self.aligned then
         self.aligned = false
-        WowVision:play(UNALIGNED_SOUND)
+        module:fireAlert("unaligned", {})
     end
 end
 
 function Beacon:update()
-    if not self.source then
-        return
-    end
     local distance, relative = self:compute()
     if not distance then
         return
@@ -103,13 +93,7 @@ function Beacon:update()
     end
     self.nextPlay = now + pingRate
 
-    -- The file's distance index is a compressed proximity bucket (~6 yards per
-    -- step), NOT raw yards, so the beacon stays audible out to a long range
-    -- instead of collapsing to the near-silent max-distance file a few yards out.
-    local fileDistance = floor((distance + 5) / 6)
-    if fileDistance < 1 then
-        fileDistance = 1
-    end
-
-    self.source:play(relative, fileDistance)
+    -- The Beacon output maps yards to the file's compressed distance index and
+    -- plays the directional sound.
+    module:fireAlert("beacon", { angle = relative, distance = distance })
 end

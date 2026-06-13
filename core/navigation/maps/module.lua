@@ -1,25 +1,49 @@
 local module = WowVision.base.navigation:createModule("maps")
 local L = module.L
 module:setLabel(L["Maps"])
+local settings = module:hasSettings()
 
 module.datasets = WowVision.Registry:new()
 
--- Active beacon sound. Hardcoded for now; this will become a user setting once
--- beacon selection UI exists.
-local BEACON_PATH = "Beacon/WowVision/probe_mid_1"
+-- Beacon feedback is driven through the alert/output system so each cue can be
+-- toggled and its sound chosen in the settings UI. Beacon.lua fires these by key
+-- (module:fireAlert) as the player moves; the maps module fires "arrival".
+local beaconAlert = module:addAlert({ key = "beacon", label = L["Beacon"] })
+beaconAlert:addOutput({
+    type = "Beacon",
+    key = "beacon",
+    label = L["Beacon Sound"],
+    beacon = "WowVision/probe_mid_1",
+})
 
--- Played each time a waypoint is reached (matches Sku's "ding").
-local ARRIVAL_SOUND = "Sound/WowVision/alerts/success2.mp3"
+local alignedAlert = module:addAlert({ key = "aligned", label = L["Beacon Aligned"] })
+alignedAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    path = "Sound/WowVision/alerts/clack.mp3",
+})
 
-function module:getBeaconSource()
-    if self._beaconSource == nil then
-        self._beaconSource = WowVision.audio:getPath(BEACON_PATH) or false
-    end
-    if self._beaconSource == false then
-        return nil
-    end
-    return self._beaconSource
-end
+local unalignedAlert = module:addAlert({ key = "unaligned", label = L["Beacon Off Course"] })
+unalignedAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    path = "Sound/WowVision/alerts/click.mp3",
+})
+
+local arrivalAlert = module:addAlert({ key = "arrival", label = L["Waypoint Reached"] })
+arrivalAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    path = "Sound/WowVision/alerts/success2.mp3",
+})
+
+settings:addRef("beacon", beaconAlert.parameters)
+settings:addRef("aligned", alignedAlert.parameters)
+settings:addRef("unaligned", unalignedAlert.parameters)
+settings:addRef("arrival", arrivalAlert.parameters)
 
 function module:newDataset(key)
     local data = WowVision.Dataset:new()
@@ -31,7 +55,7 @@ function module:pathfind(path)
     self.beacon = nil
     self.path = path
     path.events.arriveAtWaypoint:subscribe(self, function()
-        WowVision:play(ARRIVAL_SOUND)
+        module:fireAlert("arrival", {})
     end)
     self.path:start()
 end
@@ -79,11 +103,6 @@ function module:handleBeaconCommand(args)
     x, y = tonumber(x), tonumber(y)
     if not x or not y then
         WowVision:speak("Usage beacon x y")
-        return
-    end
-
-    if not self:getBeaconSource() then
-        WowVision:speak("Beacon sound not available")
         return
     end
 
