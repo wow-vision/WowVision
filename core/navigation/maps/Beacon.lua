@@ -57,10 +57,10 @@ function Beacon:updateAlignment(relative)
         self.aligned = within
     elseif within and not self.aligned then
         self.aligned = true
-        module:fireAlert("aligned", {})
+        module:fireAlert("beacon", { action = "aligned" })
     elseif not within and self.aligned then
         self.aligned = false
-        module:fireAlert("unaligned", {})
+        module:fireAlert("beacon", { action = "unaligned" })
     end
 end
 
@@ -95,5 +95,5 @@ function Beacon:update()
 
     -- The Beacon output maps yards to the file's compressed distance index and
     -- plays the directional sound.
-    module:fireAlert("beacon", { angle = relative, distance = distance })
+    module:fireAlert("beacon", { action = "tick", angle = relative, distance = distance })
 end

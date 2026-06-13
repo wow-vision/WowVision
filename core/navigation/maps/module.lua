@@ -5,45 +5,41 @@ local settings = module:hasSettings()
 
 module.datasets = WowVision.Registry:new()
 
--- Beacon feedback is driven through the alert/output system so each cue can be
--- toggled and its sound chosen in the settings UI. Beacon.lua fires these by key
--- (module:fireAlert) as the player moves; the maps module fires "arrival".
+-- All beacon feedback lives under one alert whose outputs are action-scoped:
+-- Beacon.lua fires module:fireAlert("beacon", { action = ... }) and only the
+-- output matching that action plays. Each output keeps its own enable + sound,
+-- so every cue stays independently configurable under a single settings group.
 local beaconAlert = module:addAlert({ key = "beacon", label = L["Beacon"] })
 beaconAlert:addOutput({
     type = "Beacon",
     key = "beacon",
+    action = "tick",
     label = L["Beacon Sound"],
     beacon = "WowVision/probe_mid_1",
 })
-
-local alignedAlert = module:addAlert({ key = "aligned", label = L["Beacon Aligned"] })
-alignedAlert:addOutput({
+beaconAlert:addOutput({
     type = "Sound",
-    key = "sound",
-    label = L["Sound Alert"],
+    key = "aligned",
+    action = "aligned",
+    label = L["Beacon Aligned"],
     path = "Sound/WowVision/alerts/clack.mp3",
 })
-
-local unalignedAlert = module:addAlert({ key = "unaligned", label = L["Beacon Off Course"] })
-unalignedAlert:addOutput({
+beaconAlert:addOutput({
     type = "Sound",
-    key = "sound",
-    label = L["Sound Alert"],
+    key = "unaligned",
+    action = "unaligned",
+    label = L["Beacon Off Course"],
     path = "Sound/WowVision/alerts/click.mp3",
 })
-
-local arrivalAlert = module:addAlert({ key = "arrival", label = L["Waypoint Reached"] })
-arrivalAlert:addOutput({
+beaconAlert:addOutput({
     type = "Sound",
-    key = "sound",
-    label = L["Sound Alert"],
+    key = "arrived",
+    action = "arrived",
+    label = L["Waypoint Reached"],
     path = "Sound/WowVision/alerts/success2.mp3",
 })
 
 settings:addRef("beacon", beaconAlert.parameters)
-settings:addRef("aligned", alignedAlert.parameters)
-settings:addRef("unaligned", unalignedAlert.parameters)
-settings:addRef("arrival", arrivalAlert.parameters)
 
 function module:newDataset(key)
     local data = WowVision.Dataset:new()
@@ -55,7 +51,7 @@ function module:pathfind(path)
     self.beacon = nil
     self.path = path
     path.events.arriveAtWaypoint:subscribe(self, function()
-        module:fireAlert("arrival", {})
+        module:fireAlert("beacon", { action = "arrived" })
     end)
     self.path:start()
 end

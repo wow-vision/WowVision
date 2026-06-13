@@ -63,9 +63,10 @@ function Alert:fire(message)
     if not self.enabled then
         return
     end
+    local action = message and message.action
     for i = 1, #self.outputs do
         local output = self.outputs[i]
-        if output.enabled then
+        if output.enabled and output:respondsTo(action) then
             output:fire(message)
         end
     end
@@ -108,6 +109,10 @@ Output.info:addFields({
     { key = "key", required = true, once = true },
     { key = "label" },
     { key = "tag" },
+    -- Optional action this output responds to. When set, the output only fires
+    -- if the fire message's `action` matches; when nil, it fires on every fire
+    -- (legacy multi-output alerts). Lets one alert host several distinct cues.
+    { key = "action" },
     { key = "shouldFire" },
     {
         key = "enabled",
@@ -143,6 +148,13 @@ end
 
 function Output:addParameter(info)
     return self.parameters:add(info)
+end
+
+function Output:respondsTo(action)
+    if self.action == nil then
+        return true
+    end
+    return self.action == action
 end
 
 function Output:getEnabled()
