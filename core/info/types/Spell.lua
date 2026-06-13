@@ -89,7 +89,7 @@ function SpellField:buildSelector(obj, parentButton)
             label = L["Spell Name"],
             autoInputOnFocus = false,
             events = {
-                valueChange = function(event, editBox)
+                submit = function(event, editBox)
                     local text = editBox:getValue()
                     local spellID = getSpellID(text)
                     if spellID then
@@ -105,7 +105,7 @@ function SpellField:buildSelector(obj, parentButton)
             autoInputOnFocus = false,
             type = "decimal",
             events = {
-                valueChange = function(event, editBox)
+                submit = function(event, editBox)
                     local text = editBox:getValue()
                     local id = tonumber(text)
                     if id then

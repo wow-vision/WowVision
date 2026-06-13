@@ -22,6 +22,10 @@ EditBox.info:addFields({
 
 function EditBox:initialize()
     parent.initialize(self)
+    -- Fired when the user confirms the text with Enter (single-line only), as
+    -- opposed to valueChange which fires on every keystroke. Use this for
+    -- commit-on-submit handlers so partial input isn't acted on mid-typing.
+    self:addEvent("submit")
     self.type = "string"
     self.frame = CreateFrame("EditBox")
     self.frame:SetAutoFocus(false)
@@ -94,7 +98,10 @@ function EditBox:input()
         self.frame:SetScript("OnEnterPressed", nil)
     else
         self.frame:SetScript("OnEnterPressed", function(frame)
+            -- Leave input first so the value is final, then notify submit
+            -- handlers (which may tear down this element's context).
             self:leaveInput()
+            self:emitEvent("submit", self)
         end)
     end
 
