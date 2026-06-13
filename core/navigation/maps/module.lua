@@ -8,6 +8,9 @@ module.datasets = WowVision.Registry:new()
 -- beacon selection UI exists.
 local BEACON_PATH = "Beacon/WowVision/probe_mid_1"
 
+-- Played each time a waypoint is reached (matches Sku's "ding").
+local ARRIVAL_SOUND = "Sound/WowVision/alerts/success2.mp3"
+
 function module:getBeaconSource()
     if self._beaconSource == nil then
         self._beaconSource = WowVision.audio:getPath(BEACON_PATH) or false
@@ -27,6 +30,9 @@ end
 function module:pathfind(path)
     self.beacon = nil
     self.path = path
+    path.events.arriveAtWaypoint:subscribe(self, function()
+        WowVision:play(ARRIVAL_SOUND)
+    end)
     self.path:start()
 end
 

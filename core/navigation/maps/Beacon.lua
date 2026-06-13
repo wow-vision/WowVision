@@ -9,6 +9,13 @@ local deg = math.deg
 local floor = math.floor
 local abs = math.abs
 
+-- Alignment feedback: one cue when you turn to within ALIGN_DEGREES of dead
+-- ahead, another when you turn back out. (The asset names are counterintuitive:
+-- clack.mp3 is the "locked on" cue, click.mp3 the "turned off it" cue.)
+local ALIGN_DEGREES = 10
+local ALIGNED_SOUND = "Sound/WowVision/alerts/clack.mp3"
+local UNALIGNED_SOUND = "Sound/WowVision/alerts/click.mp3"
+
 function Beacon:initialize(waypoint)
     self.waypoint = waypoint
     -- Resolved lazily so the beacon audio pack is registered by the time we play.
@@ -49,6 +56,21 @@ function Beacon:compute()
     return distance, relative
 end
 
+-- Edge-triggered alignment cue. Initialized silently so a click/clack only
+-- fires when the player actually crosses the alignment threshold by turning.
+function Beacon:updateAlignment(relative)
+    local within = abs(relative) <= ALIGN_DEGREES
+    if self.aligned == nil then
+        self.aligned = within
+    elseif within and not self.aligned then
+        self.aligned = true
+        WowVision:play(ALIGNED_SOUND)
+    elseif not within and self.aligned then
+        self.aligned = false
+        WowVision:play(UNALIGNED_SOUND)
+    end
+end
+
 function Beacon:update()
     if not self.source then
         return
@@ -57,6 +79,10 @@ function Beacon:update()
     if not distance then
         return
     end
+
+    -- Check alignment every frame (not gated by the ping throttle) so turning
+    -- onto or off the target is responsive.
+    self:updateAlignment(relative)
 
     -- Ping faster the more directly the target is ahead, so turning toward it is
     -- audible feedback: ~0.7s off-axis down to ~0.3s when aimed at it.
