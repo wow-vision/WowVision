@@ -134,15 +134,46 @@ local function textTooltip(text)
     return nil
 end
 
+local function textOf(region)
+    if region == nil then
+        return nil
+    end
+    if region.GetText ~= nil then
+        local text = region:GetText()
+        if text ~= nil and text ~= "" then
+            return text
+        end
+    end
+    -- Buttons of these templates keep their text on a Text fontstring child.
+    if region.Text ~= nil and region.Text.GetText ~= nil then
+        return region.Text:GetText()
+    end
+    return nil
+end
+
 local function frameChildText(helpers, childKey)
     return function()
         local rowFrame = helpers.target()
         local child = rowFrame ~= nil and rowFrame[childKey] or nil
-        if child ~= nil and child.GetText ~= nil then
-            return child:GetText()
-        end
+        return textOf(child)
+    end
+end
+
+-- The clickable expander of a section row, whatever the client names it.
+local function expanderOf(rowFrame)
+    if rowFrame == nil then
         return nil
     end
+    if rowFrame.Button ~= nil then
+        return rowFrame.Button
+    end
+    if rowFrame.ExpandButton ~= nil then
+        return rowFrame.ExpandButton
+    end
+    if rowFrame.GetObjectType ~= nil and rowFrame:GetObjectType() == "Button" then
+        return rowFrame
+    end
+    return nil
 end
 
 -- Header rows: name from data when the shape matches, else read from the row
@@ -460,13 +491,37 @@ end
 -- binding rows arrive as their own KeyBindingFrameBindingTemplate elements
 -- once expanded.
 settingEmitters["SettingsKeybindingSectionTemplate"] = function(builder, elementData, index, helpers)
-    builder:addItem(
-        helpers.id,
-        rowButtonNode(elementData, helpers, function()
-            return settingName(elementData) or frameChildText(helpers, "Button")()
-        end, "Button")
-    )
+    builder:addItem(helpers.id, {
+        controlType = graph.controlTypes.button,
+        announcements = {
+            {
+                text = function()
+                    local name = settingName(elementData)
+                    if name == nil then
+                        name = textOf(expanderOf(helpers.target()))
+                    end
+                    return name
+                end,
+                kind = kinds.label,
+            },
+        },
+        bindings = {
+            {
+                binding = "leftClick",
+                type = "Click",
+                emulatedKey = "LeftButton",
+                target = function()
+                    return expanderOf(helpers.target())
+                end,
+            },
+        },
+        onFocus = helpers.onFocus,
+        onUnfocus = helpers.onUnfocus,
+        tooltipFrame = helpers.target,
+    })
 end
+
+settingEmitters["SettingsExpandableSectionTemplate"] = settingEmitters["SettingsKeybindingSectionTemplate"]
 
 -- One binding row: two slot buttons, each reading "action name, current key"
 -- and starting Blizzard's rebind on Enter.
@@ -491,7 +546,7 @@ settingEmitters["KeyBindingFrameBindingTemplate"] = function(builder, elementDat
                         end
                         local button = rowFrame ~= nil and rowFrame.Buttons ~= nil and rowFrame.Buttons[slotIndex]
                             or nil
-                        local slotText = button ~= nil and button.GetText ~= nil and button:GetText() or nil
+                        local slotText = textOf(button)
                         if name ~= nil and slotText ~= nil then
                             return name .. ", " .. slotText
                         end

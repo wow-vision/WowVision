@@ -181,6 +181,49 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
+        name = "gnode",
+        description = "Dump the focused graph node's row frame structure, spoken and copyable",
+        func = function(args)
+            local lines = {}
+            local host = WowVision.graphHost
+            local screen = host:focusedScreen()
+            local node = screen ~= nil and screen.keyGraph:currentNode() or nil
+            if node == nil then
+                print("No focused graph node")
+                return
+            end
+            tinsert(lines, "node: " .. tostring(node.id.key))
+            local ref = node.vtable.tooltipFrame
+            local frame = type(ref) == "function" and ref() or ref
+            if frame == nil then
+                tinsert(lines, "no resolved frame")
+            else
+                local ok, err = pcall(function()
+                    local name = frame.GetName ~= nil and frame:GetName() or nil
+                    local objectType = frame.GetObjectType ~= nil and frame:GetObjectType() or "?"
+                    tinsert(lines, "frame: " .. tostring(name or "unnamed") .. " (" .. objectType .. ")")
+                    for key, value in pairs(frame) do
+                        if type(value) == "table" and type(key) == "string" and value.GetObjectType ~= nil then
+                            local entry = key .. ": " .. value:GetObjectType()
+                            local text = value.GetText ~= nil and value:GetText() or nil
+                            if text ~= nil and text ~= "" then
+                                entry = entry .. " text " .. text
+                            end
+                            tinsert(lines, entry)
+                        end
+                    end
+                end)
+                if not ok then
+                    tinsert(lines, "dump errored: " .. tostring(err))
+                end
+            end
+            local text = table.concat(lines, "\n")
+            WowVision.testing.showResults(text)
+            WowVision:speak(text)
+        end,
+    })
+
+    self.base:registerCommand({
         name = "gtooltip",
         description = "Dump the graph tooltip reader state, spoken and copyable",
         func = function(args)
