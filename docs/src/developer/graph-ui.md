@@ -143,4 +143,4 @@ Coexistence caveat: if a graph window and an old-framework window are open at th
 - Unstable ids are the classic bug: a structural key containing a list index breaks focus repair and stop memory the moment the list changes. Key by identity, not position.
 - Do not store nodes, renders, or vtables between rebuilds; they are throwaway. Persistent cursor state lives in `screen.state` and is managed by the engine.
 - Do not create closures per node for transitions or in hot per-tick paths beyond what labels need; transitions are plain data.
-- A context's synthetic id derives from its label; two sibling contexts with the same label under the same parent will collide. Vary the label or nest differently.
+- A context's synthetic id derives from its label; two sibling contexts with the same label under the same parent read as one level, so moving between them never re-announces the second. Pass pushContext's fourth argument, a distinct key, whenever sibling contexts can share a label (two identical bags).

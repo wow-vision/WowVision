@@ -77,7 +77,11 @@ end
 -- "list") onto nodes added from here -- pure structure: never navigable,
 -- announced when focus enters from outside. positions=false suppresses auto
 -- positions on direct children. Close with popContext.
-function Builder:pushContext(label, role, positions)
+--
+-- key overrides the synthetic identity when two sibling contexts can carry
+-- the same label (two identical bags): identical ids read as one level and
+-- the announcer never re-announces the second.
+function Builder:pushContext(label, role, positions, key)
     local parent = self:_currentParent()
     local announcements = { { text = label } }
     if role ~= nil and role ~= "" then
@@ -87,7 +91,7 @@ function Builder:pushContext(label, role, positions)
     local node = {
         -- Stable synthetic identity (label-pathed) so cross-render chain
         -- diffs match up.
-        id = ControlId.structural("ctx:" .. parentKey .. "/" .. tostring(label)),
+        id = ControlId.structural("ctx:" .. parentKey .. "/" .. tostring(key or label)),
         vtable = { announcements = announcements },
         transitions = {},
         parent = parent,

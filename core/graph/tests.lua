@@ -580,6 +580,24 @@ testRunner:addSuite("GraphAnnouncer", {
         t:assertEqual(line, "Section")
     end,
 
+    ["keyed contexts with equal labels announce separately"] = function(t)
+        local kg = makeGraph(function(b)
+            b:beginStop("one")
+            b:pushContext("Embersilk Bag", nil, nil, "bag:5")
+            b:addLabel(sid("i1"), "Slot one")
+            b:popContext()
+            b:beginStop("two")
+            b:pushContext("Embersilk Bag", nil, nil, "bag:6")
+            b:addLabel(sid("i2"), "Slot two")
+            b:popContext()
+            return b:build()
+        end)
+        kg:rerender()
+        local move = kg:move("next")
+        local line = announcer.compose(move.from, move.to)
+        t:assertEqual(line, "Embersilk Bag, Slot two", "the second bag's context level announces")
+    end,
+
     ["duplicate level labels dedupe"] = function(t)
         local kg = makeGraph(function(b)
             b:pushContext("Options")

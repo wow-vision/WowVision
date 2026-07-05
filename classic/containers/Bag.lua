@@ -44,7 +44,9 @@ function Bag:renderGraph(builder)
     end
 
     builder:beginStop("bag:" .. self.id)
-    builder:pushContext(label)
+    -- Keyed: two identical bags must not share a context identity, or moving
+    -- between them never re-announces the bag level.
+    builder:pushContext(label, nil, nil, "bag:" .. self.id)
     if self.button ~= nil then
         -- Structural id: bank bag slot buttons also appear in the bank's own
         -- slot list, so the shared frame cannot be the identity.
