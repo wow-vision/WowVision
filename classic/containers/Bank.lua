@@ -41,8 +41,10 @@ function Bank:renderGraph(builder)
         local button = BankSlotsFrame["Bag" .. i]
         if button ~= nil and button:IsShown() then
             local slotIndex = i
+            -- Structural id: these frames also back the opened bank bags'
+            -- own slot buttons.
             builder:addItem(
-                ControlId.forObject(button),
+                ControlId.structural("bankSlot:" .. i),
                 module.itemSlotNode(button, function()
                     local label = C_Container.GetBagName(slotIndex + 4) or L["Empty"]
                     return label .. " " .. (button.tooltipText or "")

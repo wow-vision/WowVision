@@ -46,8 +46,10 @@ function Bag:renderGraph(builder)
     builder:beginStop("bag:" .. self.id)
     builder:pushContext(label)
     if self.button ~= nil then
+        -- Structural id: bank bag slot buttons also appear in the bank's own
+        -- slot list, so the shared frame cannot be the identity.
         builder:addItem(
-            ControlId.forObject(self.button),
+            ControlId.structural("bagButton:" .. self.id),
             module.itemSlotNode(self.button, L["Bag Slot"] .. " " .. bagName)
         )
     end
