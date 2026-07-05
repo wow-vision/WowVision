@@ -1,93 +1,90 @@
 local module = WowVision.base.windows:createModule("gossip")
 local L = module.L
 module:setLabel(L["Gossip"])
-local gen = module:hasUI()
 
-gen:Element("gossip", function(props)
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+
+-- NPC dialogue, fully data-driven through C_GossipInfo like the old screen:
+-- greeting text, dialogue options, available and active quests, goodbye. One
+-- tab stop per entry, matching the old tab-cycled panel.
+
+local function addEntry(builder, id, vtable)
+    builder:beginStop()
+    builder:addItem(id, vtable)
+end
+
+local function render(builder, screen)
     local npcName = UnitName("npc") or L["Gossip"]
-    local result = {
-        "Panel",
-        label = npcName,
-        wrap = true,
-        children = {},
-    }
+    builder:pushContext(npcName)
 
-    -- NPC greeting text
     local greetingText = C_GossipInfo.GetText()
-    if greetingText and greetingText ~= "" then
-        tinsert(result.children, {
-            "Text",
-            key = "greeting",
-            text = greetingText,
-        })
+    if greetingText ~= nil and greetingText ~= "" then
+        addEntry(builder, ControlId.structural("greeting"), nodes.text({ label = greetingText }))
     end
 
-    -- Gossip options (dialogue choices)
-    local options = C_GossipInfo.GetOptions()
-    for _, option in ipairs(options) do
-        tinsert(result.children, {
-            "Button",
-            key = "option_" .. option.gossipOptionID,
-            label = option.name,
-            events = {
-                click = function()
-                    C_GossipInfo.SelectOption(option.gossipOptionID)
+    for _, option in ipairs(C_GossipInfo.GetOptions()) do
+        local optionID = option.gossipOptionID
+        addEntry(
+            builder,
+            ControlId.structural("option:" .. tostring(optionID)),
+            nodes.button({
+                label = option.name,
+                onActivate = function()
+                    C_GossipInfo.SelectOption(optionID)
                 end,
-            },
-        })
+            })
+        )
     end
 
-    -- Available quests (quests the NPC can give)
-    local availableQuests = C_GossipInfo.GetAvailableQuests()
-    for _, quest in ipairs(availableQuests) do
-        tinsert(result.children, {
-            "Button",
-            key = "available_" .. quest.questID,
-            label = L["Available Quest"] .. ": " .. quest.title,
-            events = {
-                click = function()
-                    C_GossipInfo.SelectAvailableQuest(quest.questID)
+    for _, quest in ipairs(C_GossipInfo.GetAvailableQuests()) do
+        local questID = quest.questID
+        addEntry(
+            builder,
+            ControlId.structural("available:" .. tostring(questID)),
+            nodes.button({
+                label = L["Available Quest"] .. ": " .. quest.title,
+                onActivate = function()
+                    C_GossipInfo.SelectAvailableQuest(questID)
                 end,
-            },
-        })
+            })
+        )
     end
 
-    -- Active quests (quests in progress with this NPC)
-    local activeQuests = C_GossipInfo.GetActiveQuests()
-    for _, quest in ipairs(activeQuests) do
-        tinsert(result.children, {
-            "Button",
-            key = "active_" .. quest.questID,
-            label = L["Accepted Quest"] .. ": " .. quest.title,
-            events = {
-                click = function()
-                    C_GossipInfo.SelectActiveQuest(quest.questID)
+    for _, quest in ipairs(C_GossipInfo.GetActiveQuests()) do
+        local questID = quest.questID
+        addEntry(
+            builder,
+            ControlId.structural("active:" .. tostring(questID)),
+            nodes.button({
+                label = L["Accepted Quest"] .. ": " .. quest.title,
+                onActivate = function()
+                    C_GossipInfo.SelectActiveQuest(questID)
                 end,
-            },
-        })
+            })
+        )
     end
 
-    -- Goodbye button
-    tinsert(result.children, {
-        "Button",
-        key = "goodbye",
-        label = L["Goodbye"],
-        events = {
-            click = function()
+    addEntry(
+        builder,
+        ControlId.structural("goodbye"),
+        nodes.button({
+            label = L["Goodbye"],
+            onActivate = function()
                 C_GossipInfo.CloseGossip()
             end,
-        },
-    })
+        })
+    )
 
-    return result
-end)
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "EventWindow",
     name = "gossip",
-    generated = true,
-    rootElement = "gossip",
     conflictingAddons = { "Sku" },
     openEvent = "GOSSIP_SHOW",
     closeEvent = "GOSSIP_CLOSED",
+    graphScreen = { render = render },
 })
