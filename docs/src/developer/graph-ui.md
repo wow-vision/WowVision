@@ -24,35 +24,13 @@ The complete game menu screen, from `core/windows/GameMenu.lua`:
 
 ```lua
 local graph = WowVision.graph
-local ControlId = graph.ControlId
 
 local function render(builder, screen)
     local frame = GameMenuFrame
     if frame == nil or not frame:IsShown() then
         return -- adding no nodes closes the screen
     end
-    local buttons = {}
-    for _, child in ipairs({ frame:GetChildren() }) do
-        if child:GetObjectType() == "Button" and child:IsShown() then
-            tinsert(buttons, child)
-        end
-    end
-    table.sort(buttons, function(a, b)
-        return a:GetTop() > b:GetTop()
-    end)
-
-    builder:pushContext(L["Menu"])
-    for _, button in ipairs(buttons) do
-        builder:beginStop()
-        builder:addItem(ControlId.forObject(button), {
-            controlType = graph.controlTypes.button,
-            announcements = { { text = buttonLabel(button), kind = graph.kinds.label } },
-            bindings = {
-                { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = button },
-            },
-        })
-    end
-    builder:popContext()
+    graph.nodes.proxyButtonMenu(builder, { label = L["Menu"], frame = frame })
 end
 
 module:registerWindow({
@@ -64,6 +42,18 @@ module:registerWindow({
 ```
 
 That is everything: a render function and a window registration carrying `graphScreen`. Window detection (FrameWindow polling, event windows, interaction windows) works exactly as before; a `graphScreen` window opens a graph screen stack instead of the old element context.
+
+## Node factories
+
+Prefer the factories in `core/graph/nodes.lua` (`graph.nodes`) over hand-writing vtables. Every factory takes a single config table:
+
+- `nodes.proxyButton({ target = frame, label = ? })` — a real Blizzard button; Enter and Backspace click it securely as true left and right clicks. The label defaults to reading the frame's text live.
+- `nodes.button({ label = ..., onActivate = fn, onSecondary = fn?, stateText = fn? })` — a synthetic button.
+- `nodes.text({ label = ..., live = ? })` — a read-only line; set `live` to watch it.
+- `nodes.proxyButtonMenu(builder, { label = ?, frame = ? or buttons = ? })` — a whole tab-cycled menu of proxy buttons: one stop per button, one announcement context, positions stamped across the set. This is the game menu's entire body.
+- `nodes.frameText(frame)` — the live label function proxy factories use; handy on its own.
+
+Factories for value controls (toggle, slider, dropdown, edit box) arrive with the settings generator; hand-written vtables (see below) remain the escape hatch for anything the factories don't cover.
 
 Rules the render function must follow:
 

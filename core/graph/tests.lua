@@ -474,6 +474,67 @@ testRunner:addSuite("GraphKeyGraph", {
 })
 
 --
+-- Node factory tests
+--
+
+testRunner:addSuite("GraphNodes", {
+    ["proxyButton binds secure clicks with both mouse buttons"] = function(t)
+        local target = {}
+        local vtable = graph.nodes.proxyButton({ target = target })
+        t:assertEqual(vtable.controlType, graph.controlTypes.button)
+        t:assertEqual(#vtable.bindings, 2)
+        t:assertEqual(vtable.bindings[1].binding, "leftClick")
+        t:assertEqual(vtable.bindings[1].type, "Click")
+        t:assertEqual(vtable.bindings[1].emulatedKey, "LeftButton")
+        t:assertEqual(vtable.bindings[1].target, target)
+        t:assertEqual(vtable.bindings[2].emulatedKey, "RightButton")
+        t:assertError(function()
+            graph.nodes.proxyButton({})
+        end)
+    end,
+
+    ["button requires a label and a handler"] = function(t)
+        local ran = false
+        local vtable = graph.nodes.button({
+            label = "OK",
+            onActivate = function()
+                ran = true
+            end,
+        })
+        vtable.onActivate()
+        t:assertTrue(ran)
+        t:assertError(function()
+            graph.nodes.button({ label = "OK" })
+        end)
+        t:assertError(function()
+            graph.nodes.button({ onActivate = function() end })
+        end)
+    end,
+
+    ["text carries the live scope"] = function(t)
+        local vtable = graph.nodes.text({ label = "Line", live = "always" })
+        t:assertEqual(vtable.announcements[1].live, "always")
+        t:assertEqual(vtable.controlType, graph.controlTypes.text)
+    end,
+
+    ["proxyButtonMenu emits one stop per button with shared positions"] = function(t)
+        local a, b, c = {}, {}, {}
+        local builder = Builder:new()
+        graph.nodes.proxyButtonMenu(builder, { label = "Menu", buttons = { a, b, c } })
+        local render = builder:build()
+        t:assertEqual(#render.order, 3)
+        local first = render.order[1]
+        local third = render.order[3]
+        t:assertEqual(first.id.reference, a)
+        t:assertEqual(third.positionIndex, 3)
+        t:assertEqual(third.positionCount, 3)
+        t:assertNotEqual(first.stopKey, third.stopKey)
+        t:assertEqual(first.parent.vtable.announcements[1].text, "Menu")
+        t:assertNil(first.transitions.down, "single-node stops have no arrow edges")
+    end,
+})
+
+--
 -- Announcer tests
 --
 
