@@ -93,3 +93,112 @@ function module.renderSpellBook(builder)
         )
     end
 end
+
+-- The core abilities tab: spec tabs picking whose list shows, then each
+-- ability with its name, guidance text, and required level when not yet
+-- learned. Draggable only for your own spec's learned actives, matching the
+-- buttons.
+function module.renderCoreAbilities(builder)
+    local frame = SpellBookCoreAbilitiesFrame
+    if frame == nil or not frame:IsShown() then
+        return
+    end
+
+    if frame.SpecTabs ~= nil then
+        builder:beginStop("coreSpecTabs")
+        builder:pushContext("coreSpecTabs", L["Tabs"])
+        builder:startRow()
+        for _, tab in ipairs(frame.SpecTabs) do
+            if tab:IsShown() then
+                local captured = tab
+                builder:addItem(
+                    ControlId.forObject(captured),
+                    nodes.proxyCheckButton({
+                        target = captured,
+                        label = function()
+                            local _, displayName = C_SpecializationInfo.GetSpecializationInfo(captured:GetID())
+                            return displayName
+                        end,
+                    })
+                )
+            end
+        end
+        builder:endRow()
+        builder:popContext()
+    end
+
+    builder:beginStop("coreAbilities")
+    builder:pushContext("coreAbilities", frame.SpecName ~= nil and frame.SpecName:GetText() or "")
+    for i, button in ipairs(frame.Abilities or {}) do
+        if button:IsShown() then
+            local captured = button
+            local vtable = nodes.proxyButton({
+                target = captured,
+                label = function()
+                    local parts = {}
+                    tinsert(parts, captured.Name:GetText() or "")
+                    local level = captured.RequiredLevel:GetText()
+                    if level ~= nil and level ~= "" then
+                        tinsert(parts, level)
+                    end
+                    tinsert(parts, captured.InfoText:GetText() or "")
+                    return table.concat(parts, ", ")
+                end,
+            })
+            tinsert(vtable.bindings, {
+                binding = "drag",
+                type = "Function",
+                func = function()
+                    if captured.draggable then
+                        local script = captured:GetScript("OnDragStart")
+                        if script ~= nil then
+                            script(captured)
+                        end
+                    end
+                end,
+            })
+            builder:addItem(ControlId.forObject(captured), vtable)
+        end
+    end
+    builder:popContext()
+end
+
+local function stripHTML(text)
+    if text == nil then
+        return ""
+    end
+    text = text:gsub("<[^>]+>", " ")
+    text = text:gsub("|n", " ")
+    text = text:gsub("%s+", " ")
+    return text
+end
+
+-- The what-has-changed tab, read straight from the class-keyed data tables
+-- the panel itself renders from.
+function module.renderWhatHasChanged(builder)
+    local displayName, class = UnitClass("player")
+    local titles = WHAT_HAS_CHANGED_TITLE ~= nil and WHAT_HAS_CHANGED_TITLE[class] or nil
+    local bodies = WHAT_HAS_CHANGED_DISPLAY ~= nil and WHAT_HAS_CHANGED_DISPLAY[class] or nil
+    if bodies == nil then
+        return
+    end
+
+    builder:beginStop("whatHasChanged")
+    builder:pushContext("whatHasChanged", displayName)
+    for i, body in ipairs(bodies) do
+        local title = titles ~= nil and titles[i] or nil
+        local text = stripHTML(body)
+        builder:addItem(
+            ControlId.structural("changed:" .. i),
+            nodes.text({
+                label = function()
+                    if title ~= nil and title ~= "" then
+                        return i .. ". " .. title .. ". " .. text
+                    end
+                    return i .. ". " .. text
+                end,
+            })
+        )
+    end
+    builder:popContext()
+end

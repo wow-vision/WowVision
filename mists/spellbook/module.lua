@@ -47,6 +47,10 @@ local function render(builder, screen)
         module.renderSpellBook(builder)
     elseif currentTab ~= nil and currentTab.bookType == "professions" then
         module.renderProfessions(builder)
+    elseif currentTab ~= nil and currentTab.bookType == BOOKTYPE_CORE_ABILITIES then
+        module.renderCoreAbilities(builder)
+    elseif currentTab ~= nil and currentTab.bookType == BOOKTYPE_WHAT_HAS_CHANGED then
+        module.renderWhatHasChanged(builder)
     end
 
     builder:popContext()
