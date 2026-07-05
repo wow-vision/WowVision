@@ -289,7 +289,7 @@ function Module:enable()
     end
     if self.registeredDropdownMenus then
         for k, v in pairs(self.registeredDropdownMenus) do
-            WowVision.UIHost.menuManager:registerMenu(k, v)
+            WowVision.graph.dropdown.registerMenu(k, v)
         end
     end
 
@@ -346,7 +346,7 @@ function Module:disable()
     end
     if self.registeredDropdownMenus then
         for k, _ in pairs(self.registeredDropdownMenus) do
-            WowVision.UIHost.menuManager:unregisterMenu(k)
+            WowVision.graph.dropdown.unregisterMenu(k)
         end
     end
 

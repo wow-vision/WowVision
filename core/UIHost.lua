@@ -142,7 +142,7 @@ function UIHost:update()
         return
     end
     self.windowManager:update()
-    self.menuManager:update()
+    WowVision.graph.dropdown.update()
     WowVision.graphHost:update()
     if self.context then
         self.context:update()

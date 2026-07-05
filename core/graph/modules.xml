@@ -15,6 +15,7 @@
   <Script file="Screen.lua" />
   <Script file="Host.lua" />
   <Script file="liveWatch.lua" />
+  <Script file="dropdownMenu.lua" />
   <Script file="textEntry.lua" />
   <Script file="keyCapture.lua" />
   <Script file="tests.lua" />

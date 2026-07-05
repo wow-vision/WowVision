@@ -110,6 +110,7 @@ local parseOnly = {
     "mists/socketing.lua",
     "mists/itemUpgrade.lua",
     "mists/QuestChoice.lua",
+    "core/graph/dropdownMenu.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
