@@ -55,6 +55,7 @@ local parseOnly = {
     "core/ui/WindowManager.lua",
     "core/windows/GameMenu.lua",
     "core/module/Module.lua",
+    "core/errors.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
