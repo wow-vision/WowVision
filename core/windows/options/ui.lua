@@ -106,12 +106,6 @@ end
 
 -- ---- row node builders ----
 
-local function textRow(builder, id, label)
-    if label ~= nil and label ~= "" then
-        builder:addItem(id, nodes.text({ label = label }))
-    end
-end
-
 local function frameChildText(helpers, childKey)
     return function()
         local rowFrame = helpers.target()
