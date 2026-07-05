@@ -129,7 +129,11 @@ local function emitItem(builder, item)
                 local ok, err = pcall(description.ForceOpenSubmenu, description)
                 if not ok then
                     geterrorhandler()("dropdown submenu: " .. tostring(err))
+                    return
                 end
+                -- Land focus inside the submenu once the rebuild sees it.
+                dropdown.pendingFocus = true
+                dropdown.pendingFocusUntil = GetTime() + 1
             end,
         })
         return
@@ -220,8 +224,25 @@ local function render(builder, screen)
     if root == nil or not root:IsShown() then
         return
     end
-    for levelIndex, menuFrame in ipairs(openMenuFrames(root)) do
+    local menus = openMenuFrames(root)
+    for levelIndex, menuFrame in ipairs(menus) do
         renderOneMenu(builder, menuFrame, levelIndex)
+    end
+
+    -- A submenu was just opened by Enter: move focus to its first item.
+    if dropdown.pendingFocus then
+        if #menus > 1 then
+            local children = { menus[#menus]:GetChildren() }
+            for i = 3, #children do
+                if children[i]:IsShown() then
+                    screen.state.nextSuggestedMove = ControlId.forObject(children[i])
+                    break
+                end
+            end
+            dropdown.pendingFocus = nil
+        elseif GetTime() > (dropdown.pendingFocusUntil or 0) then
+            dropdown.pendingFocus = nil
+        end
     end
 end
 
