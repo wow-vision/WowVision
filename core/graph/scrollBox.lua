@@ -15,6 +15,10 @@ local kinds = graph.kinds
 -- spoken the moment focus moves to it, before the focus lifecycle has
 -- scrolled it into view, so offscreen frames cannot be read in time.
 
+-- Debug ledger for /wv gnode: default row id -> what the provider said the
+-- row was. Overwritten every rebuild.
+graph.scrollBoxDebug = {}
+
 -- The row frame currently backing a data index, or nil while offscreen.
 local function resolveRowFrame(scrollBox, data, index)
     if scrollBox.FindFrame ~= nil then
@@ -109,6 +113,13 @@ function nodes.scrollBoxList(builder, config)
         }, target)
         local onUnfocus = onFocus.onUnfocus
         onFocus = onFocus.onFocus
+
+        graph.scrollBoxDebug[tostring(id.key)] = {
+            template = tostring(data ~= nil and data.frameTemplate or "?"),
+            name = tostring(
+                data ~= nil and (data.name or (type(data.data) == "table" and data.data.name or nil)) or "?"
+            ),
+        }
 
         local helpers = { onFocus = onFocus, onUnfocus = onUnfocus, target = target, id = id }
         if config.templates ~= nil then

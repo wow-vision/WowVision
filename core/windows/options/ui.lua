@@ -490,10 +490,80 @@ settingEmitters["SettingsCheckboxDropdownControlTemplate"] = function(builder, e
     builder:endRow()
 end
 
--- Keybinding sections: the header expands/collapses via a real click; the
--- binding rows arrive as their own KeyBindingFrameBindingTemplate elements
--- once expanded.
+-- ---- keybindings (structure per Blizzard_SettingsDefinitions_Frame/Keybindings.lua) ----
+--
+-- A keybinding section is ONE provider element: its data carries name,
+-- expanded, and bindingsCategories (entries are {bindingIndex, action},
+-- {prefaceText}, or the KeybindingSpacer sentinel), and its frame builds one
+-- Controls subframe per entry, shown while expanded. Clicking frame.Button
+-- toggles data.expanded. Provider-level KeyBindingFrameBindingTemplate
+-- elements exist only in search results.
+
+-- Two slot buttons for one binding: labels read live from the binding API,
+-- Enter starts the rebind, Backspace unbinds (the template's right-click).
+local function emitBindingSlots(builder, helpers, idPrefix, bindingIndex, action, resolveRow)
+    builder:startRow()
+    for slot = 1, 2 do
+        local slotIndex = slot
+        local resolveSlot = function()
+            local rowFrame = resolveRow()
+            if rowFrame == nil then
+                return nil
+            end
+            if rowFrame.Buttons ~= nil then
+                return rowFrame.Buttons[slotIndex]
+            end
+            if slotIndex == 1 then
+                return rowFrame.Button1
+            end
+            return rowFrame.Button2
+        end
+        builder:addItem(ControlId.structural(idPrefix .. ":" .. slotIndex), {
+            controlType = graph.controlTypes.button,
+            announcements = {
+                {
+                    text = function()
+                        local name = nil
+                        if action ~= nil then
+                            local ok, resolved = pcall(GetBindingName, action)
+                            if ok then
+                                name = resolved
+                            end
+                        end
+                        local slotKey = nil
+                        local ok = pcall(function()
+                            local _, _, key1, key2 = GetBinding(bindingIndex)
+                            slotKey = slotIndex == 1 and key1 or key2
+                        end)
+                        local keyText = nil
+                        if ok and slotKey ~= nil then
+                            keyText = GetBindingText(slotKey)
+                        else
+                            keyText = NOT_BOUND
+                        end
+                        if name ~= nil and keyText ~= nil then
+                            return name .. ", " .. keyText
+                        end
+                        return name or keyText
+                    end,
+                    kind = kinds.label,
+                    live = "focus",
+                },
+            },
+            bindings = {
+                { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = resolveSlot },
+                { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = resolveSlot },
+            },
+            onFocus = helpers.onFocus,
+            onUnfocus = helpers.onUnfocus,
+            tooltipFrame = resolveSlot,
+        })
+    end
+    builder:endRow()
+end
+
 settingEmitters["SettingsKeybindingSectionTemplate"] = function(builder, elementData, index, helpers)
+    local d = dataOf(elementData)
     builder:addItem(helpers.id, {
         controlType = graph.controlTypes.button,
         announcements = {
@@ -506,6 +576,13 @@ settingEmitters["SettingsKeybindingSectionTemplate"] = function(builder, element
                     return name
                 end,
                 kind = kinds.label,
+            },
+            {
+                text = function()
+                    return d.expanded and L["Expanded"] or L["Collapsed"]
+                end,
+                kind = kinds.value,
+                live = "focus",
             },
         },
         bindings = {
@@ -522,59 +599,59 @@ settingEmitters["SettingsKeybindingSectionTemplate"] = function(builder, element
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
     })
+
+    if not d.expanded or d.bindingsCategories == nil then
+        return
+    end
+    for controlIndex, entry in ipairs(d.bindingsCategories) do
+        local capturedControl = controlIndex
+        local resolveRow = function()
+            local rowFrame = helpers.target()
+            if rowFrame ~= nil and rowFrame.Controls ~= nil then
+                return rowFrame.Controls[capturedControl]
+            end
+            return nil
+        end
+        if type(entry) == "table" and entry.prefaceText ~= nil then
+            local preface = entry.prefaceText
+            builder:addItem(
+                ControlId.structural("srow:" .. index .. ":" .. controlIndex),
+                nodes.text({
+                    label = function()
+                        local localized = _G[preface]
+                        return type(localized) == "string" and localized or preface
+                    end,
+                })
+            )
+        elseif type(entry) == "table" and entry[1] ~= nil then
+            emitBindingSlots(
+                builder,
+                helpers,
+                "srow:" .. index .. ":" .. controlIndex,
+                entry[1],
+                entry[2],
+                resolveRow
+            )
+        end
+        -- The KeybindingSpacer sentinel matches neither shape and emits nothing.
+    end
 end
 
 settingEmitters["SettingsExpandableSectionTemplate"] = settingEmitters["SettingsKeybindingSectionTemplate"]
 
--- One binding row: two slot buttons, each reading "action name, current key"
--- and starting Blizzard's rebind on Enter.
+-- Search results surface bindings as their own provider elements with
+-- data.bindingIndex.
 settingEmitters["KeyBindingFrameBindingTemplate"] = function(builder, elementData, index, helpers)
-    builder:startRow()
-    for slot = 1, 2 do
-        local slotIndex = slot
-        builder:addItem(ControlId.structural("srow:" .. index .. ":bind" .. slotIndex), {
-            controlType = graph.controlTypes.button,
-            announcements = {
-                {
-                    text = function()
-                        local rowFrame = helpers.target()
-                        local name = settingName(elementData)
-                        if
-                            name == nil
-                            and rowFrame ~= nil
-                            and rowFrame.Label ~= nil
-                            and rowFrame.Label.GetText ~= nil
-                        then
-                            name = rowFrame.Label:GetText()
-                        end
-                        local button = rowFrame ~= nil and rowFrame.Buttons ~= nil and rowFrame.Buttons[slotIndex]
-                            or nil
-                        local slotText = textOf(button)
-                        if name ~= nil and slotText ~= nil then
-                            return name .. ", " .. slotText
-                        end
-                        return name or slotText
-                    end,
-                    kind = kinds.label,
-                },
-            },
-            bindings = {
-                {
-                    binding = "leftClick",
-                    type = "Click",
-                    emulatedKey = "LeftButton",
-                    target = function()
-                        local rowFrame = helpers.target()
-                        return rowFrame ~= nil and rowFrame.Buttons ~= nil and rowFrame.Buttons[slotIndex] or nil
-                    end,
-                },
-            },
-            onFocus = helpers.onFocus,
-            onUnfocus = helpers.onUnfocus,
-            tooltipFrame = helpers.target,
-        })
+    local d = dataOf(elementData)
+    local bindingIndex = d ~= nil and d.bindingIndex or nil
+    if bindingIndex == nil then
+        return
     end
-    builder:endRow()
+    local action = nil
+    pcall(function()
+        action = (GetBinding(bindingIndex))
+    end)
+    emitBindingSlots(builder, helpers, "srow:" .. index, bindingIndex, action, helpers.target)
 end
 
 -- ---- the window ----

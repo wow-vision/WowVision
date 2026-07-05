@@ -193,6 +193,11 @@ function WowVision:registerCommands()
                 return
             end
             tinsert(lines, "node: " .. tostring(node.id.key))
+            local debug = WowVision.graph.scrollBoxDebug[tostring(node.id.key)]
+            if debug ~= nil then
+                tinsert(lines, "row template: " .. debug.template)
+                tinsert(lines, "row data name: " .. debug.name)
+            end
             local ref = node.vtable.tooltipFrame
             local frame = type(ref) == "function" and ref() or ref
             if frame == nil then
