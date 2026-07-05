@@ -21,7 +21,7 @@ function Bank:renderGraph(builder)
     local frame = self:getFrame()
 
     builder:beginStop("bank")
-    builder:pushContext(BANK)
+    builder:pushContext("bank", BANK)
     for i = 1, frame.size do
         local button = _G["BankFrameItem" .. i]
         if button ~= nil then
@@ -36,7 +36,7 @@ function Bank:renderGraph(builder)
     builder:popContext()
 
     builder:beginStop("bankSlots")
-    builder:pushContext(L["Bank Bag Slots"])
+    builder:pushContext("bankSlots", L["Bank Bag Slots"])
     for i = 1, NUM_BANKBAGSLOTS do
         local button = BankSlotsFrame["Bag" .. i]
         if button ~= nil and button:IsShown() then

@@ -134,7 +134,7 @@ end
 -- Emit one InfoFrame's fields and children into the builder.
 function settings.renderInto(builder, infoFrame)
     if infoFrame.label ~= nil then
-        builder:pushContext(infoFrame.label)
+        builder:pushContext(tostring(infoFrame.key or infoFrame.label), infoFrame.label)
     end
     for _, field in ipairs(infoFrame.info.fields) do
         if field.showInUI then
@@ -201,7 +201,7 @@ local function pushComponentEditor(field, owner, instance)
         if not present then
             return
         end
-        builder:pushContext(instanceLabel(instance))
+        builder:pushContext("component", instanceLabel(instance))
         settings.renderObjectInto(builder, instance)
         builder:addItem(
             ControlId.structural("remove"),
@@ -225,7 +225,7 @@ end
 
 local function pushTypeSelector(field, owner)
     pushScreen("componentType:" .. tostring(field.key), function(builder)
-        builder:pushContext(L["Select Type"])
+        builder:pushContext("selectType", L["Select Type"])
         for _, typeEntry in ipairs(field:getAvailableTypes()) do
             local typeKey = field:getTypeKeyFromEntry(typeEntry)
             local typeLabel = field:getTypeLabel(typeEntry)
@@ -252,7 +252,7 @@ end
 
 local function pushComponentList(field, owner)
     pushScreen("components:" .. tostring(field.key), function(builder)
-        builder:pushContext(field:getLabel() or field.key)
+        builder:pushContext("components:" .. tostring(field.key), field:getLabel() or field.key)
         for _, instance in ipairs(field:get(owner)) do
             local captured = instance
             builder:addItem(
@@ -316,7 +316,7 @@ end
 -- submodule buttons pushing child screens, the module's own graph menu items
 -- (getGraphMenuItems), then its settings fields. Mirrors the old ModulePanel.
 function settings.renderModuleInto(builder, module)
-    builder:pushContext(module:getLabel() or tostring(module.key))
+    builder:pushContext("module:" .. tostring(module.key), module:getLabel() or tostring(module.key))
 
     if not module:isVital() then
         builder:addItem(

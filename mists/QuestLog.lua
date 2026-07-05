@@ -119,7 +119,7 @@ local function renderDetails(builder)
     local scrollFrame = QuestLogDetailScrollFrame
 
     builder:beginStop()
-    builder:pushContext(L["Details"])
+    builder:pushContext("details", L["Details"])
     contentText(builder, ControlId.structural("title"), QuestInfoTitleHeader, scrollFrame)
     contentText(builder, ControlId.structural("description"), QuestInfoDescriptionText, scrollFrame)
     contentText(builder, ControlId.structural("objectivesText"), QuestInfoObjectivesText, scrollFrame)
@@ -149,7 +149,7 @@ local function render(builder, screen)
     if frame == nil or not frame:IsShown() then
         return
     end
-    builder:pushContext(L["Quest Log"])
+    builder:pushContext("questLog", L["Quest Log"])
 
     builder:beginStop("quests")
     nodes.hybridScrollList(builder, {

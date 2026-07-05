@@ -102,7 +102,7 @@ function nodes.hybridScrollList(builder, config)
     end
 
     if config.label ~= nil then
-        builder:pushContext(config.label)
+        builder:pushContext(keyPrefix, config.label)
     end
 
     for index = 1, total do

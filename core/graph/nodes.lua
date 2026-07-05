@@ -284,7 +284,7 @@ function nodes.choice(config)
         if type(label) == "function" then
             label = label()
         end
-        builder:pushContext(label or "")
+        builder:pushContext("choices", label or "")
         for _, choice in ipairs(choicesOf()) do
             local value = choice.value
             builder:addItem(ControlId.structural("choice:" .. tostring(value)), {
@@ -426,7 +426,7 @@ function nodes.proxyButtonMenu(builder, config)
         end)
     end
     if config.label ~= nil then
-        builder:pushContext(config.label)
+        builder:pushContext(config.key or "proxyButtonMenu", config.label)
     end
     for _, button in ipairs(buttons) do
         builder:beginStop()

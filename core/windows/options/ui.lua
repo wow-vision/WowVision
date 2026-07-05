@@ -663,7 +663,7 @@ local function render(builder, screen)
     end
 
     builder:beginStop("tabs")
-    builder:pushContext(L["Tabs"])
+    builder:pushContext("tabs", L["Tabs"])
     builder:startRow()
     builder:addItem(ControlId.forObject(frame.GameTab), nodes.proxyButton({ target = frame.GameTab }))
     builder:addItem(ControlId.forObject(frame.AddOnsTab), nodes.proxyButton({ target = frame.AddOnsTab }))

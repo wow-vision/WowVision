@@ -45,7 +45,7 @@ local function makeRender(frame)
         if frame == nil or not frame:IsShown() then
             return
         end
-        builder:pushContext(L["Popup"])
+        builder:pushContext("popup", L["Popup"])
 
         local text = getPopupText(frame)
         if text ~= nil and text:IsShown() then

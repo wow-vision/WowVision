@@ -36,7 +36,7 @@ end
 
 local function renderTabs(builder, frame)
     builder:beginStop("tabs")
-    builder:pushContext(L["Tabs"])
+    builder:pushContext("tabs", L["Tabs"])
     builder:startRow()
     for i = 1, frame.numTabs or 0 do
         local tab = _G["PlayerTalentFrameTab" .. i]
@@ -58,7 +58,7 @@ end
 
 local function renderSpecialization(builder, page)
     builder:beginStop("specs")
-    builder:pushContext(L["Specializations"])
+    builder:pushContext("specs", L["Specializations"])
     for i = 1, 4 do
         local button = page["specButton" .. i]
         if button ~= nil and button:IsShown() then
@@ -82,7 +82,7 @@ local function renderSpecialization(builder, page)
     if scroll ~= nil and scroll:IsVisible() and scroll.child ~= nil then
         local child = scroll.child
         builder:beginStop("specInfo")
-        builder:pushContext(L["Specialization Info"])
+        builder:pushContext("specInfo", L["Specialization Info"])
         builder:addItem(ControlId.structural("role"), nodes.text({ label = fontStringText(child, "roleName") }))
         builder:addItem(ControlId.structural("specDesc"), nodes.text({ label = fontStringText(child, "description") }))
         for i = 1, 5 do
@@ -134,12 +134,12 @@ end
 
 local function renderTalents(builder, page)
     builder:beginStop("talents")
-    builder:pushContext(L["Talents"])
+    builder:pushContext("talents", L["Talents"])
     for tierIndex = 1, MAX_NUM_TALENT_TIERS or 6 do
         local tier = page["tier" .. tierIndex]
         if tier ~= nil then
             local levelText = tier.level ~= nil and tier.level:GetText() or tostring(tierIndex)
-            builder:pushContext(levelText)
+            builder:pushContext("tier:" .. tierIndex, levelText)
             builder:startRow()
             for column = 1, 3 do
                 local button = tier["talent" .. column]

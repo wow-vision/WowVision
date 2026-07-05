@@ -65,7 +65,7 @@ settings.registerFieldControl("Spell", function(field, owner)
         value = valueText,
         onActivate = function()
             settings.pushScreen("spell:" .. field.key, function(builder)
-                builder:pushContext(field:getLabel() or field.key)
+                builder:pushContext("spell", field:getLabel() or field.key)
                 builder:addItem(
                     ControlId.structural("entry"),
                     nodes.button({
@@ -141,7 +141,7 @@ settings.registerFieldControl("Template", function(field, owner)
         value = valueText,
         onActivate = function()
             settings.pushScreen("template:" .. field.key, function(builder)
-                builder:pushContext(field:getLabel() or field.key)
+                builder:pushContext("template", field:getLabel() or field.key)
                 local templates = field:getAvailableTemplates(owner)
                 if templates ~= nil then
                     for _, template in ipairs(templates.items) do
@@ -205,7 +205,7 @@ settings.registerFieldControl("Object", function(field, owner)
         value = valueText,
         onActivate = function()
             settings.pushScreen("object:" .. field.key, function(builder)
-                builder:pushContext(field:getLabel() or field.key)
+                builder:pushContext("object", field:getLabel() or field.key)
                 builder:addItem(
                     ControlId.structural("type"),
                     nodes.choice({
@@ -226,7 +226,7 @@ settings.registerFieldControl("Object", function(field, owner)
                     or nil
                 if objectType ~= nil and objectType.parameters ~= nil and #objectType.parameters.fields > 0 then
                     local proxy = field:createParamsProxy(owner)
-                    builder:pushContext(L["Parameters"])
+                    builder:pushContext("params", L["Parameters"])
                     for _, paramField in ipairs(objectType.parameters.fields) do
                         if paramField.showInUI then
                             builder:addItem(
@@ -264,7 +264,7 @@ local function pushTrackingParams(field, owner, objectType)
     editCopy.params = editCopy.params or {}
 
     settings.pushScreen("trackingParams:" .. field.key, function(builder)
-        builder:pushContext(L["Parameters"])
+        builder:pushContext("params", L["Parameters"])
         for _, paramField in ipairs(objectType.parameters.fields) do
             if paramField.key == "unit" then
                 builder:addItem(
@@ -322,7 +322,7 @@ settings.registerFieldControl("TrackingConfig", function(field, owner)
         value = valueText,
         onActivate = function()
             settings.pushScreen("tracking:" .. field.key, function(builder)
-                builder:pushContext(field:getLabel() or field.key)
+                builder:pushContext("tracking", field:getLabel() or field.key)
                 builder:addItem(
                     ControlId.structural("type"),
                     nodes.choice({
@@ -370,7 +370,7 @@ end
 
 local function pushBrowse(field, owner, directory, segments)
     settings.pushScreen("browse:" .. tostring(directory.key or "root"), function(builder)
-        builder:pushContext(directoryLabel(directory))
+        builder:pushContext("dir:" .. tostring(directory.key or "root"), directoryLabel(directory))
         for _, subdirectory in ipairs(directory.subdirectories) do
             local captured = subdirectory
             builder:addItem(
@@ -445,7 +445,7 @@ settings.registerFieldControl("Array", function(field, owner)
         end,
         onActivate = function()
             settings.pushScreen("array:" .. field.key, function(builder)
-                builder:pushContext(field:getLabel() or field.key)
+                builder:pushContext("array", field:getLabel() or field.key)
                 local elementField = field:getElementField()
                 local length = field:getLength(owner)
                 for i = 1, length do

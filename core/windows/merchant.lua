@@ -64,10 +64,10 @@ local function render(builder, screen)
         return
     end
     local buyback = frame.selectedTab == 2
-    builder:pushContext(L["Merchant"])
+    builder:pushContext("merchant", L["Merchant"])
 
     builder:beginStop("tabs")
-    builder:pushContext(L["Tabs"])
+    builder:pushContext("tabs", L["Tabs"])
     builder:startRow()
     builder:addItem(ControlId.forObject(MerchantFrameTab1), tabNode(MerchantFrameTab1, 1))
     builder:addItem(ControlId.forObject(MerchantFrameTab2), tabNode(MerchantFrameTab2, 2))
@@ -75,7 +75,7 @@ local function render(builder, screen)
     builder:popContext()
 
     builder:beginStop("items")
-    builder:pushContext(L["Items"])
+    builder:pushContext("items", L["Items"])
     local slotCount = MERCHANT_ITEMS_PER_PAGE
     if buyback then
         slotCount = GetNumBuybackItems()
@@ -113,7 +113,7 @@ local function render(builder, screen)
 
         if CanMerchantRepair() then
             builder:beginStop("repair")
-            builder:pushContext(L["Repair"])
+            builder:pushContext("repair", L["Repair"])
             builder:startRow()
             if MerchantRepairAllButton ~= nil and MerchantRepairAllButton:IsShown() then
                 builder:addItem(

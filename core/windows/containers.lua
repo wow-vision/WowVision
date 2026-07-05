@@ -53,7 +53,7 @@ function module.itemSlotNode(itemButton, label)
 end
 
 local function render(builder, screen)
-    builder:pushContext(L["Bags"])
+    builder:pushContext("bags", L["Bags"])
     containers:forEachComponent(function(container)
         if container.renderGraph ~= nil and (container.isOpen == nil or container:isOpen()) then
             local ok, err = pcall(container.renderGraph, container, builder)

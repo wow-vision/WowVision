@@ -59,11 +59,11 @@ end
 
 -- A vertical list of quest item buttons under a context, within the current
 -- stop.
-local function itemList(builder, contextLabel, buttons, scrollFrame)
+local function itemList(builder, key, contextLabel, buttons, scrollFrame)
     if #buttons == 0 then
         return
     end
-    builder:pushContext(contextLabel or "")
+    builder:pushContext(key, contextLabel or "")
     for _, button in ipairs(buttons) do
         local captured = button
         local vtable = nodes.proxyButton({
@@ -100,12 +100,14 @@ local function rewardsContent(builder, scrollFrame)
     end
     itemList(
         builder,
+        "choices",
         rewards.ItemChooseText ~= nil and rewards.ItemChooseText:GetText() or nil,
         choiceButtons,
         scrollFrame
     )
     itemList(
         builder,
+        "received",
         rewards.ItemReceiveText ~= nil and rewards.ItemReceiveText:GetText() or nil,
         rewardButtons,
         scrollFrame
@@ -140,7 +142,7 @@ local function renderGreeting(builder)
     if GreetingText ~= nil and GreetingText:IsShown() then
         contentText(builder, ControlId.structural("greetingText"), GreetingText, scrollFrame)
     end
-    builder:pushContext(L["Quests"])
+    builder:pushContext("greetingQuests", L["Quests"])
     for i = 1, 32 do
         local button = _G["QuestTitleButton" .. i]
         if button ~= nil and button:IsShown() then
@@ -167,7 +169,7 @@ end
 local function renderDetail(builder)
     local scrollFrame = QuestDetailScrollFrame
     builder:beginStop()
-    builder:pushContext(L["Details"])
+    builder:pushContext("details", L["Details"])
     contentText(builder, ControlId.structural("title"), QuestInfoTitleHeader, scrollFrame)
     contentText(builder, ControlId.structural("description"), QuestInfoDescriptionText, scrollFrame)
     contentText(builder, ControlId.structural("objectivesHeader"), QuestInfoObjectivesHeader, scrollFrame)
@@ -181,7 +183,7 @@ end
 local function renderProgress(builder)
     local scrollFrame = QuestProgressScrollFrame
     builder:beginStop()
-    builder:pushContext(L["Progress"])
+    builder:pushContext("progress", L["Progress"])
     contentText(builder, ControlId.structural("progressTitle"), QuestProgressTitleText, scrollFrame)
     contentText(builder, ControlId.structural("progressText"), QuestProgressText, scrollFrame)
 
@@ -199,7 +201,7 @@ local function renderProgress(builder)
                 tinsert(items, item)
             end
         end
-        itemList(builder, QuestProgressRequiredItemsText:GetText(), items, scrollFrame)
+        itemList(builder, "required", QuestProgressRequiredItemsText:GetText(), items, scrollFrame)
     end
     builder:popContext()
 
@@ -210,7 +212,7 @@ end
 local function renderReward(builder)
     local scrollFrame = QuestRewardScrollFrame
     builder:beginStop()
-    builder:pushContext(L["Reward"])
+    builder:pushContext("reward", L["Reward"])
     contentText(builder, ControlId.structural("rewardTitle"), QuestInfoTitleHeader, scrollFrame)
     contentText(builder, ControlId.structural("rewardText"), QuestInfoRewardText, scrollFrame)
     rewardsContent(builder, scrollFrame)
@@ -232,7 +234,7 @@ local function render(builder, screen)
     if frame == nil or not frame:IsShown() then
         return
     end
-    builder:pushContext(getWindowTitle() or L["Quest Window"])
+    builder:pushContext("questWindow", getWindowTitle() or L["Quest Window"])
 
     if QuestFrameGreetingPanel ~= nil and QuestFrameGreetingPanel:IsShown() then
         renderGreeting(builder)

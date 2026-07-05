@@ -81,7 +81,7 @@ function nodes.scrollBoxList(builder, config)
     local keyPrefix = tostring(config.key or config.label or "list")
 
     if config.label ~= nil then
-        builder:pushContext(config.label)
+        builder:pushContext(keyPrefix, config.label)
     end
 
     for index = 1, size do

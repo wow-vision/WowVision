@@ -54,10 +54,10 @@ end
 
 local function renderBindings(builder)
     local set = WowVision.input.bindings
-    builder:pushContext(L["Bindings"])
+    builder:pushContext("bindings", L["Bindings"])
     for _, binding in ipairs(set.orderedBindings) do
         local label = binding:getLabel() or binding.key
-        builder:pushContext(label)
+        builder:pushContext("binding:" .. binding.key, label)
         builder:startRow()
         for _, input in ipairs(binding.inputs) do
             local capturedInput = input

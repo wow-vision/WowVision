@@ -81,7 +81,7 @@ local function render(builder, screen)
     local snapshot = state.snapshot
 
     local npcName = UnitName("npc") or L["Gossip"]
-    builder:pushContext(npcName)
+    builder:pushContext("npc", npcName)
 
     if snapshot.text ~= nil and snapshot.text ~= "" then
         addEntry(
