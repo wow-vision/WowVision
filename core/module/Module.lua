@@ -227,11 +227,14 @@ function Module:unregisterWindow(name)
 end
 
 function Module:registerDropdownMenu(menu, description)
+    self.registeredDropdownMenus = self.registeredDropdownMenus or {}
     self.registeredDropdownMenus[menu] = description
 end
 
 function Module:unregisterDropdownMenu(menu)
-    self.registeredDropdownMenus[menu] = nil
+    if self.registeredDropdownMenus then
+        self.registeredDropdownMenus[menu] = nil
+    end
 end
 
 function Module:getEnabled()
