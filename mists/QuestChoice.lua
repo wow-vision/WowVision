@@ -1,122 +1,118 @@
 local module = WowVision.base.windows:createModule("QuestChoice")
 local L = module.L
 module:setLabel(L["Quest Choice"])
-local gen = module:hasUI()
 
-gen:Element("QuestChoice", function(props)
-    local frame = props.frame
-    local result = {
-        "Panel",
-        label = L["Quest Choice"],
-        wrap = true,
-        children = {
-            { "Text", text = frame.QuestionText:GetText() },
-            { "QuestChoice/Options", frame = frame },
-            { "ProxyButton", frame = frame.CloseButton, label = L["Close"] },
-        },
-    }
-    return result
-end)
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
 
-gen:Element("QuestChoice/Options", function(props)
-    local frame = props.frame
-    local choiceID, questionText, numOptions = C_QuestChoice.GetQuestChoiceInfo()
-    local result = { "Panel", layout = true, shouldAnnounce = false, children = {} }
-    for i = 1, numOptions do
-        local optionFrame = frame["Option" .. i]
-        if optionFrame then
-            tinsert(result.children, { "QuestChoice/Option", frame = optionFrame })
+-- The quest choice dialog (pick one of several rewards): the question, then
+-- each option as its own stop -- option text, its reputation, item, and
+-- currency rewards, and the real choose button -- then close.
+
+local function rewardTexts(builder, optionIndex, rewards)
+    if rewards == nil then
+        return
+    end
+    if rewards.ReputationsFrame ~= nil and rewards.ReputationsFrame:IsVisible() then
+        for i, child in ipairs({ rewards.ReputationsFrame:GetChildren() }) do
+            local captured = child
+            builder:addItem(
+                ControlId.structural("option:" .. optionIndex .. ":rep:" .. i),
+                nodes.text({
+                    label = function()
+                        return (captured.Faction:GetText() or "") .. ": " .. (captured.Amount:GetText() or "")
+                    end,
+                })
+            )
         end
     end
-    return result
-end)
-
-gen:Element("QuestChoice/Option", function(props)
-    local frame = props.frame
-    return {
-        "List",
-        children = {
-            { "Text", text = frame.OptionText:GetText() },
-            { "QuestChoice/Rewards", frame = frame.Rewards },
-            { "ProxyButton", frame = frame.OptionButton },
-        },
-    }
-end)
-
-gen:Element("QuestChoice/Rewards", function(props)
-    local frame = props.frame
-    return {
-        "List",
-        label = L["Rewards"],
-        children = {
-            { "QuestChoice/Rewards/ReputationsFrame", frame = frame.ReputationsFrame },
-            { "QuestChoice/Rewards/Item", frame = frame.Item },
-            { "QuestChoice/Rewards/Currencies", frame = frame.Currencies },
-        },
-    }
-end)
-
-gen:Element("QuestChoice/Rewards/ReputationsFrame", function(props)
-    local frame = props.frame
-    if not frame:IsVisible() then
-        return nil
+    if rewards.Item ~= nil and rewards.Item:IsVisible() then
+        builder:addItem(
+            ControlId.structural("option:" .. optionIndex .. ":item"),
+            nodes.text({
+                label = function()
+                    local label = rewards.Item.Name:GetText() or ""
+                    if rewards.Item.count then
+                        label = label .. " x " .. rewards.Item.count
+                    end
+                    return label
+                end,
+            })
+        )
     end
-    local result = { "List", layout = true, shouldAnnounce = false, children = {} }
-    local children = { frame:GetChildren() }
-    if #children == 0 then
-        return nil
-    end
-    for _, child in ipairs(children) do
-        local label = child.Faction:GetText() .. ": " .. child.Amount:GetText()
-        tinsert(result.children, { "Text", text = label })
-    end
-    return result
-end)
-
-gen:Element("QuestChoice/Rewards/Item", function(props)
-    local frame = props.frame
-    if not frame:IsVisible() then
-        return nil
-    end
-    local label = frame.Name:GetText()
-    if frame.count then
-        label = label .. " X" .. frame.count
-    end
-    return { "Text", text = label }
-end)
-
-gen:Element("QuestChoice/Rewards/Currencies", function(props)
-    local frame = props.frame
-    if not frame:IsVisible() then
-        return nil
-    end
-    local children = { frame:GetChildren() }
-    if #children == 0 then
-        return nil
-    end
-    local result = { "List", layout = true, shouldAnnounce = false, children = {} }
-    for _, child in ipairs(children) do
-        local id = child.currencyID
-        if id then
-            local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(id)
-            if currencyInfo then
-                label = currencyInfo.name
-                if child.Quantity:IsShown() then
-                    label = label .. " x " .. child.Quantity:GetText()
-                end
-                tinsert(result.children, { "Text", text = label })
+    if rewards.Currencies ~= nil and rewards.Currencies:IsVisible() then
+        for i, child in ipairs({ rewards.Currencies:GetChildren() }) do
+            local captured = child
+            if captured.currencyID then
+                builder:addItem(
+                    ControlId.structural("option:" .. optionIndex .. ":currency:" .. i),
+                    nodes.text({
+                        label = function()
+                            local info = C_CurrencyInfo.GetCurrencyInfo(captured.currencyID)
+                            if info == nil then
+                                return nil
+                            end
+                            local label = info.name
+                            if captured.Quantity:IsShown() then
+                                label = label .. " x " .. (captured.Quantity:GetText() or "")
+                            end
+                            return label
+                        end,
+                    })
+                )
             end
         end
     end
-    if #result.children > 0 then
-        return result
+end
+
+local function render(builder, screen)
+    local frame = QuestChoiceFrame
+    if frame == nil or not frame:IsShown() then
+        return
     end
-end)
+    builder:pushContext("questChoice", L["Quest Choice"])
+
+    builder:beginStop("question")
+    builder:addItem(
+        ControlId.structural("question"),
+        nodes.text({
+            label = function()
+                return frame.QuestionText:GetText()
+            end,
+        })
+    )
+
+    local _, _, numOptions = C_QuestChoice.GetQuestChoiceInfo()
+    for i = 1, numOptions or 0 do
+        local optionFrame = frame["Option" .. i]
+        if optionFrame ~= nil and optionFrame:IsShown() then
+            local optionIndex = i
+            builder:beginStop("option:" .. i)
+            builder:pushContext("option:" .. i, optionFrame.OptionText:GetText() or "")
+            rewardTexts(builder, optionIndex, optionFrame.Rewards)
+            builder:addItem(
+                ControlId.forObject(optionFrame.OptionButton),
+                nodes.proxyButton({ target = optionFrame.OptionButton })
+            )
+            builder:popContext()
+        end
+    end
+
+    if frame.CloseButton ~= nil then
+        builder:beginStop("close")
+        builder:addItem(
+            ControlId.forObject(frame.CloseButton),
+            nodes.proxyButton({ target = frame.CloseButton, label = L["Close"] })
+        )
+    end
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "QuestChoice",
-    generated = true,
-    rootElement = "QuestChoice",
     frameName = "QuestChoiceFrame",
+    graphScreen = { render = render },
 })
