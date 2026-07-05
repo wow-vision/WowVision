@@ -1,6 +1,10 @@
 local module = WowVision.base.windows.containers
 local L = module.L
 
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+
 local Bag = WowVision.components.createType("containers", { key = "Bag" })
 Bag.info:addFields({
     { key = "id", required = true, once = true },
@@ -26,34 +30,37 @@ function Bag:isOpen()
     return frame:IsShown()
 end
 
-function Bag:getGenerator()
+-- One tab stop per bag: the bag slot button, then the item slots (the frames
+-- lay slots out reversed, so size down to 1 reads slot order).
+function Bag:renderGraph(builder)
     local frame = self:getFrame()
-    local button = self.button
-    if not frame:IsShown() then
-        return nil
+    if frame == nil or not frame:IsShown() then
+        return
     end
-    local id = self.id
-    local bagName = C_Container.GetBagName(id)
-    if bagName == nil then
-        error("Nil bag name for bag with id " .. (id or "nil") .. " button " .. button:GetName())
-    end
-    local label
+    local bagName = C_Container.GetBagName(self.id) or ""
+    local label = bagName
     if self.prefix then
         label = self.prefix .. ": " .. bagName
-    else
-        label = bagName
     end
-    local result = { "List", label = label, children = {} }
-    if button then
-        tinsert(result.children, { "ItemButton", frame = button, label = L["Bag Slot"] .. " " .. bagName })
+
+    builder:beginStop()
+    builder:pushContext(label)
+    if self.button ~= nil then
+        builder:addItem(
+            ControlId.forObject(self.button),
+            module.itemSlotNode(self.button, L["Bag Slot"] .. " " .. bagName)
+        )
     end
     for i = frame.size, 1, -1 do
         local itemButton = _G[frame:GetName() .. "Item" .. i]
-        tinsert(result.children, {
-            "ItemButton",
-            frame = itemButton,
-            label = module.getBagItemLabel(itemButton),
-        })
+        if itemButton ~= nil then
+            builder:addItem(
+                ControlId.forObject(itemButton),
+                module.itemSlotNode(itemButton, function()
+                    return module.getBagItemLabel(itemButton)
+                end)
+            )
+        end
     end
-    return result
+    builder:popContext()
 end

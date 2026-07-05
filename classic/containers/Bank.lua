@@ -1,6 +1,10 @@
 local module = WowVision.base.windows.containers
 local L = module.L
 
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+
 local Bank = WowVision.components.createType("containers", { key = "Bank" })
 
 function Bank:getFrame()
@@ -11,35 +15,58 @@ function Bank:isOpen()
     return BankFrame:IsShown()
 end
 
-function Bank:getGenerator()
+-- The main bank: its item slots as one stop, then the bank bag slots (and
+-- the next-slot purchase when available) as another.
+function Bank:renderGraph(builder)
     local frame = self:getFrame()
-    local items = { "List", label = BANK, children = {} }
-    local slots = { "List", label = L["Bank Bag Slots"], children = {} }
-    local result = { "Panel", layout = true, shouldAnnounce = false, children = { items, slots } }
+
+    builder:beginStop()
+    builder:pushContext(BANK)
     for i = 1, frame.size do
         local button = _G["BankFrameItem" .. i]
-        if button then
-            tinsert(items.children, { "ItemButton", frame = button, label = module.getBagItemLabel(button) })
+        if button ~= nil then
+            builder:addItem(
+                ControlId.forObject(button),
+                module.itemSlotNode(button, function()
+                    return module.getBagItemLabel(button)
+                end)
+            )
         end
     end
+    builder:popContext()
+
+    builder:beginStop()
+    builder:pushContext(L["Bank Bag Slots"])
     for i = 1, NUM_BANKBAGSLOTS do
         local button = BankSlotsFrame["Bag" .. i]
-        if button and button:IsShown() then
-            local label = C_Container.GetBagName(i + 4) or L["Empty"]
-            label = label .. " " .. button.tooltipText
-            tinsert(slots.children, { "ItemButton", frame = button, label = label })
+        if button ~= nil and button:IsShown() then
+            local slotIndex = i
+            builder:addItem(
+                ControlId.forObject(button),
+                module.itemSlotNode(button, function()
+                    local label = C_Container.GetBagName(slotIndex + 4) or L["Empty"]
+                    return label .. " " .. (button.tooltipText or "")
+                end)
+            )
         else
             break
         end
     end
-    local buySlotFrame = BankFramePurchaseInfo
-    if buySlotFrame:IsVisible() then
-        tinsert(slots.children, { "Text", text = BANKSLOTPURCHASE_LABEL })
-        tinsert(
-            slots.children,
-            { "Text", text = COSTS_LABEL .. " " .. C_CurrencyInfo.GetCoinText(BankFrame.nextSlotCost) }
+
+    if BankFramePurchaseInfo ~= nil and BankFramePurchaseInfo:IsVisible() then
+        builder:addItem(ControlId.structural("purchaseLabel"), nodes.text({ label = BANKSLOTPURCHASE_LABEL }))
+        builder:addItem(
+            ControlId.structural("purchaseCost"),
+            nodes.text({
+                label = function()
+                    return COSTS_LABEL .. " " .. C_CurrencyInfo.GetCoinText(BankFrame.nextSlotCost or 0)
+                end,
+            })
         )
-        tinsert(slots.children, { "ProxyButton", frame = BankFramePurchaseButton })
+        builder:addItem(
+            ControlId.forObject(BankFramePurchaseButton),
+            nodes.proxyButton({ target = BankFramePurchaseButton })
+        )
     end
-    return result
+    builder:popContext()
 end
