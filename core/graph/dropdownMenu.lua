@@ -165,22 +165,30 @@ local function emitItem(builder, item)
     builder:addItem(ControlId.forObject(item), vtable)
 end
 
--- Every open menu frame in the chain. The root comes from the manager; on
--- this client menu frames are PARENTLESS, so the rest of the chain is found
--- by walking all frames for the menu signature (parentless, stamped ID
--- 1000, shown). Sorted by left edge -- submenus anchor to their parent
--- row's right, so this is chain order.
+-- A frame counts as an open menu if it is shown and holds menu item
+-- children (frames exposing GetElementDescription). No parent or ID
+-- assumptions: both vary by client.
+local function looksLikeMenu(frame)
+    if not frame:IsShown() or frame.GetChildren == nil then
+        return false
+    end
+    local children = { frame:GetChildren() }
+    for i = 1, #children do
+        if children[i].GetElementDescription ~= nil then
+            return true
+        end
+    end
+    return false
+end
+
+-- Every open menu frame in the chain: the root from the manager plus any
+-- other live menu found by walking all frames. Sorted by left edge --
+-- submenus anchor to their parent row's right, so this is chain order.
 local function openMenuFrames(root)
     local menus = { root }
-    local rootParent = root:GetParent()
     local frame = EnumerateFrames()
     while frame ~= nil do
-        if
-            frame ~= root
-            and frame:GetParent() == rootParent
-            and frame:GetID() == 1000
-            and frame:IsShown()
-        then
+        if frame ~= root and looksLikeMenu(frame) then
             tinsert(menus, frame)
         end
         frame = EnumerateFrames(frame)

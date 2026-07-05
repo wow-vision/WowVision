@@ -303,9 +303,22 @@ function WowVision:registerCommands()
             local lines = {}
             tinsert(lines, "root: " .. tostring(dropdown.frame))
             if dropdown.frame ~= nil then
-                local parent = dropdown.frame:GetParent()
-                tinsert(lines, "root parent: " .. tostring(parent ~= nil and (parent:GetName() or "unnamed") or nil))
-                tinsert(lines, "open menus found: " .. #dropdown.openMenuFrames(dropdown.frame))
+                local menus = dropdown.openMenuFrames(dropdown.frame)
+                tinsert(lines, "open menus found: " .. #menus)
+                for i, menu in ipairs(menus) do
+                    local parent = menu:GetParent()
+                    tinsert(
+                        lines,
+                        "menu "
+                            .. i
+                            .. ": id "
+                            .. tostring(menu:GetID())
+                            .. ", parent "
+                            .. tostring(parent ~= nil and (parent:GetName() or "unnamed") or "nil")
+                            .. ", children "
+                            .. select("#", menu:GetChildren())
+                    )
+                end
             end
             local host = WowVision.graphHost
             local screen = host:focusedScreen()
