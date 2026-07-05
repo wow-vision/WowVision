@@ -21,7 +21,18 @@ local function render(builder, screen)
 
     local greetingText = C_GossipInfo.GetText()
     if greetingText ~= nil and greetingText ~= "" then
-        addEntry(builder, ControlId.structural("greeting"), nodes.text({ label = greetingText }))
+        -- Live: selecting an option changes the text under focus after a
+        -- server round trip, and the node's identity doesn't change.
+        addEntry(
+            builder,
+            ControlId.structural("greeting"),
+            nodes.text({
+                label = function()
+                    return C_GossipInfo.GetText()
+                end,
+                live = "focus",
+            })
+        )
     end
 
     for _, option in ipairs(C_GossipInfo.GetOptions()) do
