@@ -296,6 +296,50 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
+        name = "gperf",
+        description = "Profile the UI update loop for 120 frames and report min, average, and max milliseconds",
+        func = function(args)
+            if WowVision._perfActive then
+                print("gperf already running")
+                return
+            end
+            WowVision._perfActive = true
+            local samples = {}
+            local host = WowVision.UIHost
+            local original = host.update
+            host.update = function(self, ...)
+                local started = debugprofilestop()
+                original(self, ...)
+                tinsert(samples, debugprofilestop() - started)
+                if #samples >= 120 then
+                    host.update = original
+                    WowVision._perfActive = nil
+                    local total, worst, best = 0, 0, math.huge
+                    for _, sample in ipairs(samples) do
+                        total = total + sample
+                        if sample > worst then
+                            worst = sample
+                        end
+                        if sample < best then
+                            best = sample
+                        end
+                    end
+                    local text = string.format(
+                        "ui update over %d frames: min %.2f ms, avg %.2f ms, max %.2f ms",
+                        #samples,
+                        best,
+                        total / #samples,
+                        worst
+                    )
+                    WowVision.testing.showResults(text)
+                    WowVision:speak(text)
+                end
+            end
+            WowVision:speak("profiling 120 frames")
+        end,
+    })
+
+    self.base:registerCommand({
         name = "gdrop",
         description = "Dump the open dropdown menu chain and the focused item's description state",
         func = function(args)
