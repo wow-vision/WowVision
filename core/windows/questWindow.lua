@@ -5,14 +5,16 @@ module:setLabel(L["Quest Window"])
 local graph = WowVision.graph
 local nodes = graph.nodes
 local ControlId = graph.ControlId
-local kinds = graph.kinds
 
 -- The NPC quest window: greeting, detail, progress, and reward panels of
--- QuestFrame, whichever is shown. Panel content lives in plain ScrollFrames,
--- so nodes scroll the real viewport into place as focus moves; item rewards
--- are real buttons (choosing a reward is a genuine click).
+-- QuestFrame, whichever is shown. Each panel's content (header, text,
+-- objectives, rewards) is one vertical list in a single tab stop; the action
+-- buttons follow as their own stops. Panel content lives in plain
+-- ScrollFrames, so nodes scroll the real viewport as focus moves; item
+-- rewards are real buttons (choosing a reward is a genuine click).
 
-local function textNode(builder, id, region, scrollFrame)
+-- One line of panel content, added into the current stop.
+local function contentText(builder, id, region, scrollFrame)
     if region == nil or not region:IsShown() then
         return
     end
@@ -20,7 +22,6 @@ local function textNode(builder, id, region, scrollFrame)
     if text == nil or text == "" then
         return
     end
-    builder:beginStop()
     local vtable = nodes.text({
         label = function()
             return region:GetText()
@@ -32,7 +33,8 @@ local function textNode(builder, id, region, scrollFrame)
     builder:addItem(id, vtable)
 end
 
-local function buttonNode(builder, button, scrollFrame, label)
+-- An action button as its own tab stop.
+local function actionButton(builder, button, scrollFrame, label)
     if button == nil or not button:IsShown() then
         return
     end
@@ -55,12 +57,11 @@ local function getItemLabel(item)
     return label
 end
 
--- A row of quest item buttons (choices or received rewards) under a context.
+-- A row of quest item buttons under a context, within the current stop.
 local function itemRow(builder, contextLabel, buttons, scrollFrame)
     if #buttons == 0 then
         return
     end
-    builder:beginStop()
     builder:pushContext(contextLabel or "")
     builder:startRow()
     for _, button in ipairs(buttons) do
@@ -80,41 +81,108 @@ local function itemRow(builder, contextLabel, buttons, scrollFrame)
     builder:popContext()
 end
 
+-- The rewards block (choices, received items, money, experience), shared by
+-- the detail preview and the reward panel. Adds into the current stop.
+local function rewardsContent(builder, scrollFrame)
+    local rewards = QuestInfoRewardsFrame
+    if rewards == nil or not rewards:IsShown() or not rewards:IsVisible() then
+        return
+    end
+    local choiceButtons = {}
+    local rewardButtons = {}
+    for _, button in ipairs(rewards.RewardButtons or {}) do
+        if button:IsShown() and getItemLabel(button) ~= nil then
+            if button.type == "choice" then
+                tinsert(choiceButtons, button)
+            elseif button.type == "reward" then
+                tinsert(rewardButtons, button)
+            end
+        end
+    end
+    itemRow(
+        builder,
+        rewards.ItemChooseText ~= nil and rewards.ItemChooseText:GetText() or nil,
+        choiceButtons,
+        scrollFrame
+    )
+    itemRow(
+        builder,
+        rewards.ItemReceiveText ~= nil and rewards.ItemReceiveText:GetText() or nil,
+        rewardButtons,
+        scrollFrame
+    )
+
+    if rewards.MoneyFrame ~= nil and rewards.MoneyFrame:IsShown() and rewards.MoneyFrame.staticMoney then
+        builder:addItem(
+            ControlId.structural("money"),
+            nodes.text({
+                label = function()
+                    return C_CurrencyInfo.GetCoinText(rewards.MoneyFrame.staticMoney)
+                end,
+            })
+        )
+    end
+    local xp = rewards.XPFrame
+    if xp ~= nil and xp:IsShown() and xp:IsVisible() then
+        builder:addItem(
+            ControlId.structural("xp"),
+            nodes.text({
+                label = function()
+                    return (xp.ReceiveText:GetText() or "") .. " " .. (xp.ValueText:GetText() or "")
+                end,
+            })
+        )
+    end
+end
+
 local function renderGreeting(builder)
     local scrollFrame = QuestGreetingScrollFrame
+    builder:beginStop()
     if GreetingText ~= nil and GreetingText:IsShown() then
-        textNode(builder, ControlId.structural("greetingText"), GreetingText, scrollFrame)
+        contentText(builder, ControlId.structural("greetingText"), GreetingText, scrollFrame)
     end
     for i = 1, 32 do
         local button = _G["QuestTitleButton" .. i]
         if button ~= nil and button:IsShown() then
             local captured = button
-            buttonNode(builder, captured, scrollFrame, function()
-                local title = captured:GetText() or ""
-                if captured.isActive == 1 then
-                    return L["Accepted Quest"] .. ": " .. title
-                end
-                return L["Available Quest"] .. ": " .. title
-            end)
+            builder:beginStop()
+            local vtable = nodes.proxyButton({
+                target = captured,
+                label = function()
+                    local title = captured:GetText() or ""
+                    if captured.isActive == 1 then
+                        return L["Accepted Quest"] .. ": " .. title
+                    end
+                    return L["Available Quest"] .. ": " .. title
+                end,
+            })
+            nodes.attachScrollFrame(vtable, scrollFrame, captured)
+            builder:addItem(ControlId.forObject(captured), vtable)
         end
     end
-    buttonNode(builder, QuestFrameGreetingGoodbyeButton)
+    actionButton(builder, QuestFrameGreetingGoodbyeButton)
 end
 
 local function renderDetail(builder)
     local scrollFrame = QuestDetailScrollFrame
-    textNode(builder, ControlId.structural("title"), QuestInfoTitleHeader, scrollFrame)
-    textNode(builder, ControlId.structural("description"), QuestInfoDescriptionText, scrollFrame)
-    textNode(builder, ControlId.structural("objectivesHeader"), QuestInfoObjectivesHeader, scrollFrame)
-    textNode(builder, ControlId.structural("objectives"), QuestInfoObjectivesText, scrollFrame)
-    buttonNode(builder, QuestFrameAcceptButton)
-    buttonNode(builder, QuestFrameDeclineButton)
+    builder:beginStop()
+    builder:pushContext(L["Details"])
+    contentText(builder, ControlId.structural("title"), QuestInfoTitleHeader, scrollFrame)
+    contentText(builder, ControlId.structural("description"), QuestInfoDescriptionText, scrollFrame)
+    contentText(builder, ControlId.structural("objectivesHeader"), QuestInfoObjectivesHeader, scrollFrame)
+    contentText(builder, ControlId.structural("objectives"), QuestInfoObjectivesText, scrollFrame)
+    rewardsContent(builder, scrollFrame)
+    builder:popContext()
+    actionButton(builder, QuestFrameAcceptButton)
+    actionButton(builder, QuestFrameDeclineButton)
 end
 
 local function renderProgress(builder)
     local scrollFrame = QuestProgressScrollFrame
-    textNode(builder, ControlId.structural("progressTitle"), QuestProgressTitleText, scrollFrame)
-    textNode(builder, ControlId.structural("progressText"), QuestProgressText, scrollFrame)
+    builder:beginStop()
+    builder:pushContext(L["Progress"])
+    contentText(builder, ControlId.structural("progressTitle"), QuestProgressTitleText, scrollFrame)
+    contentText(builder, ControlId.structural("progressText"), QuestProgressText, scrollFrame)
 
     if
         QuestProgressScrollChildFrame ~= nil
@@ -132,69 +200,23 @@ local function renderProgress(builder)
         end
         itemRow(builder, QuestProgressRequiredItemsText:GetText(), items, scrollFrame)
     end
+    builder:popContext()
 
-    buttonNode(builder, QuestFrameCompleteButton)
-    buttonNode(builder, QuestFrameGoodbyeButton)
+    actionButton(builder, QuestFrameCompleteButton)
+    actionButton(builder, QuestFrameGoodbyeButton)
 end
 
 local function renderReward(builder)
     local scrollFrame = QuestRewardScrollFrame
-    textNode(builder, ControlId.structural("rewardTitle"), QuestInfoTitleHeader, scrollFrame)
-    textNode(builder, ControlId.structural("rewardText"), QuestInfoRewardText, scrollFrame)
+    builder:beginStop()
+    builder:pushContext(L["Reward"])
+    contentText(builder, ControlId.structural("rewardTitle"), QuestInfoTitleHeader, scrollFrame)
+    contentText(builder, ControlId.structural("rewardText"), QuestInfoRewardText, scrollFrame)
+    rewardsContent(builder, scrollFrame)
+    builder:popContext()
 
-    local rewards = QuestInfoRewardsFrame
-    if rewards ~= nil and rewards:IsShown() then
-        local choiceButtons = {}
-        local rewardButtons = {}
-        for _, button in ipairs(rewards.RewardButtons or {}) do
-            if button:IsShown() and getItemLabel(button) ~= nil then
-                if button.type == "choice" then
-                    tinsert(choiceButtons, button)
-                elseif button.type == "reward" then
-                    tinsert(rewardButtons, button)
-                end
-            end
-        end
-        itemRow(
-            builder,
-            rewards.ItemChooseText ~= nil and rewards.ItemChooseText:GetText() or nil,
-            choiceButtons,
-            scrollFrame
-        )
-        itemRow(
-            builder,
-            rewards.ItemReceiveText ~= nil and rewards.ItemReceiveText:GetText() or nil,
-            rewardButtons,
-            scrollFrame
-        )
-
-        if rewards.MoneyFrame ~= nil and rewards.MoneyFrame:IsShown() and rewards.MoneyFrame.staticMoney then
-            builder:beginStop()
-            builder:addItem(
-                ControlId.structural("money"),
-                nodes.text({
-                    label = function()
-                        return C_CurrencyInfo.GetCoinText(rewards.MoneyFrame.staticMoney)
-                    end,
-                })
-            )
-        end
-        local xp = rewards.XPFrame
-        if xp ~= nil and xp:IsShown() and xp:IsVisible() then
-            builder:beginStop()
-            builder:addItem(
-                ControlId.structural("xp"),
-                nodes.text({
-                    label = function()
-                        return (xp.ReceiveText:GetText() or "") .. " " .. (xp.ValueText:GetText() or "")
-                    end,
-                })
-            )
-        end
-    end
-
-    buttonNode(builder, QuestFrameCompleteQuestButton)
-    buttonNode(builder, QuestFrameCancelButton)
+    actionButton(builder, QuestFrameCompleteQuestButton)
+    actionButton(builder, QuestFrameCancelButton)
 end
 
 local function getWindowTitle()
