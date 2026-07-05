@@ -63,6 +63,7 @@ Value controls take get and set functions (plus optional `valueText`); the setti
 - `nodes.number({ label, get, set, step, largeStep })` — left/right adjust, Enter opens typed entry through the host's shared edit box. Clamping belongs to the setter (Field validation handles it on settings).
 - `nodes.choice({ label, get, set, choices })` — Enter opens a child screen of the options, landing on the current pick; choosing sets and returns. `choices` is a list or function returning `{ label, value }` entries.
 - `nodes.textInput({ label, get, set })` — Enter opens typed entry.
+- `nodes.proxyDropdown({ target = frame })` — a real dropdown button (WowStyle filter dropdowns): plain clicks do not open these menus, so Enter calls the frame's `OpenMenu`; the opened menu becomes its own stack via the dropdown watcher.
 - `nodes.proxyEditBox({ editBox, label, autoInput?, hookTab?, fixAutoFocus? })` — a real Blizzard edit box. Tabbing to it hands it keyboard focus so typing starts immediately (the `onTabFocus` vtable hook, fired only on tab-pair arrivals — arrows just read it); Enter does the same; Tab from inside leaves the box and moves on. `fixAutoFocus` disables Blizzard's autofocus for boxes that re-grab the keyboard on their own refreshes.
 
 Hand-written vtables remain the escape hatch for anything the factories don't cover.

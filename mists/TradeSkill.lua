@@ -191,11 +191,10 @@ local function render(builder, screen)
 
     if TradeSkillFrame.FilterDropdown ~= nil then
         builder:beginStop("filter")
-        local filter = nodes.proxyButton({ target = TradeSkillFrame.FilterDropdown })
-        if filter ~= nil then
-            filter.controlType = graph.controlTypes.dropdown
-            builder:addItem(ControlId.forObject(TradeSkillFrame.FilterDropdown), filter)
-        end
+        builder:addItem(
+            ControlId.forObject(TradeSkillFrame.FilterDropdown),
+            nodes.proxyDropdown({ target = TradeSkillFrame.FilterDropdown })
+        )
     end
 
     builder:beginStop("recipes")

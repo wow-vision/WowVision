@@ -390,6 +390,32 @@ function nodes.proxyEditBox(config)
     return vtable
 end
 
+-- A real Blizzard dropdown button (WowStyle filter dropdowns and kin): a
+-- plain click does NOT open these menus, so Enter calls the frame's
+-- OpenMenu. The label reads the frame's text live (the current pick, where
+-- the dropdown shows one). Hidden targets yield nil, like proxyButton.
+-- config: { target, label?, allowHidden? }
+function nodes.proxyDropdown(config)
+    local target = config.target
+    if target == nil then
+        error("proxyDropdown requires a target frame")
+    end
+    if not config.allowHidden and target.IsShown ~= nil and not target:IsShown() then
+        return nil
+    end
+    return nodes.attachHover({
+        controlType = graph.controlTypes.dropdown,
+        announcements = { { text = config.label or nodes.frameText(target), kind = kinds.label } },
+        onActivate = function()
+            if target.OpenMenu ~= nil then
+                target:OpenMenu()
+            elseif target.Click ~= nil then
+                target:Click()
+            end
+        end,
+    }, target)
+end
+
 -- A real Blizzard check button: clicks are genuine, the checked state reads
 -- as the live value. Hidden targets yield nil, like proxyButton.
 -- config: { target, label?, allowHidden? }
