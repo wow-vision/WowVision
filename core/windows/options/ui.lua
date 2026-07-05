@@ -485,6 +485,7 @@ local function render(builder, screen)
         builder:beginStop("categories")
         nodes.scrollBoxList(builder, {
             scrollBox = frame.CategoryList.ScrollBox,
+            key = "categories",
             label = L["Categories"],
             emit = emitCategoryRow,
         })
@@ -499,6 +500,7 @@ local function render(builder, screen)
         end)
         nodes.scrollBoxList(builder, {
             scrollBox = list.ScrollBox,
+            key = "settings",
             label = title or L["Options"],
             emit = emitSettingRow,
         })

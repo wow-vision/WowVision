@@ -41,6 +41,9 @@ end
 --   scrollBox   the widget (required)
 --   rowLabel    function(data, index) -> spoken label (required; see above)
 --   label       announcement context wrapped around the rows
+--   key         stable prefix scoping the default row ids -- REQUIRED to be
+--               distinct when one screen holds several scroll lists, or their
+--               rows collide. Defaults to the label, else "list".
 --   id          function(data, index) -> ControlId; defaults to the element
 --               data as the reference (focus follows a row through re-sorts)
 --   button      function(rowFrame, data, index) -> the clickable frame within
@@ -66,6 +69,8 @@ function nodes.scrollBoxList(builder, config)
         return builder
     end
 
+    local keyPrefix = tostring(config.key or config.label or "list")
+
     if config.label ~= nil then
         builder:pushContext(config.label)
     end
@@ -78,9 +83,9 @@ function nodes.scrollBoxList(builder, config)
         if config.id ~= nil then
             id = config.id(data, capturedIndex)
         elseif type(data) == "table" then
-            id = ControlId.referenced(data, "row:" .. capturedIndex)
+            id = ControlId.referenced(data, keyPrefix .. ":" .. capturedIndex)
         else
-            id = ControlId.structural("row:" .. tostring(data) .. ":" .. capturedIndex)
+            id = ControlId.structural(keyPrefix .. ":" .. tostring(data) .. ":" .. capturedIndex)
         end
 
         local onFocus = function()

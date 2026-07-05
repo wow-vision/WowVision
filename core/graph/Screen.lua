@@ -34,7 +34,16 @@ end
 
 function Screen:buildRender()
     local builder = graph.Builder:new(self.state.expanded)
-    self.config.render(builder, self)
+    local ok, err = pcall(self.config.render, builder, self)
+    if not ok then
+        -- Report once and close the screen; erroring every rebuild tick would
+        -- flood the error list and TTS.
+        if not self._renderErrorReported then
+            self._renderErrorReported = true
+            geterrorhandler()(err)
+        end
+        return nil
+    end
     return builder:build()
 end
 

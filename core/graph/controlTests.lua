@@ -101,6 +101,30 @@ testRunner:addSuite("GraphScrollBox", {
         t:assertNotNil(render.order[1].vtable.bindings[1].target())
     end,
 
+    ["two lists in one build need distinct keys"] = function(t)
+        local rowsA = { { name = "General" }, { name = "Combat" } }
+        local rowsB = { { name = "Volume" }, { name = "Music" } }
+        local builder = Builder:new()
+        graph.nodes.scrollBoxList(builder, {
+            scrollBox = makeFakeScrollBox(rowsA),
+            key = "categories",
+            rowLabel = function(data)
+                return data.name
+            end,
+        })
+        graph.nodes.scrollBoxList(builder, {
+            scrollBox = makeFakeScrollBox(rowsB),
+            key = "settings",
+            rowLabel = function(data)
+                return data.name
+            end,
+        })
+        local render = builder:build()
+        t:assertEqual(#render.order, 4)
+        t:assertEqual(render.order[1].id.key, "categories:1")
+        t:assertEqual(render.order[3].id.key, "settings:1")
+    end,
+
     ["an empty provider emits nothing"] = function(t)
         local scrollBox = makeFakeScrollBox({})
         local builder = Builder:new()
