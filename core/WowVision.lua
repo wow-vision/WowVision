@@ -170,6 +170,14 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
+        name = "gsettings",
+        description = "Open a module's settings as a graph screen, for example gsettings speech",
+        func = function(args)
+            WowVision.graph.settings.openModuleSettings(args)
+        end,
+    })
+
+    self.base:registerCommand({
         name = "profile",
         description = "Profiler commands (start/stop/report/reset)",
         func = function(args)

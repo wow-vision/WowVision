@@ -1,6 +1,7 @@
 local graph = WowVision.graph
 local ControlId = graph.ControlId
 local kinds = graph.kinds
+local L = WowVision:getLocale()
 
 -- Node factories: each takes a single config table and returns a vtable for
 -- builder:addItem. Screens stay declarative; the factories own the control
@@ -73,6 +74,190 @@ function nodes.text(config)
     return {
         controlType = graph.controlTypes.text,
         announcements = { { text = config.label, kind = kinds.label, live = config.live } },
+    }
+end
+
+-- ---- value controls ----
+-- All take get/set functions; the settings renderer builds those from
+-- InfoClass fields, other screens pass their own closures.
+
+-- A checkbox: Enter flips it. The value part is live, so game-driven flips
+-- announce themselves while focused.
+-- config: { label = string|function, get = function, set = function, valueText = function? }
+function nodes.toggle(config)
+    if config.label == nil or config.get == nil or config.set == nil then
+        error("toggle requires label, get, and set")
+    end
+    local get = config.get
+    local set = config.set
+    local valueText = config.valueText
+        or function()
+            return get() and L["Checked"] or L["Unchecked"]
+        end
+    return {
+        controlType = graph.controlTypes.toggle,
+        announcements = {
+            { text = config.label, kind = kinds.label },
+            { text = valueText, kind = kinds.value, live = "focus" },
+        },
+        onActivate = function()
+            set(not get())
+        end,
+        stateText = valueText,
+    }
+end
+
+-- A numeric value: left/right adjust by step (large jumps with a modifier
+-- later), Enter opens typed entry. Clamping belongs to the setter.
+-- config: { label, get, set, step = 1?, largeStep = step*10?, valueText = function? }
+function nodes.number(config)
+    if config.label == nil or config.get == nil or config.set == nil then
+        error("number requires label, get, and set")
+    end
+    local get = config.get
+    local set = config.set
+    local step = config.step or 1
+    local largeStep = config.largeStep or step * 10
+    local valueText = config.valueText
+        or function()
+            local value = get()
+            return value ~= nil and tostring(value) or nil
+        end
+    local function trySet(value)
+        local ok = pcall(set, value)
+        return ok
+    end
+    return {
+        controlType = graph.controlTypes.number,
+        announcements = {
+            { text = config.label, kind = kinds.label },
+            { text = valueText, kind = kinds.value, live = "focus" },
+        },
+        onAdjust = function(sign, large)
+            local value = get() or 0
+            trySet(value + sign * (large and largeStep or step))
+        end,
+        onActivate = function()
+            WowVision.graphHost:openTextEntry({
+                label = config.label,
+                text = tostring(get() or ""),
+                onCommit = function(text)
+                    if trySet(tonumber(text) or text) then
+                        WowVision:speak(valueText() or "")
+                    end
+                end,
+            })
+        end,
+        stateText = valueText,
+    }
+end
+
+-- A single-select value: Enter opens a child screen of the options, landing
+-- on the current pick; choosing sets the value and returns.
+-- config: { label, get, set, choices = list or function, valueText = function? }
+function nodes.choice(config)
+    if config.label == nil or config.get == nil or config.set == nil or config.choices == nil then
+        error("choice requires label, get, set, and choices")
+    end
+    local get = config.get
+    local set = config.set
+    local function choicesOf()
+        if type(config.choices) == "function" then
+            return config.choices()
+        end
+        return config.choices
+    end
+    local valueText = config.valueText
+        or function()
+            local value = get()
+            for _, choice in ipairs(choicesOf()) do
+                if choice.value == value then
+                    return choice.label
+                end
+            end
+            return value ~= nil and tostring(value) or nil
+        end
+    local function renderChoices(builder)
+        local label = config.label
+        if type(label) == "function" then
+            label = label()
+        end
+        builder:pushContext(label or "")
+        for _, choice in ipairs(choicesOf()) do
+            local value = choice.value
+            builder:addItem(ControlId.structural("choice:" .. tostring(value)), {
+                controlType = graph.controlTypes.button,
+                announcements = {
+                    { text = choice.label, kind = kinds.label },
+                    {
+                        -- Non-empty only on the current pick: drives both the
+                        -- spoken state and landing on it when the list opens.
+                        text = function()
+                            if get() == value then
+                                return L["Checked"]
+                            end
+                            return nil
+                        end,
+                        kind = kinds.selected,
+                        live = "focus",
+                    },
+                },
+                onActivate = function()
+                    set(value)
+                    local host = WowVision.graphHost
+                    host:pop(host:focusedStack())
+                end,
+            })
+        end
+        builder:popContext()
+    end
+    return {
+        controlType = graph.controlTypes.dropdown,
+        announcements = {
+            { text = config.label, kind = kinds.label },
+            { text = valueText, kind = kinds.value, live = "focus" },
+        },
+        onActivate = function()
+            local host = WowVision.graphHost
+            local stack = host:focusedStack()
+            if stack ~= nil then
+                host:push(stack, { key = "choices", render = renderChoices })
+            end
+        end,
+    }
+end
+
+-- A text value: Enter opens typed entry.
+-- config: { label, get, set, valueText = function? }
+function nodes.textInput(config)
+    if config.label == nil or config.get == nil or config.set == nil then
+        error("textInput requires label, get, and set")
+    end
+    local get = config.get
+    local set = config.set
+    local valueText = config.valueText
+        or function()
+            local value = get()
+            return value ~= nil and tostring(value) or nil
+        end
+    return {
+        controlType = graph.controlTypes.editBox,
+        announcements = {
+            { text = config.label, kind = kinds.label },
+            { text = valueText, kind = kinds.value, live = "focus" },
+        },
+        onActivate = function()
+            WowVision.graphHost:openTextEntry({
+                label = config.label,
+                text = tostring(get() or ""),
+                onCommit = function(text)
+                    if pcall(set, text) then
+                        WowVision:speak(valueText() or "")
+                    end
+                end,
+            })
+        end,
+        stateText = valueText,
     }
 end
 

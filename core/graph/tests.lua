@@ -517,6 +517,123 @@ testRunner:addSuite("GraphNodes", {
         t:assertEqual(vtable.controlType, graph.controlTypes.text)
     end,
 
+    ["toggle flips through get and set and reports state"] = function(t)
+        local value = false
+        local vtable = graph.nodes.toggle({
+            label = "Enable",
+            get = function()
+                return value
+            end,
+            set = function(v)
+                value = v
+            end,
+        })
+        t:assertEqual(vtable.controlType, graph.controlTypes.toggle)
+        vtable.onActivate()
+        t:assertTrue(value)
+        vtable.onActivate()
+        t:assertFalse(value)
+        t:assertEqual(vtable.announcements[2].live, "focus")
+        t:assertEqual(vtable.announcements[2].kind, graph.kinds.value)
+    end,
+
+    ["number adjusts by step and large step"] = function(t)
+        local value = 50
+        local vtable = graph.nodes.number({
+            label = "Volume",
+            get = function()
+                return value
+            end,
+            set = function(v)
+                value = v
+            end,
+            step = 5,
+        })
+        vtable.onAdjust(1, false)
+        t:assertEqual(value, 55)
+        vtable.onAdjust(-1, true)
+        t:assertEqual(value, 5)
+    end,
+
+    ["number survives a rejecting setter"] = function(t)
+        local vtable = graph.nodes.number({
+            label = "Volume",
+            get = function()
+                return 10
+            end,
+            set = function()
+                error("validation rejected")
+            end,
+        })
+        vtable.onAdjust(1, false)
+        t:assertEqual(vtable.announcements[1].text, "Volume")
+    end,
+
+    ["choice reads the current option label as its value"] = function(t)
+        local value = "b"
+        local vtable = graph.nodes.choice({
+            label = "Voice",
+            get = function()
+                return value
+            end,
+            set = function(v)
+                value = v
+            end,
+            choices = {
+                { label = "Alpha", value = "a" },
+                { label = "Beta", value = "b" },
+            },
+        })
+        t:assertEqual(vtable.controlType, graph.controlTypes.dropdown)
+        t:assertEqual(graph.resolveText(vtable.announcements[2]), "Beta")
+    end,
+
+    ["settings renderer emits controls, fallbacks, and child buttons"] = function(t)
+        local store = { enabled = true, volume = 80 }
+        local function fakeField(typeKey, key)
+            return {
+                typeKey = typeKey,
+                key = key,
+                showInUI = true,
+                getLabel = function()
+                    return key
+                end,
+                get = function(self, obj)
+                    return store[key]
+                end,
+                set = function(self, obj, v)
+                    store[key] = v
+                end,
+                getValueString = function(self, obj, value)
+                    return tostring(value)
+                end,
+            }
+        end
+        local fakeFrame = {
+            label = "Speech",
+            info = {
+                fields = {
+                    fakeField("Bool", "enabled"),
+                    fakeField("Number", "volume"),
+                    fakeField("Alert", "mystery"),
+                },
+            },
+            children = { { key = "child", label = "Advanced" } },
+        }
+        local builder = Builder:new()
+        graph.settings.renderInto(builder, fakeFrame)
+        local render = builder:build()
+        t:assertNotNil(render.nodes["field:enabled"])
+        t:assertEqual(render.nodes["field:enabled"].vtable.controlType, graph.controlTypes.toggle)
+        t:assertNotNil(render.nodes["field:volume"].vtable.onAdjust)
+        t:assertEqual(render.nodes["field:mystery"].vtable.controlType, graph.controlTypes.text)
+        t:assertNotNil(render.nodes["child:child"])
+        t:assertEqual(render.nodes["field:enabled"].parent.vtable.announcements[1].text, "Speech")
+        -- The toggle drives the real store through the field.
+        render.nodes["field:enabled"].vtable.onActivate()
+        t:assertFalse(store.enabled)
+    end,
+
     ["proxyButtonMenu emits one stop per button with shared positions"] = function(t)
         local a, b, c = {}, {}, {}
         local builder = Builder:new()

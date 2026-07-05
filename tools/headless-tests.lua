@@ -44,6 +44,7 @@ loadAddonFile("core/graph/KeyGraph.lua")
 loadAddonFile("core/graph/Builder.lua")
 loadAddonFile("core/graph/ControlTypes.lua")
 loadAddonFile("core/graph/nodes.lua")
+loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/tests.lua")
 
 -- Files that need the game client to run but should at least parse cleanly.

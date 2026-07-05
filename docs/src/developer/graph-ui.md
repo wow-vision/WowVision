@@ -53,7 +53,20 @@ Prefer the factories in `core/graph/nodes.lua` (`graph.nodes`) over hand-writing
 - `nodes.proxyButtonMenu(builder, { label = ?, frame = ? or buttons = ? })` — a whole tab-cycled menu of proxy buttons: one stop per button, one announcement context, positions stamped across the set. This is the game menu's entire body.
 - `nodes.frameText(frame)` — the live label function proxy factories use; handy on its own.
 
-Factories for value controls (toggle, slider, dropdown, edit box) arrive with the settings generator; hand-written vtables (see below) remain the escape hatch for anything the factories don't cover.
+Value controls take get and set functions (plus optional `valueText`); the settings renderer builds those from InfoClass fields, and other screens pass their own closures:
+
+- `nodes.toggle({ label, get, set })` — Enter flips it; speaks Checked/Unchecked, live while focused.
+- `nodes.number({ label, get, set, step, largeStep })` — left/right adjust, Enter opens typed entry through the host's shared edit box. Clamping belongs to the setter (Field validation handles it on settings).
+- `nodes.choice({ label, get, set, choices })` — Enter opens a child screen of the options, landing on the current pick; choosing sets and returns. `choices` is a list or function returning `{ label, value }` entries.
+- `nodes.textInput({ label, get, set })` — Enter opens typed entry.
+
+Hand-written vtables remain the escape hatch for anything the factories don't cover.
+
+## Settings screens
+
+`graph.settings.renderInto(builder, infoFrame)` renders an InfoClass settings tree: Bool, Number, Choice, and String fields map to the value factories wired straight to Field get/set (validation and persistence ride along), unsupported field types read as label plus value, and child categories become buttons pushing child screens. `graph.settings.screen(infoFrame)` wraps a tree as a `graphScreen` config; register more field controls with `graph.settings.registerFieldControl(typeKey, factory)`. For side-by-side testing, `/wv gsettings speech` (or any dot path under WowVision.base) opens a module's settings as a graph window.
+
+Escape and frameless windows: a stack whose config sets `captureClose = true` (settings.screen does) holds the close key while focused, as does any stack with a pushed child screen — the opt-in cases where the game cannot close our UI for us. Everywhere else Escape stays with the game.
 
 Rules the render function must follow:
 

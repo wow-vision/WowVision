@@ -186,6 +186,7 @@ function GraphHost:update()
     if #self._navHandles == 0 then
         self:_engageNavBindings()
     end
+    self:_syncCloseKey()
 
     local stack = self:focusedStack()
     local screen = self:focusedScreen()
@@ -415,6 +416,89 @@ function GraphHost:_releaseNavBindings()
         handle:release()
     end
     self._navHandles = {}
+    if self._closeHandle ~= nil then
+        self._closeHandle:release()
+        self._closeHandle = nil
+    end
+end
+
+-- The close key (Escape) engages only when the focused stack owns something
+-- the game cannot close for it: a pushed child screen, or a stack whose
+-- config opts in with captureClose (frameless temporary windows). Everywhere
+-- else Escape stays with the game.
+function GraphHost:_syncCloseKey()
+    local stack = self:focusedStack()
+    local wants = stack ~= nil
+        and (#stack.screens > 1 or (stack.config ~= nil and stack.config.captureClose == true))
+    if wants and self._closeHandle == nil then
+        self._closeHandle = WowVision.inputActivator:activate({
+            binding = "close",
+            type = "Function",
+            delay = 0,
+            func = function()
+                self:onKey("close")
+            end,
+        })
+    elseif not wants and self._closeHandle ~= nil then
+        self._closeHandle:release()
+        self._closeHandle = nil
+    end
+end
+
+-- Typed text entry through one shared edit box: keyboard focus swallows keys
+-- while it is up, Enter commits, Escape or focus loss cancels.
+-- config: { label = string|function?, text = string?, onCommit = function, onCancel = function? }
+function GraphHost:openTextEntry(config)
+    local frame = self.editFrame
+    if frame == nil then
+        frame = CreateFrame("EditBox", "WowVisionGraphTextEntry", UIParent)
+        frame:SetSize(300, 20)
+        frame:SetPoint("TOP", UIParent, "TOP", 0, -100)
+        frame:SetFontObject(ChatFontNormal)
+        frame:SetAlpha(0)
+        frame:SetAutoFocus(false)
+        local function finish(f, committed)
+            local entry = self._textEntry
+            self._textEntry = nil
+            f:ClearFocus()
+            f:Hide()
+            if entry == nil then
+                return
+            end
+            if committed then
+                if entry.onCommit ~= nil then
+                    entry.onCommit(f:GetText())
+                end
+            elseif entry.onCancel ~= nil then
+                entry.onCancel()
+            end
+        end
+        frame:SetScript("OnEnterPressed", function(f)
+            finish(f, true)
+        end)
+        frame:SetScript("OnEscapePressed", function(f)
+            finish(f, false)
+        end)
+        frame:SetScript("OnEditFocusLost", function(f)
+            finish(f, false)
+        end)
+        self.editFrame = frame
+    end
+    self._textEntry = config
+    frame:SetText(config.text or "")
+    frame:Show()
+    frame:SetFocus()
+    frame:HighlightText()
+    local label = config.label
+    if type(label) == "function" then
+        label = label()
+    end
+    if label ~= nil then
+        self:_speak(label)
+    end
+    if config.text ~= nil and config.text ~= "" then
+        self:_speak(config.text)
+    end
 end
 
 -- Entry point for navigation keypresses. Mirrors UIHost's TTS sequencing: stop

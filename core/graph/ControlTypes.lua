@@ -39,6 +39,10 @@ end
 graph.registerControlType("button", L["Button"])
 graph.registerControlType("toggle", L["Checkbox"])
 graph.registerControlType("dropdown", L["Dropdown"])
+-- Role words for these need locale submodule additions; typed without them
+-- for now so their parts are still user-configurable.
+graph.registerControlType("number", nil)
+graph.registerControlType("editBox", nil)
 -- An expandable group header: no role word -- the announcer appends the
 -- expanded/collapsed state word instead.
 graph.registerControlType("group", nil)
