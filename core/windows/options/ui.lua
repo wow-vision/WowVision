@@ -527,6 +527,7 @@ local function render(builder, screen)
             emit = emitSettingRow,
         })
         if list.Header ~= nil and list.Header.DefaultsButton ~= nil then
+            builder:beginStop("defaults")
             builder:addItem(
                 ControlId.forObject(list.Header.DefaultsButton),
                 nodes.proxyButton({ target = list.Header.DefaultsButton })
