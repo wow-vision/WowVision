@@ -54,7 +54,7 @@ end
 -- their stack and pop on close.
 --
 -- Input: while any stack is open the host holds the navigation keymaps
--- (arrows, tab, ctrl-tab, escape, home/end) as Function actions routing into
+-- (arrows, tab, ctrl-tab, home/end) as Function actions routing into
 -- onKey. The focused node's own binding declarations (vtable.bindings, plus
 -- defaults for onActivate/onSecondary) engage when reconciled focus lands on
 -- it and release when it leaves -- keyed to the focused ControlId, so mere
@@ -69,6 +69,10 @@ end
 local GraphHost = WowVision.Class("GraphHost")
 graph.GraphHost = GraphHost
 
+-- Escape is deliberately absent: the game closes its own frames (with its own
+-- sounds), and hotkeys the game already handles are never overridden. A screen
+-- that needs a close key (a child screen the game doesn't know about) must opt
+-- in explicitly via its config.
 local NAV_KEYMAPS = {
     "up",
     "down",
@@ -80,7 +84,6 @@ local NAV_KEYMAPS = {
     "previousWindow",
     "home",
     "end",
-    "close",
 }
 
 function GraphHost:initialize()
