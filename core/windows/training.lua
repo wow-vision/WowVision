@@ -1,123 +1,190 @@
 local module = WowVision.base.windows:createModule("training")
 local L = module.L
 module:setLabel(L["Training"])
-local gen = module:hasUI()
 
-gen:Element("training", function(props)
-    return {
-        "Panel",
-        label = ClassTrainerNameText:GetText(),
-        wrap = true,
-        children = {
-            { "training/List", frame = ClassTrainerListScrollFrame },
-            { "training/Details", frame = ClassTrainerDetailScrollFrame },
-            { "ProxyButton", frame = ClassTrainerTrainButton },
-        },
-    }
-end)
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
 
-local function listFrame_getElementHeight(self)
-    return CLASS_TRAINER_SKILL_HEIGHT
-end
+-- The class trainer: the service list (a Faux-style static button pool over
+-- GetTrainerServiceInfo), the selected service's details, and the train
+-- button. Details are live: selecting a service rewrites them in place.
 
-local function ListFrame_getNumEntries(self)
-    return GetNumTrainerServices()
-end
-
-local function ListFrame_getButton(self, button)
-    local id = button:GetID()
-    local serviceName, serviceSubText, serviceType, isExpanded = GetTrainerServiceInfo(id)
-    local label = serviceName
-    if serviceSubText then
-        label = label .. " " .. serviceSubText
-    end
-    local header = nil
-    if serviceType == "used" then
-        label = label .. " " .. L["Known"]
-    elseif serviceType == "unavailable" then
-        label = label .. " " .. L["Unavailable"]
-    elseif serviceType == "header" then
-        if isExpanded then
-            header = "expanded"
-        else
-            header = "collapsed"
-        end
-    end
-    return {
-        "ProxyButton",
-        frame = button,
-        label = label,
-        selected = id == GetTrainerSelectionIndex(),
-        header = header,
-    }
-end
-
-local function ListFrame_getButtons(self)
+local function trainerButtons()
     local buttons = {}
     for i = 1, CLASS_TRAINER_SKILLS_DISPLAYED do
         local button = _G["ClassTrainerSkill" .. i]
-        if button then
+        if button ~= nil then
             tinsert(buttons, button)
         end
     end
     return buttons
 end
 
-gen:Element("training/List", function(props)
-    local frame = props.frame
-    if frame:IsShown() then
-        return {
-            "ProxyScrollFrame",
-            frame = frame,
-            getNumEntries = ListFrame_getNumEntries,
-            getElement = ListFrame_getButton,
-            getElementHeight = listFrame_getElementHeight,
-            getButtons = ListFrame_getButtons,
-        }
+local function serviceLabel(index)
+    local serviceName, serviceSubText, serviceType = GetTrainerServiceInfo(index)
+    if serviceName == nil then
+        return nil
     end
-    local result = { "List", children = {} }
-    for i = 1, CLASS_TRAINER_SKILLS_DISPLAYED do
-        local button = _G["ClassTrainerSkill" .. i]
-        if button and button:IsShown() then
-            local element = ListFrame_getButton(nil, button)
-            tinsert(result.children, element)
-        end
+    local label = serviceName
+    if serviceSubText ~= nil and serviceSubText ~= "" then
+        label = label .. " " .. serviceSubText
     end
-    return result
-end)
+    if serviceType == "used" then
+        label = label .. " " .. L["Known"]
+    elseif serviceType == "unavailable" then
+        label = label .. " " .. L["Unavailable"]
+    end
+    return label
+end
 
-gen:Element("training/Details", function(props)
-    local frame = props.frame
-    if not frame or not frame:IsVisible() then
-        return nil
-    end
-    if not ClassTrainerSkillIcon:IsShown() then
-        return nil
-    end
-    local result = { "List", label = L["Details"], children = {} }
-    tinsert(result.children, { "ProxyButton", frame = ClassTrainerSkillIcon, label = ClassTrainerSkillName:GetText() })
-    if ClassTrainerSubSkillName:IsVisible() then
-        tinsert(result.children, { "Text", text = ClassTrainerSubSkillName:GetText() })
-    end
-    if ClassTrainerSkillRequirements:IsVisible() then
-        tinsert(result.children, { "Text", text = ClassTrainerSkillRequirements:GetText() })
-    end
-    if ClassTrainerCostLabel:IsVisible() then
-        tinsert(result.children, {
-            "Text",
-            text = ClassTrainerCostLabel:GetText() .. " " .. C_CurrencyInfo.GetCoinText(
-                ClassTrainerDetailMoneyFrame.staticMoney
-            ),
+local function emitService(builder, index, helpers)
+    local _, _, serviceType = GetTrainerServiceInfo(index)
+
+    local announcements = {
+        {
+            text = function()
+                return serviceLabel(index)
+            end,
+            kind = kinds.label,
+            live = "focus",
+        },
+    }
+    if serviceType == "header" then
+        tinsert(announcements, {
+            text = function()
+                local _, _, _, isExpanded = GetTrainerServiceInfo(index)
+                return isExpanded and L["Expanded"] or L["Collapsed"]
+            end,
+            kind = kinds.value,
+            live = "focus",
+        })
+    else
+        tinsert(announcements, {
+            text = function()
+                if index == GetTrainerSelectionIndex() then
+                    return L["selected"]
+                end
+                return nil
+            end,
+            kind = kinds.selected,
+            live = "focus",
         })
     end
-    return result
-end)
+
+    builder:addItem(helpers.id, {
+        controlType = graph.controlTypes.button,
+        announcements = announcements,
+        bindings = {
+            { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+        },
+        onFocus = helpers.onFocus,
+        onUnfocus = helpers.onUnfocus,
+        tooltipFrame = helpers.target,
+    })
+end
+
+local function detailText(builder, id, label)
+    builder:addItem(
+        id,
+        nodes.text({
+            label = label,
+            live = "focus",
+        })
+    )
+end
+
+local function renderDetails(builder)
+    local frame = ClassTrainerDetailScrollFrame
+    if frame == nil or not frame:IsVisible() then
+        return
+    end
+    if ClassTrainerSkillIcon == nil or not ClassTrainerSkillIcon:IsShown() then
+        return
+    end
+
+    builder:beginStop("details")
+    builder:pushContext("details", L["Details"])
+    builder:addItem(
+        ControlId.structural("skill"),
+        nodes.attachHover({
+            controlType = graph.controlTypes.button,
+            announcements = {
+                {
+                    text = function()
+                        return ClassTrainerSkillName:GetText()
+                    end,
+                    kind = kinds.label,
+                    live = "focus",
+                },
+            },
+            bindings = {
+                {
+                    binding = "leftClick",
+                    type = "Click",
+                    emulatedKey = "LeftButton",
+                    target = ClassTrainerSkillIcon,
+                },
+            },
+        }, ClassTrainerSkillIcon)
+    )
+    if ClassTrainerSubSkillName ~= nil and ClassTrainerSubSkillName:IsVisible() then
+        detailText(builder, ControlId.structural("subSkill"), function()
+            return ClassTrainerSubSkillName:GetText()
+        end)
+    end
+    if ClassTrainerSkillRequirements ~= nil and ClassTrainerSkillRequirements:IsVisible() then
+        detailText(builder, ControlId.structural("requirements"), function()
+            return ClassTrainerSkillRequirements:GetText()
+        end)
+    end
+    if ClassTrainerCostLabel ~= nil and ClassTrainerCostLabel:IsVisible() then
+        detailText(builder, ControlId.structural("cost"), function()
+            return (ClassTrainerCostLabel:GetText() or "")
+                .. " "
+                .. C_CurrencyInfo.GetCoinText(ClassTrainerDetailMoneyFrame.staticMoney or 0)
+        end)
+    end
+    builder:popContext()
+end
+
+local function render(builder, screen)
+    if ClassTrainerFrame == nil or not ClassTrainerFrame:IsShown() then
+        return
+    end
+    builder:pushContext("trainer", ClassTrainerNameText ~= nil and ClassTrainerNameText:GetText() or L["Training"])
+
+    builder:beginStop("services")
+    nodes.hybridScrollList(builder, {
+        scrollFrame = ClassTrainerListScrollFrame,
+        key = "services",
+        label = L["Training"],
+        count = function()
+            return GetNumTrainerServices()
+        end,
+        rowHeight = CLASS_TRAINER_SKILL_HEIGHT,
+        buttons = trainerButtons,
+        emit = emitService,
+    })
+
+    renderDetails(builder)
+
+    if ClassTrainerTrainButton ~= nil and ClassTrainerTrainButton:IsShown() then
+        builder:beginStop("train")
+        builder:addItem(
+            ControlId.forObject(ClassTrainerTrainButton),
+            nodes.proxyButton({ target = ClassTrainerTrainButton })
+        )
+    end
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "PlayerInteractionWindow",
     name = "training",
-    generated = true,
-    rootElement = "training",
-    conflictingAddons = { "sku" },
+    conflictingAddons = { "Sku" },
     interactionType = Enum.PlayerInteractionType.Trainer,
+    graphScreen = { render = render },
 })

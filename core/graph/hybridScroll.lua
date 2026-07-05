@@ -23,6 +23,8 @@ local kinds = graph.kinds
 --   id           function(index) -> ControlId; default structural key:index
 --   rowHeight    pixels per row; defaults to the frame's buttonHeight, else
 --                the first pooled button's height
+--   buttons      function -> the button pool, for frames whose pool is not
+--                discoverable (FauxScrollFrames with named sibling buttons)
 function nodes.hybridScrollList(builder, config)
     local scrollFrame = config.scrollFrame
     if scrollFrame == nil then
@@ -39,6 +41,9 @@ function nodes.hybridScrollList(builder, config)
     local keyPrefix = tostring(config.key or "hybrid")
 
     local function buttonsOf()
+        if config.buttons ~= nil then
+            return config.buttons()
+        end
         if scrollFrame.buttons ~= nil then
             return scrollFrame.buttons
         end
@@ -86,15 +91,21 @@ function nodes.hybridScrollList(builder, config)
         if scrollChild == nil or buttons[1] == nil then
             return
         end
-        -- The pool's pixel baseline within the scroll child; constant, since
-        -- both tops move together as the child scrolls.
         local childTop = scrollChild:GetTop()
         local buttonTop = buttons[1]:GetTop()
         if childTop == nil or buttonTop == nil then
             return
         end
         local original = scrollBar:GetValue()
-        scrollBar:SetValue((childTop - buttonTop) + rowHeight() * (index - 1))
+        -- The pool's pixel baseline within the scroll child. Hybrid pools are
+        -- parented to the child and ride it, so the measured gap is constant;
+        -- Faux-style static pools sit still while the child slides under
+        -- them, so the measured gap shifts by the current scroll value.
+        local baseline = childTop - buttonTop
+        if buttons[1]:GetParent() ~= scrollChild then
+            baseline = baseline + original
+        end
+        scrollBar:SetValue(baseline + rowHeight() * (index - 1))
         if findButton(index) ~= nil then
             return
         end

@@ -87,6 +87,7 @@ local parseOnly = {
     "core/windows/containers.lua",
     "classic/containers/Bag.lua",
     "classic/containers/Bank.lua",
+    "core/windows/training.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
