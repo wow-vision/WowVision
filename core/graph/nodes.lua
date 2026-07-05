@@ -330,12 +330,28 @@ function nodes.choice(config)
 end
 
 -- A real Blizzard edit box as a node: Enter hands it keyboard focus and its
--- own handlers take over; the current text reads as the value.
--- config: { editBox, label }
+-- own handlers take over; the current text reads as the value. Tab is hooked
+-- to leave the box and move graph focus (hookTab = false opts out);
+-- fixAutoFocus = true turns off Blizzard's autofocus so the box cannot
+-- re-grab the keyboard on its own refreshes (icon selectors do).
+-- config: { editBox, label, hookTab?, fixAutoFocus? }
 function nodes.proxyEditBox(config)
     local editBox = config.editBox
     if editBox == nil then
         error("proxyEditBox requires an editBox")
+    end
+    if config.fixAutoFocus and editBox.SetAutoFocus ~= nil then
+        editBox:SetAutoFocus(false)
+    end
+    if config.hookTab ~= false and editBox.SetScript ~= nil then
+        editBox:SetScript("OnTabPressed", function()
+            editBox:ClearFocus()
+            if IsShiftKeyDown() then
+                WowVision.graphHost:onKey("previous")
+            else
+                WowVision.graphHost:onKey("next")
+            end
+        end)
     end
     return {
         controlType = graph.controlTypes.editBox,

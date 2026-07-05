@@ -28,6 +28,7 @@ local function renderPopup(builder)
         ControlId.structural("name"),
         nodes.proxyEditBox({
             editBox = box.IconSelectorEditBox,
+            fixAutoFocus = true,
             label = function()
                 return headerText(MacroPopupFrame.editBoxHeaderText)
             end,
