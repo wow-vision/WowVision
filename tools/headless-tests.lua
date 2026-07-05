@@ -83,6 +83,7 @@ local parseOnly = {
     "core/windows/popups.lua",
     "core/graph/hybridScroll.lua",
     "mists/QuestLog.lua",
+    "core/windows/merchant.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
