@@ -89,6 +89,7 @@ end
 function graph.newState()
     return {
         curKey = nil, -- focused ControlId (carries its reference for tier-1 recovery)
+        curStopKey = nil, -- the focused node's stop, for whole-stop-vanished recovery
         keyOrder = nil, -- down-right total order from the previous render
         nextSuggestedMove = nil, -- one-shot focus jump, consumed on next reconcile
         stopMemory = {}, -- stopKey -> ControlId: where tab lands re-entering a stop

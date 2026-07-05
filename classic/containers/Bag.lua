@@ -43,7 +43,7 @@ function Bag:renderGraph(builder)
         label = self.prefix .. ": " .. bagName
     end
 
-    builder:beginStop()
+    builder:beginStop("bag:" .. self.id)
     builder:pushContext(label)
     if self.button ~= nil then
         builder:addItem(

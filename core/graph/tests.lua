@@ -300,6 +300,44 @@ testRunner:addSuite("GraphKeyGraph", {
         t:assertEqual(state.curKey.key, "b")
     end,
 
+    ["a vanished stop lands on the surviving stop's landing"] = function(t)
+        local showB = true
+        local kg, state = makeGraph(function(b)
+            b:beginStop("a")
+            b:addLabel(sid("a1"), "A1"):addLabel(sid("a2"), "A2")
+            if showB then
+                b:beginStop("b")
+                b:addLabel(sid("b1"), "B1"):addLabel(sid("b2"), "B2")
+            end
+            return b:build()
+        end)
+        kg:rerender()
+        kg:move("next")
+        t:assertEqual(state.curKey.key, "b1")
+        showB = false
+        kg:rerender()
+        -- The raw backward walk would land on a2; entering the surviving
+        -- stop through its landing returns to its remembered position.
+        t:assertEqual(state.curKey.key, "a1")
+    end,
+
+    ["a vanished node within a surviving stop lands on its neighbor"] = function(t)
+        local showC = true
+        local kg, state = makeGraph(function(b)
+            b:addLabel(sid("a"), "A"):addLabel(sid("b"), "B")
+            if showC then
+                b:addLabel(sid("c"), "C")
+            end
+            return b:build()
+        end)
+        kg:rerender()
+        kg:moveToEdge("down")
+        t:assertEqual(state.curKey.key, "c")
+        showC = false
+        kg:rerender()
+        t:assertEqual(state.curKey.key, "b")
+    end,
+
     ["first render lands on the selected member of the start stop"] = function(t)
         local kg, state = makeGraph(function(b)
             b:addLabel(sid("a"), "A")

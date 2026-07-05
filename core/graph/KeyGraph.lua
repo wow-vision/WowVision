@@ -57,6 +57,7 @@ local function rememberStop(state, node)
     if node.stopKey ~= nil then
         state.stopMemory[node.stopKey] = node.id
     end
+    state.curStopKey = node.stopKey
 end
 
 -- The first node in a stop that reads as SELECTED -- carries a non-empty
@@ -137,12 +138,21 @@ function KeyGraph.reconcile(render, state)
         end
 
         -- Fallback: nearest survivor walking the previous order backward.
+        -- When the walk crosses into a DIFFERENT stop (the focused node's
+        -- whole stop vanished -- a bag closing), enter that stop properly
+        -- through its landing rules instead of its tail-edge node.
         if resolved == nil and state.keyOrder ~= nil then
             local oldIndex = indexOf(state.keyOrder, old)
             if oldIndex ~= nil then
                 for i = oldIndex, 1, -1 do
                     local survivor = render.nodes[state.keyOrder[i].key]
                     if survivor ~= nil then
+                        if survivor.stopKey ~= nil and survivor.stopKey ~= state.curStopKey then
+                            local landing = KeyGraph.stopLanding(render, state, survivor.stopKey)
+                            if landing ~= nil then
+                                survivor = landing
+                            end
+                        end
                         resolved = survivor.id
                         break
                     end
