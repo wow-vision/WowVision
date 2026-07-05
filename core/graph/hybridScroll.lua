@@ -3,21 +3,26 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
 
--- The HybridScrollFrame adapter: a fixed pool of row buttons over an
--- API-enumerable list (the quest log). The panel's update loop stamps each
--- visible button's ID with its absolute data index, so focusing an index
--- drives the real scrollbar in row-height units (which reruns the panel's
--- update) and the click target is the pooled button whose ID matches.
+-- The button-pool scroll adapter (HybridScrollFrame and kin): a fixed pool of
+-- row buttons over an API-enumerable list, like the quest log. Replicates the
+-- old ProxyScrollFrame discipline exactly: focusing an entry ALWAYS scrolls
+-- it to a calibrated position (never only when it looks offscreen), which
+-- re-stamps the button pool synchronously; the landing is then VERIFIED by
+-- finding the button whose index matches, and the scroll rolls back if none
+-- does. Buttons rebind as the pool scrolls, so an index-to-button mapping is
+-- only ever trusted immediately after scrolling to that index.
 --
 -- config:
---   scrollFrame  the HybridScrollFrame (required)
+--   scrollFrame  the scroll frame (required; needs a scrollBar and a pool in
+--                .buttons, else the scroll child's children)
 --   count        function -> number of logical entries (required)
 --   emit         function(builder, index, helpers) -- emit the entry's nodes
 --                (required). helpers = { onFocus, target, id }.
 --   key          stable prefix for default ids (default "hybrid")
 --   label        announcement context wrapped around the entries
 --   id           function(index) -> ControlId; default structural key:index
---   rowHeight    pixels per row; defaults to the first pooled button's height
+--   rowHeight    pixels per row; defaults to the frame's buttonHeight, else
+--                the first pooled button's height
 function nodes.hybridScrollList(builder, config)
     local scrollFrame = config.scrollFrame
     if scrollFrame == nil then
@@ -33,25 +38,67 @@ function nodes.hybridScrollList(builder, config)
     end
     local keyPrefix = tostring(config.key or "hybrid")
 
+    local function buttonsOf()
+        if scrollFrame.buttons ~= nil then
+            return scrollFrame.buttons
+        end
+        local scrollChild = scrollFrame.GetScrollChild ~= nil and scrollFrame:GetScrollChild() or nil
+        if scrollChild ~= nil then
+            return { scrollChild:GetChildren() }
+        end
+        return {}
+    end
+
     local function rowHeight()
         if config.rowHeight ~= nil then
             return config.rowHeight
         end
-        local buttons = scrollFrame.buttons
-        if buttons ~= nil and buttons[1] ~= nil then
+        if scrollFrame.buttonHeight ~= nil then
+            return scrollFrame.buttonHeight
+        end
+        local buttons = buttonsOf()
+        if buttons[1] ~= nil then
             return buttons[1]:GetHeight()
         end
         return 16
     end
 
-    local function scrollBarOf()
-        if scrollFrame.scrollBar ~= nil then
-            return scrollFrame.scrollBar
-        end
-        if scrollFrame.GetName ~= nil and scrollFrame:GetName() ~= nil then
-            return _G[scrollFrame:GetName() .. "ScrollBar"]
+    local function indexOfButton(button)
+        return button.index or button:GetID()
+    end
+
+    local function findButton(index)
+        for _, button in ipairs(buttonsOf()) do
+            if button:IsShown() and indexOfButton(button) == index then
+                return button
+            end
         end
         return nil
+    end
+
+    local function scrollToIndex(index)
+        local scrollBar = scrollFrame.scrollBar or scrollFrame.ScrollBar
+        if scrollBar == nil then
+            return
+        end
+        local scrollChild = scrollFrame.GetScrollChild ~= nil and scrollFrame:GetScrollChild() or nil
+        local buttons = buttonsOf()
+        if scrollChild == nil or buttons[1] == nil then
+            return
+        end
+        -- The pool's pixel baseline within the scroll child; constant, since
+        -- both tops move together as the child scrolls.
+        local childTop = scrollChild:GetTop()
+        local buttonTop = buttons[1]:GetTop()
+        if childTop == nil or buttonTop == nil then
+            return
+        end
+        local original = scrollBar:GetValue()
+        scrollBar:SetValue((childTop - buttonTop) + rowHeight() * (index - 1))
+        if findButton(index) ~= nil then
+            return
+        end
+        scrollBar:SetValue(original)
     end
 
     if config.label ~= nil then
@@ -69,29 +116,11 @@ function nodes.hybridScrollList(builder, config)
         end
 
         local onFocus = function()
-            pcall(function()
-                local offset = HybridScrollFrame_GetOffset(scrollFrame)
-                local visible = scrollFrame.buttons ~= nil and #scrollFrame.buttons or 0
-                if capturedIndex <= offset or capturedIndex > offset + visible - 1 then
-                    local scrollBar = scrollBarOf()
-                    if scrollBar ~= nil then
-                        scrollBar:SetValue((capturedIndex - 1) * rowHeight())
-                    end
-                end
-            end)
+            pcall(scrollToIndex, capturedIndex)
         end
 
         local target = function()
-            local buttons = scrollFrame.buttons
-            if buttons == nil then
-                return nil
-            end
-            for _, button in ipairs(buttons) do
-                if button:IsShown() and button:GetID() == capturedIndex then
-                    return button
-                end
-            end
-            return nil
+            return findButton(capturedIndex)
         end
 
         config.emit(builder, capturedIndex, { onFocus = onFocus, target = target, id = id })
