@@ -136,16 +136,37 @@ local function reputationButtons()
     return rows
 end
 
+-- Standing plus normalized numbers, matching Blizzard's own composition:
+-- friendship factions read their reaction and thresholds, everything else
+-- the standing label and barValue - barMin / barMax - barMin.
 local function factionLabel(index)
-    local name, _, standingID, _, _, _, _, _, isHeader, _, hasRep = GetFactionInfo(index)
+    local name, _, standingID, barMin, barMax, barValue, _, _, isHeader, _, hasRep, _, _, factionID =
+        GetFactionInfo(index)
     if name == nil then
         return nil
     end
+
+    local standingText
+    local capped = false
+    local repInfo = factionID ~= nil and C_GossipInfo.GetFriendshipReputation(factionID) or nil
+    if repInfo ~= nil and (repInfo.friendshipFactionID or 0) > 0 then
+        standingText = repInfo.reaction
+        if repInfo.nextThreshold then
+            barMin, barMax, barValue = repInfo.reactionThreshold, repInfo.nextThreshold, repInfo.standing
+        else
+            capped = true
+        end
+    else
+        standingText = _G["FACTION_STANDING_LABEL" .. (standingID or 0)]
+    end
+
     local label = name
     if not isHeader or hasRep then
-        local standing = _G["FACTION_STANDING_LABEL" .. (standingID or 0)]
-        if standing ~= nil then
-            label = label .. " - " .. standing
+        if standingText ~= nil then
+            label = label .. " - " .. standingText
+        end
+        if not capped and barMax ~= nil and barMin ~= nil and barValue ~= nil then
+            label = label .. " " .. (barValue - barMin) .. " / " .. (barMax - barMin)
         end
     end
     return label

@@ -81,8 +81,22 @@ function nodes.hybridScrollList(builder, config)
         return nil
     end
 
+    local function scrollBarOf()
+        if scrollFrame.scrollBar ~= nil then
+            return scrollFrame.scrollBar
+        end
+        if scrollFrame.ScrollBar ~= nil then
+            return scrollFrame.ScrollBar
+        end
+        -- FauxScrollFrames name their bar as a global with no key.
+        if scrollFrame.GetName ~= nil and scrollFrame:GetName() ~= nil then
+            return _G[scrollFrame:GetName() .. "ScrollBar"]
+        end
+        return nil
+    end
+
     local function scrollToIndex(index)
-        local scrollBar = scrollFrame.scrollBar or scrollFrame.ScrollBar
+        local scrollBar = scrollBarOf()
         if scrollBar == nil then
             return
         end
