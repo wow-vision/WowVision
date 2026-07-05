@@ -177,10 +177,15 @@ function testing.showResults(text)
         resultsFrame.editBox = editBox
     end
 
+    -- Order matters for reliable re-use: show first, drop focus so the old
+    -- highlight releases, then set the new text and re-highlight -- or a
+    -- second call reads the new text while Ctrl+C still copies the old.
+    resultsFrame:Show()
+    resultsFrame.editBox:ClearFocus()
     resultsFrame.editBox:SetText(text)
+    resultsFrame.editBox:SetCursorPosition(0)
     resultsFrame.editBox:HighlightText()
     resultsFrame.editBox:SetFocus()
-    resultsFrame:Show()
 end
 
 function testing.runAndShow(args)
