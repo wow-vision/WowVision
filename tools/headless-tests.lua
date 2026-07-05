@@ -45,6 +45,20 @@ loadAddonFile("core/graph/Builder.lua")
 loadAddonFile("core/graph/ControlTypes.lua")
 loadAddonFile("core/graph/tests.lua")
 
+-- Files that need the game client to run but should at least parse cleanly.
+local parseOnly = {
+    "core/ui/input/actions.lua",
+    "core/ui/input/activator.lua",
+    "core/ui/input/tests.lua",
+}
+for _, path in ipairs(parseOnly) do
+    local chunk, err = loadfile(path)
+    if chunk == nil then
+        print("PARSE FAIL: " .. err)
+        os.exit(1)
+    end
+end
+
 local filter = nil
 local verbose = false
 for _, argument in ipairs({ ... }) do

@@ -4,6 +4,8 @@
   <Script file="input.lua" />
   <Script file="binding.lua" />
   <Script file="bindings.lua" />
+  <Script file="actions.lua" />
+  <Script file="activator.lua" />
   <Script file="tests.lua" />
 
 </Ui>

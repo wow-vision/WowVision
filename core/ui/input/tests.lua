@@ -280,3 +280,88 @@ testRunner:addSuite("ActivationSet", {
         t:assertEqual(#info2.activated, 0)
     end,
 })
+
+--
+-- Activator tests (the new keymap + action + activator path)
+--
+
+local function makeTestKeymap(key, inputs, emulatedKey)
+    if input:getBinding(key) == nil then
+        input:createBinding({
+            type = "Click",
+            key = key,
+            dorment = true,
+            label = key,
+            inputs = inputs,
+            emulatedKey = emulatedKey,
+        })
+    end
+    return input:getBinding(key)
+end
+
+testRunner:addSuite("InputActivator", {
+    ["unknown keymap and action error"] = function(t)
+        t:assertError(function()
+            WowVision.inputActivator:activate({ binding = "noSuchKeymap", type = "Click" })
+        end)
+        makeTestKeymap("activatorTestA", { "F13" }, "LeftButton")
+        t:assertError(function()
+            WowVision.inputActivator:activate({ binding = "activatorTestA", type = "NoSuchAction" })
+        end)
+    end,
+
+    ["activation configures one frame per input and releases them"] = function(t)
+        makeTestKeymap("activatorTestB", { "F13", "F14" }, "LeftButton")
+        local configured = {}
+        local cleared = 0
+        WowVision.inputActions:register("activatorTestAction", {
+            configure = function(frame, spec, emulatedKey)
+                tinsert(configured, emulatedKey)
+            end,
+            clear = function(frame, spec)
+                cleared = cleared + 1
+            end,
+        })
+        local handle = WowVision.inputActivator:activate({
+            binding = "activatorTestB",
+            type = "activatorTestAction",
+        })
+        t:assertTrue(handle.active)
+        t:assertEqual(#handle.frames, 2)
+        t:assertEqual(configured[1], "LeftButton", "keymap default emulated key applies")
+        handle:release()
+        t:assertFalse(handle.active)
+        t:assertEqual(cleared, 2)
+        t:assertEqual(#handle.frames, 0)
+        handle:release() -- releasing twice is harmless
+        t:assertEqual(cleared, 2)
+    end,
+
+    ["spec emulatedKey overrides the keymap default"] = function(t)
+        makeTestKeymap("activatorTestC", { "F13" }, "LeftButton")
+        local seen = nil
+        WowVision.inputActions:register("activatorTestAction2", {
+            configure = function(frame, spec, emulatedKey)
+                seen = emulatedKey
+            end,
+            clear = function(frame, spec) end,
+        })
+        local handle = WowVision.inputActivator:activate({
+            binding = "activatorTestC",
+            type = "activatorTestAction2",
+            emulatedKey = "RightButton",
+        })
+        t:assertEqual(seen, "RightButton")
+        handle:release()
+    end,
+
+    ["a keymap with no inputs yields an inactive handle"] = function(t)
+        makeTestKeymap("activatorTestD", {}, "LeftButton")
+        local handle = WowVision.inputActivator:activate({
+            binding = "activatorTestD",
+            type = "Click",
+        })
+        t:assertFalse(handle.active)
+        handle:release()
+    end,
+})
