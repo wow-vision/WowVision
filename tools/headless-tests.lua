@@ -101,6 +101,9 @@ local parseOnly = {
     "core/windows/bars/MainActionBar.lua",
     "core/windows/bars/StanceBar.lua",
     "core/windows/bars/PetActionBar.lua",
+    "mists/spellbook/module.lua",
+    "mists/spellbook/spellbook.lua",
+    "mists/spellbook/professions.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)

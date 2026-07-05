@@ -1,71 +1,99 @@
 local module = WowVision.base.windows:createModule("spellbook")
 local L = module.L
 module:setLabel(L["Spellbook"])
-local gen = module:hasUI()
 
-gen:Element("spellbook", function(props)
-    local frame = props.frame
-    local tab = SpellBookFrame.currentTab
-    local title = frame:GetTitleText():GetText()
-    local result = {
-        "Panel",
-        label = title,
-        wrap = true,
-        children = {
-            { "spellbook/Tabs", frame = frame, tab = tab },
-        },
-    }
-    if tab.bookType == "spell" then
-        tinsert(result.children, { "spellbook/SpellBook", frame = frame, title = title })
-    elseif tab.bookType == "professions" then
-        tinsert(result.children, { "spellbook/Professions", frame = SpellBookProfessionFrame, title = title })
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
+
+-- The spellbook: bottom tabs pick the book, then either the spell pages
+-- (side tabs, the spell list, page buttons) or the professions summary.
+-- module.renderSpellBook and module.renderProfessions live in their files.
+
+local function render(builder, screen)
+    local frame = SpellBookFrame
+    if frame == nil or not frame:IsShown() then
+        return
     end
-    return result
-end)
+    local title = frame:GetTitleText():GetText()
+    builder:pushContext("spellbook", title)
 
-gen:Element("spellbook/Tabs", function(props)
-    local tab = props.tab
-    local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
-    for i = 1, props.frame.numTabs do
+    local currentTab = frame.currentTab
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    for i = 1, frame.numTabs do
         local button = _G["SpellBookFrameTabButton" .. i]
-        if button and button:IsShown() then
-            tinsert(result.children, {
-                "ProxyButton",
-                frame = button,
-                selected = button == tab,
+        if button ~= nil and button:IsShown() then
+            local captured = button
+            local vtable = nodes.proxyButton({ target = captured })
+            tinsert(vtable.announcements, {
+                text = function()
+                    if SpellBookFrame.currentTab == captured then
+                        return L["selected"]
+                    end
+                    return nil
+                end,
+                kind = kinds.selected,
             })
+            builder:addItem(ControlId.forObject(captured), vtable)
         end
     end
-    return result
-end)
+    builder:endRow()
+    builder:popContext()
+
+    if currentTab ~= nil and currentTab.bookType == "spell" then
+        module.renderSpellBook(builder)
+    elseif currentTab ~= nil and currentTab.bookType == "professions" then
+        module.renderProfessions(builder)
+    end
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "spellbook",
-    generated = true,
-    rootElement = "spellbook",
     frameName = "SpellBookFrame",
+    graphScreen = { render = render },
 })
 
-gen:Element("SpellFlyout", function(props)
-    local result = { "Panel", label = L["Spell Flyout"], wrap = true, children = {} }
-    local children = { SpellFlyout:GetChildren() }
-    for _, v in ipairs(children) do
-        if v:IsVisible() then
-            tinsert(result.children, { "ProxyButton", frame = v, label = GetSpellInfo(v.spellID) })
+-- The spell flyout (action bar and spellbook flyout arrows). Not a UIPanel:
+-- the game will not close it on Escape, so the screen holds close and hides
+-- the frame itself.
+local function renderFlyout(builder, screen)
+    if SpellFlyout == nil or not SpellFlyout:IsShown() then
+        return
+    end
+    builder:pushContext("flyout", L["Spell Flyout"])
+    builder:beginStop("spells")
+    for _, button in ipairs({ SpellFlyout:GetChildren() }) do
+        if button:IsVisible() then
+            local captured = button
+            builder:addItem(
+                ControlId.forObject(captured),
+                nodes.proxyButton({
+                    target = captured,
+                    label = function()
+                        return GetSpellInfo(captured.spellID)
+                    end,
+                })
+            )
         end
     end
-    return result
-end)
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "SpellFlyout",
-    generated = true,
-    rootElement = "SpellFlyout",
     frameName = "SpellFlyout",
-    hookEscape = true,
-    onClose = function()
-        SpellFlyout:Hide()
-    end,
+    graphScreen = {
+        render = renderFlyout,
+        captureClose = true,
+        onRequestClose = function()
+            SpellFlyout:Hide()
+        end,
+    },
 })

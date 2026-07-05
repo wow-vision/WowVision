@@ -1,38 +1,16 @@
 local module = WowVision.base.windows.spellbook
 local L = module.L
-local gen = module:hasUI()
 
-gen:Element("spellbook/SpellBook", function(props)
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "spellbook/SideTabs", frame = SpellBookSideTabsFrame },
-            { "spellbook/SpellIcons", frame = SpellBookSpellIconsFrame },
-            { "spellbook/SpellBookPageNavigation", frame = SpellBookPageNavigationFrame },
-        },
-    }
-end)
-
-gen:Element("spellbook/SideTabs", function(props)
-    if not props.frame or not props.frame:IsShown() then
-        return nil
-    end
-    local result = { "List", label = L["Side Tabs"], direction = "horizontal", children = {} }
-    local children = { props.frame:GetChildren() }
-    for _, v in ipairs(children) do
-        tinsert(result.children, { "ProxyCheckButton", frame = v, label = v.tooltip })
-    end
-    return result
-end)
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
 
 local function getSpellLabel(button)
     local regions = { button:GetRegions() }
     local label = {}
-    for _, v in ipairs(regions) do
-        if v:GetObjectType() == "FontString" and v:IsShown() then
-            local text = v:GetText()
+    for _, region in ipairs(regions) do
+        if region:GetObjectType() == "FontString" and region:IsShown() then
+            local text = region:GetText()
             if text ~= nil and text ~= "" then
                 tinsert(label, text)
             end
@@ -41,39 +19,77 @@ local function getSpellLabel(button)
     return table.concat(label, " ")
 end
 
-gen:Element("spellbook/SpellIcons", function(props)
-    if not props.frame or not props.frame:IsShown() then
-        return nil
-    end
-    local result = { "List", label = L["Spells"], children = {} }
-    local children = { props.frame:GetChildren() }
-    table.sort(children, function(a, b)
-        return a:GetID() < b:GetID()
-    end)
-    for i, v in ipairs(children) do
-        if v:IsShown() and v:IsEnabled() then
-            tinsert(result.children, {
-                "ProxyButton",
-                frame = v,
-                label = getSpellLabel(v),
-                draggable = true
-            })
+-- The spell pages: side tabs (specialization filters), the spell list --
+-- live labels, since page flips rebind the same twelve buttons -- and the
+-- page buttons.
+function module.renderSpellBook(builder)
+    if SpellBookSideTabsFrame ~= nil and SpellBookSideTabsFrame:IsShown() then
+        builder:beginStop("sideTabs")
+        builder:pushContext("sideTabs", L["Side Tabs"])
+        builder:startRow()
+        for _, button in ipairs({ SpellBookSideTabsFrame:GetChildren() }) do
+            local captured = button
+            builder:addItem(
+                ControlId.forObject(captured),
+                nodes.proxyCheckButton({
+                    target = captured,
+                    label = function()
+                        return captured.tooltip
+                    end,
+                })
+            )
         end
+        builder:endRow()
+        builder:popContext()
     end
-    return result
-end)
 
-gen:Element("spellbook/SpellBookPageNavigation", function(props)
-    if not props.frame or not props.frame:IsShown() then
-        return nil
+    if SpellBookSpellIconsFrame ~= nil and SpellBookSpellIconsFrame:IsShown() then
+        builder:beginStop("spells")
+        builder:pushContext("spells", L["Spells"])
+        local buttons = { SpellBookSpellIconsFrame:GetChildren() }
+        table.sort(buttons, function(a, b)
+            return a:GetID() < b:GetID()
+        end)
+        local emitted = 0
+        for _, button in ipairs(buttons) do
+            if button:IsShown() and button:IsEnabled() then
+                local captured = button
+                local vtable = nodes.proxyButton({
+                    target = captured,
+                    label = function()
+                        return getSpellLabel(captured)
+                    end,
+                })
+                tinsert(vtable.bindings, {
+                    binding = "drag",
+                    type = "Function",
+                    func = function()
+                        local script = captured:GetScript("OnDragStart")
+                        if script ~= nil then
+                            script(captured)
+                        end
+                    end,
+                })
+                builder:addItem(ControlId.forObject(captured), vtable)
+                emitted = emitted + 1
+            end
+        end
+        if emitted == 0 then
+            builder:addItem(ControlId.structural("spellsEmpty"), nodes.text({ label = L["Empty"] }))
+        end
+        builder:popContext()
     end
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "ProxyButton", frame = SpellBookPrevPageButton, label = L["Previous Page"] },
-            { "ProxyButton", frame = SpellBookNextPageButton, label = L["Next Page"] },
-        },
-    }
-end)
+
+    if SpellBookPageNavigationFrame ~= nil and SpellBookPageNavigationFrame:IsShown() then
+        builder:beginStop("prevPage")
+        builder:addItem(
+            ControlId.forObject(SpellBookPrevPageButton),
+            nodes.proxyButton({ target = SpellBookPrevPageButton, label = L["Previous Page"] })
+        )
+        builder:beginStop("nextPage")
+        builder:addItem(
+            ControlId.forObject(SpellBookNextPageButton),
+            nodes.proxyButton({ target = SpellBookNextPageButton, label = L["Next Page"] })
+        )
+    end
+end
