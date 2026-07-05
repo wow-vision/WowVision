@@ -457,8 +457,8 @@ settingEmitters["SettingsCheckboxDropdownControlTemplate"] = function(builder, e
 end
 
 -- Keybinding sections: the header expands/collapses via a real click; the
--- binding rows are subframes of the section, so they can only enumerate once
--- the section frame is materialized (focus the header first).
+-- binding rows arrive as their own KeyBindingFrameBindingTemplate elements
+-- once expanded.
 settingEmitters["SettingsKeybindingSectionTemplate"] = function(builder, elementData, index, helpers)
     builder:addItem(
         helpers.id,
@@ -466,46 +466,57 @@ settingEmitters["SettingsKeybindingSectionTemplate"] = function(builder, element
             return settingName(elementData) or frameChildText(helpers, "Button")()
         end, "Button")
     )
-    local rowFrame = helpers.target()
-    if rowFrame == nil or rowFrame.Controls == nil then
-        return
+end
+
+-- One binding row: two slot buttons, each reading "action name, current key"
+-- and starting Blizzard's rebind on Enter.
+settingEmitters["KeyBindingFrameBindingTemplate"] = function(builder, elementData, index, helpers)
+    builder:startRow()
+    for slot = 1, 2 do
+        local slotIndex = slot
+        builder:addItem(ControlId.structural("srow:" .. index .. ":bind" .. slotIndex), {
+            controlType = graph.controlTypes.button,
+            announcements = {
+                {
+                    text = function()
+                        local rowFrame = helpers.target()
+                        local name = settingName(elementData)
+                        if
+                            name == nil
+                            and rowFrame ~= nil
+                            and rowFrame.Label ~= nil
+                            and rowFrame.Label.GetText ~= nil
+                        then
+                            name = rowFrame.Label:GetText()
+                        end
+                        local button = rowFrame ~= nil and rowFrame.Buttons ~= nil and rowFrame.Buttons[slotIndex]
+                            or nil
+                        local slotText = button ~= nil and button.GetText ~= nil and button:GetText() or nil
+                        if name ~= nil and slotText ~= nil then
+                            return name .. ", " .. slotText
+                        end
+                        return name or slotText
+                    end,
+                    kind = kinds.label,
+                },
+            },
+            bindings = {
+                {
+                    binding = "leftClick",
+                    type = "Click",
+                    emulatedKey = "LeftButton",
+                    target = function()
+                        local rowFrame = helpers.target()
+                        return rowFrame ~= nil and rowFrame.Buttons ~= nil and rowFrame.Buttons[slotIndex] or nil
+                    end,
+                },
+            },
+            onFocus = helpers.onFocus,
+            onUnfocus = helpers.onUnfocus,
+            tooltipFrame = helpers.target,
+        })
     end
-    for controlIndex, control in ipairs(rowFrame.Controls) do
-        if control:IsShown() and control.Label ~= nil and control.Buttons ~= nil then
-            builder:pushContext(control.Label:GetText() or "")
-            builder:startRow()
-            for buttonIndex, bindingButton in ipairs(control.Buttons) do
-                local captured = bindingButton
-                builder:addItem(
-                    ControlId.structural("kb:" .. index .. ":" .. controlIndex .. ":" .. buttonIndex),
-                    nodes.attachHover({
-                        controlType = graph.controlTypes.button,
-                        announcements = {
-                            {
-                                text = function()
-                                    return captured.GetText ~= nil and captured:GetText() or nil
-                                end,
-                                kind = kinds.label,
-                            },
-                        },
-                        bindings = {
-                            {
-                                binding = "leftClick",
-                                type = "Click",
-                                emulatedKey = "LeftButton",
-                                target = function()
-                                    return captured
-                                end,
-                            },
-                        },
-                        onFocus = helpers.onFocus,
-                    }, captured)
-                )
-            end
-            builder:endRow()
-            builder:popContext()
-        end
-    end
+    builder:endRow()
 end
 
 local function emitSettingRow(builder, elementData, index, helpers)
