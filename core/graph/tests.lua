@@ -615,7 +615,7 @@ testRunner:addSuite("GraphNodes", {
                 fields = {
                     fakeField("Bool", "enabled"),
                     fakeField("Number", "volume"),
-                    fakeField("Alert", "mystery"),
+                    fakeField("SomeUnregisteredType", "mystery"),
                 },
             },
             children = { { key = "child", label = "Advanced" } },
@@ -632,6 +632,100 @@ testRunner:addSuite("GraphNodes", {
         -- The toggle drives the real store through the field.
         render.nodes["field:enabled"].vtable.onActivate()
         t:assertFalse(store.enabled)
+    end,
+
+    ["all field types have registered controls"] = function(t)
+        local expected = {
+            "Bool",
+            "Number",
+            "Choice",
+            "String",
+            "ComponentArray",
+            "Time",
+            "VoicePack",
+            "Spell",
+            "Alert",
+            "Template",
+            "Object",
+            "TrackingConfig",
+            "Array",
+        }
+        for _, typeKey in ipairs(expected) do
+            t:assertTrue(graph.settings.hasFieldControl(typeKey), typeKey .. " control missing")
+        end
+    end,
+
+    ["button value parts read live"] = function(t)
+        local value = "10"
+        local vtable = graph.nodes.button({
+            label = "Volume",
+            value = function()
+                return value
+            end,
+            onActivate = function() end,
+        })
+        t:assertEqual(vtable.announcements[2].kind, graph.kinds.value)
+        t:assertEqual(vtable.announcements[2].live, "focus")
+        t:assertEqual(graph.resolveText(vtable.announcements[2]), "10")
+    end,
+
+    ["array control renders element rows with remove and add"] = function(t)
+        local store = { "alpha", "beta" }
+        local elementField = {
+            typeKey = "String",
+            key = "_element",
+            showInUI = true,
+            getLabel = function()
+                return "Value"
+            end,
+            get = function(self, obj)
+                return obj._element
+            end,
+            set = function(self, obj, v)
+                obj._element = v
+            end,
+            getValueString = function(self, obj, value)
+                return tostring(value)
+            end,
+            getDefault = function()
+                return ""
+            end,
+        }
+        local fakeField = {
+            typeKey = "Array",
+            key = "items",
+            getLabel = function()
+                return "Items"
+            end,
+            getLength = function(self, owner)
+                return #store
+            end,
+            getElementField = function()
+                return elementField
+            end,
+            createElementProxy = function(self, owner, index)
+                return setmetatable({}, {
+                    __index = function(_, k)
+                        if k == "_element" then
+                            return store[index]
+                        end
+                    end,
+                    __newindex = function(_, k, v)
+                        if k == "_element" then
+                            store[index] = v
+                        end
+                    end,
+                })
+            end,
+            removeElement = function(self, owner, index)
+                table.remove(store, index)
+            end,
+            addElement = function(self, owner, value)
+                tinsert(store, value)
+            end,
+        }
+        local vtable = graph.settings.controlFor(fakeField, {})
+        t:assertEqual(graph.resolveText(vtable.announcements[1]), "Items (2)")
     end,
 
     ["componentArray control reads label with count"] = function(t)

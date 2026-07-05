@@ -9,6 +9,7 @@
   <Script file="ControlTypes.lua" />
   <Script file="nodes.lua" />
   <Script file="settings.lua" />
+  <Script file="fieldControls.lua" />
   <Script file="Host.lua" />
   <Script file="tests.lua" />
 

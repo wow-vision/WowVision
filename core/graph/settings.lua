@@ -36,6 +36,10 @@ function settings.registerFieldControl(typeKey, make)
     fieldControls[typeKey] = make
 end
 
+function settings.hasFieldControl(typeKey)
+    return fieldControls[typeKey] ~= nil
+end
+
 settings.registerFieldControl("Bool", function(field, infoFrame)
     return nodes.toggle({
         label = field:getLabel(),
@@ -174,6 +178,7 @@ local function pushScreen(key, render)
         host:push(stack, { key = key, render = render })
     end
 end
+settings.pushScreen = pushScreen
 
 local function instanceLabel(instance)
     local label = instance.getLabel ~= nil and instance:getLabel() or nil

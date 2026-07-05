@@ -47,8 +47,10 @@ function nodes.proxyButton(config)
     }
 end
 
--- A synthetic button: Enter runs the handler.
--- config: { label = string|function, onActivate = function, onSecondary = function?, stateText = function? }
+-- A synthetic button: Enter runs the handler. An optional value part reads
+-- after the role word and is watched live while focused (an opener button
+-- showing the value it edits).
+-- config: { label = string|function, onActivate = function, value = string|function?, onSecondary = function?, stateText = function? }
 function nodes.button(config)
     if config.label == nil then
         error("button requires a label")
@@ -56,9 +58,13 @@ function nodes.button(config)
     if config.onActivate == nil then
         error("button requires an onActivate handler")
     end
+    local announcements = { { text = config.label, kind = kinds.label } }
+    if config.value ~= nil then
+        tinsert(announcements, { text = config.value, kind = kinds.value, live = "focus" })
+    end
     return {
         controlType = graph.controlTypes.button,
-        announcements = { { text = config.label, kind = kinds.label } },
+        announcements = announcements,
         onActivate = config.onActivate,
         onSecondary = config.onSecondary,
         stateText = config.stateText,

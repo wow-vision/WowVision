@@ -72,6 +72,8 @@ The module menu: `graph.settings.renderModuleInto(builder, module)` mirrors the 
 
 Component arrays: ComponentArray fields render as a button reading "Label (N)" that opens a list screen — one button per component (identity follows the instance), plus Add when the field declares available types. A component's editor renders its class fields through `settings.renderObjectInto` (a component may take over by defining `renderGraphSettings(builder)`) plus a Remove button; Add goes through a type selector and drops you straight into the new component's editor. Nested component arrays (buffer groups containing buffers) recurse naturally.
 
+Every field type now has a control (`core/graph/fieldControls.lua`): Time (a Number speaking formatted durations), VoicePack (a choice over registered packs), Spell (typed name-or-id entry plus recent-spell quick picks), Alert (opens its parameters InfoFrame), Template (registered templates plus a Custom format entry), Object (type choice plus parameter fields through the params proxy), TrackingConfig (type choice plus a copy-edit parameters screen validated on Save), and Array (element-editor rows with Remove, and Add). Opener buttons carry their current value as a live value part.
+
 Rules the render function must follow:
 
 1. Read live game state fresh every call. Never cache game data between renders in upvalues; the whole point is that the graph is always current. Screen-local UI state (a filter string, a sort mode) may live on `screen` or in upvalues.
