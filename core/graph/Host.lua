@@ -443,7 +443,8 @@ function GraphHost:_arrow(screen, dir)
         end
     end
 
-    self:_speak(announcer.leafText(kg:currentNode()))
+    -- Focus did not move: stay silent. Re-reading the same node on a
+    -- boundary bump is noise when arrowing quickly.
 end
 
 function GraphHost:_tab(screen, key)
@@ -458,9 +459,8 @@ function GraphHost:_tab(screen, key)
         if node ~= nil and node.vtable.onTabFocus ~= nil then
             node.vtable.onTabFocus()
         end
-    else
-        self:_speak(announcer.leafText(kg:currentNode()))
     end
+    -- No move (a single-stop screen): silent, same as arrows.
 end
 
 function GraphHost:_jumpEdge(screen, first)
