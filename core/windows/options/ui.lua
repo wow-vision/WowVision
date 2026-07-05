@@ -112,6 +112,35 @@ local function textRow(builder, id, label)
     end
 end
 
+local function frameChildText(helpers, childKey)
+    return function()
+        local rowFrame = helpers.target()
+        local child = rowFrame ~= nil and rowFrame[childKey] or nil
+        if child ~= nil and child.GetText ~= nil then
+            return child:GetText()
+        end
+        return nil
+    end
+end
+
+-- Header rows: name from data when the shape matches, else read from the row
+-- frame (headers sit adjacent to visible rows, so their frames are usually
+-- materialized by the time they are announced), else just "Separator".
+local function headerNode(helpers, dataName, frameChildKey)
+    return nodes.text({
+        label = function()
+            local name = dataName()
+            if name == nil or name == "" then
+                name = frameChildText(helpers, frameChildKey)()
+            end
+            if name ~= nil and name ~= "" then
+                return name .. ", " .. L["Separator"]
+            end
+            return L["Separator"]
+        end,
+    })
+end
+
 local function unimplementedRow(builder, id, template)
     builder:addItem(id, nodes.text({ label = "Setting type " .. tostring(template) .. " not implemented" }))
 end
@@ -180,17 +209,6 @@ local function rowButtonNode(elementData, helpers, label, childKey)
     }
 end
 
-local function frameChildText(helpers, childKey)
-    return function()
-        local rowFrame = helpers.target()
-        local child = rowFrame ~= nil and rowFrame[childKey] or nil
-        if child ~= nil and child.GetText ~= nil then
-            return child:GetText()
-        end
-        return nil
-    end
-end
-
 local function sliderNode(elementData, helpers, label, setting, options)
     options = options or {}
     local minValue = options.minValue
@@ -241,10 +259,16 @@ end
 local function emitCategoryRow(builder, elementData, index, helpers)
     local template = elementData.frameTemplate
     if template == "SettingsCategoryListSpacerTemplate" then
+        builder:addItem(helpers.id, nodes.text({ label = L["Separator"] }))
         return
     end
     if template == "SettingsCategoryListHeaderTemplate" then
-        textRow(builder, helpers.id, categoryName(elementData))
+        builder:addItem(
+            helpers.id,
+            headerNode(helpers, function()
+                return categoryName(elementData)
+            end, "Label")
+        )
         return
     end
     builder:addItem(helpers.id, {
@@ -269,7 +293,12 @@ end
 local settingEmitters = {}
 
 settingEmitters["SettingsListSectionHeaderTemplate"] = function(builder, elementData, index, helpers)
-    textRow(builder, helpers.id, settingName(elementData))
+    builder:addItem(
+        helpers.id,
+        headerNode(helpers, function()
+            return settingName(elementData)
+        end, "Title")
+    )
 end
 
 settingEmitters["SettingsListSearchCategoryTemplate"] = settingEmitters["SettingsListSectionHeaderTemplate"]
