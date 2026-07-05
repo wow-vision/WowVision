@@ -634,6 +634,65 @@ testRunner:addSuite("GraphNodes", {
         t:assertFalse(store.enabled)
     end,
 
+    ["componentArray control reads label with count"] = function(t)
+        local fakeField = {
+            typeKey = "ComponentArray",
+            key = "items",
+            getLabel = function()
+                return "Buffers"
+            end,
+            getLength = function(self, owner)
+                return 2
+            end,
+        }
+        local vtable = graph.settings.controlFor(fakeField, {})
+        t:assertEqual(graph.resolveText(vtable.announcements[1]), "Buffers (2)")
+        t:assertNotNil(vtable.onActivate)
+    end,
+
+    ["renderObjectInto emits class fields and honors the override hook"] = function(t)
+        local store = { name = "General" }
+        local fakeInstance = {
+            class = {
+                info = {
+                    fields = {
+                        {
+                            typeKey = "String",
+                            key = "name",
+                            showInUI = true,
+                            getLabel = function()
+                                return "Name"
+                            end,
+                            get = function(self, obj)
+                                return store.name
+                            end,
+                            set = function(self, obj, v)
+                                store.name = v
+                            end,
+                            getValueString = function(self, obj, value)
+                                return tostring(value)
+                            end,
+                        },
+                    },
+                },
+            },
+        }
+        local builder = Builder:new()
+        graph.settings.renderObjectInto(builder, fakeInstance)
+        local render = builder:build()
+        t:assertNotNil(render.nodes["field:name"])
+        t:assertEqual(render.nodes["field:name"].vtable.controlType, graph.controlTypes.editBox)
+
+        local overrideRan = false
+        local overriding = {
+            renderGraphSettings = function(self, b)
+                overrideRan = true
+            end,
+        }
+        graph.settings.renderObjectInto(Builder:new(), overriding)
+        t:assertTrue(overrideRan)
+    end,
+
     ["module menu renders toggle, submodules, hook items, and settings"] = function(t)
         local enabledState = true
         local hookRan = false

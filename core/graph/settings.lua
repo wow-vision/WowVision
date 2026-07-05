@@ -89,6 +89,31 @@ local function fallbackControl(field, infoFrame)
     })
 end
 
+-- The control vtable for one field against one owner object (an InfoFrame or
+-- any InfoClass instance).
+function settings.controlFor(field, owner)
+    local make = fieldControls[field.typeKey] or fallbackControl
+    return make(field, owner)
+end
+
+-- Emit an InfoClass instance's own fields (a component's editor body). An
+-- object may take over entirely by defining renderGraphSettings(builder).
+function settings.renderObjectInto(builder, obj)
+    if obj.renderGraphSettings ~= nil then
+        obj:renderGraphSettings(builder)
+        return
+    end
+    local fields = obj.class ~= nil and obj.class.info ~= nil and obj.class.info.fields or nil
+    if fields == nil then
+        return
+    end
+    for _, field in ipairs(fields) do
+        if field.showInUI then
+            builder:addItem(ControlId.structural("field:" .. field.key), settings.controlFor(field, obj))
+        end
+    end
+end
+
 local function pushChildScreen(target)
     local host = WowVision.graphHost
     local stack = host:focusedStack()
@@ -109,8 +134,7 @@ function settings.renderInto(builder, infoFrame)
     end
     for _, field in ipairs(infoFrame.info.fields) do
         if field.showInUI then
-            local make = fieldControls[field.typeKey] or fallbackControl
-            builder:addItem(ControlId.structural("field:" .. field.key), make(field, infoFrame))
+            builder:addItem(ControlId.structural("field:" .. field.key), settings.controlFor(field, infoFrame))
         end
     end
     for _, child in ipairs(infoFrame.children) do
@@ -140,6 +164,129 @@ function settings.screen(infoFrame)
         end,
     }
 end
+
+-- ---- component arrays (buffer groups, buffers, monitors, rules) ----
+
+local function pushScreen(key, render)
+    local host = WowVision.graphHost
+    local stack = host:focusedStack()
+    if stack ~= nil then
+        host:push(stack, { key = key, render = render })
+    end
+end
+
+local function instanceLabel(instance)
+    local label = instance.getLabel ~= nil and instance:getLabel() or nil
+    if label ~= nil and label ~= "" then
+        return label
+    end
+    return "item"
+end
+
+local function pushComponentEditor(field, owner, instance)
+    pushScreen("component:" .. tostring(instance), function(builder)
+        -- The instance may have been removed under us.
+        local present = false
+        for _, current in ipairs(field:get(owner)) do
+            if current == instance then
+                present = true
+                break
+            end
+        end
+        if not present then
+            return
+        end
+        builder:pushContext(instanceLabel(instance))
+        settings.renderObjectInto(builder, instance)
+        builder:addItem(
+            ControlId.structural("remove"),
+            nodes.button({
+                label = L["Remove"],
+                onActivate = function()
+                    for i, current in ipairs(field:get(owner)) do
+                        if current == instance then
+                            field:removeElement(owner, i)
+                            break
+                        end
+                    end
+                    local host = WowVision.graphHost
+                    host:pop(host:focusedStack())
+                end,
+            })
+        )
+        builder:popContext()
+    end)
+end
+
+local function pushTypeSelector(field, owner)
+    pushScreen("componentType:" .. tostring(field.key), function(builder)
+        builder:pushContext(L["Select Type"])
+        for _, typeEntry in ipairs(field:getAvailableTypes()) do
+            local typeKey = field:getTypeKeyFromEntry(typeEntry)
+            local typeLabel = field:getTypeLabel(typeEntry)
+            builder:addItem(
+                ControlId.structural("type:" .. tostring(typeKey)),
+                nodes.button({
+                    label = typeLabel,
+                    onActivate = function()
+                        local instance = field.factory({
+                            type = typeKey,
+                            label = L["New"] .. " " .. typeLabel,
+                        })
+                        field:addElement(owner, instance)
+                        local host = WowVision.graphHost
+                        host:pop(host:focusedStack())
+                        pushComponentEditor(field, owner, instance)
+                    end,
+                })
+            )
+        end
+        builder:popContext()
+    end)
+end
+
+local function pushComponentList(field, owner)
+    pushScreen("components:" .. tostring(field.key), function(builder)
+        builder:pushContext(field:getLabel() or field.key)
+        for _, instance in ipairs(field:get(owner)) do
+            local captured = instance
+            builder:addItem(
+                ControlId.forObject(captured),
+                nodes.button({
+                    label = function()
+                        return instanceLabel(captured)
+                    end,
+                    onActivate = function()
+                        pushComponentEditor(field, owner, captured)
+                    end,
+                })
+            )
+        end
+        if #field:getAvailableTypes() > 0 then
+            builder:addItem(
+                ControlId.structural("add"),
+                nodes.button({
+                    label = L["Add"],
+                    onActivate = function()
+                        pushTypeSelector(field, owner)
+                    end,
+                })
+            )
+        end
+        builder:popContext()
+    end)
+end
+
+settings.registerFieldControl("ComponentArray", function(field, owner)
+    return nodes.button({
+        label = function()
+            return (field:getLabel() or field.key) .. " (" .. field:getLength(owner) .. ")"
+        end,
+        onActivate = function()
+            pushComponentList(field, owner)
+        end,
+    })
+end)
 
 -- ---- the module menu ----
 

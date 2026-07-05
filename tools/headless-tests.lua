@@ -59,6 +59,7 @@ local parseOnly = {
     "core/module/Module.lua",
     "core/errors.lua",
     "core/ui modules/graphBindings.lua",
+    "core/buffers/module.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)

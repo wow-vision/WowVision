@@ -40,6 +40,16 @@ function module:getAdditionalMenuUI()
     end
 end
 
+function module:getGraphMenuItems(builder)
+    if self.root then
+        local field = self.root.class.info:getField("items")
+        builder:addItem(
+            WowVision.graph.ControlId.structural("buffers"),
+            WowVision.graph.settings.controlFor(field, self.root)
+        )
+    end
+end
+
 -- Helper to get current group
 function module:getCurrentGroup()
     return self.root and self.root:getFocus()
