@@ -164,6 +164,20 @@ testRunner:addSuite("GraphBuilder", {
         t:assertNil(render.nodes["outside"].parent)
     end,
 
+    ["context children in separate stops share one position group"] = function(t)
+        local b = Builder:new()
+        b:pushContext("Menu")
+        b:beginStop():addLabel(sid("a"), "A")
+        b:beginStop():addLabel(sid("b"), "B")
+        b:beginStop():addLabel(sid("c"), "C")
+        b:popContext()
+        local render = b:build()
+        t:assertEqual(render.nodes["a"].positionIndex, 1)
+        t:assertEqual(render.nodes["c"].positionIndex, 3)
+        t:assertEqual(render.nodes["c"].positionCount, 3)
+        t:assertNil(render.nodes["a"].transitions.down, "single-node stops have no arrow edges")
+    end,
+
     ["pushContext can suppress child positions"] = function(t)
         local b = Builder:new()
         b:pushContext("Log", nil, false)
@@ -327,6 +341,27 @@ testRunner:addSuite("GraphKeyGraph", {
         t:assertEqual(state.curKey.key, "a1")
         kg:move("next") -- returns to stop 2's remembered position
         t:assertEqual(state.curKey.key, "b2")
+    end,
+
+    ["tab cycles single-node stops with wrap"] = function(t)
+        local kg, state = makeGraph(function(b)
+            b:pushContext("Menu")
+            b:beginStop():addLabel(sid("a"), "A")
+            b:beginStop():addLabel(sid("b"), "B")
+            b:beginStop():addLabel(sid("c"), "C")
+            b:popContext()
+            return b:build()
+        end)
+        kg:rerender()
+        t:assertEqual(state.curKey.key, "a")
+        kg:move("next")
+        t:assertEqual(state.curKey.key, "b")
+        kg:move("next")
+        t:assertEqual(state.curKey.key, "c")
+        kg:move("next")
+        t:assertEqual(state.curKey.key, "a", "wraps to the first stop")
+        kg:move("previous")
+        t:assertEqual(state.curKey.key, "c", "wraps backward")
     end,
 
     ["explicit tab edges override stop cycling"] = function(t)

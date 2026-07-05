@@ -42,8 +42,10 @@ local function render(builder, screen)
         return a:GetTop() > b:GetTop()
     end)
 
+    -- One tab stop per entry, matching the old tab-cycled menu.
     builder:pushContext(L["Menu"])
     for _, button in ipairs(buttons) do
+        builder:beginStop()
         builder:addItem(ControlId.forObject(button), {
             controlType = graph.controlTypes.button,
             announcements = { { text = buttonLabel(button), kind = graph.kinds.label } },

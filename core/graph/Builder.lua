@@ -435,11 +435,14 @@ end
 
 -- Auto-stamp "n of m" positions: a multi-item row's members are positioned
 -- within their row; single-item-row nodes among the siblings sharing their
--- (parent, stop) -- the vertical level arrows actually traverse. Raw nodes get
--- none. Announced only when m > 1.
+-- parent -- a context or group declares one logical collection even when its
+-- children sit in separate tab stops (a tab-cycled menu). Root nodes with no
+-- parent group per stop. Raw nodes get none. Announced only when m > 1.
+local ALL_STOPS = {}
+
 function Builder:_stampPositions()
     local groups = {}
-    local groupIndex = {} -- parent (or false) -> stopKey -> sibling list
+    local groupIndex = {} -- parent (or false) -> stopKey (or ALL_STOPS) -> sibling list
     for _, row in ipairs(self.rows) do
         if #row.items > 1 then
             stamp(row.items)
@@ -447,15 +450,16 @@ function Builder:_stampPositions()
             local node = row.items[1]
             if not (node.parent ~= nil and node.parent.suppressChildPositions) then
                 local parentKey = node.parent or false
+                local subKey = node.parent ~= nil and ALL_STOPS or node.stopKey
                 local byStop = groupIndex[parentKey]
                 if byStop == nil then
                     byStop = {}
                     groupIndex[parentKey] = byStop
                 end
-                local list = byStop[node.stopKey]
+                local list = byStop[subKey]
                 if list == nil then
                     list = {}
-                    byStop[node.stopKey] = list
+                    byStop[subKey] = list
                     tinsert(groups, list)
                 end
                 tinsert(list, node)
