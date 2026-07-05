@@ -253,8 +253,7 @@ end
 local function emitCategoryRow(builder, elementData, index, helpers)
     local template = elementData.frameTemplate
     if template == "SettingsCategoryListSpacerTemplate" then
-        builder:addItem(helpers.id, nodes.text({ label = L["Separator"] }))
-        return
+        return -- purely visual gap; nothing to hear
     end
     if template == "SettingsCategoryListHeaderTemplate" then
         builder:addItem(
