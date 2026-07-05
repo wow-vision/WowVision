@@ -1,244 +1,236 @@
 local module = WowVision.base.windows:createModule("questWindow")
 local L = module.L
 module:setLabel(L["Quest Window"])
-local gen = module:hasUI()
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
+
+-- The NPC quest window: greeting, detail, progress, and reward panels of
+-- QuestFrame, whichever is shown. Panel content lives in plain ScrollFrames,
+-- so nodes scroll the real viewport into place as focus moves; item rewards
+-- are real buttons (choosing a reward is a genuine click).
+
+local function textNode(builder, id, region, scrollFrame)
+    if region == nil or not region:IsShown() then
+        return
+    end
+    local text = region:GetText()
+    if text == nil or text == "" then
+        return
+    end
+    builder:beginStop()
+    local vtable = nodes.text({
+        label = function()
+            return region:GetText()
+        end,
+    })
+    if scrollFrame ~= nil then
+        nodes.attachScrollFrame(vtable, scrollFrame, region)
+    end
+    builder:addItem(id, vtable)
+end
+
+local function buttonNode(builder, button, scrollFrame, label)
+    if button == nil or not button:IsShown() then
+        return
+    end
+    builder:beginStop()
+    local vtable = nodes.proxyButton({ target = button, label = label })
+    if scrollFrame ~= nil then
+        nodes.attachScrollFrame(vtable, scrollFrame, button)
+    end
+    builder:addItem(ControlId.forObject(button), vtable)
+end
+
+local function getItemLabel(item)
+    local label = item.Name ~= nil and item.Name:GetText() or nil
+    if label == nil then
+        return nil
+    end
+    if item.Count ~= nil and item.Count:IsShown() then
+        label = label .. " x " .. (item.Count:GetText() or "")
+    end
+    return label
+end
+
+-- A row of quest item buttons (choices or received rewards) under a context.
+local function itemRow(builder, contextLabel, buttons, scrollFrame)
+    if #buttons == 0 then
+        return
+    end
+    builder:beginStop()
+    builder:pushContext(contextLabel or "")
+    builder:startRow()
+    for _, button in ipairs(buttons) do
+        local captured = button
+        local vtable = nodes.proxyButton({
+            target = captured,
+            label = function()
+                return getItemLabel(captured)
+            end,
+        })
+        if scrollFrame ~= nil then
+            nodes.attachScrollFrame(vtable, scrollFrame, captured)
+        end
+        builder:addItem(ControlId.forObject(captured), vtable)
+    end
+    builder:endRow()
+    builder:popContext()
+end
+
+local function renderGreeting(builder)
+    local scrollFrame = QuestGreetingScrollFrame
+    if GreetingText ~= nil and GreetingText:IsShown() then
+        textNode(builder, ControlId.structural("greetingText"), GreetingText, scrollFrame)
+    end
+    for i = 1, 32 do
+        local button = _G["QuestTitleButton" .. i]
+        if button ~= nil and button:IsShown() then
+            local captured = button
+            buttonNode(builder, captured, scrollFrame, function()
+                local title = captured:GetText() or ""
+                if captured.isActive == 1 then
+                    return L["Accepted Quest"] .. ": " .. title
+                end
+                return L["Available Quest"] .. ": " .. title
+            end)
+        end
+    end
+    buttonNode(builder, QuestFrameGreetingGoodbyeButton)
+end
+
+local function renderDetail(builder)
+    local scrollFrame = QuestDetailScrollFrame
+    textNode(builder, ControlId.structural("title"), QuestInfoTitleHeader, scrollFrame)
+    textNode(builder, ControlId.structural("description"), QuestInfoDescriptionText, scrollFrame)
+    textNode(builder, ControlId.structural("objectivesHeader"), QuestInfoObjectivesHeader, scrollFrame)
+    textNode(builder, ControlId.structural("objectives"), QuestInfoObjectivesText, scrollFrame)
+    buttonNode(builder, QuestFrameAcceptButton)
+    buttonNode(builder, QuestFrameDeclineButton)
+end
+
+local function renderProgress(builder)
+    local scrollFrame = QuestProgressScrollFrame
+    textNode(builder, ControlId.structural("progressTitle"), QuestProgressTitleText, scrollFrame)
+    textNode(builder, ControlId.structural("progressText"), QuestProgressText, scrollFrame)
+
+    if
+        QuestProgressScrollChildFrame ~= nil
+        and QuestProgressScrollChildFrame:IsVisible()
+        and QuestProgressRequiredItemsText ~= nil
+        and QuestProgressRequiredItemsText:IsShown()
+    then
+        local items = {}
+        local children = { QuestProgressScrollChildFrame:GetChildren() }
+        for i = 2, #children do
+            local item = children[i]
+            if item:IsShown() and getItemLabel(item) ~= nil then
+                tinsert(items, item)
+            end
+        end
+        itemRow(builder, QuestProgressRequiredItemsText:GetText(), items, scrollFrame)
+    end
+
+    buttonNode(builder, QuestFrameCompleteButton)
+    buttonNode(builder, QuestFrameGoodbyeButton)
+end
+
+local function renderReward(builder)
+    local scrollFrame = QuestRewardScrollFrame
+    textNode(builder, ControlId.structural("rewardTitle"), QuestInfoTitleHeader, scrollFrame)
+    textNode(builder, ControlId.structural("rewardText"), QuestInfoRewardText, scrollFrame)
+
+    local rewards = QuestInfoRewardsFrame
+    if rewards ~= nil and rewards:IsShown() then
+        local choiceButtons = {}
+        local rewardButtons = {}
+        for _, button in ipairs(rewards.RewardButtons or {}) do
+            if button:IsShown() and getItemLabel(button) ~= nil then
+                if button.type == "choice" then
+                    tinsert(choiceButtons, button)
+                elseif button.type == "reward" then
+                    tinsert(rewardButtons, button)
+                end
+            end
+        end
+        itemRow(
+            builder,
+            rewards.ItemChooseText ~= nil and rewards.ItemChooseText:GetText() or nil,
+            choiceButtons,
+            scrollFrame
+        )
+        itemRow(
+            builder,
+            rewards.ItemReceiveText ~= nil and rewards.ItemReceiveText:GetText() or nil,
+            rewardButtons,
+            scrollFrame
+        )
+
+        if rewards.MoneyFrame ~= nil and rewards.MoneyFrame:IsShown() and rewards.MoneyFrame.staticMoney then
+            builder:beginStop()
+            builder:addItem(
+                ControlId.structural("money"),
+                nodes.text({
+                    label = function()
+                        return C_CurrencyInfo.GetCoinText(rewards.MoneyFrame.staticMoney)
+                    end,
+                })
+            )
+        end
+        local xp = rewards.XPFrame
+        if xp ~= nil and xp:IsShown() and xp:IsVisible() then
+            builder:beginStop()
+            builder:addItem(
+                ControlId.structural("xp"),
+                nodes.text({
+                    label = function()
+                        return (xp.ReceiveText:GetText() or "") .. " " .. (xp.ValueText:GetText() or "")
+                    end,
+                })
+            )
+        end
+    end
+
+    buttonNode(builder, QuestFrameCompleteQuestButton)
+    buttonNode(builder, QuestFrameCancelButton)
+end
 
 local function getWindowTitle()
-    if QuestFrameNpcNameText then
+    if QuestFrameNpcNameText ~= nil then
         return QuestFrameNpcNameText:GetText()
     end
     return QuestFrame:GetTitleText():GetText()
 end
 
-gen:Element("QuestWindow", function(props)
-    local result = { "Panel", label = getWindowTitle(), wrap = true, children = {} }
+local function render(builder, screen)
+    local frame = QuestFrame
+    if frame == nil or not frame:IsShown() then
+        return
+    end
+    builder:pushContext(getWindowTitle() or L["Quest Window"])
 
-    -- Check if greeting panel is shown (NPC with only quests, no other gossip)
-    if QuestFrameGreetingPanel and QuestFrameGreetingPanel:IsShown() then
-        tinsert(result.children, { "QuestWindow/greeting" })
+    if QuestFrameGreetingPanel ~= nil and QuestFrameGreetingPanel:IsShown() then
+        renderGreeting(builder)
+    end
+    if QuestFrameDetailPanel ~= nil and QuestFrameDetailPanel:IsShown() then
+        renderDetail(builder)
+    end
+    if QuestFrameProgressPanel ~= nil and QuestFrameProgressPanel:IsShown() then
+        renderProgress(builder)
+    end
+    if QuestFrameRewardPanel ~= nil and QuestFrameRewardPanel:IsShown() then
+        renderReward(builder)
     end
 
-    if QuestFrameDetailPanel:IsShown() then
-        tinsert(result.children, { "QuestWindow/detail", frame = QuestFrameDetailPanel })
-    end
-    if QuestFrameProgressPanel:IsShown() then
-        tinsert(result.children, { "QuestWindow/progress", frame = QuestFrameProgressPanel })
-    end
-    if QuestFrameRewardPanel:IsShown() then
-        tinsert(result.children, { "QuestWindow/reward", frame = QuestFrameRewardPanel })
-    end
-    return result
-end)
-
-gen:Element("QuestWindow/greeting", function(props)
-    local result = { "Panel", label = L["Quests"], wrap = true, children = {} }
-
-    -- Greeting text
-    if GreetingText and GreetingText:IsShown() then
-        local greetingContent = GreetingText:GetText()
-        if greetingContent and greetingContent ~= "" then
-            tinsert(result.children, { "Text", text = greetingContent })
-        end
-    end
-
-    -- Add quest buttons in a flat list like gossip window
-    for i = 1, 25 do
-        local button = _G["QuestTitleButton" .. i]
-        if button and button:IsShown() then
-            local questTitle = button:GetText() or ""
-            local label
-            if button.isActive == 1 then
-                label = L["Accepted Quest"] .. ": " .. questTitle
-            else
-                label = L["Available Quest"] .. ": " .. questTitle
-            end
-            tinsert(result.children, { "ProxyButton", frame = button, label = label })
-        end
-    end
-
-    -- Goodbye button
-    tinsert(result.children, { "ProxyButton", frame = QuestFrameGreetingGoodbyeButton })
-
-    return result
-end)
-
-gen:Element("QuestWindow/detail", function(props)
-    local result = { "Panel", label = L["Details"], wrap = true, children = {} }
-    local text = { "List", shouldAnnounce = false, children = {} }
-
-    -- Quest name
-    if QuestInfoTitleHeader and QuestInfoTitleHeader:IsShown() then
-        local titleText = QuestInfoTitleHeader:GetText()
-        if titleText and titleText ~= "" then
-            tinsert(text.children, { "Text", key = "title", text = titleText })
-        end
-    end
-
-    -- Quest description
-    if QuestInfoDescriptionText and QuestInfoDescriptionText:IsShown() then
-        local descText = QuestInfoDescriptionText:GetText()
-        if descText and descText ~= "" then
-            tinsert(text.children, { "Text", key = "description", text = descText })
-        end
-    end
-
-    -- Objectives header (requirements label)
-    if QuestInfoObjectivesHeader and QuestInfoObjectivesHeader:IsShown() then
-        local headerText = QuestInfoObjectivesHeader:GetText()
-        if headerText and headerText ~= "" then
-            tinsert(text.children, { "Text", key = "objectivesHeader", text = headerText })
-        end
-    end
-
-    -- Objectives text (actual requirements)
-    if QuestInfoObjectivesText and QuestInfoObjectivesText:IsShown() then
-        local objText = QuestInfoObjectivesText:GetText()
-        if objText and objText ~= "" then
-            tinsert(text.children, { "Text", key = "objectives", text = objText })
-        end
-    end
-
-    tinsert(result.children, text)
-    tinsert(result.children, { "ProxyButton", frame = QuestFrameAcceptButton })
-    tinsert(result.children, { "ProxyButton", frame = QuestFrameDeclineButton })
-    return result
-end)
-
-gen:Element("QuestWindow/progress", function(props)
-    local text = {
-        "List",
-        shouldAnnounce = false,
-        children = {
-            { "Text", text = QuestProgressTitleText:GetText() },
-            { "Text", text = QuestProgressText:GetText() },
-            { "QuestWindow/progress/items", frame = QuestProgressScrollChildFrame },
-        },
-    }
-    local result = {
-        "Panel",
-        label = L["Progress"],
-        wrap = true,
-        children = {
-            text,
-            { "ProxyButton", frame = QuestFrameCompleteButton },
-            { "ProxyButton", frame = QuestFrameGoodbyeButton },
-        },
-    }
-    return result
-end)
-
-local function getItemLabel(item)
-    local label = item.Name:GetText() or "it broke"
-    if item.Count:IsShown() then
-        label = label .. " x " .. (item.Count:GetText() or "count broke")
-    end
-    return label
+    builder:popContext()
 end
-
-gen:Element("QuestWindow/progress/items", function(props)
-    if not props.frame or not props.frame:IsShown() or not props.frame:IsVisible() then
-        return nil
-    end
-
-    local text = QuestProgressRequiredItemsText
-    if not text:IsShown() then
-        return nil
-    end
-    local result = { "List", label = text:GetText(), children = {} }
-    local children = { props.frame:GetChildren() }
-    for i = 2, #children do
-        local item = children[i]
-        if item:IsShown() then
-            tinsert(result.children, { "Text", text = getItemLabel(item) })
-        end
-    end
-    return result
-end)
-
-gen:Element("QuestWindow/item", function(props)
-    if not props.frame or not props.frame:IsShown() or not props.frame:IsVisible() then
-        return nil
-    end
-    if not props.frame.Name:GetText() then
-        return nil
-    end
-
-    return { "ProxyButton", frame = props.frame, label = getItemLabel(props.frame) }
-end)
-
-gen:Element("QuestWindow/reward/rewards", function(props)
-    local result = { "Panel", shouldAnnounce = false, children = {} }
-    local choiceButtons = {}
-    local rewardButtons = {}
-    for _, button in ipairs(props.frame.RewardButtons) do
-        if button.type == "reward" then
-            tinsert(rewardButtons, button)
-        elseif button.type == "choice" then
-            tinsert(choiceButtons, button)
-        end
-    end
-
-    if #choiceButtons > 0 then
-        local choiceList = { "List", label = props.frame.ItemChooseText:GetText(), children = {} }
-        for _, button in ipairs(choiceButtons) do
-            tinsert(choiceList.children, { "QuestWindow/item", frame = button })
-        end
-        tinsert(result.children, choiceList)
-    end
-
-    local rewardList = { "List", label = props.frame.ItemReceiveText:GetText(), children = {} }
-
-    for _, button in ipairs(rewardButtons) do
-        tinsert(rewardList.children, { "QuestWindow/item", frame = button })
-    end
-
-    if props.frame.MoneyFrame:IsShown() and props.frame.MoneyFrame.staticMoney then
-        tinsert(rewardList.children, {
-            "Text",
-            text = C_CurrencyInfo.GetCoinText(props.frame.MoneyFrame.staticMoney),
-        })
-    end
-
-    local frame = props.frame.XPFrame
-    if frame:IsShown() and frame:IsVisible() then
-        tinsert(rewardList.children, {
-            "Text",
-            text = frame.ReceiveText:GetText() .. " " .. frame.ValueText:GetText(),
-        })
-    end
-    tinsert(result.children, rewardList)
-
-    return result
-end)
-
-gen:Element("QuestWindow/reward", function(props)
-    local text = {
-        "List",
-        shouldAnnounce = false,
-        children = {
-            { "Text", text = QuestInfoTitleHeader:GetText() },
-            { "Text", text = QuestInfoRewardText:GetText() },
-        },
-    }
-    local result = {
-        "Panel",
-        label = L["Reward"],
-        wrap = true,
-        children = {
-            text,
-            { "QuestWindow/reward/rewards", frame = QuestInfoRewardsFrame },
-            { "ProxyButton", frame = QuestFrameCompleteQuestButton },
-            { "ProxyButton", frame = QuestFrameCancelButton },
-        },
-    }
-    return result
-end)
 
 module:registerWindow({
     type = "FrameWindow",
     name = "questWindow",
-    generated = true,
-    rootElement = "QuestWindow",
     frameName = "QuestFrame",
     conflictingAddons = { "Sku" },
+    graphScreen = { render = render },
 })

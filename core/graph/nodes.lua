@@ -55,6 +55,56 @@ function nodes.attachHover(vtable, frameOrFunction)
     return vtable
 end
 
+-- Scroll a plain (non-virtualized) ScrollFrame so a region is visible when
+-- its node gains focus. Content is fully instantiated; only the viewport
+-- moves, piloted through the real scrollbar when there is one. Runs before
+-- any existing onFocus hook.
+function nodes.attachScrollFrame(vtable, scrollFrame, regionOrFunction)
+    vtable.onFocus = chainCalls(function()
+        local frame = resolveFrame(scrollFrame)
+        local region = resolveFrame(regionOrFunction)
+        if frame == nil or region == nil then
+            return
+        end
+        pcall(function()
+            local scrollChild = frame:GetScrollChild()
+            local childTop = scrollChild ~= nil and scrollChild:GetTop() or nil
+            local regionTop = region:GetTop()
+            local regionBottom = region:GetBottom() or regionTop
+            if childTop == nil or regionTop == nil then
+                return
+            end
+            local offsetTop = childTop - regionTop
+            local offsetBottom = childTop - regionBottom
+            local viewHeight = frame:GetHeight()
+            local current = frame:GetVerticalScroll()
+            local target = current
+            if offsetTop < current then
+                target = offsetTop
+            elseif offsetBottom > current + viewHeight then
+                target = offsetBottom - viewHeight
+            end
+            local range = frame:GetVerticalScrollRange()
+            if target < 0 then
+                target = 0
+            elseif target > range then
+                target = range
+            end
+            if target ~= current then
+                local scrollBar = frame.ScrollBar
+                    or (frame.GetName ~= nil and frame:GetName() ~= nil and _G[frame:GetName() .. "ScrollBar"])
+                    or nil
+                if scrollBar ~= nil and scrollBar.SetValue ~= nil then
+                    scrollBar:SetValue(target)
+                else
+                    frame:SetVerticalScroll(target)
+                end
+            end
+        end)
+    end, vtable.onFocus)
+    return vtable
+end
+
 -- A live label function for a Blizzard frame: its own text, else the first
 -- text region (dropdown-style buttons keep their text on a region).
 function nodes.frameText(frame)
