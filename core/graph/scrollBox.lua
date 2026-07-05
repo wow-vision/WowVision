@@ -48,13 +48,16 @@ end
 --   row         function(data, index, helpers) -> vtable, replacing the
 --               default row vtable entirely. helpers = { onFocus, target }
 --               (the scroll hook and the lazy click target) for composing.
+--   emit        function(builder, data, index, helpers) -- full control:
+--               emit zero or more nodes for this element (multi-control rows,
+--               skipped spacers). helpers adds id (the default ControlId).
 function nodes.scrollBoxList(builder, config)
     local scrollBox = config.scrollBox
     if scrollBox == nil then
         error("scrollBoxList requires a scrollBox")
     end
-    if config.rowLabel == nil and config.row == nil then
-        error("scrollBoxList requires rowLabel (or a row factory)")
+    if config.rowLabel == nil and config.row == nil and config.emit == nil then
+        error("scrollBoxList requires rowLabel, row, or emit")
     end
 
     local size = scrollBox:GetDataProviderSize()
@@ -91,28 +94,32 @@ function nodes.scrollBoxList(builder, config)
             return rowFrame
         end
 
-        local vtable
-        if config.row ~= nil then
-            vtable = config.row(data, capturedIndex, { onFocus = onFocus, target = target })
+        if config.emit ~= nil then
+            config.emit(builder, data, capturedIndex, { onFocus = onFocus, target = target, id = id })
         else
-            vtable = {
-                controlType = graph.controlTypes.button,
-                announcements = {
-                    {
-                        text = function()
-                            return config.rowLabel(data, capturedIndex)
-                        end,
-                        kind = kinds.label,
+            local vtable
+            if config.row ~= nil then
+                vtable = config.row(data, capturedIndex, { onFocus = onFocus, target = target })
+            else
+                vtable = {
+                    controlType = graph.controlTypes.button,
+                    announcements = {
+                        {
+                            text = function()
+                                return config.rowLabel(data, capturedIndex)
+                            end,
+                            kind = kinds.label,
+                        },
                     },
-                },
-                bindings = {
-                    { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
-                    { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = target },
-                },
-                onFocus = onFocus,
-            }
+                    bindings = {
+                        { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
+                        { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = target },
+                    },
+                    onFocus = onFocus,
+                }
+            end
+            builder:addItem(id, vtable)
         end
-        builder:addItem(id, vtable)
     end
 
     if config.label ~= nil then
