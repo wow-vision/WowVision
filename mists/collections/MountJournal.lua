@@ -1,57 +1,94 @@
 local module = WowVision.base.windows.collections
 local L = module.L
-local gen = module:hasUI()
 
-gen:Element("collections/MountJournal", function(props)
-    local frame = props.frame
-    local result = {
-        "Panel",
-        label = L["Mounts"],
-        children = {
-            { "collections/MountJournal/SearchBox" },
-            { "collections/MountJournal/MountList", frame = frame.ScrollBox },
-            { "ProxyButton", frame = MountJournalMountButton },
-        },
-    }
-    return result
-end)
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
 
-gen:Element("collections/MountJournal/SearchBox", function(props)
-    local frame = MountJournalSearchBox
-    local result = {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "ProxyEditBox", frame = frame, label = L["Search"] },
-        },
-    }
-    if frame:GetText() ~= "" then
-        tinsert(result.children, { "ProxyButton", frame = frame.clearButton, label = L["Clear"] })
+-- The mount journal: search, the mount list (a modern ScrollBox piloted
+-- with data-first labels from the mount journal API), and the mount button.
+
+local function mountLabel(index)
+    local name, _, _, isActive = C_MountJournal.GetDisplayedMountInfo(index)
+    if name == nil then
+        return nil
     end
-    return result
-end)
-
-local function MountList_GetButton(self, button)
-    local label = button.name:GetText()
-    if button.active then
-        label = label .. " (" .. L["Mounted"] .. ")"
+    if isActive then
+        return name .. " (" .. L["Mounted"] .. ")"
     end
+    return name
+end
+
+local function mountRow(data, index, helpers)
+    local _, spellID = C_MountJournal.GetDisplayedMountInfo(index)
     return {
-        "ProxyButton",
-        frame = button,
-        dragFrame = button.DragButton,
-        label = label,
-        tooltip = { type = "Mount", spellID = button.spellID },
+        controlType = graph.controlTypes.button,
+        announcements = {
+            {
+                text = function()
+                    return mountLabel(index)
+                end,
+                kind = kinds.label,
+            },
+        },
+        bindings = {
+            { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+            {
+                binding = "drag",
+                type = "Function",
+                func = function()
+                    local row = helpers.target()
+                    local dragButton = row ~= nil and row.DragButton or nil
+                    if dragButton ~= nil then
+                        local script = dragButton:GetScript("OnDragStart")
+                        if script ~= nil then
+                            script(dragButton)
+                        end
+                    end
+                end,
+            },
+        },
+        onFocus = helpers.onFocus,
+        onFocusTick = helpers.onFocusTick,
+        onUnfocus = helpers.onUnfocus,
+        tooltip = spellID ~= nil and { type = "Mount", spellID = spellID } or nil,
     }
 end
 
-gen:Element("collections/MountJournal/MountList", function(props)
-    return {
-        "ProxyScrollBox",
-        frame = MountJournal.ScrollBox,
+function module.renderMountJournal(builder)
+    builder:beginStop("search")
+    builder:addItem(
+        ControlId.structural("search"),
+        nodes.proxyEditBox({ editBox = MountJournalSearchBox, label = L["Search"] })
+    )
+    if MountJournalSearchBox:GetText() ~= "" and MountJournalSearchBox.clearButton ~= nil then
+        builder:addItem(
+            ControlId.forObject(MountJournalSearchBox.clearButton),
+            nodes.proxyButton({ target = MountJournalSearchBox.clearButton, label = L["Clear"] })
+        )
+    end
+
+    builder:beginStop("mounts")
+    nodes.scrollBoxList(builder, {
+        scrollBox = MountJournal.ScrollBox,
+        key = "mounts",
         label = L["Mounts"],
-        getElement = MountList_GetButton,
-        ordered = false,
-    }
-end)
+        id = function(data, index)
+            local mountID = select(12, C_MountJournal.GetDisplayedMountInfo(index))
+            if mountID ~= nil then
+                return ControlId.structural("mount:" .. mountID)
+            end
+            return ControlId.structural("mount:" .. index)
+        end,
+        row = mountRow,
+    })
+
+    if MountJournalMountButton ~= nil and MountJournalMountButton:IsShown() then
+        builder:beginStop("mountButton")
+        builder:addItem(
+            ControlId.forObject(MountJournalMountButton),
+            nodes.proxyButton({ target = MountJournalMountButton })
+        )
+    end
+end

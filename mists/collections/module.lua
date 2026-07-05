@@ -1,65 +1,59 @@
 local module = WowVision.base.windows:createModule("collections")
 local L = module.L
 module:setLabel(L["Collections"])
-local gen = module:hasUI()
 
-gen:Element("collections", {
-    regenerateOn = {
-        frameFields = { { "CollectionsJournal", "selectedTab" } },
-    },
-}, function(props)
-    local result = {
-        "Panel",
-        label = L["Collections"],
-        wrap = true,
-        children = {
-            { "collections/Tabs", frame = CollectionsJournal },
-            { "collections/CurrentTab", tab = CollectionsJournal.selectedTab },
-        },
-    }
-    return result
-end)
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
 
-gen:Element("collections/Tabs", function(props)
-    local frame = props.frame
-    local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
-    for i = 1, frame.numTabs do
+-- The collections journal: tabs, then the selected tab's body. Tab 1 is the
+-- mount journal (module.renderMountJournal, in its file); other tabs are
+-- not implemented yet.
+
+local function render(builder, screen)
+    if CollectionsJournal == nil or not CollectionsJournal:IsShown() then
+        return
+    end
+    builder:pushContext("collections", L["Collections"])
+
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    for i = 1, CollectionsJournal.numTabs do
         local tab = _G["CollectionsJournalTab" .. i]
-        if tab then
-            tinsert(result.children, {
-                "ProxyButton",
-                frame = tab,
-                selected = frame.selectedTab == i,
+        local tabIndex = i
+        if tab ~= nil and tab:IsShown() then
+            local vtable = nodes.proxyButton({ target = tab })
+            tinsert(vtable.announcements, {
+                text = function()
+                    if CollectionsJournal.selectedTab == tabIndex then
+                        return L["selected"]
+                    end
+                    return nil
+                end,
+                kind = kinds.selected,
             })
+            builder:addItem(ControlId.forObject(tab), vtable)
         end
     end
-    return result
-end)
+    builder:endRow()
+    builder:popContext()
 
-local function getTabFrame(tab)
-    if tab == 1 then
-        return MountJournal
+    local tab = CollectionsJournal.selectedTab
+    if tab == 1 and MountJournal ~= nil and MountJournal:IsShown() and MountJournal:IsVisible() then
+        module.renderMountJournal(builder)
+    else
+        builder:beginStop("unimplemented")
+        builder:addItem(ControlId.structural("unimplemented"), nodes.text({ label = "Not implemented yet" }))
     end
-    return nil
+
+    builder:popContext()
 end
-
-gen:Element("collections/CurrentTab", function(props)
-    local tab = props.tab
-    local frame = getTabFrame(tab)
-    if frame == nil or not frame:IsShown() or not frame:IsVisible() then
-        return { "Text", text = "Not implemented yet" }
-    end
-    if tab == 1 then
-        return { "collections/MountJournal", frame = frame }
-    end
-    return { "Text", text = "Not implemented yet" }
-end)
 
 module:registerWindow({
     type = "FrameWindow",
     name = "collections",
-    auto = true,
-    generated = true,
-    rootElement = "collections",
     frameName = "CollectionsJournal",
+    graphScreen = { render = render },
 })
