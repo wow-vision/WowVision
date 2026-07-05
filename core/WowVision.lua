@@ -87,12 +87,7 @@ function WowVision:SlashCommand(msg)
     end
 
     -- Default behavior: open the menu
-    local root = self.base:getMenuPanel()
-    self.UIHost:openTemporaryWindow({
-        generated = true,
-        rootElement = root,
-        hookEscape = true,
-    })
+    WowVision.graph.settings.openMenu()
 end
 
 function WowVision:InspectCommand(args)
@@ -182,6 +177,19 @@ function WowVision:registerCommands()
         description = "Open the WowVision menu as a graph screen",
         func = function(args)
             WowVision.graph.settings.openMenu()
+        end,
+    })
+
+    self.base:registerCommand({
+        name = "oldmenu",
+        description = "Open the legacy menu on the old UI framework",
+        func = function(args)
+            local root = WowVision.base:getMenuPanel()
+            WowVision.UIHost:openTemporaryWindow({
+                generated = true,
+                rootElement = root,
+                hookEscape = true,
+            })
         end,
     })
 
