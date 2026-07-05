@@ -212,7 +212,13 @@ function Module:unregisterWindow(name)
     if not self.registeredWindows or not self.registeredWindows[name] then
         return
     end
+    local window = self.registeredWindows[name]
     self.registeredWindows[name] = nil
+    -- Event-driven windows hook the shared dispatcher at creation; detach or
+    -- the orphan keeps opening on events.
+    if window.destroy ~= nil then
+        window:destroy()
+    end
     -- If the module is already enabled, the window is live in the window manager
     -- (registered in fullEnable), so remove it there too.
     if self:getEnabled() then

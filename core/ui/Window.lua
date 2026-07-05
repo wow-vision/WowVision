@@ -350,6 +350,12 @@ function EventWindow:initialize(config)
     EventDispatcher:register(self, { self.openEvent, self.closeEvent })
 end
 
+-- Detach from the dispatcher when the window is discarded (a version module
+-- replacing a core registration), or the orphan keeps opening on events.
+function EventWindow:destroy()
+    EventDispatcher:unregister(self, { self.openEvent, self.closeEvent })
+end
+
 function EventWindow:onEvent(event, ...)
     if event == self.openEvent then
         self._isCurrentlyOpen = true
@@ -377,6 +383,15 @@ function PlayerInteractionWindow:initialize(config)
     Window.initialize(self, config)
     -- Register with shared event dispatcher
     EventDispatcher:register(self, {
+        "PLAYER_INTERACTION_MANAGER_FRAME_SHOW",
+        "PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
+    })
+end
+
+-- Detach from the dispatcher when the window is discarded (a version module
+-- replacing a core registration), or the orphan keeps opening on events.
+function PlayerInteractionWindow:destroy()
+    EventDispatcher:unregister(self, {
         "PLAYER_INTERACTION_MANAGER_FRAME_SHOW",
         "PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
     })
