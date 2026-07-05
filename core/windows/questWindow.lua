@@ -140,6 +140,7 @@ local function renderGreeting(builder)
     if GreetingText ~= nil and GreetingText:IsShown() then
         contentText(builder, ControlId.structural("greetingText"), GreetingText, scrollFrame)
     end
+    builder:pushContext(L["Quests"])
     for i = 1, 32 do
         local button = _G["QuestTitleButton" .. i]
         if button ~= nil and button:IsShown() then
@@ -159,6 +160,7 @@ local function renderGreeting(builder)
             builder:addItem(ControlId.forObject(captured), vtable)
         end
     end
+    builder:popContext()
     actionButton(builder, QuestFrameGreetingGoodbyeButton)
 end
 

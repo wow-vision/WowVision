@@ -155,6 +155,7 @@ local function render(builder, screen)
     nodes.hybridScrollList(builder, {
         scrollFrame = QuestLogListScrollFrame,
         key = "quests",
+        label = L["Quests"],
         count = function()
             return (GetNumQuestLogEntries())
         end,
