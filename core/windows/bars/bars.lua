@@ -1,7 +1,10 @@
 local module = WowVision.base.windows:createModule("bars")
 local L = module.L
 module:setLabel(L["Bars"])
-local gen = module:hasUI()
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
 
 -- Stance buttons compatibility
 local stanceButtons = {}
@@ -113,46 +116,49 @@ local bars = module:createComponentRegistry({
     classNamePrefix = "ActionBar_",
 })
 
--- Generator for individual action button
-gen:Element("bars/ActionButton", function(props)
-    return {
-        "ProxyButton",
-        frame = props.frame,
-        label = module.getActionButtonLabel(props.frame),
-        ignoreRequiresFrameShown = true,
-        draggable = true
-    }
-end)
+-- An action button node: live label (drag, page flips, and cooldown-driven
+-- changes rewrite slots), real clicks, drag support.
+function module.actionButtonNode(button, label)
+    local vtable = nodes.proxyButton({
+        target = button,
+        label = label or function()
+            return module.getActionButtonLabel(button)
+        end,
+    })
+    tinsert(vtable.bindings, {
+        binding = "drag",
+        type = "Function",
+        func = function()
+            local script = button:GetScript("OnDragStart")
+            if script ~= nil then
+                script(button)
+            end
+        end,
+    })
+    return vtable
+end
 
--- Generator for a bar component
-gen:Element("bars/Bar", function(props)
-    local bar = props.bar
-    if not bar:isVisible() then
-        return nil
-    end
-    return bar:getGenerator()
-end)
-
--- Main bars generator
-gen:Element("bars", function(props)
-    local children = {}
+-- One stop holds every visible bar; each bar is a labeled row, so left and
+-- right walk along a bar and up and down switch bars.
+local function render(builder, screen)
+    builder:beginStop("bars")
+    builder:pushContext("bars", L["Bars"])
     bars:forEachComponent(function(bar)
-        tinsert(children, { "bars/Bar", bar = bar })
+        if bar.renderGraph ~= nil and bar:isVisible() then
+            local ok, err = pcall(bar.renderGraph, bar, builder)
+            if not ok then
+                geterrorhandler()(err)
+            end
+        end
     end)
-    return {
-        "List",
-        label = L["Bars"],
-        children = children,
-    }
-end)
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "ManualWindow",
     name = "bars",
     innate = true,
-    generated = true,
-    rootElement = "bars",
-    hookEscape = true,
+    graphScreen = { render = render, captureClose = true },
 })
 
 module:registerBinding({

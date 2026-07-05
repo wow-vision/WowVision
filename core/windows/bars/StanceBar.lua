@@ -1,20 +1,31 @@
 local module = WowVision.base.windows.bars
 local L = module.L
 
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+
 local StanceBar = WowVision.components.createType("bars", { key = "StanceBar" })
 
 function StanceBar:isVisible()
     return module.StanceBarFrame:IsShown()
 end
 
-function StanceBar:getGenerator()
-    local result = { "List", label = self.label, direction = "horizontal", children = {} }
+function StanceBar:renderGraph(builder)
+    builder:pushContext(self.key, self.label)
+    builder:startRow()
     for i, button in ipairs(module.stanceButtons) do
         if button:IsShown() then
-            local _, _, _, spellID = GetShapeshiftFormInfo(i)
-            local label = module.GetSpellInfo(spellID)
-            tinsert(result.children, { "ProxyButton", frame = button, label = label, draggable = true})
+            local formIndex = i
+            builder:addItem(
+                ControlId.forObject(button),
+                module.actionButtonNode(button, function()
+                    local _, _, _, spellID = GetShapeshiftFormInfo(formIndex)
+                    return module.GetSpellInfo(spellID)
+                end)
+            )
         end
     end
-    return result
+    builder:endRow()
+    builder:popContext()
 end
