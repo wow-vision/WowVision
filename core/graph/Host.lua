@@ -451,6 +451,13 @@ function GraphHost:_tab(screen, key)
     local move = kg:move(key)
     if move.moved then
         self:_announceMove(screen, move)
+        -- Tab-pair arrivals only: a node may react to being tabbed to
+        -- (edit boxes take keyboard focus so typing starts immediately;
+        -- Tab out is their hooked OnTabPressed).
+        local node = kg:currentNode()
+        if node ~= nil and node.vtable.onTabFocus ~= nil then
+            node.vtable.onTabFocus()
+        end
     else
         self:_speak(announcer.leafText(kg:currentNode()))
     end
