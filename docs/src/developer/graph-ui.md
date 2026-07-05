@@ -68,6 +68,8 @@ Hand-written vtables remain the escape hatch for anything the factories don't co
 
 Escape and frameless windows: a stack whose config sets `captureClose = true` (settings.screen does) holds the close key while focused, as does any stack with a pushed child screen — the opt-in cases where the game cannot close our UI for us. Everywhere else Escape stays with the game.
 
+The module menu: `graph.settings.renderModuleInto(builder, module)` mirrors the old ModulePanel — an Enabled toggle for non-vital modules, sorted submodule buttons pushing child screens, then the module's settings. A module contributes extra menu items by defining `getGraphMenuItems(builder)` (the graph counterpart of `getAdditionalMenuUI`). `/wv gmenu` opens the whole WowVision menu as a graph screen, parallel to the old menu until parity.
+
 Rules the render function must follow:
 
 1. Read live game state fresh every call. Never cache game data between renders in upvalues; the whole point is that the graph is always current. Screen-local UI state (a filter string, a sort mode) may live on `screen` or in upvalues.

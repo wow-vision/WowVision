@@ -634,6 +634,72 @@ testRunner:addSuite("GraphNodes", {
         t:assertFalse(store.enabled)
     end,
 
+    ["module menu renders toggle, submodules, hook items, and settings"] = function(t)
+        local enabledState = true
+        local hookRan = false
+        local sub1 = {
+            key = "zeta",
+            submodules = {},
+            getLabel = function()
+                return "Zeta"
+            end,
+        }
+        local sub2 = {
+            key = "alpha",
+            submodules = {},
+            getLabel = function()
+                return "Alpha"
+            end,
+        }
+        local fakeModule = {
+            key = "root",
+            submodules = { sub1, sub2 },
+            getLabel = function()
+                return "WowVision"
+            end,
+            isVital = function()
+                return false
+            end,
+            getEnabled = function()
+                return enabledState
+            end,
+            setEnabled = function(self, value)
+                enabledState = value
+            end,
+            getGraphMenuItems = function(self, builder)
+                hookRan = true
+                builder:addItem(sid("extra"), graph.nodes.button({
+                    label = "Extra",
+                    onActivate = function() end,
+                }))
+            end,
+            settingsRoot = {
+                label = "Settings",
+                info = { fields = {} },
+                children = {},
+            },
+        }
+        local builder = Builder:new()
+        graph.settings.renderModuleInto(builder, fakeModule)
+        local render = builder:build()
+        t:assertNotNil(render.nodes["enabled"])
+        t:assertTrue(hookRan)
+        t:assertNotNil(render.nodes["extra"])
+        -- Submodules sort by label: Alpha before Zeta.
+        local alphaIndex, zetaIndex
+        for i, node in ipairs(render.order) do
+            if node.id.key == "module:alpha" then
+                alphaIndex = i
+            elseif node.id.key == "module:zeta" then
+                zetaIndex = i
+            end
+        end
+        t:assertTrue(alphaIndex < zetaIndex)
+        -- The enabled toggle drives the module.
+        render.nodes["enabled"].vtable.onActivate()
+        t:assertFalse(enabledState)
+    end,
+
     ["proxyButtonMenu emits one stop per button with shared positions"] = function(t)
         local a, b, c = {}, {}, {}
         local builder = Builder:new()

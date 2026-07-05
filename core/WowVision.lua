@@ -178,6 +178,14 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
+        name = "gmenu",
+        description = "Open the WowVision menu as a graph screen",
+        func = function(args)
+            WowVision.graph.settings.openMenu()
+        end,
+    })
+
+    self.base:registerCommand({
         name = "profile",
         description = "Profiler commands (start/stop/report/reset)",
         func = function(args)

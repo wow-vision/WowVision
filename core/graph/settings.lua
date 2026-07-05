@@ -1,6 +1,7 @@
 local graph = WowVision.graph
 local nodes = graph.nodes
 local ControlId = graph.ControlId
+local L = WowVision:getLocale()
 
 -- Renders InfoFrame settings trees as graph screens: fields become value
 -- controls wired straight to Field get/set (validation and persistence ride
@@ -138,6 +139,91 @@ function settings.screen(infoFrame)
             settings.renderInto(builder, infoFrame)
         end,
     }
+end
+
+-- ---- the module menu ----
+
+local function moduleSortComp(a, b)
+    return (a:getLabel() or "") < (b:getLabel() or "")
+end
+
+local function pushModuleScreen(module)
+    local host = WowVision.graphHost
+    local stack = host:focusedStack()
+    if stack ~= nil then
+        host:push(stack, {
+            key = "module:" .. tostring(module.key or module:getLabel()),
+            render = function(builder)
+                settings.renderModuleInto(builder, module)
+            end,
+        })
+    end
+end
+
+-- Emit one module's menu: enabled toggle (non-vital modules), sorted
+-- submodule buttons pushing child screens, the module's own graph menu items
+-- (getGraphMenuItems), then its settings fields. Mirrors the old ModulePanel.
+function settings.renderModuleInto(builder, module)
+    builder:pushContext(module:getLabel() or tostring(module.key))
+
+    if not module:isVital() then
+        builder:addItem(
+            ControlId.structural("enabled"),
+            nodes.toggle({
+                label = L["Enabled"],
+                get = function()
+                    return module:getEnabled()
+                end,
+                set = function(value)
+                    module:setEnabled(value)
+                end,
+            })
+        )
+    end
+
+    local submodules = {}
+    for _, submodule in ipairs(module.submodules) do
+        tinsert(submodules, submodule)
+    end
+    table.sort(submodules, moduleSortComp)
+    for _, submodule in ipairs(submodules) do
+        builder:addItem(
+            ControlId.structural("module:" .. tostring(submodule.key)),
+            nodes.button({
+                label = submodule:getLabel() or tostring(submodule.key),
+                onActivate = function()
+                    pushModuleScreen(submodule)
+                end,
+            })
+        )
+    end
+
+    if module.getGraphMenuItems ~= nil then
+        module:getGraphMenuItems(builder)
+    end
+
+    if module.settingsRoot ~= nil then
+        settings.renderInto(builder, module.settingsRoot)
+    end
+
+    builder:popContext()
+end
+
+-- A graphScreen config for a module's menu (frameless: Escape closes it).
+function settings.moduleScreen(module)
+    return {
+        key = "menu:" .. tostring(module.key or module:getLabel()),
+        captureClose = true,
+        render = function(builder)
+            settings.renderModuleInto(builder, module)
+        end,
+    }
+end
+
+-- The graph version of the WowVision menu. Parallel to the old menu until
+-- parity; opened by /wv gmenu.
+function settings.openMenu()
+    WowVision.UIHost:openTemporaryWindow({ graphScreen = settings.moduleScreen(WowVision.base) })
 end
 
 -- Dev entry: open a module's settings as a graph window for side-by-side
