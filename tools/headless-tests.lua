@@ -95,6 +95,7 @@ local parseOnly = {
     "core/windows/Macros.lua",
     "core/windows/itemText.lua",
     "core/windows/RolePoll.lua",
+    "core/windows/trade.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
