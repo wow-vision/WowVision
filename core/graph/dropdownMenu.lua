@@ -165,33 +165,28 @@ local function emitItem(builder, item)
     builder:addItem(ControlId.forObject(item), vtable)
 end
 
--- A frame counts as an open menu if it is shown and holds menu item
--- children (frames exposing GetElementDescription). No parent or ID
--- assumptions: both vary by client.
-local function looksLikeMenu(frame)
-    if not frame:IsShown() or frame.GetChildren == nil then
-        return false
-    end
-    local children = { frame:GetChildren() }
-    for i = 1, #children do
-        if children[i].GetElementDescription ~= nil then
-            return true
-        end
-    end
-    return false
+-- Menu frames attach through the Window API, not SetParent, so neither
+-- parent walks nor EnumerateFrames can find them reliably. Instead, capture
+-- every menu frame at creation: MenuProxyMixin is the global mixin on
+-- MenuTemplateBase, its OnLoad runs once per pooled frame, and
+-- hooksecurefunc on the mixin propagates to every frame built from it.
+-- Pooled menu frames are never destroyed, so a weak registry stays exact.
+local trackedMenus = setmetatable({}, { __mode = "k" })
+if MenuProxyMixin ~= nil and MenuProxyMixin.OnLoad ~= nil then
+    hooksecurefunc(MenuProxyMixin, "OnLoad", function(frame)
+        trackedMenus[frame] = true
+    end)
 end
 
--- Every open menu frame in the chain: the root from the manager plus any
--- other live menu found by walking all frames. Sorted by left edge --
--- submenus anchor to their parent row's right, so this is chain order.
+-- Every open menu frame in the chain: the root from the manager plus every
+-- tracked menu frame currently shown. Sorted by left edge -- submenus
+-- anchor to their parent row's right, so this is chain order.
 local function openMenuFrames(root)
     local menus = { root }
-    local frame = EnumerateFrames()
-    while frame ~= nil do
-        if frame ~= root and looksLikeMenu(frame) then
+    for frame in pairs(trackedMenus) do
+        if frame ~= root and frame:IsShown() then
             tinsert(menus, frame)
         end
-        frame = EnumerateFrames(frame)
     end
     table.sort(menus, function(a, b)
         return (a:GetLeft() or 0) < (b:GetLeft() or 0)
