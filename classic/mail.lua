@@ -106,6 +106,9 @@ end
 
 local function attachmentNode(slot, label)
     local vtable = nodes.proxyButton({ target = slot, label = label })
+    if vtable == nil then
+        return nil
+    end
     tinsert(vtable.bindings, {
         binding = "drag",
         type = "Function",

@@ -49,6 +49,9 @@ end
 
 local function draggableProxy(button, label)
     local vtable = nodes.proxyButton({ target = button, label = label })
+    if vtable == nil then
+        return nil
+    end
     tinsert(vtable.bindings, {
         binding = "drag",
         type = "Function",
