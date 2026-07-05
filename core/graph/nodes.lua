@@ -379,6 +379,22 @@ function nodes.proxyEditBox(config)
     return vtable
 end
 
+-- A real Blizzard check button: clicks are genuine, the checked state reads
+-- as the live value.
+-- config: { target, label? }
+function nodes.proxyCheckButton(config)
+    local button = config.target
+    local vtable = nodes.proxyButton(config)
+    vtable.controlType = graph.controlTypes.toggle
+    tinsert(vtable.announcements, {
+        text = function()
+            return button:GetChecked() and L["Checked"] or L["Unchecked"]
+        end,
+        kind = kinds.value,
+    })
+    return vtable
+end
+
 -- A text value: Enter opens typed entry.
 -- config: { label, get, set, valueText = function? }
 function nodes.textInput(config)

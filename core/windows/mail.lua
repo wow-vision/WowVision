@@ -17,17 +17,8 @@ function module.editBoxNode(editBox, label)
     return nodes.proxyEditBox({ editBox = editBox, label = label })
 end
 
--- A real check button with its checked state as the live value.
 function module.checkButtonNode(button, label)
-    local vtable = nodes.proxyButton({ target = button, label = label })
-    vtable.controlType = graph.controlTypes.toggle
-    tinsert(vtable.announcements, {
-        text = function()
-            return button:GetChecked() and L["Checked"] or L["Unchecked"]
-        end,
-        kind = kinds.value,
-    })
-    return vtable
+    return nodes.proxyCheckButton({ target = button, label = label })
 end
 
 function module.moneyText(frame)
