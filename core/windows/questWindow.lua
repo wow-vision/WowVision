@@ -57,13 +57,13 @@ local function getItemLabel(item)
     return label
 end
 
--- A row of quest item buttons under a context, within the current stop.
-local function itemRow(builder, contextLabel, buttons, scrollFrame)
+-- A vertical list of quest item buttons under a context, within the current
+-- stop.
+local function itemList(builder, contextLabel, buttons, scrollFrame)
     if #buttons == 0 then
         return
     end
     builder:pushContext(contextLabel or "")
-    builder:startRow()
     for _, button in ipairs(buttons) do
         local captured = button
         local vtable = nodes.proxyButton({
@@ -77,7 +77,6 @@ local function itemRow(builder, contextLabel, buttons, scrollFrame)
         end
         builder:addItem(ControlId.forObject(captured), vtable)
     end
-    builder:endRow()
     builder:popContext()
 end
 
@@ -99,13 +98,13 @@ local function rewardsContent(builder, scrollFrame)
             end
         end
     end
-    itemRow(
+    itemList(
         builder,
         rewards.ItemChooseText ~= nil and rewards.ItemChooseText:GetText() or nil,
         choiceButtons,
         scrollFrame
     )
-    itemRow(
+    itemList(
         builder,
         rewards.ItemReceiveText ~= nil and rewards.ItemReceiveText:GetText() or nil,
         rewardButtons,
@@ -198,7 +197,7 @@ local function renderProgress(builder)
                 tinsert(items, item)
             end
         end
-        itemRow(builder, QuestProgressRequiredItemsText:GetText(), items, scrollFrame)
+        itemList(builder, QuestProgressRequiredItemsText:GetText(), items, scrollFrame)
     end
     builder:popContext()
 
