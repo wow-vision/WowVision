@@ -22,3 +22,4 @@
 - [Monitors](./developer/monitors.md)
 - [Alerts & Outputs](./developer/alerts.md)
 - [UI System](./developer/ui-system.md)
+- [Graph UI Framework](./developer/graph-ui.md)
