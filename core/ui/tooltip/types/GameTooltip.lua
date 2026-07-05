@@ -7,7 +7,9 @@ function GameTooltipType:initialize(tooltip)
 end
 
 function GameTooltipType:activate(widget, data)
-    self.tooltip.activeFrame = GameTooltip
+    -- Some panels render into their own tooltip frame (SettingsPanel uses
+    -- SettingsTooltip); data.frame points the reader there.
+    self.tooltip.activeFrame = data.frame or GameTooltip
     self.mode = data.mode
     self.widget = widget
 end

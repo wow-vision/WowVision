@@ -181,6 +181,65 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
+        name = "gtooltip",
+        description = "Dump the graph tooltip reader state, spoken and copyable",
+        func = function(args)
+            local lines = {}
+            local function add(label, fn)
+                local ok, value = pcall(fn)
+                if ok then
+                    tinsert(lines, label .. ": " .. tostring(value))
+                else
+                    tinsert(lines, label .. " errored: " .. tostring(value))
+                end
+            end
+            local host = WowVision.graphHost
+            local screen = host:focusedScreen()
+            local node = screen ~= nil and screen.keyGraph:currentNode() or nil
+            add("focused node", function()
+                return node ~= nil and tostring(node.id.key) or "none"
+            end)
+            add("has tooltip config", function()
+                return node ~= nil and node.vtable.tooltip ~= nil
+            end)
+            add("has tooltip frame", function()
+                return node ~= nil and node.vtable.tooltipFrame ~= nil
+            end)
+            add("resolved frame", function()
+                local ref = node ~= nil and node.vtable.tooltipFrame or nil
+                local frame = type(ref) == "function" and ref() or ref
+                if frame == nil then
+                    return "nil"
+                end
+                return frame.GetName ~= nil and (frame:GetName() or "unnamed") or "no GetName"
+            end)
+            add("host tooltip active", function()
+                return host._tooltipActive
+            end)
+            local tooltip = WowVision.UIHost.tooltip
+            add("reader has data", function()
+                return tooltip.tooltipData ~= nil
+            end)
+            add("reader frame", function()
+                local frame = tooltip.activeFrame
+                if frame == nil then
+                    return "nil"
+                end
+                return frame.GetName ~= nil and (frame:GetName() or "unnamed") or "no GetName"
+            end)
+            add("reader lines before read", function()
+                return tooltip:getNumLines()
+            end)
+            add("full text", function()
+                return tooltip:getText()
+            end)
+            local text = table.concat(lines, "\n")
+            WowVision.testing.showResults(text)
+            WowVision:speak(text)
+        end,
+    })
+
+    self.base:registerCommand({
         name = "oldmenu",
         description = "Open the legacy menu on the old UI framework",
         func = function(args)

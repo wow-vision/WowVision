@@ -238,10 +238,13 @@ function GraphHost:_setTooltipFor(node)
     if data == nil then
         return
     end
-    local ok = pcall(function()
+    local ok, err = pcall(function()
         tooltip:set({ frame = frame }, data)
         tooltip:onFocus()
     end)
+    if not ok then
+        geterrorhandler()(err)
+    end
     self._tooltipActive = ok
 end
 

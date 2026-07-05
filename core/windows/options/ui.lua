@@ -106,6 +106,16 @@ end
 
 -- ---- row node builders ----
 
+-- The settings panel renders row tooltips into its own SettingsTooltip frame,
+-- not GameTooltip; point the reader there.
+local settingsTooltipData = nil
+local function settingsTooltip()
+    if settingsTooltipData == nil and SettingsTooltip ~= nil then
+        settingsTooltipData = { type = "Game", mode = "immediate", frame = SettingsTooltip }
+    end
+    return settingsTooltipData
+end
+
 local function frameChildText(helpers, childKey)
     return function()
         local rowFrame = helpers.target()
@@ -175,6 +185,7 @@ local function checkboxNode(elementData, helpers, label, setting, childKey)
         onFocus = helpers.onFocus,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
+        tooltip = settingsTooltip(),
     }
 end
 
@@ -204,6 +215,7 @@ local function rowButtonNode(elementData, helpers, label, childKey)
         onFocus = helpers.onFocus,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
+        tooltip = settingsTooltip(),
     }
 end
 
@@ -234,6 +246,7 @@ local function sliderNode(elementData, helpers, label, setting, options)
     vtable.onFocus = helpers.onFocus
     vtable.onUnfocus = helpers.onUnfocus
     vtable.tooltipFrame = helpers.target
+    vtable.tooltip = settingsTooltip()
     return vtable
 end
 
@@ -253,6 +266,7 @@ local function dropdownNode(elementData, helpers, label, setting)
     vtable.onFocus = helpers.onFocus
     vtable.onUnfocus = helpers.onUnfocus
     vtable.tooltipFrame = helpers.target
+    vtable.tooltip = settingsTooltip()
     return vtable
 end
 
