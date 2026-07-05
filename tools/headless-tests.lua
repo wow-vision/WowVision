@@ -47,10 +47,15 @@ loadAddonFile("core/graph/nodes.lua")
 loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
+loadAddonFile("core/graph/controlTests.lua")
 
 -- Files that need the game client to run but should at least parse cleanly.
 local parseOnly = {
+    "core/graph/Screen.lua",
     "core/graph/Host.lua",
+    "core/graph/liveWatch.lua",
+    "core/graph/textEntry.lua",
+    "core/graph/keyCapture.lua",
     "core/ui/input/actions.lua",
     "core/ui/input/activator.lua",
     "core/ui/input/tests.lua",

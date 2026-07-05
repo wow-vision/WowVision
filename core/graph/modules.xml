@@ -10,7 +10,12 @@
   <Script file="nodes.lua" />
   <Script file="settings.lua" />
   <Script file="fieldControls.lua" />
+  <Script file="Screen.lua" />
   <Script file="Host.lua" />
+  <Script file="liveWatch.lua" />
+  <Script file="textEntry.lua" />
+  <Script file="keyCapture.lua" />
   <Script file="tests.lua" />
+  <Script file="controlTests.lua" />
 
 </Ui>
