@@ -243,6 +243,43 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
+        name = "glive",
+        description = "Dump the focused node's live watch state, spoken and copyable",
+        func = function(args)
+            local host = WowVision.graphHost
+            local screen = host:focusedScreen()
+            local node = screen ~= nil and screen.keyGraph:currentNode() or nil
+            if node == nil then
+                print("No focused graph node")
+                return
+            end
+            local lines = {}
+            tinsert(lines, "node: " .. tostring(node.id.key))
+            tinsert(lines, "live key matches: " .. tostring(screen._liveKey == node.id))
+            local parts = WowVision.graph.announcer.effectiveAnnouncements(node)
+            for i, part in ipairs(parts) do
+                local resolved = WowVision.graph.resolveText(part)
+                local cached = screen._liveValues[i]
+                tinsert(
+                    lines,
+                    i
+                        .. ": kind "
+                        .. tostring(part.kind)
+                        .. ", live "
+                        .. tostring(part.live)
+                        .. ", now "
+                        .. tostring(resolved)
+                        .. ", cached "
+                        .. tostring(cached)
+                )
+            end
+            local text = table.concat(lines, "\n")
+            WowVision.testing.showResults(text)
+            WowVision:speak(text)
+        end,
+    })
+
+    self.base:registerCommand({
         name = "gtooltip",
         description = "Dump the graph tooltip reader state, spoken and copyable",
         func = function(args)
