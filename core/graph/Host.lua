@@ -171,6 +171,12 @@ function GraphHost:update()
             screen._lastSpokenNode = node
         end
         self:_watchLive(screen, node)
+        -- Scroll adapters watch for pool drift under the focused node: if
+        -- the frame their engaged click resolved to no longer shows this
+        -- entry, they re-align and ask for a re-engage.
+        if node.vtable.onFocusTick ~= nil then
+            pcall(node.vtable.onFocusTick)
+        end
     end
     self:_watchAlways(screen, node)
     self:_syncNodeFocus(screen)

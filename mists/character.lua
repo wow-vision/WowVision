@@ -189,6 +189,7 @@ local function emitFaction(builder, index, helpers)
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
         },
         onFocus = helpers.onFocus,
+        onFocusTick = helpers.onFocusTick,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
     })
@@ -303,6 +304,7 @@ local function emitCurrency(builder, index, helpers)
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
         },
         onFocus = helpers.onFocus,
+        onFocusTick = helpers.onFocusTick,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
     })

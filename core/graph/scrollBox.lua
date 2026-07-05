@@ -104,15 +104,33 @@ function nodes.scrollBoxList(builder, config)
             end
             return rowFrame
         end
+        -- Secure clicks bind to a FRAME at engage time, but ScrollBox rows
+        -- recycle as the pane scrolls. Track what focus resolved; each tick,
+        -- if the mapping drifted, re-scroll and ask the host to re-engage.
+        local engaged = {}
+
         -- Scroll first so the row materializes, then hover it: the game shows
         -- its tooltip and highlight for the reader.
         local onFocus = nodes.attachHover({
             onFocus = function()
                 scrollBox:ScrollToElementDataIndex(capturedIndex)
+                engaged.target = target()
             end,
         }, target)
         local onUnfocus = onFocus.onUnfocus
         onFocus = onFocus.onFocus
+
+        local onFocusTick = function()
+            local current = target()
+            if current == nil then
+                scrollBox:ScrollToElementDataIndex(capturedIndex)
+                current = target()
+            end
+            if current ~= engaged.target then
+                engaged.target = current
+                WowVision.graphHost:refreshBindings()
+            end
+        end
 
         graph.scrollBoxDebug[tostring(id.key)] = {
             template = tostring(data ~= nil and data.frameTemplate or "?"),
@@ -121,7 +139,13 @@ function nodes.scrollBoxList(builder, config)
             ),
         }
 
-        local helpers = { onFocus = onFocus, onUnfocus = onUnfocus, target = target, id = id }
+        local helpers = {
+            onFocus = onFocus,
+            onFocusTick = onFocusTick,
+            onUnfocus = onUnfocus,
+            target = target,
+            id = id,
+        }
         if config.templates ~= nil then
             local emitter = config.templates[data ~= nil and data.frameTemplate or nil] or config.defaultTemplate
             if emitter ~= nil then
@@ -161,6 +185,7 @@ function nodes.scrollBoxList(builder, config)
                         { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = target },
                     },
                     onFocus = onFocus,
+                    onFocusTick = onFocusTick,
                     onUnfocus = onUnfocus,
                     tooltipFrame = target,
                 }

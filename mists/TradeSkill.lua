@@ -97,6 +97,7 @@ local function emitRecipe(builder, index, helpers)
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
         },
         onFocus = helpers.onFocus,
+        onFocusTick = helpers.onFocusTick,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
     })
