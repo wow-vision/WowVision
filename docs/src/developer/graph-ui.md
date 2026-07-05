@@ -47,7 +47,7 @@ That is everything: a render function and a window registration carrying `graphS
 
 Prefer the factories in `core/graph/nodes.lua` (`graph.nodes`) over hand-writing vtables. Every factory takes a single config table:
 
-- `nodes.proxyButton({ target = frame, label = ? })` — a real Blizzard button; Enter and Backspace click it securely as true left and right clicks. The label defaults to reading the frame's text live.
+- `nodes.proxyButton({ target = frame, label = ?, allowHidden = ? })` — a real Blizzard button; Enter and Backspace click it securely as true left and right clicks. The label defaults to reading the frame's text live. All proxy factories return nil for hidden targets — hidden pooled Blizzard frames carry stale state from prior occupants, so an unshown control is someone else's control — and `addItem` skips nil vtables. `allowHidden = true` opts out for frames clickable while hidden (action bar buttons).
 - `nodes.button({ label = ..., onActivate = fn, onSecondary = fn?, stateText = fn? })` — a synthetic button.
 - `nodes.text({ label = ..., live = ? })` — a read-only line; set `live` to watch it.
 - `nodes.proxyButtonMenu(builder, { label = ?, frame = ? or buttons = ? })` — a whole tab-cycled menu of proxy buttons: one stop per button, one announcement context, positions stamped across the set. This is the game menu's entire body.

@@ -201,9 +201,10 @@ function Builder:endRow()
 end
 
 -- Add a control -- into the open row, or as its own single-item row. A no-op
--- inside a collapsed group's subtree.
+-- inside a collapsed group's subtree, and a no-op on a nil vtable (the proxy
+-- factories yield nil for hidden targets).
 function Builder:addItem(id, vtable)
-    if self:_isSuppressed() then
+    if self:_isSuppressed() or vtable == nil then
         return self
     end
     local node = self:_makeNode(id, vtable)

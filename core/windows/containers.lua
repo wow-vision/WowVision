@@ -38,6 +38,9 @@ end
 -- focus), real clicks for pickup, use, and split, and drag support.
 function module.itemSlotNode(itemButton, label)
     local vtable = nodes.proxyButton({ target = itemButton, label = label })
+    if vtable == nil then
+        return nil
+    end
     vtable.announcements[1].live = "focus"
     tinsert(vtable.bindings, {
         binding = "drag",

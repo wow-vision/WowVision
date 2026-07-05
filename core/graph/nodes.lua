@@ -127,11 +127,19 @@ end
 
 -- A real Blizzard button: Enter and Backspace click it securely as true
 -- left/right clicks.
--- config: { target = frame, label = string|function? }
+--
+-- Hidden targets yield nil (addItem skips nil vtables): hidden pooled
+-- Blizzard frames carry stale state from prior occupants, so an unshown
+-- control is someone else's control. allowHidden = true opts out for frames
+-- that are clickable while hidden (action bar buttons).
+-- config: { target = frame, label = string|function?, allowHidden = bool? }
 function nodes.proxyButton(config)
     local target = config.target
     if target == nil then
         error("proxyButton requires a target frame")
+    end
+    if not config.allowHidden and target.IsShown ~= nil and not target:IsShown() then
+        return nil
     end
     return nodes.attachHover({
         controlType = graph.controlTypes.button,
@@ -342,6 +350,9 @@ function nodes.proxyEditBox(config)
     if editBox == nil then
         error("proxyEditBox requires an editBox")
     end
+    if not config.allowHidden and editBox.IsShown ~= nil and not editBox:IsShown() then
+        return nil
+    end
     if config.fixAutoFocus and editBox.SetAutoFocus ~= nil then
         editBox:SetAutoFocus(false)
     end
@@ -380,11 +391,14 @@ function nodes.proxyEditBox(config)
 end
 
 -- A real Blizzard check button: clicks are genuine, the checked state reads
--- as the live value.
--- config: { target, label? }
+-- as the live value. Hidden targets yield nil, like proxyButton.
+-- config: { target, label?, allowHidden? }
 function nodes.proxyCheckButton(config)
     local button = config.target
     local vtable = nodes.proxyButton(config)
+    if vtable == nil then
+        return nil
+    end
     vtable.controlType = graph.controlTypes.toggle
     tinsert(vtable.announcements, {
         text = function()

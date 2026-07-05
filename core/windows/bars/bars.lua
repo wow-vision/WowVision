@@ -117,10 +117,13 @@ local bars = module:createComponentRegistry({
 })
 
 -- An action button node: live label (drag, page flips, and cooldown-driven
--- changes rewrite slots), real clicks, drag support.
+-- changes rewrite slots), real clicks, drag support. allowHidden: action
+-- buttons stay clickable while their bar frame is hidden (the old
+-- ignoreRequiresFrameShown).
 function module.actionButtonNode(button, label)
     local vtable = nodes.proxyButton({
         target = button,
+        allowHidden = true,
         label = label or function()
             return module.getActionButtonLabel(button)
         end,

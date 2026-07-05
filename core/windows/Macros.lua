@@ -100,7 +100,7 @@ local function renderMain(builder)
     end
     builder:popContext()
 
-    if MacroFrame.SelectedMacroButton ~= nil then
+    if MacroFrame.SelectedMacroButton ~= nil and MacroFrame.SelectedMacroButton:IsShown() then
         builder:beginStop("pickup")
         local pickup = nodes.proxyButton({
             target = MacroFrame.SelectedMacroButton,

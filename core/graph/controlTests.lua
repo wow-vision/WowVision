@@ -185,6 +185,24 @@ testRunner:addSuite("GraphNodes", {
         end)
     end,
 
+    ["proxy factories skip hidden targets"] = function(t)
+        local hidden = {
+            IsShown = function()
+                return false
+            end,
+        }
+        t:assertEqual(graph.nodes.proxyButton({ target = hidden }), nil)
+        t:assertEqual(graph.nodes.proxyCheckButton({ target = hidden }), nil)
+        t:assertEqual(graph.nodes.proxyEditBox({ editBox = hidden }), nil)
+        local allowed = graph.nodes.proxyButton({ target = hidden, allowHidden = true })
+        t:assertEqual(allowed.controlType, graph.controlTypes.button)
+        -- addItem skips nil vtables, so call sites need no guards.
+        local b = Builder:new()
+        b:addItem(sid("gone"), nil)
+        local render = b:addLabel(sid("real"), "Real"):build()
+        t:assertEqual(#render.order, 1)
+    end,
+
     ["button requires a label and a handler"] = function(t)
         local ran = false
         local vtable = graph.nodes.button({
