@@ -8,6 +8,113 @@ local function sid(key)
 end
 
 --
+-- ScrollBox adapter tests
+--
+
+local function makeFakeScrollBox(rows)
+    local provider = {
+        Find = function(self, index)
+            return rows[index]
+        end,
+    }
+    local visibleFrames = {}
+    local scrollBox = {
+        scrolledTo = nil,
+        GetDataProviderSize = function(self)
+            return #rows
+        end,
+        GetDataProvider = function(self)
+            return provider
+        end,
+        ScrollToElementDataIndex = function(self, index)
+            self.scrolledTo = index
+            visibleFrames[rows[index]] = { name = "frame" .. index }
+        end,
+        FindFrame = function(self, data)
+            return visibleFrames[data]
+        end,
+    }
+    return scrollBox
+end
+
+testRunner:addSuite("GraphScrollBox", {
+    ["rows come from the data provider with data identity"] = function(t)
+        local rows = { { name = "Sword" }, { name = "Shield" }, { name = "Potion" } }
+        local scrollBox = makeFakeScrollBox(rows)
+        local builder = Builder:new()
+        graph.nodes.scrollBoxList(builder, {
+            scrollBox = scrollBox,
+            label = "Items",
+            rowLabel = function(data)
+                return data.name
+            end,
+        })
+        local render = builder:build()
+        t:assertEqual(#render.order, 3)
+        t:assertEqual(render.order[1].id.reference, rows[1])
+        t:assertEqual(graph.resolveText(render.order[2].vtable.announcements[1]), "Shield")
+        t:assertEqual(render.order[3].positionIndex, 3)
+        t:assertEqual(render.order[1].parent.vtable.announcements[1].text, "Items")
+    end,
+
+    ["focus scrolls and the click target resolves the materialized frame"] = function(t)
+        local rows = { { name = "Sword" }, { name = "Shield" } }
+        local scrollBox = makeFakeScrollBox(rows)
+        local builder = Builder:new()
+        graph.nodes.scrollBoxList(builder, {
+            scrollBox = scrollBox,
+            rowLabel = function(data)
+                return data.name
+            end,
+        })
+        local render = builder:build()
+        local node = render.order[2]
+        local targetFn = node.vtable.bindings[1].target
+        t:assertType(targetFn, "function")
+        t:assertNil(targetFn(), "offscreen row has no frame yet")
+        node.vtable.onFocus()
+        t:assertEqual(scrollBox.scrolledTo, 2)
+        t:assertNotNil(targetFn(), "scrolled row resolves its frame")
+        t:assertEqual(node.vtable.bindings[1].emulatedKey, "LeftButton")
+    end,
+
+    ["custom rows compose the scroll hook and lazy target"] = function(t)
+        local rows = { { name = "Lot" } }
+        local scrollBox = makeFakeScrollBox(rows)
+        local builder = Builder:new()
+        graph.nodes.scrollBoxList(builder, {
+            scrollBox = scrollBox,
+            row = function(data, index, helpers)
+                return {
+                    controlType = graph.controlTypes.button,
+                    announcements = { { text = data.name } },
+                    bindings = {
+                        { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+                    },
+                    onFocus = helpers.onFocus,
+                }
+            end,
+        })
+        local render = builder:build()
+        render.order[1].vtable.onFocus()
+        t:assertEqual(scrollBox.scrolledTo, 1)
+        t:assertNotNil(render.order[1].vtable.bindings[1].target())
+    end,
+
+    ["an empty provider emits nothing"] = function(t)
+        local scrollBox = makeFakeScrollBox({})
+        local builder = Builder:new()
+        graph.nodes.scrollBoxList(builder, {
+            scrollBox = scrollBox,
+            rowLabel = function(data)
+                return ""
+            end,
+        })
+        t:assertNil(builder:build())
+    end,
+})
+
+--
 -- Node factory tests
 --
 

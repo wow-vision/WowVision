@@ -204,10 +204,12 @@ function GraphHost:_syncNodeFocus(screen)
     self._focusNode = node
     self._bindingsDirty = false
     if node ~= nil then
-        self:_engageNodeBindings(node)
+        -- onFocus runs first: scroll adapters materialize the row frame here,
+        -- and binding targets may resolve lazily against it at engage.
         if node.vtable.onFocus ~= nil then
             pcall(node.vtable.onFocus, node)
         end
+        self:_engageNodeBindings(node)
     end
 end
 

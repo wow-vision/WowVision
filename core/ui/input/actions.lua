@@ -11,11 +11,17 @@ WowVision.inputActions = actions
 
 -- Secure click-through to a protected Blizzard frame: the emulated mouse
 -- button is passed through, so Enter on a proxy node is a true left click.
--- spec: { target = frame }
+-- target may be a function resolved at engage time -- scroll adapters bind
+-- rows whose frames only exist after scrolling them into view.
+-- spec: { target = frame|function }
 actions:register("Click", {
     configure = function(frame, spec, emulatedKey)
+        local target = spec.target
+        if type(target) == "function" then
+            target = target()
+        end
         frame:SetAttribute("type", "click")
-        frame:SetAttribute("clickbutton", spec.target)
+        frame:SetAttribute("clickbutton", target)
         frame:SetAttribute("button", emulatedKey)
     end,
     clear = function(frame, spec)

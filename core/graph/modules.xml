@@ -8,6 +8,7 @@
   <Script file="Builder.lua" />
   <Script file="ControlTypes.lua" />
   <Script file="nodes.lua" />
+  <Script file="scrollBox.lua" />
   <Script file="settings.lua" />
   <Script file="fieldControls.lua" />
   <Script file="Screen.lua" />
