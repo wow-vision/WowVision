@@ -261,6 +261,47 @@ function nodes.textInput(config)
     }
 end
 
+-- Push a confirmation child screen: a prompt line and confirm/cancel buttons.
+-- Escape pops without confirming, like cancel.
+-- config: { prompt = string|function, confirmLabel?, cancelLabel?, onConfirm = function, onCancel = function? }
+function nodes.pushConfirm(config)
+    local host = WowVision.graphHost
+    local stack = host:focusedStack()
+    if stack == nil then
+        return
+    end
+    host:push(stack, {
+        key = "confirm",
+        render = function(builder)
+            builder:addItem(ControlId.structural("prompt"), nodes.text({ label = config.prompt }))
+            builder:addItem(
+                ControlId.structural("yes"),
+                nodes.button({
+                    label = config.confirmLabel or "Yes",
+                    onActivate = function()
+                        host:pop(host:focusedStack())
+                        if config.onConfirm ~= nil then
+                            config.onConfirm()
+                        end
+                    end,
+                })
+            )
+            builder:addItem(
+                ControlId.structural("no"),
+                nodes.button({
+                    label = config.cancelLabel or "No",
+                    onActivate = function()
+                        host:pop(host:focusedStack())
+                        if config.onCancel ~= nil then
+                            config.onCancel()
+                        end
+                    end,
+                })
+            )
+        end,
+    })
+end
+
 -- A whole tab-cycled menu of proxy buttons under one announcement context:
 -- one tab stop per button, positions stamped across the set. Buttons come
 -- from config.buttons, else all shown Button children of config.frame sorted
