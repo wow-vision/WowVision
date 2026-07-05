@@ -109,31 +109,24 @@ local function emitItem(builder, item)
     end
 
     if isSubmenuRow(item) then
-        -- A submenu parent: Enter opens its child menu, which appears as
-        -- the next tab stop. ForceOpenSubmenu bypasses the manager's
-        -- IsMouseOver gate (the reason synthetic hover can never work).
+        -- A submenu parent: Enter opens its child menu, which the watcher
+        -- pushes as a new screen (landing on its first item).
+        -- ForceOpenSubmenu bypasses the manager's IsMouseOver gate (the
+        -- reason synthetic hover can never work).
         local captured = item
         builder:addItem(ControlId.forObject(item), {
             controlType = graph.controlTypes.dropdown,
             announcements = { { text = label, kind = kinds.label } },
             onActivate = function()
                 local description = descriptionOf(captured)
-                if description == nil then
-                    geterrorhandler()("dropdown submenu: no element description")
-                    return
-                end
-                if description.ForceOpenSubmenu == nil then
-                    geterrorhandler()("dropdown submenu: proxy lacks ForceOpenSubmenu")
+                if description == nil or description.ForceOpenSubmenu == nil then
+                    geterrorhandler()("dropdown submenu: no usable element description")
                     return
                 end
                 local ok, err = pcall(description.ForceOpenSubmenu, description)
                 if not ok then
                     geterrorhandler()("dropdown submenu: " .. tostring(err))
-                    return
                 end
-                -- Land focus inside the submenu once the rebuild sees it.
-                dropdown.pendingFocus = true
-                dropdown.pendingFocusUntil = GetTime() + 1
             end,
         })
         return
@@ -219,35 +212,35 @@ local function renderOneMenu(builder, menuFrame, levelIndex)
     builder:popContext()
 end
 
-local function render(builder, screen)
-    local root = dropdown.frame
-    if root == nil or not root:IsShown() then
-        return
-    end
-    local menus = openMenuFrames(root)
-    for levelIndex, menuFrame in ipairs(menus) do
-        renderOneMenu(builder, menuFrame, levelIndex)
-    end
-
-    -- A submenu was just opened by Enter: move focus to its first item.
-    if dropdown.pendingFocus then
-        if #menus > 1 then
-            local children = { menus[#menus]:GetChildren() }
-            for i = 3, #children do
-                if children[i]:IsShown() then
-                    screen.state.nextSuggestedMove = ControlId.forObject(children[i])
-                    break
-                end
-            end
-            dropdown.pendingFocus = nil
-        elseif GetTime() > (dropdown.pendingFocusUntil or 0) then
-            dropdown.pendingFocus = nil
+-- One screen per menu level. If this level vanished mid-tick (the sync
+-- pops momentarily), render the deepest surviving menu so an empty render
+-- never closes the whole stack.
+local function renderLevel(level)
+    return function(builder, screen)
+        local root = dropdown.frame
+        if root == nil or not root:IsShown() then
+            return
         end
+        local menus = openMenuFrames(root)
+        local menuFrame = menus[level] or menus[#menus]
+        if menuFrame == nil then
+            return
+        end
+        renderOneMenu(builder, menuFrame, level)
     end
 end
 
--- Called every frame from UIHost's update. The stack lives as long as ANY
--- menu is open; submenu levels come and go inside the per-tick rebuild.
+local function closeMenuFrame(menuFrame)
+    if menuFrame ~= nil and menuFrame.Close ~= nil then
+        pcall(menuFrame.Close, menuFrame)
+    end
+end
+
+-- Called every frame from UIHost's update. Each open menu level is one
+-- screen on the dropdown stack, synced both ways: Blizzard opening a
+-- submenu pushes a screen (landing on its first item); the user popping a
+-- screen (Escape) closes Blizzard's deepest menu; Blizzard collapsing
+-- levels pops our screens.
 function dropdown.update()
     local manager = Menu ~= nil and Menu.GetManager ~= nil and Menu:GetManager() or nil
     local open = manager ~= nil and manager:GetOpenMenu() or nil
@@ -257,10 +250,44 @@ function dropdown.update()
             WowVision.graphHost:close(dropdown.stack)
             dropdown.stack = nil
         end
+        dropdown.depth = 0
         dropdown.active = nil
         return
     end
+
+    local host = WowVision.graphHost
     if dropdown.stack == nil then
-        dropdown.stack = WowVision.graphHost:open({ key = "dropdown", render = render })
+        dropdown.stack = host:open({
+            key = "dropdown",
+            captureClose = true,
+            onRequestClose = function()
+                closeMenuFrame(dropdown.frame)
+            end,
+            render = renderLevel(1),
+        })
+        dropdown.depth = 1
+    end
+
+    local menus = openMenuFrames(open)
+    local levels = #menus
+    local screens = #dropdown.stack.screens
+    if screens < dropdown.depth then
+        -- The user popped a submenu screen: close Blizzard's deepest levels
+        -- to match.
+        for level = levels, screens + 1, -1 do
+            closeMenuFrame(menus[level])
+        end
+        dropdown.depth = screens
+    elseif levels > dropdown.depth then
+        for level = dropdown.depth + 1, levels do
+            host:push(dropdown.stack, { key = "dropdown:" .. level, render = renderLevel(level) })
+        end
+        dropdown.depth = levels
+    elseif levels < dropdown.depth then
+        -- Blizzard collapsed submenus (a pick, a hover elsewhere): pop ours.
+        for _ = levels + 1, dropdown.depth do
+            host:pop(dropdown.stack)
+        end
+        dropdown.depth = levels
     end
 end
