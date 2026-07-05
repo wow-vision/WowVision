@@ -162,20 +162,37 @@ function module.renderSend(builder, screen)
     end
     builder:popContext()
 
+    -- Send Money and COD are a RADIO pair: clicking one unchecks the other,
+    -- and clicking the already-selected one is a no-op. COD is disabled
+    -- until an item is attached; it stays visible with its state spoken.
     builder:beginStop("sendMoney")
     builder:addItem(
         ControlId.forObject(SendMailSendMoneyButton),
         module.checkButtonNode(SendMailSendMoneyButton, L["Send Money"])
     )
-    if SendMailCODButton:IsEnabled() then
-        builder:beginStop("cod")
-        builder:addItem(ControlId.forObject(SendMailCODButton), module.checkButtonNode(SendMailCODButton, L["COD"]))
+    builder:beginStop("cod")
+    local cod = module.checkButtonNode(SendMailCODButton, L["COD"])
+    if cod ~= nil then
+        tinsert(cod.announcements, {
+            text = function()
+                if not SendMailCODButton:IsEnabled() then
+                    return L["Disabled"]
+                end
+                return nil
+            end,
+            kind = graph.kinds.enabled,
+        })
+        builder:addItem(ControlId.forObject(SendMailCODButton), cod)
     end
 
     -- Each coin box is its own stop: tabbing into a box starts typing, and
     -- Tab out goes to the NEXT STOP, so boxes sharing a stop would be
-    -- unreachable.
-    builder:pushContext("money", L["Money"])
+    -- unreachable. The section label follows the mode: Amount to Send or
+    -- COD Amount.
+    builder:pushContext(
+        "money",
+        SendMailMoneyText ~= nil and SendMailMoneyText:GetText() or L["Money"]
+    )
     builder:beginStop("gold")
     builder:addItem(ControlId.structural("gold"), module.editBoxNode(SendMailMoneyGold, L["Gold"]))
     builder:beginStop("silver")
