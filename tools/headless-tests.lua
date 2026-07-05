@@ -114,6 +114,7 @@ local parseOnly = {
     "mists/collections/module.lua",
     "mists/collections/MountJournal.lua",
     "core/chat/ui.lua",
+    "mists/auction.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)

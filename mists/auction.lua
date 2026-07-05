@@ -1,709 +1,684 @@
 local module = WowVision.base.windows:createModule("auction")
 local L = module.L
 module:setLabel(L["Auction House"])
-local gen = module:hasUI()
 
---Some utility functions
-local function getTimeLeftString(time)
-    if time == 0 then
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
+
+-- The auction house (the modern AuctionHouseFrame: every list is a
+-- ScrollBox over C_AuctionHouse data). Buy: categories, search, browse
+-- results, then the commodity or item purchase panes. Sell: the item or
+-- commodity posting forms with comparables. Auctions: your auctions and
+-- bids. The BuyDialog overlay replaces the whole body while shown. All row
+-- clicks are real clicks on the real row buttons.
+
+local function coin(amount)
+    return C_CurrencyInfo.GetCoinText(amount or 0)
+end
+
+local function getTimeLeftString(timeLeft)
+    if timeLeft == 0 then
         return L["Short"]
-    elseif time == 1 then
+    elseif timeLeft == 1 then
         return L["Medium"]
-    elseif time == 2 then
+    elseif timeLeft == 2 then
         return L["Long"]
-    else
-        return L["Very Long"]
     end
+    return L["Very Long"]
 end
 
-local auctionHooks = {}
-
-gen:Element("auction", function(props)
-    local result = { "Panel", layout = true, shouldAnnounce = false, children = {} }
-    if AuctionHouseFrame.BuyDialog:IsShown() then
-        --This is a popup that overlays the entire screen
-        tinsert(result.children, { "auction/BuyDialog", key = "BuyDialog" })
-    else
-        tinsert(result.children, { "auction/AuctionHouse", key = "AuctionHouse" })
-    end
-    return result
-end)
-
-gen:Element("auction/AuctionHouse", function(props)
-    local result = {
-        "Panel",
-        label = AuctionHouseFrame:GetTitleText():GetText(),
-        wrap = true,
-        children = {
-            { "auction/Tabs" },
-        },
-    }
-
-    return result
-end)
-
-gen:Element("auction/Tabs", function(props)
-    local frame = AuctionHouseFrame
-    local result = {
-        "ProxyTabPanel",
-        frame = frame,
-        wrap = true,
-        tabs = {
-            { "auction/BuyTab" },
-            { "auction/SellTab" },
-            { "auction/AuctionsTab" },
-        },
-    }
-
-    return result
-end)
-
-gen:Element("auction/BuyTab", function(props)
-    local result = {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "auction/CategoriesList" },
-            { "auction/SearchBar" },
-        },
-    }
-    if AuctionHouseFrame.BrowseResultsFrame:IsShown() then
-        tinsert(result.children, { "auction/SearchResults" })
-    end
-    if AuctionHouseFrame.CommoditiesBuyFrame:IsShown() then
-        tinsert(result.children, { "auction/BuyCommodity" })
-    elseif AuctionHouseFrame.ItemBuyFrame:IsShown() then
-        tinsert(result.children, { "auction/BuyItem" })
-    end
-    return result
-end)
-
-local function CategoriesList_getElement(self, button)
-    return { "ProxyButton", frame = button }
-end
-
-gen:Element("auction/CategoriesList", function(props)
-    return {
-        "ProxyScrollBox",
-        frame = AuctionHouseFrame.CategoriesList.ScrollBox,
-        label = L["Categories"],
-        getElement = CategoriesList_getElement,
-    }
-end)
-
-gen:Element("auction/SearchBar", function(props)
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            {
-                "ProxyDropdownButton",
-                frame = AuctionHouseFrame.SearchBar.FilterButton,
-            },
-            {
-                "ProxyEditBox",
-                frame = AuctionHouseFrame.SearchBar.SearchBox,
-                label = L["Search"],
-            },
-            { "ProxyButton", frame = AuctionHouseFrame.SearchBar.SearchButton },
-        },
-    }
-end)
-
-module:registerDropdownMenu("MENU_AUCTION_HOUSE_SEARCH_FILTER", { [2] = { "auction/DropdownLevelRange" } })
-
-gen:Element("auction/DropdownLevelRange", function(props)
-    return {
-        "List",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            {
-                "ProxyEditBox",
-                frame = props.frame.MinLevel,
-                autoInputOnFocus = false,
-                hookEnter = true,
-                label = L["Minimum"],
-            },
-            {
-                "ProxyEditBox",
-                frame = props.frame.MaxLevel,
-                autoInputOnFocus = false,
-                hookEnter = true,
-                label = L["Maximum"],
-            },
-        },
-    }
-end)
-
-local function BrowseResults_getNumEntries(self)
-    return AuctionHouseFrame.BrowseResultsFrame:GetNumBrowseResults()
-end
-
-local function BrowseResults_getButtonData(self, button)
-    local rowData = button:GetRowData()
-    local data = {}
-    button:GetScript("OnEnter")(button)
-    data.name = GameTooltip:GetItem()
-    button:GetScript("OnLeave")(button)
-
-    data.price = C_CurrencyInfo.GetCoinText(rowData.minPrice)
-    data.available = rowData.totalQuantity
-    return data
-end
-
-gen:Element("auction/SearchResults", function(props)
-    return {
-        "ProxyScrollTable",
-        frame = AuctionHouseFrame.BrowseResultsFrame.ItemList.ScrollBox,
-        label = L["Results"],
-        getNumEntries = BrowseResults_getNumEntries,
-        getButtonData = BrowseResults_getButtonData,
-        headers = {
-            {
-                key = "name",
-            },
-            {
-                key = "price",
-                label = L["Price"],
-            },
-            {
-                key = "available",
-                label = L["Available"],
-            },
-        },
-    }
-end)
-
-gen:Element("auction/BuyCommodity", function(props)
-    local frame = AuctionHouseFrame.CommoditiesBuyFrame
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "ProxyButton", frame = frame.BackButton },
-            { "auction/BuyCommodityAuctionsList", frame = frame.ItemList },
-            { "auction/BuyCommodityBuyDisplay", frame = frame.BuyDisplay },
-        },
-    }
-end)
-
-local function BuyCommodityAuctionsList_getNumEntries(self)
-    return AuctionHouseFrame.CommoditiesBuyFrame.ItemList:getNumEntries()
-end
-
-local function BuyCommodityAuctionsList_getButtonData(self, button)
-    local rowData = button:GetRowData()
-    local data = {}
-    data.name = C_Item.GetItemInfo(rowData.itemID)
-    data.unitPrice = C_CurrencyInfo.GetCoinText(rowData.unitPrice)
-    data.available = rowData.quantity
-    return data
-end
-
-local function BuyCommodityAuctionsList_getSelectedIndex(self)
-    return -1
-end
-
-gen:Element("auction/BuyCommodityAuctionsList", function(props)
-    return {
-        "ProxyScrollTable",
-        frame = props.frame.ScrollBox,
-        label = L["Auctions"],
-        getNumEntries = BuyCommodityAuctionsList_getNumEntries,
-        getButtonData = BuyCommodityAuctionsList_getButtonData,
-        getSelectedIndex = BuyCommodityAuctionsList_getSelectedIndex,
-        headers = {
-            {
-                key = "name",
-            },
-            {
-                key = "unitPrice",
-                label = L["Unit Price"],
-            },
-            {
-                key = "available",
-                label = L["Available"],
-            },
-        },
-    }
-end)
-
-gen:Element("auction/BuyCommodityBuyDisplay", function(props)
-    local result = { "Panel", layout = true, shouldAnnounce = false, children = {} }
-    if props.frame.QuantityInput:IsShown() then
-        tinsert(result.children, {
-            "ProxyEditBox",
-            frame = props.frame.QuantityInput.InputBox,
-            label = props.frame.QuantityInput.Label:GetText(),
-        })
-        tinsert(result.children, {
-            "Text",
-            label = props.frame.TotalPrice.Label:GetText(),
-            text = C_CurrencyInfo.GetCoinText(props.frame.TotalPrice:GetAmount()),
-        })
-        tinsert(result.children, { "ProxyButton", frame = props.frame.BuyButton })
-    end
-
-    return result
-end)
-
-gen:Element("auction/BuyItem", function(props)
-    local frame = AuctionHouseFrame.ItemBuyFrame
-    local result = {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "ProxyButton", frame = AuctionHouseFrame.ItemBuyFrame.BackButton },
-        },
-    }
-    if frame.ItemList:IsShown() then
-        tinsert(result.children, { "auction/BuyItemAuctionsList", frame = frame.ItemList })
-    end
-    if frame:HasAuctionSelected() then
-        tinsert(result.children, { "auction/BuyoutFrame", frame = frame.BuyoutFrame })
-        tinsert(result.children, { "auction/BidFrame", frame = frame.BidFrame })
-    end
-    return result
-end)
-
-local function BuyItemAuctionsList_getNumEntries(self)
-    return AuctionHouseFrame.ItemBuyFrame.ItemList:getNumEntries()
-end
-
-local function BuyItemAuctionsList_getButtonData(self, button)
-    local rowData = button:GetRowData()
-    local data = {}
-    button:GetScript("OnEnter")(button)
-    data.name = GameTooltip:GetItem()
-    button:GetScript("OnLeave")(button)
-    if rowData.bidAmount then
-        data.bidPrice = C_CurrencyInfo.GetCoinText(rowData.bidAmount)
-    end
-    if rowData.buyoutAmount then
-        data.buyoutPrice = C_CurrencyInfo.GetCoinText(rowData.buyoutAmount)
-    end
-    if rowData.timeLeft then
-        data.timeLeft = getTimeLeftString(rowData.timeLeft)
-    end
-
-    return data
-end
-
-gen:Element("auction/BuyItemAuctionsList", function(props)
-    return {
-        "ProxyScrollTable",
-        frame = props.frame.ScrollBox,
-        label = L["Auctions"],
-        getNumEntries = BuyItemAuctionsList_getNumEntries,
-        getButtonData = BuyItemAuctionsList_getButtonData,
-        headers = {
-            { key = "name" },
-            { key = "bidPrice", label = L["Bid Price"] },
-            { key = "buyoutPrice", label = L["Buyout Price"] },
-            { key = "timeLeft", label = L["Time Left"] },
-        },
-    }
-end)
-
-gen:Element("auction/BuyoutFrame", function(props)
-    return {
-        "Panel",
-        label = L["Buyout Frame"],
-        children = {
-            { "Text", text = C_CurrencyInfo.GetCoinText(props.frame:GetPrice()) },
-            { "ProxyButton", frame = props.frame.BuyoutButton },
-        },
-    }
-end)
-
-gen:Element("auction/BidFrame", function(props)
-    local result = { "Panel", label = L["Bid Frame"], children = {} }
-    tinsert(result.children, {
-        "ProxyEditBox",
-        frame = props.frame.BidAmount.gold,
-        label = L["Gold"],
-    })
-    tinsert(result.children, { "ProxyEditBox", frame = props.frame.BidAmount.silver, label = L["Silver"] })
-    tinsert(result.children, {
-        "ProxyEditBox",
-        frame = props.frame.BidAmount.copper,
-        label = L["Copper"],
-    })
-    tinsert(result.children, { "ProxyButton", frame = props.frame.BidButton })
-    return result
-end)
-
-gen:Element("auction/BuyDialog", function(props)
-    local frame = AuctionHouseFrame.BuyDialog
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        wrap = true,
-        children = {
-            { "Text", text = frame.ItemDisplay.ItemText:GetText() },
-            { "Text", text = C_CurrencyInfo.GetCoinText(frame.PriceFrame:GetAmount()) },
-            { "ProxyButton", frame = AuctionHouseFrame.BuyDialog.CancelButton, enabled = true },
-            { "ProxyButton", frame = AuctionHouseFrame.BuyDialog.BuyNowButton, enabled = true },
-        },
-    }
-end)
-
-gen:Element("auction/SellTab", function(props)
-    local result = { "Panel", layout = true, shouldAnnounce = false, children = {} }
-    if AuctionHouseFrame.ItemSellFrame:IsShown() then
-        tinsert(result.children, { "auction/SellItem" })
-    elseif AuctionHouseFrame.CommoditiesSellFrame:IsShown() then
-        tinsert(result.children, { "auction/SellCommodity" })
-    end
-    return result
-end)
-
-local function SellItem_Click()
-    AuctionHouseFrame.ItemSellFrame:OnOverlayClick()
-end
-
-gen:Element("auction/SellTabItemPlacement", function(props)
-    local result = {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            {
-                "Button",
-                label = L["Place Item Here"],
-                draggable = true,
-                events = {
-                    click = SellItem_Click,
-                },
-            },
-        },
-    }
-    return result
-end)
-
-gen:Element("auction/SellItem", function(props)
-    local frame = AuctionHouseFrame.ItemSellFrame
-    local result = {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "auction/SellTabItemPlacement", frame = frame },
-            {
-                "ProxyEditBox",
-                frame = frame.QuantityInput.InputBox,
-                label = frame.QuantityInput.Label:GetText(),
-            },
-            { "ProxyButton", frame = frame.QuantityInput.MaxButton },
-            { "ProxyDropdownButton", frame = frame.Duration.Dropdown },
-            { "auction/SellItemItemList" },
-            { "auction/SellItemPriceInput", frame = frame.PriceInput },
-            {
-                "Text",
-                label = frame.Deposit.Label:GetText(),
-                text = C_CurrencyInfo.GetCoinText(frame.Deposit.MoneyDisplayFrame:GetAmount()),
-            },
-            {
-                "Text",
-                label = frame.TotalPrice.Label:GetText(),
-                text = C_CurrencyInfo.GetCoinText(frame.TotalPrice:GetAmount()),
-            },
-            { "ProxyButton", frame = frame.PostButton },
-            { "ProxyCheckButton", frame = frame.BuyoutModeCheckButton },
-            { "auction/SellItemPriceInput", frame = frame.SecondaryPriceInput },
-        },
-    }
-    return result
-end)
-
-gen:Element("auction/SellItemPriceInput", function(props)
-    if not props.frame:IsShown() then
+-- Item names from item keys arrive async from the server; labels are live,
+-- so they fill in when the data lands.
+local function itemKeyName(itemKey)
+    if itemKey == nil then
         return nil
     end
-    local moneyFrame = props.frame.MoneyInputFrame
-    local result = {
-        "Panel",
-        label = props.frame.Label:GetText(),
-        layout = true,
-        children = {
-            { "ProxyEditBox", frame = moneyFrame.GoldBox, label = L["Gold"] },
-            { "ProxyEditBox", frame = moneyFrame.SilverBox, label = L["Silver"] },
-            { "ProxyEditBox", frame = moneyFrame.CopperBox, label = L["Copper"] },
-        },
-    }
-    return result
-end)
-
-local function SellItemItemList_getNumEntries(self)
-    return AuctionHouseFrame.ItemSellFrame:GetItemSellList():getNumEntries()
+    local info = C_AuctionHouse.GetItemKeyInfo(itemKey)
+    return info ~= nil and info.itemName or nil
 end
 
-local function SellItemItemList_getButtonData(self, button)
-    local rowData = button:GetRowData()
-    local data = {}
-    button:GetScript("OnEnter")(button)
-    data.name = GameTooltip:GetItem()
-    button:GetScript("OnLeave")(button)
-
-    if rowData.bidAmount then
-        data.bidPrice = C_CurrencyInfo.GetCoinText(rowData.bidAmount)
+local function itemKeyId(prefix, itemKey, fallbackIndex)
+    if itemKey == nil then
+        return ControlId.structural(prefix .. ":" .. fallbackIndex)
     end
-    if rowData.buyoutAmount then
-        data.buyoutPrice = C_CurrencyInfo.GetCoinText(rowData.buyoutAmount)
-    end
-
-    return data
-end
-
-gen:Element("auction/SellItemItemList", function(props)
-    local frame = AuctionHouseFrame.ItemSellFrame:GetItemSellList()
-    if not frame then
-        return nil
-    end
-
-    return {
-        "ProxyScrollTable",
-        frame = frame.ScrollBox,
-        label = L["Auctions"],
-        getNumEntries = SellItemItemList_getNumEntries,
-        getButtonData = SellItemItemList_getButtonData,
-        headers = {
-            { key = "name" },
-            { key = "bidPrice", label = L["Bid Price"] },
-            { key = "buyoutPrice", label = L["Buyout Price"] },
-        },
-    }
-end)
-
-gen:Element("auction/SellCommodity", function(props)
-    local frame = AuctionHouseFrame.CommoditiesSellFrame
-    local result = {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "auction/SellTabItemPlacement", frame = frame },
-            {
-                "ProxyEditBox",
-                frame = frame.QuantityInput.InputBox,
-                label = frame.QuantityInput.Label:GetText(),
-            },
-            { "ProxyButton", frame = frame.QuantityInput.MaxButton },
-            { "ProxyDropdownButton", frame = frame.Duration.Dropdown },
-            { "auction/SellCommodityItemList" },
-            { "auction/SellItemPriceInput", frame = frame.PriceInput },
-            {
-                "Text",
-                label = frame.Deposit.Label:GetText(),
-                text = C_CurrencyInfo.GetCoinText(frame.Deposit.MoneyDisplayFrame:GetAmount()),
-            },
-            {
-                "Text",
-                label = frame.TotalPrice.Label:GetText(),
-                text = C_CurrencyInfo.GetCoinText(frame.TotalPrice:GetAmount()),
-            },
-            { "ProxyButton", frame = frame.PostButton },
-        },
-    }
-    return result
-end)
-
-local function SellCommodityItemList_getNumEntries()
-    return AuctionHouseFrame.CommoditiesSellFrame:GetCommoditiesSellList():getNumEntries()
-end
-
-local function SellCommodityItemList_getButtonData(self, button)
-    local rowData = button:GetRowData()
-    local data = {}
-    data.name = C_Item.GetItemInfo(rowData.itemID)
-    data.unitPrice = C_CurrencyInfo.GetCoinText(rowData.unitPrice)
-
-    if rowData.owners and #rowData.owners > 0 then
-        local owners = table.concat(rowData.owners, ", ")
-        data.seller = owners
-    end
-
-    return data
-end
-
-gen:Element("auction/SellCommodityItemList", function(props)
-    local frame = AuctionHouseFrame.CommoditiesSellFrame:GetCommoditiesSellList()
-    if not frame then
-        return nil
-    end
-    return {
-        "ProxyScrollTable",
-        frame = frame.ScrollBox,
-        label = L["Auctions"],
-        getNumEntries = SellCommodityItemList_getNumEntries,
-        getButtonData = SellCommodityItemList_getButtonData,
-        headers = {
-            { key = "name" },
-            { key = "unitPrice", label = L["Unit Price"] },
-            { key = "seller", label = L["Seller"] },
-        },
-    }
-end)
-
-gen:Element("auction/AuctionsTab", function(props)
-    local frame = AuctionHouseFrame.AuctionsFrame
-    local result = {
-        "ProxyTabPanel",
-        frame = frame,
-        tabs = {
-            { "auction/AuctionsFrameAuctions", frame = frame },
-            { "auction/AuctionsFrameBids", frame = frame },
-        },
-    }
-    return result
-end)
-
-gen:Element("auction/AuctionsFrameAuctions", function(props)
-    local result = {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "auction/AllAuctionsList", frame = props.frame.AllAuctionsList },
-            { "ProxyButton", frame = props.frame.CancelAuctionButton },
-        },
-    }
-    return result
-end)
-
-local function AllAuctionsList_getButtonData(self, button)
-    local rowData = button:GetRowData()
-    local data = {}
-    if rowData.status == 1 then
-        data.sold = true
-    end
-    button:GetScript("OnEnter")(button)
-    data.name = GameTooltip:GetItem()
-    button:GetScript("OnLeave")(button)
-    if rowData.bidAmount then
-        data.bidPrice = C_CurrencyInfo.GetCoinText(rowData.bidAmount)
-    end
-    if rowData.buyoutAmount then
-        data.buyoutPrice = C_CurrencyInfo.GetCoinText(rowData.buyoutAmount)
-    end
-    if rowData.quantity then
-        data.quantity = rowData.quantity
-    end
-    if rowData.timeLeftSeconds then
-        data.timeLeft = SecondsToTime(rowData.timeLeftSeconds, false, true)
-    end
-    return data
-end
-
-local AllAuctionsList_selection = nil
-
-local function AllAuctionsList_selectionCallback(data)
-    AllAuctionsList_selection = data
-end
-
---mark
-local function AllAuctionsList_Mount(self, props)
-    WowVision.UIHost:hookFunc(
-        AuctionHouseFrame.AuctionsFrame.AllAuctionsList,
-        "selectionCallback",
-        AllAuctionsList_selectionCallback
+    return ControlId.structural(
+        prefix
+            .. ":"
+            .. tostring(itemKey.itemID)
+            .. ":"
+            .. tostring(itemKey.itemLevel or 0)
+            .. ":"
+            .. tostring(itemKey.itemSuffix or 0)
     )
 end
 
-gen:Element("auction/AllAuctionsList", function(props)
-    return {
-        "ProxyScrollTable",
-        frame = props.frame.ScrollBox,
+local function isSelectedEntry(list, data)
+    if list == nil or list.GetSelectedEntry == nil then
+        return false
+    end
+    local ok, selected = pcall(list.GetSelectedEntry, list)
+    return ok and selected == data
+end
+
+-- A table row: label composed from row data, real clicks, selected state
+-- when the list tracks one.
+local function tableRow(list, labelOf)
+    return function(data, index, helpers)
+        return {
+            controlType = graph.controlTypes.button,
+            announcements = {
+                {
+                    text = function()
+                        return labelOf(data, index)
+                    end,
+                    kind = kinds.label,
+                },
+                {
+                    text = function()
+                        if isSelectedEntry(list, data) then
+                            return L["selected"]
+                        end
+                        return nil
+                    end,
+                    kind = kinds.selected,
+                },
+            },
+            bindings = {
+                { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+            },
+            onFocus = helpers.onFocus,
+            onFocusTick = helpers.onFocusTick,
+            onUnfocus = helpers.onUnfocus,
+            tooltipFrame = helpers.target,
+        }
+    end
+end
+
+local function actionStop(builder, stopKey, button, label)
+    if button == nil or not button:IsShown() then
+        return
+    end
+    builder:beginStop(stopKey)
+    builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button, label = label }))
+end
+
+local function liveText(builder, id, label)
+    builder:addItem(id, nodes.text({ label = label }))
+end
+
+-- Gold, silver, copper boxes as separate stops under a labeled context.
+local function moneyInputStops(builder, keyPrefix, contextLabel, moneyFrame)
+    builder:pushContext(keyPrefix, contextLabel)
+    builder:beginStop(keyPrefix .. ":gold")
+    builder:addItem(
+        ControlId.structural(keyPrefix .. ":gold"),
+        nodes.proxyEditBox({ editBox = moneyFrame.GoldBox or moneyFrame.gold, label = L["Gold"] })
+    )
+    builder:beginStop(keyPrefix .. ":silver")
+    builder:addItem(
+        ControlId.structural(keyPrefix .. ":silver"),
+        nodes.proxyEditBox({ editBox = moneyFrame.SilverBox or moneyFrame.silver, label = L["Silver"] })
+    )
+    builder:beginStop(keyPrefix .. ":copper")
+    builder:addItem(
+        ControlId.structural(keyPrefix .. ":copper"),
+        nodes.proxyEditBox({ editBox = moneyFrame.CopperBox or moneyFrame.copper, label = L["Copper"] })
+    )
+    builder:popContext()
+end
+
+------------------------------------------------------------
+-- Buy tab
+------------------------------------------------------------
+
+local function renderCategories(builder)
+    builder:beginStop("categories")
+    nodes.scrollBoxList(builder, {
+        scrollBox = AuctionHouseFrame.CategoriesList.ScrollBox,
+        key = "categories",
+        label = L["Categories"],
+        id = function(data, index)
+            if data ~= nil and data.name ~= nil then
+                return ControlId.structural("cat:" .. tostring(data.type) .. ":" .. data.name)
+            end
+            return ControlId.structural("cat:" .. index)
+        end,
+        row = function(data, index, helpers)
+            return {
+                controlType = graph.controlTypes.button,
+                announcements = {
+                    {
+                        text = function()
+                            return data ~= nil and data.name or nil
+                        end,
+                        kind = kinds.label,
+                    },
+                    {
+                        text = function()
+                            if data ~= nil and data.selected then
+                                return L["selected"]
+                            end
+                            return nil
+                        end,
+                        kind = kinds.selected,
+                    },
+                },
+                bindings = {
+                    { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+                },
+                onFocus = helpers.onFocus,
+                onFocusTick = helpers.onFocusTick,
+                onUnfocus = helpers.onUnfocus,
+            }
+        end,
+    })
+end
+
+local function renderSearchBar(builder)
+    local searchBar = AuctionHouseFrame.SearchBar
+    if searchBar.FilterButton ~= nil and searchBar.FilterButton:IsShown() then
+        builder:beginStop("filter")
+        builder:addItem(
+            ControlId.forObject(searchBar.FilterButton),
+            nodes.proxyDropdown({ target = searchBar.FilterButton })
+        )
+    end
+    builder:beginStop("searchBox")
+    builder:addItem(
+        ControlId.structural("searchBox"),
+        nodes.proxyEditBox({ editBox = searchBar.SearchBox, label = L["Search"] })
+    )
+    actionStop(builder, "searchButton", searchBar.SearchButton)
+end
+
+local function renderBrowseResults(builder)
+    local resultsFrame = AuctionHouseFrame.BrowseResultsFrame
+    builder:beginStop("results")
+    nodes.scrollBoxList(builder, {
+        scrollBox = resultsFrame.ItemList.ScrollBox,
+        key = "results",
+        label = L["Results"],
+        id = function(data, index)
+            return itemKeyId("browse", data ~= nil and data.itemKey or nil, index)
+        end,
+        row = tableRow(resultsFrame.ItemList, function(data)
+            if data == nil then
+                return nil
+            end
+            local parts = {}
+            tinsert(parts, itemKeyName(data.itemKey) or "")
+            tinsert(parts, coin(data.minPrice))
+            tinsert(parts, L["Available"] .. " " .. tostring(data.totalQuantity or 0))
+            return table.concat(parts, ", ")
+        end),
+    })
+end
+
+local function renderCommoditiesBuy(builder)
+    local frame = AuctionHouseFrame.CommoditiesBuyFrame
+    actionStop(builder, "back", frame.BackButton)
+
+    local itemList = frame.ItemList
+    builder:beginStop("commodityAuctions")
+    nodes.scrollBoxList(builder, {
+        scrollBox = itemList.ScrollBox,
+        key = "commodityAuctions",
         label = L["Auctions"],
-        selectedElement = AllAuctionsList_selection,
-        getButtonData = AllAuctionsList_getButtonData,
-        headers = {
-            { key = "sold", label = L["Sold"], flag = true },
-            { key = "name" },
-            { key = "quantity", label = L["Quantity"] },
-            { key = "bidPrice", label = L["Bid Price"] },
-            { key = "buyoutPrice", label = L["Buyout Price"] },
-            { key = "timeLeft", label = L["Time Left"] },
-        },
-        hooks = {
-            mount = AllAuctionsList_Mount,
-        },
-    }
-end)
+        id = function(data, index)
+            if data ~= nil and data.auctionID ~= nil then
+                return ControlId.structural("cauction:" .. data.auctionID)
+            end
+            return ControlId.structural("cauction:" .. index)
+        end,
+        row = tableRow(itemList, function(data)
+            if data == nil then
+                return nil
+            end
+            local name = data.itemID ~= nil and C_Item.GetItemInfo(data.itemID) or nil
+            local parts = {}
+            tinsert(parts, name or "")
+            tinsert(parts, L["Unit Price"] .. " " .. coin(data.unitPrice))
+            tinsert(parts, L["Available"] .. " " .. tostring(data.quantity or 0))
+            return table.concat(parts, ", ")
+        end),
+    })
 
-gen:Element("auction/AuctionsFrameBids", function(props)
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "auction/BidsList", frame = props.frame.BidsList },
-            { "auction/BidFrame", frame = props.frame.BidFrame },
-            { "auction/BuyoutFrame", frame = props.frame.BuyoutFrame },
-        },
-    }
-end)
-
-local BidsList_selection = nil
-
-local function BidsList_selectionCallback(element)
-    BidsList_selection = element
+    local buyDisplay = frame.BuyDisplay
+    if buyDisplay.QuantityInput ~= nil and buyDisplay.QuantityInput:IsShown() then
+        builder:beginStop("quantity")
+        builder:addItem(
+            ControlId.structural("quantity"),
+            nodes.proxyEditBox({
+                editBox = buyDisplay.QuantityInput.InputBox,
+                label = buyDisplay.QuantityInput.Label:GetText(),
+            })
+        )
+        builder:beginStop("totalPrice")
+        liveText(builder, ControlId.structural("totalPrice"), function()
+            return (buyDisplay.TotalPrice.Label:GetText() or "") .. " " .. coin(buyDisplay.TotalPrice:GetAmount())
+        end)
+        actionStop(builder, "buy", buyDisplay.BuyButton)
+    end
 end
 
-local function BidsList_Mount(self, props)
-    WowVision.UIHost:hookFunc(AuctionHouseFrame.AuctionsFrame.BidsList, "selectionCallback", BidsList_selectionCallback)
+local function renderItemBuy(builder)
+    local frame = AuctionHouseFrame.ItemBuyFrame
+    actionStop(builder, "back", frame.BackButton)
+
+    if frame.ItemList ~= nil and frame.ItemList:IsShown() then
+        builder:beginStop("itemAuctions")
+        nodes.scrollBoxList(builder, {
+            scrollBox = frame.ItemList.ScrollBox,
+            key = "itemAuctions",
+            label = L["Auctions"],
+            id = function(data, index)
+                if data ~= nil and data.auctionID ~= nil then
+                    return ControlId.structural("auction:" .. data.auctionID)
+                end
+                return ControlId.structural("auction:" .. index)
+            end,
+            row = tableRow(frame.ItemList, function(data)
+                if data == nil then
+                    return nil
+                end
+                local parts = {}
+                if data.bidAmount ~= nil then
+                    tinsert(parts, L["Bid Price"] .. " " .. coin(data.bidAmount))
+                end
+                if data.buyoutAmount ~= nil then
+                    tinsert(parts, L["Buyout Price"] .. " " .. coin(data.buyoutAmount))
+                end
+                if data.timeLeft ~= nil then
+                    tinsert(parts, L["Time Left"] .. " " .. getTimeLeftString(data.timeLeft))
+                end
+                return table.concat(parts, ", ")
+            end),
+        })
+    end
+
+    if frame:HasAuctionSelected() then
+        local buyout = frame.BuyoutFrame
+        if buyout ~= nil and buyout:IsShown() then
+            builder:beginStop("buyoutPrice")
+            builder:pushContext("buyout", L["Buyout Frame"])
+            liveText(builder, ControlId.structural("buyoutPrice"), function()
+                return coin(buyout:GetPrice())
+            end)
+            builder:popContext()
+            actionStop(builder, "buyout", buyout.BuyoutButton)
+        end
+        local bid = frame.BidFrame
+        if bid ~= nil and bid:IsShown() then
+            moneyInputStops(builder, "bid", L["Bid Frame"], bid.BidAmount)
+            actionStop(builder, "bidButton", bid.BidButton)
+        end
+    end
 end
 
-local function BidsList_getButtonData(self, button)
-    local rowData = button:GetRowData()
-    local data = {}
-    button:GetScript("OnEnter")(button)
-    data.name = GameTooltip:GetItem()
-    button:GetScript("OnLeave")(button)
-
-    if rowData.bidAmount then
-        data.bidAmount = C_CurrencyInfo.GetCoinText(rowData.bidAmount)
+local function renderBuyTab(builder)
+    renderCategories(builder)
+    renderSearchBar(builder)
+    if AuctionHouseFrame.BrowseResultsFrame:IsShown() then
+        renderBrowseResults(builder)
     end
-    if rowData.minBid then
-        data.minBid = C_CurrencyInfo.GetCoinText(rowData.minBid)
+    if AuctionHouseFrame.CommoditiesBuyFrame:IsShown() then
+        renderCommoditiesBuy(builder)
+    elseif AuctionHouseFrame.ItemBuyFrame:IsShown() then
+        renderItemBuy(builder)
     end
-    if rowData.timeLeft then
-        data.timeLeft = getTimeLeftString(rowData.timeLeft)
-    end
-    return data
 end
 
-gen:Element("auction/BidsList", function(props)
-    return {
-        "ProxyScrollTable",
-        frame = props.frame.ScrollBox,
-        label = L["Bids"],
-        getButtonData = BidsList_getButtonData,
-        selectedElement = BidsList_selection,
-        headers = {
-            { key = "name" },
-            { key = "bidder", label = L["Bidder"] },
-            { key = "bidAmount", label = L["Bid Amount"] },
-            { key = "minBid", label = L["Minimum Bid"] },
-            { key = "timeLeft", label = L["Time Left"] },
+------------------------------------------------------------
+-- Sell tab
+------------------------------------------------------------
+
+local function renderPriceInput(builder, keyPrefix, priceInput)
+    if priceInput == nil or not priceInput:IsShown() then
+        return
+    end
+    moneyInputStops(builder, keyPrefix, priceInput.Label:GetText() or "", priceInput.MoneyInputFrame)
+end
+
+-- The posting form shared by item and commodity sells. config.itemSell adds
+-- the buyout mode checkbox and the secondary price input.
+local function renderSellForm(builder, frame, itemSell)
+    builder:beginStop("placeItem")
+    builder:addItem(ControlId.structural("placeItem"), {
+        controlType = graph.controlTypes.button,
+        announcements = { { text = L["Place Item Here"], kind = kinds.label } },
+        onActivate = function()
+            frame:OnOverlayClick()
+        end,
+        bindings = {
+            {
+                binding = "drag",
+                type = "Function",
+                func = function()
+                    frame:OnOverlayClick()
+                end,
+            },
         },
-        hooks = {
-            mount = BidsList_Mount,
-        },
-    }
-end)
+    })
+
+    builder:beginStop("sellQuantity")
+    builder:addItem(
+        ControlId.structural("sellQuantity"),
+        nodes.proxyEditBox({
+            editBox = frame.QuantityInput.InputBox,
+            label = frame.QuantityInput.Label:GetText(),
+        })
+    )
+    actionStop(builder, "maxQuantity", frame.QuantityInput.MaxButton)
+
+    if frame.Duration ~= nil and frame.Duration.Dropdown ~= nil then
+        builder:beginStop("duration")
+        builder:addItem(
+            ControlId.forObject(frame.Duration.Dropdown),
+            nodes.proxyDropdown({ target = frame.Duration.Dropdown })
+        )
+    end
+
+    renderPriceInput(builder, "price", frame.PriceInput)
+    if itemSell then
+        if frame.BuyoutModeCheckButton ~= nil and frame.BuyoutModeCheckButton:IsShown() then
+            builder:beginStop("buyoutMode")
+            builder:addItem(
+                ControlId.forObject(frame.BuyoutModeCheckButton),
+                nodes.proxyCheckButton({ target = frame.BuyoutModeCheckButton })
+            )
+        end
+        renderPriceInput(builder, "secondaryPrice", frame.SecondaryPriceInput)
+    end
+
+    builder:beginStop("deposit")
+    liveText(builder, ControlId.structural("deposit"), function()
+        return (frame.Deposit.Label:GetText() or "") .. " " .. coin(frame.Deposit.MoneyDisplayFrame:GetAmount())
+    end)
+    builder:beginStop("sellTotal")
+    liveText(builder, ControlId.structural("sellTotal"), function()
+        return (frame.TotalPrice.Label:GetText() or "") .. " " .. coin(frame.TotalPrice:GetAmount())
+    end)
+    actionStop(builder, "post", frame.PostButton)
+end
+
+local function renderSellComparables(builder, list, labelOf)
+    if list == nil or list.ScrollBox == nil then
+        return
+    end
+    builder:beginStop("comparables")
+    nodes.scrollBoxList(builder, {
+        scrollBox = list.ScrollBox,
+        key = "comparables",
+        label = L["Auctions"],
+        id = function(data, index)
+            if data ~= nil and data.auctionID ~= nil then
+                return ControlId.structural("comparable:" .. data.auctionID)
+            end
+            return ControlId.structural("comparable:" .. index)
+        end,
+        row = tableRow(list, labelOf),
+    })
+end
+
+local function renderItemSell(builder)
+    local frame = AuctionHouseFrame.ItemSellFrame
+    renderSellForm(builder, frame, true)
+    renderSellComparables(builder, frame:GetItemSellList(), function(data)
+        if data == nil then
+            return nil
+        end
+        local parts = {}
+        if data.bidAmount ~= nil then
+            tinsert(parts, L["Bid Price"] .. " " .. coin(data.bidAmount))
+        end
+        if data.buyoutAmount ~= nil then
+            tinsert(parts, L["Buyout Price"] .. " " .. coin(data.buyoutAmount))
+        end
+        return table.concat(parts, ", ")
+    end)
+end
+
+local function renderCommoditySell(builder)
+    local frame = AuctionHouseFrame.CommoditiesSellFrame
+    renderSellForm(builder, frame, false)
+    renderSellComparables(builder, frame:GetCommoditiesSellList(), function(data)
+        if data == nil then
+            return nil
+        end
+        local parts = {}
+        local name = data.itemID ~= nil and C_Item.GetItemInfo(data.itemID) or nil
+        tinsert(parts, name or "")
+        tinsert(parts, L["Unit Price"] .. " " .. coin(data.unitPrice))
+        if data.owners ~= nil and #data.owners > 0 then
+            tinsert(parts, L["Seller"] .. " " .. table.concat(data.owners, ", "))
+        end
+        return table.concat(parts, ", ")
+    end)
+end
+
+local function renderSellTab(builder)
+    if AuctionHouseFrame.ItemSellFrame:IsShown() then
+        renderItemSell(builder)
+    elseif AuctionHouseFrame.CommoditiesSellFrame:IsShown() then
+        renderCommoditySell(builder)
+    end
+end
+
+------------------------------------------------------------
+-- Auctions tab (your auctions and bids)
+------------------------------------------------------------
+
+local function renderAuctionsSubTabs(builder, auctionsFrame)
+    builder:beginStop("subTabs")
+    builder:pushContext("subTabs", L["Tabs"])
+    builder:startRow()
+    for _, tab in ipairs(auctionsFrame.Tabs or {}) do
+        if tab:IsShown() then
+            local captured = tab
+            local vtable = nodes.proxyButton({ target = captured })
+            if vtable ~= nil then
+                tinsert(vtable.announcements, {
+                    text = function()
+                        if PanelTemplates_GetSelectedTab(auctionsFrame) == captured:GetID() then
+                            return L["selected"]
+                        end
+                        return nil
+                    end,
+                    kind = kinds.selected,
+                })
+                builder:addItem(ControlId.forObject(captured), vtable)
+            end
+        end
+    end
+    builder:endRow()
+    builder:popContext()
+end
+
+local function renderAuctionsTab(builder)
+    local auctionsFrame = AuctionHouseFrame.AuctionsFrame
+    renderAuctionsSubTabs(builder, auctionsFrame)
+
+    if auctionsFrame.AllAuctionsList ~= nil and auctionsFrame.AllAuctionsList:IsShown() then
+        builder:beginStop("myAuctions")
+        nodes.scrollBoxList(builder, {
+            scrollBox = auctionsFrame.AllAuctionsList.ScrollBox,
+            key = "myAuctions",
+            label = L["Auctions"],
+            id = function(data, index)
+                if data ~= nil and data.auctionID ~= nil then
+                    return ControlId.structural("mine:" .. data.auctionID)
+                end
+                return ControlId.structural("mine:" .. index)
+            end,
+            row = tableRow(auctionsFrame.AllAuctionsList, function(data)
+                if data == nil then
+                    return nil
+                end
+                local parts = {}
+                if data.status == 1 then
+                    tinsert(parts, L["Sold"])
+                end
+                tinsert(parts, itemKeyName(data.itemKey) or "")
+                if data.quantity ~= nil and data.quantity > 1 then
+                    tinsert(parts, "x" .. data.quantity)
+                end
+                if data.bidAmount ~= nil then
+                    tinsert(parts, L["Bid Price"] .. " " .. coin(data.bidAmount))
+                end
+                if data.buyoutAmount ~= nil then
+                    tinsert(parts, L["Buyout Price"] .. " " .. coin(data.buyoutAmount))
+                end
+                if data.timeLeftSeconds ~= nil then
+                    tinsert(parts, L["Time Left"] .. " " .. SecondsToTime(data.timeLeftSeconds, false, true))
+                end
+                return table.concat(parts, ", ")
+            end),
+        })
+        actionStop(builder, "cancelAuction", auctionsFrame.CancelAuctionButton)
+    end
+
+    if auctionsFrame.BidsList ~= nil and auctionsFrame.BidsList:IsShown() then
+        builder:beginStop("myBids")
+        nodes.scrollBoxList(builder, {
+            scrollBox = auctionsFrame.BidsList.ScrollBox,
+            key = "myBids",
+            label = L["Bids"],
+            id = function(data, index)
+                if data ~= nil and data.auctionID ~= nil then
+                    return ControlId.structural("bid:" .. data.auctionID)
+                end
+                return ControlId.structural("bid:" .. index)
+            end,
+            row = tableRow(auctionsFrame.BidsList, function(data)
+                if data == nil then
+                    return nil
+                end
+                local parts = {}
+                tinsert(parts, itemKeyName(data.itemKey) or "")
+                if data.bidder ~= nil then
+                    tinsert(parts, L["Bidder"] .. " " .. tostring(data.bidder))
+                end
+                if data.bidAmount ~= nil then
+                    tinsert(parts, L["Bid Amount"] .. " " .. coin(data.bidAmount))
+                end
+                if data.minBid ~= nil then
+                    tinsert(parts, L["Minimum Bid"] .. " " .. coin(data.minBid))
+                end
+                if data.timeLeft ~= nil then
+                    tinsert(parts, L["Time Left"] .. " " .. getTimeLeftString(data.timeLeft))
+                end
+                return table.concat(parts, ", ")
+            end),
+        })
+        if auctionsFrame.BidFrame ~= nil and auctionsFrame.BidFrame:IsShown() then
+            moneyInputStops(builder, "rebid", L["Bid Frame"], auctionsFrame.BidFrame.BidAmount)
+            actionStop(builder, "rebidButton", auctionsFrame.BidFrame.BidButton)
+        end
+        if auctionsFrame.BuyoutFrame ~= nil and auctionsFrame.BuyoutFrame:IsShown() then
+            builder:beginStop("bidBuyoutPrice")
+            builder:pushContext("bidBuyout", L["Buyout Frame"])
+            liveText(builder, ControlId.structural("bidBuyoutPrice"), function()
+                return coin(auctionsFrame.BuyoutFrame:GetPrice())
+            end)
+            builder:popContext()
+            actionStop(builder, "bidBuyout", auctionsFrame.BuyoutFrame.BuyoutButton)
+        end
+    end
+end
+
+------------------------------------------------------------
+-- Buy dialog overlay and the root
+------------------------------------------------------------
+
+local function renderBuyDialog(builder)
+    local dialog = AuctionHouseFrame.BuyDialog
+    builder:pushContext("buyDialog", L["Auction House"])
+    builder:beginStop("dialogItem")
+    liveText(builder, ControlId.structural("dialogItem"), function()
+        return dialog.ItemDisplay.ItemText:GetText()
+    end)
+    builder:beginStop("dialogPrice")
+    liveText(builder, ControlId.structural("dialogPrice"), function()
+        return coin(dialog.PriceFrame:GetAmount())
+    end)
+    actionStop(builder, "buyNow", dialog.BuyNowButton)
+    actionStop(builder, "cancelBuy", dialog.CancelButton)
+    builder:popContext()
+end
+
+local function render(builder, screen)
+    if AuctionHouseFrame == nil or not AuctionHouseFrame:IsShown() then
+        return
+    end
+
+    -- The buy dialog overlays the whole window.
+    if AuctionHouseFrame.BuyDialog:IsShown() then
+        renderBuyDialog(builder)
+        return
+    end
+
+    builder:pushContext("auction", AuctionHouseFrame:GetTitleText():GetText())
+
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    for i, tab in ipairs(AuctionHouseFrame.Tabs or {}) do
+        if tab:IsShown() then
+            local captured = tab
+            local tabIndex = i
+            local vtable = nodes.proxyButton({ target = captured })
+            if vtable ~= nil then
+                tinsert(vtable.announcements, {
+                    text = function()
+                        if AuctionHouseFrame.selectedTab == tabIndex then
+                            return L["selected"]
+                        end
+                        return nil
+                    end,
+                    kind = kinds.selected,
+                })
+                builder:addItem(ControlId.forObject(captured), vtable)
+            end
+        end
+    end
+    builder:endRow()
+    builder:popContext()
+
+    if AuctionHouseFrame.BuyTab ~= nil and AuctionHouseFrame.selectedTab == 1 then
+        renderBuyTab(builder)
+    elseif AuctionHouseFrame.selectedTab == 2 then
+        renderSellTab(builder)
+    elseif AuctionHouseFrame.selectedTab == 3 then
+        renderAuctionsTab(builder)
+    end
+
+    builder:popContext()
+end
+
+-- The search filter menu's level-range row holds two edit boxes.
+module:registerDropdownMenu("MENU_AUCTION_HOUSE_SEARCH_FILTER", {
+    [2] = function(builder, itemFrame, index)
+        if itemFrame.MinLevel ~= nil then
+            builder:addItem(
+                ControlId.structural("minLevel"),
+                nodes.proxyEditBox({ editBox = itemFrame.MinLevel, label = L["Minimum"], autoInput = false })
+            )
+        end
+        if itemFrame.MaxLevel ~= nil then
+            builder:addItem(
+                ControlId.structural("maxLevel"),
+                nodes.proxyEditBox({ editBox = itemFrame.MaxLevel, label = L["Maximum"], autoInput = false })
+            )
+        end
+    end,
+})
 
 module:registerWindow({
     type = "EventWindow",
     name = "AuctionHouseFrame",
-    generated = true,
-    rootElement = "auction",
     openEvent = "AUCTION_HOUSE_SHOW",
     closeEvent = "AUCTION_HOUSE_CLOSED",
+    graphScreen = { render = render },
 })
