@@ -54,13 +54,18 @@ end
 --   emit        function(builder, data, index, helpers) -- full control:
 --               emit zero or more nodes for this element (multi-control rows,
 --               skipped spacers). helpers adds id (the default ControlId).
+--   templates   registry of emitters keyed by the element's frameTemplate --
+--               the shape template-driven panels (the settings lists) use.
+--               Missing templates fall to config.defaultTemplate, else to a
+--               spoken not-implemented row; emitter errors report and skip
+--               the row instead of killing the render.
 function nodes.scrollBoxList(builder, config)
     local scrollBox = config.scrollBox
     if scrollBox == nil then
         error("scrollBoxList requires a scrollBox")
     end
-    if config.rowLabel == nil and config.row == nil and config.emit == nil then
-        error("scrollBoxList requires rowLabel, row, or emit")
+    if config.rowLabel == nil and config.row == nil and config.emit == nil and config.templates == nil then
+        error("scrollBoxList requires rowLabel, row, emit, or templates")
     end
 
     local size = scrollBox:GetDataProviderSize()
@@ -106,7 +111,24 @@ function nodes.scrollBoxList(builder, config)
         onFocus = onFocus.onFocus
 
         local helpers = { onFocus = onFocus, onUnfocus = onUnfocus, target = target, id = id }
-        if config.emit ~= nil then
+        if config.templates ~= nil then
+            local emitter = config.templates[data ~= nil and data.frameTemplate or nil] or config.defaultTemplate
+            if emitter ~= nil then
+                local ok, err = pcall(emitter, builder, data, capturedIndex, helpers)
+                if not ok then
+                    geterrorhandler()(err)
+                end
+            else
+                builder:addItem(id, {
+                    controlType = graph.controlTypes.text,
+                    announcements = {
+                        {
+                            text = "Row template " .. tostring(data ~= nil and data.frameTemplate) .. " not implemented",
+                        },
+                    },
+                })
+            end
+        elseif config.emit ~= nil then
             config.emit(builder, data, capturedIndex, helpers)
         else
             local vtable

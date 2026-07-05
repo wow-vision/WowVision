@@ -125,6 +125,33 @@ testRunner:addSuite("GraphScrollBox", {
         t:assertEqual(render.order[3].id.key, "settings:1")
     end,
 
+    ["templates dispatch by frameTemplate with fallbacks"] = function(t)
+        local rows = {
+            { frameTemplate = "Known", name = "First" },
+            { frameTemplate = "Mystery", name = "Second" },
+            { frameTemplate = "Skipped", name = "Third" },
+        }
+        local scrollBox = makeFakeScrollBox(rows)
+        local builder = Builder:new()
+        local emitted = {}
+        graph.nodes.scrollBoxList(builder, {
+            scrollBox = scrollBox,
+            key = "t",
+            templates = {
+                Known = function(b, data, index, helpers)
+                    tinsert(emitted, data.name)
+                    b:addItem(helpers.id, graph.nodes.text({ label = data.name }))
+                end,
+                Skipped = function() end,
+            },
+        })
+        local render = builder:build()
+        t:assertEqual(emitted[1], "First")
+        t:assertEqual(#render.order, 2, "known plus not-implemented; skipped emits nothing")
+        local fallback = render.order[2]
+        t:assertTrue(graph.resolveText(fallback.vtable.announcements[1]):find("Mystery") ~= nil)
+    end,
+
     ["an empty provider emits nothing"] = function(t)
         local scrollBox = makeFakeScrollBox({})
         local builder = Builder:new()

@@ -210,6 +210,20 @@ function WowVision:registerCommands()
                                 entry = entry .. " text " .. text
                             end
                             tinsert(lines, entry)
+                            for subKey, subValue in pairs(value) do
+                                if
+                                    type(subValue) == "table"
+                                    and type(subKey) == "string"
+                                    and subValue.GetObjectType ~= nil
+                                then
+                                    local subEntry = key .. "." .. subKey .. ": " .. subValue:GetObjectType()
+                                    local subText = subValue.GetText ~= nil and subValue:GetText() or nil
+                                    if subText ~= nil and subText ~= "" then
+                                        subEntry = subEntry .. " text " .. subText
+                                    end
+                                    tinsert(lines, subEntry)
+                                end
+                            end
                         end
                     end
                 end)

@@ -321,20 +321,23 @@ end
 
 -- ---- category list ----
 
-local function emitCategoryRow(builder, elementData, index, helpers)
-    local template = elementData.frameTemplate
-    if template == "SettingsCategoryListSpacerTemplate" then
-        return -- purely visual gap; nothing to hear
-    end
-    if template == "SettingsCategoryListHeaderTemplate" then
-        builder:addItem(
-            helpers.id,
-            headerNode(helpers, function()
-                return categoryName(elementData)
-            end, "Label")
-        )
-        return
-    end
+local categoryTemplates = {}
+
+categoryTemplates["SettingsCategoryListSpacerTemplate"] = function()
+    -- purely visual gap; nothing to hear
+end
+
+categoryTemplates["SettingsCategoryListHeaderTemplate"] = function(builder, elementData, index, helpers)
+    builder:addItem(
+        helpers.id,
+        headerNode(helpers, function()
+            return categoryName(elementData)
+        end, "Label")
+    )
+end
+
+-- Every other row is a category button.
+local function categoryButtonRow(builder, elementData, index, helpers)
     builder:addItem(helpers.id, {
         controlType = graph.controlTypes.button,
         announcements = {
@@ -574,18 +577,6 @@ settingEmitters["KeyBindingFrameBindingTemplate"] = function(builder, elementDat
     builder:endRow()
 end
 
-local function emitSettingRow(builder, elementData, index, helpers)
-    local emitter = settingEmitters[elementData.frameTemplate]
-    if emitter ~= nil then
-        local ok, err = pcall(emitter, builder, elementData, index, helpers)
-        if not ok then
-            geterrorhandler()(err)
-        end
-        return
-    end
-    unimplementedRow(builder, helpers.id, elementData.frameTemplate)
-end
-
 -- ---- the window ----
 
 local function render(builder, screen)
@@ -624,7 +615,8 @@ local function render(builder, screen)
             scrollBox = frame.CategoryList.ScrollBox,
             key = "categories",
             label = L["Categories"],
-            emit = emitCategoryRow,
+            templates = categoryTemplates,
+            defaultTemplate = categoryButtonRow,
         })
     end
 
@@ -639,7 +631,7 @@ local function render(builder, screen)
             scrollBox = list.ScrollBox,
             key = "settings",
             label = title or L["Options"],
-            emit = emitSettingRow,
+            templates = settingEmitters,
         })
         if list.Header ~= nil and list.Header.DefaultsButton ~= nil then
             builder:beginStop("defaults")
