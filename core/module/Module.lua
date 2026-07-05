@@ -42,8 +42,8 @@ end
 function Module:hasUI()
     if not self.elementGenerator then
         self.elementGenerator = WowVision.Generator:new()
-        self.registeredWindows = {}
-        self.registeredDropdownMenus = {}
+        self.registeredWindows = self.registeredWindows or {}
+        self.registeredDropdownMenus = self.registeredDropdownMenus or {}
     end
     return self.elementGenerator
 end
@@ -204,17 +204,18 @@ function Module:registerWindow(config)
             "Window config must specify 'type' field. Available types: FrameWindow, CustomWindow, ManualWindow, EventWindow, PlayerInteractionWindow"
         )
     end
+    self.registeredWindows = self.registeredWindows or {}
     self.registeredWindows[window.name] = window
 end
 
 function Module:unregisterWindow(name)
-    if not self.registeredWindows[name] then
+    if not self.registeredWindows or not self.registeredWindows[name] then
         return
     end
     self.registeredWindows[name] = nil
     -- If the module is already enabled, the window is live in the window manager
     -- (registered in fullEnable), so remove it there too.
-    if self.elementGenerator and self:getEnabled() then
+    if self:getEnabled() then
         WowVision.UIHost.windowManager:UnregisterWindow(name)
     end
 end
@@ -274,10 +275,13 @@ function Module:enable()
     end
     if self.elementGenerator then
         WowVision.ui.generator:include(self.elementGenerator)
+    end
+    if self.registeredWindows then
         for _, v in pairs(self.registeredWindows) do
             WowVision.UIHost.windowManager:RegisterWindow(v)
         end
-
+    end
+    if self.registeredDropdownMenus then
         for k, v in pairs(self.registeredDropdownMenus) do
             WowVision.UIHost.menuManager:registerMenu(k, v)
         end
@@ -328,11 +332,13 @@ function Module:onEnable() end
 function Module:disable()
     if self.elementGenerator then
         WowVision.ui.generator:exclude(self.elementGenerator)
-
+    end
+    if self.registeredWindows then
         for k, _ in pairs(self.registeredWindows) do
             WowVision.UIHost.windowManager:UnregisterWindow(k)
         end
-
+    end
+    if self.registeredDropdownMenus then
         for k, _ in pairs(self.registeredDropdownMenus) do
             WowVision.UIHost.menuManager:unregisterMenu(k)
         end
