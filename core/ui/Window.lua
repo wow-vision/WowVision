@@ -63,6 +63,7 @@ Window.info:addFields({
     { key = "innate", default = false },
     { key = "conflictingAddons" },
     { key = "onClose" },
+    { key = "graphScreen" }, -- graph-framework screen config; supersedes generated/rootElement
 })
 
 -- Whether this window type needs to be polled each frame
@@ -150,6 +151,44 @@ function Window:createContext()
     })
 end
 
+-- Open as a graph-framework screen stack instead of an element context.
+function Window:openGraph(manager)
+    local window = self
+    local config = {}
+    for k, v in pairs(self.graphScreen) do
+        config[k] = v
+    end
+    config.key = config.key or self.name
+    if config.onRequestClose == nil then
+        config.onRequestClose = function()
+            window:requestClose()
+        end
+    end
+    local instance = {
+        ref = self,
+        name = self.name,
+        stack = WowVision.graphHost:open(config),
+    }
+    self._openInstance = instance
+    manager:notifyOpened(self, instance)
+    return instance
+end
+
+-- Escape pressed on a graph window's last screen: close the real UI and let
+-- state detection finish the job.
+function Window:requestClose()
+    local frame = self.getFrame and self:getFrame() or nil
+    if frame ~= nil then
+        if HideUIPanel ~= nil then
+            HideUIPanel(frame)
+        else
+            frame:Hide()
+        end
+        return
+    end
+    WowVision.UIHost.windowManager:closeWindow(self.name)
+end
+
 -- Open the window with optional props
 -- Returns the open instance, or nil if window couldn't be opened
 function Window:open(manager, props)
@@ -158,6 +197,10 @@ function Window:open(manager, props)
     end
     if self._openInstance then
         return nil -- Already open
+    end
+
+    if self.graphScreen then
+        return self:openGraph(manager)
     end
 
     local context = self:createContext()
