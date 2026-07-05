@@ -1,220 +1,213 @@
 local module = WowVision.base.windows:createModule("talents")
 local L = module.L
 module:setLabel(L["Talents"])
-local gen = module:hasUI()
 
-gen:Element("talents", {
-    alwaysRun = true, -- Children reference frames that may not exist initially
-}, function(props)
-    local result = {
-        "Panel",
-        label = L["Talents"],
-        wrap = true,
-        children = {
-            { "talents/Tabs", key = "tabs", frame = props.frame },
-            { "talents/Specialization", key = "spec", frame = PlayerTalentFrameSpecialization },
-            { "talents/Talents", key = "talents", frame = PlayerTalentFrameTalents },
-            { "talents/glyphs", key = "glyphs", frame = GlyphFrame },
-        },
-    }
-    return result
-end)
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
 
-gen:Element("talents/Tabs", {
-    dynamicValues = function(props)
-        return { props.frame.numTabs, props.frame.selectedTab }
-    end,
-}, function(props)
-    local result = { "List", direction = "horizontal", label = L["Tabs"], children = {} }
-    for i = 1, props.frame.numTabs do
-        local tab = _G["PlayerTalentFrameTab" .. i]
-        tinsert(result.children, {
-            "ProxyButton",
-            key = "tab_" .. i,
-            frame = tab,
-            selected = props.frame.selectedTab == i,
-        })
-    end
-    return result
-end)
+-- The MoP talent window: tabs, the specialization page (spec choices plus
+-- the selected spec's role, description, and abilities), and the talents page
+-- (tiers as rows of three choices). All static frames; no scroll piloting.
 
-gen:Element("talents/Specialization", {
-    dynamicValues = function(props)
-        return { props.frame:IsShown() }
-    end,
-}, function(props)
-    if not props.frame:IsShown() then
-        return nil
-    end
-    local result = {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "talents/SpecializationList", key = "list", frame = props.frame },
-            { "talents/SpecializationDescription", key = "desc", frame = props.frame.spellsScroll },
-            { "ProxyButton", key = "learn", frame = props.frame.learnButton },
-        },
-    }
-    return result
-end)
-
-gen:Element("talents/SpecializationList", {
-    dynamicValues = function(props)
-        local f = props.frame
-        local values = {}
-        for i = 1, 4 do
-            local button = f["specButton" .. i]
-            if button then
-                tinsert(values, button.selected)
-                tinsert(values, button.specName:GetText())
+local function selectedPart(isSelected)
+    return {
+        text = function()
+            if isSelected() then
+                return L["selected"]
             end
-        end
-        return values
-    end,
-}, function(props)
-    local result = { "List", label = L["Specializations"], children = {} }
-    for i = 1, 4 do
-        local button = props.frame["specButton" .. i]
-        if button then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "spec_" .. i,
-                frame = button,
-                label = button.specName:GetText(),
-                selected = button.selected,
-            })
-        end
-    end
-    return result
-end)
-
-gen:Element("talents/SpecializationDescription", {
-    dynamicValues = function(props)
-        if not props.frame:IsVisible() then
-            return { false }
-        end
-        local frame = props.frame.child
-        local values = { true, frame.roleName:GetText(), frame.description:GetText() }
-        for i = 1, 5 do
-            local button = frame["abilityButton" .. i]
-            if button then
-                tinsert(values, button.name:GetText())
-            end
-        end
-        return values
-    end,
-}, function(props)
-    if not props.frame:IsVisible() then
-        return nil
-    end
-    local frame = props.frame.child
-    local result = {
-        "List",
-        label = L["Specialization Info"],
-        children = {
-            { "Text", key = "role", text = frame.roleName:GetText() },
-            { "Text", key = "desc", text = frame.description:GetText() },
-        },
+            return nil
+        end,
+        kind = kinds.selected,
+        live = "focus",
     }
-    for i = 1, 5 do
-        local button = frame["abilityButton" .. i]
-        if button then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "ability_" .. i,
-                frame = button,
-                label = button.name:GetText(),
-            })
-        end
-    end
-    return result
-end)
-
-gen:Element("talents/Talents", {
-    dynamicValues = function(props)
-        return { props.frame:IsShown() }
-    end,
-}, function(props)
-    if not props.frame:IsShown() then
-        return nil
-    end
-
-    local result = {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "talents/TalentsList", key = "list", frame = props.frame },
-            { "ProxyButton", key = "learn", frame = props.frame.learnButton },
-            { "talents/TalentsClearButton", key = "clear", frame = props.frame.clearInfo },
-        },
-    }
-
-    return result
-end)
-
-gen:Element("talents/TalentsList", {
-    dynamicValues = function()
-        return {}
-    end, -- Static tier structure
-}, function(props)
-    local result = { "List", label = L["Talents"], children = {} }
-    for i = 1, MAX_NUM_TALENT_TIERS do
-        local tier = props.frame["tier" .. i]
-        if tier then
-            tinsert(result.children, { "talents/TalentsTier", key = "tier_" .. i, frame = tier })
-        end
-    end
-    return result
-end)
-
-gen:Element("talents/TalentsTier", {
-    dynamicValues = function(props)
-        local f = props.frame
-        return {
-            f.level:GetText(),
-            f.talent1 and f.talent1.name:GetText(),
-            f.talent2 and f.talent2.name:GetText(),
-            f.talent3 and f.talent3.name:GetText(),
-        }
-    end,
-}, function(props)
-    local result = { "List", label = props.frame.level:GetText(), direction = "horizontal", children = {} }
-    for i = 1, 3 do
-        local button = props.frame["talent" .. i]
-        if button then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "talent_" .. i,
-                frame = button,
-                label = button.name:GetText(),
-                draggable = true
-            })
-        end
-    end
-    return result
-end)
-
-local function getClearLabel(button)
-    local info = C_Spell.GetSpellInfo(button.spellID)
-    local label = info.name .. "(" .. button.name:GetText() .. ")"
-    return label
 end
 
-gen:Element("talents/TalentsClearButton", {
-    dynamicValues = function(props)
-        return { props.frame.spellID, props.frame.name:GetText() }
-    end,
-}, function(props)
-    return { "ProxyButton", frame = props.frame, label = getClearLabel(props.frame) }
-end)
+local function fontStringText(owner, key)
+    return function()
+        local region = owner[key]
+        if region ~= nil and region.GetText ~= nil then
+            return region:GetText()
+        end
+        return nil
+    end
+end
+
+local function renderTabs(builder, frame)
+    builder:beginStop("tabs")
+    builder:pushContext(L["Tabs"])
+    builder:startRow()
+    for i = 1, frame.numTabs or 0 do
+        local tab = _G["PlayerTalentFrameTab" .. i]
+        local tabIndex = i
+        if tab ~= nil and tab:IsShown() then
+            local vtable = nodes.proxyButton({ target = tab })
+            tinsert(
+                vtable.announcements,
+                selectedPart(function()
+                    return frame.selectedTab == tabIndex
+                end)
+            )
+            builder:addItem(ControlId.forObject(tab), vtable)
+        end
+    end
+    builder:endRow()
+    builder:popContext()
+end
+
+local function renderSpecialization(builder, page)
+    builder:beginStop("specs")
+    builder:pushContext(L["Specializations"])
+    for i = 1, 4 do
+        local button = page["specButton" .. i]
+        if button ~= nil and button:IsShown() then
+            local captured = button
+            local vtable = nodes.proxyButton({
+                target = captured,
+                label = fontStringText(captured, "specName"),
+            })
+            tinsert(
+                vtable.announcements,
+                selectedPart(function()
+                    return captured.selected
+                end)
+            )
+            builder:addItem(ControlId.forObject(captured), vtable)
+        end
+    end
+    builder:popContext()
+
+    local scroll = page.spellsScroll
+    if scroll ~= nil and scroll:IsVisible() and scroll.child ~= nil then
+        local child = scroll.child
+        builder:beginStop("specInfo")
+        builder:pushContext(L["Specialization Info"])
+        builder:addItem(ControlId.structural("role"), nodes.text({ label = fontStringText(child, "roleName") }))
+        builder:addItem(ControlId.structural("specDesc"), nodes.text({ label = fontStringText(child, "description") }))
+        for i = 1, 5 do
+            local ability = child["abilityButton" .. i]
+            if ability ~= nil and ability:IsShown() then
+                builder:addItem(
+                    ControlId.forObject(ability),
+                    nodes.proxyButton({
+                        target = ability,
+                        label = fontStringText(ability, "name"),
+                    })
+                )
+            end
+        end
+        builder:popContext()
+    end
+
+    if page.learnButton ~= nil and page.learnButton:IsShown() then
+        builder:beginStop("specLearn")
+        builder:addItem(ControlId.forObject(page.learnButton), nodes.proxyButton({ target = page.learnButton }))
+    end
+end
+
+-- A talent choice: proxy click plus the old drag support, announcing when it
+-- is the tier's chosen talent.
+local function talentNode(button)
+    local vtable = nodes.proxyButton({
+        target = button,
+        label = fontStringText(button, "name"),
+    })
+    tinsert(
+        vtable.announcements,
+        selectedPart(function()
+            return button.knownSelection ~= nil and button.knownSelection:IsShown()
+        end)
+    )
+    tinsert(vtable.bindings, {
+        binding = "drag",
+        type = "Function",
+        func = function()
+            local script = button:GetScript("OnDragStart")
+            if script ~= nil then
+                script(button)
+            end
+        end,
+    })
+    return vtable
+end
+
+local function renderTalents(builder, page)
+    builder:beginStop("talents")
+    builder:pushContext(L["Talents"])
+    for tierIndex = 1, MAX_NUM_TALENT_TIERS or 6 do
+        local tier = page["tier" .. tierIndex]
+        if tier ~= nil then
+            local levelText = tier.level ~= nil and tier.level:GetText() or tostring(tierIndex)
+            builder:pushContext(levelText)
+            builder:startRow()
+            for column = 1, 3 do
+                local button = tier["talent" .. column]
+                if button ~= nil then
+                    builder:addItem(ControlId.forObject(button), talentNode(button))
+                end
+            end
+            builder:endRow()
+            builder:popContext()
+        end
+    end
+    builder:popContext()
+
+    builder:beginStop("talentActions")
+    builder:startRow()
+    if page.learnButton ~= nil and page.learnButton:IsShown() then
+        builder:addItem(ControlId.forObject(page.learnButton), nodes.proxyButton({ target = page.learnButton }))
+    end
+    local clear = page.clearInfo
+    if clear ~= nil and clear:IsShown() then
+        builder:addItem(
+            ControlId.forObject(clear),
+            nodes.proxyButton({
+                target = clear,
+                label = function()
+                    local ok, label = pcall(function()
+                        local info = C_Spell.GetSpellInfo(clear.spellID)
+                        return info.name .. " (" .. clear.name:GetText() .. ")"
+                    end)
+                    if ok then
+                        return label
+                    end
+                    return nil
+                end,
+            })
+        )
+    end
+    builder:endRow()
+end
+
+local function render(builder, screen)
+    local frame = PlayerTalentFrame
+    if frame == nil or not frame:IsShown() then
+        return
+    end
+
+    renderTabs(builder, frame)
+
+    local spec = PlayerTalentFrameSpecialization
+    if spec ~= nil and spec:IsShown() then
+        renderSpecialization(builder, spec)
+    end
+
+    local talents = PlayerTalentFrameTalents
+    if talents ~= nil and talents:IsShown() then
+        renderTalents(builder, talents)
+    end
+
+    if GlyphFrame ~= nil and GlyphFrame:IsShown() then
+        builder:beginStop("glyphs")
+        builder:addItem(ControlId.structural("glyphs"), nodes.text({ label = "Glyphs not yet implemented" }))
+    end
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "talents",
-    generated = true,
-    rootElement = "talents",
     frameName = "PlayerTalentFrame",
     conflictingAddons = { "Sku" },
+    graphScreen = { render = render },
 })

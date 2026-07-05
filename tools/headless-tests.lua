@@ -76,6 +76,8 @@ local parseOnly = {
     "core/buffers/module.lua",
     "core/windows/options/ui.lua",
     "core/windows/options/Module.lua",
+    "mists/talents/talents.lua",
+    "mists/talents/glyphs.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
