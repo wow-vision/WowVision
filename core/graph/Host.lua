@@ -69,6 +69,11 @@ function GraphHost:open(config)
     local screen = graph.Screen:new(config)
     local stack = { screens = { screen }, config = config }
     tinsert(self.stacks, stack)
+    -- Background stacks (bags auto-opening at a vendor) never steal focus
+    -- from an already-open stack; they are still reachable by stack cycling.
+    if config.background and self.focusedIndex ~= nil and self.focusedIndex >= 1 and #self.stacks > 1 then
+        return stack
+    end
     self.focusedIndex = #self.stacks
     screen:resetAnnouncement()
     self._bindingsDirty = true

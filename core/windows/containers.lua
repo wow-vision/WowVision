@@ -77,5 +77,7 @@ module:registerWindow({
         return false
     end,
     conflictingAddons = { "Sku" },
-    graphScreen = { render = render },
+    -- Background: bags auto-open alongside merchants, mailboxes, and the
+    -- bank; the interaction window keeps focus and ctrl-tab reaches the bags.
+    graphScreen = { render = render, background = true },
 })
