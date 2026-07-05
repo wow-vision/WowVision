@@ -126,26 +126,16 @@ function nodes.hybridScrollList(builder, config)
             id = ControlId.structural(keyPrefix .. ":" .. capturedIndex)
         end
 
-        -- Secure clicks bind to a FRAME at engage time, but pool frames
-        -- rebind as the pane scrolls. Track what was resolved at focus; each
-        -- tick, if the mapping drifted (Blizzard re-scrolled, a wheel event),
-        -- re-align the scroll and ask the host to re-engage.
-        local engaged = {}
-
         local onFocus = function()
             pcall(scrollToIndex, capturedIndex)
-            engaged.target = findButton(capturedIndex)
         end
 
+        -- Stateless per-tick re-align: if the entry scrolled out from under
+        -- focus, pull it back. The host's click-drift watch handles
+        -- re-engaging bindings when the frame mapping shifts.
         local onFocusTick = function()
-            local current = findButton(capturedIndex)
-            if current == nil then
+            if findButton(capturedIndex) == nil then
                 pcall(scrollToIndex, capturedIndex)
-                current = findButton(capturedIndex)
-            end
-            if current ~= engaged.target then
-                engaged.target = current
-                WowVision.graphHost:refreshBindings()
             end
         end
 

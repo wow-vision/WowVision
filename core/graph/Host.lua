@@ -171,15 +171,35 @@ function GraphHost:update()
             screen._lastSpokenNode = node
         end
         self:_watchLive(screen, node)
-        -- Scroll adapters watch for pool drift under the focused node: if
-        -- the frame their engaged click resolved to no longer shows this
-        -- entry, they re-align and ask for a re-engage.
+        -- Scroll adapters re-align their pane each tick if the focused entry
+        -- scrolled out from under them (stateless; never touches bindings).
         if node.vtable.onFocusTick ~= nil then
             pcall(node.vtable.onFocusTick)
         end
+        self:_checkClickDrift(node)
     end
     self:_watchAlways(screen, node)
     self:_syncNodeFocus(screen)
+end
+
+-- Secure clicks bind to a FRAME at engage time, but scrolled pools rebind
+-- frames to entries. Compare what each function-valued Click target resolved
+-- to at engage against what it resolves to now; on drift, mark bindings
+-- dirty so _syncNodeFocus re-engages node handles this same tick. Nav
+-- bindings are never released here.
+function GraphHost:_checkClickDrift(node)
+    local resolutions = self._clickResolutions
+    if resolutions == nil or self._focusNodeId == nil or self._focusNodeId ~= node.id then
+        return
+    end
+    for _, entry in ipairs(resolutions) do
+        local ok, current = pcall(entry.resolve)
+        if ok and current ~= entry.frame then
+            self._clickResolutions = nil
+            self._bindingsDirty = true
+            return
+        end
+    end
 end
 
 function GraphHost:_speak(text)
@@ -311,6 +331,22 @@ function GraphHost:_engageNodeBindings(node)
     for _, spec in ipairs(specs) do
         tinsert(self._nodeHandles, WowVision.inputActivator:activate(spec))
     end
+
+    -- Record what function-valued Click targets resolved to right now, for
+    -- the per-tick drift check.
+    local resolutions = nil
+    for _, spec in ipairs(specs) do
+        if spec.type == "Click" and type(spec.target) == "function" then
+            local ok, frame = pcall(spec.target)
+            if ok then
+                if resolutions == nil then
+                    resolutions = {}
+                end
+                tinsert(resolutions, { resolve = spec.target, frame = frame })
+            end
+        end
+    end
+    self._clickResolutions = resolutions
 end
 
 function GraphHost:_releaseNodeHandles()
@@ -318,6 +354,7 @@ function GraphHost:_releaseNodeHandles()
         handle:release()
     end
     self._nodeHandles = {}
+    self._clickResolutions = nil
 end
 
 -- ---- navigation keymaps ----

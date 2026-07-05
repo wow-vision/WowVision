@@ -104,31 +104,22 @@ function nodes.scrollBoxList(builder, config)
             end
             return rowFrame
         end
-        -- Secure clicks bind to a FRAME at engage time, but ScrollBox rows
-        -- recycle as the pane scrolls. Track what focus resolved; each tick,
-        -- if the mapping drifted, re-scroll and ask the host to re-engage.
-        local engaged = {}
-
         -- Scroll first so the row materializes, then hover it: the game shows
         -- its tooltip and highlight for the reader.
         local onFocus = nodes.attachHover({
             onFocus = function()
                 scrollBox:ScrollToElementDataIndex(capturedIndex)
-                engaged.target = target()
             end,
         }, target)
         local onUnfocus = onFocus.onUnfocus
         onFocus = onFocus.onFocus
 
+        -- Stateless per-tick re-align: if the row scrolled out from under
+        -- focus, pull it back. The host's click-drift watch handles
+        -- re-engaging bindings when the frame mapping shifts.
         local onFocusTick = function()
-            local current = target()
-            if current == nil then
+            if target() == nil then
                 scrollBox:ScrollToElementDataIndex(capturedIndex)
-                current = target()
-            end
-            if current ~= engaged.target then
-                engaged.target = current
-                WowVision.graphHost:refreshBindings()
             end
         end
 
