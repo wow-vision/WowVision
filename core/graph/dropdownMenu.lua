@@ -155,16 +155,21 @@ local function emitItem(builder, item)
     builder:addItem(ControlId.forObject(item), vtable)
 end
 
--- Every open menu frame: parented to WorldFrame, stamped with ID 1000.
--- Sorted by left edge -- submenus anchor to their parent row's right, so
--- this is chain order.
-local function openMenuFrames()
+-- Every open menu frame in the chain. The root comes from the manager;
+-- submenu frames are its SIBLINGS (menu frames share one parent and are
+-- stamped with ID 1000), sorted by left edge -- submenus anchor to their
+-- parent row's right, so this is chain order.
+local function openMenuFrames(root)
     local menus = {}
-    for _, child in ipairs({ WorldFrame:GetChildren() }) do
-        if child:GetID() == 1000 and child:IsShown() then
-            tinsert(menus, child)
+    local parent = root ~= nil and root:GetParent() or nil
+    if parent ~= nil then
+        for _, child in ipairs({ parent:GetChildren() }) do
+            if child ~= root and child:GetID() == 1000 and child:IsShown() then
+                tinsert(menus, child)
+            end
         end
     end
+    tinsert(menus, root)
     table.sort(menus, function(a, b)
         return (a:GetLeft() or 0) < (b:GetLeft() or 0)
     end)
@@ -192,30 +197,30 @@ local function renderOneMenu(builder, menuFrame, levelIndex)
 end
 
 local function render(builder, screen)
-    local menus = openMenuFrames()
-    if #menus == 0 then
+    local root = dropdown.frame
+    if root == nil or not root:IsShown() then
         return
     end
-    for levelIndex, menuFrame in ipairs(menus) do
+    for levelIndex, menuFrame in ipairs(openMenuFrames(root)) do
         renderOneMenu(builder, menuFrame, levelIndex)
     end
 end
 
--- Called every frame from UIHost's update.
+-- Called every frame from UIHost's update. The stack lives as long as ANY
+-- menu is open; submenu levels come and go inside the per-tick rebuild.
 function dropdown.update()
     local manager = Menu ~= nil and Menu.GetManager ~= nil and Menu:GetManager() or nil
     local open = manager ~= nil and manager:GetOpenMenu() or nil
-    if open == dropdown.frame then
+    dropdown.frame = open
+    if open == nil then
+        if dropdown.stack ~= nil then
+            WowVision.graphHost:close(dropdown.stack)
+            dropdown.stack = nil
+        end
+        dropdown.active = nil
         return
     end
-    if dropdown.stack ~= nil then
-        WowVision.graphHost:close(dropdown.stack)
-        dropdown.stack = nil
-    end
-    dropdown.frame = open
-    if open ~= nil then
+    if dropdown.stack == nil then
         dropdown.stack = WowVision.graphHost:open({ key = "dropdown", render = render })
-    else
-        dropdown.active = nil
     end
 end
