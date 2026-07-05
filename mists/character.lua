@@ -1,7 +1,16 @@
 local module = WowVision.base.windows:createModule("character")
 local L = module.L
 module:setLabel(L["Character"])
-local gen = module:hasUI()
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
+
+-- The character panel: tabs pick paper doll (equipment and stats),
+-- reputation (a Faux-pooled faction list plus the detail side panel), or
+-- currency (a hybrid-scrolled token list). Reputation rows report GetID 0
+-- but carry .index, which the scroll adapter prefers.
 
 -- Slot ID to localized name mapping for empty slots
 local SLOT_NAMES = {
@@ -26,68 +35,6 @@ local SLOT_NAMES = {
     [INVSLOT_RANGED] = L["Ranged"],
 }
 
-gen:Element("character", {
-    regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
-        values = function(props)
-            return { selectedTab = CharacterFrame.selectedTab }
-        end,
-    },
-}, function(props)
-    local result = { "Panel", label = "Character Frame", wrap = true, children = {} }
-    local tab = CharacterFrame.selectedTab
-    if tab == 1 then
-        tinsert(result.children, { "character/PaperDoll", frame = PaperDollFrame })
-    elseif tab == 3 then
-        tinsert(result.children, { "character/Reputation", frame = ReputationFrame })
-        tinsert(result.children, { "character/ReputationDetail" })
-    elseif tab == 4 then
-        tinsert(result.children, { "character/Currency", frame = TokenFrame })
-    else
-        tinsert(result.children, { "Text", text = "Not yet implemented" })
-    end
-    tinsert(result.children, { "character/Tabs" })
-    return result
-end)
-
-gen:Element("character/Tabs", {
-    regenerateOn = {
-        values = function(props)
-            return { selectedTab = CharacterFrame.selectedTab }
-        end,
-    },
-}, function(props)
-    local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
-    for i = 1, 4 do
-        local tab = _G["CharacterFrameTab" .. i]
-        if tab then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "tab_" .. i,
-                frame = tab,
-                selected = CharacterFrame.selectedTab == i,
-            })
-        end
-    end
-    return result
-end)
-
-gen:Element("character/PaperDoll", {
-    regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
-    },
-}, function(props)
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "character/Equipment", frame = PaperDollItemsFrame },
-            { "character/Stats" },
-        },
-    }
-end)
-
 local function getEquipmentLabel(frame)
     local slotId = frame:GetID()
     local itemLink = GetInventoryItemLink("player", slotId)
@@ -100,271 +47,323 @@ local function getEquipmentLabel(frame)
     return SLOT_NAMES[slotId] or L["Empty"]
 end
 
-gen:Element("character/Equipment", {
-    regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
-    },
-}, function(props)
-    local result = { "List", label = L["Equipment"], children = {} }
-    local children = { props.frame:GetChildren() }
-    for i, v in ipairs(children) do
-        local slotId = v:GetID()
-        tinsert(result.children, {
-            "ItemButton",
-            key = "slot_" .. slotId,
-            frame = v,
-            label = getEquipmentLabel(v),
-            tooltip = {
-                type = "Game",
-                mode = "immediate",
-            },
-        })
-    end
-    return result
-end)
-
-gen:Element("character/Stats", {
-    regenerateOn = {
-        events = {
-            "PLAYER_EQUIPMENT_CHANGED",
-            "UNIT_INVENTORY_CHANGED",
-            "COMBAT_RATING_UPDATE",
-            "UNIT_STATS",
-            "UNIT_AURA",
-            "UNIT_DAMAGE",
-            "UNIT_ATTACK_SPEED",
-            "UNIT_ATTACK_POWER",
-            "UNIT_RANGED_ATTACK_POWER",
-            "PLAYER_DAMAGE_DONE_MODS",
-        },
-    },
-}, function(props)
-    local result = { "List", label = L["Stats"], children = {} }
-    for i, k in ipairs(PAPERDOLL_STATCATEGORY_DEFAULTORDER) do
-        local v = PAPERDOLL_STATCATEGORIES[k]
-        local categoryFrame = _G["CharacterStatsPaneCategory" .. v.id]
-        tinsert(result.children, { "character/StatsCategory", key = "category_" .. v.id, frame = categoryFrame })
-    end
-    return result
-end)
-
--- No regenerateOn needed - this is always a child of character/Stats
--- which handles the event-driven regeneration
-gen:Element("character/StatsCategory", function(props)
-    local label = props.frame.NameText:GetText()
-    if not label or label == "" then
-        return nil
-    end
-    local result = { "List", direction = "horizontal", label = label, children = {} }
-    local children = { props.frame:GetChildren() }
-    for i = 2, #children do
-        local stat = children[i]
-        if stat:IsShown() then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "stat_" .. i,
-                frame = stat,
-                label = tostring(stat.Label:GetText()) .. " " .. tostring(stat.Value:GetText()),
-                tooltip = {
-                    type = "Game",
-                    mode = "immediate",
-                },
-            })
-        end
-    end
-    return result
-end)
-
-local function getTokenNumEntries(self, element)
-    return GetCurrencyListSize()
+local function draggableProxy(button, label)
+    local vtable = nodes.proxyButton({ target = button, label = label })
+    tinsert(vtable.bindings, {
+        binding = "drag",
+        type = "Function",
+        func = function()
+            local script = button:GetScript("OnDragStart")
+            if script ~= nil then
+                script(button)
+            end
+        end,
+    })
+    return vtable
 end
 
-local function getTokenElement(self, button)
-    local index = button.index
-    local name, isHeader, isExpanded, isUnused, isWatched, count, icon, maxQuantity, maxEarnable, quantityEarned, isTradeable, itemID =
-        GetCurrencyListInfo(index)
-    local label = name
-    local header = nil
-    if isHeader then
-        if isExpanded then
-            header = "expanded"
-        else
-            header = "collapsed"
-        end
-    elseif count ~= nil then
-        label = label .. " " .. count
+local function renderPaperDoll(builder)
+    builder:beginStop("equipment")
+    builder:pushContext("equipment", L["Equipment"])
+    for _, slot in ipairs({ PaperDollItemsFrame:GetChildren() }) do
+        local captured = slot
+        builder:addItem(
+            ControlId.forObject(captured),
+            draggableProxy(captured, function()
+                return getEquipmentLabel(captured)
+            end)
+        )
     end
-    return { "ProxyButton", frame = button, label = label, header = header }
-end
+    builder:popContext()
 
-gen:Element("character/Currency", {
-    regenerateOn = {
-        events = { "CURRENCY_DISPLAY_UPDATE" },
-    },
-}, function(props)
-    local frame = TokenFrameContainer
-    local result = {
-        "List",
-        label = CharacterFrameTab4:GetText(),
-        children = {
-            {
-                "ProxyScrollFrame",
-                frame = frame,
-                getNumEntries = getTokenNumEntries,
-                getElement = getTokenElement,
-            },
-        },
-    }
-    return result
-end)
+    -- Stats: one stop, each category a labeled row -- up and down switch
+    -- categories, left and right walk a category's stats.
+    builder:beginStop("stats")
+    builder:pushContext("stats", L["Stats"])
+    for _, categoryKey in ipairs(PAPERDOLL_STATCATEGORY_DEFAULTORDER) do
+        local category = PAPERDOLL_STATCATEGORIES[categoryKey]
+        local categoryFrame = _G["CharacterStatsPaneCategory" .. category.id]
+        if categoryFrame ~= nil then
+            local label = categoryFrame.NameText:GetText()
+            if label ~= nil and label ~= "" then
+                builder:pushContext("statCategory:" .. category.id, label)
+                builder:startRow()
+                local children = { categoryFrame:GetChildren() }
+                for i = 2, #children do
+                    local stat = children[i]
+                    if stat:IsShown() then
+                        local captured = stat
+                        builder:addItem(
+                            ControlId.forObject(captured),
+                            nodes.proxyButton({
+                                target = captured,
+                                label = function()
+                                    return tostring(captured.Label:GetText())
+                                        .. " "
+                                        .. tostring(captured.Value:GetText())
+                                end,
+                            })
+                        )
+                    end
+                end
+                builder:endRow()
+                builder:popContext()
+            end
+        end
+    end
+    builder:popContext()
+end
 
 ------------------------------------------------------------
--- Reputation tab (tab 3). Mists uses the Cata ReputationFrame, where each
--- ReputationBar[i] is itself a clickable row Button (sub-frames: FactionName,
--- ReputationBarFactionStanding, ExpandOrCollapseButton for headers), shown via
--- the ReputationListScrollFrame FauxScrollFrame, with a ReputationDetailFrame
--- side panel.
+-- Reputation (tab 3). Mists uses the Cata ReputationFrame: ReputationBar[i]
+-- is itself a clickable row Button shown via the ReputationListScrollFrame
+-- FauxScrollFrame, with a ReputationDetailFrame side panel.
 ------------------------------------------------------------
 
-local NUM_FACTIONS_DISPLAYED = NUM_FACTIONS_DISPLAYED or 15
+local REPUTATION_ROWS = NUM_FACTIONS_DISPLAYED or 15
 
--- ReputationBar frames report GetID() == 0; derive the display index from the
--- frame name ("ReputationBar3" -> 3) at use time, so we don't depend on the
--- frames existing at addon-load time.
-local function repBarIndex(frame)
-    local n = frame and frame.GetName and frame:GetName()
-    return n and tonumber(n:match("^ReputationBar(%d+)$"))
-end
-
-local function buildReputationElement(self, row)
-    -- In the Cata/Mists reputation UI, ReputationBar[i] is itself a clickable
-    -- Button (its OnClick runs ReputationBar_OnClick -> opens ReputationDetailFrame),
-    -- with sub-frames for the name, standing, and a header expand/collapse button.
-    local i = repBarIndex(row)
-    if not i or not row:IsShown() then
-        return nil
-    end
-    local base = "ReputationBar" .. i
-
-    local nameText = _G[base .. "FactionName"]
-    local name = nameText and nameText:GetText() or ""
-    if name == "" then
-        return nil
-    end
-
-    local label = name
-    local standingFrame = _G[base .. "ReputationBarFactionStanding"]
-    local standing = standingFrame and standingFrame:GetText() or ""
-    if standing and standing ~= "" then
-        label = label .. " - " .. standing
-    end
-    if row.tooltip and row.tooltip ~= "" then
-        label = label .. " " .. row.tooltip
-    end
-
-    -- Header rows show an ExpandOrCollapseButton; clicking it toggles the section.
-    local expandButton = _G[base .. "ExpandOrCollapseButton"]
-    if expandButton and expandButton:IsShown() then
-        local headerState
-        if row.index then
-            local isCollapsed = select(10, GetFactionInfo(row.index))
-            headerState = isCollapsed and "collapsed" or "expanded"
-        end
-        return { "ProxyButton", frame = expandButton, label = label, header = headerState }
-    end
-
-    -- Faction row: the row Button's own OnClick opens/closes the detail frame.
-    return { "ProxyButton", frame = row, label = label }
-end
-
-local function getNumFactions()
-    return GetNumFactions()
-end
-
-local function getReputationIndex(self, frame)
-    local offset = FauxScrollFrame_GetOffset(ReputationListScrollFrame) or 0
-    return (repBarIndex(frame) or 0) + offset
-end
-
-local function getReputationRows()
+local function reputationButtons()
     local rows = {}
-    for i = 1, NUM_FACTIONS_DISPLAYED do
+    for i = 1, REPUTATION_ROWS do
         local frame = _G["ReputationBar" .. i]
-        if frame then
+        if frame ~= nil then
             tinsert(rows, frame)
         end
     end
     return rows
 end
 
-gen:Element("character/Reputation", {
-    regenerateOn = {
-        events = { "UPDATE_FACTION" },
-    },
-}, function(props)
-    if ReputationListScrollFrame and ReputationListScrollFrame:IsShown() then
-        return {
-            "ProxyFauxScrollFrame",
-            frame = ReputationListScrollFrame,
-            buttonHeight = REPUTATIONFRAME_FACTIONHEIGHT,
-            updateFunction = ReputationFrame_Update,
-            getNumEntries = getNumFactions,
-            getElement = buildReputationElement,
-            getElementIndex = getReputationIndex,
-            getButtons = getReputationRows,
-        }
+local function factionLabel(index)
+    local name, _, standingID, _, _, _, _, _, isHeader, _, hasRep = GetFactionInfo(index)
+    if name == nil then
+        return nil
     end
-
-    -- Scroll frame hidden (few factions): render rows directly.
-    local children = {}
-    for i = 1, NUM_FACTIONS_DISPLAYED do
-        local frame = _G["ReputationBar" .. i]
-        if frame then
-            local element = buildReputationElement(nil, frame)
-            if element then
-                tinsert(children, element)
-            end
+    local label = name
+    if not isHeader or hasRep then
+        local standing = _G["FACTION_STANDING_LABEL" .. (standingID or 0)]
+        if standing ~= nil then
+            label = label .. " - " .. standing
         end
     end
-    if #children == 0 then
-        return nil
-    end
-    return { "List", label = L["Reputation"], children = children }
-end)
+    return label
+end
 
-gen:Element("character/ReputationDetail", function(props)
-    local frame = ReputationDetailFrame
-    if not frame or not frame:IsShown() then
-        return nil
+local function emitFaction(builder, index, helpers)
+    local name, _, _, _, _, _, _, _, isHeader = GetFactionInfo(index)
+    if name == nil then
+        return
     end
 
-    local children = {}
-    local factionName = ReputationDetailFactionName and ReputationDetailFactionName:GetText() or ""
-    local description = ReputationDetailFactionDescription and ReputationDetailFactionDescription:GetText() or ""
-    if description and description ~= "" then
-        tinsert(children, { "Text", text = description })
-    end
-    if ReputationDetailAtWarCheckbox and ReputationDetailAtWarCheckbox:IsShown() then
-        tinsert(children, { "ProxyCheckButton", frame = ReputationDetailAtWarCheckbox, label = L["At War"] })
-    end
-    if ReputationDetailInactiveCheckbox and ReputationDetailInactiveCheckbox:IsShown() then
-        tinsert(children, { "ProxyCheckButton", frame = ReputationDetailInactiveCheckbox, label = MOVE_TO_INACTIVE or "Move to Inactive" })
-    end
-    if ReputationDetailMainScreenCheckbox and ReputationDetailMainScreenCheckbox:IsShown() then
-        tinsert(children, { "ProxyCheckButton", frame = ReputationDetailMainScreenCheckbox, label = L["Watched"] })
-    end
-    if ReputationDetailCloseButton then
-        tinsert(children, { "ProxyButton", frame = ReputationDetailCloseButton, label = CLOSE or "Close" })
+    local announcements = {
+        {
+            text = function()
+                return factionLabel(index)
+            end,
+            kind = kinds.label,
+        },
+    }
+
+    local target = helpers.target
+    if isHeader then
+        tinsert(announcements, {
+            text = function()
+                local _, _, _, _, _, _, _, _, _, isCollapsed = GetFactionInfo(index)
+                return isCollapsed and L["Collapsed"] or L["Expanded"]
+            end,
+            kind = kinds.value,
+        })
+        -- Headers toggle through their expand button, a named child of the row.
+        target = function()
+            local row = helpers.target()
+            if row == nil then
+                return nil
+            end
+            return _G[row:GetName() .. "ExpandOrCollapseButton"]
+        end
     end
 
-    return { "List", label = factionName, children = children }
-end)
+    builder:addItem(helpers.id, {
+        controlType = graph.controlTypes.button,
+        announcements = announcements,
+        bindings = {
+            { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
+        },
+        onFocus = helpers.onFocus,
+        onUnfocus = helpers.onUnfocus,
+        tooltipFrame = helpers.target,
+    })
+end
+
+local function reputationEntryId(index)
+    local name, _, _, _, _, _, _, _, isHeader = GetFactionInfo(index)
+    if name ~= nil then
+        return ControlId.structural((isHeader and "repHeader:" or "faction:") .. name)
+    end
+    return ControlId.structural("faction:" .. index)
+end
+
+local function renderReputation(builder)
+    builder:beginStop("factions")
+    nodes.hybridScrollList(builder, {
+        scrollFrame = ReputationListScrollFrame,
+        key = "factions",
+        label = L["Reputation"],
+        count = GetNumFactions,
+        rowHeight = REPUTATIONFRAME_FACTIONHEIGHT,
+        buttons = reputationButtons,
+        id = reputationEntryId,
+        emit = emitFaction,
+    })
+
+    local detail = ReputationDetailFrame
+    if detail ~= nil and detail:IsShown() then
+        builder:beginStop("repDetail")
+        builder:pushContext(
+            "repDetail",
+            ReputationDetailFactionName ~= nil and ReputationDetailFactionName:GetText() or ""
+        )
+        builder:addItem(
+            ControlId.structural("repDescription"),
+            nodes.text({
+                label = function()
+                    return ReputationDetailFactionDescription ~= nil
+                            and ReputationDetailFactionDescription:GetText()
+                        or nil
+                end,
+            })
+        )
+        if ReputationDetailAtWarCheckbox ~= nil and ReputationDetailAtWarCheckbox:IsShown() then
+            builder:addItem(
+                ControlId.forObject(ReputationDetailAtWarCheckbox),
+                nodes.proxyCheckButton({ target = ReputationDetailAtWarCheckbox, label = L["At War"] })
+            )
+        end
+        if ReputationDetailInactiveCheckbox ~= nil and ReputationDetailInactiveCheckbox:IsShown() then
+            builder:addItem(
+                ControlId.forObject(ReputationDetailInactiveCheckbox),
+                nodes.proxyCheckButton({
+                    target = ReputationDetailInactiveCheckbox,
+                    label = MOVE_TO_INACTIVE or "Move to Inactive",
+                })
+            )
+        end
+        if ReputationDetailMainScreenCheckbox ~= nil and ReputationDetailMainScreenCheckbox:IsShown() then
+            builder:addItem(
+                ControlId.forObject(ReputationDetailMainScreenCheckbox),
+                nodes.proxyCheckButton({ target = ReputationDetailMainScreenCheckbox, label = L["Watched"] })
+            )
+        end
+        if ReputationDetailCloseButton ~= nil then
+            builder:addItem(
+                ControlId.forObject(ReputationDetailCloseButton),
+                nodes.proxyButton({ target = ReputationDetailCloseButton, label = CLOSE or L["Close"] })
+            )
+        end
+        builder:popContext()
+    end
+end
+
+------------------------------------------------------------
+-- Currency (tab 4): TokenFrameContainer is a native HybridScrollFrame over
+-- the currency list.
+------------------------------------------------------------
+
+local function emitCurrency(builder, index, helpers)
+    local _, isHeader = GetCurrencyListInfo(index)
+
+    local announcements = {
+        {
+            text = function()
+                local name, header, _, _, _, count = GetCurrencyListInfo(index)
+                if name == nil then
+                    return nil
+                end
+                if header or count == nil then
+                    return name
+                end
+                return name .. " " .. count
+            end,
+            kind = kinds.label,
+        },
+    }
+    if isHeader then
+        tinsert(announcements, {
+            text = function()
+                local _, _, isExpanded = GetCurrencyListInfo(index)
+                return isExpanded and L["Expanded"] or L["Collapsed"]
+            end,
+            kind = kinds.value,
+        })
+    end
+
+    builder:addItem(helpers.id, {
+        controlType = graph.controlTypes.button,
+        announcements = announcements,
+        bindings = {
+            { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+        },
+        onFocus = helpers.onFocus,
+        onUnfocus = helpers.onUnfocus,
+        tooltipFrame = helpers.target,
+    })
+end
+
+local function renderCurrency(builder)
+    builder:beginStop("currency")
+    nodes.hybridScrollList(builder, {
+        scrollFrame = TokenFrameContainer,
+        key = "currency",
+        label = CharacterFrameTab4 ~= nil and CharacterFrameTab4:GetText() or L["Currency"],
+        count = GetCurrencyListSize,
+        emit = emitCurrency,
+    })
+end
+
+local function render(builder, screen)
+    if CharacterFrame == nil or not CharacterFrame:IsShown() then
+        return
+    end
+    builder:pushContext("character", L["Character"])
+
+    local selectedTab = CharacterFrame.selectedTab
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    for i = 1, 4 do
+        local tab = _G["CharacterFrameTab" .. i]
+        local tabIndex = i
+        if tab ~= nil and tab:IsShown() then
+            local vtable = nodes.proxyButton({ target = tab })
+            tinsert(vtable.announcements, {
+                text = function()
+                    if CharacterFrame.selectedTab == tabIndex then
+                        return L["selected"]
+                    end
+                    return nil
+                end,
+                kind = kinds.selected,
+            })
+            builder:addItem(ControlId.forObject(tab), vtable)
+        end
+    end
+    builder:endRow()
+    builder:popContext()
+
+    if selectedTab == 1 then
+        renderPaperDoll(builder)
+    elseif selectedTab == 3 then
+        renderReputation(builder)
+    elseif selectedTab == 4 then
+        renderCurrency(builder)
+    end
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "character",
-    generated = true,
-    rootElement = "character",
     frameName = "CharacterFrame",
     conflictingAddons = { "Sku" },
+    graphScreen = { render = render },
 })
