@@ -358,6 +358,84 @@ settings.registerFieldControl("TrackingConfig", function(field, owner)
     })
 end)
 
+-- DataBrowse: pick a path from a data directory (the sound and beacon
+-- pickers). Subdirectories push deeper screens; entries preview on focus and
+-- select on Enter, unwinding back to the field.
+local function directoryLabel(directory)
+    if directory.getLabel ~= nil then
+        return directory:getLabel()
+    end
+    return directory.label or directory.key or ""
+end
+
+local function pushBrowse(field, owner, directory, segments)
+    settings.pushScreen("browse:" .. tostring(directory.key or "root"), function(builder)
+        builder:pushContext(directoryLabel(directory))
+        for _, subdirectory in ipairs(directory.subdirectories) do
+            local captured = subdirectory
+            builder:addItem(
+                ControlId.structural("dir:" .. tostring(captured.key)),
+                nodes.button({
+                    label = directoryLabel(captured),
+                    onActivate = function()
+                        local deeper = {}
+                        for _, segment in ipairs(segments) do
+                            tinsert(deeper, segment)
+                        end
+                        tinsert(deeper, captured.key)
+                        pushBrowse(field, owner, captured, deeper)
+                    end,
+                })
+            )
+        end
+        for _, entry in ipairs(directory.entries) do
+            local captured = entry
+            local vtable = nodes.button({
+                label = function()
+                    if captured.getLabel ~= nil then
+                        return captured:getLabel()
+                    end
+                    return tostring(captured.key)
+                end,
+                onActivate = function()
+                    local parts = {}
+                    for _, segment in ipairs(segments) do
+                        tinsert(parts, segment)
+                    end
+                    tinsert(parts, captured.key)
+                    field:set(owner, table.concat(parts, "/"))
+                    -- Unwind every browse level; the revealed field button
+                    -- re-announces with the new value.
+                    local host = WowVision.graphHost
+                    for _ = 1, #segments + 1 do
+                        host:pop(host:focusedStack())
+                    end
+                end,
+            })
+            vtable.onFocus = function()
+                if captured.preview ~= nil then
+                    captured:preview()
+                end
+            end
+            builder:addItem(ControlId.structural("entry:" .. tostring(captured.key)), vtable)
+        end
+        builder:popContext()
+    end)
+end
+
+settings.registerFieldControl("DataBrowse", function(field, owner)
+    return nodes.button({
+        label = field:getLabel(),
+        value = valueTextOf(owner, field),
+        onActivate = function()
+            local directory = field:getDirectory(owner)
+            if directory ~= nil then
+                pushBrowse(field, owner, directory, {})
+            end
+        end,
+    })
+end)
+
 -- Array: rows of element editor plus Remove, and Add appending the element
 -- default. Elements edit through the field's index proxies.
 settings.registerFieldControl("Array", function(field, owner)

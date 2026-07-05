@@ -649,6 +649,7 @@ testRunner:addSuite("GraphNodes", {
             "Object",
             "TrackingConfig",
             "Array",
+            "DataBrowse",
         }
         for _, typeKey in ipairs(expected) do
             t:assertTrue(graph.settings.hasFieldControl(typeKey), typeKey .. " control missing")
