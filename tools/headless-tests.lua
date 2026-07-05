@@ -11,6 +11,13 @@ tinsert = table.insert
 tremove = table.remove
 unpack = unpack or table.unpack
 
+-- WoW API stand-in: records the run script on the fake frame.
+function ExecuteFrameScript(frame, script)
+    if frame._scripts ~= nil then
+        tinsert(frame._scripts, script)
+    end
+end
+
 local namespace = {}
 local function loadAddonFile(path)
     local chunk, err = loadfile(path)

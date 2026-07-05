@@ -9,6 +9,47 @@ local L = WowVision:getLocale()
 local nodes = {}
 graph.nodes = nodes
 
+local function chainCalls(first, second)
+    if first == nil then
+        return second
+    end
+    if second == nil then
+        return first
+    end
+    return function(...)
+        first(...)
+        second(...)
+    end
+end
+
+local function resolveFrame(frameOrFunction)
+    if type(frameOrFunction) == "function" then
+        return frameOrFunction()
+    end
+    return frameOrFunction
+end
+
+local function runFrameScript(frameOrFunction, script)
+    local frame = resolveFrame(frameOrFunction)
+    if frame ~= nil and frame.HasScript ~= nil and frame:HasScript(script) then
+        ExecuteFrameScript(frame, script)
+    end
+end
+
+-- Run a frame's hover scripts as focus enters and leaves the node: the game
+-- shows its own tooltip and highlight, and the tooltip reader has content.
+-- Appends to any existing onFocus/onUnfocus (a scroll adapter's scroll hook
+-- runs first, so the frame is materialized before hovering).
+function nodes.attachHover(vtable, frameOrFunction)
+    vtable.onFocus = chainCalls(vtable.onFocus, function()
+        runFrameScript(frameOrFunction, "OnEnter")
+    end)
+    vtable.onUnfocus = chainCalls(vtable.onUnfocus, function()
+        runFrameScript(frameOrFunction, "OnLeave")
+    end)
+    return vtable
+end
+
 -- A live label function for a Blizzard frame: its own text, else the first
 -- text region (dropdown-style buttons keep their text on a region).
 function nodes.frameText(frame)
@@ -37,14 +78,14 @@ function nodes.proxyButton(config)
     if target == nil then
         error("proxyButton requires a target frame")
     end
-    return {
+    return nodes.attachHover({
         controlType = graph.controlTypes.button,
         announcements = { { text = config.label or nodes.frameText(target), kind = kinds.label } },
         bindings = {
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
             { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = target },
         },
-    }
+    }, target)
 end
 
 -- A synthetic button: Enter runs the handler. An optional value part reads

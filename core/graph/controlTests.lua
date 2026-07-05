@@ -176,6 +176,40 @@ testRunner:addSuite("GraphNodes", {
         end)
     end,
 
+    ["attachHover runs hover scripts around existing hooks"] = function(t)
+        local frame = {
+            _scripts = {},
+            HasScript = function(self, script)
+                return true
+            end,
+        }
+        local order = {}
+        local vtable = graph.nodes.attachHover({
+            onFocus = function()
+                tinsert(order, "base")
+            end,
+        }, frame)
+        vtable.onFocus()
+        t:assertEqual(order[1], "base", "existing hook runs before hover")
+        t:assertEqual(frame._scripts[1], "OnEnter")
+        vtable.onUnfocus()
+        t:assertEqual(frame._scripts[2], "OnLeave")
+    end,
+
+    ["proxyButton hovers its target on focus"] = function(t)
+        local frame = {
+            _scripts = {},
+            HasScript = function(self, script)
+                return true
+            end,
+        }
+        local vtable = graph.nodes.proxyButton({ target = frame, label = "OK" })
+        vtable.onFocus()
+        vtable.onUnfocus()
+        t:assertEqual(frame._scripts[1], "OnEnter")
+        t:assertEqual(frame._scripts[2], "OnLeave")
+    end,
+
     ["text carries the live scope"] = function(t)
         local vtable = graph.nodes.text({ label = "Line", live = "always" })
         t:assertEqual(vtable.announcements[1].live, "always")

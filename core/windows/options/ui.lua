@@ -173,6 +173,7 @@ local function checkboxNode(elementData, helpers, label, setting, childKey)
             },
         },
         onFocus = helpers.onFocus,
+        onUnfocus = helpers.onUnfocus,
     }
 end
 
@@ -200,6 +201,7 @@ local function rowButtonNode(elementData, helpers, label, childKey)
             },
         },
         onFocus = helpers.onFocus,
+        onUnfocus = helpers.onUnfocus,
     }
 end
 
@@ -228,6 +230,7 @@ local function sliderNode(elementData, helpers, label, setting, options)
         step = step,
     })
     vtable.onFocus = helpers.onFocus
+    vtable.onUnfocus = helpers.onUnfocus
     return vtable
 end
 
@@ -245,6 +248,7 @@ local function dropdownNode(elementData, helpers, label, setting)
         end,
     })
     vtable.onFocus = helpers.onFocus
+    vtable.onUnfocus = helpers.onUnfocus
     return vtable
 end
 
@@ -278,6 +282,7 @@ local function emitCategoryRow(builder, elementData, index, helpers)
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
         },
         onFocus = helpers.onFocus,
+        onUnfocus = helpers.onUnfocus,
     })
 end
 
@@ -430,28 +435,31 @@ settingEmitters["SettingsKeybindingSectionTemplate"] = function(builder, element
             builder:startRow()
             for buttonIndex, bindingButton in ipairs(control.Buttons) do
                 local captured = bindingButton
-                builder:addItem(ControlId.structural("kb:" .. index .. ":" .. controlIndex .. ":" .. buttonIndex), {
-                    controlType = graph.controlTypes.button,
-                    announcements = {
-                        {
-                            text = function()
-                                return captured.GetText ~= nil and captured:GetText() or nil
-                            end,
-                            kind = kinds.label,
+                builder:addItem(
+                    ControlId.structural("kb:" .. index .. ":" .. controlIndex .. ":" .. buttonIndex),
+                    nodes.attachHover({
+                        controlType = graph.controlTypes.button,
+                        announcements = {
+                            {
+                                text = function()
+                                    return captured.GetText ~= nil and captured:GetText() or nil
+                                end,
+                                kind = kinds.label,
+                            },
                         },
-                    },
-                    bindings = {
-                        {
-                            binding = "leftClick",
-                            type = "Click",
-                            emulatedKey = "LeftButton",
-                            target = function()
-                                return captured
-                            end,
+                        bindings = {
+                            {
+                                binding = "leftClick",
+                                type = "Click",
+                                emulatedKey = "LeftButton",
+                                target = function()
+                                    return captured
+                                end,
+                            },
                         },
-                    },
-                    onFocus = helpers.onFocus,
-                })
+                        onFocus = helpers.onFocus,
+                    }, captured)
+                )
             end
             builder:endRow()
             builder:popContext()

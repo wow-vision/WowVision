@@ -88,9 +88,6 @@ function nodes.scrollBoxList(builder, config)
             id = ControlId.structural(keyPrefix .. ":" .. tostring(data) .. ":" .. capturedIndex)
         end
 
-        local onFocus = function()
-            scrollBox:ScrollToElementDataIndex(capturedIndex)
-        end
         local target = function()
             local rowFrame = resolveRowFrame(scrollBox, data, capturedIndex)
             if rowFrame ~= nil and config.button ~= nil then
@@ -98,13 +95,23 @@ function nodes.scrollBoxList(builder, config)
             end
             return rowFrame
         end
+        -- Scroll first so the row materializes, then hover it: the game shows
+        -- its tooltip and highlight for the reader.
+        local onFocus = nodes.attachHover({
+            onFocus = function()
+                scrollBox:ScrollToElementDataIndex(capturedIndex)
+            end,
+        }, target)
+        local onUnfocus = onFocus.onUnfocus
+        onFocus = onFocus.onFocus
 
+        local helpers = { onFocus = onFocus, onUnfocus = onUnfocus, target = target, id = id }
         if config.emit ~= nil then
-            config.emit(builder, data, capturedIndex, { onFocus = onFocus, target = target, id = id })
+            config.emit(builder, data, capturedIndex, helpers)
         else
             local vtable
             if config.row ~= nil then
-                vtable = config.row(data, capturedIndex, { onFocus = onFocus, target = target })
+                vtable = config.row(data, capturedIndex, helpers)
             else
                 vtable = {
                     controlType = graph.controlTypes.button,
@@ -121,6 +128,7 @@ function nodes.scrollBoxList(builder, config)
                         { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = target },
                     },
                     onFocus = onFocus,
+                    onUnfocus = onUnfocus,
                 }
             end
             builder:addItem(id, vtable)
