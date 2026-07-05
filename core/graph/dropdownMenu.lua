@@ -165,26 +165,32 @@ local function emitItem(builder, item)
     builder:addItem(ControlId.forObject(item), vtable)
 end
 
--- Every open menu frame in the chain. The root comes from the manager;
--- submenu frames are its SIBLINGS (menu frames share one parent and are
--- stamped with ID 1000), sorted by left edge -- submenus anchor to their
--- parent row's right, so this is chain order.
+-- Every open menu frame in the chain. The root comes from the manager; on
+-- this client menu frames are PARENTLESS, so the rest of the chain is found
+-- by walking all frames for the menu signature (parentless, stamped ID
+-- 1000, shown). Sorted by left edge -- submenus anchor to their parent
+-- row's right, so this is chain order.
 local function openMenuFrames(root)
-    local menus = {}
-    local parent = root ~= nil and root:GetParent() or nil
-    if parent ~= nil then
-        for _, child in ipairs({ parent:GetChildren() }) do
-            if child ~= root and child:GetID() == 1000 and child:IsShown() then
-                tinsert(menus, child)
-            end
+    local menus = { root }
+    local rootParent = root:GetParent()
+    local frame = EnumerateFrames()
+    while frame ~= nil do
+        if
+            frame ~= root
+            and frame:GetParent() == rootParent
+            and frame:GetID() == 1000
+            and frame:IsShown()
+        then
+            tinsert(menus, frame)
         end
+        frame = EnumerateFrames(frame)
     end
-    tinsert(menus, root)
     table.sort(menus, function(a, b)
         return (a:GetLeft() or 0) < (b:GetLeft() or 0)
     end)
     return menus
 end
+graph.dropdown.openMenuFrames = openMenuFrames
 
 local function renderOneMenu(builder, menuFrame, levelIndex)
     builder:beginStop("menu:" .. levelIndex)

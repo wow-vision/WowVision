@@ -305,15 +305,7 @@ function WowVision:registerCommands()
             if dropdown.frame ~= nil then
                 local parent = dropdown.frame:GetParent()
                 tinsert(lines, "root parent: " .. tostring(parent ~= nil and (parent:GetName() or "unnamed") or nil))
-                local count = 0
-                if parent ~= nil then
-                    for _, child in ipairs({ parent:GetChildren() }) do
-                        if child:GetID() == 1000 and child:IsShown() then
-                            count = count + 1
-                        end
-                    end
-                end
-                tinsert(lines, "menus with id 1000 shown: " .. count)
+                tinsert(lines, "open menus found: " .. #dropdown.openMenuFrames(dropdown.frame))
             end
             local host = WowVision.graphHost
             local screen = host:focusedScreen()
