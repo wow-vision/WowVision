@@ -329,6 +329,32 @@ function nodes.choice(config)
     }
 end
 
+-- A real Blizzard edit box as a node: Enter hands it keyboard focus and its
+-- own handlers take over; the current text reads as the value.
+-- config: { editBox, label }
+function nodes.proxyEditBox(config)
+    local editBox = config.editBox
+    if editBox == nil then
+        error("proxyEditBox requires an editBox")
+    end
+    return {
+        controlType = graph.controlTypes.editBox,
+        announcements = {
+            { text = config.label, kind = kinds.label },
+            {
+                text = function()
+                    return editBox:GetText()
+                end,
+                kind = kinds.value,
+            },
+        },
+        onActivate = function()
+            editBox:SetFocus()
+        end,
+        tooltipFrame = editBox,
+    }
+end
+
 -- A text value: Enter opens typed entry.
 -- config: { label, get, set, valueText = function? }
 function nodes.textInput(config)

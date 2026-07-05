@@ -13,25 +13,8 @@ local kinds = graph.kinds
 -- interaction event). Inbox labels read live; the per-tick rebuild picks up
 -- MAIL_INBOX_UPDATE arrivals without event plumbing.
 
--- A real Blizzard edit box as a node: Enter hands it keyboard focus and its
--- own handlers take over; the current text reads as the value.
 function module.editBoxNode(editBox, label)
-    return {
-        controlType = graph.controlTypes.editBox,
-        announcements = {
-            { text = label, kind = kinds.label },
-            {
-                text = function()
-                    return editBox:GetText()
-                end,
-                kind = kinds.value,
-            },
-        },
-        onActivate = function()
-            editBox:SetFocus()
-        end,
-        tooltipFrame = editBox,
-    }
+    return nodes.proxyEditBox({ editBox = editBox, label = label })
 end
 
 -- A real check button with its checked state as the live value.

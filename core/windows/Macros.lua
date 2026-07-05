@@ -1,123 +1,170 @@
 local macros = WowVision.base.windows:createModule("macros")
 local L = macros.L
 macros:setLabel(L["Macros"])
-local gen = macros:hasUI()
 
-gen:Element("macros", function(props)
-    if props.forcePopup or MacroPopupFrame:IsShown() then
-        return { "macros/PopupPanel" }
-    else
-        return { "macros/MainPanel" }
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
+
+-- The macro window: tabs, the macro list (synthetic buttons selecting via
+-- MacroFrame:SelectMacro), the pickup button, the macro text edit box, and
+-- the action buttons. The create/edit popup replaces the whole body while
+-- shown: name edit box, Okay, Cancel.
+
+local function headerText(region)
+    if type(region) == "table" and region.GetText ~= nil then
+        return region:GetText()
     end
-end)
-
-local function MainPanel_Mount(self, props)
-    --When the popup panel closes, the macro text field is focused which is not desired
-    MacroFrameText:ClearFocus()
+    return region
 end
 
-gen:Element("macros/MainPanel", function(props)
-    return {
-        "Panel",
-        label = "Macros",
-        wrap = true,
-        hooks = {
-            mount = MainPanel_Mount,
-        },
-        children = {
-            { "macros/MacroTabs" },
-            { "macros/MacroList" },
-            {
-                "ProxyButton",
-                frame = MacroFrame.SelectedMacroButton,
-                label = L["Drag to pick up macro"],
-                draggable = true
-            },
-            { "ProxyButton", frame = MacroEditButton },
-            { "ProxyEditBox", label = "Macro Text", frame = MacroFrameText },
-            { "ProxyButton", frame = MacroCancelButton },
-            { "ProxyButton", frame = MacroSaveButton },
-            { "ProxyButton", frame = MacroDeleteButton },
-            { "ProxyButton", frame = MacroNewButton },
-        },
-    }
-end)
-
-gen:Element("macros/MacroTab", function(props)
-    local tab = props.tab
-    return { "ProxyButton", frame = tab, selected = props.selected }
-end)
-
-gen:Element("macros/MacroTabs", function(props)
-    local selectedTab = PanelTemplates_GetSelectedTab(MacroFrame)
-    return {
-        "List",
-        direction = "horizontal",
-        label = L["Tabs"],
-        children = {
-            { "macros/MacroTab", tab = MacroFrameTab1, selected = selectedTab == 1 },
-            { "macros/MacroTab", tab = MacroFrameTab2, selected = selectedTab == 2 },
-        },
-    }
-end)
-
-function MacroButton_Click(event, source)
-    MacroFrame:SelectMacro(source.key, true)
-end
-
-gen:Element("macros/MacroList", function(props)
-    local tab = PanelTemplates_GetSelectedTab(MacroFrame)
-    local macroCounts = { GetNumMacros() }
-    local macroOffset = 120 * (tab - 1)
-    local startIndex = 1
-    local endIndex = startIndex + macroCounts[tab] - 1
-    local selectedMacro = MacroFrame.MacroSelector:GetSelectedIndex()
-    local result = { "List", label = "Macros", children = {} }
-    for i = startIndex, endIndex do
-        local name = GetMacroInfo(i + macroOffset)
-        tinsert(result.children, {
-            "Button",
-            label = name,
-            selected = selectedMacro == i,
-            key = i,
-            events = {
-                click = MacroButton_Click,
-            },
-        })
-    end
-    return result
-end)
-
-local function PopupPanel_Mount(self, props)
-    MacroPopupFrame.BorderBox.IconSelectorEditBox:ClearFocus()
-end
-
-gen:Element("macros/PopupPanel", function(props)
+local function renderPopup(builder)
     local box = MacroPopupFrame.BorderBox
-    return {
-        "Panel",
-        label = "create/edit",
-        wrap = true,
-        hooks = {
-            mount = PopupPanel_Mount,
-        },
-        children = {
-            {
-                "ProxyEditBox",
-                frame = box.IconSelectorEditBox,
-                fixAutoFocus = true,
-                label = MacroPopupFrame.editBoxHeaderText,
-            },
-            { "ProxyButton", frame = box.OkayButton },
-            { "ProxyButton", frame = box.CancelButton },
-        },
-    }
-end)
+    builder:pushContext("macroPopup", L["Macros"])
+
+    builder:beginStop("name")
+    builder:addItem(
+        ControlId.structural("name"),
+        nodes.proxyEditBox({
+            editBox = box.IconSelectorEditBox,
+            label = function()
+                return headerText(MacroPopupFrame.editBoxHeaderText)
+            end,
+        })
+    )
+    builder:beginStop("okay")
+    builder:addItem(ControlId.forObject(box.OkayButton), nodes.proxyButton({ target = box.OkayButton }))
+    builder:beginStop("cancel")
+    builder:addItem(ControlId.forObject(box.CancelButton), nodes.proxyButton({ target = box.CancelButton }))
+
+    builder:popContext()
+end
+
+local function renderMain(builder)
+    builder:pushContext("macros", L["Macros"])
+
+    local selectedTab = PanelTemplates_GetSelectedTab(MacroFrame)
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    for i = 1, 2 do
+        local tab = _G["MacroFrameTab" .. i]
+        local tabIndex = i
+        if tab ~= nil and tab:IsShown() then
+            local vtable = nodes.proxyButton({ target = tab })
+            tinsert(vtable.announcements, {
+                text = function()
+                    if PanelTemplates_GetSelectedTab(MacroFrame) == tabIndex then
+                        return L["selected"]
+                    end
+                    return nil
+                end,
+                kind = kinds.selected,
+            })
+            builder:addItem(ControlId.forObject(tab), vtable)
+        end
+    end
+    builder:endRow()
+    builder:popContext()
+
+    builder:beginStop("list")
+    builder:pushContext("macroList", L["Macros"])
+    local macroCounts = { GetNumMacros() }
+    local macroOffset = 120 * (selectedTab - 1)
+    local count = macroCounts[selectedTab] or 0
+    for i = 1, count do
+        local index = i
+        local vtable = nodes.button({
+            label = function()
+                return (GetMacroInfo(index + macroOffset))
+            end,
+            onActivate = function()
+                MacroFrame:SelectMacro(index, true)
+            end,
+        })
+        tinsert(vtable.announcements, {
+            text = function()
+                if MacroFrame.MacroSelector:GetSelectedIndex() == index then
+                    return L["selected"]
+                end
+                return nil
+            end,
+            kind = kinds.selected,
+        })
+        builder:addItem(ControlId.structural("macro:" .. i), vtable)
+    end
+    if count == 0 then
+        builder:addItem(ControlId.structural("macroListEmpty"), nodes.text({ label = L["Empty"] }))
+    end
+    builder:popContext()
+
+    if MacroFrame.SelectedMacroButton ~= nil then
+        builder:beginStop("pickup")
+        local pickup = nodes.proxyButton({
+            target = MacroFrame.SelectedMacroButton,
+            label = L["Drag to pick up macro"],
+        })
+        tinsert(pickup.bindings, {
+            binding = "drag",
+            type = "Function",
+            func = function()
+                local button = MacroFrame.SelectedMacroButton
+                local script = button:GetScript("OnDragStart")
+                if script ~= nil then
+                    script(button)
+                end
+            end,
+        })
+        builder:addItem(ControlId.forObject(MacroFrame.SelectedMacroButton), pickup)
+    end
+
+    builder:beginStop("edit")
+    builder:addItem(ControlId.forObject(MacroEditButton), nodes.proxyButton({ target = MacroEditButton }))
+
+    builder:beginStop("text")
+    builder:addItem(
+        ControlId.structural("macroText"),
+        nodes.proxyEditBox({ editBox = MacroFrameText, label = L["Macro Text"] })
+    )
+
+    for _, button in ipairs({ MacroCancelButton, MacroSaveButton, MacroDeleteButton, MacroNewButton }) do
+        if button ~= nil and button:IsShown() then
+            builder:beginStop()
+            builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button }))
+        end
+    end
+
+    builder:popContext()
+end
+
+local function render(builder, screen)
+    if MacroFrame == nil or not MacroFrame:IsShown() then
+        return
+    end
+
+    local popup = MacroPopupFrame ~= nil and MacroPopupFrame:IsShown()
+    -- On mode flips, steal keyboard focus back from the box Blizzard
+    -- auto-focuses (the old mount hooks).
+    if screen._macroPopup ~= popup then
+        screen._macroPopup = popup
+        if popup then
+            MacroPopupFrame.BorderBox.IconSelectorEditBox:ClearFocus()
+        else
+            MacroFrameText:ClearFocus()
+        end
+    end
+
+    if popup then
+        renderPopup(builder)
+    else
+        renderMain(builder)
+    end
+end
 
 macros:registerWindow({
     type = "FrameWindow",
     name = "MacroFrame",
-    generated = true,
-    rootElement = "macros",
     frameName = "MacroFrame",
+    graphScreen = { render = render },
 })

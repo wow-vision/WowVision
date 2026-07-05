@@ -92,6 +92,7 @@ local parseOnly = {
     "core/windows/taxi.lua",
     "core/windows/mail.lua",
     "classic/mail.lua",
+    "core/windows/Macros.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
