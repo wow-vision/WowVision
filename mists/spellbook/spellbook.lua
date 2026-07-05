@@ -28,16 +28,20 @@ function module.renderSpellBook(builder)
         builder:pushContext("sideTabs", L["Side Tabs"])
         builder:startRow()
         for _, button in ipairs({ SpellBookSideTabsFrame:GetChildren() }) do
-            local captured = button
-            builder:addItem(
-                ControlId.forObject(captured),
-                nodes.proxyCheckButton({
-                    target = captured,
-                    label = function()
-                        return captured.tooltip
-                    end,
-                })
-            )
+            -- Only shown tabs: the frame's child pool includes hidden
+            -- leftover skill-line tabs.
+            if button:IsShown() then
+                local captured = button
+                builder:addItem(
+                    ControlId.forObject(captured),
+                    nodes.proxyCheckButton({
+                        target = captured,
+                        label = function()
+                            return captured.tooltip
+                        end,
+                    })
+                )
+            end
         end
         builder:endRow()
         builder:popContext()
