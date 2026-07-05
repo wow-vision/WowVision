@@ -172,10 +172,15 @@ function module.renderSend(builder, screen)
         builder:addItem(ControlId.forObject(SendMailCODButton), module.checkButtonNode(SendMailCODButton, L["COD"]))
     end
 
-    builder:beginStop("money")
+    -- Each coin box is its own stop: tabbing into a box starts typing, and
+    -- Tab out goes to the NEXT STOP, so boxes sharing a stop would be
+    -- unreachable.
     builder:pushContext("money", L["Money"])
+    builder:beginStop("gold")
     builder:addItem(ControlId.structural("gold"), module.editBoxNode(SendMailMoneyGold, L["Gold"]))
+    builder:beginStop("silver")
     builder:addItem(ControlId.structural("silver"), module.editBoxNode(SendMailMoneySilver, L["Silver"]))
+    builder:beginStop("copper")
     builder:addItem(ControlId.structural("copper"), module.editBoxNode(SendMailMoneyCopper, L["Copper"]))
     builder:popContext()
 

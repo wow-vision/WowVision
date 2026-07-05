@@ -64,16 +64,21 @@ local function render(builder, screen)
 
     renderSide(builder, "playerItems", TradeFramePlayerNameText, "TradePlayerItem", GetTradePlayerItemInfo)
 
-    builder:beginStop("playerMoney")
+    -- Each coin box is its own stop: tabbing into a box starts typing, and
+    -- Tab out goes to the NEXT STOP, so boxes sharing a stop would be
+    -- unreachable.
     builder:pushContext("playerMoney", L["Money"])
+    builder:beginStop("gold")
     builder:addItem(
         ControlId.structural("gold"),
         nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrameGold, label = L["Gold"] })
     )
+    builder:beginStop("silver")
     builder:addItem(
         ControlId.structural("silver"),
         nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrameSilver, label = L["Silver"] })
     )
+    builder:beginStop("copper")
     builder:addItem(
         ControlId.structural("copper"),
         nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrameCopper, label = L["Copper"] })
