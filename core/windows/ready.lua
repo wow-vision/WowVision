@@ -1,69 +1,104 @@
 local module = WowVision.base.windows.popups:createModule("readycheck")
 local L = module.L
 module:setLabel(L["Ready Check"])
-local gen = module:hasUI()
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
 
 --Standard ready check popup
-gen:Element("ReadyCheck", function(props)
-    return {
-        "Panel",
-        label = L["Ready Check"],
-        wrap = true,
-        children = {
-            { "Text", text = ReadyCheckFrameText:GetText() or "" },
-            { "ProxyButton", frame = ReadyCheckFrameYesButton },
-            { "ProxyButton", frame = ReadyCheckFrameNoButton },
-        },
-    }
-end)
+local function renderReadyCheck(builder, screen)
+    if ReadyCheckFrame == nil or not ReadyCheckFrame:IsShown() then
+        return
+    end
+    builder:pushContext("readyCheck", L["Ready Check"])
+
+    builder:beginStop()
+    builder:addItem(
+        ControlId.structural("text"),
+        nodes.text({
+            label = function()
+                return ReadyCheckFrameText:GetText()
+            end,
+        })
+    )
+    builder:beginStop()
+    builder:addItem(ControlId.forObject(ReadyCheckFrameYesButton), nodes.proxyButton({ target = ReadyCheckFrameYesButton }))
+    builder:beginStop()
+    builder:addItem(ControlId.forObject(ReadyCheckFrameNoButton), nodes.proxyButton({ target = ReadyCheckFrameNoButton }))
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "ReadyCheck",
-    generated = true,
-    rootElement = "ReadyCheck",
     frameName = "ReadyCheckFrame",
     conflictingAddons = { "Sku" },
+    graphScreen = { render = renderReadyCheck },
 })
 
 --LFD Dungeon Ready
-gen:Element("DungeonReady", function(props)
-    local info = { "List", children = {} }
-    local frame = props.frame
-    local result = {
-        "Panel",
-        label = LFGDungeonReadyDialogLabel:GetText(),
-        wrap = true,
-        children = {
-            info,
-            { "ProxyButton", frame = props.frame.enterButton },
-            { "ProxyButton", frame = props.frame.leaveButton },
-        },
-    }
+local function regionTexts(builder, keyPrefix, holder)
+    if holder == nil then
+        return
+    end
+    for i, region in ipairs({ holder:GetRegions() }) do
+        if region:GetObjectType() == "FontString" and region:IsVisible() then
+            local captured = region
+            builder:addItem(
+                ControlId.structural(keyPrefix .. ":" .. i),
+                nodes.text({
+                    label = function()
+                        return captured:GetText()
+                    end,
+                })
+            )
+        end
+    end
+end
 
-    --LFGDungeonReadyDialog
+local function renderDungeonReady(builder, screen)
+    local frame = LFGDungeonReadyDialog
+    if frame == nil or not frame:IsShown() then
+        return
+    end
+    builder:pushContext(
+        "dungeonReady",
+        LFGDungeonReadyDialogLabel ~= nil and LFGDungeonReadyDialogLabel:GetText() or L["Ready Check"]
+    )
+
+    builder:beginStop()
     local roleLabel, roleName = LFGDungeonReadyDialogYourRoleDescription, LFGDungeonReadyDialogRoleLabel
-    if roleLabel:IsVisible() and roleName:IsVisible() then
-        tinsert(info.children, { "Text", text = roleLabel:GetText() .. " " .. roleName:GetText() })
+    if roleLabel ~= nil and roleLabel:IsVisible() and roleName ~= nil and roleName:IsVisible() then
+        builder:addItem(
+            ControlId.structural("role"),
+            nodes.text({
+                label = function()
+                    return (roleLabel:GetText() or "") .. " " .. (roleName:GetText() or "")
+                end,
+            })
+        )
     end
-    for _, v in ipairs({ props.frame.randomInProgress:GetRegions() }) do
-        if v:GetObjectType() == "FontString" and v:IsVisible() then
-            tinsert(info.children, { "Text", text = v:GetText() })
-        end
+    regionTexts(builder, "progress", frame.randomInProgress)
+    regionTexts(builder, "instance", frame.instanceInfo)
+
+    if frame.enterButton ~= nil and frame.enterButton:IsShown() then
+        builder:beginStop()
+        builder:addItem(ControlId.forObject(frame.enterButton), nodes.proxyButton({ target = frame.enterButton }))
     end
-    for _, v in ipairs({ props.frame.instanceInfo:GetRegions() }) do
-        if v:GetObjectType() == "FontString" and v:IsVisible() then
-            tinsert(info.children, { "Text", text = v:GetText() })
-        end
+    if frame.leaveButton ~= nil and frame.leaveButton:IsShown() then
+        builder:beginStop()
+        builder:addItem(ControlId.forObject(frame.leaveButton), nodes.proxyButton({ target = frame.leaveButton }))
     end
-    return result
-end)
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "DungeonReady",
-    generated = true,
-    rootElement = "DungeonReady",
     frameName = "LFGDungeonReadyDialog",
     conflictingAddons = { "Sku" },
+    graphScreen = { render = renderDungeonReady },
 })
