@@ -70,10 +70,12 @@ function module.renderProfessions(builder)
                         end,
                     })
                 )
-                if child.SpellButton2 ~= nil then
+                -- Only shown buttons: hidden spell buttons keep stale spell
+                -- attributes from other professions.
+                if child.SpellButton2 ~= nil and child.SpellButton2:IsShown() then
                     builder:addItem(ControlId.forObject(child.SpellButton2), professionSpellNode(child.SpellButton2))
                 end
-                if child.SpellButton1 ~= nil then
+                if child.SpellButton1 ~= nil and child.SpellButton1:IsShown() then
                     builder:addItem(ControlId.forObject(child.SpellButton1), professionSpellNode(child.SpellButton1))
                 end
                 if child.UnlearnButton ~= nil and child.UnlearnButton:IsShown() then
