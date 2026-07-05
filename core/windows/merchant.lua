@@ -80,12 +80,18 @@ local function render(builder, screen)
     if buyback then
         slotCount = GetNumBuybackItems()
     end
+    local emitted = 0
     for i = 1, slotCount do
         local item = _G["MerchantItem" .. i]
         if item == nil or item.ItemButton == nil or not item.ItemButton:IsShown() then
             break
         end
         builder:addItem(ControlId.forObject(item.ItemButton), itemNode(item.ItemButton, buyback))
+        emitted = emitted + 1
+    end
+    if emitted == 0 then
+        -- An empty page is still a place to land (a fresh buyback tab).
+        builder:addItem(ControlId.structural("itemsEmpty"), nodes.text({ label = L["Empty"] }))
     end
     builder:popContext()
 
