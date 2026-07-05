@@ -5,9 +5,14 @@ local kinds = graph.kinds
 local L = WowVision:getLocale()
 
 -- Dropdown menus, graph-side: watches the modern Menu manager for an open
--- menu anywhere and presents it as its own stack while it lives. Items are
--- the menu's real buttons (real clicks); titles read as text. Replaces the
--- legacy MenuManager path.
+-- menu anywhere and presents the whole open chain as one stack. Every open
+-- menu level (root, then each submenu) is its own tab stop; the per-tick
+-- rebuild picks up submenus opening and closing with no extra plumbing.
+--
+-- Menu items get NO hover attach: the menu manager opens and collapses
+-- submenus on mouse-enter, so hovering rows as focus moves would churn the
+-- open chain. Submenu rows open explicitly through their element
+-- description on Enter instead.
 local dropdown = {
     stack = nil,
     frame = nil,
@@ -35,79 +40,165 @@ function dropdown.unregisterMenu(menuKey)
     dropdown.overrides[menuKey] = nil
 end
 
-local RADIO_TEXTURE = 130940
-local CHECK_TEXTURE = 136810
+-- The legacy check texture (UIDropDownMenu-era rows): shown means checked.
+local LEGACY_CHECK_TEXTURE = 136810
+
+local function descriptionOf(item)
+    if item.GetElementDescription == nil then
+        return nil
+    end
+    local ok, description = pcall(item.GetElementDescription, item)
+    if ok then
+        return description
+    end
+    return nil
+end
+
+local function isSubmenuRow(item)
+    local description = descriptionOf(item)
+    if description == nil or description.CanOpenSubmenu == nil then
+        return false
+    end
+    local ok, canOpen = pcall(description.CanOpenSubmenu, description)
+    return ok and canOpen or false
+end
+
+-- Modern check and radio rows swap their mark texture's atlas by state.
+local function atlasState(item)
+    local mark = item.leftTexture1
+    if mark == nil or mark.GetAtlas == nil then
+        return nil
+    end
+    local atlas = mark:GetAtlas()
+    if atlas == nil then
+        return nil
+    end
+    if atlas:find("checkmark") ~= nil or atlas:find("radialtick") ~= nil then
+        return true
+    end
+    if atlas:find("ticksquare") ~= nil or atlas:find("tickradial") ~= nil then
+        return false
+    end
+    return nil
+end
 
 local function itemRegions(item)
-    local labelRegion, stateRegion
+    local labelRegion, legacyCheck
     for _, region in ipairs({ item:GetRegions() }) do
         local kind = region:GetObjectType()
         if kind == "FontString" and labelRegion == nil then
             labelRegion = region
-        elseif
-            kind == "Texture"
-            and (region:GetTexture() == CHECK_TEXTURE or region:GetTexture() == RADIO_TEXTURE)
-        then
-            stateRegion = region
+        elseif kind == "Texture" and region:GetTexture() == LEGACY_CHECK_TEXTURE then
+            legacyCheck = region
         end
     end
-    return labelRegion, stateRegion
+    return labelRegion, legacyCheck
 end
 
-local function renderMenu(builder, menuFrame)
-    if menuFrame == nil or not menuFrame:IsShown() then
+local function emitItem(builder, item)
+    local labelRegion, legacyCheck = itemRegions(item)
+    local label = function()
+        return labelRegion ~= nil and labelRegion:GetText() or nil
+    end
+
+    if item:GetObjectType() ~= "Button" then
+        if labelRegion ~= nil then
+            builder:addItem(ControlId.forObject(item), nodes.text({ label = label }))
+        end
         return
     end
-    builder:pushContext("dropdown", L["Dropdown"])
-    builder:beginStop("items")
 
+    if isSubmenuRow(item) then
+        -- A submenu parent: Enter opens its child menu, which appears as
+        -- the next tab stop.
+        local captured = item
+        builder:addItem(ControlId.forObject(item), {
+            controlType = graph.controlTypes.dropdown,
+            announcements = { { text = label, kind = kinds.label } },
+            onActivate = function()
+                local description = descriptionOf(captured)
+                if description ~= nil and description.ForceOpenSubmenu ~= nil then
+                    pcall(description.ForceOpenSubmenu, description)
+                end
+            end,
+        })
+        return
+    end
+
+    local vtable = {
+        controlType = graph.controlTypes.button,
+        announcements = { { text = label, kind = kinds.label } },
+        bindings = {
+            { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = item },
+        },
+    }
+    local checked = atlasState(item)
+    if checked ~= nil then
+        vtable.controlType = graph.controlTypes.toggle
+        local captured = item
+        tinsert(vtable.announcements, {
+            text = function()
+                return atlasState(captured) and L["Checked"] or L["Unchecked"]
+            end,
+            kind = kinds.value,
+        })
+    elseif legacyCheck ~= nil then
+        vtable.controlType = graph.controlTypes.toggle
+        local capturedRegion = legacyCheck
+        tinsert(vtable.announcements, {
+            text = function()
+                return capturedRegion:IsShown() and L["Checked"] or L["Unchecked"]
+            end,
+            kind = kinds.value,
+        })
+    end
+    builder:addItem(ControlId.forObject(item), vtable)
+end
+
+-- Every open menu frame: parented to WorldFrame, stamped with ID 1000.
+-- Sorted by left edge -- submenus anchor to their parent row's right, so
+-- this is chain order.
+local function openMenuFrames()
+    local menus = {}
+    for _, child in ipairs({ WorldFrame:GetChildren() }) do
+        if child:GetID() == 1000 and child:IsShown() then
+            tinsert(menus, child)
+        end
+    end
+    table.sort(menus, function(a, b)
+        return (a:GetLeft() or 0) < (b:GetLeft() or 0)
+    end)
+    return menus
+end
+
+local function renderOneMenu(builder, menuFrame, levelIndex)
+    builder:beginStop("menu:" .. levelIndex)
+    builder:pushContext("menu:" .. levelIndex, L["Dropdown"])
     local frames = { menuFrame:GetChildren() }
     for i = 3, #frames do
         local item = frames[i]
         local index = i - 2
-        local override = dropdown.active ~= nil and dropdown.active[index] or nil
+        local override = levelIndex == 1 and dropdown.active ~= nil and dropdown.active[index] or nil
         if type(override) == "function" then
             local ok, err = pcall(override, builder, item, index)
             if not ok then
                 geterrorhandler()(err)
             end
-        elseif item:GetObjectType() == "Button" then
-            local labelRegion, stateRegion = itemRegions(item)
-            local vtable = nodes.proxyButton({
-                target = item,
-                label = function()
-                    return labelRegion ~= nil and labelRegion:GetText() or nil
-                end,
-            })
-            if vtable ~= nil then
-                if stateRegion ~= nil then
-                    -- Check and radio items show their mark texture when set.
-                    vtable.controlType = graph.controlTypes.toggle
-                    tinsert(vtable.announcements, {
-                        text = function()
-                            return stateRegion:IsShown() and L["Checked"] or L["Unchecked"]
-                        end,
-                        kind = kinds.value,
-                    })
-                end
-                builder:addItem(ControlId.forObject(item), vtable)
-            end
-        else
-            local labelRegion = itemRegions(item)
-            if labelRegion ~= nil and item:IsShown() then
-                builder:addItem(
-                    ControlId.forObject(item),
-                    nodes.text({
-                        label = function()
-                            return labelRegion:GetText()
-                        end,
-                    })
-                )
-            end
+        elseif item:IsShown() then
+            emitItem(builder, item)
         end
     end
-
     builder:popContext()
+end
+
+local function render(builder, screen)
+    local menus = openMenuFrames()
+    if #menus == 0 then
+        return
+    end
+    for levelIndex, menuFrame in ipairs(menus) do
+        renderOneMenu(builder, menuFrame, levelIndex)
+    end
 end
 
 -- Called every frame from UIHost's update.
@@ -123,13 +214,7 @@ function dropdown.update()
     end
     dropdown.frame = open
     if open ~= nil then
-        local menuFrame = open
-        dropdown.stack = WowVision.graphHost:open({
-            key = "dropdown",
-            render = function(builder)
-                renderMenu(builder, menuFrame)
-            end,
-        })
+        dropdown.stack = WowVision.graphHost:open({ key = "dropdown", render = render })
     else
         dropdown.active = nil
     end
