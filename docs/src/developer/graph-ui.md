@@ -101,10 +101,10 @@ Rules the render function must follow:
 ## Structure: stops, contexts, groups
 
 - `beginStop(key)` starts a tab stop. Arrows never cross stops; tab and shift-tab cycle them, landing on the stop's remembered position (then its selected member, then its first node). One node per stop makes a tab-cycled menu, like the game menu.
-- `pushContext(label, role)` / `popContext()` push a non-focusable announcement level. Entering any child from outside reads the context levels outermost-first: "Categories, list, Combat, 9 of 13". Moving between siblings inside reads only the leaf.
+- `pushContext(key, label, role)` / `popContext()` push a non-focusable announcement level. The key is required and is the context's whole identity: labels play no part, because every context is distinct even when names repeat (two identical bags). Derive keys from what the context IS, stable across rebuilds. Entering any child from outside reads the context levels outermost-first: "Categories, list, Combat, 9 of 13". Moving between siblings inside reads only the leaf.
 - `beginGroup(id, vtable, expanded, defaultExpanded)` / `endGroup()` push a focusable expandable header (a tree section). Children build only while expanded; right expands or descends, left collapses or ascends. Expansion state persists in the screen's `state.expanded`; screens hold none of their own.
 - `startRow(rowKey)` / `endRow()` make horizontal rows; rows sharing a non-nil key get column-preserving vertical navigation.
-- Positions ("2 of 9") are stamped automatically: multi-item rows within the row; other nodes among siblings sharing their parent context or group (even across stops), or per stop at root level. `pushContext(label, role, false)` suppresses them for log-like content.
+- Positions ("2 of 9") are stamped automatically: multi-item rows within the row; other nodes among siblings sharing their parent context or group (even across stops), or per stop at root level. `pushContext(key, label, role, false)` suppresses them for log-like content.
 - Raw mode: `addNode(id, vtable)` plus `connect(fromId, dir, toId, label)` for arbitrary topologies (grids). `dir` includes `"next"`/`"previous"` to hand-wire tab edges; an explicit tab edge overrides stop cycling. A `connect` label speaks only while crossing that edge (a lane change).
 
 ## Announcements and live parts
