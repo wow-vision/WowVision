@@ -191,12 +191,18 @@ local function renderOpenMail(builder)
                 return L["Empty"]
             end
         else
+            -- Data-first: the buttons are plain ItemButtonTemplates whose
+            -- Count fontstring is a global, not a keyed child, so read the
+            -- attachment straight from the inbox API by slot id.
             label = function()
-                local itemType = WowVision.gameDB:get("Item"):get("Mail")
-                if itemType ~= nil and itemType.getLabel ~= nil then
-                    return itemType.getLabel(captured, {})
+                local name, _, _, count = GetInboxItem(InboxFrame.openMailID, captured:GetID())
+                if name == nil then
+                    return L["Empty"]
                 end
-                return nil
+                if count ~= nil and count > 1 then
+                    return name .. " x " .. count
+                end
+                return name
             end
         end
         builder:addItem(ControlId.forObject(captured), nodes.proxyButton({ target = captured, label = label }))
