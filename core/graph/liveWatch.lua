@@ -4,11 +4,15 @@ local GraphHost = graph.GraphHost
 
 -- The live announcement watches, run by the host each tick.
 
+-- The focused node's readout is inherently live: EVERY part (label, value,
+-- selected, expanded state) is watched by default, so screens never need
+-- per-part flags for the focused case. live = false opts a part out;
+-- live = "always" additionally watches it while unfocused.
 local function isWatched(part)
-    return part.live == true or part.live == "focus" or part.live == "always"
+    return part.live ~= false
 end
 
--- Watch the FOCUSED node's live parts and speak a part when its resolved text
+-- Watch the focused node's parts and speak a part when its resolved text
 -- changes. Baselines silently whenever focus lands on a new identity (the
 -- focus announcement already spoke the initial state). Arrays cannot hold nil,
 -- so absent values cache as false.

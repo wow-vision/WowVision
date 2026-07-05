@@ -111,7 +111,7 @@ Rules the render function must follow:
 
 The announcer diffs the old and new focus paths by identity and speaks only what changed. You get this for free; the only authoring decisions are labels, kinds, control types, and context/group structure.
 
-A part with `live = "focus"` (or `true`) is watched while its node is focused: when its resolved text changes, just that part is spoken, without interrupting. A part with `live = "always"` is watched even while unfocused, anywhere in the render. Both baseline silently when first seen, and self-caused changes rebaseline through `stateText`, so nothing is spoken twice. Use always-scope sparingly — a few parts per screen (cast progress, quantity counters).
+The focused node's readout is inherently live: every part — label, value, selected, expanded state — is watched while its node is focused, and when a part's resolved text changes, just that part is spoken without interrupting. No flags needed for the focused case; `live = false` opts a part out. A part with `live = "always"` is additionally watched while unfocused, anywhere in the render. Watches baseline silently when first seen, and self-caused changes rebaseline through `stateText`, so nothing is spoken twice. Use always-scope sparingly — a few parts per screen (cast progress, quantity counters).
 
 ## Input
 
