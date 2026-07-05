@@ -1,153 +1,247 @@
 local module = WowVision.base.windows:createModule("mail")
 local L = module.L
 module:setLabel(L["Mail"])
-local gen = module:hasUI()
 
-gen:Element("mail", function(props)
-    local result = {
-        "Panel",
-        label = L["Mail"],
-        wrap = true,
-        children = {
-            { "mail/tabs", frame = MailFrame },
-        },
-    }
-    if InboxFrame:IsShown() then
-        tinsert(result.children, { "mail/inbox", frame = InboxFrame })
-    end
-    return result
-end)
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
 
-gen:Element("mail/tabs", function(props)
+-- The mailbox: tabs, the inbox page, and the open letter. Version modules
+-- may define module.renderSend(builder, screen) for the send tab and
+-- re-register the window (classic clients poll MailFrame instead of the
+-- interaction event). Inbox labels read live; the per-tick rebuild picks up
+-- MAIL_INBOX_UPDATE arrivals without event plumbing.
+
+-- A real Blizzard edit box as a node: Enter hands it keyboard focus and its
+-- own handlers take over; the current text reads as the value.
+function module.editBoxNode(editBox, label)
     return {
-        "List",
-        label = L["Tabs"],
-        direction = "horizontal",
-        children = {
-            { "mail/tab", frame = MailFrameTab1, selected = MailFrame.selectedTab == 1 },
-            { "mail/tab", frame = MailFrameTab2, selected = MailFrame.selectedTab == 2 },
+        controlType = graph.controlTypes.editBox,
+        announcements = {
+            { text = label, kind = kinds.label },
+            {
+                text = function()
+                    return editBox:GetText()
+                end,
+                kind = kinds.value,
+            },
         },
+        onActivate = function()
+            editBox:SetFocus()
+        end,
+        tooltipFrame = editBox,
     }
-end)
+end
 
-gen:Element("mail/tab", function(props)
-    return { "ProxyButton", frame = props.frame, selected = props.selected }
-end)
+-- A real check button with its checked state as the live value.
+function module.checkButtonNode(button, label)
+    local vtable = nodes.proxyButton({ target = button, label = label })
+    vtable.controlType = graph.controlTypes.toggle
+    tinsert(vtable.announcements, {
+        text = function()
+            return button:GetChecked() and L["Checked"] or L["Unchecked"]
+        end,
+        kind = kinds.value,
+    })
+    return vtable
+end
 
-gen:Element("mail/inbox", function(props)
-    local result = { "Panel", shouldAnnounce = false, children = {
-        { "mail/inbox/MailList" },
-    } }
-    if OpenMailFrame:IsShown() then
-        tinsert(result.children, { "mail/inbox/open", frame = OpenMailFrame })
+function module.moneyText(frame)
+    local money = frame ~= nil and (frame.staticMoney or frame.money) or nil
+    if money == nil then
+        return nil
     end
-    return result
-end)
+    return C_CurrencyInfo.GetCoinText(money)
+end
 
 local function getInboxItemLabel(item)
     local elementName = item:GetName()
-    local sender = _G[elementName .. "Sender"]:GetText()
-    local subject = _G[elementName .. "Subject"]:GetText()
-    local label = L["From"] .. ": " .. sender .. ", " .. L["Subject"] .. ": " .. subject
-    return label
+    local sender = _G[elementName .. "Sender"]:GetText() or ""
+    local subject = _G[elementName .. "Subject"]:GetText() or ""
+    return L["From"] .. ": " .. sender .. ", " .. L["Subject"] .. ": " .. subject
 end
 
-gen:Element("mail/inbox/MailList", function(props)
-    local result = { "Panel", label = L["Inbox"], children = {
-        { "ProxyButton", frame = OpenAllMail },
-    } }
-    local items = { "List", children = {} }
+local function renderTabs(builder)
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    for i = 1, 2 do
+        local tab = _G["MailFrameTab" .. i]
+        local tabIndex = i
+        if tab ~= nil and tab:IsShown() then
+            local vtable = nodes.proxyButton({ target = tab })
+            tinsert(vtable.announcements, {
+                text = function()
+                    if MailFrame.selectedTab == tabIndex then
+                        return L["selected"]
+                    end
+                    return nil
+                end,
+                kind = kinds.selected,
+            })
+            builder:addItem(ControlId.forObject(tab), vtable)
+        end
+    end
+    builder:endRow()
+    builder:popContext()
+end
+
+local function renderInbox(builder)
+    if OpenAllMail ~= nil and OpenAllMail:IsShown() then
+        builder:beginStop("openAll")
+        builder:addItem(ControlId.forObject(OpenAllMail), nodes.proxyButton({ target = OpenAllMail }))
+    end
+
+    builder:beginStop("inboxItems")
+    builder:pushContext("inbox", L["Inbox"])
+    local emitted = 0
     for i = 1, INBOXITEMS_TO_DISPLAY do
         local item = _G["MailItem" .. i]
-        if item.Button:IsShown() then
-            tinsert(items.children, {
-                "ProxyButton",
-                frame = item.Button,
-                label = getInboxItemLabel(item),
-            })
+        if item ~= nil and item.Button:IsShown() then
+            local captured = item
+            builder:addItem(
+                ControlId.forObject(item.Button),
+                nodes.proxyButton({
+                    target = item.Button,
+                    label = function()
+                        return getInboxItemLabel(captured)
+                    end,
+                })
+            )
+            emitted = emitted + 1
         end
     end
-    tinsert(result.children, items)
-    tinsert(result.children, { "ProxyButton", frame = InboxPrevPageButton, label = L["Previous Page"] })
-    tinsert(result.children, { "ProxyButton", frame = InboxNextPageButton, label = L["Next Page"] })
-    return result
-end)
-
-gen:Element("mail/inbox/open", function(props)
-    local result = {
-        "Panel",
-        label = L["Mail"],
-        children = {
-            { "mail/inbox/open/list" },
-            { "ProxyButton", frame = OpenMailReplyButton },
-            { "ProxyButton", frame = OpenMailDeleteButton },
-            { "ProxyButton", frame = OpenMailCloseButton },
-            { "ProxyButton", frame = OpenMailReportSpamButton },
-        },
-    }
-    return result
-end)
-
-gen:Element("mail/inbox/open/list", function(props)
-    local result = {
-        "List",
-        children = {
-            { "Text", text = OpenMailSender.Name:GetText() },
-            { "Text", text = L["Subject"] .. ": " .. (OpenMailSubject:GetText() or "")},
-        },
-    }
-    if OpenMailBodyText:IsShown() then
-        local text = GetInboxText(InboxFrame.openMailID)
-        if text and text ~= "" then
-            tinsert(result.children, { "Text", text = text })
-        end
+    if emitted == 0 then
+        builder:addItem(ControlId.structural("inboxEmpty"), nodes.text({ label = L["Empty"] }))
     end
-    local frame = OpenMailInvoiceFrame
-    if frame:IsShown() then
-        tinsert(result.children, { "Text", text = OpenMailInvoiceItemLabel:GetText() })
-        tinsert(result.children, {
-            "Text",
-            text = OpenMailInvoicePurchaser:GetText() .. " " .. (OpenMailInvoiceBuyMode:GetText() or "Unknown"),
-        })
-        tinsert(
-            result.children,
-            { "money/MoneyFrame", frame = OpenMailSalePriceMoneyFrame, label = OpenMailInvoiceSalePrice:GetText() }
+    builder:popContext()
+
+    if InboxPrevPageButton ~= nil and InboxPrevPageButton:IsShown() then
+        builder:beginStop("prevPage")
+        builder:addItem(
+            ControlId.forObject(InboxPrevPageButton),
+            nodes.proxyButton({ target = InboxPrevPageButton, label = L["Previous Page"] })
         )
-        tinsert(
-            result.children,
-            { "money/MoneyFrame", frame = OpenMailDepositMoneyFrame, label = OpenMailInvoiceDeposit:GetText() }
-        )
-        tinsert(
-            result.children,
-            { "money/MoneyFrame", frame = OpenMailHouseCutMoneyFrame, label = OpenMailInvoiceHouseCut:GetText() }
-        )
-        tinsert(result.children, {
-            "money/MoneyFrame",
-            frame = OpenMailTransactionAmountMoneyFrame,
-            label = OpenMailInvoiceAmountReceived:GetText(),
-        })
     end
-    for _, button in ipairs(OpenMailFrame.activeAttachmentButtons) do
-        if button == OpenMailLetterButton then
-            tinsert(result.children, { "ProxyButton", frame = button, label = L["Letter"] })
-        elseif button == OpenMailMoneyButton then
-            local label = L["Empty"]
-            if OpenMailFrame.money and OpenMailFrame.money > 0 then
-                label = C_CurrencyInfo.GetCoinText(OpenMailFrame.money)
+    if InboxNextPageButton ~= nil and InboxNextPageButton:IsShown() then
+        builder:beginStop("nextPage")
+        builder:addItem(
+            ControlId.forObject(InboxNextPageButton),
+            nodes.proxyButton({ target = InboxNextPageButton, label = L["Next Page"] })
+        )
+    end
+end
+
+local function invoiceText(builder, id, label)
+    builder:addItem(id, nodes.text({ label = label }))
+end
+
+local function renderOpenMail(builder)
+    builder:beginStop("letter")
+    builder:pushContext("letter", L["Mail"])
+
+    invoiceText(builder, ControlId.structural("sender"), function()
+        return OpenMailSender.Name:GetText()
+    end)
+    invoiceText(builder, ControlId.structural("subject"), function()
+        return L["Subject"] .. ": " .. (OpenMailSubject:GetText() or "")
+    end)
+    if OpenMailBodyText ~= nil and OpenMailBodyText:IsShown() then
+        invoiceText(builder, ControlId.structural("body"), function()
+            return GetInboxText(InboxFrame.openMailID)
+        end)
+    end
+
+    if OpenMailInvoiceFrame ~= nil and OpenMailInvoiceFrame:IsShown() then
+        invoiceText(builder, ControlId.structural("invoiceItem"), function()
+            return OpenMailInvoiceItemLabel:GetText()
+        end)
+        invoiceText(builder, ControlId.structural("invoiceBuyer"), function()
+            return (OpenMailInvoicePurchaser:GetText() or "")
+                .. " "
+                .. (OpenMailInvoiceBuyMode:GetText() or "")
+        end)
+        invoiceText(builder, ControlId.structural("invoiceSale"), function()
+            return (OpenMailInvoiceSalePrice:GetText() or "") .. " " .. (module.moneyText(OpenMailSalePriceMoneyFrame) or "")
+        end)
+        invoiceText(builder, ControlId.structural("invoiceDeposit"), function()
+            return (OpenMailInvoiceDeposit:GetText() or "") .. " " .. (module.moneyText(OpenMailDepositMoneyFrame) or "")
+        end)
+        invoiceText(builder, ControlId.structural("invoiceCut"), function()
+            return (OpenMailInvoiceHouseCut:GetText() or "") .. " " .. (module.moneyText(OpenMailHouseCutMoneyFrame) or "")
+        end)
+        invoiceText(builder, ControlId.structural("invoiceTotal"), function()
+            return (OpenMailInvoiceAmountReceived:GetText() or "")
+                .. " "
+                .. (module.moneyText(OpenMailTransactionAmountMoneyFrame) or "")
+        end)
+    end
+
+    for i, button in ipairs(OpenMailFrame.activeAttachmentButtons or {}) do
+        local captured = button
+        local label
+        if captured == OpenMailLetterButton then
+            label = L["Letter"]
+        elseif captured == OpenMailMoneyButton then
+            label = function()
+                if OpenMailFrame.money ~= nil and OpenMailFrame.money > 0 then
+                    return C_CurrencyInfo.GetCoinText(OpenMailFrame.money)
+                end
+                return L["Empty"]
             end
-            tinsert(result.children, { "ProxyButton", frame = button, label = label })
         else
-            tinsert(result.children, { "ItemButton", frame = button, itemType = "Mail" })
+            label = function()
+                local itemType = WowVision.gameDB:get("Item"):get("Mail")
+                if itemType ~= nil and itemType.getLabel ~= nil then
+                    return itemType.getLabel(captured, {})
+                end
+                return nil
+            end
+        end
+        builder:addItem(ControlId.forObject(captured), nodes.proxyButton({ target = captured, label = label }))
+    end
+    builder:popContext()
+
+    for _, button in ipairs({
+        OpenMailReplyButton,
+        OpenMailDeleteButton,
+        OpenMailCloseButton,
+        OpenMailReportSpamButton,
+    }) do
+        if button ~= nil and button:IsShown() then
+            builder:beginStop()
+            builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button }))
         end
     end
-    return result
-end)
+end
+
+function module.renderMail(builder, screen)
+    if MailFrame == nil or not MailFrame:IsShown() then
+        return
+    end
+    builder:pushContext("mail", L["Mail"])
+
+    renderTabs(builder)
+
+    if InboxFrame ~= nil and InboxFrame:IsShown() then
+        renderInbox(builder)
+        if OpenMailFrame ~= nil and OpenMailFrame:IsShown() then
+            renderOpenMail(builder)
+        end
+    end
+
+    if module.renderSend ~= nil and SendMailFrame ~= nil and SendMailFrame:IsShown() then
+        module.renderSend(builder, screen)
+    end
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "PlayerInteractionWindow",
     name = "mail",
-    generated = true,
-    rootElement = "mail",
     conflictingAddons = { "Sku" },
     interactionType = Enum.PlayerInteractionType.MailInfo,
+    graphScreen = { render = module.renderMail },
 })

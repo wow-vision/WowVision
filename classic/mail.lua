@@ -1,6 +1,9 @@
 local module = WowVision.base.windows.mail
 local L = module.L
-local gen = module:hasUI()
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
 
 -- Shared by TBC and Mists, which use the same Classic SendMail UI. Bail out on
 -- any client whose mail frames differ so we neither error at load nor when the
@@ -17,18 +20,19 @@ local function getBodyEditBox()
     return MailEditBox
 end
 
--- Route Tab presses on a Blizzard EditBox to WV's navigator instead of
+-- Route Tab presses on a Blizzard EditBox to the graph host instead of
 -- cycling through Blizzard's built-in EditBox tab chain.
 local function routeTabToWV(editBox)
-    if not editBox or not editBox.SetScript then return end
+    if not editBox or not editBox.SetScript then
+        return
+    end
     editBox:SetScript("OnTabPressed", function()
-        local binding
+        editBox:ClearFocus()
         if IsShiftKeyDown() then
-            binding = WowVision.input:getBinding("previous")
+            WowVision.graphHost:onKey("previous")
         else
-            binding = WowVision.input:getBinding("next")
+            WowVision.graphHost:onKey("next")
         end
-        WowVision.UIHost:onBindingPressed(binding)
     end)
 end
 
@@ -38,8 +42,12 @@ SendMailFrame:HookScript("OnShow", function()
         mailEditBoxesGuarded = true
         -- Disable autoFocus and route Tab to WV on all mail EditBoxes
         local editBoxes = {
-            SendMailMoneyGold, SendMailMoneySilver, SendMailMoneyCopper,
-            SendMailNameEditBox, SendMailSubjectEditBox, getBodyEditBox(),
+            SendMailMoneyGold,
+            SendMailMoneySilver,
+            SendMailMoneyCopper,
+            SendMailNameEditBox,
+            SendMailSubjectEditBox,
+            getBodyEditBox(),
         }
         for _, editBox in ipairs(editBoxes) do
             if editBox then
@@ -63,72 +71,12 @@ SendMailFrame:HookScript("OnShow", function()
         -- Remove body/money entries from the tab list as a safety net.
         -- WV overrides OnTabPressed on all mail EditBoxes, so this list should
         -- never be consulted, but nil the dangerous entries just in case.
-        SEND_MAIL_TAB_LIST[3] = nil  -- MailEditBox
-        SEND_MAIL_TAB_LIST[4] = nil  -- SendMailMoneyGold
-        SEND_MAIL_TAB_LIST[5] = nil  -- SendMailMoneyCopper
+        SEND_MAIL_TAB_LIST[3] = nil -- MailEditBox
+        SEND_MAIL_TAB_LIST[4] = nil -- SendMailMoneyGold
+        SEND_MAIL_TAB_LIST[5] = nil -- SendMailMoneyCopper
     end
     -- Runs every show: Blizzard's OnShow calls SetFocus(), steal it back
     SendMailNameEditBox:ClearFocus()
-end)
-
-local function getInboxItemLabel(item)
-    local name = item:GetName()
-    local sender = _G[name .. "Sender"]:GetText()
-    local subject = _G[name .. "Subject"]:GetText()
-    return L["From"] .. ": " .. sender .. ", " .. L["Subject"] .. ": " .. subject
-end
-
--- Override inbox list to regenerate when mail data arrives.
--- On first open the MailItem buttons aren't shown yet because WoW fires
--- MAIL_INBOX_UPDATE after the frame becomes visible.
-gen:Element("mail/inbox/MailList", {
-    regenerateOn = {
-        events = { "MAIL_INBOX_UPDATE" },
-    },
-}, function(props)
-    local result = { "Panel", label = L["Inbox"], children = {
-        { "ProxyButton", frame = OpenAllMail },
-    } }
-    local items = { "List", children = {} }
-    for i = 1, INBOXITEMS_TO_DISPLAY do
-        local item = _G["MailItem" .. i]
-        if item.Button:IsShown() then
-            tinsert(items.children, {
-                "ProxyButton",
-                frame = item.Button,
-                label = getInboxItemLabel(item),
-            })
-        end
-    end
-    tinsert(result.children, items)
-    tinsert(result.children, { "ProxyButton", frame = InboxPrevPageButton, label = L["Previous Page"] })
-    tinsert(result.children, { "ProxyButton", frame = InboxNextPageButton, label = L["Next Page"] })
-    return result
-end)
-
--- Override core root element to also show the SendMail tab
-gen:Element("mail", {
-    regenerateOn = {
-        values = function(props)
-            return { tab = MailFrame.selectedTab }
-        end,
-    },
-}, function(props)
-    local result = {
-        "Panel",
-        label = L["Mail"],
-        wrap = true,
-        children = {
-            { "mail/tabs", key = "tabs", frame = MailFrame },
-        },
-    }
-    if InboxFrame:IsShown() then
-        tinsert(result.children, { "mail/inbox", key = "inbox", frame = InboxFrame })
-    end
-    if SendMailFrame:IsShown() then
-        tinsert(result.children, { "mail/send", key = "send" })
-    end
-    return result
 end)
 
 local function getAttachmentLabel(i)
@@ -156,68 +104,93 @@ local function getFirstEmptySlot()
     return nil
 end
 
-gen:Element("mail/send", {
-    regenerateOn = {
-        events = { "MAIL_SEND_INFO_UPDATE" },
-        values = function(props)
-            return { codEnabled = SendMailCODButton:IsEnabled() }
+local function attachmentNode(slot, label)
+    local vtable = nodes.proxyButton({ target = slot, label = label })
+    tinsert(vtable.bindings, {
+        binding = "drag",
+        type = "Function",
+        func = function()
+            local script = slot:GetScript("OnDragStart")
+            if script ~= nil then
+                script(slot)
+            end
         end,
-    },
-}, function(props)
+    })
+    return vtable
+end
+
+-- The send tab, slotted into core's mail render.
+function module.renderSend(builder, screen)
+    builder:beginStop("sendTo")
+    builder:addItem(ControlId.structural("sendTo"), module.editBoxNode(SendMailNameEditBox, L["Send To"]))
+    builder:beginStop("subject")
+    builder:addItem(ControlId.structural("subject"), module.editBoxNode(SendMailSubjectEditBox, L["Subject"]))
     local bodyFrame = getBodyEditBox()
-    local children = {
-        { "ProxyEditBox", key = "sendTo", frame = SendMailNameEditBox, label = L["Send To"] },
-        { "ProxyEditBox", key = "subject", frame = SendMailSubjectEditBox, label = L["Subject"] },
-    }
     if bodyFrame then
-        tinsert(children, { "ProxyEditBox", key = "body", frame = bodyFrame, label = L["Body"], hookEnter = true })
+        builder:beginStop("body")
+        builder:addItem(ControlId.structural("body"), module.editBoxNode(bodyFrame, L["Body"]))
     end
-    -- Filled attachments in a navigable list (only if any exist)
-    local attachments = { "List", key = "attachments", label = L["Attachments"], children = {} }
+
+    builder:beginStop("attachments")
+    builder:pushContext("attachments", L["Attachments"])
+    local emitted = 0
     for i = 1, ATTACHMENTS_MAX_SEND do
         if HasSendMailItem(i) then
             local slot = SendMailFrame.SendMailAttachments[i]
             if slot then
-                tinsert(attachments.children, {
-                    "ProxyButton",
-                    key = "attachment_" .. i,
-                    frame = slot,
-                    label = getAttachmentLabel(i) or "",
-                    draggable = true,
-                })
+                local index = i
+                builder:addItem(
+                    ControlId.structural("attachment:" .. i),
+                    attachmentNode(slot, function()
+                        return getAttachmentLabel(index) or ""
+                    end)
+                )
+                emitted = emitted + 1
             end
         end
     end
-    if #attachments.children > 0 then
-        tinsert(children, attachments)
-    end
-    -- First empty slot as drop area
     local emptySlot = getFirstEmptySlot()
     if emptySlot then
-        tinsert(children, {
-            "ProxyButton",
-            key = "drop",
-            frame = emptySlot,
-            label = L["Drop Item"],
-            draggable = true,
-        })
+        builder:addItem(ControlId.structural("drop"), attachmentNode(emptySlot, L["Drop Item"]))
+        emitted = emitted + 1
     end
-    -- Money options and input fields
-    tinsert(children, { "ProxyCheckButton", key = "sendMoney", frame = SendMailSendMoneyButton, label = L["Send Money"] })
+    if emitted == 0 then
+        builder:addItem(ControlId.structural("attachmentsEmpty"), nodes.text({ label = L["Empty"] }))
+    end
+    builder:popContext()
+
+    builder:beginStop("sendMoney")
+    builder:addItem(
+        ControlId.forObject(SendMailSendMoneyButton),
+        module.checkButtonNode(SendMailSendMoneyButton, L["Send Money"])
+    )
     if SendMailCODButton:IsEnabled() then
-        tinsert(children, { "ProxyCheckButton", key = "cod", frame = SendMailCODButton, label = L["COD"] })
+        builder:beginStop("cod")
+        builder:addItem(ControlId.forObject(SendMailCODButton), module.checkButtonNode(SendMailCODButton, L["COD"]))
     end
-    tinsert(children, { "Panel", key = "money", label = L["Money"], layout = true, children = {
-        { "ProxyEditBox", key = "gold", frame = SendMailMoneyGold, label = L["Gold"] },
-        { "ProxyEditBox", key = "silver", frame = SendMailMoneySilver, label = L["Silver"] },
-        { "ProxyEditBox", key = "copper", frame = SendMailMoneyCopper, label = L["Copper"] },
-    } })
-    -- Postage and action buttons
-    tinsert(children, { "money/MoneyFrame", key = "postage", frame = SendMailCostMoneyFrame, label = L["Postage"] })
-    tinsert(children, { "ProxyButton", key = "send", frame = SendMailMailButton })
-    tinsert(children, { "ProxyButton", key = "cancel", frame = SendMailCancelButton })
-    return { "Panel", label = L["Send Mail"], children = children }
-end)
+
+    builder:beginStop("money")
+    builder:pushContext("money", L["Money"])
+    builder:addItem(ControlId.structural("gold"), module.editBoxNode(SendMailMoneyGold, L["Gold"]))
+    builder:addItem(ControlId.structural("silver"), module.editBoxNode(SendMailMoneySilver, L["Silver"]))
+    builder:addItem(ControlId.structural("copper"), module.editBoxNode(SendMailMoneyCopper, L["Copper"]))
+    builder:popContext()
+
+    builder:beginStop("postage")
+    builder:addItem(
+        ControlId.structural("postage"),
+        nodes.text({
+            label = function()
+                return L["Postage"] .. " " .. (module.moneyText(SendMailCostMoneyFrame) or "")
+            end,
+        })
+    )
+
+    builder:beginStop("send")
+    builder:addItem(ControlId.forObject(SendMailMailButton), nodes.proxyButton({ target = SendMailMailButton }))
+    builder:beginStop("cancel")
+    builder:addItem(ControlId.forObject(SendMailCancelButton), nodes.proxyButton({ target = SendMailCancelButton }))
+end
 
 -- Override core's PlayerInteractionWindow with a TBC-standard FrameWindow.
 -- PlayerInteractionWindow opens on event before frames are fully initialized;
@@ -227,8 +200,7 @@ module:unregisterWindow("mail")
 module:registerWindow({
     type = "FrameWindow",
     name = "mail",
-    generated = true,
-    rootElement = "mail",
     frameName = "MailFrame",
     conflictingAddons = { "Sku" },
+    graphScreen = { render = module.renderMail },
 })
