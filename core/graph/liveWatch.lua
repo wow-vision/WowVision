@@ -28,6 +28,13 @@ function GraphHost:_watchLive(screen, node)
         screen._liveKey = node.id
         screen._liveValues = {}
     end
+    -- Ground truth for /wv glive.
+    screen._liveDebug = {
+        ticks = (screen._liveDebug ~= nil and screen._liveDebug.ticks or 0) + 1,
+        partCount = #parts,
+        valueCount = #screen._liveValues,
+        baselined = baseline,
+    }
 
     for i, part in ipairs(parts) do
         if not isWatched(part) then

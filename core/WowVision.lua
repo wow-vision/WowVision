@@ -256,6 +256,22 @@ function WowVision:registerCommands()
             local lines = {}
             tinsert(lines, "node: " .. tostring(node.id.key))
             tinsert(lines, "live key matches: " .. tostring(screen._liveKey == node.id))
+            local debug = screen._liveDebug
+            if debug ~= nil then
+                tinsert(
+                    lines,
+                    "watch ticks "
+                        .. debug.ticks
+                        .. ", saw "
+                        .. debug.partCount
+                        .. " parts, stored "
+                        .. debug.valueCount
+                        .. ", baselined "
+                        .. tostring(debug.baselined)
+                )
+            else
+                tinsert(lines, "watch has never run")
+            end
             local parts = WowVision.graph.announcer.effectiveAnnouncements(node)
             for i, part in ipairs(parts) do
                 local resolved = WowVision.graph.resolveText(part)
