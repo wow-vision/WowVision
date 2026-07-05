@@ -106,14 +106,32 @@ end
 
 -- ---- row node builders ----
 
--- The settings panel renders row tooltips into its own SettingsTooltip frame,
--- not GameTooltip; point the reader there.
-local settingsTooltipData = nil
-local function settingsTooltip()
-    if settingsTooltipData == nil and SettingsTooltip ~= nil then
-        settingsTooltipData = { type = "Game", mode = "immediate", frame = SettingsTooltip }
+-- Row tooltips come from the initializer's own data (GetTooltip), read as
+-- Text tooltips like the old screen: the panel's SettingsTooltip frame
+-- populates asynchronously, so reading it live races the populate.
+local function rowTooltip(elementData)
+    local ok, tip = pcall(function()
+        if elementData.GetTooltip ~= nil then
+            local value = elementData:GetTooltip()
+            if type(value) == "function" then
+                value = value()
+            end
+            return value
+        end
+        local d = dataOf(elementData)
+        return d ~= nil and d.tooltip or nil
+    end)
+    if ok and type(tip) == "string" and tip ~= "" then
+        return { type = "Text", text = tip }
     end
-    return settingsTooltipData
+    return nil
+end
+
+local function textTooltip(text)
+    if type(text) == "string" and text ~= "" then
+        return { type = "Text", text = text }
+    end
+    return nil
 end
 
 local function frameChildText(helpers, childKey)
@@ -185,7 +203,7 @@ local function checkboxNode(elementData, helpers, label, setting, childKey)
         onFocus = helpers.onFocus,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
-        tooltip = settingsTooltip(),
+        tooltip = rowTooltip(elementData),
     }
 end
 
@@ -215,7 +233,7 @@ local function rowButtonNode(elementData, helpers, label, childKey)
         onFocus = helpers.onFocus,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
-        tooltip = settingsTooltip(),
+        tooltip = rowTooltip(elementData),
     }
 end
 
@@ -246,7 +264,7 @@ local function sliderNode(elementData, helpers, label, setting, options)
     vtable.onFocus = helpers.onFocus
     vtable.onUnfocus = helpers.onUnfocus
     vtable.tooltipFrame = helpers.target
-    vtable.tooltip = settingsTooltip()
+    vtable.tooltip = rowTooltip(elementData)
     return vtable
 end
 
@@ -266,7 +284,7 @@ local function dropdownNode(elementData, helpers, label, setting)
     vtable.onFocus = helpers.onFocus
     vtable.onUnfocus = helpers.onUnfocus
     vtable.tooltipFrame = helpers.target
-    vtable.tooltip = settingsTooltip()
+    vtable.tooltip = rowTooltip(elementData)
     return vtable
 end
 
@@ -411,12 +429,13 @@ settingEmitters["SettingsCheckboxSliderControlTemplate"] = function(builder, ele
     local d = dataOf(elementData)
     local cbSetting = d.setting or d.cbSetting
     builder:startRow()
-    builder:addItem(helpers.id, checkboxNode(elementData, helpers, d.cbLabel or settingName(elementData), cbSetting))
+    local cbNode = checkboxNode(elementData, helpers, d.cbLabel or settingName(elementData), cbSetting)
+    cbNode.tooltip = textTooltip(d.cbTooltip) or cbNode.tooltip
+    builder:addItem(helpers.id, cbNode)
     if cbSetting ~= nil and settingValue(cbSetting) and d.sliderSetting ~= nil then
-        builder:addItem(
-            ControlId.structural("srow:" .. index .. ":slider"),
-            sliderNode(elementData, helpers, d.sliderLabel, d.sliderSetting, d.sliderOptions)
-        )
+        local slider = sliderNode(elementData, helpers, d.sliderLabel, d.sliderSetting, d.sliderOptions)
+        slider.tooltip = textTooltip(d.sliderTooltip) or slider.tooltip
+        builder:addItem(ControlId.structural("srow:" .. index .. ":slider"), slider)
     end
     builder:endRow()
 end
@@ -425,10 +444,13 @@ settingEmitters["SettingsCheckboxDropdownControlTemplate"] = function(builder, e
     local d = dataOf(elementData)
     local cbSetting = d.setting or d.cbSetting
     builder:startRow()
-    builder:addItem(helpers.id, checkboxNode(elementData, helpers, d.cbLabel or settingName(elementData), cbSetting))
+    local cbNode = checkboxNode(elementData, helpers, d.cbLabel or settingName(elementData), cbSetting)
+    cbNode.tooltip = textTooltip(d.cbTooltip) or cbNode.tooltip
+    builder:addItem(helpers.id, cbNode)
     local dropdownSetting = d.dropdownSetting or d.dropDownSetting
     if cbSetting ~= nil and settingValue(cbSetting) and dropdownSetting ~= nil then
         local vtable = dropdownNode(elementData, helpers, d.dropDownLabel or d.dropdownLabel, dropdownSetting)
+        vtable.tooltip = textTooltip(d.tooltip or d.dropDownTooltip) or vtable.tooltip
         builder:addItem(ControlId.structural("srow:" .. index .. ":dropdown"), vtable)
     end
     builder:endRow()
