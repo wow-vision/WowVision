@@ -105,6 +105,7 @@ local parseOnly = {
     "mists/spellbook/spellbook.lua",
     "mists/spellbook/professions.lua",
     "mists/character.lua",
+    "mists/TradeSkill.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
