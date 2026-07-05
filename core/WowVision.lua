@@ -296,6 +296,49 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
+        name = "gdrop",
+        description = "Dump the open dropdown menu chain and the focused item's description state",
+        func = function(args)
+            local dropdown = WowVision.graph.dropdown
+            local lines = {}
+            tinsert(lines, "root: " .. tostring(dropdown.frame))
+            if dropdown.frame ~= nil then
+                local parent = dropdown.frame:GetParent()
+                tinsert(lines, "root parent: " .. tostring(parent ~= nil and (parent:GetName() or "unnamed") or nil))
+                local count = 0
+                if parent ~= nil then
+                    for _, child in ipairs({ parent:GetChildren() }) do
+                        if child:GetID() == 1000 and child:IsShown() then
+                            count = count + 1
+                        end
+                    end
+                end
+                tinsert(lines, "menus with id 1000 shown: " .. count)
+            end
+            local host = WowVision.graphHost
+            local screen = host:focusedScreen()
+            local node = screen ~= nil and screen.keyGraph:currentNode() or nil
+            local item = node ~= nil and type(node.id.key) == "table" and node.id.key or nil
+            if item ~= nil and item.GetElementDescription ~= nil then
+                local ok, description = pcall(item.GetElementDescription, item)
+                tinsert(lines, "description: " .. tostring(ok and description or ("ERR " .. tostring(description))))
+                if ok and description ~= nil then
+                    tinsert(lines, "canOpen fn: " .. tostring(description.CanOpenSubmenu ~= nil))
+                    local ok2, can = pcall(description.CanOpenSubmenu, description)
+                    tinsert(lines, "canOpen: " .. tostring(ok2 and can or ("ERR " .. tostring(can))))
+                    local ok3, err3 = pcall(description.ForceOpenSubmenu, description)
+                    tinsert(lines, "forceOpen: " .. tostring(ok3 and "called" or ("ERR " .. tostring(err3))))
+                end
+            else
+                tinsert(lines, "focused node is not a frame-backed menu item")
+            end
+            local text = table.concat(lines, "\n")
+            WowVision.testing.showResults(text)
+            WowVision:speak(text)
+        end,
+    })
+
+    self.base:registerCommand({
         name = "gtooltip",
         description = "Dump the graph tooltip reader state, spoken and copyable",
         func = function(args)

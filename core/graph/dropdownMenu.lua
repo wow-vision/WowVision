@@ -110,15 +110,25 @@ local function emitItem(builder, item)
 
     if isSubmenuRow(item) then
         -- A submenu parent: Enter opens its child menu, which appears as
-        -- the next tab stop.
+        -- the next tab stop. ForceOpenSubmenu bypasses the manager's
+        -- IsMouseOver gate (the reason synthetic hover can never work).
         local captured = item
         builder:addItem(ControlId.forObject(item), {
             controlType = graph.controlTypes.dropdown,
             announcements = { { text = label, kind = kinds.label } },
             onActivate = function()
                 local description = descriptionOf(captured)
-                if description ~= nil and description.ForceOpenSubmenu ~= nil then
-                    pcall(description.ForceOpenSubmenu, description)
+                if description == nil then
+                    geterrorhandler()("dropdown submenu: no element description")
+                    return
+                end
+                if description.ForceOpenSubmenu == nil then
+                    geterrorhandler()("dropdown submenu: proxy lacks ForceOpenSubmenu")
+                    return
+                end
+                local ok, err = pcall(description.ForceOpenSubmenu, description)
+                if not ok then
+                    geterrorhandler()("dropdown submenu: " .. tostring(err))
                 end
             end,
         })
