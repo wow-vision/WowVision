@@ -28,14 +28,6 @@ function GraphHost:_watchLive(screen, node)
         screen._liveKey = node.id
         screen._liveValues = {}
     end
-    -- Ground truth for /wv glive.
-    screen._liveDebug = {
-        ticks = (screen._liveDebug ~= nil and screen._liveDebug.ticks or 0) + 1,
-        partCount = #parts,
-        valueCount = #screen._liveValues,
-        baselined = baseline,
-    }
-
     for i, part in ipairs(parts) do
         if not isWatched(part) then
             if baseline then
@@ -43,7 +35,13 @@ function GraphHost:_watchLive(screen, node)
             end
         else
             local value = graph.resolveText(part)
-            local cached = value == nil and false or value
+            -- NOT `value == nil and false or value`: that idiom yields nil
+            -- for the nil case, punching a hole in the array, breaking its
+            -- length, and forcing a silent re-baseline every tick.
+            local cached = value
+            if cached == nil then
+                cached = false
+            end
             if baseline then
                 screen._liveValues[i] = cached
             elseif screen._liveValues[i] ~= cached then
@@ -54,6 +52,14 @@ function GraphHost:_watchLive(screen, node)
             end
         end
     end
+
+    -- Ground truth for /wv glive.
+    screen._liveDebug = {
+        ticks = (screen._liveDebug ~= nil and screen._liveDebug.ticks or 0) + 1,
+        partCount = #parts,
+        valueCount = #screen._liveValues,
+        baselined = baseline,
+    }
 end
 
 -- Watch always-scoped parts across the whole render, focused or not. Nodes
@@ -74,7 +80,10 @@ function GraphHost:_watchAlways(screen, focusedNode)
             for i, part in ipairs(parts) do
                 if part ~= nil and part.live == "always" then
                     local value = graph.resolveText(part)
-                    local cached = value == nil and false or value
+                    local cached = value
+                    if cached == nil then
+                        cached = false
+                    end
                     if fresh == nil then
                         fresh = {}
                     end
