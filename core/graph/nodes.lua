@@ -39,7 +39,9 @@ end
 -- Run a frame's hover scripts as focus enters and leaves the node: the game
 -- shows its own tooltip and highlight, and the tooltip reader has content.
 -- Appends to any existing onFocus/onUnfocus (a scroll adapter's scroll hook
--- runs first, so the frame is materialized before hovering).
+-- runs first, so the frame is materialized before hovering). Also marks the
+-- node's tooltipFrame so the host points the tooltip reader at it (SPACE and
+-- the shift-arrow line keys).
 function nodes.attachHover(vtable, frameOrFunction)
     vtable.onFocus = chainCalls(vtable.onFocus, function()
         runFrameScript(frameOrFunction, "OnEnter")
@@ -47,6 +49,9 @@ function nodes.attachHover(vtable, frameOrFunction)
     vtable.onUnfocus = chainCalls(vtable.onUnfocus, function()
         runFrameScript(frameOrFunction, "OnLeave")
     end)
+    if vtable.tooltipFrame == nil then
+        vtable.tooltipFrame = frameOrFunction
+    end
     return vtable
 end
 

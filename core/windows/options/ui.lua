@@ -174,6 +174,7 @@ local function checkboxNode(elementData, helpers, label, setting, childKey)
         },
         onFocus = helpers.onFocus,
         onUnfocus = helpers.onUnfocus,
+        tooltipFrame = helpers.target,
     }
 end
 
@@ -202,6 +203,7 @@ local function rowButtonNode(elementData, helpers, label, childKey)
         },
         onFocus = helpers.onFocus,
         onUnfocus = helpers.onUnfocus,
+        tooltipFrame = helpers.target,
     }
 end
 
@@ -231,6 +233,7 @@ local function sliderNode(elementData, helpers, label, setting, options)
     })
     vtable.onFocus = helpers.onFocus
     vtable.onUnfocus = helpers.onUnfocus
+    vtable.tooltipFrame = helpers.target
     return vtable
 end
 
@@ -249,6 +252,7 @@ local function dropdownNode(elementData, helpers, label, setting)
     })
     vtable.onFocus = helpers.onFocus
     vtable.onUnfocus = helpers.onUnfocus
+    vtable.tooltipFrame = helpers.target
     return vtable
 end
 
@@ -283,6 +287,7 @@ local function emitCategoryRow(builder, elementData, index, helpers)
         },
         onFocus = helpers.onFocus,
         onUnfocus = helpers.onUnfocus,
+        tooltipFrame = helpers.target,
     })
 end
 

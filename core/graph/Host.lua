@@ -211,12 +211,45 @@ function GraphHost:_syncNodeFocus(screen)
         end
         self:_engageNodeBindings(node)
     end
+    self:_setTooltipFor(node)
+end
+
+-- Point the tooltip reader (SPACE and the shift-arrow line keys) at the
+-- focused node's tooltip: an explicit vtable.tooltip config, or the game
+-- tooltip its hovered frame produced.
+function GraphHost:_setTooltipFor(node)
+    local tooltip = WowVision.UIHost.tooltip
+    if self._tooltipActive then
+        pcall(function()
+            tooltip:onUnfocus()
+            tooltip:reset()
+        end)
+        self._tooltipActive = false
+    end
+    if node == nil then
+        return
+    end
+    local data = node.vtable.tooltip
+    local frameRef = node.vtable.tooltipFrame
+    local frame = type(frameRef) == "function" and frameRef() or frameRef
+    if data == nil and frame ~= nil then
+        data = { type = "Game", mode = "immediate" }
+    end
+    if data == nil then
+        return
+    end
+    local ok = pcall(function()
+        tooltip:set({ frame = frame }, data)
+        tooltip:onFocus()
+    end)
+    self._tooltipActive = ok
 end
 
 function GraphHost:_dropNodeFocus()
     if self._focusNode ~= nil and self._focusNode.vtable.onUnfocus ~= nil then
         pcall(self._focusNode.vtable.onUnfocus, self._focusNode)
     end
+    self:_setTooltipFor(nil)
     self:_releaseNodeHandles()
     self._focusNodeId = nil
     self._focusNode = nil
@@ -248,6 +281,16 @@ function GraphHost:_engageNodeBindings(node)
             interruptSpeech = true,
             func = function()
                 self:_secondaryFocused()
+            end,
+        })
+    end
+    if (node.vtable.tooltip ~= nil or node.vtable.tooltipFrame ~= nil) and not has.tooltip then
+        tinsert(specs, {
+            binding = "tooltip",
+            type = "Function",
+            interruptSpeech = true,
+            func = function()
+                WowVision.UIHost.tooltip:speak()
             end,
         })
     end

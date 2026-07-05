@@ -129,6 +129,7 @@ function nodes.scrollBoxList(builder, config)
                     },
                     onFocus = onFocus,
                     onUnfocus = onUnfocus,
+                    tooltipFrame = target,
                 }
             end
             builder:addItem(id, vtable)
