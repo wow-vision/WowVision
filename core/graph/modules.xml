@@ -7,6 +7,7 @@
   <Script file="KeyGraph.lua" />
   <Script file="Builder.lua" />
   <Script file="ControlTypes.lua" />
+  <Script file="Host.lua" />
   <Script file="tests.lua" />
 
 </Ui>
