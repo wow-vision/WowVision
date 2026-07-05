@@ -62,7 +62,10 @@ function module.renderMountJournal(builder)
         ControlId.structural("search"),
         nodes.proxyEditBox({ editBox = MountJournalSearchBox, label = L["Search"] })
     )
+    -- Own stop: an edit box cannot share a stop with anything after it (tab
+    -- is both its entrance and its exit).
     if MountJournalSearchBox:GetText() ~= "" and MountJournalSearchBox.clearButton ~= nil then
+        builder:beginStop("clearSearch")
         builder:addItem(
             ControlId.forObject(MountJournalSearchBox.clearButton),
             nodes.proxyButton({ target = MountJournalSearchBox.clearButton, label = L["Clear"] })
