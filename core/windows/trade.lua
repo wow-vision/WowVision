@@ -68,46 +68,24 @@ local function render(builder, screen)
     -- Tab out goes to the NEXT STOP, so boxes sharing a stop would be
     -- unreachable.
     builder:pushContext("playerMoney", L["Money"])
-    -- Blizzard FORBIDS the trade money input frame (SetForbidden in
-    -- TradeFrame.lua -- anti-scam hardening), so its edit boxes cannot be
-    -- proxied at all. These are synthetic inputs over the trade money API,
-    -- the same call the forbidden frame itself makes.
-    local function setTradeCopper(total)
-        if C_TradeInfo ~= nil and C_TradeInfo.SetTradeMoney ~= nil then
-            C_TradeInfo.SetTradeMoney(total)
-        elseif SetTradeMoney ~= nil then
-            SetTradeMoney(total)
-        end
-    end
-    local function coinInput(key, label, unit, modulus)
-        builder:beginStop(key)
-        builder:addItem(
-            ControlId.structural(key),
-            nodes.textInput({
-                label = label,
-                get = function()
-                    local money = GetPlayerTradeMoney() or 0
-                    local amount = math.floor(money / unit)
-                    if modulus ~= nil then
-                        amount = amount % modulus
-                    end
-                    return amount
-                end,
-                set = function(value)
-                    local amount = tonumber(value) or 0
-                    local money = GetPlayerTradeMoney() or 0
-                    local current = math.floor(money / unit)
-                    if modulus ~= nil then
-                        current = current % modulus
-                    end
-                    setTradeCopper(money + (amount - current) * unit)
-                end,
-            })
-        )
-    end
-    coinInput("gold", L["Gold"], 10000, nil)
-    coinInput("silver", L["Silver"], 100, 100)
-    coinInput("copper", L["Copper"], 1, 100)
+    -- Trade money is SEALED from addons on this client: the input frame is
+    -- forbidden (SetForbidden in TradeFrame.lua) AND the SetTradeMoney API
+    -- is a forbidden function -- anti-scam hardening at both layers. The
+    -- offered amount reads live; entering it is only possible with the
+    -- mouse in the default UI.
+    builder:beginStop("playerMoney")
+    builder:addItem(
+        ControlId.structural("playerMoney"),
+        nodes.text({
+            label = function()
+                local money = GetPlayerTradeMoney()
+                if money ~= nil and money > 0 then
+                    return C_CurrencyInfo.GetCoinText(money)
+                end
+                return L["Empty"]
+            end,
+        })
+    )
     builder:popContext()
 
     renderSide(builder, "targetItems", TradeFrameRecipientNameText, "TradeRecipientItem", GetTradeTargetItemInfo)
