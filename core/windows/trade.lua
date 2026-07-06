@@ -68,20 +68,22 @@ local function render(builder, screen)
     -- Tab out goes to the NEXT STOP, so boxes sharing a stop would be
     -- unreachable.
     builder:pushContext("playerMoney", L["Money"])
+    -- Keyed children: the coin box GLOBALS are shadowed by non-widget
+    -- tables on this client.
     builder:beginStop("gold")
     builder:addItem(
         ControlId.structural("gold"),
-        nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrameGold, label = L["Gold"] })
+        nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrame.gold, label = L["Gold"] })
     )
     builder:beginStop("silver")
     builder:addItem(
         ControlId.structural("silver"),
-        nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrameSilver, label = L["Silver"] })
+        nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrame.silver, label = L["Silver"] })
     )
     builder:beginStop("copper")
     builder:addItem(
         ControlId.structural("copper"),
-        nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrameCopper, label = L["Copper"] })
+        nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrame.copper, label = L["Copper"] })
     )
     builder:popContext()
 
