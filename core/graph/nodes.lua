@@ -138,8 +138,17 @@ function nodes.proxyButton(config)
     if target == nil then
         error("proxyButton requires a target frame")
     end
-    if not config.allowHidden and target.IsShown ~= nil and not target:IsShown() then
-        return nil
+    if not config.allowHidden and target.IsShown ~= nil then
+        local ok, shown = pcall(target.IsShown, target)
+        if not ok then
+            geterrorhandler()(
+                "proxyButton: not a widget (label " .. tostring(config.label) .. ", value " .. tostring(target) .. ")"
+            )
+            return nil
+        end
+        if not shown then
+            return nil
+        end
     end
     return nodes.attachHover({
         controlType = graph.controlTypes.button,
@@ -350,8 +359,21 @@ function nodes.proxyEditBox(config)
     if editBox == nil then
         error("proxyEditBox requires an editBox")
     end
-    if not config.allowHidden and editBox.IsShown ~= nil and not editBox:IsShown() then
-        return nil
+    if not config.allowHidden and editBox.IsShown ~= nil then
+        local ok, shown = pcall(editBox.IsShown, editBox)
+        if not ok then
+            geterrorhandler()(
+                "proxyEditBox: not a widget (label "
+                    .. tostring(config.label)
+                    .. ", value "
+                    .. tostring(editBox)
+                    .. ")"
+            )
+            return nil
+        end
+        if not shown then
+            return nil
+        end
     end
     if config.fixAutoFocus and editBox.SetAutoFocus ~= nil then
         editBox:SetAutoFocus(false)
