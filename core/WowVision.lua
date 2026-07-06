@@ -296,6 +296,46 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
+        name = "gdump",
+        description = "Evaluate a Lua expression and describe the value, spoken and copyable",
+        func = function(args)
+            local chunk, err = loadstring("return " .. tostring(args))
+            if chunk == nil then
+                print("gdump: " .. tostring(err))
+                return
+            end
+            local ok, value = pcall(chunk)
+            if not ok then
+                print("gdump: " .. tostring(value))
+                return
+            end
+            local lines = {}
+            tinsert(lines, "value: " .. tostring(value) .. " (type " .. type(value) .. ")")
+            if type(value) == "table" then
+                local okType, objectType = pcall(function()
+                    return value:GetObjectType()
+                end)
+                tinsert(lines, "GetObjectType: " .. tostring(okType and objectType or ("ERR " .. tostring(objectType))))
+                local okName, name = pcall(function()
+                    return value:GetName()
+                end)
+                tinsert(lines, "GetName: " .. tostring(okName and name or "ERR"))
+                local keys = {}
+                for key in pairs(value) do
+                    tinsert(keys, tostring(key))
+                    if #keys >= 12 then
+                        break
+                    end
+                end
+                tinsert(lines, "keys: " .. table.concat(keys, ", "))
+            end
+            local text = table.concat(lines, "\n")
+            WowVision.testing.showResults(text)
+            WowVision:speak(text)
+        end,
+    })
+
+    self.base:registerCommand({
         name = "gperf",
         description = "Profile the UI update loop for 120 frames and report min, average, and max milliseconds",
         func = function(args)
