@@ -1,218 +1,197 @@
 local module = WowVision.base.windows:createModule("QuestLog")
 local L = module.L
 module:setLabel(L["Quest Log"])
-local gen = module:hasUI()
 
-gen:Element("QuestLog", function(props)
-    return {
-        "Panel",
-        label = L["Quest Log"],
-        wrap = true,
-        children = {
-            { "QuestLog/QuestList", frame = QuestLogListScrollFrame },
-            { "QuestLog/QuestDetails", frame = QuestLogDetailScrollChildFrame },
-            { "QuestLog/QuestControl" },
-        },
-    }
-end)
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
 
-local function getNumEntries(self)
-    return GetNumQuestLogEntries()
-end
+-- The TBC quest log: a true FauxScrollFrame with a six-button pool
+-- (QuestLogTitle1-6) whose ids are POOL-RELATIVE -- logical index is id
+-- plus scroll offset -- then the details pane with live objectives and the
+-- control buttons.
 
-local function getQuestListButton(self, button)
-    local buttonId = button:GetID()
-    local offset = FauxScrollFrame_GetOffset(QuestLogListScrollFrame) or 0
-    local questIndex = buttonId + offset
-    local label = ""
-    local questLogTitleText, level, questTag, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling =
-        GetQuestLogTitle(questIndex)
-    if isHidden then
-        return nil
-    end
-    if isComplete == 1 then
-        label = label .. "[" .. L["Complete"] .. "] "
-    elseif isComplete == -1 then
-        label = label .. "[" .. L["Failed"] .. "] "
-    end
-    if frequency == LE_QUEST_FREQUENCY_DAILY then
-        label = label .. "[" .. L["Daily"] .. "] "
-    elseif frequency == LE_QUEST_FREQUENCY_WEEKLY then
-        label = label .. "[" .. L["Weekly"] .. "] "
-    end
-    label = label .. " " .. button:GetText()
-    local header = nil
-    if isHeader then
-        if isCollapsed then
-            header = "collapsed"
-        else
-            header = "expanded"
-        end
-    end
-    return {
-        "ProxyButton",
-        frame = button,
-        label = label,
-        selected = questIndex == GetQuestLogSelection(),
-        header = header,
-    }
-end
-
-local function getQuestListButtonIndex(self, button)
-    -- TBC uses FauxScrollFrame, so the button ID is relative to scroll offset
-    local offset = FauxScrollFrame_GetOffset(QuestLogListScrollFrame) or 0
-    return button:GetID() + offset
-end
-
--- TBC quest buttons are hardcoded as QuestLogTitle1-6, not children of the scroll frame
 local QUESTS_DISPLAYED = 6
-local function getQuestListButtons(self)
+
+local function questButtons()
     local buttons = {}
     for i = 1, QUESTS_DISPLAYED do
         local button = _G["QuestLogTitle" .. i]
-        if button then
+        if button ~= nil then
             tinsert(buttons, button)
         end
     end
     return buttons
 end
 
-gen:Element("QuestLog/QuestList", function(props)
-    local frame = props.frame
+local function questButtonIndex(button)
+    local offset = FauxScrollFrame_GetOffset(QuestLogListScrollFrame) or 0
+    return button:GetID() + offset
+end
 
-    -- If scroll frame is shown, use ProxyFauxScrollFrame
-    if frame and frame:IsShown() then
-        return {
-            "ProxyFauxScrollFrame",
-            frame = frame,
-            buttonHeight = QUESTLOG_QUEST_HEIGHT,
-            updateFunction = QuestLog_Update,
-            getNumEntries = getNumEntries,
-            getElement = getQuestListButton,
-            getElementIndex = getQuestListButtonIndex,
-            getButtons = getQuestListButtons,
-        }
-    end
-
-    -- Scroll frame is hidden (not enough quests to scroll), render buttons directly
-    local children = {}
-    for i = 1, QUESTS_DISPLAYED do
-        local button = _G["QuestLogTitle" .. i]
-        if button and button:IsShown() then
-            local element = getQuestListButton(nil, button)
-            if element then
-                tinsert(children, element)
-            end
-        end
-    end
-
-    if #children == 0 then
+local function questLabel(index)
+    local title, _, _, isHeader, _, isComplete, frequency = GetQuestLogTitle(index)
+    if title == nil then
         return nil
     end
+    if isHeader then
+        return title
+    end
+    local label = ""
+    if isComplete == 1 then
+        label = "[" .. L["Complete"] .. "] "
+    elseif isComplete == -1 then
+        label = "[" .. L["Failed"] .. "] "
+    end
+    if frequency == LE_QUEST_FREQUENCY_DAILY then
+        label = label .. "[" .. L["Daily"] .. "] "
+    elseif frequency == LE_QUEST_FREQUENCY_WEEKLY then
+        label = label .. "[" .. L["Weekly"] .. "] "
+    end
+    return label .. title
+end
 
-    return {
-        "List",
-        label = L["Quests"],
-        children = children,
-    }
-end)
+local function questEntryId(index)
+    local title, _, _, isHeader, _, _, _, questID = GetQuestLogTitle(index)
+    if isHeader then
+        return ControlId.structural("header:" .. tostring(title))
+    end
+    if questID ~= nil and questID ~= 0 then
+        return ControlId.structural("quest:" .. tostring(questID))
+    end
+    return ControlId.structural("entry:" .. index)
+end
 
-gen:Element("QuestLog/QuestDetails", {
-    regenerateOn = {
-        events = { "QUEST_LOG_UPDATE", "QUEST_WATCH_UPDATE", "UNIT_QUEST_LOG_CHANGED" },
-        values = function(props)
-            return { GetQuestLogSelection() }
-        end,
-    },
-}, function(props)
-    local frame = props.frame
-    if not frame:IsShown() or not frame:IsVisible() then
-        return nil
+local function emitQuestEntry(builder, index, helpers)
+    local _, _, _, isHeader, _, _, _, _, _, _, _, _, _, _, _, isHidden = GetQuestLogTitle(index)
+    if isHidden then
+        return
     end
 
-    -- Get quest text using TBC frame names
-    local title = QuestLogQuestTitle and QuestLogQuestTitle:GetText() or ""
-    local objectivesHeader = QuestLogObjectivesText and QuestLogObjectivesText:GetText() or ""
-    local description = QuestLogQuestDescription and QuestLogQuestDescription:GetText() or ""
-
-    local result = {
-        "List",
-        label = L["Details"],
-        children = {
-            { "Text", key = "title", text = title },
-            { "Text", key = "description", text = description },
-            { "Text", key = "objectivesText", text = objectivesHeader },
-            { "QuestLog/QuestObjectives" },
+    local announcements = {
+        {
+            text = function()
+                return questLabel(index)
+            end,
+            kind = kinds.label,
         },
     }
-    return result
-end)
+    if isHeader then
+        tinsert(announcements, {
+            text = function()
+                local _, _, _, _, collapsed = GetQuestLogTitle(index)
+                return collapsed and L["Collapsed"] or L["Expanded"]
+            end,
+            kind = kinds.value,
+        })
+    else
+        tinsert(announcements, {
+            text = function()
+                if index == GetQuestLogSelection() then
+                    return L["selected"]
+                end
+                return nil
+            end,
+            kind = kinds.selected,
+        })
+    end
 
-gen:Element("QuestLog/QuestObjectives", {
-    regenerateOn = {
-        events = { "QUEST_LOG_UPDATE", "QUEST_WATCH_UPDATE" },
-    },
-}, function(props)
-    local result = { "List", label = L["Objectives"], children = {} }
+    builder:addItem(helpers.id, {
+        controlType = graph.controlTypes.button,
+        announcements = announcements,
+        bindings = {
+            { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+        },
+        onFocus = helpers.onFocus,
+        onFocusTick = helpers.onFocusTick,
+        onUnfocus = helpers.onUnfocus,
+        tooltipFrame = helpers.target,
+    })
+end
 
-    -- TBC uses QuestLogObjective1 through QuestLogObjective10
-    local MAX_OBJECTIVES = 10
-    for i = 1, MAX_OBJECTIVES do
+local function contentText(builder, id, region, scrollFrame)
+    if region == nil or not region:IsShown() then
+        return
+    end
+    local text = region:GetText()
+    if text == nil or text == "" then
+        return
+    end
+    local vtable = nodes.text({
+        label = function()
+            return region:GetText()
+        end,
+    })
+    nodes.attachScrollFrame(vtable, scrollFrame, region)
+    builder:addItem(id, vtable)
+end
+
+local function renderDetails(builder)
+    local child = QuestLogDetailScrollChildFrame
+    if child == nil or not child:IsShown() or not child:IsVisible() then
+        return
+    end
+    local scrollFrame = QuestLogDetailScrollFrame
+
+    builder:beginStop("details")
+    builder:pushContext("details", L["Details"])
+    contentText(builder, ControlId.structural("title"), QuestLogQuestTitle, scrollFrame)
+    contentText(builder, ControlId.structural("description"), QuestLogQuestDescription, scrollFrame)
+    contentText(builder, ControlId.structural("objectivesText"), QuestLogObjectivesText, scrollFrame)
+
+    for i = 1, 10 do
         local objective = _G["QuestLogObjective" .. i]
-        if objective and objective:IsShown() then
-            local text = objective:GetText()
-            if text and text ~= "" then
-                tinsert(result.children, { "Text", key = "objective_" .. i, text = text })
-            end
+        if objective ~= nil and objective:IsShown() then
+            contentText(builder, ControlId.structural("objective:" .. i), objective, scrollFrame)
         end
     end
+    builder:popContext()
+end
 
-    if #result.children > 0 then
-        return result
+local function actionButton(builder, button)
+    if button == nil or not button:IsShown() then
+        return
     end
-    return nil
-end)
+    builder:beginStop()
+    builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button }))
+end
 
-gen:Element("QuestLog/QuestControl", function(props)
-    -- TBC doesn't have a control panel frame, check if quest log is open
-    if not QuestLogFrame or not QuestLogFrame:IsShown() then
-        return nil
+local function render(builder, screen)
+    local frame = QuestLogFrame
+    if frame == nil or not frame:IsShown() then
+        return
     end
+    builder:pushContext("questLog", L["Quest Log"])
 
-    local children = {}
+    builder:beginStop("quests")
+    nodes.hybridScrollList(builder, {
+        scrollFrame = QuestLogListScrollFrame,
+        key = "quests",
+        label = L["Quests"],
+        count = function()
+            return (GetNumQuestLogEntries())
+        end,
+        rowHeight = QUESTLOG_QUEST_HEIGHT,
+        buttons = questButtons,
+        indexOf = questButtonIndex,
+        id = questEntryId,
+        emit = emitQuestEntry,
+    })
 
-    -- Collapse/Expand all button
-    if QuestLogCollapseAllButton and QuestLogCollapseAllButton:IsShown() then
-        tinsert(children, { "ProxyButton", frame = QuestLogCollapseAllButton })
-    end
+    renderDetails(builder)
 
-    -- Abandon button
-    if QuestLogFrameAbandonButton and QuestLogFrameAbandonButton:IsShown() then
-        tinsert(children, { "ProxyButton", frame = QuestLogFrameAbandonButton })
-    end
+    actionButton(builder, QuestLogCollapseAllButton)
+    actionButton(builder, QuestLogFrameAbandonButton)
+    actionButton(builder, QuestFramePushQuestButton)
 
-    -- Push/Share quest button
-    if QuestFramePushQuestButton and QuestFramePushQuestButton:IsShown() then
-        tinsert(children, { "ProxyButton", frame = QuestFramePushQuestButton })
-    end
-
-    if #children == 0 then
-        return nil
-    end
-
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = children,
-    }
-end)
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "QuestLog",
-    generated = true,
-    rootElement = "QuestLog",
     frameName = "QuestLogFrame",
     conflictingAddons = { "Sku" },
+    graphScreen = { render = render },
 })

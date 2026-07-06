@@ -2,86 +2,15 @@ local module = WowVision.base.windows:createModule("spellbook")
 local L = module.L
 module:setLabel(L["Spellbook"])
 
-local gen = module:hasUI()
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
 
-WowVision.tbc = WowVision.tbc or {}
-WowVision.tbc.spellbook = {
-    module = module,
-    gen = gen,
-    L = L,
-}
-
-gen:Element("spellbook", function(props)
-    local result = {
-        "Panel",
-        label = L["Spellbook"],
-        wrap = true,
-        children = {},
-    }
-
-    -- Bottom tabs (Spellbook, Pet, etc.)
-    tinsert(result.children, { "spellbook/Tabs" })
-
-    -- Side tabs (spell schools/professions)
-    tinsert(result.children, { "spellbook/SkillLineTabs", frame = SpellBookSideTabsFrame })
-
-    -- Spell buttons grid
-    tinsert(result.children, { "spellbook/Spells" })
-
-    -- Page navigation
-    tinsert(result.children, { "spellbook/PageNav" })
-
-    -- Show all ranks checkbox
-    if ShowAllSpellRanksCheckbox and ShowAllSpellRanksCheckbox:IsShown() then
-        tinsert(result.children, {
-            "ProxyCheckButton",
-            frame = ShowAllSpellRanksCheckbox,
-            label = ShowAllSpellRanksCheckboxText:GetText(),
-        })
-    end
-
-    -- Close button
-    if SpellBookCloseButton then
-        tinsert(result.children, {
-            "ProxyButton",
-            frame = SpellBookCloseButton,
-            label = CLOSE or "Close",
-        })
-    end
-
-    return result
-end)
-
-gen:Element("spellbook/SkillLineTabs", function(props)
-    local frame = props.frame
-    if not frame:IsShown() then
-        return nil
-    end
-    local result = {
-        "List",
-        label = L["Side Tabs"],
-        children = {},
-    }
-
-    for i = 1, 8 do
-        local tab = _G["SpellBookSkillLineTab" .. i]
-        if tab and tab:IsShown() then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "skillline_" .. i,
-                frame = tab,
-                label = tab.tooltip or "",
-                selected = tab:GetChecked(),
-            })
-        end
-    end
-
-    if #result.children == 0 then
-        return nil
-    end
-
-    return result
-end)
+-- The TBC spellbook: bottom tabs, side skill-line tabs, the spell page
+-- (SpellButton1-12, sorted top-to-bottom then left-to-right, live labels
+-- since page flips rebind the buttons), page navigation, the show-all-ranks
+-- checkbox, and close.
 
 local function getSpellButtons()
     local buttons = {}
@@ -112,83 +41,134 @@ local function getSpellLabel(button)
     return name
 end
 
-gen:Element("spellbook/Spells", function(props)
-    local result = {
-        "List",
-        label = L["Spells"],
-        children = {},
-    }
-
-    local buttons = getSpellButtons()
-    for _, button in ipairs(buttons) do
-        local label = getSpellLabel(button)
-        if label and label ~= "" then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "spell_" .. button:GetID(),
-                frame = button,
-                label = label,
-                draggable = true,
-                tooltip = {
-                    type = "Game",
-                    mode = "immediate",
-                },
-            })
-        end
+local function render(builder, screen)
+    if SpellBookFrame == nil or not SpellBookFrame:IsShown() then
+        return
     end
+    builder:pushContext("spellbook", L["Spellbook"])
 
-    if #result.children == 0 then
-        return nil
-    end
-
-    return result
-end)
-
-gen:Element("spellbook/PageNav", function(props)
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "ProxyButton", frame = SpellBookPrevPageButton, label = L["Previous Page"] },
-            { "ProxyButton", frame = SpellBookNextPageButton, label = L["Next Page"] },
-        },
-    }
-end)
-
-gen:Element("spellbook/Tabs", function(props)
-    local result = {
-        "List",
-        label = L["Tabs"],
-        direction = "horizontal",
-        children = {},
-    }
-
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
     for i = 1, 3 do
         local tab = _G["SpellBookFrameTabButton" .. i]
-        if tab and tab:IsShown() then
-            local selected = PanelTemplates_GetSelectedTab(SpellBookFrame) == i
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "tab_" .. i,
-                frame = tab,
-                selected = selected,
-            })
+        local tabIndex = i
+        if tab ~= nil and tab:IsShown() then
+            local vtable = nodes.proxyButton({ target = tab })
+            if vtable ~= nil then
+                tinsert(vtable.announcements, {
+                    text = function()
+                        if PanelTemplates_GetSelectedTab(SpellBookFrame) == tabIndex then
+                            return L["selected"]
+                        end
+                        return nil
+                    end,
+                    kind = kinds.selected,
+                })
+                builder:addItem(ControlId.forObject(tab), vtable)
+            end
         end
     end
+    builder:endRow()
+    builder:popContext()
 
-    if #result.children == 0 then
-        return nil
+    if SpellBookSideTabsFrame ~= nil and SpellBookSideTabsFrame:IsShown() then
+        builder:beginStop("sideTabs")
+        builder:pushContext("sideTabs", L["Side Tabs"])
+        builder:startRow()
+        for i = 1, 8 do
+            local tab = _G["SpellBookSkillLineTab" .. i]
+            if tab ~= nil and tab:IsShown() then
+                local captured = tab
+                builder:addItem(
+                    ControlId.forObject(captured),
+                    nodes.proxyCheckButton({
+                        target = captured,
+                        label = function()
+                            return captured.tooltip
+                        end,
+                    })
+                )
+            end
+        end
+        builder:endRow()
+        builder:popContext()
     end
 
-    return result
-end)
+    builder:beginStop("spells")
+    builder:pushContext("spells", L["Spells"])
+    local emitted = 0
+    for _, button in ipairs(getSpellButtons()) do
+        local captured = button
+        local vtable = nodes.proxyButton({
+            target = captured,
+            label = function()
+                return getSpellLabel(captured)
+            end,
+        })
+        if vtable ~= nil then
+            tinsert(vtable.bindings, {
+                binding = "drag",
+                type = "Function",
+                func = function()
+                    local script = captured:GetScript("OnDragStart")
+                    if script ~= nil then
+                        script(captured)
+                    end
+                end,
+            })
+            builder:addItem(ControlId.forObject(captured), vtable)
+            emitted = emitted + 1
+        end
+    end
+    if emitted == 0 then
+        builder:addItem(ControlId.structural("spellsEmpty"), nodes.text({ label = L["Empty"] }))
+    end
+    builder:popContext()
+
+    if SpellBookPrevPageButton ~= nil and SpellBookPrevPageButton:IsShown() then
+        builder:beginStop("prevPage")
+        builder:addItem(
+            ControlId.forObject(SpellBookPrevPageButton),
+            nodes.proxyButton({ target = SpellBookPrevPageButton, label = L["Previous Page"] })
+        )
+    end
+    if SpellBookNextPageButton ~= nil and SpellBookNextPageButton:IsShown() then
+        builder:beginStop("nextPage")
+        builder:addItem(
+            ControlId.forObject(SpellBookNextPageButton),
+            nodes.proxyButton({ target = SpellBookNextPageButton, label = L["Next Page"] })
+        )
+    end
+
+    if ShowAllSpellRanksCheckbox ~= nil and ShowAllSpellRanksCheckbox:IsShown() then
+        builder:beginStop("showAllRanks")
+        builder:addItem(
+            ControlId.forObject(ShowAllSpellRanksCheckbox),
+            nodes.proxyCheckButton({
+                target = ShowAllSpellRanksCheckbox,
+                label = function()
+                    return ShowAllSpellRanksCheckboxText ~= nil and ShowAllSpellRanksCheckboxText:GetText() or nil
+                end,
+            })
+        )
+    end
+
+    if SpellBookCloseButton ~= nil then
+        builder:beginStop("close")
+        builder:addItem(
+            ControlId.forObject(SpellBookCloseButton),
+            nodes.proxyButton({ target = SpellBookCloseButton, label = CLOSE or L["Close"] })
+        )
+    end
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "spellbook",
-    generated = true,
-    rootElement = "spellbook",
     frameName = "SpellBookFrame",
     conflictingAddons = { "Sku" },
+    graphScreen = { render = render },
 })

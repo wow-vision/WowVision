@@ -1,7 +1,10 @@
 local module = WowVision.base.windows:createModule("socketing")
 local L = module.L
 module:setLabel(L["Socketing"])
-local gen = module:hasUI()
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
 
 -- TBC Anniversary uses unnamed child frames for sockets and the apply button.
 -- The socket buttons (IDs 1..N) and the apply button (ID 0 with text) live inside
@@ -44,17 +47,16 @@ local function findApplyButton(container)
     end
 end
 
-local function getSocketLabel(button)
-    local id = button:GetID()
+local function getSocketLabel(id)
     local color = ""
     local colorKey = GetSocketTypes(id)
     if colorKey then
         color = _G[strupper(colorKey .. "_GEM")] or colorKey
     end
     local label = color .. ": "
-    local name, icon, _ = GetExistingSocketInfo(id)
+    local name = GetExistingSocketInfo(id)
     if not name then
-        name, icon, _ = GetNewSocketInfo(id)
+        name = GetNewSocketInfo(id)
     end
     if name then
         label = label .. name
@@ -64,50 +66,70 @@ local function getSocketLabel(button)
     return label
 end
 
-gen:Element("socketing", function(props)
+local function render(builder, screen)
+    if ItemSocketingFrame == nil or not ItemSocketingFrame:IsShown() then
+        return
+    end
+    builder:pushContext("socketing", L["Socketing"])
+
     local container = findSocketContainer()
-    local children = {
-        { "socketing/Sockets", container = container },
-    }
-    if container then
-        local applyButton = findApplyButton(container)
-        if applyButton then
-            tinsert(children, { "ProxyButton", frame = applyButton })
-        end
-    end
-    tinsert(children, { "ProxyButton", frame = ItemSocketingFrameCloseButton, label = L["Close"] })
-    return {
-        "Panel",
-        label = L["Socketing"],
-        wrap = true,
-        children = children,
-    }
-end)
 
-gen:Element("socketing/Socket", function(props)
-    local frame = props.frame
-    return { "ItemButton", frame = frame, label = getSocketLabel(frame) }
-end)
-
-gen:Element("socketing/Sockets", function(props)
-    local result = { "List", children = {} }
-    local container = props.container
-    if not container then
-        return result
-    end
-    local buttons = findSocketButtons(container)
+    builder:beginStop("sockets")
+    builder:pushContext("sockets", L["Socketing"])
+    local buttons = container ~= nil and findSocketButtons(container) or {}
+    local emitted = 0
     for i = 1, GetNumSockets() do
-        if buttons[i] then
-            tinsert(result.children, { "socketing/Socket", frame = buttons[i] })
+        local button = buttons[i]
+        if button ~= nil then
+            local socketId = i
+            local vtable = nodes.proxyButton({
+                target = button,
+                label = function()
+                    return getSocketLabel(socketId)
+                end,
+            })
+            if vtable ~= nil then
+                tinsert(vtable.bindings, {
+                    binding = "drag",
+                    type = "Function",
+                    func = function()
+                        local script = button:GetScript("OnDragStart")
+                        if script ~= nil then
+                            script(button)
+                        end
+                    end,
+                })
+                builder:addItem(ControlId.forObject(button), vtable)
+                emitted = emitted + 1
+            end
         end
     end
-    return result
-end)
+    if emitted == 0 then
+        builder:addItem(ControlId.structural("socketsEmpty"), nodes.text({ label = L["Empty"] }))
+    end
+    builder:popContext()
+
+    if container ~= nil then
+        local applyButton = findApplyButton(container)
+        if applyButton ~= nil and applyButton:IsShown() then
+            builder:beginStop("apply")
+            builder:addItem(ControlId.forObject(applyButton), nodes.proxyButton({ target = applyButton }))
+        end
+    end
+    if ItemSocketingFrameCloseButton ~= nil then
+        builder:beginStop("close")
+        builder:addItem(
+            ControlId.forObject(ItemSocketingFrameCloseButton),
+            nodes.proxyButton({ target = ItemSocketingFrameCloseButton, label = L["Close"] })
+        )
+    end
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "socketing",
-    generated = true,
-    rootElement = "socketing",
     frameName = "ItemSocketingFrame",
+    graphScreen = { render = render },
 })

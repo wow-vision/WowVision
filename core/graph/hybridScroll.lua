@@ -25,6 +25,9 @@ local kinds = graph.kinds
 --                the first pooled button's height
 --   buttons      function -> the button pool, for frames whose pool is not
 --                discoverable (FauxScrollFrames with named sibling buttons)
+--   indexOf      function(button) -> the button's LOGICAL index, for pools
+--                whose IDs are pool-relative (TBC-era Faux rows carry slot
+--                ids; logical index is id plus the frame's scroll offset)
 function nodes.hybridScrollList(builder, config)
     local scrollFrame = config.scrollFrame
     if scrollFrame == nil then
@@ -81,6 +84,9 @@ function nodes.hybridScrollList(builder, config)
     end
 
     local function indexOfButton(button)
+        if config.indexOf ~= nil then
+            return config.indexOf(button)
+        end
         return button.index or button:GetID()
     end
 
