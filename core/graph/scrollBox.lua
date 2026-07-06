@@ -123,10 +123,13 @@ function nodes.scrollBoxList(builder, config)
             end
         end
 
+        -- Provider elements may be plain values (index-range providers hand
+        -- out numbers), so only tables carry template and name info.
+        local isTable = type(data) == "table"
         graph.scrollBoxDebug[tostring(id.key)] = {
-            template = tostring(data ~= nil and data.frameTemplate or "?"),
+            template = tostring(isTable and data.frameTemplate or "?"),
             name = tostring(
-                data ~= nil and (data.name or (type(data.data) == "table" and data.data.name or nil)) or "?"
+                isTable and (data.name or (type(data.data) == "table" and data.data.name or nil)) or tostring(data)
             ),
         }
 
@@ -138,7 +141,7 @@ function nodes.scrollBoxList(builder, config)
             id = id,
         }
         if config.templates ~= nil then
-            local emitter = config.templates[data ~= nil and data.frameTemplate or nil] or config.defaultTemplate
+            local emitter = config.templates[isTable and data.frameTemplate or nil] or config.defaultTemplate
             if emitter ~= nil then
                 local ok, err = pcall(emitter, builder, data, capturedIndex, helpers)
                 if not ok then
