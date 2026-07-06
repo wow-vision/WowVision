@@ -152,7 +152,20 @@ function nodes.proxyButton(config)
     end
     return nodes.attachHover({
         controlType = graph.controlTypes.button,
-        announcements = { { text = config.label or nodes.frameText(target), kind = kinds.label } },
+        announcements = {
+            { text = config.label or nodes.frameText(target), kind = kinds.label },
+            -- Disabled state reads (and changes live: a Post button enabling
+            -- as a form becomes valid speaks it).
+            {
+                text = function()
+                    if target.IsEnabled ~= nil and not target:IsEnabled() then
+                        return L["Disabled"]
+                    end
+                    return nil
+                end,
+                kind = kinds.enabled,
+            },
+        },
         bindings = {
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
             { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = target },
@@ -427,7 +440,18 @@ function nodes.proxyDropdown(config)
     end
     return nodes.attachHover({
         controlType = graph.controlTypes.dropdown,
-        announcements = { { text = config.label or nodes.frameText(target), kind = kinds.label } },
+        announcements = {
+            { text = config.label or nodes.frameText(target), kind = kinds.label },
+            {
+                text = function()
+                    if target.IsEnabled ~= nil and not target:IsEnabled() then
+                        return L["Disabled"]
+                    end
+                    return nil
+                end,
+                kind = kinds.enabled,
+            },
+        },
         onActivate = function()
             if target.OpenMenu ~= nil then
                 target:OpenMenu()

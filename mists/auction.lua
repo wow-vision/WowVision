@@ -418,9 +418,11 @@ local function renderPriceInput(builder, keyPrefix, priceInput)
     moneyInputStops(builder, keyPrefix, priceInput.Label:GetText() or "", priceInput.MoneyInputFrame)
 end
 
--- The posting form shared by item and commodity sells. config.itemSell adds
--- the buyout mode checkbox and the secondary price input.
-local function renderSellForm(builder, frame, itemSell)
+-- The posting form shared by item and commodity sells. itemSell adds the
+-- buyout mode checkbox and the secondary price input; comparables (other
+-- sellers' auctions of the item) render after the duration dropdown,
+-- before the price inputs.
+local function renderSellForm(builder, frame, itemSell, comparables)
     builder:beginStop("placeItem")
     builder:addItem(ControlId.structural("placeItem"), {
         controlType = graph.controlTypes.button,
@@ -455,6 +457,10 @@ local function renderSellForm(builder, frame, itemSell)
             ControlId.forObject(frame.Duration.Dropdown),
             nodes.proxyDropdown({ target = frame.Duration.Dropdown })
         )
+    end
+
+    if comparables ~= nil then
+        comparables(builder)
     end
 
     renderPriceInput(builder, "price", frame.PriceInput)
@@ -500,9 +506,7 @@ local function renderSellComparables(builder, list, labelOf)
     })
 end
 
-local function renderItemSell(builder)
-    local frame = AuctionHouseFrame.ItemSellFrame
-    renderSellForm(builder, frame, true)
+local function renderItemSellComparables(builder, frame)
     renderSellComparables(builder, frame:GetItemSellList(), function(entry, index, helpers)
         if entry == nil then
             return nil
@@ -522,9 +526,14 @@ local function renderItemSell(builder)
     end)
 end
 
-local function renderCommoditySell(builder)
-    local frame = AuctionHouseFrame.CommoditiesSellFrame
-    renderSellForm(builder, frame, false)
+local function renderItemSell(builder)
+    local frame = AuctionHouseFrame.ItemSellFrame
+    renderSellForm(builder, frame, true, function(innerBuilder)
+        renderItemSellComparables(innerBuilder, frame)
+    end)
+end
+
+local function renderCommoditySellComparables(builder, frame)
     renderSellComparables(builder, frame:GetCommoditiesSellList(), function(entry)
         if entry == nil then
             return nil
@@ -537,6 +546,13 @@ local function renderCommoditySell(builder)
             tinsert(parts, L["Seller"] .. " " .. table.concat(entry.owners, ", "))
         end
         return table.concat(parts, ", ")
+    end)
+end
+
+local function renderCommoditySell(builder)
+    local frame = AuctionHouseFrame.CommoditiesSellFrame
+    renderSellForm(builder, frame, false, function(innerBuilder)
+        renderCommoditySellComparables(innerBuilder, frame)
     end)
 end
 

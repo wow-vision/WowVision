@@ -171,19 +171,8 @@ function module.renderSend(builder, screen)
         module.checkButtonNode(SendMailSendMoneyButton, L["Send Money"])
     )
     builder:beginStop("cod")
-    local cod = module.checkButtonNode(SendMailCODButton, L["COD"])
-    if cod ~= nil then
-        tinsert(cod.announcements, {
-            text = function()
-                if not SendMailCODButton:IsEnabled() then
-                    return L["Disabled"]
-                end
-                return nil
-            end,
-            kind = graph.kinds.enabled,
-        })
-        builder:addItem(ControlId.forObject(SendMailCODButton), cod)
-    end
+    -- The proxy factories announce disabled state themselves.
+    builder:addItem(ControlId.forObject(SendMailCODButton), module.checkButtonNode(SendMailCODButton, L["COD"]))
 
     -- Each coin box is its own stop: tabbing into a box starts typing, and
     -- Tab out goes to the NEXT STOP, so boxes sharing a stop would be
