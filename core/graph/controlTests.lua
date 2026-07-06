@@ -152,16 +152,19 @@ testRunner:addSuite("GraphScrollBox", {
         t:assertTrue(graph.resolveText(fallback.vtable.announcements[1]):find("Mystery") ~= nil)
     end,
 
-    ["an empty provider emits nothing"] = function(t)
+    ["an empty provider emits a landable Empty placeholder"] = function(t)
         local scrollBox = makeFakeScrollBox({})
         local builder = Builder:new()
         graph.nodes.scrollBoxList(builder, {
             scrollBox = scrollBox,
+            key = "rows",
             rowLabel = function(data)
                 return ""
             end,
         })
-        t:assertNil(builder:build())
+        local render = builder:build()
+        t:assertEqual(#render.order, 1)
+        t:assertEqual(render.order[1].id.key, "rows:empty")
     end,
 })
 
