@@ -2,6 +2,7 @@ local graph = WowVision.graph
 local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
+local L = WowVision:getLocale()
 
 -- The ScrollBox adapter: pilots a Blizzard virtualized scroll widget. The
 -- full logical list comes from the widget's data provider, so every row is a
@@ -74,11 +75,19 @@ function nodes.scrollBoxList(builder, config)
 
     local size = scrollBox:GetDataProviderSize()
     local provider = scrollBox.GetDataProvider ~= nil and scrollBox:GetDataProvider() or nil
+    local keyPrefix = tostring(config.key or config.label or "list")
+
+    -- An empty list is still a place to land.
     if size == 0 or provider == nil then
+        if config.label ~= nil then
+            builder:pushContext(keyPrefix, config.label)
+        end
+        builder:addItem(ControlId.structural(keyPrefix .. ":empty"), nodes.text({ label = L["Empty"] }))
+        if config.label ~= nil then
+            builder:popContext()
+        end
         return builder
     end
-
-    local keyPrefix = tostring(config.key or config.label or "list")
 
     if config.label ~= nil then
         builder:pushContext(keyPrefix, config.label)

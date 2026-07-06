@@ -34,11 +34,23 @@ function nodes.hybridScrollList(builder, config)
         error("hybridScrollList requires count and emit")
     end
 
+    local keyPrefix = tostring(config.key or "hybrid")
+
+    -- An empty list is still a place to land.
     local total = config.count()
     if total == nil or total <= 0 then
+        if config.label ~= nil then
+            builder:pushContext(keyPrefix, config.label)
+        end
+        builder:addItem(
+            ControlId.structural(keyPrefix .. ":empty"),
+            nodes.text({ label = WowVision:getLocale()["Empty"] })
+        )
+        if config.label ~= nil then
+            builder:popContext()
+        end
         return builder
     end
-    local keyPrefix = tostring(config.key or "hybrid")
 
     local function buttonsOf()
         if config.buttons ~= nil then

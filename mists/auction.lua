@@ -346,7 +346,7 @@ local function renderItemBuy(builder)
 
     if frame:HasAuctionSelected() then
         local buyout = frame.BuyoutFrame
-        if buyout ~= nil and buyout:IsShown() then
+        if buyout ~= nil and buyout:IsVisible() then
             builder:beginStop("buyoutPrice")
             builder:pushContext("buyout", L["Buyout Frame"])
             liveText(builder, ControlId.structural("buyoutPrice"), function()
@@ -356,7 +356,7 @@ local function renderItemBuy(builder)
             actionStop(builder, "buyout", buyout.BuyoutButton)
         end
         local bid = frame.BidFrame
-        if bid ~= nil and bid:IsShown() then
+        if bid ~= nil and bid:IsVisible() then
             moneyInputStops(builder, "bid", L["Bid Frame"], bid.BidAmount)
             actionStop(builder, "bidButton", bid.BidButton)
         end
@@ -656,11 +656,11 @@ local function renderAuctionsTab(builder)
                 return table.concat(parts, ", ")
             end),
         })
-        if auctionsFrame.BidFrame ~= nil and auctionsFrame.BidFrame:IsShown() then
+        if auctionsFrame.BidFrame ~= nil and auctionsFrame.BidFrame:IsVisible() then
             moneyInputStops(builder, "rebid", L["Bid Frame"], auctionsFrame.BidFrame.BidAmount)
             actionStop(builder, "rebidButton", auctionsFrame.BidFrame.BidButton)
         end
-        if auctionsFrame.BuyoutFrame ~= nil and auctionsFrame.BuyoutFrame:IsShown() then
+        if auctionsFrame.BuyoutFrame ~= nil and auctionsFrame.BuyoutFrame:IsVisible() then
             builder:beginStop("bidBuyoutPrice")
             builder:pushContext("bidBuyout", L["Buyout Frame"])
             liveText(builder, ControlId.structural("bidBuyoutPrice"), function()
