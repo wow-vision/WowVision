@@ -1,19 +1,18 @@
 local module = WowVision.base.navigation.maps
-local gen = module:hasUI()
 local L = module.L
 
-local function getMapButton(self, data)
-    return { "Button", label = data.name }
-end
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
 
-local closest = WowVision.Dataset:new()
+-- Prototype atlas window (not yet reachable from any binding): lists the 20
+-- closest Sku waypoints to the player, computed once per open.
 
 local function distance(x1, y1, x2, y2)
     return (x2 - x1) ^ 2 + (y2 - y1) ^ 2
 end
 
-local function Maps_onMount()
-    closest:clear()
+local function closestWaypoints()
     local wp = {}
     local x, y = UnitPosition("player")
     for _, point in ipairs(module.datasets.items.sku.data) do
@@ -38,30 +37,34 @@ local function Maps_onMount()
             tinsert(wp, { dist, point })
         end
     end
+    local points = {}
     for _, v in ipairs(wp) do
-        closest:addPoint(v[2])
+        tinsert(points, v[2])
     end
+    return points
 end
 
-gen:Element("maps/Atlas", function(props)
-    local data = { "DataList", dataset = closest, label = "Entrypoint", getElement = getMapButton }
-    return {
-        "Panel",
-        label = "Maps",
-        hooks = {
-            mount = Maps_onMount,
-        },
-        children = {
-            { "Text", text = "Maps go here" },
-            data,
-        },
-    }
-end)
+local function render(builder, screen)
+    if screen._closest == nil then
+        screen._closest = closestWaypoints()
+    end
+    builder:pushContext("atlas", "Maps")
+
+    builder:beginStop("points")
+    builder:pushContext("points", "Entrypoint")
+    if #screen._closest == 0 then
+        builder:addItem(ControlId.structural("pointsEmpty"), nodes.text({ label = L["Empty"] }))
+    end
+    for i, point in ipairs(screen._closest) do
+        builder:addItem(ControlId.structural("point:" .. i), nodes.text({ label = point.name }))
+    end
+    builder:popContext()
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "ManualWindow",
     name = "atlas",
-    generated = true,
-    rootElement = "maps/Atlas",
-    hookEscape = true,
+    graphScreen = { render = render, captureClose = true },
 })
