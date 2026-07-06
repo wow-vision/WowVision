@@ -1,7 +1,11 @@
 local module = WowVision.base.windows:createModule("auction")
 local L = module.L
 module:setLabel(L["Auction House"])
-local gen = module:hasUI()
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
 
 -- Tooltip type for auction items: populates GameTooltip via SetAuctionItem.
 local AuctionItemTooltipType = WowVision.tooltips:createType("AuctionItem")
@@ -94,52 +98,6 @@ local function fullScanScanningLabel()
     return L["Scanning"]
 end
 
-gen:Element("auction/FullScanButton", {
-    regenerateOn = {
-        values = function()
-            return {
-                scanning = ahPrices.isFullScanning(),
-                canScan = select(1, ahPrices.canFullScan()),
-            }
-        end,
-    },
-}, function(props)
-    if ahPrices.isFullScanning() then
-        return {
-            "Button",
-            label = fullScanScanningLabel,
-            events = {
-                click = function()
-                    ahPrices.abortFullScan()
-                end,
-            },
-        }
-    end
-
-    if ahPrices.canFullScan() then
-        return {
-            "Button",
-            label = L["Full Scan"],
-            events = {
-                click = function()
-                    ahPrices.startFullScan()
-                end,
-            },
-        }
-    end
-
-    -- Cooldown: click speaks remaining time
-    return {
-        "Button",
-        label = L["Full Scan"] .. ", " .. L["Cooldown active"],
-        events = {
-            click = function()
-                WowVision:speak(formatCooldownTime(ahPrices.getFullScanCooldownRemaining()))
-            end,
-        },
-    }
-end)
-
 -- Button counts per tab (matching Blizzard's fixed button arrays)
 local NUM_BROWSE_BUTTONS = 8
 local NUM_BID_BUTTONS = 9
@@ -218,290 +176,11 @@ local function formatItemLabel(item, opts)
 end
 
 ------------------------------------------------------------
--- Shared factories for repeated scroll frame patterns
+-- Shared graph helpers
 ------------------------------------------------------------
-
--- Creates a gen:Element callback for ProxyFauxScrollFrame with List fallback.
--- config: { buttonPrefix, numButtons, listType, scrollFrameName, label,
---           updateFunctionName, getElement, emptyElement }
-local function makeResultsElement(config)
-    local cachedButtons
-    local function getButtons()
-        if not cachedButtons then
-            cachedButtons = {}
-            for i = 1, config.numButtons do
-                local button = _G[config.buttonPrefix .. i]
-                if button then
-                    tinsert(cachedButtons, button)
-                end
-            end
-        end
-        return cachedButtons
-    end
-    local function getNumEntries()
-        return GetNumAuctionItems(config.listType) or 0
-    end
-    local function getElementIndex(self, button)
-        return button:GetID() + (FauxScrollFrame_GetOffset(_G[config.scrollFrameName]) or 0)
-    end
-
-    return function(props)
-        if getNumEntries() == 0 then
-            return config.emptyElement
-        end
-        local scrollFrame = _G[config.scrollFrameName]
-        if scrollFrame and scrollFrame:IsShown() then
-            return {
-                "ProxyFauxScrollFrame",
-                frame = scrollFrame,
-                label = config.label,
-                buttonHeight = AUCTIONS_BUTTON_HEIGHT or 37,
-                updateFunction = _G[config.updateFunctionName],
-                getNumEntries = getNumEntries,
-                getElement = config.getElement,
-                getElementIndex = getElementIndex,
-                getButtons = getButtons,
-            }
-        end
-        local children = {}
-        for _, button in ipairs(getButtons()) do
-            if button:IsShown() then
-                local element = config.getElement(nil, button)
-                if element then
-                    tinsert(children, element)
-                end
-            end
-        end
-        if #children == 0 then
-            return nil
-        end
-        return { "List", label = config.label, children = children }
-    end
-end
-
--- Builds a sort header element spec from a sortTable name and button definitions.
--- Called inside gen:Element callbacks (where Blizzard frames are available).
-local function buildSortHeaders(sortTable, buttons)
-    local children = {}
-    for _, btn in ipairs(buttons) do
-        if btn.frame and btn.frame:IsShown() then
-            tinsert(children, { "AuctionSortButton", frame = btn.frame, sortTable = sortTable, sortColumn = btn.column })
-        end
-    end
-    if #children == 0 then
-        return nil
-    end
-    return { "List", label = L["Sort"], direction = "horizontal", children = children }
-end
-
-------------------------------------------------------------
--- AuctionSortButton element type
-------------------------------------------------------------
-
-local function getCurrentSort(sortTable)
-    local column, reversed = GetAuctionSort(sortTable, 1)
-    -- Normalize bid-related columns to "bid" for matching
-    if column == "totalbuyout" or column == "unitbid" or column == "unitprice" then
-        column = "bid"
-    end
-    return column, reversed -- reversed: true=descending, false=ascending
-end
-
-local AuctionSortButton, widgetParent = WowVision.ui:CreateElementType("AuctionSortButton", "Widget")
-
-AuctionSortButton.info:addFields({
-    { key = "sortTable", default = nil },
-    { key = "sortColumn", default = nil },
-    { key = "frame", default = nil, compareMode = "direct" },
-})
-
-AuctionSortButton.info:updateFields({
-    { key = "displayType", default = "Sort Column" },
-})
-
-function AuctionSortButton:initialize()
-    widgetParent.initialize(self)
-    self.pendingDescending = nil
-end
-
-function AuctionSortButton:setupUniqueBindings()
-    self:addBinding({
-        binding = "leftClick",
-        type = "Function",
-        interruptSpeech = true,
-        func = function()
-            self:click()
-        end,
-    })
-end
-
-function AuctionSortButton:getLabel()
-    if self.frame and self.frame.GetText then
-        local text = self.frame:GetText()
-        if text and text ~= "" then
-            return text
-        end
-    end
-    return self.label
-end
-
-function AuctionSortButton:onFocus()
-    widgetParent.onFocus(self)
-    local currentColumn, reversed = getCurrentSort(self.sortTable)
-    if currentColumn == self.sortColumn then
-        self.pendingDescending = reversed
-    else
-        self.pendingDescending = false
-    end
-end
-
-function AuctionSortButton:onUnfocus()
-    widgetParent.onUnfocus(self)
-    self.pendingDescending = nil
-end
-
-function AuctionSortButton:getExtras()
-    local extras = {}
-    local directionStr
-    if self.pendingDescending then
-        directionStr = self.L["Descending"]
-    else
-        directionStr = self.L["Ascending"]
-    end
-    tinsert(extras, directionStr)
-    local currentColumn = getCurrentSort(self.sortTable)
-    if currentColumn == self.sortColumn then
-        tinsert(extras, self.L["Active"])
-    end
-    return extras
-end
-
-function AuctionSortButton:onBindingPressed(binding)
-    if binding.key == "up" then
-        self.pendingDescending = false
-        WowVision:speak(self.L["Ascending"])
-        return true
-    elseif binding.key == "down" then
-        self.pendingDescending = true
-        WowVision:speak(self.L["Descending"])
-        return true
-    end
-    return false
-end
-
-function AuctionSortButton:onClick()
-    AuctionFrame_SetSort(self.sortTable, self.sortColumn, self.pendingDescending)
-    if self.sortTable == "list" then
-        AuctionFrameBrowse_Search()
-    else
-        SortAuctionApplySort(self.sortTable)
-    end
-end
-
-------------------------------------------------------------
--- Root element
-------------------------------------------------------------
-
-gen:Element("auction", {
-    regenerateOn = {
-        values = function(props)
-            return { tab = PanelTemplates_GetSelectedTab(AuctionFrame) }
-        end,
-    },
-}, function(props)
-    local children = {}
-    if AuctionFrameBrowse:IsShown() then
-        tinsert(children, { "auction/BrowseTab" })
-    elseif AuctionFrameBid:IsShown() then
-        tinsert(children, { "auction/BidsTab" })
-    elseif AuctionFrameAuctions:IsShown() then
-        tinsert(children, { "auction/AuctionsTab" })
-    end
-    tinsert(children, { "auction/Tabs" })
-    return {
-        "Panel",
-        label = L["Auction House"],
-        wrap = true,
-        children = children,
-    }
-end)
-
-gen:Element("auction/Tabs", {
-    regenerateOn = {
-        values = function(props)
-            return { tab = PanelTemplates_GetSelectedTab(AuctionFrame) }
-        end,
-    },
-}, function(props)
-    local result = {
-        "List",
-        label = L["Tabs"],
-        direction = "horizontal",
-        children = {},
-    }
-    for i = 1, 3 do
-        local tab = _G["AuctionFrameTab" .. i]
-        if tab and tab:IsShown() then
-            local selected = PanelTemplates_GetSelectedTab(AuctionFrame) == i
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "tab_" .. i,
-                frame = tab,
-                selected = selected,
-            })
-        end
-    end
-    if #result.children == 0 then
-        return nil
-    end
-    return result
-end)
-
-------------------------------------------------------------
--- Reusable: money input (Gold / Silver / Copper EditBoxes)
-------------------------------------------------------------
-
-gen:Element("auction/MoneyInput", function(props)
-    local frame = props.frame
-    if not frame or not frame:IsShown() then
-        return nil
-    end
-    local goldBox = _G[frame:GetName() .. "Gold"]
-    local silverBox = _G[frame:GetName() .. "Silver"]
-    local copperBox = _G[frame:GetName() .. "Copper"]
-    if not goldBox then
-        return nil
-    end
-    return {
-        "Panel",
-        label = props.label,
-        layout = true,
-        children = {
-            { "ProxyEditBox", frame = goldBox, label = L["Gold"] },
-            { "ProxyEditBox", frame = silverBox, label = L["Silver"] },
-            { "ProxyEditBox", frame = copperBox, label = L["Copper"] },
-        },
-    }
-end)
-
-------------------------------------------------------------
--- BROWSE TAB
-------------------------------------------------------------
-
-gen:Element("auction/BrowseTab", function(props)
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "auction/Categories" },
-            { "auction/SearchFilters" },
-        },
-    }
-end)
 
 -- HookScript each frame at most once. We touch category/browse buttons repeatedly
--- during UI regeneration; without this, we'd stack duplicate handlers every redraw.
+-- during rebuilds; without this, we'd stack duplicate handlers every tick.
 local hookedFrames = setmetatable({}, { __mode = "k" })
 local function hookOnce(frame, script, handler)
     local key = hookedFrames[frame]
@@ -514,6 +193,244 @@ local function hookOnce(frame, script, handler)
     frame:HookScript(script, handler)
 end
 
+local function actionStop(builder, stopKey, button, label)
+    if button == nil or not button:IsShown() then
+        return
+    end
+    builder:beginStop(stopKey)
+    builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button, label = label }))
+end
+
+local function syntheticStop(builder, stopKey, config)
+    builder:beginStop(stopKey)
+    builder:addItem(ControlId.structural(stopKey), nodes.button(config))
+end
+
+local function liveTextStop(builder, stopKey, label)
+    builder:beginStop(stopKey)
+    builder:addItem(ControlId.structural(stopKey), nodes.text({ label = label }))
+end
+
+-- A Blizzard MoneyFrame display (deposit, buyout price of the selection).
+local function moneyFrameText(frame, label)
+    return function()
+        local amount = frame ~= nil and (frame.staticMoney or 0) or 0
+        return (label or "") .. " " .. (formatMoney(amount) or "0")
+    end
+end
+
+-- Money input: named Gold/Silver/Copper edit boxes as separate stops under a
+-- labeled context (an edit box cannot share a stop with anything after it).
+local function moneyInputStops(builder, keyPrefix, contextLabel, frame)
+    if frame == nil or not frame:IsShown() then
+        return
+    end
+    local goldBox = _G[frame:GetName() .. "Gold"]
+    local silverBox = _G[frame:GetName() .. "Silver"]
+    local copperBox = _G[frame:GetName() .. "Copper"]
+    if goldBox == nil then
+        return
+    end
+    builder:pushContext(keyPrefix, contextLabel)
+    builder:beginStop(keyPrefix .. ":gold")
+    builder:addItem(
+        ControlId.structural(keyPrefix .. ":gold"),
+        nodes.proxyEditBox({ editBox = goldBox, label = L["Gold"] })
+    )
+    if silverBox ~= nil then
+        builder:beginStop(keyPrefix .. ":silver")
+        builder:addItem(
+            ControlId.structural(keyPrefix .. ":silver"),
+            nodes.proxyEditBox({ editBox = silverBox, label = L["Silver"] })
+        )
+    end
+    if copperBox ~= nil then
+        builder:beginStop(keyPrefix .. ":copper")
+        builder:addItem(
+            ControlId.structural(keyPrefix .. ":copper"),
+            nodes.proxyEditBox({ editBox = copperBox, label = L["Copper"] })
+        )
+    end
+    builder:popContext()
+end
+
+------------------------------------------------------------
+-- Sort headers: up/down pick the direction, Enter applies the sort.
+------------------------------------------------------------
+
+local function getCurrentSort(sortTable)
+    local column, reversed = GetAuctionSort(sortTable, 1)
+    -- Normalize bid-related columns to "bid" for matching
+    if column == "totalbuyout" or column == "unitbid" or column == "unitprice" then
+        column = "bid"
+    end
+    return column, reversed -- reversed: true=descending, false=ascending
+end
+
+local function sortHeaderNode(screen, sortTable, column, frame)
+    local stateKey = sortTable .. ":" .. column
+    screen._sortPending = screen._sortPending or {}
+    local pending = screen._sortPending
+
+    return {
+        controlType = graph.controlTypes.button,
+        announcements = {
+            {
+                text = function()
+                    local text = frame.GetText ~= nil and frame:GetText() or nil
+                    return text ~= nil and text ~= "" and text or column
+                end,
+                kind = kinds.label,
+            },
+            {
+                text = function()
+                    return pending[stateKey] and L["Descending"] or L["Ascending"]
+                end,
+                kind = kinds.value,
+            },
+            {
+                text = function()
+                    local currentColumn = getCurrentSort(sortTable)
+                    if currentColumn == column then
+                        return L["Active"]
+                    end
+                    return nil
+                end,
+                kind = kinds.selected,
+            },
+        },
+        onFocus = function()
+            local currentColumn, reversed = getCurrentSort(sortTable)
+            if currentColumn == column then
+                pending[stateKey] = reversed and true or false
+            else
+                pending[stateKey] = false
+            end
+        end,
+        onActivate = function()
+            AuctionFrame_SetSort(sortTable, column, pending[stateKey] and true or false)
+            if sortTable == "list" then
+                AuctionFrameBrowse_Search()
+            else
+                SortAuctionApplySort(sortTable)
+            end
+        end,
+        bindings = {
+            {
+                binding = "up",
+                type = "Function",
+                interruptSpeech = true,
+                func = function()
+                    pending[stateKey] = false
+                    WowVision:speak(L["Ascending"])
+                end,
+            },
+            {
+                binding = "down",
+                type = "Function",
+                interruptSpeech = true,
+                func = function()
+                    pending[stateKey] = true
+                    WowVision:speak(L["Descending"])
+                end,
+            },
+        },
+    }
+end
+
+local function sortHeadersStop(builder, screen, stopKey, sortTable, buttons)
+    local shown = {}
+    for _, btn in ipairs(buttons) do
+        if btn.frame ~= nil and btn.frame:IsShown() then
+            tinsert(shown, btn)
+        end
+    end
+    if #shown == 0 then
+        return
+    end
+    builder:beginStop(stopKey)
+    builder:pushContext(stopKey, L["Sort"])
+    builder:startRow()
+    for _, btn in ipairs(shown) do
+        builder:addItem(
+            ControlId.structural("sort:" .. sortTable .. ":" .. btn.column),
+            sortHeaderNode(screen, sortTable, btn.column, btn.frame)
+        )
+    end
+    builder:endRow()
+    builder:popContext()
+end
+
+------------------------------------------------------------
+-- Results lists (Faux pools with pool-relative ids)
+------------------------------------------------------------
+
+local function resultsList(builder, screen, config)
+    local count = GetNumAuctionItems(config.listType) or 0
+    builder:beginStop(config.stopKey)
+    nodes.hybridScrollList(builder, {
+        scrollFrame = _G[config.scrollFrameName],
+        key = config.stopKey,
+        label = config.label,
+        count = function()
+            return GetNumAuctionItems(config.listType) or 0
+        end,
+        rowHeight = AUCTIONS_BUTTON_HEIGHT or 37,
+        buttons = function()
+            local buttons = {}
+            for i = 1, config.numButtons do
+                local button = _G[config.buttonPrefix .. i]
+                if button ~= nil then
+                    tinsert(buttons, button)
+                end
+            end
+            return buttons
+        end,
+        indexOf = function(button)
+            return button:GetID() + (FauxScrollFrame_GetOffset(_G[config.scrollFrameName]) or 0)
+        end,
+        emit = function(innerBuilder, index, helpers)
+            local capturedIndex = index
+            local vtable = {
+                controlType = graph.controlTypes.button,
+                announcements = {
+                    {
+                        text = function()
+                            local item = readAuctionItem(config.listType, capturedIndex)
+                            return item ~= nil and formatItemLabel(item, config.labelOpts) or nil
+                        end,
+                        kind = kinds.label,
+                    },
+                    {
+                        text = function()
+                            if GetSelectedAuctionItem(config.listType) == capturedIndex then
+                                return L["selected"]
+                            end
+                            return nil
+                        end,
+                        kind = kinds.selected,
+                    },
+                },
+                bindings = {
+                    { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+                },
+                onFocus = helpers.onFocus,
+                onFocusTick = helpers.onFocusTick,
+                onUnfocus = helpers.onUnfocus,
+                tooltip = { type = "AuctionItem", listType = config.listType, index = capturedIndex },
+            }
+            if config.onEmitRow ~= nil then
+                config.onEmitRow(helpers)
+            end
+            innerBuilder:addItem(helpers.id, vtable)
+        end,
+    })
+end
+
+------------------------------------------------------------
+-- BROWSE TAB
+------------------------------------------------------------
+
 -- Category filter buttons — hook each to auto-search on click
 local function hookFilterButton(button)
     hookOnce(button, "OnClick", function()
@@ -521,103 +438,7 @@ local function hookFilterButton(button)
     end)
 end
 
-gen:Element("auction/Categories", function(props)
-    local children = {}
-    for i = 1, 15 do
-        local button = _G["AuctionFilterButton" .. i]
-        if button and button:IsShown() then
-            hookFilterButton(button)
-            tinsert(children, { "ProxyButton", frame = button })
-        end
-    end
-    if #children == 0 then
-        return nil
-    end
-    return { "List", label = L["Categories"], children = children }
-end)
-
--- Search filters
-gen:Element("auction/SearchFilters", function(props)
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "ProxyEditBox", frame = BrowseName, label = L["Search"] },
-            { "auction/BrowseResults" },
-            { "auction/BrowsePageControls" },
-            { "auction/BrowseActions" },
-            { "auction/BrowseSortHeaders" },
-            { "auction/BrowsePriceOptions" },
-            {
-                "Button",
-                label = L["Filters"],
-                displayType = "Dropdown",
-                events = {
-                    click = function(event, button)
-                        button.context:addGenerated({
-                            "List",
-                            layout = true,
-                            label = L["Filters"],
-                            children = {
-                                {
-                                    "EditBox",
-                                    label = L["Min Stack Size"],
-                                    type = "number",
-                                    autoInputOnFocus = false,
-                                    value = minStackSize > 0 and minStackSize or nil,
-                                    events = {
-                                        valueChange = function(event, widget, value)
-                                            minStackSize = tonumber(value) or 0
-                                        end,
-                                    },
-                                },
-                                { "ProxyEditBox", frame = BrowseMinLevel, autoInputOnFocus = false, hookEnter = true, label = L["Minimum Level"] },
-                                { "ProxyEditBox", frame = BrowseMaxLevel, autoInputOnFocus = false, hookEnter = true, label = L["Maximum Level"] },
-                                { "ProxyDropdownButton", frame = BrowseDropDown or BrowseDropdown },
-                                { "ProxyCheckButton", frame = IsUsableCheckButton },
-                                { "ProxyCheckButton", frame = ShowOnPlayerCheckButton },
-                            },
-                        })
-                    end,
-                },
-            },
-            { "ProxyButton", frame = BrowseSearchButton },
-            { "auction/FullScanButton" },
-            { "ProxyButton", frame = BrowseResetButton },
-        },
-    }
-end)
-
--- Browse sort headers
-gen:Element("auction/BrowseSortHeaders", function(props)
-    return buildSortHeaders("list", {
-        { frame = BrowseQualitySort, column = "quality" },
-        { frame = BrowseLevelSort, column = "level" },
-        { frame = BrowseDurationSort, column = "duration" },
-        { frame = BrowseHighBidderSort, column = "seller" },
-        { frame = BrowseCurrentBidSort, column = "bid" },
-    })
-end)
-
--- Browse price options (shown when price options frame is open)
-gen:Element("auction/BrowsePriceOptions", function(props)
-    if not BrowsePriceOptionsFrame:IsShown() then
-        return nil
-    end
-    return {
-        "List",
-        label = L["Price Options"],
-        children = {
-            { "ProxyCheckButton", frame = SortByBidPriceButton },
-            { "ProxyCheckButton", frame = SortByBuyoutPriceButton },
-            { "ProxyCheckButton", frame = SortByTotalPriceButton },
-            { "ProxyCheckButton", frame = SortByUnitPriceButton },
-        },
-    }
-end)
-
--- Browse result item element builder
+-- Browse rows announce the selection through the alert on click.
 local function hookBrowseButton(button)
     hookOnce(button, "OnClick", function()
         local selected = GetSelectedAuctionItem("list")
@@ -628,20 +449,6 @@ local function hookBrowseButton(button)
             end
         end
     end)
-end
-
-local function getBrowseElement(self, button)
-    local offset = FauxScrollFrame_GetOffset(BrowseScrollFrame) or 0
-    local index = button:GetID() + offset
-    local item = readAuctionItem("list", index)
-    if not item then return nil end
-    hookBrowseButton(button)
-    return {
-        "ProxyButton",
-        frame = button,
-        label = formatItemLabel(item, { showSeller = true }),
-        tooltip = { type = "AuctionItem", listType = "list", index = index },
-    }
 end
 
 -- Select a browse item by its 1-based index in the auction list.
@@ -663,46 +470,6 @@ function selectBrowseItem(realIndex)
     end
 end
 
--- Build a flat List of browse results filtered by minStackSize.
-local MAX_FILTERED_BROWSE = 10000 -- ~200 pages, safety cap against getAll data in list
-
-local function buildFilteredBrowseList()
-    local numBatch = GetNumAuctionItems("list") or 0
-    if numBatch == 0 then return nil end
-    if numBatch > MAX_FILTERED_BROWSE then return nil end
-    local children = {}
-    for i = 1, numBatch do
-        local item = readAuctionItem("list", i)
-        if item and (item.count or 0) >= minStackSize then
-            local realIndex = i
-            tinsert(children, {
-                "Button",
-                label = formatItemLabel(item, { showSeller = true }),
-                tooltip = { type = "AuctionItem", listType = "list", index = realIndex },
-                events = {
-                    click = function()
-                        selectBrowseItem(realIndex)
-                    end,
-                },
-            })
-        end
-    end
-    if #children == 0 then
-        return { "Text", text = L["No Results"] }
-    end
-    return { "List", label = L["Results"], children = children }
-end
-
-local browseResultsCallback = makeResultsElement({
-    buttonPrefix = "BrowseButton",
-    numButtons = NUM_BROWSE_BUTTONS,
-    listType = "list",
-    scrollFrameName = "BrowseScrollFrame",
-    label = L["Results"],
-    updateFunctionName = "AuctionFrameBrowse_Update",
-    getElement = getBrowseElement,
-})
-
 -- Build a filter closure from the current minStackSize setting.
 local function buildStackFilter()
     if minStackSize <= 1 then return nil end
@@ -712,199 +479,331 @@ local function buildStackFilter()
     end
 end
 
--- Build a List element from the session's scan results.
-local function buildScanResultsList()
-    local results = session:getResults()
-    if not results or #results == 0 then
-        return { "Text", text = L["No Results"] }
+local MAX_FILTERED_BROWSE = 10000 -- ~200 pages, safety cap against getAll data in list
+
+-- Current-page browse results filtered by minStackSize, as synthetic rows.
+local function renderFilteredBrowseList(builder)
+    local numBatch = GetNumAuctionItems("list") or 0
+    builder:beginStop("filteredResults")
+    builder:pushContext("filteredResults", L["Results"])
+    local emitted = 0
+    if numBatch > 0 and numBatch <= MAX_FILTERED_BROWSE then
+        for i = 1, numBatch do
+            local item = readAuctionItem("list", i)
+            if item and (item.count or 0) >= minStackSize then
+                local realIndex = i
+                builder:addItem(ControlId.structural("filtered:" .. realIndex), {
+                    controlType = graph.controlTypes.button,
+                    announcements = {
+                        {
+                            text = function()
+                                local current = readAuctionItem("list", realIndex)
+                                return current ~= nil and formatItemLabel(current, { showSeller = true }) or nil
+                            end,
+                            kind = kinds.label,
+                        },
+                    },
+                    onActivate = function()
+                        selectBrowseItem(realIndex)
+                    end,
+                    tooltip = { type = "AuctionItem", listType = "list", index = realIndex },
+                })
+                emitted = emitted + 1
+            end
+        end
     end
-    local children = {}
-    for _, item in ipairs(results) do
-        local capturedItem = item
-        tinsert(children, {
-            "Button",
-            label = formatItemLabel(item, { showSeller = true }),
-            tooltip = item.link and { type = "AuctionItem", link = item.link } or nil,
-            events = {
-                click = function()
-                    session:selectResult(capturedItem)
-                end,
-            },
-        })
+    if emitted == 0 then
+        builder:addItem(ControlId.structural("filteredEmpty"), nodes.text({ label = L["No Results"] }))
     end
-    return { "List", label = L["Scan Results"], children = children }
+    builder:popContext()
 end
 
-gen:Element("auction/BrowseResults", {
-    regenerateOn = {
-        events = { "AUCTION_ITEM_LIST_UPDATE" },
-        values = function()
-            local results = session:getResults()
-            return {
-                minStack = minStackSize,
-                state = session:getState(),
-                scanCount = results and #results or 0,
-            }
-        end,
-    },
-}, function(props)
+-- The session's scan results as synthetic rows.
+local function renderScanResultsList(builder)
+    local results = session:getResults()
+    builder:beginStop("scanResults")
+    builder:pushContext("scanResults", L["Scan Results"])
+    if results == nil or #results == 0 then
+        builder:addItem(ControlId.structural("scanEmpty"), nodes.text({ label = L["No Results"] }))
+    else
+        for i, item in ipairs(results) do
+            local capturedItem = item
+            builder:addItem(ControlId.structural("scan:" .. i), {
+                controlType = graph.controlTypes.button,
+                announcements = {
+                    {
+                        text = function()
+                            return formatItemLabel(capturedItem, { showSeller = true })
+                        end,
+                        kind = kinds.label,
+                    },
+                },
+                onActivate = function()
+                    session:selectResult(capturedItem)
+                end,
+                tooltip = capturedItem.link and { type = "AuctionItem", link = capturedItem.link } or nil,
+            })
+        end
+    end
+    builder:popContext()
+end
+
+local function renderBrowseResults(builder, screen)
     -- Show abort button during scan
     if session:isScanning() then
-        local progress = session:getScanProgress()
-        return {
-            "Button",
-            label = L["Abort Scan"] .. " (" .. progress.page .. "/" .. progress.totalPages .. ")",
-            events = {
-                click = function()
-                    session:abort()
-                end,
-            },
-        }
+        syntheticStop(builder, "abortScan", {
+            label = function()
+                local progress = session:getScanProgress()
+                return L["Abort Scan"] .. " (" .. progress.page .. "/" .. progress.totalPages .. ")"
+            end,
+            onActivate = function()
+                session:abort()
+            end,
+        })
+        return
     end
 
     -- Viewing a single item from scan results — hide the full browse list.
-    -- BrowseActions handles bid/buyout controls for the selected item.
+    -- Browse actions handle bid/buyout controls for the selected item.
     if session:isViewingItem() then
-        return nil
+        return
     end
 
-    -- Show scan results list if we have them
     if session:hasResults() then
-        return buildScanResultsList()
+        renderScanResultsList(builder)
+        return
     end
 
-    -- Filtered browse: show current page filtered results
-    -- Scan button is handled by BrowsePageControls (replaces Next Page).
     if minStackSize > 1 then
-        return buildFilteredBrowseList()
+        renderFilteredBrowseList(builder)
+        return
     end
 
-    return browseResultsCallback(props)
-end)
+    resultsList(builder, screen, {
+        stopKey = "results",
+        label = L["Results"],
+        listType = "list",
+        buttonPrefix = "BrowseButton",
+        numButtons = NUM_BROWSE_BUTTONS,
+        scrollFrameName = "BrowseScrollFrame",
+        labelOpts = { showSeller = true },
+        onEmitRow = function(helpers)
+            local row = helpers.target()
+            if row ~= nil then
+                hookBrowseButton(row)
+            end
+        end,
+    })
+end
 
--- Pagination: show "Scan" or "Load More" when filters are active, otherwise Blizzard page buttons.
-gen:Element("auction/BrowsePageControls", function(props)
+local function renderBrowsePageControls(builder)
     -- When viewing scan results, replace Blizzard pagination with "Load More"
     if session:hasResults() and not session:isViewingItem() and not session:isScanning() then
         if session:canLoadMore() then
-            local results = session:getResults()
-            return {
-                "Button",
+            syntheticStop(builder, "loadMore", {
                 label = L["Load More"],
-                events = {
-                    click = function()
-                        session:startScan({
-                            append = true,
-                            startPage = results.lastPage + 1,
-                            filter = buildStackFilter(),
-                        })
-                    end,
-                },
-            }
+                onActivate = function()
+                    local results = session:getResults()
+                    session:startScan({
+                        append = true,
+                        startPage = results.lastPage + 1,
+                        filter = buildStackFilter(),
+                    })
+                end,
+            })
         end
-        return nil
+        return
     end
 
-    -- Filtered browse without scan results yet: offer Scan button instead of page controls
+    -- Filtered browse without scan results yet: offer Scan instead of paging
     if minStackSize > 1 and not session:hasResults() and not session:isScanning() then
         local _, totalAuctions = GetNumAuctionItems("list")
         if (totalAuctions or 0) > 0 then
-            return {
-                "Button",
+            syntheticStop(builder, "scan", {
                 label = L["Scan"],
-                events = {
-                    click = function()
-                        session:startScan({ filter = buildStackFilter() })
-                    end,
-                },
-            }
+                onActivate = function()
+                    session:startScan({ filter = buildStackFilter() })
+                end,
+            })
         end
+        return
     end
 
     -- Normal Blizzard page controls
-    local children = {}
     if BrowsePrevPageButton:IsShown() and BrowsePrevPageButton:IsEnabled() then
-        tinsert(children, { "ProxyButton", frame = BrowsePrevPageButton, label = L["Previous Page"] })
+        actionStop(builder, "prevPage", BrowsePrevPageButton, L["Previous Page"])
     end
     if BrowseNextPageButton:IsShown() and BrowseNextPageButton:IsEnabled() then
-        tinsert(children, { "ProxyButton", frame = BrowseNextPageButton, label = L["Next Page"] })
+        actionStop(builder, "nextPage", BrowseNextPageButton, L["Next Page"])
     end
-    if #children == 0 then
-        return nil
-    end
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = children,
-    }
-end)
+end
 
--- Bid/buyout actions on selected browse item (only when an item is selected)
-gen:Element("auction/BrowseActions", function(props)
+local function renderBrowseActions(builder)
     local selected = GetSelectedAuctionItem("list")
     if not selected or selected == 0 then
-        -- If we came from scan results but nothing is selected (e.g. after buying),
-        -- offer to go back to the list
+        -- If we came from scan results but nothing is selected (e.g. after
+        -- buying), offer to go back to the list
         if session:isViewingItem() then
-            return {
-                "Button",
+            syntheticStop(builder, "backToResults", {
                 label = L["Scan Results"],
-                events = {
-                    click = function()
-                        session:returnToResults()
-                    end,
-                },
-            }
-        end
-        return nil
-    end
-    local children = {}
-    if BrowseBuyoutPrice:IsShown() then
-        tinsert(children, { "money/MoneyFrame", frame = BrowseBuyoutPrice, label = L["Buyout Price"] })
-        tinsert(children, { "ProxyButton", frame = BrowseBuyoutButton })
-    end
-    tinsert(children, { "auction/MoneyInput", frame = BrowseBidPrice, label = L["Bid Price"] })
-    tinsert(children, { "ProxyButton", frame = BrowseBidButton })
-    if session:isViewingItem() then
-        tinsert(children, {
-            "Button",
-            label = L["Scan Results"],
-            events = {
-                click = function()
+                onActivate = function()
                     session:returnToResults()
                 end,
-            },
+            })
+        end
+        return
+    end
+
+    if BrowseBuyoutPrice:IsShown() then
+        liveTextStop(builder, "buyoutPrice", moneyFrameText(BrowseBuyoutPrice, L["Buyout Price"]))
+        actionStop(builder, "buyoutButton", BrowseBuyoutButton)
+    end
+    moneyInputStops(builder, "browseBid", L["Bid Price"], BrowseBidPrice)
+    actionStop(builder, "bidButton", BrowseBidButton)
+    if session:isViewingItem() then
+        syntheticStop(builder, "backToResults", {
+            label = L["Scan Results"],
+            onActivate = function()
+                session:returnToResults()
+            end,
         })
     end
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = children,
-    }
-end)
+end
+
+-- The Filters push screen (min stack size plus Blizzard's filter widgets).
+local function pushFiltersScreen()
+    graph.settings.pushScreen("auctionFilters", function(builder)
+        builder:pushContext("filters", L["Filters"])
+        builder:beginStop("minStack")
+        builder:addItem(
+            ControlId.structural("minStack"),
+            nodes.textInput({
+                label = L["Min Stack Size"],
+                get = function()
+                    return minStackSize > 0 and minStackSize or nil
+                end,
+                set = function(value)
+                    minStackSize = tonumber(value) or 0
+                end,
+            })
+        )
+        builder:beginStop("minLevel")
+        builder:addItem(
+            ControlId.structural("minLevel"),
+            nodes.proxyEditBox({ editBox = BrowseMinLevel, label = L["Minimum Level"] })
+        )
+        builder:beginStop("maxLevel")
+        builder:addItem(
+            ControlId.structural("maxLevel"),
+            nodes.proxyEditBox({ editBox = BrowseMaxLevel, label = L["Maximum Level"] })
+        )
+        local dropdown = BrowseDropDown or BrowseDropdown
+        if dropdown ~= nil then
+            builder:beginStop("rarity")
+            builder:addItem(ControlId.forObject(dropdown), nodes.proxyDropdown({ target = dropdown }))
+        end
+        if IsUsableCheckButton ~= nil then
+            builder:beginStop("usable")
+            builder:addItem(
+                ControlId.forObject(IsUsableCheckButton),
+                nodes.proxyCheckButton({ target = IsUsableCheckButton })
+            )
+        end
+        if ShowOnPlayerCheckButton ~= nil then
+            builder:beginStop("showOnPlayer")
+            builder:addItem(
+                ControlId.forObject(ShowOnPlayerCheckButton),
+                nodes.proxyCheckButton({ target = ShowOnPlayerCheckButton })
+            )
+        end
+        builder:popContext()
+    end)
+end
+
+local function renderBrowseTab(builder, screen)
+    builder:beginStop("categories")
+    builder:pushContext("categories", L["Categories"])
+    local emitted = 0
+    for i = 1, 15 do
+        local button = _G["AuctionFilterButton" .. i]
+        if button ~= nil and button:IsShown() then
+            hookFilterButton(button)
+            builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button }))
+            emitted = emitted + 1
+        end
+    end
+    if emitted == 0 then
+        builder:addItem(ControlId.structural("categoriesEmpty"), nodes.text({ label = L["Empty"] }))
+    end
+    builder:popContext()
+
+    builder:beginStop("search")
+    builder:addItem(ControlId.structural("search"), nodes.proxyEditBox({ editBox = BrowseName, label = L["Search"] }))
+
+    renderBrowseResults(builder, screen)
+    renderBrowsePageControls(builder)
+    renderBrowseActions(builder)
+
+    sortHeadersStop(builder, screen, "browseSort", "list", {
+        { frame = BrowseQualitySort, column = "quality" },
+        { frame = BrowseLevelSort, column = "level" },
+        { frame = BrowseDurationSort, column = "duration" },
+        { frame = BrowseHighBidderSort, column = "seller" },
+        { frame = BrowseCurrentBidSort, column = "bid" },
+    })
+
+    if BrowsePriceOptionsFrame ~= nil and BrowsePriceOptionsFrame:IsShown() then
+        builder:beginStop("priceOptions")
+        builder:pushContext("priceOptions", L["Price Options"])
+        for _, button in ipairs({
+            SortByBidPriceButton,
+            SortByBuyoutPriceButton,
+            SortByTotalPriceButton,
+            SortByUnitPriceButton,
+        }) do
+            if button ~= nil and button:IsShown() then
+                builder:addItem(ControlId.forObject(button), nodes.proxyCheckButton({ target = button }))
+            end
+        end
+        builder:popContext()
+    end
+
+    syntheticStop(builder, "filters", {
+        label = L["Filters"],
+        onActivate = pushFiltersScreen,
+    })
+    actionStop(builder, "searchButton", BrowseSearchButton)
+
+    -- Full scan (price database): label and action follow the scanner state.
+    syntheticStop(builder, "fullScan", {
+        label = function()
+            if ahPrices.isFullScanning() then
+                return fullScanScanningLabel()
+            end
+            if ahPrices.canFullScan() then
+                return L["Full Scan"]
+            end
+            return L["Full Scan"] .. ", " .. L["Cooldown active"]
+        end,
+        onActivate = function()
+            if ahPrices.isFullScanning() then
+                ahPrices.abortFullScan()
+            elseif ahPrices.canFullScan() then
+                ahPrices.startFullScan()
+            else
+                WowVision:speak(formatCooldownTime(ahPrices.getFullScanCooldownRemaining()))
+            end
+        end,
+    })
+    actionStop(builder, "resetButton", BrowseResetButton)
+end
 
 ------------------------------------------------------------
 -- BIDS TAB
 ------------------------------------------------------------
 
-gen:Element("auction/BidsTab", function(props)
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "auction/BidSortHeaders" },
-            { "auction/BidResults" },
-            { "auction/BidActions" },
-        },
-    }
-end)
-
--- Bid sort headers
-gen:Element("auction/BidSortHeaders", function(props)
-    return buildSortHeaders("bidder", {
+local function renderBidsTab(builder, screen)
+    sortHeadersStop(builder, screen, "bidSort", "bidder", {
         { frame = BidQualitySort, column = "quality" },
         { frame = BidLevelSort, column = "level" },
         { frame = BidDurationSort, column = "duration" },
@@ -912,186 +811,186 @@ gen:Element("auction/BidSortHeaders", function(props)
         { frame = BidStatusSort, column = "status" },
         { frame = BidBidSort, column = "bid" },
     })
-end)
 
--- Bid result item element builder
-local function getBidElement(self, button)
-    local offset = FauxScrollFrame_GetOffset(BidScrollFrame) or 0
-    local index = button:GetID() + offset
-    local item = readAuctionItem("bidder", index)
-    if not item then return nil end
-    return { "ProxyButton", frame = button, label = formatItemLabel(item) }
-end
-
-gen:Element("auction/BidResults", {
-    regenerateOn = {
-        events = { "AUCTION_BIDDER_LIST_UPDATE" },
-    },
-}, makeResultsElement({
-    buttonPrefix = "BidButton",
-    numButtons = NUM_BID_BUTTONS,
-    listType = "bidder",
-    scrollFrameName = "BidScrollFrame",
-    label = L["Bids"],
-    updateFunctionName = "AuctionFrameBid_Update",
-    getElement = getBidElement,
-    emptyElement = { "Text", text = L["No Bids"] },
-}))
-
--- Bid actions (only when an item is selected)
-gen:Element("auction/BidActions", function(props)
-    local selected = GetSelectedAuctionItem("bidder")
-    if not selected or selected == 0 then
-        return nil
+    if (GetNumAuctionItems("bidder") or 0) == 0 then
+        liveTextStop(builder, "noBids", L["No Bids"])
+    else
+        resultsList(builder, screen, {
+            stopKey = "bids",
+            label = L["Bids"],
+            listType = "bidder",
+            buttonPrefix = "BidButton",
+            numButtons = NUM_BID_BUTTONS,
+            scrollFrameName = "BidScrollFrame",
+        })
     end
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "auction/MoneyInput", frame = BidBidPrice, label = L["Bid Price"] },
-            { "ProxyButton", frame = BidBidButton },
-            { "ProxyButton", frame = BidBuyoutButton },
-        },
-    }
-end)
+
+    local selected = GetSelectedAuctionItem("bidder")
+    if selected ~= nil and selected ~= 0 then
+        moneyInputStops(builder, "rebid", L["Bid Price"], BidBidPrice)
+        actionStop(builder, "rebidButton", BidBidButton)
+        actionStop(builder, "bidBuyoutButton", BidBuyoutButton)
+    end
+end
 
 ------------------------------------------------------------
 -- AUCTIONS TAB
 ------------------------------------------------------------
 
-gen:Element("auction/AuctionsTab", function(props)
-    local itemLabel = L["Place Item Here"]
-    local sellName, sellTexture, sellCount = GetAuctionSellItemInfo()
-    if sellName then
-        local stackSize = tonumber(AuctionsStackSizeEntry:GetText()) or sellCount
-        itemLabel = sellName
-        if stackSize and stackSize > 1 then
-            itemLabel = itemLabel .. " x" .. stackSize
-        end
-    end
-    local children = {
-        { "ProxyButton", frame = AuctionsItemButton, label = itemLabel },
-        { "auction/CreateAuction" },
-        { "auction/MyAuctionsList" },
-    }
-    if AuctionsCancelAuctionButton:IsEnabled() then
-        tinsert(children, { "ProxyButton", frame = AuctionsCancelAuctionButton })
-    end
-    tinsert(children, { "auction/AuctionsSortHeaders" })
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = children,
-    }
-end)
-
--- Auctions sort headers
-gen:Element("auction/AuctionsSortHeaders", function(props)
-    return buildSortHeaders("owner", {
-        { frame = AuctionsQualitySort, column = "quality" },
-        { frame = AuctionsDurationSort, column = "duration" },
-        { frame = AuctionsHighBidderSort, column = "status" },
-        { frame = AuctionsBidSort, column = "bid" },
-    })
-end)
-
--- My auction item element builder
-local function getAuctionElement(self, button)
-    local offset = FauxScrollFrame_GetOffset(AuctionsScrollFrame) or 0
-    local index = button:GetID() + offset
-    local item = readAuctionItem("owner", index)
-    if not item then return nil end
-    return { "ProxyButton", frame = button, label = formatItemLabel(item, { showBidder = true, showSold = true }) }
-end
-
-gen:Element("auction/MyAuctionsList", {
-    regenerateOn = {
-        events = { "AUCTION_OWNED_LIST_UPDATE" },
-    },
-}, makeResultsElement({
-    buttonPrefix = "AuctionsButton",
-    numButtons = NUM_AUCTION_BUTTONS,
-    listType = "owner",
-    scrollFrameName = "AuctionsScrollFrame",
-    label = L["Auctions"],
-    updateFunctionName = "AuctionFrameAuctions_Update",
-    getElement = getAuctionElement,
-}))
-
--- Create auction form
-gen:Element("auction/CreateAuction", function(props)
-    local children = {}
-    local sellName, sellTexture, sellCount = GetAuctionSellItemInfo()
+local function renderCreateAuction(builder)
+    builder:pushContext("createAuction", L["Create Auction"])
+    local sellName = GetAuctionSellItemInfo()
 
     -- Stack size and number of stacks (Blizzard hides these in TBC Anniversary
-    -- but the backend logic still populates them; force-show so they can receive focus)
+    -- but the backend logic still populates them; force-show so they can
+    -- receive focus)
     if sellName then
         AuctionsStackSizeEntry:Show()
         AuctionsStackSizeMaxButton:Show()
         AuctionsNumStacksEntry:Show()
         AuctionsNumStacksMaxButton:Show()
-        tinsert(children, { "ProxyEditBox", frame = AuctionsStackSizeEntry, label = L["Stack Size"] })
-        tinsert(children, { "ProxyButton", frame = AuctionsStackSizeMaxButton })
-        tinsert(children, { "ProxyEditBox", frame = AuctionsNumStacksEntry, label = L["Number of Stacks"] })
-        tinsert(children, { "ProxyButton", frame = AuctionsNumStacksMaxButton })
+        builder:beginStop("stackSize")
+        builder:addItem(
+            ControlId.structural("stackSize"),
+            nodes.proxyEditBox({ editBox = AuctionsStackSizeEntry, label = L["Stack Size"] })
+        )
+        actionStop(builder, "stackSizeMax", AuctionsStackSizeMaxButton)
+        builder:beginStop("numStacks")
+        builder:addItem(
+            ControlId.structural("numStacks"),
+            nodes.proxyEditBox({ editBox = AuctionsNumStacksEntry, label = L["Number of Stacks"] })
+        )
+        actionStop(builder, "numStacksMax", AuctionsNumStacksMaxButton)
     end
 
-    -- Buyout price
-    tinsert(children, { "auction/MoneyInput", frame = BuyoutPrice, label = L["Buyout Price"] })
+    moneyInputStops(builder, "buyout", L["Buyout Price"], BuyoutPrice)
 
-    -- Starting price (behind expandable dropdown)
-    local startGold = _G[StartPrice:GetName() .. "Gold"]
-    local startSilver = _G[StartPrice:GetName() .. "Silver"]
-    local startCopper = _G[StartPrice:GetName() .. "Copper"]
-    tinsert(children, {
-        "Button",
+    -- Starting price behind a push screen, as before.
+    syntheticStop(builder, "startingBid", {
         label = L["Starting Bid"],
-        displayType = "Dropdown",
-        events = {
-            click = function(event, button)
-                button.context:addGenerated({
-                    "Panel",
-                    label = L["Starting Bid"],
-                    layout = true,
-                    children = {
-                        { "ProxyEditBox", frame = startGold, autoInputOnFocus = false, hookEnter = true, label = L["Gold"] },
-                        { "ProxyEditBox", frame = startSilver, autoInputOnFocus = false, hookEnter = true, label = L["Silver"] },
-                        { "ProxyEditBox", frame = startCopper, autoInputOnFocus = false, hookEnter = true, label = L["Copper"] },
-                    },
-                })
-            end,
-        },
+        onActivate = function()
+            graph.settings.pushScreen("auctionStartingBid", function(innerBuilder)
+                innerBuilder:pushContext("startingBid", L["Starting Bid"])
+                moneyInputStops(innerBuilder, "startPrice", L["Starting Bid"], StartPrice)
+                innerBuilder:popContext()
+            end)
+        end,
     })
 
-    -- Duration radio buttons
-    tinsert(children, {
-        "List",
-        label = L["Duration"],
-        children = {
-            { "ProxyCheckButton", frame = AuctionsShortAuctionButton, label = L["12 Hours"] },
-            { "ProxyCheckButton", frame = AuctionsMediumAuctionButton, label = L["24 Hours"] },
-            { "ProxyCheckButton", frame = AuctionsLongAuctionButton, label = L["48 Hours"] },
-        },
-    })
+    builder:beginStop("duration")
+    builder:pushContext("duration", L["Duration"])
+    local durations = {
+        { frame = AuctionsShortAuctionButton, label = L["12 Hours"] },
+        { frame = AuctionsMediumAuctionButton, label = L["24 Hours"] },
+        { frame = AuctionsLongAuctionButton, label = L["48 Hours"] },
+    }
+    for _, duration in ipairs(durations) do
+        if duration.frame ~= nil then
+            builder:addItem(
+                ControlId.forObject(duration.frame),
+                nodes.proxyCheckButton({ target = duration.frame, label = duration.label })
+            )
+        end
+    end
+    builder:popContext()
 
-    -- Deposit (shown when an item is placed)
     if sellName then
-        tinsert(children, { "money/MoneyFrame", frame = AuctionsDepositMoneyFrame, label = L["Deposit"] })
+        liveTextStop(builder, "deposit", moneyFrameText(AuctionsDepositMoneyFrame, L["Deposit"]))
     end
 
-    -- Create auction button
-    tinsert(children, { "ProxyButton", frame = AuctionsCreateAuctionButton })
+    actionStop(builder, "createAuction", AuctionsCreateAuctionButton)
+    builder:popContext()
+end
 
-    return {
-        "Panel",
-        label = L["Create Auction"],
-        layout = true,
-        shouldAnnounce = false,
-        children = children,
-    }
-end)
+local function renderAuctionsTab(builder, screen)
+    builder:beginStop("sellItem")
+    builder:addItem(
+        ControlId.forObject(AuctionsItemButton),
+        nodes.proxyButton({
+            target = AuctionsItemButton,
+            label = function()
+                local sellName, _, sellCount = GetAuctionSellItemInfo()
+                if sellName then
+                    local stackSize = tonumber(AuctionsStackSizeEntry:GetText()) or sellCount
+                    if stackSize and stackSize > 1 then
+                        return sellName .. " x" .. stackSize
+                    end
+                    return sellName
+                end
+                return L["Place Item Here"]
+            end,
+        })
+    )
+
+    renderCreateAuction(builder)
+
+    resultsList(builder, screen, {
+        stopKey = "myAuctions",
+        label = L["Auctions"],
+        listType = "owner",
+        buttonPrefix = "AuctionsButton",
+        numButtons = NUM_AUCTION_BUTTONS,
+        scrollFrameName = "AuctionsScrollFrame",
+        labelOpts = { showBidder = true, showSold = true },
+    })
+
+    if AuctionsCancelAuctionButton:IsEnabled() then
+        actionStop(builder, "cancelAuction", AuctionsCancelAuctionButton)
+    end
+
+    sortHeadersStop(builder, screen, "auctionsSort", "owner", {
+        { frame = AuctionsQualitySort, column = "quality" },
+        { frame = AuctionsDurationSort, column = "duration" },
+        { frame = AuctionsHighBidderSort, column = "status" },
+        { frame = AuctionsBidSort, column = "bid" },
+    })
+end
+
+------------------------------------------------------------
+-- Root render
+------------------------------------------------------------
+
+local function render(builder, screen)
+    if AuctionFrame == nil or not AuctionFrame:IsShown() then
+        return
+    end
+    builder:pushContext("auction", L["Auction House"])
+
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    for i = 1, 3 do
+        local tab = _G["AuctionFrameTab" .. i]
+        local tabIndex = i
+        if tab ~= nil and tab:IsShown() then
+            local vtable = nodes.proxyButton({ target = tab })
+            if vtable ~= nil then
+                tinsert(vtable.announcements, {
+                    text = function()
+                        if PanelTemplates_GetSelectedTab(AuctionFrame) == tabIndex then
+                            return L["selected"]
+                        end
+                        return nil
+                    end,
+                    kind = kinds.selected,
+                })
+                builder:addItem(ControlId.forObject(tab), vtable)
+            end
+        end
+    end
+    builder:endRow()
+    builder:popContext()
+
+    if AuctionFrameBrowse:IsShown() then
+        renderBrowseTab(builder, screen)
+    elseif AuctionFrameBid:IsShown() then
+        renderBidsTab(builder, screen)
+    elseif AuctionFrameAuctions:IsShown() then
+        renderAuctionsTab(builder, screen)
+    end
+
+    builder:popContext()
+end
 
 ------------------------------------------------------------
 -- Enrich auction confirmation popups with item name + count.
@@ -1175,11 +1074,12 @@ end)
 module:registerWindow({
     type = "FrameWindow",
     name = "auction",
-    generated = true,
-    rootElement = "auction",
     frameName = "AuctionFrame",
-    hookEscape = true,
-    onClose = function()
-        AuctionFrame:Hide()
-    end,
+    graphScreen = {
+        render = render,
+        captureClose = true,
+        onRequestClose = function()
+            AuctionFrame:Hide()
+        end,
+    },
 })

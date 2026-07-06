@@ -127,6 +127,7 @@ local parseOnly = {
     "tbc/character/PVP.lua",
     "tbc/character/Reputation.lua",
     "tbc/character/Skills.lua",
+    "tbc/auction/module.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
