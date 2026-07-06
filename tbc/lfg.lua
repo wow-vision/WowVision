@@ -1,7 +1,15 @@
 local module = WowVision.base.windows:createModule("lfg")
 local L = module.L
 module:setLabel(L["Looking for Group"])
-local gen = module:hasUI()
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
+
+-- The TBC anniversary LFG tool: the listing tab (category or activity
+-- selection, roles, comment, post) and the browse tab (filters, results
+-- with data-first labels from the LFG list API, contact buttons).
 
 local function findCheckButton(parent)
     local children = { parent:GetChildren() }
@@ -21,80 +29,110 @@ local function findEditBox(parent)
     end
 end
 
-gen:Element("lfg", function(props)
-    local result = { "Panel", label = L["Looking for Group"], wrap = true, children = {} }
-    tinsert(result.children, { "lfg/Tabs" })
-    local tab = PanelTemplates_GetSelectedTab(LFGParentFrame)
-    if tab == 1 then
-        if LFGListingFrameLockedView:IsShown() then
-            tinsert(result.children, { "lfg/LockedView" })
-        else
-            if LFGListingFrameActivityView:IsShown() then
-                tinsert(result.children, { "lfg/ActivityList" })
-                tinsert(result.children, { "ProxyButton", frame = LFGListingFrameBackButton })
-            else
-                tinsert(result.children, { "lfg/CategoryList" })
-            end
-            tinsert(result.children, { "lfg/Roles" })
-            tinsert(result.children, { "lfg/Comment" })
-            tinsert(result.children, { "ProxyButton", frame = LFGListingFramePostButton })
-        end
-    elseif tab == 2 then
-        tinsert(result.children, { "ProxyDropdownButton", frame = LFGBrowseFrameCategoryDropdown })
-        tinsert(result.children, { "ProxyDropdownButton", frame = LFGBrowseFrameActivityDropdown })
-        tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameRefreshButton, label = L["Search"] })
-        tinsert(result.children, { "lfg/BrowseResults" })
-        tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameSendMessageButton })
-        tinsert(result.children, { "ProxyButton", frame = LFGBrowseFrameGroupInviteButton })
-    end
-    return result
-end)
-
-gen:Element("lfg/Tabs", {
-    regenerateOn = {
-        values = function(props)
-            return { selectedTab = PanelTemplates_GetSelectedTab(LFGParentFrame) }
-        end,
-    },
-}, function(props)
-    local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
-    for i = 1, 2 do
-        local tab = _G["LFGParentFrameTab" .. i]
-        if tab and tab:IsShown() then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "tab_" .. i,
-                frame = tab,
-                selected = PanelTemplates_GetSelectedTab(LFGParentFrame) == i,
-            })
-        end
-    end
-    if #result.children == 0 then
-        return nil
-    end
-    return result
-end)
-
-gen:Element("lfg/LockedView", function(props)
-    local text = ""
-    local regions = { LFGListingFrameLockedView:GetRegions() }
-    for _, region in ipairs(regions) do
-        if region:GetObjectType() == "FontString" and region:IsShown() then
-            local str = region:GetText()
-            if str and str ~= "" then
-                if text ~= "" then
-                    text = text .. " "
+local function renderLockedView(builder)
+    builder:beginStop("locked")
+    builder:addItem(
+        ControlId.structural("locked"),
+        nodes.text({
+            label = function()
+                local text = ""
+                for _, region in ipairs({ LFGListingFrameLockedView:GetRegions() }) do
+                    if region:GetObjectType() == "FontString" and region:IsShown() then
+                        local str = region:GetText()
+                        if str ~= nil and str ~= "" then
+                            if text ~= "" then
+                                text = text .. " "
+                            end
+                            text = text .. str
+                        end
+                    end
                 end
-                text = text .. str
-            end
+                return text
+            end,
+        })
+    )
+end
+
+local function renderCategoryList(builder)
+    builder:beginStop("categories")
+    builder:pushContext("categories", L["Categories"])
+    local emitted = 0
+    for _, child in ipairs({ LFGListingFrameCategoryView:GetChildren() }) do
+        if child:IsShown() and child:GetObjectType() == "Button" then
+            builder:addItem(ControlId.forObject(child), nodes.proxyButton({ target = child }))
+            emitted = emitted + 1
         end
     end
-    return { "Text", text = text }
-end)
+    if emitted == 0 then
+        builder:addItem(ControlId.structural("categoriesEmpty"), nodes.text({ label = L["Empty"] }))
+    end
+    builder:popContext()
+end
 
-gen:Element("lfg/Roles", function(props)
-    local result = { "List", label = L["Roles"], children = {} }
+local function activityName(data)
+    if data ~= nil and data.GetData ~= nil then
+        local ok, inner = pcall(data.GetData, data)
+        if ok and inner ~= nil and inner.name ~= nil then
+            return inner.name
+        end
+    end
+    if type(data) == "table" and data.name ~= nil then
+        return data.name
+    end
+    return nil
+end
 
+local function renderActivityList(builder)
+    builder:beginStop("activities")
+    nodes.scrollBoxList(builder, {
+        scrollBox = LFGListingFrameActivityViewScrollBox,
+        key = "activities",
+        label = L["Activities"],
+        id = function(data, index)
+            local name = activityName(data)
+            if name ~= nil then
+                return ControlId.structural("activity:" .. name)
+            end
+            return ControlId.structural("activity:" .. index)
+        end,
+        button = function(rowFrame)
+            return findCheckButton(rowFrame) or rowFrame
+        end,
+        row = function(data, index, helpers)
+            return {
+                controlType = graph.controlTypes.toggle,
+                announcements = {
+                    {
+                        text = function()
+                            return activityName(data)
+                        end,
+                        kind = kinds.label,
+                    },
+                    {
+                        text = function()
+                            local check = helpers.target()
+                            if check ~= nil and check.GetChecked ~= nil then
+                                return check:GetChecked() and L["Checked"] or L["Unchecked"]
+                            end
+                            return nil
+                        end,
+                        kind = kinds.value,
+                    },
+                },
+                bindings = {
+                    { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+                },
+                onFocus = helpers.onFocus,
+                onFocusTick = helpers.onFocusTick,
+                onUnfocus = helpers.onUnfocus,
+            }
+        end,
+    })
+end
+
+local function renderRoles(builder)
+    builder:beginStop("roles")
+    builder:pushContext("roles", L["Roles"])
     if LFGListingFrameSoloRoleButtons:IsShown() then
         local roles = {
             { frame = LFGListingFrameSoloRoleButtonsRoleButtonTank, label = L["Tank"] },
@@ -103,121 +141,101 @@ gen:Element("lfg/Roles", function(props)
         }
         for _, role in ipairs(roles) do
             local check = findCheckButton(role.frame)
-            if check then
-                tinsert(result.children, { "ProxyCheckButton", frame = check, label = role.label })
+            if check ~= nil then
+                builder:addItem(
+                    ControlId.forObject(check),
+                    nodes.proxyCheckButton({ target = check, label = role.label })
+                )
             end
         end
     elseif LFGListingFrameGroupRoleButtons:IsShown() then
-        tinsert(result.children, {
-            "ProxyDropdownButton",
-            frame = LFGListingFrameGroupRoleButtonsRoleDropdown,
-        })
-        tinsert(result.children, {
-            "ProxyButton",
-            frame = LFGListingFrameGroupRoleButtonsInitiateRolePoll,
-        })
+        builder:addItem(
+            ControlId.forObject(LFGListingFrameGroupRoleButtonsRoleDropdown),
+            nodes.proxyDropdown({ target = LFGListingFrameGroupRoleButtonsRoleDropdown })
+        )
+        builder:addItem(
+            ControlId.forObject(LFGListingFrameGroupRoleButtonsInitiateRolePoll),
+            nodes.proxyButton({ target = LFGListingFrameGroupRoleButtonsInitiateRolePoll })
+        )
     end
 
     local newPlayerFriendly = findCheckButton(LFGListingFrameNewPlayerFriendlyButton)
-    if newPlayerFriendly then
-        tinsert(result.children, { "ProxyCheckButton", frame = newPlayerFriendly, label = L["New Player Friendly"] })
+    if newPlayerFriendly ~= nil then
+        builder:addItem(
+            ControlId.forObject(newPlayerFriendly),
+            nodes.proxyCheckButton({ target = newPlayerFriendly, label = L["New Player Friendly"] })
+        )
     end
-
-    if #result.children == 0 then
-        return nil
-    end
-    return result
-end)
-
-gen:Element("lfg/CategoryList", function(props)
-    local result = { "List", label = L["Categories"], children = {} }
-    local children = { LFGListingFrameCategoryView:GetChildren() }
-    for _, child in ipairs(children) do
-        if child:IsShown() and child:GetObjectType() == "Button" then
-            tinsert(result.children, { "ProxyButton", frame = child })
-        end
-    end
-    if #result.children == 0 then
-        return nil
-    end
-    return result
-end)
-
-local function getActivityLabel(button)
-    local node = button.GetElementData and button:GetElementData()
-    if node and node.GetData then
-        local data = node:GetData()
-        if data and data.name then
-            return data.name
-        end
-    end
-    return nil
+    builder:popContext()
 end
 
-local function ActivityList_getElement(self, button)
-    local check = findCheckButton(button)
-    if check then
-        return { "ProxyCheckButton", frame = check, label = getActivityLabel(button) }
+local function renderListingTab(builder)
+    if LFGListingFrameLockedView:IsShown() then
+        renderLockedView(builder)
+        return
     end
-    return nil
+
+    if LFGListingFrameActivityView:IsShown() then
+        renderActivityList(builder)
+        if LFGListingFrameBackButton ~= nil and LFGListingFrameBackButton:IsShown() then
+            builder:beginStop("back")
+            builder:addItem(
+                ControlId.forObject(LFGListingFrameBackButton),
+                nodes.proxyButton({ target = LFGListingFrameBackButton })
+            )
+        end
+    else
+        renderCategoryList(builder)
+    end
+
+    renderRoles(builder)
+
+    local commentBox = findEditBox(LFGListingComment)
+    if commentBox ~= nil then
+        builder:beginStop("comment")
+        builder:addItem(
+            ControlId.structural("comment"),
+            nodes.proxyEditBox({ editBox = commentBox, label = L["Comment"] })
+        )
+    end
+
+    if LFGListingFramePostButton ~= nil and LFGListingFramePostButton:IsShown() then
+        builder:beginStop("post")
+        builder:addItem(
+            ControlId.forObject(LFGListingFramePostButton),
+            nodes.proxyButton({ target = LFGListingFramePostButton })
+        )
+    end
 end
 
-gen:Element("lfg/ActivityList", function(props)
-    return {
-        "ProxyScrollBox",
-        frame = LFGListingFrameActivityViewScrollBox,
-        label = L["Activities"],
-        getElement = ActivityList_getElement,
-        ordered = false,
-    }
-end)
-
-gen:Element("lfg/Comment", function(props)
-    local editBox = findEditBox(LFGListingComment)
-    if editBox then
-        return { "ProxyEditBox", frame = editBox, label = L["Comment"] }
+local function browseResultLabel(data)
+    if data == nil or data.resultID == nil then
+        return nil
     end
-    return nil
-end)
-
-local function getBrowseResultLabel(button)
-    local elemData = button.GetElementData and button:GetElementData()
-    if elemData and elemData.resultID then
-        local ok, info = pcall(C_LFGList.GetSearchResultInfo, elemData.resultID)
-        if ok and info then
-            local parts = {}
-            if info.leaderName and info.leaderName ~= "" then
-                tinsert(parts, info.leaderName)
-            end
-            local actInfo
-            if info.activityIDs and info.activityIDs[1] then
-                local aOk, aResult = pcall(C_LFGList.GetActivityInfoTable, info.activityIDs[1])
-                if aOk then actInfo = aResult end
-            end
-            if actInfo and actInfo.shortName then
-                tinsert(parts, actInfo.shortName)
-            end
-            if info.numMembers then
-                local maxPlayers = actInfo and actInfo.maxNumPlayers and ("/" .. actInfo.maxNumPlayers) or ""
-                tinsert(parts, info.numMembers .. maxPlayers .. " " .. L["Members"])
-            end
-            if info.comment and info.comment ~= "" then
-                tinsert(parts, info.comment)
-            end
-            if #parts > 0 then
-                return table.concat(parts, " - ")
-            end
-        end
+    local ok, info = pcall(C_LFGList.GetSearchResultInfo, data.resultID)
+    if not ok or info == nil then
+        return nil
     end
     local parts = {}
-    local regions = { button:GetRegions() }
-    for _, region in ipairs(regions) do
-        if region:GetObjectType() == "FontString" and region:IsShown() then
-            local text = region:GetText()
-            if text and text ~= "" then
-                tinsert(parts, text)
-            end
+    if info.leaderName ~= nil and info.leaderName ~= "" then
+        tinsert(parts, info.leaderName)
+    end
+    local actInfo
+    if info.activityIDs ~= nil and info.activityIDs[1] ~= nil then
+        local aOk, aResult = pcall(C_LFGList.GetActivityInfoTable, info.activityIDs[1])
+        if aOk then
+            actInfo = aResult
         end
+    end
+    if actInfo ~= nil and actInfo.shortName ~= nil then
+        tinsert(parts, actInfo.shortName)
+    end
+    if info.numMembers ~= nil then
+        local maxPlayers = actInfo ~= nil and actInfo.maxNumPlayers ~= nil and ("/" .. actInfo.maxNumPlayers) or ""
+        tinsert(parts, info.numMembers .. maxPlayers .. " " .. L["Members"])
+    end
+    if info.comment ~= nil and info.comment ~= "" then
+        tinsert(parts, info.comment)
     end
     if #parts > 0 then
         return table.concat(parts, " - ")
@@ -225,24 +243,97 @@ local function getBrowseResultLabel(button)
     return GROUP or "Group"
 end
 
-local function BrowseResults_getElement(self, button)
-    return { "ProxyButton", frame = button, label = getBrowseResultLabel(button) }
+local function renderBrowseTab(builder)
+    if LFGBrowseFrameCategoryDropdown ~= nil and LFGBrowseFrameCategoryDropdown:IsShown() then
+        builder:beginStop("categoryFilter")
+        builder:addItem(
+            ControlId.forObject(LFGBrowseFrameCategoryDropdown),
+            nodes.proxyDropdown({ target = LFGBrowseFrameCategoryDropdown })
+        )
+    end
+    if LFGBrowseFrameActivityDropdown ~= nil and LFGBrowseFrameActivityDropdown:IsShown() then
+        builder:beginStop("activityFilter")
+        builder:addItem(
+            ControlId.forObject(LFGBrowseFrameActivityDropdown),
+            nodes.proxyDropdown({ target = LFGBrowseFrameActivityDropdown })
+        )
+    end
+    if LFGBrowseFrameRefreshButton ~= nil and LFGBrowseFrameRefreshButton:IsShown() then
+        builder:beginStop("refresh")
+        builder:addItem(
+            ControlId.forObject(LFGBrowseFrameRefreshButton),
+            nodes.proxyButton({ target = LFGBrowseFrameRefreshButton, label = L["Search"] })
+        )
+    end
+
+    builder:beginStop("groups")
+    nodes.scrollBoxList(builder, {
+        scrollBox = LFGBrowseFrameScrollBox,
+        key = "groups",
+        label = L["Browse Groups"],
+        id = function(data, index)
+            if data ~= nil and data.resultID ~= nil then
+                return ControlId.structural("group:" .. data.resultID)
+            end
+            return ControlId.structural("group:" .. index)
+        end,
+        rowLabel = function(data)
+            return browseResultLabel(data)
+        end,
+    })
+
+    for _, button in ipairs({ LFGBrowseFrameSendMessageButton, LFGBrowseFrameGroupInviteButton }) do
+        if button ~= nil and button:IsShown() then
+            builder:beginStop()
+            builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button }))
+        end
+    end
 end
 
-gen:Element("lfg/BrowseResults", function(props)
-    return {
-        "ProxyScrollBox",
-        frame = LFGBrowseFrameScrollBox,
-        label = L["Browse Groups"],
-        getElement = BrowseResults_getElement,
-        ordered = false,
-    }
-end)
+local function render(builder, screen)
+    if LFGParentFrame == nil or not LFGParentFrame:IsShown() then
+        return
+    end
+    builder:pushContext("lfg", L["Looking for Group"])
+
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    for i = 1, 2 do
+        local tab = _G["LFGParentFrameTab" .. i]
+        local tabIndex = i
+        if tab ~= nil and tab:IsShown() then
+            local vtable = nodes.proxyButton({ target = tab })
+            if vtable ~= nil then
+                tinsert(vtable.announcements, {
+                    text = function()
+                        if PanelTemplates_GetSelectedTab(LFGParentFrame) == tabIndex then
+                            return L["selected"]
+                        end
+                        return nil
+                    end,
+                    kind = kinds.selected,
+                })
+                builder:addItem(ControlId.forObject(tab), vtable)
+            end
+        end
+    end
+    builder:endRow()
+    builder:popContext()
+
+    local tab = PanelTemplates_GetSelectedTab(LFGParentFrame)
+    if tab == 1 then
+        renderListingTab(builder)
+    elseif tab == 2 then
+        renderBrowseTab(builder)
+    end
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "lfg",
-    generated = true,
-    rootElement = "lfg",
     frameName = "LFGParentFrame",
+    graphScreen = { render = render },
 })

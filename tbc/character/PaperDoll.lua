@@ -1,6 +1,13 @@
 local char = WowVision.tbc.character
-local gen = char.gen
 local L = char.L
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+
+-- The TBC paper doll: equipment (named slot frames, live labels, drag,
+-- immediate tooltips), the two stat columns each led by its category
+-- dropdown, and the resistances.
 
 -- Slot ID to localized name mapping for empty slots
 local SLOT_NAMES = {
@@ -50,8 +57,6 @@ local EQUIPMENT_SLOTS = {
     "CharacterAmmoSlot",
 }
 
--- Resistance frame names
--- MagicResFrame1-5, each has a .tooltip property with localized name and value
 local RESISTANCE_FRAMES = {
     "MagicResFrame1", -- Fire
     "MagicResFrame2", -- Frost
@@ -59,23 +64,6 @@ local RESISTANCE_FRAMES = {
     "MagicResFrame4", -- Shadow
     "MagicResFrame5", -- Arcane
 }
-
-gen:Element("character/PaperDoll", {
-    regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
-    },
-}, function(props)
-    return {
-        "Panel",
-        layout = true,
-        shouldAnnounce = false,
-        children = {
-            { "character/Equipment" },
-            { "character/Stats" },
-            { "character/Resistances" },
-        },
-    }
-end)
 
 local function getEquipmentLabel(frame)
     local slotId = frame:GetID()
@@ -95,146 +83,93 @@ local function getEquipmentLabel(frame)
     return SLOT_NAMES[slotId] or L["Empty"]
 end
 
-gen:Element("character/Equipment", {
-    regenerateOn = {
-        events = { "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED" },
-    },
-}, function(props)
-    local result = { "List", label = L["Equipment"], children = {} }
-    for _, slotName in ipairs(EQUIPMENT_SLOTS) do
-        local slot = _G[slotName]
-        if slot and slot:IsShown() then
-            local slotId = slot:GetID()
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "slot_" .. slotId,
-                frame = slot,
-                label = getEquipmentLabel(slot),
-                draggable = true,
-                tooltip = {
-                    type = "Game",
-                    mode = "immediate",
-                },
-            })
-        end
-    end
-    return result
-end)
-
-gen:Element("character/Stats", {
-    regenerateOn = {
-        events = {
-            "PLAYER_EQUIPMENT_CHANGED",
-            "UNIT_INVENTORY_CHANGED",
-            "COMBAT_RATING_UPDATE",
-            "UNIT_STATS",
-            "UNIT_AURA",
-            "UNIT_DAMAGE",
-            "UNIT_ATTACK_SPEED",
-            "UNIT_ATTACK_POWER",
-            "UNIT_RANGED_ATTACK_POWER",
-            "PLAYER_DAMAGE_DONE_MODS",
-            "UNIT_RESISTANCES",
-        },
-    },
-}, function(props)
-    return {
-        "List",
-        label = L["Stats"],
-        children = {
-            { "character/StatsColumn", key = "left", prefix = "PlayerStatFrameLeft" },
-            { "character/StatsColumn", key = "right", prefix = "PlayerStatFrameRight" },
-        },
-    }
-end)
-
-local function getStatText(statFrame)
-    if not statFrame or not statFrame:IsShown() then
-        return nil
-    end
-    local label = _G[statFrame:GetName() .. "Label"]
-    local statText = _G[statFrame:GetName() .. "StatText"]
-    if not label or not statText then
+local function statText(prefix, i)
+    local label = _G[prefix .. i .. "Label"]
+    local value = _G[prefix .. i .. "StatText"]
+    if label == nil or value == nil then
         return nil
     end
     local labelText = label:GetText()
-    local valueText = statText:GetText()
-    if not labelText or labelText == "" then
+    if labelText == nil or labelText == "" then
         return nil
     end
-    return labelText .. " " .. (valueText or "")
+    return labelText .. " " .. (value:GetText() or "")
 end
 
-gen:Element("character/StatsColumn", function(props)
-    local prefix = props.prefix
-    local dropdownName = prefix .. "Dropdown"
-    local dropdown = _G[dropdownName]
-
-    local result = { "List", label = L["Stats"], children = {} }
-
-    -- Add the dropdown to change stat category
-    if dropdown and dropdown:IsShown() then
-        tinsert(result.children, {
-            "ProxyDropdownButton",
-            key = "dropdown",
-            frame = dropdown,
-        })
+local function statsColumn(builder, stopKey, prefix)
+    builder:beginStop(stopKey)
+    builder:pushContext(stopKey, L["Stats"])
+    local dropdown = _G[prefix .. "Dropdown"]
+    if dropdown ~= nil and dropdown:IsShown() then
+        builder:addItem(ControlId.forObject(dropdown), nodes.proxyDropdown({ target = dropdown }))
     end
-
-    -- Add the 6 stat frames for this column
     for i = 1, 6 do
         local statFrame = _G[prefix .. i]
-        if statFrame and statFrame:IsShown() then
-            local text = getStatText(statFrame)
-            if text then
-                tinsert(result.children, {
-                    "ProxyButton",
-                    key = "stat_" .. i,
-                    frame = statFrame,
-                    label = text,
-                    tooltip = {
-                        type = "Game",
-                        mode = "immediate",
-                    },
+        if statFrame ~= nil and statFrame:IsShown() then
+            local capturedPrefix, capturedIndex = prefix, i
+            builder:addItem(
+                ControlId.forObject(statFrame),
+                nodes.proxyButton({
+                    target = statFrame,
+                    label = function()
+                        return statText(capturedPrefix, capturedIndex)
+                    end,
                 })
+            )
+        end
+    end
+    builder:popContext()
+end
+
+function char.renderPaperDoll(builder)
+    builder:beginStop("equipment")
+    builder:pushContext("equipment", L["Equipment"])
+    for _, slotName in ipairs(EQUIPMENT_SLOTS) do
+        local slot = _G[slotName]
+        if slot ~= nil and slot:IsShown() then
+            local captured = slot
+            local vtable = nodes.proxyButton({
+                target = captured,
+                label = function()
+                    return getEquipmentLabel(captured)
+                end,
+            })
+            if vtable ~= nil then
+                tinsert(vtable.bindings, {
+                    binding = "drag",
+                    type = "Function",
+                    func = function()
+                        local script = captured:GetScript("OnDragStart")
+                        if script ~= nil then
+                            script(captured)
+                        end
+                    end,
+                })
+                builder:addItem(ControlId.forObject(captured), vtable)
             end
         end
     end
+    builder:popContext()
 
-    if #result.children == 0 then
-        return nil
-    end
+    statsColumn(builder, "statsLeft", "PlayerStatFrameLeft")
+    statsColumn(builder, "statsRight", "PlayerStatFrameRight")
 
-    return result
-end)
-
-gen:Element("character/Resistances", {
-    regenerateOn = {
-        events = { "UNIT_RESISTANCES" },
-    },
-}, function(props)
-    local result = { "List", label = L["Resistances"], children = {} }
-
-    for i, frameName in ipairs(RESISTANCE_FRAMES) do
+    builder:beginStop("resistances")
+    builder:pushContext("resistances", L["Resistances"])
+    for _, frameName in ipairs(RESISTANCE_FRAMES) do
         local frame = _G[frameName]
-        if frame and frame:IsShown() then
-            local label = frame.tooltip or ""
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "resistance_" .. i,
-                frame = frame,
-                label = label,
-                tooltip = {
-                    type = "Game",
-                    mode = "immediate",
-                },
-            })
+        if frame ~= nil and frame:IsShown() then
+            local captured = frame
+            builder:addItem(
+                ControlId.forObject(captured),
+                nodes.proxyButton({
+                    target = captured,
+                    label = function()
+                        return captured.tooltip
+                    end,
+                })
+            )
         end
     end
-
-    if #result.children == 0 then
-        return nil
-    end
-
-    return result
-end)
+    builder:popContext()
+end

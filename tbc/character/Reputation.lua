@@ -1,213 +1,184 @@
 local char = WowVision.tbc.character
-local gen = char.gen
 local L = char.L
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
+
+-- The TBC reputation tab: a Faux list whose row pool reports GetID 0, so
+-- indices map through the pool table plus scroll offset. Faction rows are
+-- StatusBars driven by OnMouseUp -- not clickable Buttons -- so activation
+-- calls ReputationBar_OnClick directly, exactly as the old screen did.
+-- Header rows click their overlay ReputationHeader button. Labels are
+-- data-first from GetFactionInfo with normalized progress numbers.
 
 local NUM_FACTIONS_DISPLAYED = 15
 
--- Map ReputationBar frames to their display indices (since GetID() returns 0)
 local reputationBarIndices = {}
-for i = 1, NUM_FACTIONS_DISPLAYED do
-    local frame = _G["ReputationBar" .. i]
-    if frame then
-        reputationBarIndices[frame] = i
-    end
-end
-
--- Build a single element for a reputation row
--- Each row has ReputationBar[i] (StatusBar) and ReputationHeader[i] (Button for headers)
-local function buildReputationElement(self, frame)
-    local i = reputationBarIndices[frame]
-    if not i then
-        return nil
-    end
-    local bar = frame -- frame IS ReputationBar[i]
-    local header = _G["ReputationHeader" .. i]
-
-    local isHeader = header and header:IsShown()
-    local isBar = bar and bar:IsShown()
-
-    -- Must have either a header or a bar showing
-    if not isHeader and not isBar then
-        return nil
-    end
-
-    -- Get faction name from UI element
-    -- For headers, the name is on the header button's Text, not on the bar
-    local name
-    if isHeader and header.Text then
-        name = header.Text:GetText() or ""
-    else
-        local nameText = _G["ReputationBar" .. i .. "FactionName"]
-        name = nameText and nameText:GetText() or ""
-    end
-
-    if not name or name == "" then
-        return nil
-    end
-
-    local label = name
-
-    -- Get standing text from UI element
-    local standingFrame = _G["ReputationBar" .. i .. "FactionStanding"]
-    local standingText = standingFrame and standingFrame:GetText() or ""
-    if standingText and standingText ~= "" then
-        label = label .. " - " .. standingText
-    end
-
-    -- Add progress if available from bar tooltip
-    if bar.tooltip and bar.tooltip ~= "" then
-        label = label .. bar.tooltip
-    end
-
-    -- Check if this is a header by seeing if ReputationHeader is shown
-    local headerState = nil
-
-    if isHeader then
-        -- This is a header row - use the header button for clicking (it's a Button)
-        if header.isCollapsed then
-            headerState = "collapsed"
-        else
-            headerState = "expanded"
-        end
-        return {
-            "ProxyButton",
-            frame = header,
-            label = label,
-            header = headerState,
-        }
-    else
-        -- For regular rows, the bar is a StatusBar that uses OnMouseUp, not OnClick
-        -- Use a Button element with a click handler that calls ReputationBar_OnClick directly
-        return {
-            "Button",
-            label = label,
-            events = {
-                click = function()
-                    ReputationBar_OnClick(bar)
-                end,
-            },
-        }
-    end
-end
-
-local function getNumFactions()
-    return GetNumFactions()
-end
-
-local function getReputationIndex(self, frame)
-    local offset = FauxScrollFrame_GetOffset(ReputationListScrollFrame) or 0
-    local displayIndex = reputationBarIndices[frame] or 0
-    return displayIndex + offset
-end
-
--- Return the ReputationBar frames (used for positioning even if headers use different frames)
-local function getReputationRows()
+local function reputationButtons()
     local rows = {}
     for i = 1, NUM_FACTIONS_DISPLAYED do
         local frame = _G["ReputationBar" .. i]
-        if frame then
+        if frame ~= nil then
+            reputationBarIndices[frame] = i
             tinsert(rows, frame)
         end
     end
     return rows
 end
 
-gen:Element("character/Reputation", function(props)
-    -- If scroll frame is shown, use ProxyFauxScrollFrame
-    if ReputationListScrollFrame and ReputationListScrollFrame:IsShown() then
-        return {
-            "ProxyFauxScrollFrame",
-            frame = ReputationListScrollFrame,
-            buttonHeight = REPUTATIONFRAME_FACTIONHEIGHT,
-            updateFunction = ReputationFrame_Update,
-            getNumEntries = getNumFactions,
-            getElement = buildReputationElement,
-            getElementIndex = getReputationIndex,
-            getButtons = getReputationRows,
-        }
-    end
+local function reputationIndexOf(button)
+    local offset = FauxScrollFrame_GetOffset(ReputationListScrollFrame) or 0
+    return (reputationBarIndices[button] or 0) + offset
+end
 
-    -- Scroll frame is hidden (not enough factions to scroll), render rows directly
-    local children = {}
-    for i = 1, NUM_FACTIONS_DISPLAYED do
-        local frame = _G["ReputationBar" .. i]
-        if frame then
-            local element = buildReputationElement(nil, frame)
-            if element then
-                tinsert(children, element)
-            end
+local function factionLabel(index)
+    local name, _, standingID, barMin, barMax, barValue, _, _, isHeader, _, hasRep = GetFactionInfo(index)
+    if name == nil then
+        return nil
+    end
+    local label = name
+    if not isHeader or hasRep then
+        local standing = _G["FACTION_STANDING_LABEL" .. (standingID or 0)]
+        if standing ~= nil then
+            label = label .. " - " .. standing
+        end
+        if barMax ~= nil and barMin ~= nil and barValue ~= nil then
+            label = label .. " " .. (barValue - barMin) .. " / " .. (barMax - barMin)
         end
     end
+    return label
+end
 
-    if #children == 0 then
-        return nil
+local function emitFaction(builder, index, helpers)
+    local name, _, _, _, _, _, _, _, isHeader = GetFactionInfo(index)
+    if name == nil then
+        return
     end
 
-    return {
-        "List",
+    local announcements = {
+        {
+            text = function()
+                return factionLabel(index)
+            end,
+            kind = kinds.label,
+        },
+    }
+
+    if isHeader then
+        tinsert(announcements, {
+            text = function()
+                local _, _, _, _, _, _, _, _, _, isCollapsed = GetFactionInfo(index)
+                return isCollapsed and L["Collapsed"] or L["Expanded"]
+            end,
+            kind = kinds.value,
+        })
+        builder:addItem(helpers.id, {
+            controlType = graph.controlTypes.button,
+            announcements = announcements,
+            bindings = {
+                {
+                    binding = "leftClick",
+                    type = "Click",
+                    emulatedKey = "LeftButton",
+                    -- Headers click their overlay button, found by pool slot.
+                    target = function()
+                        local bar = helpers.target()
+                        local slot = bar ~= nil and reputationBarIndices[bar] or nil
+                        return slot ~= nil and _G["ReputationHeader" .. slot] or nil
+                    end,
+                },
+            },
+            onFocus = helpers.onFocus,
+            onFocusTick = helpers.onFocusTick,
+            onUnfocus = helpers.onUnfocus,
+        })
+        return
+    end
+
+    builder:addItem(helpers.id, {
+        controlType = graph.controlTypes.button,
+        announcements = announcements,
+        -- StatusBar rows respond to OnMouseUp, not clicks; call the handler.
+        onActivate = function()
+            local bar = helpers.target()
+            if bar ~= nil then
+                ReputationBar_OnClick(bar)
+            end
+        end,
+        onFocus = helpers.onFocus,
+        onFocusTick = helpers.onFocusTick,
+        onUnfocus = helpers.onUnfocus,
+    })
+end
+
+local function reputationEntryId(index)
+    local name, _, _, _, _, _, _, _, isHeader = GetFactionInfo(index)
+    if name ~= nil then
+        return ControlId.structural((isHeader and "repHeader:" or "faction:") .. name)
+    end
+    return ControlId.structural("faction:" .. index)
+end
+
+function char.renderReputation(builder)
+    builder:beginStop("factions")
+    nodes.hybridScrollList(builder, {
+        scrollFrame = ReputationListScrollFrame,
+        key = "factions",
         label = L["Reputation"],
-        children = children,
-    }
-end)
+        count = GetNumFactions,
+        rowHeight = REPUTATIONFRAME_FACTIONHEIGHT,
+        buttons = reputationButtons,
+        indexOf = reputationIndexOf,
+        id = reputationEntryId,
+        emit = emitFaction,
+    })
 
-gen:Element("character/ReputationDetail", function(props)
-    local frame = ReputationDetailFrame
-    if not frame or not frame:IsShown() then
-        return nil
+    local detail = ReputationDetailFrame
+    if detail ~= nil and detail:IsShown() then
+        builder:beginStop("repDetail")
+        builder:pushContext(
+            "repDetail",
+            ReputationDetailFactionName ~= nil and ReputationDetailFactionName:GetText() or ""
+        )
+        builder:addItem(
+            ControlId.structural("repDescription"),
+            nodes.text({
+                label = function()
+                    return ReputationDetailFactionDescription ~= nil
+                            and ReputationDetailFactionDescription:GetText()
+                        or nil
+                end,
+            })
+        )
+        if ReputationDetailAtWarCheckbox ~= nil and ReputationDetailAtWarCheckbox:IsShown() then
+            builder:addItem(
+                ControlId.forObject(ReputationDetailAtWarCheckbox),
+                nodes.proxyCheckButton({ target = ReputationDetailAtWarCheckbox, label = L["At War"] })
+            )
+        end
+        if ReputationDetailInactiveCheckbox ~= nil and ReputationDetailInactiveCheckbox:IsShown() then
+            builder:addItem(
+                ControlId.forObject(ReputationDetailInactiveCheckbox),
+                nodes.proxyCheckButton({
+                    target = ReputationDetailInactiveCheckbox,
+                    label = MOVE_TO_INACTIVE or "Move to Inactive",
+                })
+            )
+        end
+        if ReputationDetailMainScreenCheckbox ~= nil and ReputationDetailMainScreenCheckbox:IsShown() then
+            builder:addItem(
+                ControlId.forObject(ReputationDetailMainScreenCheckbox),
+                nodes.proxyCheckButton({ target = ReputationDetailMainScreenCheckbox, label = L["Watched"] })
+            )
+        end
+        if ReputationDetailCloseButton ~= nil then
+            builder:addItem(
+                ControlId.forObject(ReputationDetailCloseButton),
+                nodes.proxyButton({ target = ReputationDetailCloseButton, label = CLOSE or L["Close"] })
+            )
+        end
+        builder:popContext()
     end
-
-    local children = {}
-
-    -- Faction name and description as static text
-    local factionName = ReputationDetailFactionName and ReputationDetailFactionName:GetText() or ""
-    local description = ReputationDetailFactionDescription and ReputationDetailFactionDescription:GetText() or ""
-
-    if description and description ~= "" then
-        tinsert(children, {
-            "Text",
-            text = description,
-        })
-    end
-
-    -- At War checkbox
-    if ReputationDetailAtWarCheckbox and ReputationDetailAtWarCheckbox:IsShown() then
-        tinsert(children, {
-            "ProxyCheckButton",
-            frame = ReputationDetailAtWarCheckbox,
-            label = L["At War"],
-        })
-    end
-
-    -- Move to Inactive checkbox
-    if ReputationDetailInactiveCheckbox and ReputationDetailInactiveCheckbox:IsShown() then
-        tinsert(children, {
-            "ProxyCheckButton",
-            frame = ReputationDetailInactiveCheckbox,
-            label = MOVE_TO_INACTIVE or "Move to Inactive",
-        })
-    end
-
-    -- Show on Main Screen checkbox (watch bar)
-    if ReputationDetailMainScreenCheckbox and ReputationDetailMainScreenCheckbox:IsShown() then
-        tinsert(children, {
-            "ProxyCheckButton",
-            frame = ReputationDetailMainScreenCheckbox,
-            label = L["Watched"],
-        })
-    end
-
-    -- Close button
-    if ReputationDetailCloseButton then
-        tinsert(children, {
-            "ProxyButton",
-            frame = ReputationDetailCloseButton,
-            label = CLOSE or "Close",
-        })
-    end
-
-    return {
-        "List",
-        label = factionName,
-        children = children,
-    }
-end)
+end

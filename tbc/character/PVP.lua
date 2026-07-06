@@ -1,78 +1,55 @@
 local char = WowVision.tbc.character
-local gen = char.gen
 local L = char.L
 
-gen:Element("character/PVP", function(props)
-    local children = {}
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
 
-    -- Honor Points
-    local honorLabel = PVPFrameHonorLabel and PVPFrameHonorLabel:GetText() or ""
-    local honorPoints = PVPFrameHonorPoints and PVPFrameHonorPoints:GetText() or "0"
-    if honorLabel ~= "" then
-        tinsert(children, {
-            "Text",
-            text = honorLabel .. " " .. honorPoints,
-        })
+-- The TBC PVP tab: honor and arena points, the kill statistics, and the
+-- week/season toggle. All live text.
+
+local function pairText(labelRegion, valueRegion, fallbackLabel, separator)
+    return function()
+        local label = labelRegion ~= nil and labelRegion:GetText() or fallbackLabel
+        if label == nil or label == "" then
+            return nil
+        end
+        local value = valueRegion ~= nil and valueRegion:GetText() or "0"
+        return label .. (separator or " ") .. value
     end
+end
 
-    -- Arena Points
-    local arenaLabel = PVPFrameArenaLabel and PVPFrameArenaLabel:GetText() or ""
-    local arenaPoints = PVPFrameArenaPoints and PVPFrameArenaPoints:GetText() or "0"
-    if arenaLabel ~= "" then
-        tinsert(children, {
-            "Text",
-            text = arenaLabel .. " " .. arenaPoints,
-        })
+function char.renderPVP(builder)
+    builder:beginStop("pvp")
+    builder:pushContext("pvp", L["PVP"])
+
+    builder:addItem(
+        ControlId.structural("honor"),
+        nodes.text({ label = pairText(PVPFrameHonorLabel, PVPFrameHonorPoints) })
+    )
+    builder:addItem(
+        ControlId.structural("arena"),
+        nodes.text({ label = pairText(PVPFrameArenaLabel, PVPFrameArenaPoints) })
+    )
+
+    builder:pushContext("kills", L["Honorable Kills"])
+    builder:addItem(
+        ControlId.structural("today"),
+        nodes.text({ label = pairText(PVPHonorTodayLabel, PVPHonorTodayKills, L["Today"], ": ") })
+    )
+    builder:addItem(
+        ControlId.structural("yesterday"),
+        nodes.text({ label = pairText(PVPHonorYesterdayLabel, PVPHonorYesterdayKills, L["Yesterday"], ": ") })
+    )
+    builder:addItem(
+        ControlId.structural("lifetime"),
+        nodes.text({ label = pairText(PVPHonorLifetimeLabel, PVPHonorLifetimeKills, L["Lifetime"], ": ") })
+    )
+    builder:popContext()
+    builder:popContext()
+
+    if PVPFrameToggleButton ~= nil and PVPFrameToggleButton:IsShown() then
+        builder:beginStop("toggle")
+        builder:addItem(ControlId.forObject(PVPFrameToggleButton), nodes.proxyButton({ target = PVPFrameToggleButton }))
     end
-
-    -- Kill Statistics
-    local killsChildren = {}
-
-    -- Today
-    local todayLabel = PVPHonorTodayLabel and PVPHonorTodayLabel:GetText() or L["Today"]
-    local todayKills = PVPHonorTodayKills and PVPHonorTodayKills:GetText() or "0"
-    tinsert(killsChildren, {
-        "Text",
-        text = todayLabel .. ": " .. todayKills,
-    })
-
-    -- Yesterday
-    local yesterdayLabel = PVPHonorYesterdayLabel and PVPHonorYesterdayLabel:GetText() or L["Yesterday"]
-    local yesterdayKills = PVPHonorYesterdayKills and PVPHonorYesterdayKills:GetText() or "0"
-    tinsert(killsChildren, {
-        "Text",
-        text = yesterdayLabel .. ": " .. yesterdayKills,
-    })
-
-    -- Lifetime
-    local lifetimeLabel = PVPHonorLifetimeLabel and PVPHonorLifetimeLabel:GetText() or L["Lifetime"]
-    local lifetimeKills = PVPHonorLifetimeKills and PVPHonorLifetimeKills:GetText() or "0"
-    tinsert(killsChildren, {
-        "Text",
-        text = lifetimeLabel .. ": " .. lifetimeKills,
-    })
-
-    tinsert(children, {
-        "List",
-        label = L["Honorable Kills"],
-        children = killsChildren,
-    })
-
-    -- Toggle Stats Button (Week vs Season)
-    if PVPFrameToggleButton and PVPFrameToggleButton:IsShown() then
-        tinsert(children, {
-            "ProxyButton",
-            frame = PVPFrameToggleButton,
-        })
-    end
-
-    if #children == 0 then
-        return nil
-    end
-
-    return {
-        "List",
-        label = L["PVP"],
-        children = children,
-    }
-end)
+end

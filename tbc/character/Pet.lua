@@ -1,192 +1,128 @@
 local char = WowVision.tbc.character
-local gen = char.gen
 local L = char.L
 
-gen:Element("character/Pet", function(props)
-    -- Only show if player has a pet
-    if not HasPetUI() then
-        return {
-            "Text",
-            text = L["No pet"],
-        }
-    end
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
 
-    local children = {}
+-- The TBC pet tab: name, level, loyalty, training points, experience, diet,
+-- the stat and resistance readouts (all live), and close.
 
-    -- Pet Name
-    local petName = PetNameText and PetNameText:GetText() or ""
-    if petName ~= "" then
-        tinsert(children, {
-            "Text",
-            text = petName,
-        })
-    end
-
-    -- Pet Level/Family
-    local petLevel = PetLevelText and PetLevelText:GetText() or ""
-    if petLevel ~= "" then
-        tinsert(children, {
-            "Text",
-            text = petLevel,
-        })
-    end
-
-    -- Pet Loyalty (hunter pets)
-    local petLoyalty = PetLoyaltyText and PetLoyaltyText:GetText() or ""
-    if petLoyalty ~= "" then
-        tinsert(children, {
-            "Text",
-            text = petLoyalty,
-        })
-    end
-
-    -- Training Points (hunter pets)
-    local trainingLabel = PetTrainingPointLabel and PetTrainingPointLabel:GetText() or ""
-    local trainingPoints = PetTrainingPointText and PetTrainingPointText:GetText() or ""
-    if trainingLabel ~= "" and trainingPoints ~= "" then
-        tinsert(children, {
-            "Text",
-            text = trainingLabel .. " " .. trainingPoints,
-        })
-    end
-
-    -- Experience Bar
-    local xpText = PetPaperDollFrameExpBarText and PetPaperDollFrameExpBarText:GetText() or ""
-    if xpText ~= "" then
-        tinsert(children, {
-            "Text",
-            text = xpText,
-        })
-    end
-
-    -- Happiness/Diet info
-    if PetPaperDollPetInfo and PetPaperDollPetInfo:IsShown() then
-        local foodTypes = GetPetFoodTypes()
-        if foodTypes then
-            local dietText = BuildListString(foodTypes)
-            if dietText and dietText ~= "" then
-                tinsert(children, {
-                    "Text",
-                    text = L["Diet"] .. ": " .. dietText,
-                })
-            end
+local function textOf(region)
+    return function()
+        local text = region ~= nil and region:GetText() or nil
+        if text ~= nil and text ~= "" then
+            return text
         end
+        return nil
+    end
+end
+
+local function pairText(labelRegion, valueRegion)
+    return function()
+        local label = labelRegion ~= nil and labelRegion:GetText() or nil
+        if label == nil or label == "" then
+            return nil
+        end
+        local value = valueRegion ~= nil and valueRegion:GetText() or ""
+        return label .. " " .. value
+    end
+end
+
+function char.renderPet(builder)
+    if not HasPetUI() then
+        builder:beginStop("noPet")
+        builder:addItem(ControlId.structural("noPet"), nodes.text({ label = L["No pet"] }))
+        return
     end
 
-    -- Base Stats (left column)
-    local statsChildren = {}
+    builder:beginStop("pet")
+    builder:pushContext("pet", L["Pet"])
+
+    builder:addItem(ControlId.structural("petName"), nodes.text({ label = textOf(PetNameText) }))
+    builder:addItem(ControlId.structural("petLevel"), nodes.text({ label = textOf(PetLevelText) }))
+    builder:addItem(ControlId.structural("petLoyalty"), nodes.text({ label = textOf(PetLoyaltyText) }))
+    builder:addItem(
+        ControlId.structural("petTraining"),
+        nodes.text({ label = pairText(PetTrainingPointLabel, PetTrainingPointText) })
+    )
+    builder:addItem(ControlId.structural("petXP"), nodes.text({ label = textOf(PetPaperDollFrameExpBarText) }))
+    builder:addItem(
+        ControlId.structural("petDiet"),
+        nodes.text({
+            label = function()
+                if PetPaperDollPetInfo == nil or not PetPaperDollPetInfo:IsShown() then
+                    return nil
+                end
+                local foodTypes = GetPetFoodTypes()
+                if foodTypes == nil then
+                    return nil
+                end
+                local dietText = BuildListString(foodTypes)
+                if dietText ~= nil and dietText ~= "" then
+                    return L["Diet"] .. ": " .. dietText
+                end
+                return nil
+            end,
+        })
+    )
+
+    builder:pushContext("petStats", L["Stats"])
     for i = 1, 5 do
         local statFrame = _G["PetStatFrame" .. i]
-        if statFrame and statFrame:IsShown() then
-            local label = _G["PetStatFrame" .. i .. "Label"]
-            local statText = _G["PetStatFrame" .. i .. "StatText"]
-            local labelText = label and label:GetText() or ""
-            local valueText = statText and statText:GetText() or ""
-            if labelText ~= "" then
-                tinsert(statsChildren, {
-                    "Text",
-                    text = labelText .. " " .. valueText,
+        if statFrame ~= nil and statFrame:IsShown() then
+            builder:addItem(
+                ControlId.structural("petStat:" .. i),
+                nodes.text({
+                    label = pairText(_G["PetStatFrame" .. i .. "Label"], _G["PetStatFrame" .. i .. "StatText"]),
                 })
-            end
+            )
         end
     end
-
-    -- Combat Stats (right column)
-    -- Attack Power
-    if PetAttackPowerFrame and PetAttackPowerFrame:IsShown() then
-        local label = PetAttackPowerFrameLabel and PetAttackPowerFrameLabel:GetText() or ""
-        local value = PetAttackPowerFrameStatText and PetAttackPowerFrameStatText:GetText() or ""
-        if label ~= "" then
-            tinsert(statsChildren, {
-                "Text",
-                text = label .. " " .. value,
-            })
+    local combatStats = {
+        { key = "attackPower", frame = PetAttackPowerFrame, label = PetAttackPowerFrameLabel, value = PetAttackPowerFrameStatText },
+        { key = "damage", frame = PetDamageFrame, label = PetDamageFrameLabel, value = PetDamageFrameStatText },
+        { key = "spellDamage", frame = PetSpellDamageFrame, label = PetSpellDamageFrameLabel, value = PetSpellDamageFrameStatText },
+        { key = "armor", frame = PetArmorFrame, label = PetArmorFrameLabel, value = PetArmorFrameStatText },
+    }
+    for _, stat in ipairs(combatStats) do
+        if stat.frame ~= nil and stat.frame:IsShown() then
+            builder:addItem(
+                ControlId.structural("petStat:" .. stat.key),
+                nodes.text({ label = pairText(stat.label, stat.value) })
+            )
         end
     end
+    builder:popContext()
 
-    -- Damage
-    if PetDamageFrame and PetDamageFrame:IsShown() then
-        local label = PetDamageFrameLabel and PetDamageFrameLabel:GetText() or ""
-        local value = PetDamageFrameStatText and PetDamageFrameStatText:GetText() or ""
-        if label ~= "" then
-            tinsert(statsChildren, {
-                "Text",
-                text = label .. " " .. value,
-            })
-        end
-    end
-
-    -- Spell Damage
-    if PetSpellDamageFrame and PetSpellDamageFrame:IsShown() then
-        local label = PetSpellDamageFrameLabel and PetSpellDamageFrameLabel:GetText() or ""
-        local value = PetSpellDamageFrameStatText and PetSpellDamageFrameStatText:GetText() or ""
-        if label ~= "" then
-            tinsert(statsChildren, {
-                "Text",
-                text = label .. " " .. value,
-            })
-        end
-    end
-
-    -- Armor
-    if PetArmorFrame and PetArmorFrame:IsShown() then
-        local label = PetArmorFrameLabel and PetArmorFrameLabel:GetText() or ""
-        local value = PetArmorFrameStatText and PetArmorFrameStatText:GetText() or ""
-        if label ~= "" then
-            tinsert(statsChildren, {
-                "Text",
-                text = label .. " " .. value,
-            })
-        end
-    end
-
-    if #statsChildren > 0 then
-        tinsert(children, {
-            "List",
-            label = L["Stats"],
-            children = statsChildren,
-        })
-    end
-
-    -- Resistances
-    local resChildren = {}
+    builder:pushContext("petResistances", L["Resistances"])
     local resNames = { RESISTANCE6_NAME, RESISTANCE2_NAME, RESISTANCE3_NAME, RESISTANCE4_NAME, RESISTANCE5_NAME }
     for i = 1, 5 do
         local resText = _G["PetMagicResText" .. i]
-        local value = resText and resText:GetText() or ""
-        if value ~= "" and value ~= "0" then
-            local resName = resNames[i] or ""
-            tinsert(resChildren, {
-                "Text",
-                text = resName .. " " .. value,
+        local resName = resNames[i]
+        local index = i
+        builder:addItem(
+            ControlId.structural("petRes:" .. i),
+            nodes.text({
+                label = function()
+                    local region = _G["PetMagicResText" .. index]
+                    local value = region ~= nil and region:GetText() or nil
+                    if value ~= nil and value ~= "" and value ~= "0" then
+                        return (resName or "") .. " " .. value
+                    end
+                    return nil
+                end,
             })
-        end
+        )
     end
+    builder:popContext()
+    builder:popContext()
 
-    if #resChildren > 0 then
-        tinsert(children, {
-            "List",
-            label = L["Resistances"],
-            children = resChildren,
-        })
+    if PetPaperDollCloseButton ~= nil and PetPaperDollCloseButton:IsShown() then
+        builder:beginStop("petClose")
+        builder:addItem(
+            ControlId.forObject(PetPaperDollCloseButton),
+            nodes.proxyButton({ target = PetPaperDollCloseButton, label = CLOSE })
+        )
     end
-
-    -- Close Button
-    if PetPaperDollCloseButton and PetPaperDollCloseButton:IsShown() then
-        tinsert(children, {
-            "ProxyButton",
-            frame = PetPaperDollCloseButton,
-            label = CLOSE,
-        })
-    end
-
-    if #children == 0 then
-        return nil
-    end
-
-    return {
-        "List",
-        label = L["Pet"],
-        children = children,
-    }
-end)
+end

@@ -1,190 +1,191 @@
 local char = WowVision.tbc.character
-local gen = char.gen
 local L = char.L
+
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
+
+-- The TBC skills tab: a Faux list of skill lines with pool-relative row
+-- ids. Headers click their SkillTypeLabel button; skill rows click the
+-- row's Border button; labels are data-first from GetSkillLineInfo. The
+-- selected skill's detail follows, with unlearn for abandonable skills.
 
 local NUM_SKILLS_DISPLAYED = 12
 
--- Build a single element for a skill row
--- The frame passed in is SkillRankFrame[i], use its ID to find related frames
-local function buildSkillElement(self, frame)
-    local i = frame:GetID()
-    local skillBar = frame
-    local headerLabel = _G["SkillTypeLabel" .. i]
-
-    -- Check if this is a header row
-    if headerLabel and headerLabel:IsShown() then
-        local name = headerLabel:GetText() or ""
-        if name == "" then
-            return nil
-        end
-
-        local headerState = headerLabel.isExpanded and "expanded" or "collapsed"
-
-        return {
-            "ProxyButton",
-            frame = headerLabel,
-            label = name,
-            header = headerState,
-        }
-    end
-
-    -- Check if this is a skill row
-    if skillBar and skillBar:IsShown() then
-        local nameText = _G["SkillRankFrame" .. i .. "SkillName"]
-        local rankText = _G["SkillRankFrame" .. i .. "SkillRank"]
-
-        local name = nameText and nameText:GetText() or ""
-        if name == "" then
-            return nil
-        end
-
-        local rank = rankText and rankText:GetText() or ""
-        local label = name
-        if rank and rank ~= "" then
-            label = label .. " " .. rank
-        end
-
-        -- Mark as selected if this skill is currently selected
-        local skillIndex = skillBar.skillIndex
-        local isSelected = skillIndex and skillIndex == GetSelectedSkill()
-
-        -- The clickable frame is SkillRankFrame[i]Border (a child Button)
-        local borderButton = _G["SkillRankFrame" .. i .. "Border"]
-
-        return {
-            "ProxyButton",
-            frame = borderButton,
-            label = label,
-            selected = isSelected,
-        }
-    end
-
-    return nil
-end
-
-local function getNumEntries()
-    return GetNumSkillLines()
-end
-
-local function getSkillIndex(self, frame)
-    local offset = FauxScrollFrame_GetOffset(SkillListScrollFrame) or 0
-    return frame:GetID() + offset
-end
-
--- Return the actual SkillRankFrame elements
-local function getSkillRows()
+local function skillButtons()
     local rows = {}
     for i = 1, NUM_SKILLS_DISPLAYED do
         local frame = _G["SkillRankFrame" .. i]
-        if frame then
+        if frame ~= nil then
             tinsert(rows, frame)
         end
     end
     return rows
 end
 
-gen:Element("character/Skills", function(props)
-    local children = {}
+local function skillIndexOf(button)
+    local offset = FauxScrollFrame_GetOffset(SkillListScrollFrame) or 0
+    return button:GetID() + offset
+end
 
-    -- Add collapse all button
-    if SkillFrameCollapseAllButton and SkillFrameCollapseAllButton:IsShown() then
-        local collapseLabel = SkillFrameCollapseAllButton.isExpanded and L["Collapse All"] or L["Expand All"]
-        tinsert(children, {
-            "ProxyButton",
-            frame = SkillFrameCollapseAllButton,
-            label = collapseLabel,
-        })
+local function skillLabel(index)
+    local skillName, isHeader, _, skillRank, numTempPoints, skillModifier, skillMaxRank = GetSkillLineInfo(index)
+    if skillName == nil or skillName == "" then
+        return nil
+    end
+    if isHeader then
+        return skillName
+    end
+    local label = skillName
+    if skillMaxRank ~= nil and skillMaxRank > 1 then
+        local displayRank = (skillRank or 0) + (numTempPoints or 0)
+        label = label .. " " .. displayRank
+        if skillModifier ~= nil and skillModifier ~= 0 then
+            local sign = skillModifier > 0 and "+" or ""
+            label = label .. " (" .. sign .. skillModifier .. ")"
+        end
+        label = label .. "/" .. skillMaxRank
+    end
+    return label
+end
+
+local function emitSkill(builder, index, helpers)
+    local skillName, isHeader, isExpanded = GetSkillLineInfo(index)
+    if skillName == nil or skillName == "" then
+        return
     end
 
-    -- If scroll frame is shown, use ProxyFauxScrollFrame
-    if SkillListScrollFrame and SkillListScrollFrame:IsShown() then
-        tinsert(children, {
-            "ProxyFauxScrollFrame",
-            frame = SkillListScrollFrame,
-            buttonHeight = SKILLFRAME_SKILL_HEIGHT,
-            updateFunction = SkillFrame_UpdateSkills,
-            getNumEntries = getNumEntries,
-            getElement = buildSkillElement,
-            getElementIndex = getSkillIndex,
-            getButtons = getSkillRows,
+    local announcements = {
+        {
+            text = function()
+                return skillLabel(index)
+            end,
+            kind = kinds.label,
+        },
+    }
+
+    if isHeader then
+        tinsert(announcements, {
+            text = function()
+                local _, _, expanded = GetSkillLineInfo(index)
+                return expanded and L["Expanded"] or L["Collapsed"]
+            end,
+            kind = kinds.value,
         })
     else
-        -- Scroll frame is hidden (not enough skills to scroll), render rows directly
-        for i = 1, NUM_SKILLS_DISPLAYED do
-            local frame = _G["SkillRankFrame" .. i]
-            if frame then
-                local element = buildSkillElement(nil, frame)
-                if element then
-                    tinsert(children, element)
+        tinsert(announcements, {
+            text = function()
+                if index == GetSelectedSkill() then
+                    return L["selected"]
                 end
-            end
-        end
+                return nil
+            end,
+            kind = kinds.selected,
+        })
     end
 
-    if #children == 0 then
-        return nil
+    builder:addItem(helpers.id, {
+        controlType = graph.controlTypes.button,
+        announcements = announcements,
+        bindings = {
+            {
+                binding = "leftClick",
+                type = "Click",
+                emulatedKey = "LeftButton",
+                target = function()
+                    local row = helpers.target()
+                    if row == nil then
+                        return nil
+                    end
+                    local slot = row:GetID()
+                    if isHeader then
+                        return _G["SkillTypeLabel" .. slot]
+                    end
+                    return _G["SkillRankFrame" .. slot .. "Border"]
+                end,
+            },
+        },
+        onFocus = helpers.onFocus,
+        onFocusTick = helpers.onFocusTick,
+        onUnfocus = helpers.onUnfocus,
+    })
+end
+
+local function skillEntryId(index)
+    local skillName, isHeader = GetSkillLineInfo(index)
+    if skillName ~= nil and skillName ~= "" then
+        return ControlId.structural((isHeader and "skillHeader:" or "skill:") .. skillName)
+    end
+    return ControlId.structural("skill:" .. index)
+end
+
+function char.renderSkills(builder)
+    if SkillFrameCollapseAllButton ~= nil and SkillFrameCollapseAllButton:IsShown() then
+        builder:beginStop("collapseAll")
+        builder:addItem(
+            ControlId.forObject(SkillFrameCollapseAllButton),
+            nodes.proxyButton({
+                target = SkillFrameCollapseAllButton,
+                label = function()
+                    return SkillFrameCollapseAllButton.isExpanded and L["Collapse All"] or L["Expand All"]
+                end,
+            })
+        )
     end
 
-    return {
-        "List",
+    builder:beginStop("skills")
+    nodes.hybridScrollList(builder, {
+        scrollFrame = SkillListScrollFrame,
+        key = "skills",
         label = L["Skills"],
-        children = children,
-    }
-end)
-
-gen:Element("character/SkillsDetail", function(props)
-    local selectedSkill = GetSelectedSkill()
-    if not selectedSkill or selectedSkill == 0 then
-        return nil
-    end
-
-    local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType, skillDescription =
-        GetSkillLineInfo(selectedSkill)
-
-    -- Don't show detail for headers or empty
-    if not skillName or skillName == "" or header then
-        return nil
-    end
-
-    local children = {}
-
-    -- Skill rank info
-    local rankLabel = skillName
-    if skillMaxRank and skillMaxRank > 1 then
-        local displayRank = skillRank + (numTempPoints or 0)
-        rankLabel = skillName .. " " .. displayRank .. "/" .. skillMaxRank
-        if skillModifier and skillModifier ~= 0 then
-            local sign = skillModifier > 0 and "+" or ""
-            rankLabel = skillName .. " " .. displayRank .. " (" .. sign .. skillModifier .. ")/" .. skillMaxRank
-        end
-    end
-
-    tinsert(children, {
-        "Text",
-        text = rankLabel,
+        count = GetNumSkillLines,
+        rowHeight = SKILLFRAME_SKILL_HEIGHT,
+        buttons = skillButtons,
+        indexOf = skillIndexOf,
+        id = skillEntryId,
+        emit = emitSkill,
     })
 
-    -- Description
-    if skillDescription and skillDescription ~= "" then
-        tinsert(children, {
-            "Text",
-            text = skillDescription,
-        })
+    local selectedSkill = GetSelectedSkill()
+    if selectedSkill ~= nil and selectedSkill ~= 0 then
+        local skillName, header, _, _, _, _, _, isAbandonable, _, _, _, _, skillDescription =
+            GetSkillLineInfo(selectedSkill)
+        if skillName ~= nil and skillName ~= "" and not header then
+            builder:beginStop("skillDetail")
+            builder:pushContext("skillDetail", L["Skill Details"])
+            builder:addItem(
+                ControlId.structural("skillRank"),
+                nodes.text({
+                    label = function()
+                        return skillLabel(GetSelectedSkill())
+                    end,
+                })
+            )
+            builder:addItem(
+                ControlId.structural("skillDescription"),
+                nodes.text({
+                    label = function()
+                        local selected = GetSelectedSkill()
+                        if selected == nil or selected == 0 then
+                            return nil
+                        end
+                        local _, _, _, _, _, _, _, _, _, _, _, _, description = GetSkillLineInfo(selected)
+                        if description ~= nil and description ~= "" then
+                            return description
+                        end
+                        return nil
+                    end,
+                })
+            )
+            local unlearnButton = SkillDetailStatusBarUnlearnButton
+            if isAbandonable and unlearnButton ~= nil and unlearnButton:IsShown() then
+                builder:addItem(
+                    ControlId.forObject(unlearnButton),
+                    nodes.proxyButton({ target = unlearnButton, label = L["Unlearn"] })
+                )
+            end
+            builder:popContext()
+        end
     end
-
-    -- Unlearn button (for abandonable skills like professions)
-    local unlearnButton = SkillDetailStatusBarUnlearnButton
-    if isAbandonable and unlearnButton and unlearnButton:IsShown() then
-        tinsert(children, {
-            "ProxyButton",
-            frame = unlearnButton,
-            label = L["Unlearn"],
-        })
-    end
-
-    return {
-        "List",
-        label = L["Skill Details"],
-        children = children,
-    }
-end)
+end

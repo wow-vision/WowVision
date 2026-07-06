@@ -1,64 +1,72 @@
 local module = WowVision.base.windows:createModule("character")
 local L = module.L
 module:setLabel(L["Character"])
-local gen = module:hasUI()
 
--- Export module and gen for sub-files
+local graph = WowVision.graph
+local nodes = graph.nodes
+local ControlId = graph.ControlId
+local kinds = graph.kinds
+
+-- The TBC character panel: five tabs (paper doll, pet, reputation, skills,
+-- PVP), each body provided by its file through char.render* functions.
 WowVision.tbc = WowVision.tbc or {}
-WowVision.tbc.character = {
+local char = {
     module = module,
-    gen = gen,
     L = L,
 }
+WowVision.tbc.character = char
 
-gen:Element("character", function(props)
-    local result = { "Panel", label = L["Character"], wrap = true, children = {} }
-    local tab = CharacterFrame.selectedTab
-    if tab == 1 then
-        tinsert(result.children, { "character/PaperDoll", frame = PaperDollFrame })
-    elseif tab == 2 then
-        tinsert(result.children, { "character/Pet", frame = PetPaperDollFrame })
-    elseif tab == 3 then
-        tinsert(result.children, { "character/Reputation", frame = ReputationFrame })
-    elseif tab == 4 then
-        tinsert(result.children, { "character/Skills", frame = SkillFrame })
-    elseif tab == 5 then
-        tinsert(result.children, { "character/PVP", frame = PVPFrame })
-    else
-        tinsert(result.children, { "Text", text = "Not yet implemented" })
+local function render(builder, screen)
+    if CharacterFrame == nil or not CharacterFrame:IsShown() then
+        return
     end
-    -- Add detail panels after tabs (only shows when applicable)
-    if tab == 3 then
-        tinsert(result.children, { "character/ReputationDetail" })
-    elseif tab == 4 then
-        tinsert(result.children, { "character/SkillsDetail" })
-    end
-    tinsert(result.children, { "character/Tabs" })
-    return result
-end)
+    builder:pushContext("character", L["Character"])
 
-gen:Element("character/Tabs", function(props)
-    local result = { "List", label = L["Tabs"], direction = "horizontal", children = {} }
-    -- TBC has 5 tabs
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
     for i = 1, 5 do
         local tab = _G["CharacterFrameTab" .. i]
-        if tab and tab:IsShown() then
-            tinsert(result.children, {
-                "ProxyButton",
-                key = "tab_" .. i,
-                frame = tab,
-                selected = CharacterFrame.selectedTab == i,
-            })
+        local tabIndex = i
+        if tab ~= nil and tab:IsShown() then
+            local vtable = nodes.proxyButton({ target = tab })
+            if vtable ~= nil then
+                tinsert(vtable.announcements, {
+                    text = function()
+                        if CharacterFrame.selectedTab == tabIndex then
+                            return L["selected"]
+                        end
+                        return nil
+                    end,
+                    kind = kinds.selected,
+                })
+                builder:addItem(ControlId.forObject(tab), vtable)
+            end
         end
     end
-    return result
-end)
+    builder:endRow()
+    builder:popContext()
+
+    local tab = CharacterFrame.selectedTab
+    if tab == 1 and char.renderPaperDoll ~= nil then
+        char.renderPaperDoll(builder)
+    elseif tab == 2 and char.renderPet ~= nil then
+        char.renderPet(builder)
+    elseif tab == 3 and char.renderReputation ~= nil then
+        char.renderReputation(builder)
+    elseif tab == 4 and char.renderSkills ~= nil then
+        char.renderSkills(builder)
+    elseif tab == 5 and char.renderPVP ~= nil then
+        char.renderPVP(builder)
+    end
+
+    builder:popContext()
+end
 
 module:registerWindow({
     type = "FrameWindow",
     name = "character",
-    generated = true,
-    rootElement = "character",
     frameName = "CharacterFrame",
     conflictingAddons = { "Sku" },
+    graphScreen = { render = render },
 })
