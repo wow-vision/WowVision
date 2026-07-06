@@ -363,7 +363,38 @@ local function renderItemBuy(builder)
     end
 end
 
-local function renderBuyTab(builder)
+-- Drilling into a result replaces the browse list with a purchase pane:
+-- land focus on its Back button, and remember the result so Back returns
+-- to it instead of leaving focus recovery to walk backward to the search
+-- button.
+local function trackBuyTransitions(screen)
+    local mode = "browse"
+    local back = nil
+    if AuctionHouseFrame.CommoditiesBuyFrame:IsShown() then
+        mode = "commodity"
+        back = AuctionHouseFrame.CommoditiesBuyFrame.BackButton
+    elseif AuctionHouseFrame.ItemBuyFrame:IsShown() then
+        mode = "item"
+        back = AuctionHouseFrame.ItemBuyFrame.BackButton
+    end
+    if screen._buyMode == mode then
+        return
+    end
+    local previous = screen._buyMode
+    screen._buyMode = mode
+    if mode ~= "browse" and back ~= nil then
+        if previous == "browse" then
+            screen._browseReturn = screen.state.curKey
+        end
+        screen.state.nextSuggestedMove = ControlId.forObject(back)
+    elseif mode == "browse" and previous ~= nil and screen._browseReturn ~= nil then
+        screen.state.nextSuggestedMove = screen._browseReturn
+        screen._browseReturn = nil
+    end
+end
+
+local function renderBuyTab(builder, screen)
+    trackBuyTransitions(screen)
     renderCategories(builder)
     renderSearchBar(builder)
     if AuctionHouseFrame.BrowseResultsFrame:IsShown() then
@@ -700,7 +731,7 @@ local function render(builder, screen)
     builder:popContext()
 
     if AuctionHouseFrame.BuyTab ~= nil and AuctionHouseFrame.selectedTab == 1 then
-        renderBuyTab(builder)
+        renderBuyTab(builder, screen)
     elseif AuctionHouseFrame.selectedTab == 2 then
         renderSellTab(builder)
     elseif AuctionHouseFrame.selectedTab == 3 then
