@@ -54,16 +54,55 @@ local function itemKeyId(prefix, itemKey, fallbackIndex)
     )
 end
 
-local function isSelectedEntry(list, data)
-    if list == nil or list.GetSelectedEntry == nil then
+-- AuctionHouseItemList ScrollBoxes use index-range data providers: the
+-- provider elements are NUMBERS, and the real row data comes from the
+-- list's registered getEntry -- the very same table the row buttons carry
+-- as their rowData.
+local function rowEntry(list, data)
+    if type(data) == "number" and list ~= nil and list.getEntry ~= nil then
+        local ok, entry = pcall(list.getEntry, data)
+        if ok then
+            return entry
+        end
+        return nil
+    end
+    return data
+end
+
+local function isSelectedEntry(list, entry)
+    if list == nil or list.GetSelectedEntry == nil or entry == nil then
         return false
     end
     local ok, selected = pcall(list.GetSelectedEntry, list)
-    return ok and selected == data
+    return ok and selected == entry
 end
 
--- A table row: label composed from row data, real clicks, selected state
--- when the list tracks one.
+-- The old screen's deliberate naming path: hover the materialized row and
+-- read the item name off GameTooltip -- the full display name, suffixes
+-- included. Falls back to nil when the row is not on screen yet (the live
+-- label re-resolves once focus scrolls it in).
+local function scrapeRowName(helpers)
+    local row = helpers.target()
+    if row == nil then
+        return nil
+    end
+    local name
+    pcall(function()
+        local onEnter = row:GetScript("OnEnter")
+        if onEnter ~= nil then
+            onEnter(row)
+            name = GameTooltip:GetItem()
+            local onLeave = row:GetScript("OnLeave")
+            if onLeave ~= nil then
+                onLeave(row)
+            end
+        end
+    end)
+    return name
+end
+
+-- A table row: label composed from the resolved entry, real clicks,
+-- selected state when the list tracks one. labelOf(entry, index, helpers).
 local function tableRow(list, labelOf)
     return function(data, index, helpers)
         return {
@@ -71,13 +110,13 @@ local function tableRow(list, labelOf)
             announcements = {
                 {
                     text = function()
-                        return labelOf(data, index)
+                        return labelOf(rowEntry(list, data), index, helpers)
                     end,
                     kind = kinds.label,
                 },
                 {
                     text = function()
-                        if isSelectedEntry(list, data) then
+                        if isSelectedEntry(list, rowEntry(list, data)) then
                             return L["selected"]
                         end
                         return nil
@@ -201,16 +240,17 @@ local function renderBrowseResults(builder)
         key = "results",
         label = L["Results"],
         id = function(data, index)
-            return itemKeyId("browse", data ~= nil and data.itemKey or nil, index)
+            local entry = rowEntry(resultsFrame.ItemList, data)
+            return itemKeyId("browse", entry ~= nil and entry.itemKey or nil, index)
         end,
-        row = tableRow(resultsFrame.ItemList, function(data)
-            if data == nil then
+        row = tableRow(resultsFrame.ItemList, function(entry, index, helpers)
+            if entry == nil then
                 return nil
             end
             local parts = {}
-            tinsert(parts, itemKeyName(data.itemKey) or "")
-            tinsert(parts, coin(data.minPrice))
-            tinsert(parts, L["Available"] .. " " .. tostring(data.totalQuantity or 0))
+            tinsert(parts, scrapeRowName(helpers) or itemKeyName(entry.itemKey) or "")
+            tinsert(parts, coin(entry.minPrice))
+            tinsert(parts, L["Available"] .. " " .. tostring(entry.totalQuantity or 0))
             return table.concat(parts, ", ")
         end),
     })
@@ -227,20 +267,21 @@ local function renderCommoditiesBuy(builder)
         key = "commodityAuctions",
         label = L["Auctions"],
         id = function(data, index)
-            if data ~= nil and data.auctionID ~= nil then
-                return ControlId.structural("cauction:" .. data.auctionID)
+            local entry = rowEntry(itemList, data)
+            if entry ~= nil and entry.auctionID ~= nil then
+                return ControlId.structural("cauction:" .. entry.auctionID)
             end
             return ControlId.structural("cauction:" .. index)
         end,
-        row = tableRow(itemList, function(data)
-            if data == nil then
+        row = tableRow(itemList, function(entry)
+            if entry == nil then
                 return nil
             end
-            local name = data.itemID ~= nil and C_Item.GetItemInfo(data.itemID) or nil
+            local name = entry.itemID ~= nil and C_Item.GetItemInfo(entry.itemID) or nil
             local parts = {}
             tinsert(parts, name or "")
-            tinsert(parts, L["Unit Price"] .. " " .. coin(data.unitPrice))
-            tinsert(parts, L["Available"] .. " " .. tostring(data.quantity or 0))
+            tinsert(parts, L["Unit Price"] .. " " .. coin(entry.unitPrice))
+            tinsert(parts, L["Available"] .. " " .. tostring(entry.quantity or 0))
             return table.concat(parts, ", ")
         end),
     })
@@ -274,24 +315,29 @@ local function renderItemBuy(builder)
             key = "itemAuctions",
             label = L["Auctions"],
             id = function(data, index)
-                if data ~= nil and data.auctionID ~= nil then
-                    return ControlId.structural("auction:" .. data.auctionID)
+                local entry = rowEntry(frame.ItemList, data)
+                if entry ~= nil and entry.auctionID ~= nil then
+                    return ControlId.structural("auction:" .. entry.auctionID)
                 end
                 return ControlId.structural("auction:" .. index)
             end,
-            row = tableRow(frame.ItemList, function(data)
-                if data == nil then
+            row = tableRow(frame.ItemList, function(entry, index, helpers)
+                if entry == nil then
                     return nil
                 end
                 local parts = {}
-                if data.bidAmount ~= nil then
-                    tinsert(parts, L["Bid Price"] .. " " .. coin(data.bidAmount))
+                local name = scrapeRowName(helpers)
+                if name ~= nil then
+                    tinsert(parts, name)
                 end
-                if data.buyoutAmount ~= nil then
-                    tinsert(parts, L["Buyout Price"] .. " " .. coin(data.buyoutAmount))
+                if entry.bidAmount ~= nil then
+                    tinsert(parts, L["Bid Price"] .. " " .. coin(entry.bidAmount))
                 end
-                if data.timeLeft ~= nil then
-                    tinsert(parts, L["Time Left"] .. " " .. getTimeLeftString(data.timeLeft))
+                if entry.buyoutAmount ~= nil then
+                    tinsert(parts, L["Buyout Price"] .. " " .. coin(entry.buyoutAmount))
+                end
+                if entry.timeLeft ~= nil then
+                    tinsert(parts, L["Time Left"] .. " " .. getTimeLeftString(entry.timeLeft))
                 end
                 return table.concat(parts, ", ")
             end),
@@ -413,8 +459,9 @@ local function renderSellComparables(builder, list, labelOf)
         key = "comparables",
         label = L["Auctions"],
         id = function(data, index)
-            if data ~= nil and data.auctionID ~= nil then
-                return ControlId.structural("comparable:" .. data.auctionID)
+            local entry = rowEntry(list, data)
+            if entry ~= nil and entry.auctionID ~= nil then
+                return ControlId.structural("comparable:" .. entry.auctionID)
             end
             return ControlId.structural("comparable:" .. index)
         end,
@@ -425,16 +472,20 @@ end
 local function renderItemSell(builder)
     local frame = AuctionHouseFrame.ItemSellFrame
     renderSellForm(builder, frame, true)
-    renderSellComparables(builder, frame:GetItemSellList(), function(data)
-        if data == nil then
+    renderSellComparables(builder, frame:GetItemSellList(), function(entry, index, helpers)
+        if entry == nil then
             return nil
         end
         local parts = {}
-        if data.bidAmount ~= nil then
-            tinsert(parts, L["Bid Price"] .. " " .. coin(data.bidAmount))
+        local name = scrapeRowName(helpers)
+        if name ~= nil then
+            tinsert(parts, name)
         end
-        if data.buyoutAmount ~= nil then
-            tinsert(parts, L["Buyout Price"] .. " " .. coin(data.buyoutAmount))
+        if entry.bidAmount ~= nil then
+            tinsert(parts, L["Bid Price"] .. " " .. coin(entry.bidAmount))
+        end
+        if entry.buyoutAmount ~= nil then
+            tinsert(parts, L["Buyout Price"] .. " " .. coin(entry.buyoutAmount))
         end
         return table.concat(parts, ", ")
     end)
@@ -443,16 +494,16 @@ end
 local function renderCommoditySell(builder)
     local frame = AuctionHouseFrame.CommoditiesSellFrame
     renderSellForm(builder, frame, false)
-    renderSellComparables(builder, frame:GetCommoditiesSellList(), function(data)
-        if data == nil then
+    renderSellComparables(builder, frame:GetCommoditiesSellList(), function(entry)
+        if entry == nil then
             return nil
         end
         local parts = {}
-        local name = data.itemID ~= nil and C_Item.GetItemInfo(data.itemID) or nil
+        local name = entry.itemID ~= nil and C_Item.GetItemInfo(entry.itemID) or nil
         tinsert(parts, name or "")
-        tinsert(parts, L["Unit Price"] .. " " .. coin(data.unitPrice))
-        if data.owners ~= nil and #data.owners > 0 then
-            tinsert(parts, L["Seller"] .. " " .. table.concat(data.owners, ", "))
+        tinsert(parts, L["Unit Price"] .. " " .. coin(entry.unitPrice))
+        if entry.owners ~= nil and #entry.owners > 0 then
+            tinsert(parts, L["Seller"] .. " " .. table.concat(entry.owners, ", "))
         end
         return table.concat(parts, ", ")
     end)
@@ -507,31 +558,32 @@ local function renderAuctionsTab(builder)
             key = "myAuctions",
             label = L["Auctions"],
             id = function(data, index)
-                if data ~= nil and data.auctionID ~= nil then
-                    return ControlId.structural("mine:" .. data.auctionID)
+                local entry = rowEntry(auctionsFrame.AllAuctionsList, data)
+                if entry ~= nil and entry.auctionID ~= nil then
+                    return ControlId.structural("mine:" .. entry.auctionID)
                 end
                 return ControlId.structural("mine:" .. index)
             end,
-            row = tableRow(auctionsFrame.AllAuctionsList, function(data)
-                if data == nil then
+            row = tableRow(auctionsFrame.AllAuctionsList, function(entry, index, helpers)
+                if entry == nil then
                     return nil
                 end
                 local parts = {}
-                if data.status == 1 then
+                if entry.status == 1 then
                     tinsert(parts, L["Sold"])
                 end
-                tinsert(parts, itemKeyName(data.itemKey) or "")
-                if data.quantity ~= nil and data.quantity > 1 then
-                    tinsert(parts, "x" .. data.quantity)
+                tinsert(parts, scrapeRowName(helpers) or itemKeyName(entry.itemKey) or "")
+                if entry.quantity ~= nil and entry.quantity > 1 then
+                    tinsert(parts, "x" .. entry.quantity)
                 end
-                if data.bidAmount ~= nil then
-                    tinsert(parts, L["Bid Price"] .. " " .. coin(data.bidAmount))
+                if entry.bidAmount ~= nil then
+                    tinsert(parts, L["Bid Price"] .. " " .. coin(entry.bidAmount))
                 end
-                if data.buyoutAmount ~= nil then
-                    tinsert(parts, L["Buyout Price"] .. " " .. coin(data.buyoutAmount))
+                if entry.buyoutAmount ~= nil then
+                    tinsert(parts, L["Buyout Price"] .. " " .. coin(entry.buyoutAmount))
                 end
-                if data.timeLeftSeconds ~= nil then
-                    tinsert(parts, L["Time Left"] .. " " .. SecondsToTime(data.timeLeftSeconds, false, true))
+                if entry.timeLeftSeconds ~= nil then
+                    tinsert(parts, L["Time Left"] .. " " .. SecondsToTime(entry.timeLeftSeconds, false, true))
                 end
                 return table.concat(parts, ", ")
             end),
@@ -546,28 +598,29 @@ local function renderAuctionsTab(builder)
             key = "myBids",
             label = L["Bids"],
             id = function(data, index)
-                if data ~= nil and data.auctionID ~= nil then
-                    return ControlId.structural("bid:" .. data.auctionID)
+                local entry = rowEntry(auctionsFrame.BidsList, data)
+                if entry ~= nil and entry.auctionID ~= nil then
+                    return ControlId.structural("bid:" .. entry.auctionID)
                 end
                 return ControlId.structural("bid:" .. index)
             end,
-            row = tableRow(auctionsFrame.BidsList, function(data)
-                if data == nil then
+            row = tableRow(auctionsFrame.BidsList, function(entry, index, helpers)
+                if entry == nil then
                     return nil
                 end
                 local parts = {}
-                tinsert(parts, itemKeyName(data.itemKey) or "")
-                if data.bidder ~= nil then
-                    tinsert(parts, L["Bidder"] .. " " .. tostring(data.bidder))
+                tinsert(parts, scrapeRowName(helpers) or itemKeyName(entry.itemKey) or "")
+                if entry.bidder ~= nil then
+                    tinsert(parts, L["Bidder"] .. " " .. tostring(entry.bidder))
                 end
-                if data.bidAmount ~= nil then
-                    tinsert(parts, L["Bid Amount"] .. " " .. coin(data.bidAmount))
+                if entry.bidAmount ~= nil then
+                    tinsert(parts, L["Bid Amount"] .. " " .. coin(entry.bidAmount))
                 end
-                if data.minBid ~= nil then
-                    tinsert(parts, L["Minimum Bid"] .. " " .. coin(data.minBid))
+                if entry.minBid ~= nil then
+                    tinsert(parts, L["Minimum Bid"] .. " " .. coin(entry.minBid))
                 end
-                if data.timeLeft ~= nil then
-                    tinsert(parts, L["Time Left"] .. " " .. getTimeLeftString(data.timeLeft))
+                if entry.timeLeft ~= nil then
+                    tinsert(parts, L["Time Left"] .. " " .. getTimeLeftString(entry.timeLeft))
                 end
                 return table.concat(parts, ", ")
             end),
