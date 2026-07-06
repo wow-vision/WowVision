@@ -68,23 +68,46 @@ local function render(builder, screen)
     -- Tab out goes to the NEXT STOP, so boxes sharing a stop would be
     -- unreachable.
     builder:pushContext("playerMoney", L["Money"])
-    -- Keyed children: the coin box GLOBALS are shadowed by non-widget
-    -- tables on this client.
-    builder:beginStop("gold")
-    builder:addItem(
-        ControlId.structural("gold"),
-        nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrame.gold, label = L["Gold"] })
-    )
-    builder:beginStop("silver")
-    builder:addItem(
-        ControlId.structural("silver"),
-        nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrame.silver, label = L["Silver"] })
-    )
-    builder:beginStop("copper")
-    builder:addItem(
-        ControlId.structural("copper"),
-        nodes.proxyEditBox({ editBox = TradePlayerInputMoneyFrame.copper, label = L["Copper"] })
-    )
+    -- Blizzard FORBIDS the trade money input frame (SetForbidden in
+    -- TradeFrame.lua -- anti-scam hardening), so its edit boxes cannot be
+    -- proxied at all. These are synthetic inputs over the trade money API,
+    -- the same call the forbidden frame itself makes.
+    local function setTradeCopper(total)
+        if C_TradeInfo ~= nil and C_TradeInfo.SetTradeMoney ~= nil then
+            C_TradeInfo.SetTradeMoney(total)
+        elseif SetTradeMoney ~= nil then
+            SetTradeMoney(total)
+        end
+    end
+    local function coinInput(key, label, unit, modulus)
+        builder:beginStop(key)
+        builder:addItem(
+            ControlId.structural(key),
+            nodes.textInput({
+                label = label,
+                get = function()
+                    local money = GetPlayerTradeMoney() or 0
+                    local amount = math.floor(money / unit)
+                    if modulus ~= nil then
+                        amount = amount % modulus
+                    end
+                    return amount
+                end,
+                set = function(value)
+                    local amount = tonumber(value) or 0
+                    local money = GetPlayerTradeMoney() or 0
+                    local current = math.floor(money / unit)
+                    if modulus ~= nil then
+                        current = current % modulus
+                    end
+                    setTradeCopper(money + (amount - current) * unit)
+                end,
+            })
+        )
+    end
+    coinInput("gold", L["Gold"], 10000, nil)
+    coinInput("silver", L["Silver"], 100, 100)
+    coinInput("copper", L["Copper"], 1, 100)
     builder:popContext()
 
     renderSide(builder, "targetItems", TradeFrameRecipientNameText, "TradeRecipientItem", GetTradeTargetItemInfo)
