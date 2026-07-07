@@ -139,6 +139,50 @@ local function pushChildScreen(target)
     end
 end
 
+-- Category fields open a child screen: their sub-fields operate on the
+-- nested table (aliased into the db), and their refs are InfoFrame
+-- parameter trees (alert params).
+settings.registerFieldControl("Category", function(field, owner)
+    return nodes.button({
+        label = field:getLabel(),
+        onActivate = function()
+            local host = WowVision.graphHost
+            local stack = host:focusedStack()
+            if stack == nil then
+                return
+            end
+            host:push(stack, {
+                key = "category:" .. tostring(field.key),
+                render = function(builder)
+                    builder:pushContext("category:" .. tostring(field.key), field:getLabel())
+                    local nested = field:get(owner)
+                    for _, subField in ipairs(field:getSubFields()) do
+                        if subField.showInUI ~= false then
+                            builder:addItem(
+                                ControlId.structural("field:" .. subField.key),
+                                settings.controlFor(subField, nested)
+                            )
+                        end
+                    end
+                    for _, ref in ipairs(field.refs or {}) do
+                        builder:addItem(
+                            ControlId.structural("child:" .. tostring(ref.key)),
+                            nodes.button({
+                                label = ref.target.label,
+                                onActivate = function()
+                                    pushChildScreen(ref.target)
+                                end,
+                            })
+                        )
+                    end
+                    builder:popContext()
+                end,
+            })
+        end,
+    })
+end)
+
+
 -- Emit one InfoFrame's fields and children into the builder.
 function settings.renderInto(builder, infoFrame)
     if infoFrame.label ~= nil then

@@ -459,3 +459,64 @@ classes.registerFieldType("Spell", {
         return tostring(value)
     end,
 })
+
+-- ---------------------------------------------------------------------------
+-- Category: an organizational settings sub-screen. Holds child fields (def
+-- key `fields`) over a nested table aliased into the db, plus refs to
+-- InfoFrame parameter trees (alert params) added via field:addRef. The
+-- nested table persists BY REFERENCE, so child writes flow to the db
+-- without copying.
+-- ---------------------------------------------------------------------------
+
+classes.registerFieldType("Category", {
+    validate = function(field, value)
+        if value == nil or type(value) ~= "table" then
+            return {}
+        end
+        return value
+    end,
+
+    default = function(field, obj)
+        local result = {}
+        for _, subField in ipairs(field:getSubFields()) do
+            local default = subField:getDefault(result)
+            if default ~= nil then
+                result[subField.key] = default
+            end
+        end
+        return result
+    end,
+
+    api = {
+        addRef = function(field, key, target)
+            if field.refs == nil then
+                field.refs = {}
+            end
+            tinsert(field.refs, { key = key, target = target })
+        end,
+
+        getSubFields = function(field)
+            if field._subFields == nil then
+                field._subFields = {}
+                for _, def in ipairs(field.fields or {}) do
+                    tinsert(field._subFields, classes.newField(def))
+                end
+            end
+            return field._subFields
+        end,
+
+        addField = function(field, def)
+            field.fields = field.fields or {}
+            tinsert(field.fields, def)
+            field._subFields = nil
+            return field
+        end,
+
+        addFields = function(field, defs)
+            for _, def in ipairs(defs) do
+                field:addField(def)
+            end
+            return field
+        end,
+    },
+})
