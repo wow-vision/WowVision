@@ -303,7 +303,7 @@ function classes.setFieldScope(obj, field, scope)
             else
                 value = dbValue
             end
-            setField(obj, field, value)
+            field:set(obj, value)
         end
     else
         local store = pair.char
