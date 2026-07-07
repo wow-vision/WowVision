@@ -38,6 +38,7 @@ end
 
 graph.registerControlType("button", L["Button"])
 graph.registerControlType("toggle", L["Checkbox"])
+graph.registerControlType("radio", L["Radio"])
 graph.registerControlType("dropdown", L["Dropdown"])
 graph.registerControlType("number", L["Number"])
 graph.registerControlType("editBox", L["EditBox"])

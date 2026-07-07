@@ -150,7 +150,11 @@ local function emitItem(builder, item)
         -- carrying a selection predicate are toggles; plain buttons never
         -- read as checkboxes regardless of what textures they show.
         if selectionState(description) ~= nil then
-            vtable.controlType = graph.controlTypes.toggle
+            local okRadio, isRadio = pcall(function()
+                return description.IsRadio ~= nil and description:IsRadio() == true
+            end)
+            vtable.controlType = (okRadio and isRadio) and graph.controlTypes.radio
+                or graph.controlTypes.toggle
             local captured = description
             tinsert(vtable.announcements, {
                 text = function()
