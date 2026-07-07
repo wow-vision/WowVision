@@ -86,15 +86,15 @@ function module.getActionButtonLabel(button)
 end
 
 -- Base class for all action bar types
-local ActionBar = WowVision.Class("ActionBar"):include(WowVision.InfoClass)
-ActionBar.info:addFields({
+local ActionBar = WowVision.Class("ActionBar")
+ActionBar:addFields({
     { key = "key", required = true },
     { key = "type", required = true },
     { key = "label", required = true },
 })
 
 function ActionBar:initialize(info)
-    self:setInfo(info)
+    self:applyFields(info)
 end
 
 function ActionBar:isVisible()

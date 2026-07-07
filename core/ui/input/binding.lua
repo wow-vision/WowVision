@@ -43,24 +43,19 @@ function ActivatedBinding:reactivate()
     self:activate()
 end
 
-local Binding = WowVision.Class("Binding"):include(WowVision.InfoClass)
+local Binding = WowVision.Class("Binding")
 WowVision.input.Binding = Binding
-Binding.info:addFields({
+Binding:addFields({
     { key = "key", required = true },
     { key = "type", required = true },
     { key = "vital", default = false },
     { key = "dorment", default = false },
+    -- Plain managed field: setInputs below is the checked write path and
+    -- must not be wired as the setter (it assigns self.inputs).
     {
         key = "inputs",
         default = function()
             return {}
-        end,
-        set = function(obj, key, value)
-            if type(obj.setInputs) == "function" then
-                obj:setInputs(value)
-            else
-                obj[key] = value
-            end
         end,
     },
     { key = "label" },
@@ -77,7 +72,12 @@ Binding.info:addFields({
 function Binding:initialize(info)
     self.inputs = { _type = "array" }
     self.activated = {}
-    self:setInfo(info, true)
+    self:applyFields(info, true)
+    -- Config-supplied inputs go through the conflict-checked path, as the
+    -- old field setter did.
+    if info ~= nil and info.inputs ~= nil then
+        self:setInputs(info.inputs)
+    end
 end
 
 function Binding:getLabel()
@@ -141,11 +141,28 @@ function Binding:doesInputConflict(input)
     return nil
 end
 
+-- Copy this binding's declared field values (and optionally an override
+-- table's declared keys) onto a target -- the old InfoManager:set usage.
+function Binding:collectInfo(target, source)
+    for _, field in ipairs(self.class:getFields()) do
+        local value
+        if source ~= nil then
+            value = source[field.key]
+        else
+            value = field:get(self)
+        end
+        if value ~= nil then
+            target[field.key] = value
+        end
+    end
+    return target
+end
+
 function Binding:activate(info)
     local newInfo = {}
-    self.info:set(newInfo, self)
+    self:collectInfo(newInfo)
     if info then
-        self.info:set(newInfo, info)
+        self:collectInfo(newInfo, info)
     end
     if newInfo.dorment then
         return nil

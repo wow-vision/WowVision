@@ -47,7 +47,7 @@ function InputManager:createActivationSet()
 end
 
 function InputManager:createBindingType(key)
-    local class = WowVision.Class(key .. "InputBinding", self.Binding):include(WowVision.InfoClass)
+    local class = WowVision.Class(key .. "InputBinding", self.Binding)
     self.bindingTypes:register(key, class)
     return class
 end

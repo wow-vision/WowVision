@@ -7,14 +7,14 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 
 -- Base class for all container types
-local Container = WowVision.Class("Container"):include(WowVision.InfoClass)
-Container.info:addFields({
+local Container = WowVision.Class("Container")
+Container:addFields({
     { key = "key", required = true },
     { key = "type", required = true },
 })
 
 function Container:initialize(info)
-    self:setInfo(info)
+    self:applyFields(info)
 end
 
 -- Create component registry for containers

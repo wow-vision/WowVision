@@ -642,7 +642,7 @@ function WowVision:registerCommands()
             end
 
             -- Now simulate what addElement does
-            local config = rule.class.info:getData(rule)
+            local config = WowVision.classes.instanceConfig(rule)
             config.type = "CooldownState"
             -- Pretend we have a DB array
             local dbArr = { config }
@@ -651,7 +651,7 @@ function WowVision:registerCommands()
 
             -- Now check if lazy link works
             for _, key in ipairs({"ready", "on_cooldown"}) do
-                local alertField = rule.class.info:getField(key)
+                local alertField = rule.class:getField(key)
                 if alertField then
                     local alert = alertField:getAlert(rule)
                     print(key, "alert.db:", alert.db and "linked" or "NIL")

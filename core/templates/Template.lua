@@ -1,6 +1,6 @@
-local Template = WowVision.Class("Template"):include(WowVision.InfoClass)
+local Template = WowVision.Class("Template")
 
-Template.info:addFields({
+Template:addFields({
     { key = "key", required = true },
     { key = "name", required = true },
     { key = "description" },
@@ -8,7 +8,7 @@ Template.info:addFields({
 })
 
 function Template:initialize(info)
-    self:setInfo(info)
+    self:applyFields(info)
     -- Parse format into AST at creation time
     -- Locale values are resolved now and baked into literal nodes
     self.nodes, self.fields = WowVision.templates.parse(self.format, WowVision:getLocale())

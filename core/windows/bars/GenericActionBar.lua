@@ -6,7 +6,7 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 
 local GenericActionBar = WowVision.components.createType("bars", { key = "GenericActionBar" })
-GenericActionBar.info:addFields({
+GenericActionBar:addFields({
     { key = "frame", required = true },
 })
 

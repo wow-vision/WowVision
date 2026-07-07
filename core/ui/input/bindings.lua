@@ -1,7 +1,7 @@
 local input = WowVision.input
 
 local Click = input:createBindingType("Click")
-Click.info:addFields({
+Click:addFields({
     { key = "targetFrame" },
 })
 
@@ -31,7 +31,7 @@ function Flexible:activate(info)
         error("Info must have a type to activate a Flexible binding. Key is " .. (info.key or "nil"))
     end
     local newInfo = {}
-    self.info:set(newInfo, self)
+    self:collectInfo(newInfo)
     for k, v in pairs(info) do
         newInfo[k] = v
     end
@@ -45,7 +45,7 @@ function Flexible:activate(info)
 end
 
 local Function = input:createBindingType("Function")
-Function.info:addFields({
+Function:addFields({
     { key = "func", required = true },
     { key = "interruptSpeech", required = true, default = false },
     {
@@ -93,7 +93,7 @@ function Function:onDeactivate(frame, info)
 end
 
 local Script = input:createBindingType("Script")
-Script.info:addFields({
+Script:addFields({
     { key = "script", required = true },
 })
 
@@ -107,7 +107,7 @@ function Script:onDeactivate(frame, info)
 end
 
 local Target = input:createBindingType("Target")
-Target.info:addFields({
+Target:addFields({
     { key = "unit" },
 })
 
@@ -121,7 +121,7 @@ function Target:onDeactivate(frame, info)
 end
 
 local VirtualKey = input:createBindingType("VirtualKey")
-VirtualKey.info:addFields({
+VirtualKey:addFields({
     { key = "targetFrame" },
 })
 
@@ -140,7 +140,7 @@ function VirtualKey:onDeactivate(frame, info)
 end
 
 local Virtual = input:createBindingType("Virtual")
-Virtual.info:addFields({
+Virtual:addFields({
     { key = "targetFrame" },
 })
 

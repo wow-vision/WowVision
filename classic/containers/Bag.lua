@@ -6,7 +6,7 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 
 local Bag = WowVision.components.createType("containers", { key = "Bag" })
-Bag.info:addFields({
+Bag:addFields({
     { key = "id", required = true, once = true },
     { key = "button" },
     { key = "prefix" },

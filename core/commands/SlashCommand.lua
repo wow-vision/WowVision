@@ -2,9 +2,9 @@
 -- Commands can be scoped to WowVision (/wv <name>) or Global (/<name>)
 
 local SlashCommand = WowVision.Class("SlashCommand")
-SlashCommand:include(WowVision.InfoClass)
+SlashCommand
 
-SlashCommand.info:addFields({
+SlashCommand:addFields({
     { key = "name", required = true }, -- Command name (e.g., "version")
     { key = "func", required = true }, -- function(args, module) to execute
     { key = "description", default = "" }, -- Help text for the command
@@ -13,7 +13,7 @@ SlashCommand.info:addFields({
 })
 
 function SlashCommand:initialize(config, module)
-    self:setInfo(config)
+    self:applyFields(config)
     self.module = module
     self._registered = false
 end

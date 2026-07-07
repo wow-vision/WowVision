@@ -1,7 +1,7 @@
 local utils = WowVision.utils
-local DataSource = WowVision.Class("DataSource"):include(WowVision.InfoClass)
+local DataSource = WowVision.Class("DataSource")
 WowVision.DataSource = DataSource
-DataSource.info:addFields({
+DataSource:addFields({
     { key = "key", required = true, once = true },
     { key = "label" },
     { key = "value", required = true },
@@ -9,7 +9,7 @@ DataSource.info:addFields({
 })
 
 function DataSource:initialize(info)
-    self:setInfo(info)
+    self:applyFields(info)
 end
 
 function DataSource:getLabel()
@@ -20,9 +20,9 @@ function DataSource:getValue()
     return self.value
 end
 
-local DataDirectory = WowVision.Class("DataDirectory"):include(WowVision.InfoClass)
+local DataDirectory = WowVision.Class("DataDirectory")
 WowVision.DataDirectory = DataDirectory
-DataDirectory.info:addFields({
+DataDirectory:addFields({
     { key = "key", required = true, once = true },
     { key = "label" },
     { key = "filePath" },
@@ -33,7 +33,7 @@ function DataDirectory:initialize(info)
     self.subdirectories = {}
     self.entries = {}
     self.data = {}
-    self:setInfo(info)
+    self:applyFields(info)
 end
 
 function DataDirectory:addSubdirectory(info, isRef)

@@ -1,8 +1,8 @@
 local L = WowVision:getLocale()
 
-local MapDataset = WowVision.Class("MapDataset"):include(WowVision.InfoClass)
+local MapDataset = WowVision.Class("MapDataset")
 
-MapDataset.info:addFields({
+MapDataset:addFields({
     { key = "key", type = "String", required = true, once = true, label = L["Key"] },
     { key = "label", type = "String", persist = true, label = L["Label"] },
     { key = "gameVersion", type = "String", label = L["Game Version"] },
@@ -16,7 +16,7 @@ function MapDataset:initialize(config)
     self.events = {
         waypointsAdded = WowVision.Event:new("waypointsAdded"),
     }
-    self:setInfo(config)
+    self:applyFields(config)
 end
 
 -- Bulk-add waypoints. Each waypoint is a plain table:

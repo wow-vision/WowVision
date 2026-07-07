@@ -1,8 +1,8 @@
 -- MessageStore: A simple store for messages with event-based notifications
 -- Stores can be registered globally by key for lookup by buffers
 
-local MessageStore = WowVision.Class("MessageStore"):include(WowVision.InfoClass)
-MessageStore.info:addFields({
+local MessageStore = WowVision.Class("MessageStore")
+MessageStore:addFields({
     { key = "messages", default = {} },
     { key = "maxMessages" },
     { key = "getDataString" },
@@ -10,7 +10,7 @@ MessageStore.info:addFields({
 
 function MessageStore:initialize(obj)
     obj = obj or {}
-    self:setInfo(obj)
+    self:applyFields(obj)
     self.events = {
         add = WowVision.Event:new("add"),
         remove = WowVision.Event:new("remove"),
