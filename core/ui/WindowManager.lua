@@ -3,8 +3,7 @@ local WindowManager = WowVision.Class("WindowManager")
 -- Class-level registry for window types (must be available before instances are created)
 WindowManager.windowTypes = WowVision.Registry:new()
 
-function WindowManager:initialize(windowContext)
-    self.windowContext = windowContext
+function WindowManager:initialize()
     self.windows = {}
     self.autoWindows = {} -- Separate list for auto windows (faster iteration)
     self.openWindows = { autoWindows = {} }
@@ -70,11 +69,6 @@ function WindowManager:notifyOpened(window, instance)
     if window:needsPolling() then
         self.openWindows.autoWindows[window.name] = true
     end
-    if instance.stack then
-        return -- graph stacks live in the graph host, not the element context
-    end
-    self.windowContext:add(instance.context)
-    WowVision.UIHost:open()
 end
 
 function WindowManager:notifyClosed(window, instance, shouldHandleContext)
@@ -96,14 +90,6 @@ function WindowManager:notifyClosed(window, instance, shouldHandleContext)
 
     if instance.stack then
         WowVision.graphHost:close(instance.stack)
-        return
-    end
-
-    if shouldHandleContext ~= false then
-        self.windowContext:remove(instance.context)
-        if WowVision.UIHost:shouldClose() then
-            WowVision.UIHost:close()
-        end
     end
 end
 

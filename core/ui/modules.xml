@@ -2,15 +2,8 @@
 ..\FrameXML\UI.xsd">
 
   <Include file="input/modules.xml" />
-  <Script file="Generator.lua" />
   <Script file="WindowManager.lua" />
   <Script file="Window.lua" />
-  <Script file="MenuManager.lua" />
-  <Script file="UIManager.lua" />
-  <Script file="ContextMenu.lua" />
   <Include file="tooltip/modules.xml" />
-  <Include file="elements/modules.xml" />
-  <Include file="navigators/modules.xml" />
-  <Script file="tests.lua" />
 
 </Ui>

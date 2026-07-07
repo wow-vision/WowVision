@@ -39,15 +39,6 @@ function Module:createModule(key)
     return submodule
 end
 
-function Module:hasUI()
-    if not self.elementGenerator then
-        self.elementGenerator = WowVision.Generator:new()
-        self.registeredWindows = self.registeredWindows or {}
-        self.registeredDropdownMenus = self.registeredDropdownMenus or {}
-    end
-    return self.elementGenerator
-end
-
 function Module:registerCommand(config)
     if not self.registeredCommands then
         self.registeredCommands = {}
@@ -194,10 +185,6 @@ function Module:registerWindow(config)
             config.isOpenFunc = config.isOpen
             config.isOpen = nil
         end
-        -- Pass the module's generator to the window for event-driven regeneration
-        if self.elementGenerator then
-            config.generator = self.elementGenerator
-        end
         window = WowVision.WindowManager:CreateWindow(config.type, config)
     else
         error(
@@ -254,13 +241,6 @@ function Module:setEnabled(enabled)
     end
 end
 
-function Module:registerContextMenuHook(tag, handler)
-    if not self._contextTagSubscriptions then
-        self._contextTagSubscriptions = {}
-    end
-    tinsert(self._contextTagSubscriptions, { tag = tag, handler = handler })
-end
-
 function Module:registerBinding(info)
     local instance = WowVision.input:createBinding(info)
     self.bindings:add(instance)
@@ -282,9 +262,6 @@ function Module:enable()
     if not self:getEnabled() then
         return
     end
-    if self.elementGenerator then
-        WowVision.ui.generator:include(self.elementGenerator)
-    end
     if self.registeredWindows then
         for _, v in pairs(self.registeredWindows) do
             WowVision.UIHost.windowManager:RegisterWindow(v)
@@ -300,12 +277,6 @@ function Module:enable()
     if self.registeredCommands then
         for _, command in pairs(self.registeredCommands) do
             WowVision.SlashCommandManager:registerCommand(command)
-        end
-    end
-
-    if self._contextTagSubscriptions then
-        for _, sub in ipairs(self._contextTagSubscriptions) do
-            WowVision.contextMenuManager:subscribe(sub.tag, sub.handler, self)
         end
     end
 
@@ -339,9 +310,6 @@ end
 function Module:onEnable() end
 
 function Module:disable()
-    if self.elementGenerator then
-        WowVision.ui.generator:exclude(self.elementGenerator)
-    end
     if self.registeredWindows then
         for k, _ in pairs(self.registeredWindows) do
             WowVision.UIHost.windowManager:UnregisterWindow(k)
@@ -360,8 +328,6 @@ function Module:disable()
         end
     end
 
-    WowVision.contextMenuManager:unsubscribe(self)
-
     self.eventsFrame:UnregisterAllEvents()
     self:onDisable()
     self:_markUpdateHandlersDirty()
@@ -376,15 +342,6 @@ end
 function Module:onDisable() end
 
 function Module:onFullEnable() end
-
-function Module:getAdditionalMenuUI()
-    return nil
-end
-
-function Module:getMenuPanel()
-    local ui = self:getAdditionalMenuUI()
-    return { "ModulePanel", module = self, additionalUI = ui }
-end
 
 -- Register an update handler for this module (call in onEnable)
 -- This avoids the recursive tree walk - only modules with handlers are called

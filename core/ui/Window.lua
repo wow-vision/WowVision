@@ -56,14 +56,9 @@ local Window, _ = WowVision.WindowManager:CreateWindowType("Window")
 
 Window.info:addFields({
     { key = "name", required = true },
-    { key = "generated", default = false },
-    { key = "rootElement" },
-    { key = "generator" }, -- Module's generator for event-driven regeneration
-    { key = "hookEscape", default = false },
     { key = "innate", default = false },
     { key = "conflictingAddons" },
-    { key = "onClose" },
-    { key = "graphScreen" }, -- graph-framework screen config; supersedes generated/rootElement
+    { key = "graphScreen" }, -- graph-framework screen config
 })
 
 -- Whether this window type needs to be polled each frame
@@ -117,41 +112,7 @@ function Window:canOpen()
     return not self._hasConflictingAddon
 end
 
--- Build the root element configuration for generated windows
-function Window:buildRootElement(props)
-    local generated = {}
-    local frame = self.getFrame and self:getFrame()
-    if frame then
-        generated.frame = frame
-    end
-    if type(self.rootElement) == "string" then
-        generated[1] = self.rootElement
-    elseif type(self.rootElement) == "table" then
-        for k, v in pairs(self.rootElement) do
-            generated[k] = v
-        end
-    else
-        error("Window: invalid root element format")
-    end
-    if props then
-        for k, v in pairs(props) do
-            generated[k] = v
-        end
-    end
-    return generated
-end
-
--- Create and configure the WindowContext for this window
-function Window:createContext()
-    return WowVision.ui:CreateElement("WindowContext", {
-        window = self,
-        hookEscape = self.hookEscape,
-        innate = self.innate,
-        onClose = self.onClose,
-    })
-end
-
--- Open as a graph-framework screen stack instead of an element context.
+-- Open as a graph-framework screen stack.
 function Window:openGraph(manager)
     local window = self
     local config = {}
@@ -199,33 +160,7 @@ function Window:open(manager, props)
         return nil -- Already open
     end
 
-    if self.graphScreen then
-        return self:openGraph(manager)
-    end
-
-    local context = self:createContext()
-    local instance = {
-        ref = self,
-        name = self.name,
-        hookEscape = self.hookEscape,
-        onClose = self.onClose,
-        context = context,
-    }
-
-    if self.generated then
-        context:addGenerated(self:buildRootElement(props), nil, self.generator)
-    else
-        if props then
-            for k, v in pairs(props) do
-                self.rootElement:setProp(k, v)
-            end
-        end
-        context:add(self.rootElement)
-    end
-
-    self._openInstance = instance
-    manager:notifyOpened(self, instance)
-    return instance
+    return self:openGraph(manager)
 end
 
 -- Close the window

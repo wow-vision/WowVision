@@ -487,19 +487,6 @@ function WowVision:registerCommands()
     })
 
     self.base:registerCommand({
-        name = "oldmenu",
-        description = "Open the legacy menu on the old UI framework",
-        func = function(args)
-            local root = WowVision.base:getMenuPanel()
-            WowVision.UIHost:openTemporaryWindow({
-                generated = true,
-                rootElement = root,
-                hookEscape = true,
-            })
-        end,
-    })
-
-    self.base:registerCommand({
         name = "profile",
         description = "Profiler commands (start/stop/report/reset)",
         func = function(args)
@@ -614,7 +601,10 @@ function WowVision:registerCommands()
         name = "close",
         description = "Force close WowVision UI",
         func = function(args)
-            WowVision.UIHost:close()
+            local host = WowVision.graphHost
+            for i = #host.stacks, 1, -1 do
+                host:close(host.stacks[i])
+            end
         end,
     })
 
@@ -745,36 +735,6 @@ function WowVision:registerCommands()
         end,
     })
 
-    self.base:registerCommand({
-        name = "browse",
-        description = "Test: browse audio data sources",
-        func = function(args)
-            WowVision.UIHost:openTemporaryWindow({
-                hookEscape = true,
-                generated = true,
-                rootElement = { "Panel", label = "Audio Browser", children = {
-                    { "Button", label = "Browse Sounds", events = {
-                        click = function(event, button)
-                            local browseContext = WowVision.ui:CreateElement("DataBrowseContext", {
-                                directory = WowVision.audio.directory,
-                            })
-                            browseContext.events.confirm:subscribe(nil, function(event, context, source, path)
-                                print("Selected: " .. tostring(path))
-                                if source.play then
-                                    source:play()
-                                end
-                                button.context:pop()
-                            end)
-                            browseContext.events.cancel:subscribe(nil, function(event, context)
-                                button.context:pop()
-                            end)
-                            button.context:add(browseContext)
-                        end,
-                    }},
-                }},
-            })
-        end,
-    })
 end
 
 function WowVision:showDumpFrame(text)
