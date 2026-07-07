@@ -594,6 +594,54 @@ testRunner:addSuite("ClassSystem", {
         t:assertEqual(global.items[1].size, 5)
     end,
 
+    ["components move between stores with their config"] = function(t)
+        local Widget = NewClass("MWidget")
+        Widget:addFields({ { key = "label", type = "String", persist = true } })
+        function Widget:initialize(config)
+            self:applyFields(config)
+        end
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return Widget:new(config)
+            end,
+            getTypeKey = function()
+                return "MWidget"
+            end,
+        })
+        local charDB = { monitors = { _type = "array", { label = "mine", type = "MWidget" } } }
+        local globalDB = { monitors = { _type = "array", { label = "shared", type = "MWidget" } } }
+        local container = { monitors = {} }
+        field:setDB(container, { char = charDB, global = globalDB })
+
+        -- Account entries list first, then character entries
+        t:assertEqual(#container.monitors, 2)
+        t:assertEqual(container.monitors[1].label, "shared")
+        t:assertEqual(field:scopeOf(container.monitors[1]), "global")
+        t:assertEqual(field:scopeOf(container.monitors[2]), "char")
+
+        -- New components default to the account store
+        field:addElement(container, { type = "MWidget", label = "fresh" })
+        t:assertEqual(#globalDB.monitors, 2)
+        t:assertEqual(globalDB.monitors[2].label, "fresh")
+
+        -- Moving to character carries the config table across
+        local mover = container.monitors[1]
+        field:setComponentScope(container, mover, "char")
+        t:assertEqual(#globalDB.monitors, 1)
+        t:assertEqual(#charDB.monitors, 2)
+        t:assertEqual(field:scopeOf(mover), "char")
+        mover.label = "renamed"
+        t:assertEqual(charDB.monitors[2].label, "renamed")
+
+        -- Removal pulls the right config out of the right array
+        field:removeElement(container, 2) -- merged index of the char original
+        t:assertEqual(#charDB.monitors, 1)
+        t:assertEqual(charDB.monitors[1].label, "renamed")
+    end,
+
     ["standalone component arrays work over plain containers"] = function(t)
         local Widget = NewClass("SWidget")
         Widget:addFields({ { key = "label", type = "String", persist = true } })

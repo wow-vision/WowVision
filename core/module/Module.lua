@@ -122,6 +122,7 @@ function Module:getDefaultGlobalDBRecursive()
     local db = {
         submodules = {},
         settings = self.settingsObj ~= nil and self.settingsObj:getDefaultDB("global") or {},
+        data = {},
     }
     for _, submodule in ipairs(self.submodules) do
         db.submodules[submodule.key] = submodule:getDefaultGlobalDBRecursive()

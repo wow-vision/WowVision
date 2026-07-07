@@ -590,7 +590,12 @@ classes.newField = buildField
 -- Old-convention restore for STANDALONE fields over plain containers:
 -- field:setDB(obj, db) with a single backing node.
 function FieldAPI:setDB(obj, db)
-    local pair = { char = db }
+    local pair
+    if db ~= nil and (db.char ~= nil or db.global ~= nil) then
+        pair = db
+    else
+        pair = { char = db }
+    end
     rawset(obj, "_db", pair)
     if self.fieldType.setDB ~= nil then
         self.fieldType.setDB(self, obj, pair)

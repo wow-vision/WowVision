@@ -365,17 +365,27 @@ local function pushComponentList(field, owner)
         builder:pushContext("components:" .. tostring(field.key), field:getLabel() or field.key)
         for _, instance in ipairs(field:get(owner)) do
             local captured = instance
-            builder:addItem(
-                ControlId.forObject(captured),
-                nodes.button({
-                    label = function()
-                        return instanceLabel(captured)
-                    end,
-                    onActivate = function()
-                        pushComponentEditor(field, owner, captured)
-                    end,
-                })
-            )
+            local vtable = nodes.button({
+                label = function()
+                    return instanceLabel(captured)
+                end,
+                onActivate = function()
+                    pushComponentEditor(field, owner, captured)
+                end,
+            })
+            -- A component's context menu moves it between the account and
+            -- this character (when both stores back the array).
+            local pair = rawget(owner, "_db")
+            if field.setComponentScope ~= nil and pair ~= nil and pair.global ~= nil then
+                vtable.contextActions = function(add)
+                    add(scopeSubmenu(function()
+                        return field:scopeOf(captured) == "global"
+                    end, function(scope)
+                        field:setComponentScope(owner, captured, scope)
+                    end))
+                end
+            end
+            builder:addItem(ControlId.forObject(captured), vtable)
         end
         if #field:getAvailableTypes() > 0 then
             builder:addItem(

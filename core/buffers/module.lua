@@ -29,7 +29,10 @@ end
 
 function module:onFullEnable()
     local root = WowVision.buffers.RootBufferGroup:new(self.db.data)
-    root:setDB(self.db.data)
+    root:setDB({
+        char = self.db.data,
+        global = self.globalDB ~= nil and self.globalDB.data or nil,
+    })
     self.root = root
 end
 

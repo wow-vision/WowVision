@@ -57,9 +57,27 @@ local function instancesToConfigs(field, instances)
     return result
 end
 
--- The store side this array lives in, honoring the field's own scope.
-local function arrayStore(field, pair)
-    return classes.resolveStore(field, classes.constrainPair(field, pair))
+-- Find and remove an instance's bound config table from whichever side's
+-- array holds it (identity match through the instance's own db pair).
+local function removeConfigOf(field, pair, instance)
+    local bound = rawget(instance, "_db")
+    local config = bound ~= nil and (bound.char or bound.global) or nil
+    if config == nil then
+        return nil
+    end
+    local constrained = classes.constrainPair(field, pair)
+    for _, side in ipairs({ "global", "char" }) do
+        local store = constrained[side]
+        if store ~= nil and store[field.key] ~= nil then
+            for i, entry in ipairs(store[field.key]) do
+                if entry == config then
+                    tremove(store[field.key], i)
+                    return config
+                end
+            end
+        end
+    end
+    return config
 end
 
 classes.registerFieldType("ComponentArray", {
@@ -83,23 +101,25 @@ classes.registerFieldType("ComponentArray", {
         return instancesToConfigs(field, value)
     end,
 
-    -- Restore: build instances from the stored configs, binding each to its
-    -- config entry so instance field writes persist in place.
+    -- Restore: build instances from BOTH stores (account first, then
+    -- character), binding each to its config table -- bindings hold the
+    -- table itself, so array positions never matter after this.
     setDB = function(field, obj, pair)
         local constrained = classes.constrainPair(field, pair)
-        local store = classes.resolveStore(field, constrained)
-        if store == nil then
-            return
-        end
-        if store[field.key] == nil then
-            store[field.key] = { _type = "array" }
-        end
-        local base = classes.subPair(constrained, field.key)
         local instances = {}
-        for index, config in ipairs(store[field.key]) do
-            local instance = field.factory(config)
-            instance:setDB(classes.subPair(base, index))
-            tinsert(instances, instance)
+        for _, side in ipairs({ "global", "char" }) do
+            local store = constrained[side]
+            if store ~= nil then
+                if store[field.key] == nil then
+                    store[field.key] = { _type = "array" }
+                end
+                for _, config in ipairs(store[field.key]) do
+                    local instance = field.factory(config)
+                    instance:setDB({ [side] = config })
+                    rawset(instance, "_scopeSide", side)
+                    tinsert(instances, instance)
+                end
+            end
         end
         setStored(field, obj, instances)
     end,
@@ -150,14 +170,23 @@ classes.registerFieldType("ComponentArray", {
             local pair = rawget(obj, "_db")
             if pair ~= nil then
                 local constrained = classes.constrainPair(field, pair)
-                local store = classes.resolveStore(field, constrained)
+                -- New components follow the field scope: account-wide by
+                -- default, character when that side is all there is.
+                local side = "char"
+                if field.global ~= false and constrained.global ~= nil then
+                    side = "global"
+                elseif constrained.char == nil and constrained.global ~= nil then
+                    side = "global"
+                end
+                local store = constrained[side]
                 if store ~= nil then
                     if store[field.key] == nil then
                         store[field.key] = { _type = "array" }
                     end
-                    tinsert(store[field.key], instanceToConfig(field, instance))
-                    local base = classes.subPair(constrained, field.key)
-                    instance:setDB(classes.subPair(base, #store[field.key]))
+                    local config = instanceToConfig(field, instance)
+                    tinsert(store[field.key], config)
+                    instance:setDB({ [side] = config })
+                    rawset(instance, "_scopeSide", side)
                 end
             end
             field.events.valueChange:emit(obj, field.key, instances)
@@ -172,19 +201,46 @@ classes.registerFieldType("ComponentArray", {
             local removed = tremove(instances, index)
             local pair = rawget(obj, "_db")
             if pair ~= nil then
-                local store = arrayStore(field, pair)
-                if store ~= nil and store[field.key] ~= nil then
-                    tremove(store[field.key], index)
-                end
-                -- Later instances' db entries shifted down: rebind them.
-                local constrained = classes.constrainPair(field, pair)
-                local base = classes.subPair(constrained, field.key)
-                for i = index, #instances do
-                    instances[i]:setDB(classes.subPair(base, i))
-                end
+                removeConfigOf(field, pair, removed)
             end
             field.events.valueChange:emit(obj, field.key, instances)
             return removed
+        end,
+
+        -- The store side an instance lives in.
+        scopeOf = function(field, instance)
+            return rawget(instance, "_scopeSide") or "char"
+        end,
+
+        -- Move one component between stores: its config table leaves the
+        -- source array, joins the target, and the instance rebinds to the
+        -- same table on its new side. Values are untouched.
+        setComponentScope = function(field, obj, instance, scope)
+            local side = scope == "global" and "global" or "char"
+            if (rawget(instance, "_scopeSide") or "char") == side then
+                return false
+            end
+            local pair = rawget(obj, "_db")
+            if pair == nil then
+                return false
+            end
+            local constrained = classes.constrainPair(field, pair)
+            local target = constrained[side]
+            if target == nil then
+                return false
+            end
+            local config = removeConfigOf(field, pair, instance)
+            if config == nil then
+                config = instanceToConfig(field, instance)
+            end
+            if target[field.key] == nil then
+                target[field.key] = { _type = "array" }
+            end
+            tinsert(target[field.key], config)
+            instance:setDB({ [side] = config })
+            rawset(instance, "_scopeSide", side)
+            field.events.valueChange:emit(obj, field.key, field:get(obj))
+            return true
         end,
     },
 })

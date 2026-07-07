@@ -36,7 +36,10 @@ end
 
 function module:onFullEnable()
     container.db = self.db.data
-    monitorsField:setDB(container, self.db.data)
+    monitorsField:setDB(container, {
+        char = self.db.data,
+        global = self.globalDB ~= nil and self.globalDB.data or nil,
+    })
 end
 
 function module:getGraphMenuItems(builder)
