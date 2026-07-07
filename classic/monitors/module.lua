@@ -42,6 +42,26 @@ function module:onFullEnable()
     })
 end
 
+-- Module-level scope covers every monitor: move them all between stores.
+function module:onSetScope(scope)
+    for _, monitor in ipairs(container.monitors or {}) do
+        monitorsField:setComponentScope(container, monitor, scope)
+    end
+end
+
+function module:getScopeState()
+    local result = nil
+    for _, monitor in ipairs(container.monitors or {}) do
+        local side = monitorsField:scopeOf(monitor)
+        if result == nil then
+            result = side
+        elseif result ~= side then
+            return nil
+        end
+    end
+    return result or "global"
+end
+
 function module:getGraphMenuItems(builder)
     builder:addItem(
         WowVision.graph.ControlId.structural("monitors"),

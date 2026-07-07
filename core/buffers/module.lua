@@ -36,6 +36,35 @@ function module:onFullEnable()
     self.root = root
 end
 
+-- Module-level scope moves every top-level buffer group (children ride
+-- along inside their configs).
+function module:onSetScope(scope)
+    if self.root == nil then
+        return
+    end
+    local field = self.root.class:getField("items")
+    for _, item in ipairs(self.root.items or {}) do
+        field:setComponentScope(self.root, item, scope)
+    end
+end
+
+function module:getScopeState()
+    if self.root == nil then
+        return nil
+    end
+    local field = self.root.class:getField("items")
+    local result = nil
+    for _, item in ipairs(self.root.items or {}) do
+        local side = field:scopeOf(item)
+        if result == nil then
+            result = side
+        elseif result ~= side then
+            return nil
+        end
+    end
+    return result or "global"
+end
+
 function module:getGraphMenuItems(builder)
     if self.root then
         local field = self.root.class:getField("items")

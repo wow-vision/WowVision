@@ -179,6 +179,43 @@ function Module:setDBObj(db, globalDB)
     end
 end
 
+-- Module-level scope: the whole module's persisted state at once. Covers
+-- the settings object automatically; modules whose state lives elsewhere
+-- (component containers) implement onSetScope(scope)/getScopeState().
+function Module:hasScope()
+    return self.settingsObj ~= nil or self.onSetScope ~= nil
+end
+
+function Module:setScope(scope)
+    if self.settingsObj ~= nil then
+        WowVision.classes.setObjectScope(self.settingsObj, scope)
+    end
+    if self.onSetScope ~= nil then
+        self:onSetScope(scope)
+    end
+end
+
+-- "global" or "char" when uniform; nil when mixed (neither radio reads
+-- checked).
+function Module:getScope()
+    local scopes = {}
+    if self.settingsObj ~= nil then
+        tinsert(scopes, WowVision.classes.effectiveObjectScope(self.settingsObj))
+    end
+    if self.getScopeState ~= nil then
+        tinsert(scopes, self:getScopeState())
+    end
+    local result = nil
+    for _, scope in ipairs(scopes) do
+        if result == nil then
+            result = scope
+        elseif result ~= scope then
+            return nil
+        end
+    end
+    return result
+end
+
 function Module:isVital()
     return self.vital
 end

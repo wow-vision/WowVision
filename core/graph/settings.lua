@@ -466,15 +466,14 @@ function settings.renderModuleInto(builder, module)
             end,
         })
         -- A module button's context menu switches the whole module's
-        -- settings scope at once (clearing per-setting choices).
-        if submodule.settingsObj ~= nil then
-            local settingsObj = submodule.settingsObj
+        -- persisted state at once: settings and, for modules that implement
+        -- the scope hooks, their components.
+        if submodule.hasScope ~= nil and submodule:hasScope() then
             vtable.contextActions = function(add)
-                local classes = WowVision.classes
                 add(scopeSubmenu(function()
-                    return classes.effectiveObjectScope(settingsObj) == "global"
+                    return submodule:getScope() == "global"
                 end, function(scope)
-                    classes.setObjectScope(settingsObj, scope)
+                    submodule:setScope(scope)
                 end))
             end
         end
