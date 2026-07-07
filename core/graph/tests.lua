@@ -576,8 +576,11 @@ testRunner:addSuite("GraphAnnouncer", {
         kg:treeRight()
         local result = kg:treeLeft()
         t:assertEqual(result.kind, "ascended")
-        local line = announcer.compose(result.move.from, result.move.to)
-        t:assertEqual(line, "Section")
+        -- Null the announcer hooks: in game they add expanded-state text.
+        withAnnouncerHooks({}, function()
+            local line = announcer.compose(result.move.from, result.move.to)
+            t:assertEqual(line, "Section")
+        end)
     end,
 
     ["a row context announces the bar role"] = function(t)
@@ -677,8 +680,11 @@ testRunner:addSuite("GraphAnnouncer", {
             return b:build()
         end)
         kg:rerender()
-        local line = announcer.composeFull(kg:currentNode())
-        t:assertEqual(line, "Stats, List, Attributes, Bar, Strength")
+        -- Null the announcer hooks: in game they add position text.
+        withAnnouncerHooks({}, function()
+            local line = announcer.composeFull(kg:currentNode())
+            t:assertEqual(line, "Stats, List, Attributes, Bar, Strength")
+        end)
     end,
 
     ["a context spanning tab stops announces the panel role"] = function(t)
@@ -692,8 +698,10 @@ testRunner:addSuite("GraphAnnouncer", {
             return b:build()
         end)
         kg:rerender()
-        local line = announcer.composeFull(kg:currentNode())
-        t:assertEqual(line, "Menu, Panel, Options")
+        withAnnouncerHooks({}, function()
+            local line = announcer.composeFull(kg:currentNode())
+            t:assertEqual(line, "Menu, Panel, Options")
+        end)
     end,
 
     ["duplicate level labels dedupe"] = function(t)

@@ -107,13 +107,6 @@ testRunner:addSuite("Field", {
 })
 
 testRunner:addSuite("Field.String", {
-    ["getGenerator returns EditBox"] = function(t)
-        local info = WowVision.info.InfoManager:new()
-        info:addField({ type = "String", key = "name", label = "Name" })
-        local field = info:getField("name")
-        local gen = field:getGenerator({})
-        t:assertEqual(gen[1], "EditBox")
-    end,
 })
 
 testRunner:addSuite("Field.Number", {
@@ -140,13 +133,6 @@ testRunner:addSuite("Field.Number", {
 })
 
 testRunner:addSuite("Field.Bool", {
-    ["getGenerator returns Checkbox"] = function(t)
-        local info = WowVision.info.InfoManager:new()
-        info:addField({ type = "Bool", key = "enabled", label = "Enabled" })
-        local field = info:getField("enabled")
-        local gen = field:getGenerator({})
-        t:assertEqual(gen[1], "Checkbox")
-    end,
 })
 
 testRunner:addSuite("Field.Choice", {
@@ -726,58 +712,6 @@ testRunner:addSuite("Field.Array", {
         t:assertEqual(field:getValueString({}, nil), "0 items")
     end,
 
-    ["getGenerator returns Button"] = function(t)
-        local info = WowVision.info.InfoManager:new()
-        info:addField({
-            type = "Array",
-            key = "items",
-            label = "Items",
-            elementField = { type = "Number" },
-        })
-        local field = info:getField("items")
-
-        local obj = { items = { 1, 2, 3 } }
-        local gen = field:getGenerator(obj)
-        t:assertEqual(gen[1], "Button")
-        t:assertEqual(gen.label, "Items (3 items)")
-    end,
-
-    ["getGenerator shows 0 items for empty array"] = function(t)
-        local info = WowVision.info.InfoManager:new()
-        info:addField({
-            type = "Array",
-            key = "items",
-            label = "Items",
-            elementField = { type = "Number" },
-        })
-        local field = info:getField("items")
-
-        local obj = { items = {} }
-        local gen = field:getGenerator(obj)
-        t:assertEqual(gen.label, "Items (0 items)")
-    end,
-
-    ["buildArrayList creates list with elements and add button"] = function(t)
-        local info = WowVision.info.InfoManager:new()
-        info:addField({
-            type = "Array",
-            key = "items",
-            label = "Items",
-            elementField = { type = "Number" },
-        })
-        local field = info:getField("items")
-
-        local obj = { items = { 10, 20 } }
-        local list = field:buildArrayList(obj)
-        t:assertEqual(list[1], "List")
-        t:assertEqual(list.label, "Items")
-        -- 2 elements + 1 add button = 3 children
-        t:assertEqual(#list.children, 3)
-        -- Last child should be Add button
-        t:assertEqual(list.children[3][1], "Button")
-        t:assertEqual(list.children[3].label, "Add")
-    end,
-
     ["createElementProxy reads from array"] = function(t)
         local info = WowVision.info.InfoManager:new()
         info:addField({
@@ -824,26 +758,6 @@ testRunner:addSuite("Field.Array", {
         local proxy = field:createElementProxy(obj, 1)
         proxy._element = 150
         t:assertEqual(obj.items[1], 100) -- clamped to max
-    end,
-
-    ["buildArrayItem contains element generator and remove button"] = function(t)
-        local info = WowVision.info.InfoManager:new()
-        info:addField({
-            type = "Array",
-            key = "items",
-            elementField = { type = "Number", label = "Value" },
-        })
-        local field = info:getField("items")
-
-        local obj = { items = { 42 } }
-        local item = field:buildArrayItem(obj, 1)
-        t:assertEqual(item[1], "List")
-        t:assertEqual(#item.children, 2)
-        -- First child is the element editor (EditBox for Number)
-        t:assertEqual(item.children[1][1], "EditBox")
-        -- Second child is Remove button
-        t:assertEqual(item.children[2][1], "Button")
-        t:assertEqual(item.children[2].label, "Remove")
     end,
 
     ["set persists to db when persist is true"] = function(t)
@@ -1080,20 +994,6 @@ testRunner:addSuite("Field.Object", {
         t:assertEqual(obj.obj.params.unit, "target")
     end,
 
-    ["getGenerator returns Button"] = function(t)
-        local info = WowVision.info.InfoManager:new()
-        info:addField({
-            type = "Object",
-            key = "obj",
-            label = "My Object",
-        })
-        local field = info:getField("obj")
-
-        local obj = { obj = { type = nil, params = {} } }
-        local gen = field:getGenerator(obj)
-        t:assertEqual(gen[1], "Button")
-    end,
-
     ["set persists to db when persist is true"] = function(t)
         local info = WowVision.info.InfoManager:new()
         info:addField({
@@ -1270,20 +1170,6 @@ testRunner:addSuite("Field.TrackingConfig", {
         t:assertTrue(result:find("Health"))
         t:assertTrue(result:find("player"))
         t:assertTrue(result:find("target"))
-    end,
-
-    ["getGenerator returns Button"] = function(t)
-        local info = WowVision.info.InfoManager:new()
-        info:addField({
-            type = "TrackingConfig",
-            key = "source",
-            label = "Source",
-        })
-        local field = info:getField("source")
-
-        local obj = { source = { type = nil } }
-        local gen = field:getGenerator(obj)
-        t:assertEqual(gen[1], "Button")
     end,
 
     ["set persists to db when persist is true"] = function(t)

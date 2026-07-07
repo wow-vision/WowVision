@@ -225,6 +225,9 @@ testRunner:addSuite("GraphNodes", {
     end,
 
     ["attachHover runs hover scripts around existing hooks"] = function(t)
+        if CreateFrame ~= nil then
+            return -- headless-only: fake frames cannot pass the real ExecuteFrameScript
+        end
         local frame = {
             _scripts = {},
             HasScript = function(self, script)
@@ -245,6 +248,9 @@ testRunner:addSuite("GraphNodes", {
     end,
 
     ["proxyButton hovers its target on focus"] = function(t)
+        if CreateFrame ~= nil then
+            return -- headless-only: fake frames cannot pass the real ExecuteFrameScript
+        end
         local frame = {
             _scripts = {},
             HasScript = function(self, script)

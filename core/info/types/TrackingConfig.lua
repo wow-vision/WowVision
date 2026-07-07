@@ -90,6 +90,12 @@ function TrackingConfigField:setType(obj, typeKey)
             -- Fresh config scaffolding for the new type
             value.params = {}
             value.type = typeKey
+            -- Unit-based types track the player by default (the old
+            -- UnitType:getTrackingGenerator initialized this).
+            if objectType:isInstanceOf(WowVision.objects.UnitType) then
+                value.unit = "player"
+                value.units = { "player" }
+            end
             -- Populate parameter field defaults for params not already at top level
             if objectType.parameters and value.params then
                 for _, paramField in ipairs(objectType.parameters.fields) do
