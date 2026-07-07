@@ -44,6 +44,10 @@ end
 
 loadAddonFile("core/testing/TestRunner.lua")
 
+loadAddonFile("core/Event.lua")
+loadAddonFile("core/Class.lua")
+loadAddonFile("core/ClassTests.lua")
+
 loadAddonFile("core/graph/ControlId.lua")
 loadAddonFile("core/graph/types.lua")
 loadAddonFile("core/graph/Announcer.lua")
