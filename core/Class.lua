@@ -181,23 +181,53 @@ classes.registerFieldType("Number", {
     end,
 })
 
+-- Choice: NO set-membership validation (matching the old ChoiceField --
+-- choices are often registered after the default is applied, and the UI
+-- constrains input). The api mirrors the old field surface.
 classes.registerFieldType("Choice", {
-    validate = function(field, value)
+    default = function(field, obj)
+        local choices = field:getChoices(obj)
+        if choices ~= nil and choices[1] ~= nil then
+            return choices[1].value
+        end
+        return nil
+    end,
+
+    valueString = function(field, obj, value)
+        local choice = field:getChoiceByValue(obj, value)
+        if choice ~= nil then
+            return choice.label
+        end
         if value == nil then
             return nil
         end
-        local choices = field.choices
-        if type(choices) == "function" then
-            return value -- dynamic choices validate at UI level
-        end
-        for _, choice in ipairs(choices or {}) do
-            local allowed = type(choice) == "table" and choice.value or choice
-            if allowed == value then
-                return value
-            end
-        end
-        error("Field " .. field.key .. " does not allow value " .. tostring(value))
+        return tostring(value)
     end,
+
+    api = {
+        getChoices = function(field, obj)
+            if type(field.choices) == "function" then
+                return field.choices(obj)
+            end
+            return field.choices or {}
+        end,
+
+        addChoice = function(field, choice)
+            if field.choices == nil then
+                field.choices = {}
+            end
+            tinsert(field.choices, choice)
+        end,
+
+        getChoiceByValue = function(field, obj, value)
+            for _, choice in ipairs(field:getChoices(obj)) do
+                if choice.value == value then
+                    return choice
+                end
+            end
+            return nil
+        end,
+    },
 })
 
 -- A nested plain table stored and persisted whole (assignment replaces it).
@@ -511,10 +541,13 @@ local function getField(obj, field)
     end
     local values = rawget(obj, "_values")
     local value = values[field.key]
-    if value == nil and field.default ~= nil then
-        -- Materialize the default lazily so tables get a stable per-instance copy.
+    if value == nil then
+        -- Materialize the default (field- or type-level) lazily so tables
+        -- get a stable per-instance copy.
         value = FieldAPI.getDefault(field, obj)
-        values[field.key] = value
+        if value ~= nil then
+            values[field.key] = value
+        end
     end
     return value
 end

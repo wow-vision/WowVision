@@ -199,15 +199,18 @@ testRunner:addSuite("ClassSystem", {
         t:assertEqual(a.code, "5!")
     end,
 
-    ["choice fields reject values outside the set"] = function(t)
+    ["choice fields expose their choice api"] = function(t)
         local A = NewClass("A")
-        A:addFields({ { key = "mode", type = "Choice", choices = { "on", "off" } } })
+        A:addFields({ { key = "mode", type = "Choice" } })
+        local field = A:getField("mode")
+        field:addChoice({ label = "On", value = "on" })
+        field:addChoice({ label = "Off", value = "off" })
         local a = A:new()
-        a.mode = "on"
-        t:assertEqual(a.mode, "on")
-        t:assertTrue(not pcall(function()
-            a.mode = "sideways"
-        end))
+        t:assertEqual(a.mode, "on") -- first choice is the fallback default
+        a.mode = "off"
+        t:assertEqual(field:getValueString(a, a.mode), "Off")
+        t:assertEqual(field:getChoiceByValue(a, "on").label, "On")
+        t:assertEqual(#field:getChoices(a), 2)
     end,
 
     ["valueChange fires on change with obj, key, value"] = function(t)
