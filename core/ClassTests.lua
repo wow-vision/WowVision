@@ -267,6 +267,31 @@ testRunner:addSuite("ClassSystem", {
         end))
     end,
 
+    ["applyFields runs custom setters for defaults"] = function(t)
+        local A = NewClass("A")
+        A:addFields({
+            {
+                key = "enabled",
+                default = true,
+                get = function(obj)
+                    return rawget(obj, "_enabled")
+                end,
+                set = function(obj, key, value)
+                    rawset(obj, "_enabled", value)
+                    rawset(obj, "_setterRan", true)
+                end,
+            },
+        })
+        function A:initialize(config)
+            self:applyFields(config)
+        end
+        local a = A:new({})
+        t:assertEqual(a.enabled, true)
+        t:assertTrue(rawget(a, "_setterRan"))
+        local b = A:new({ enabled = false })
+        t:assertEqual(b.enabled, false)
+    end,
+
     ["applyFields sets declared keys and enforces required"] = function(t)
         local A = NewClass("A")
         A:addFields({

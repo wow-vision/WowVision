@@ -1,6 +1,6 @@
 local L = WowVision:getLocale()
-local Alert = WowVision.Class("Alert"):include(WowVision.InfoClass)
-Alert.info:addFields({
+local Alert = WowVision.Class("Alert")
+Alert:addFields({
     { key = "key", required = true, once = true },
     { key = "label" },
     {
@@ -34,7 +34,7 @@ function Alert:initialize(info)
     enabledParam.events.valueChange:subscribe(self, function(self, event, source, value)
         self:setEnabled(value)
     end)
-    self:setInfo(info)
+    self:applyFields(info)
 end
 
 function Alert:getEnabled()
@@ -104,8 +104,8 @@ function Alert:setDB(db)
     end
 end
 
-local Output = WowVision.Class("AlertOutput"):include(WowVision.InfoClass)
-Output.info:addFields({
+local Output = WowVision.Class("AlertOutput")
+Output:addFields({
     { key = "key", required = true, once = true },
     { key = "label" },
     { key = "tag" },
@@ -143,7 +143,7 @@ function Output:initialize(info)
     enabledParam.events.valueChange:subscribe(self, function(self, event, source, value)
         self:setEnabled(value)
     end)
-    self:setInfo(info)
+    self:applyFields(info)
 end
 
 function Output:addParameter(info)
@@ -195,7 +195,7 @@ function Alerts:initialize()
 end
 
 function Alerts:createOutput(name)
-    local class = WowVision.Class(name .. "AlertOutput", Output):include(WowVision.InfoClass)
+    local class = WowVision.Class(name .. "AlertOutput", Output)
     self.outputTypes:register(name, class)
     return class
 end

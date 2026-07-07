@@ -597,13 +597,18 @@ function ClassProto:getField(key)
 end
 
 -- Apply a config table to an instance: declared keys set through the field
--- path; required fields must end up non-nil. Replaces InfoClass:setInfo.
+-- path, defaults fill unset fields THROUGH THE SET PATH (so custom setters
+-- run), required fields must end up non-nil. Replaces InfoClass:setInfo.
 function ClassProto:applyFields(config, ignoreRequired)
     config = config or {}
     for _, field in ipairs(self.class:getFields()) do
         local value = config[field.key]
         if value ~= nil then
             setField(self, field, value)
+        elseif field.default ~= nil and (field.getFunc ~= nil or rawget(self, "_values")[field.key] == nil) then
+            if getField(self, field) == nil then
+                setField(self, field, field:getDefault(self))
+            end
         elseif field.required and not ignoreRequired and getField(self, field) == nil then
             error("Field " .. field.key .. " must have a value")
         end

@@ -1,7 +1,7 @@
 local L = WowVision:getLocale()
 local Output = WowVision.alerts.Output
 local tts = WowVision.alerts:createOutput("TTS")
-tts.info:addFields({
+tts:addFields({
     { key = "buildMessage" },
     { key = "message" },
     {
@@ -65,7 +65,7 @@ function tts:onFire(message)
 end
 
 local Sound = WowVision.alerts:createOutput("Sound")
-Sound.info:addFields({
+Sound:addFields({
     { key = "getPath" },
     { key = "path" },
 })
@@ -98,7 +98,7 @@ function Sound:onFire(message)
 end
 
 local Voice = WowVision.alerts:createOutput("Voice")
-Voice.info:addFields({
+Voice:addFields({
     { key = "getPath", required = true },
     {
         key = "voicePack",
@@ -141,7 +141,7 @@ end
 local floor = math.floor
 
 local Beacon = WowVision.alerts:createOutput("Beacon")
-Beacon.info:addFields({
+Beacon:addFields({
     { key = "beacon" },
 })
 
