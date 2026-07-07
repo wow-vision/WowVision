@@ -2,7 +2,6 @@
 -- Commands can be scoped to WowVision (/wv <name>) or Global (/<name>)
 
 local SlashCommand = WowVision.Class("SlashCommand")
-SlashCommand
 
 SlashCommand:addFields({
     { key = "name", required = true }, -- Command name (e.g., "version")

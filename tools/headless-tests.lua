@@ -184,7 +184,6 @@ local parseOnly = {
     "core/ui/Window.lua",
     "core/ui/WindowManager.lua",
     "core/windows/GameMenu.lua",
-    "core/module/Module.lua",
     "core/errors.lua",
     "core/ui modules/graphBindings.lua",
     "core/buffers/module.lua",
@@ -243,6 +242,20 @@ local parseOnly = {
     "tbc/character/Skills.lua",
     "tbc/auction/module.lua",
     "core/navigation/maps/ui.lua",
+    "core/commands/SlashCommand.lua",
+    "core/data.lua",
+    "core/MessageStore.lua",
+    "core/navigation/atlas/MapDataset.lua",
+    "core/templates/Template.lua",
+    "core/ui/input/binding.lua",
+    "core/ui/input/bindings.lua",
+    "core/ui/input/input.lua",
+    "core/windows/bars/StanceBar.lua",
+    "classic/containers/Bag.lua",
+    "core/WowVision.lua",
+    "core/module/Module.lua",
+    "core/alerts/alerts.lua",
+    "core/alerts/outputs.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)
