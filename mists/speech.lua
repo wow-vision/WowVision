@@ -90,7 +90,7 @@ local queueSetting = settings:add({
     default = true,
 })
 
-queueSetting.events.valueChange:subscribe(nil, function(event, proxy, value)
+queueSetting.events.valueChange:subscribe(nil, function(event, obj, key, value)
     applyQueueSetting(value)
 end)
 

@@ -178,7 +178,7 @@ function Queued:destroy()
 end
 
 -- Module lifecycle
-styleSetting.events.valueChange:subscribe(nil, function(event, proxy, value)
+styleSetting.events.valueChange:subscribe(nil, function(event, obj, key, value)
     if module.activeStyle then
         module.activeStyle:destroy()
     end
