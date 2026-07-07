@@ -27,7 +27,6 @@
     <Include file="audio/modules.xml" />
     <Include file="../audio/modules.xml" />
     <Include file="alerts/modules.xml" />
-    <Script file="info/types/Alert.lua" />
   <Include file="graph/modules.xml" />
   <Include file="ui/modules.xml" />
     <Script file="UIHost.lua" />
