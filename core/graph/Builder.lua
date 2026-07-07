@@ -112,8 +112,35 @@ function Builder:popContext()
     if #self.parents == 0 then
         error("No context/group to pop")
     end
-    table.remove(self.parents)
+    local entry = table.remove(self.parents)
+    self:_stampArrangementRole(entry.node)
     return self
+end
+
+-- Contexts without a declared role get one from their shape, matching the
+-- old framework's horizontal/vertical Lists: a context that is exactly one
+-- multi-item row announces "bar" ("tabs, bar, Buy, button, 1 of 3");
+-- a context with multiple vertical entries announces "list", even when bars
+-- sit inside it (a vertical list of bars was a list).
+function Builder:_stampArrangementRole(node)
+    if
+        node == nil
+        or node.focusable
+        or node.vtable.announcements == nil
+        or node.vtable.announcements[2] ~= nil
+    then
+        return
+    end
+    local count = node._vCount or 0
+    local role = nil
+    if count == 1 and node._hasBarRow then
+        role = WowVision:getLocale()["Bar"]
+    elseif count > 1 then
+        role = WowVision:getLocale()["List"]
+    end
+    if role ~= nil then
+        tinsert(node.vtable.announcements, { text = role })
+    end
 end
 
 -- Push a FOCUSABLE, expandable group header (a tree section): the header
@@ -146,6 +173,9 @@ function Builder:beginGroup(id, vtable, expanded, defaultExpanded)
         local row = { items = { header }, stopKey = self.stopKey }
         tinsert(self.rows, row)
         self.rowOf[header] = row
+        if header.parent ~= nil then
+            header.parent._vCount = (header.parent._vCount or 0) + 1
+        end
     end
     tinsert(self.parents, {
         -- Suppressed subtree: keep chaining from the outer parent so the
@@ -195,20 +225,13 @@ function Builder:endRow()
     end
     if #self.currentRow.items > 0 then
         tinsert(self.rows, self.currentRow)
-        -- A horizontal row gives its enclosing context the Bar role word
-        -- (the old horizontal List announced "tabs, bar, ..."), unless the
-        -- context already declared a role.
-        if #self.currentRow.items > 1 then
-            local parent = self:_currentParent()
-            if
-                parent ~= nil
-                and not parent.focusable
-                and not parent._barRole
-                and parent.vtable.announcements ~= nil
-                and parent.vtable.announcements[2] == nil
-            then
-                parent._barRole = true
-                tinsert(parent.vtable.announcements, { text = WowVision:getLocale()["Bar"] })
+        -- One vertical entry of the enclosing context, and a bar candidate
+        -- when multi-item; popContext turns the tallies into a role word.
+        local parent = self:_currentParent()
+        if parent ~= nil then
+            parent._vCount = (parent._vCount or 0) + 1
+            if #self.currentRow.items > 1 then
+                parent._hasBarRow = true
             end
         end
     end
@@ -231,6 +254,9 @@ function Builder:addItem(id, vtable)
         local row = { items = { node }, stopKey = self.stopKey }
         tinsert(self.rows, row)
         self.rowOf[node] = row
+        if node.parent ~= nil then
+            node.parent._vCount = (node.parent._vCount or 0) + 1
+        end
     end
     return self
 end
