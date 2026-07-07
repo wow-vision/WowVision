@@ -681,6 +681,21 @@ testRunner:addSuite("GraphAnnouncer", {
         t:assertEqual(line, "Stats, List, Attributes, Bar, Strength")
     end,
 
+    ["a context spanning tab stops announces the panel role"] = function(t)
+        local kg = makeGraph(function(b)
+            b:pushContext("menu", "Menu")
+            b:beginStop("a")
+            b:addLabel(sid("options"), "Options")
+            b:beginStop("b")
+            b:addLabel(sid("quit"), "Quit")
+            b:popContext()
+            return b:build()
+        end)
+        kg:rerender()
+        local line = announcer.composeFull(kg:currentNode())
+        t:assertEqual(line, "Menu, Panel, Options")
+    end,
+
     ["duplicate level labels dedupe"] = function(t)
         local kg = makeGraph(function(b)
             b:pushContext("options", "Options")

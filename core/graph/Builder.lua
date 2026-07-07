@@ -108,6 +108,19 @@ function Builder:pushContext(key, label, role, positions)
     return self
 end
 
+-- Tally one vertical entry on a context, tracking whether its entries span
+-- more than one tab stop (which promotes list to panel).
+local function tallyEntry(parent, stopKey, multiStop)
+    parent._vCount = (parent._vCount or 0) + 1
+    if multiStop then
+        parent._multiStop = true
+    elseif parent._firstStop == nil then
+        parent._firstStop = stopKey
+    elseif parent._firstStop ~= stopKey then
+        parent._multiStop = true
+    end
+end
+
 function Builder:popContext()
     if #self.parents == 0 then
         error("No context/group to pop")
@@ -119,7 +132,7 @@ function Builder:popContext()
         -- A populated context is itself one vertical entry of its parent,
         -- so arrangement roles recurse: "Stats, list, Attributes, bar, ..."
         if node ~= nil and node.parent ~= nil and (node._vCount or 0) > 0 then
-            node.parent._vCount = (node.parent._vCount or 0) + 1
+            tallyEntry(node.parent, node._firstStop, node._multiStop)
         end
     end
     return self
@@ -144,6 +157,8 @@ function Builder:_stampArrangementRole(node)
     local role = nil
     if count == 1 and node._hasBarRow then
         role = WowVision:getLocale()["Bar"]
+    elseif count > 0 and node._multiStop then
+        role = WowVision:getLocale()["Panel"]
     elseif count > 0 then
         role = WowVision:getLocale()["List"]
     end
@@ -183,7 +198,7 @@ function Builder:beginGroup(id, vtable, expanded, defaultExpanded)
         tinsert(self.rows, row)
         self.rowOf[header] = row
         if header.parent ~= nil then
-            header.parent._vCount = (header.parent._vCount or 0) + 1
+            tallyEntry(header.parent, header.stopKey, false)
         end
     end
     tinsert(self.parents, {
@@ -238,7 +253,7 @@ function Builder:endRow()
         -- when multi-item; popContext turns the tallies into a role word.
         local parent = self:_currentParent()
         if parent ~= nil then
-            parent._vCount = (parent._vCount or 0) + 1
+            tallyEntry(parent, self.currentRow.stopKey, false)
             if #self.currentRow.items > 1 then
                 parent._hasBarRow = true
             end
@@ -264,7 +279,7 @@ function Builder:addItem(id, vtable)
         tinsert(self.rows, row)
         self.rowOf[node] = row
         if node.parent ~= nil then
-            node.parent._vCount = (node.parent._vCount or 0) + 1
+            tallyEntry(node.parent, node.stopKey, false)
         end
     end
     return self
