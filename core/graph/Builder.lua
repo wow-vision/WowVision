@@ -195,6 +195,22 @@ function Builder:endRow()
     end
     if #self.currentRow.items > 0 then
         tinsert(self.rows, self.currentRow)
+        -- A horizontal row gives its enclosing context the Bar role word
+        -- (the old horizontal List announced "tabs, bar, ..."), unless the
+        -- context already declared a role.
+        if #self.currentRow.items > 1 then
+            local parent = self:_currentParent()
+            if
+                parent ~= nil
+                and not parent.focusable
+                and not parent._barRole
+                and parent.vtable.announcements ~= nil
+                and parent.vtable.announcements[2] == nil
+            then
+                parent._barRole = true
+                tinsert(parent.vtable.announcements, { text = WowVision:getLocale()["Bar"] })
+            end
+        end
     end
     self.currentRow = nil
     return self

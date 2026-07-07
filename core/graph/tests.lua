@@ -580,6 +580,21 @@ testRunner:addSuite("GraphAnnouncer", {
         t:assertEqual(line, "Section")
     end,
 
+    ["a row context announces the bar role"] = function(t)
+        local kg = makeGraph(function(b)
+            b:beginStop("tabs")
+            b:pushContext("tabs", "Tabs")
+            b:startRow()
+            b:addLabel(sid("a"), "Buy"):addLabel(sid("b"), "Sell")
+            b:endRow()
+            b:popContext()
+            return b:build()
+        end)
+        kg:rerender()
+        local line = announcer.composeFull(kg:currentNode())
+        t:assertTrue(line:find("Bar") ~= nil, "row context carries the Bar role: " .. line)
+    end,
+
     ["keyed contexts with equal labels announce separately"] = function(t)
         local kg = makeGraph(function(b)
             b:beginStop("one")
