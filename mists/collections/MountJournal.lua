@@ -31,9 +31,22 @@ local function mountRow(data, index, helpers)
                 end,
                 kind = kinds.label,
             },
+            {
+                text = function()
+                    if spellID ~= nil and MountJournal.selectedSpellID == spellID then
+                        return L["selected"]
+                    end
+                    return nil
+                end,
+                kind = kinds.selected,
+            },
         },
         bindings = {
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+            -- Right click opens the mount's context menu (mount/dismount,
+            -- favorite) through the row's own handler; the dropdown watcher
+            -- picks the opened menu up as a pushed screen.
+            { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = helpers.target },
             {
                 binding = "drag",
                 type = "Function",
