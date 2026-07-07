@@ -54,7 +54,7 @@ WowVision.EventDispatcher = EventDispatcher
 -- Base Window class
 local Window, _ = WowVision.WindowManager:CreateWindowType("Window")
 
-Window.info:addFields({
+Window:addFields({
     { key = "name", required = true },
     { key = "innate", default = false },
     { key = "conflictingAddons" },
@@ -68,7 +68,7 @@ function Window:needsPolling()
 end
 
 function Window:initialize(config)
-    self:setInfo(config)
+    self:applyFields(config)
     self._isCurrentlyOpen = false
     self._openInstance = nil
     -- Cache conflicting addon check at init (addons don't change during session)
@@ -183,7 +183,7 @@ WowVision.Window = Window
 -- FrameWindow - detects open state via frame visibility
 local FrameWindow, _ = WowVision.WindowManager:CreateWindowType("FrameWindow", "Window")
 
-FrameWindow.info:addFields({
+FrameWindow:addFields({
     { key = "frameName", required = true },
     { key = "frame" },
 })
@@ -239,7 +239,7 @@ WowVision.FrameWindow = FrameWindow
 -- CustomWindow - uses a custom function to detect open state
 local CustomWindow, _ = WowVision.WindowManager:CreateWindowType("CustomWindow", "Window")
 
-CustomWindow.info:addFields({
+CustomWindow:addFields({
     { key = "isOpenFunc", required = true },
 })
 
@@ -274,7 +274,7 @@ WowVision.ManualWindow = ManualWindow
 -- EventWindow - opens/closes based on WoW events
 local EventWindow, _ = WowVision.WindowManager:CreateWindowType("EventWindow", "Window")
 
-EventWindow.info:addFields({
+EventWindow:addFields({
     { key = "openEvent", required = true },
     { key = "closeEvent", required = true },
 })
@@ -310,7 +310,7 @@ WowVision.EventWindow = EventWindow
 -- PlayerInteractionWindow - opens/closes based on PLAYER_INTERACTION_MANAGER events
 local PlayerInteractionWindow, _ = WowVision.WindowManager:CreateWindowType("PlayerInteractionWindow", "Window")
 
-PlayerInteractionWindow.info:addFields({
+PlayerInteractionWindow:addFields({
     { key = "interactionType", required = true },
 })
 

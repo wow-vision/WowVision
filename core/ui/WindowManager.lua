@@ -23,7 +23,7 @@ function WindowManager:CreateWindowType(typeKey, parentKey)
     end
 
     local parentClass = parent or nil
-    local newClass = WowVision.Class(typeKey, parentClass):include(WowVision.InfoClass)
+    local newClass = WowVision.Class(typeKey, parentClass)
     self.windowTypes:register(typeKey, newClass)
     return newClass, parentClass
 end
