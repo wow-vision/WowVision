@@ -278,23 +278,43 @@ function classes.effectiveScope(field, pair)
     return "char"
 end
 
--- Flip a field's scope on a live object: record the override, copy the
--- current value to the newly chosen side (the old side keeps its copy, so
--- switching is reversible), and let future writes follow the override.
+-- Flip a field's scope on a live object. Directions differ deliberately:
+-- switching TO GLOBAL means JOINING the account value -- adopt what the
+-- global store holds (never export this character's value onto everyone).
+-- Switching TO CHARACTER forks the current value as this character's local
+-- copy. Neither direction deletes the other side, so switching is always
+-- reversible.
 function classes.setFieldScope(obj, field, scope)
     local pair = rawget(obj, "_db")
     if pair == nil or pair.overrides == nil then
         return false
     end
     pair.overrides[field.key] = scope
-    local store = scope == "global" and pair.global or pair.char
-    if store ~= nil then
-        local value = field:get(obj)
-        if value ~= nil and type(value) ~= "function" then
-            if field.fieldType.toDB ~= nil then
-                store[field.key] = field.fieldType.toDB(field, obj, value)
+    if scope == "global" then
+        local store = pair.global
+        if store ~= nil then
+            local dbValue = store[field.key]
+            local value
+            if dbValue == nil then
+                -- Nothing account-wide yet: this character's value seeds it.
+                value = field:get(obj)
+            elseif field.fieldType.fromDB ~= nil then
+                value = field.fieldType.fromDB(field, obj, dbValue, pair)
             else
-                store[field.key] = value
+                value = dbValue
+            end
+            setField(obj, field, value)
+        end
+    else
+        local store = pair.char
+        if store ~= nil then
+            local value = field:get(obj)
+            if value ~= nil and type(value) ~= "function" then
+                if field.fieldType.toDB ~= nil then
+                    store[field.key] = field.fieldType.toDB(field, obj, value)
+                else
+                    store[field.key] = value
+                end
             end
         end
     end

@@ -631,10 +631,10 @@ testRunner:addSuite("ClassSystem", {
         t:assertEqual(WowVision.classes.effectiveScope(A:getField("volume"), rawget(a, "_db")), "global")
 
         WowVision.classes.setFieldScope(a, A:getField("volume"), "char")
-        t:assertEqual(char.volume, 60) -- copied on switch
+        t:assertEqual(char.volume, 60) -- forked to this character on switch
         a.volume = 30
         t:assertEqual(char.volume, 30) -- writes follow the override
-        t:assertEqual(global.volume, 60) -- the other side keeps its copy
+        t:assertEqual(global.volume, 60) -- the account value is untouched
         t:assertEqual(overrides.volume, "char")
 
         -- A fresh restore with the same override reads the char side
@@ -642,10 +642,14 @@ testRunner:addSuite("ClassSystem", {
         b:setDB({ char = char, global = global, overrides = overrides })
         t:assertEqual(b.volume, 30)
 
+        -- Switching back to global ADOPTS the account value; the local
+        -- value never leaks onto other characters.
         WowVision.classes.setFieldScope(b, A:getField("volume"), "global")
+        t:assertEqual(b.volume, 60)
+        t:assertEqual(global.volume, 60)
         b.volume = 99
-        t:assertEqual(global.volume, 99)
-        t:assertEqual(char.volume, 30)
+        t:assertEqual(global.volume, 99) -- global writes work after adopting
+        t:assertEqual(char.volume, 30) -- the local copy stays behind
     end,
 
     ["onSetDB hook fires after restore"] = function(t)
