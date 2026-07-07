@@ -224,17 +224,38 @@ testRunner:addSuite("ClassSystem", {
         t:assertEqual(seen.value, "x")
     end,
 
-    ["setting an equal value neither persists nor emits"] = function(t)
+    ["change detection: scalars by value, tables by identity"] = function(t)
         local A = NewClass("A")
-        A:addFields({ { key = "list", type = "Table" } })
+        A:addFields({ { key = "n" }, { key = "list" } })
         local a = A:new()
-        a.list = { 1, 2 }
+        a.n = 5
         local fired = counter()
-        A:getField("list").events.valueChange:subscribe(nil, fired.bump)
-        a.list = { 1, 2 } -- deep-equal
+        A:getField("n").events.valueChange:subscribe(nil, fired.bump)
+        a.n = 5 -- equal scalar: no event
         t:assertEqual(fired.count, 0)
-        a.list = { 1, 2, 3 }
-        t:assertEqual(fired.count, 1)
+
+        local shared = { 1, 2 }
+        a.list = shared
+        local listFired = counter()
+        A:getField("list").events.valueChange:subscribe(nil, listFired.bump)
+        a.list = shared -- same table: no event
+        t:assertEqual(listFired.count, 0)
+        a.list = { 1, 2 } -- equal CONTENT but different table: stores + emits
+        t:assertEqual(listFired.count, 1)
+        t:assertTrue(a.list ~= shared)
+    end,
+
+    ["field table assignments keep reference semantics"] = function(t)
+        -- The binding.setDB pattern: alias a db table, then mutate through
+        -- the field -- the db table must see the mutation.
+        local A = NewClass("A")
+        A:addFields({ { key = "inputs", default = function() return {} end } })
+        local a = A:new()
+        local _ = a.inputs -- materialize the default
+        local db = { inputs = {} }
+        a.inputs = db.inputs
+        tinsert(a.inputs, "CTRL-X")
+        t:assertEqual(#db.inputs, 1)
     end,
 
     ["custom get and set functions own the storage"] = function(t)

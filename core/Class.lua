@@ -550,7 +550,11 @@ local function setField(obj, field, value)
     end
 
     local old = getField(obj, field)
-    if deepEqual(old, value) then
+    -- Change detection is by VALUE for scalars and IDENTITY for tables:
+    -- assigning a different-but-equal table must still store it, or code
+    -- relying on reference semantics (binding.inputs aliasing db.inputs)
+    -- silently keeps the old table.
+    if old == value then
         return false
     end
 
@@ -599,7 +603,7 @@ function FieldAPI:set(obj, value)
         value = self.fieldType.validate(self, value)
     end
     local old = self:get(obj)
-    if deepEqual(old, value) then
+    if old == value then
         return false
     end
     local persistValue = value
