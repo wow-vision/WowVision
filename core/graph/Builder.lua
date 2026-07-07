@@ -104,7 +104,7 @@ function Builder:pushContext(key, label, role, positions)
     if positions == false then
         node.suppressChildPositions = true
     end
-    tinsert(self.parents, { node = node, suppressed = self:_isSuppressed() })
+    tinsert(self.parents, { node = node, suppressed = self:_isSuppressed(), isContext = true })
     return self
 end
 
@@ -113,15 +113,24 @@ function Builder:popContext()
         error("No context/group to pop")
     end
     local entry = table.remove(self.parents)
-    self:_stampArrangementRole(entry.node)
+    if entry.isContext then
+        local node = entry.node
+        self:_stampArrangementRole(node)
+        -- A populated context is itself one vertical entry of its parent,
+        -- so arrangement roles recurse: "Stats, list, Attributes, bar, ..."
+        if node ~= nil and node.parent ~= nil and (node._vCount or 0) > 0 then
+            node.parent._vCount = (node.parent._vCount or 0) + 1
+        end
+    end
     return self
 end
 
 -- Contexts without a declared role get one from their shape, matching the
 -- old framework's horizontal/vertical Lists: a context that is exactly one
--- multi-item row announces "bar" ("tabs, bar, Buy, button, 1 of 3");
--- a context with multiple vertical entries announces "list", even when bars
--- sit inside it (a vertical list of bars was a list).
+-- multi-item row announces "bar" ("tabs, bar, Buy, button, 1 of 3"); any
+-- other populated context announces "list", even when bars or child lists
+-- sit inside it (a vertical list of bars was a list). Empty contexts stay
+-- silent -- they hold no focusable children to announce through.
 function Builder:_stampArrangementRole(node)
     if
         node == nil
@@ -135,7 +144,7 @@ function Builder:_stampArrangementRole(node)
     local role = nil
     if count == 1 and node._hasBarRow then
         role = WowVision:getLocale()["Bar"]
-    elseif count > 1 then
+    elseif count > 0 then
         role = WowVision:getLocale()["List"]
     end
     if role ~= nil then
