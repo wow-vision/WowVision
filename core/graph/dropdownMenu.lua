@@ -63,23 +63,28 @@ local function isSubmenuRow(item)
     return ok and canOpen or false
 end
 
--- Modern check and radio rows swap their mark texture's atlas by state.
-local function atlasState(item)
-    local mark = item.leftTexture1
-    if mark == nil or mark.GetAtlas == nil then
+-- Data-first row semantics from the element description proxy (the same
+-- object ForceOpenSubmenu uses). A description built by CreateCheckbox or
+-- CreateRadio stores its isSelected predicate as a plain field, so its
+-- presence is what marks a selectable row -- no texture guessing. IsSelected
+-- runs the predicate for live checked state; IsEnabled covers disabled rows.
+local function selectionState(description)
+    if description.isSelected == nil or description.IsSelected == nil then
         return nil
     end
-    local atlas = mark:GetAtlas()
-    if atlas == nil then
+    local ok, selected = pcall(description.IsSelected, description)
+    if not ok then
         return nil
     end
-    if atlas:find("checkmark") ~= nil or atlas:find("radialtick") ~= nil then
+    return selected == true
+end
+
+local function isDescriptionEnabled(description)
+    if description.IsEnabled == nil then
         return true
     end
-    if atlas:find("ticksquare") ~= nil or atlas:find("tickradial") ~= nil then
-        return false
-    end
-    return nil
+    local ok, enabled = pcall(description.IsEnabled, description)
+    return not ok or enabled ~= false
 end
 
 local function itemRegions(item)
@@ -139,17 +144,34 @@ local function emitItem(builder, item)
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = item },
         },
     }
-    local checked = atlasState(item)
-    if checked ~= nil then
-        vtable.controlType = graph.controlTypes.toggle
-        local captured = item
+    local description = descriptionOf(item)
+    if description ~= nil then
+        -- Modern rows: the description says what the row IS. Only rows
+        -- carrying a selection predicate are toggles; plain buttons never
+        -- read as checkboxes regardless of what textures they show.
+        if selectionState(description) ~= nil then
+            vtable.controlType = graph.controlTypes.toggle
+            local captured = description
+            tinsert(vtable.announcements, {
+                text = function()
+                    return selectionState(captured) and L["Checked"] or L["Unchecked"]
+                end,
+                kind = kinds.value,
+            })
+        end
+        local captured = description
         tinsert(vtable.announcements, {
             text = function()
-                return atlasState(captured) and L["Checked"] or L["Unchecked"]
+                if not isDescriptionEnabled(captured) then
+                    return L["Disabled"]
+                end
+                return nil
             end,
-            kind = kinds.value,
+            kind = kinds.enabled,
         })
     elseif legacyCheck ~= nil then
+        -- Legacy UIDropDownMenu rows have no descriptions; the shown check
+        -- texture stays the signal there.
         vtable.controlType = graph.controlTypes.toggle
         local capturedRegion = legacyCheck
         tinsert(vtable.announcements, {
