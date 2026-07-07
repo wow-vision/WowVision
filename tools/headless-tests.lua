@@ -66,6 +66,21 @@ loadAddonFile("core/components/ClassRegistryType.lua")
 loadAddonFile("core/components/ComponentRegistry.lua")
 loadAddonFile("core/components/tests.lua")
 
+-- Alerts construct at every module load in game; a construction smoke here
+-- catches recursion/typo failures the parse check cannot.
+loadAddonFile("core/info/InfoFrame.lua")
+loadAddonFile("core/alerts/alerts.lua")
+WowVision.testing.testRunner:addSuite("AlertConstruction", {
+    ["an alert with an output constructs enabled"] = function(t)
+        local alert = WowVision.alerts.Alert:new({ key = "smoke", label = "Smoke" })
+        t:assertEqual(alert.enabled, true)
+        t:assertEqual(alert.defaultEnabled, true)
+        alert:setEnabled(false)
+        t:assertEqual(alert.enabled, false)
+        t:assertEqual(alert.defaultEnabled, true)
+    end,
+})
+
 loadAddonFile("core/graph/ControlId.lua")
 loadAddonFile("core/graph/types.lua")
 loadAddonFile("core/graph/Announcer.lua")

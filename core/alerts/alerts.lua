@@ -3,18 +3,10 @@ local Alert = WowVision.Class("Alert")
 Alert:addFields({
     { key = "key", required = true, once = true },
     { key = "label" },
-    {
-        key = "enabled",
-        required = true,
-        default = true,
-        get = function(obj, key)
-            return obj:getEnabled()
-        end,
-        set = function(obj, key, value)
-            obj:setEnabled(value)
-            obj.defaultEnabled = value
-        end,
-    },
+    -- Plain managed field: accessor methods below MUST NOT be wired as the
+    -- field's get/set -- they read/write self.enabled, which would re-enter
+    -- the field and recurse.
+    { key = "enabled", default = true },
 })
 
 function Alert:initialize(info)
@@ -35,6 +27,8 @@ function Alert:initialize(info)
         self:setEnabled(value)
     end)
     self:applyFields(info)
+    -- The config-time enabled value feeds the settings parameter's default.
+    self.defaultEnabled = self.enabled
 end
 
 function Alert:getEnabled()
@@ -114,17 +108,8 @@ Output:addFields({
     -- (legacy multi-output alerts). Lets one alert host several distinct cues.
     { key = "action" },
     { key = "shouldFire" },
-    {
-        key = "enabled",
-        default = true,
-        get = function(obj, k)
-            return obj:getEnabled()
-        end,
-        set = function(obj, key, value)
-            obj:setEnabled(value)
-            obj.defaultEnabled = value
-        end,
-    },
+    -- Plain managed field; see the Alert note above.
+    { key = "enabled", default = true },
 })
 
 function Output:initialize(info)
@@ -144,6 +129,7 @@ function Output:initialize(info)
         self:setEnabled(value)
     end)
     self:applyFields(info)
+    self.defaultEnabled = self.enabled
 end
 
 function Output:addParameter(info)
