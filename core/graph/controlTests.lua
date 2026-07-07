@@ -580,11 +580,6 @@ testRunner:addSuite("GraphNodes", {
                     onActivate = function() end,
                 }))
             end,
-            settingsRoot = {
-                label = "Settings",
-                info = { fields = {} },
-                children = {},
-            },
         }
         local builder = Builder:new()
         graph.settings.renderModuleInto(builder, fakeModule)

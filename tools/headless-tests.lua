@@ -147,6 +147,31 @@ WowVision.testing.testRunner:addSuite("MonitorConstruction", {
     end,
 })
 
+-- Module settings as fields: the per-module settings class contract
+-- (Module.lua itself is WoW-bound, so the shape is replicated here).
+WowVision.testing.testRunner:addSuite("ModuleSettings", {
+    ["settings declare, read, persist, and restore"] = function(t)
+        local mod = { key = "fake" }
+        local settingsClass = WowVision.Class("Settings:fake")
+        local settingsObj = settingsClass:new()
+        mod.settings = settingsObj
+        settingsClass:addFields({
+            { key = "volume", type = "Number", default = 80, persist = true, setting = true },
+            { key = "muted", type = "Bool", default = false, persist = true, setting = true },
+        })
+        t:assertEqual(mod.settings.volume, 80)
+
+        local node = { volume = 40, muted = true }
+        settingsObj:setDB({ char = node })
+        t:assertEqual(mod.settings.volume, 40)
+        t:assertEqual(mod.settings.muted, true)
+
+        mod.settings.volume = 55
+        t:assertEqual(node.volume, 55)
+        t:assertEqual(WowVision.classes.instanceConfig(settingsObj).muted, true)
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("AlertConstruction", {
     ["an alert with an output constructs enabled"] = function(t)
         local alert = WowVision.alerts.Alert:new({ key = "smoke", label = "Smoke" })

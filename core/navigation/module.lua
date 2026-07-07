@@ -14,6 +14,6 @@ local autoMove = settings:add({
     default = true,
 })
 
-autoMove.events.valueChange:subscribe(nil, function(event, setting, value)
+autoMove.events.valueChange:subscribe(nil, function(event, obj, key, value)
     SetCVar("autoInteract", value)
 end)

@@ -362,8 +362,22 @@ function settings.renderModuleInto(builder, module)
         module:getGraphMenuItems(builder)
     end
 
-    if module.settingsRoot ~= nil then
-        settings.renderInto(builder, module.settingsRoot)
+    if module.settingsObj ~= nil then
+        settings.renderObjectInto(builder, module.settingsObj)
+    end
+    if module.settingsFacade ~= nil then
+        for _, ref in ipairs(module.settingsFacade.refs) do
+            local target = ref.target
+            builder:addItem(
+                ControlId.structural("child:" .. tostring(ref.key)),
+                nodes.button({
+                    label = target.label,
+                    onActivate = function()
+                        pushChildScreen(target)
+                    end,
+                })
+            )
+        end
     end
 
     builder:popContext()
@@ -394,9 +408,9 @@ function settings.openModuleSettings(path)
     for part in tostring(path or ""):gmatch("[^%.%s]+") do
         target = target ~= nil and target[part] or nil
     end
-    if target == nil or target.settingsRoot == nil then
+    if target == nil or target.settingsObj == nil then
         print("No settings found for " .. tostring(path))
         return
     end
-    WowVision.UIHost:openTemporaryWindow({ graphScreen = settings.screen(target.settingsRoot) })
+    WowVision.UIHost:openTemporaryWindow({ graphScreen = settings.moduleScreen(target) })
 end

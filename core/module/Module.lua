@@ -54,14 +54,29 @@ function Module:unregisterCommand(name)
     end
 end
 
+-- Settings are fields on a per-module settings class; module.settings.rate
+-- reads a managed field. hasSettings returns a facade keeping the old
+-- declaration API: settings:add(def) declares a persisted field and returns
+-- it; settings:addRef links an alert's parameter frame into the screen.
 function Module:hasSettings()
-    if not self.settingsRoot then
-        self.settingsRoot = WowVision.info.InfoFrame:new({
-            key = "settings",
-            label = "Settings",
-        })
+    if self.settingsFacade == nil then
+        local settingsClass = WowVision.Class("Settings:" .. self.key)
+        local settingsObj = settingsClass:new()
+        self.settingsObj = settingsObj
+        self.settings = settingsObj
+        local facade = { refs = {} }
+        function facade:add(def)
+            def.persist = true
+            def.setting = true
+            settingsClass:addFields({ def })
+            return settingsClass:getField(def.key)
+        end
+        function facade:addRef(key, target)
+            tinsert(self.refs, { key = key, target = target })
+        end
+        self.settingsFacade = facade
     end
-    return self.settingsRoot
+    return self.settingsFacade
 end
 
 function Module:createComponentRegistry(config)
@@ -71,8 +86,8 @@ function Module:createComponentRegistry(config)
 end
 
 function Module:getDefaultSettings()
-    if self.settingsRoot then
-        return self.settingsRoot:getDefaultDB()
+    if self.settingsObj then
+        return WowVision.classes.instanceConfig(self.settingsObj)
     end
     return {}
 end
@@ -112,9 +127,8 @@ function Module:setDBObj(db)
         end
         v:setDB(alertDB)
     end
-    self.settings = db.settings
-    if self.settingsRoot then
-        self.settingsRoot:setDB(db.settings)
+    if self.settingsObj then
+        self.settingsObj:setDB({ char = db.settings })
     end
     self.data = db.data
     for _, submodule in ipairs(self.submodules) do
