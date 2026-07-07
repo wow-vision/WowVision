@@ -351,7 +351,17 @@ local function render(builder, screen)
     end
     builder:pushContext("character", L["Character"])
 
+    -- Body first: opening the panel lands on the tab's content (the
+    -- equipment list on the paper doll), with the tabs a stop behind.
     local selectedTab = CharacterFrame.selectedTab
+    if selectedTab == 1 then
+        renderPaperDoll(builder)
+    elseif selectedTab == 3 then
+        renderReputation(builder)
+    elseif selectedTab == 4 then
+        renderCurrency(builder)
+    end
+
     builder:beginStop("tabs")
     builder:pushContext("tabs", L["Tabs"])
     builder:startRow()
@@ -374,14 +384,6 @@ local function render(builder, screen)
     end
     builder:endRow()
     builder:popContext()
-
-    if selectedTab == 1 then
-        renderPaperDoll(builder)
-    elseif selectedTab == 3 then
-        renderReputation(builder)
-    elseif selectedTab == 4 then
-        renderCurrency(builder)
-    end
 
     builder:popContext()
 end

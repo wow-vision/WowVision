@@ -22,6 +22,21 @@ local function render(builder, screen)
     end
     builder:pushContext("character", L["Character"])
 
+    -- Body first: opening the panel lands on the tab's content (the
+    -- equipment list on the paper doll), with the tabs a stop behind.
+    local tab = CharacterFrame.selectedTab
+    if tab == 1 and char.renderPaperDoll ~= nil then
+        char.renderPaperDoll(builder)
+    elseif tab == 2 and char.renderPet ~= nil then
+        char.renderPet(builder)
+    elseif tab == 3 and char.renderReputation ~= nil then
+        char.renderReputation(builder)
+    elseif tab == 4 and char.renderSkills ~= nil then
+        char.renderSkills(builder)
+    elseif tab == 5 and char.renderPVP ~= nil then
+        char.renderPVP(builder)
+    end
+
     builder:beginStop("tabs")
     builder:pushContext("tabs", L["Tabs"])
     builder:startRow()
@@ -46,19 +61,6 @@ local function render(builder, screen)
     end
     builder:endRow()
     builder:popContext()
-
-    local tab = CharacterFrame.selectedTab
-    if tab == 1 and char.renderPaperDoll ~= nil then
-        char.renderPaperDoll(builder)
-    elseif tab == 2 and char.renderPet ~= nil then
-        char.renderPet(builder)
-    elseif tab == 3 and char.renderReputation ~= nil then
-        char.renderReputation(builder)
-    elseif tab == 4 and char.renderSkills ~= nil then
-        char.renderSkills(builder)
-    elseif tab == 5 and char.renderPVP ~= nil then
-        char.renderPVP(builder)
-    end
 
     builder:popContext()
 end
