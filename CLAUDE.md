@@ -13,61 +13,55 @@ WowVision is a World of Warcraft accessibility addon for visually impaired playe
 | `tbc/` | TBC-specific modules |
 | `mists/` | Mists-specific modules |
 | `retail/` | Retail-specific modules |
-| `libs/` | Ace3, middleclass, LibSharedMedia, LibRangeCheck |
+| `libs/` | Ace3, LibSharedMedia, LibRangeCheck |
 | `locale/` | Git submodule: localization strings |
 | `audio/` | Git submodule: voice packs |
 | `docs/` | mdBook user and developer documentation |
 
 **Loading order**: `libs.xml` -> `[version]/setup.lua` -> `modules.xml` (core) -> `[version]/modules.xml`. Version is determined by which TOC file WoW selects, no runtime checks.
 
-## OOP System (middleclass)
+## Class System (`core/Class.lua`)
 
-All classes use `libs/middleclass.lua`:
+The custom class library: classes with NATIVE fields and db persistence (it replaced middleclass and the old InfoClass in July 2026). All metatable magic lives in this one file; downstream code is plain Lua.
 
 ```lua
-local MyClass = WowVision.Class("MyClass", ParentClass)
-MyClass:include(SomeMixin)
-function MyClass:initialize(...) end
-local instance = MyClass:new(...)
+local Monitor = WowVision.Class("Monitor", Parent)
+Monitor:addFields({
+    { key = "label", type = "String", persist = true },
+    { key = "enabled", type = "Bool", default = true, persist = true, global = false },
+})
+function Monitor:initialize(config)
+    self:applyFields(config)      -- validates, fills defaults THROUGH setters
+    self.tracker = nil            -- plain instance vars work normally
+end
+
+local m = Monitor:new({ label = "Test" })
+m.enabled = false                 -- validates, stores, persists, emits valueChange
+m:setDB({ char = charNode, global = globalNode })
 ```
+
+**Field declarations** (`Class:addFields`): key, type (registry key), default (value or function(obj)), persist, `global` (DEFAULT TRUE -- `global = false` means per-character), setting (renders on the module settings screen), label, required, once, validate, get/set (custom accessors), showInUI.
+
+**HARD RULES:**
+- NEVER wire a field to get/set accessors that read or write `self.<key>` -- that re-enters the field metamethods and overflows the C stack. Use a plain field; keep helper methods thin.
+- Change detection: scalars by value, TABLES BY IDENTITY. Assigning a different-but-equal table still stores it (reference semantics).
+- A stored `false` is a value, never treat it as nil (no `x and y or nil` on field reads).
+- Inheritance is a super-chain walk computed lazily -- a child declaring fields can NEVER corrupt its parent. `Class:updateField(def)` overrides an inherited field for that class only.
+- Field definition OBJECTS are stable; subscribe to `Class:getField(key).events.valueChange` -- handlers receive `(subscriber, eventName, obj, key, value)`.
+
+**DB pairs and scope:** `setDB({ char = node, global = node, overrides = map })`. Each field routes by scope: per-field override, then object-wide override (reserved `"*"` key), then the field's `global` flag. A char-only pair structurally traps everything below it (nesting rule). Containers (Dict, InstanceArray, ComponentArray) cascade setDB to child instances. Scope switching: `classes.setFieldScope` / `classes.setObjectScope` -- switching TO GLOBAL adopts the account value; switching TO CHARACTER forks the current value; nothing is ever deleted.
+
+**Field types** (`classes.registerFieldType(key, {validate, toDB, fromDB, setDB, getDefaultDB, valueString, default, api}`): scalars live in `core/Class.lua`; complex types (ComponentArray, TrackingConfig, Template, Alert, Spell, Category, Time, VoicePack, DataBrowse, Array) in `core/fieldTypes.lua`. The `api` table exposes methods on built fields (`field:addElement(obj, x)`).
+
+**FieldSet** (`classes.newFieldSet`): a standalone self-owned field collection (alert/output parameters, ObjectType parameters). `set:add(def)` returns the field; values live on the set; `set:setDB(node)` restores; `set:applyTo(obj, config)` applies a schema to an external object.
+
+**Module settings:** `local settings = module:hasSettings()` then `settings:add({...})` declares a field on a per-module settings class; read/write as `module.settings.key`. `settings:addRef(key, alert.parameters)` links parameter screens.
+
+**Stores:** WowVisionDB (per character) + WowVisionGlobalDB (account). Per-store migrations in `core/db.lua`. Settings default to the account store; monitors/buffers move per instance via the context menu (Shift-F10 -> Scope).
+
+**Testing:** the class system is pure Lua -- `lua tools/headless-tests.lua` runs the full suite plus construction smokes for alerts, buffers, and monitors. Add a smoke when converting or adding a class family.
 
 ## Core Systems
-
-### InfoClass / InfoManager / Fields (`core/info/`)
-
-Declarative property system. Define fields once, get validation, persistence, UI generation, and change events.
-
-```lua
-local MyClass = WowVision.Class("MyClass"):include(WowVision.InfoClass)
-MyClass.info:addFields({
-    { key = "enabled", type = "Bool", default = true, persist = true, label = L["Enabled"] },
-    { key = "label", type = "String", persist = true, label = L["Label"] },
-})
-```
-
-**IMPORTANT: InfoClass is a mixin, and it must be `:include()`d on EVERY child class in the hierarchy.** When `InfoClass:included(class)` runs, it clones the parent's `info` (InfoManager) so the child can add its own fields without affecting the parent. If you forget to include InfoClass on a subclass, it shares the parent's InfoManager and field additions corrupt the parent.
-
-```lua
--- CORRECT: each class includes InfoClass
-local Parent = WowVision.Class("Parent"):include(WowVision.InfoClass)
-Parent.info:addFields({ { key = "name", type = "String" } })
-
-local Child = WowVision.Class("Child", Parent):include(WowVision.InfoClass)
-Child.info:addFields({ { key = "age", type = "Number" } })  -- Child has name + age, Parent only has name
-
--- WRONG: forgetting to include InfoClass on Child
-local Child = WowVision.Class("Child", Parent)
-Child.info:addFields({ { key = "age", type = "Number" } })  -- CORRUPTS Parent.info!
-```
-
-**Exception:** ComponentRegistry's `createType` automatically includes InfoClass on every type class it creates (see below), so you don't need to do it manually for registry-created types.
-
-- `InfoManager` manages a collection of Field instances for a class
-- `InfoClass` mixin gives any class an `info` (InfoManager) and `setInfo(config)` method
-- `Field:set(obj, value)` validates, persists to `obj.db`, and emits `valueChange`
-- `Field:setDB(obj, db)` restores from database (temporarily disables `obj.db` to prevent re-persist)
-- Classes needing DB cascade should define `setDB(db)` (see Buffer, Rule, Monitor for examples)
-- Field types: Bool, String, Number, Choice, Array, Category, Object, TrackingConfig, ComponentArray, Alert, Template, Time, VoicePack, Spell
 
 ### ComponentRegistry (`core/components/`)
 
@@ -85,10 +79,9 @@ local registry = WowVision.components.createRegistry({
 -- Register a new type (creates a CLASS, not an instance)
 local AuraStateRule = registry:createType({ key = "AuraState", parent = "State" })
 -- AuraStateRule is now a class that inherits from StateRule
--- InfoClass is AUTOMATICALLY included by createType — no need to do it manually
 
 -- Add fields to the type class
-AuraStateRule.info:addFields({ { key = "spell", type = "Spell", persist = true } })
+AuraStateRule:addFields({ { key = "spell", type = "Spell", persist = true } })
 
 -- Create instances of a type
 local rule = registry:createTemporaryComponent({ type = "AuraState", spell = 12345 })
@@ -96,11 +89,11 @@ local rule = registry:createTemporaryComponent({ type = "AuraState", spell = 123
 ```
 
 **Key concepts:**
-- `createType(config)` creates a **class** (not an instance). It auto-includes InfoClass and clones the parent's InfoManager.
+- `createType(config)` creates a **class** (not an instance).
 - `createTemporaryComponent(config)` creates an **instance** of a registered type class.
 - `createComponent(config)` creates and registers a named instance.
 - `config.parent` specifies inheritance: `createType({ key = "AuraState", parent = "State" })` makes AuraStateRule inherit from StateRule.
-- The `type = "class"` registry type (ClassRegistryType) handles the class creation. Each type gets its own InfoManager via the automatic InfoClass include.
+- The `type = "class"` registry type (ClassRegistryType) handles the class creation. Field inheritance comes from the class system's chain walk.
 
 **Where it's used:**
 - `WowVision.monitors.registry` — Monitor types (Aura, Cooldown)
@@ -204,9 +197,9 @@ WowVision.ui:CreateElement("List", {
 
 ## Conventions
 
-- **Classes**: `WowVision.Class("Name", Parent):include(Mixin)`
+- **Classes**: `WowVision.Class("Name", Parent)`; fields via `Class:addFields`
 - **Registries**: key-value stores for type registries (objects, fields, elements, windows, outputs)
-- **InfoClass**: use for any class needing configurable/persistable/UI-generatable properties
+- **Fields**: declare configurable/persistable properties with Class:addFields; access as plain attributes
 - **Events**: `WowVision.Event:new("name")` with subscribe/emit pattern
 - **Modules**: `parent:createModule(key)` with setLabel, addAlert, etc.
 - **Locale strings**: `local L = WowVision:getLocale()` then `L["String Key"]`. Locale is a git submodule.
@@ -221,7 +214,7 @@ WowVision.ui:CreateElement("List", {
 | `core/WowVision.lua` | Main addon entry, OnInitialize, OnUpdate loop |
 | `core/UIHost.lua` | UI orchestrator (window context, navigator, combat) |
 | `core/module/Module.lua` | Module base class |
-| `core/info/Info.lua` | InfoManager + InfoClass mixin |
+| `core/Class.lua` | The class library: classes, fields, db pairs, scope |
 | `core/info/Field.lua` | Base Field class |
 | `core/objects/types/type.lua` | ObjectType, GlobalType, UnitType |
 | `core/monitors/Monitor.lua` | Monitor base class |
@@ -232,4 +225,4 @@ WowVision.ui:CreateElement("List", {
 ## Developer Docs
 
 Detailed system documentation lives in `docs/src/developer/`:
-- Architecture, Modules, UI System, InfoClass & Fields, Object Tracking, Alerts & Outputs
+- Architecture, Modules, Graph UI, Class System & Fields, Object Tracking, Alerts & Outputs
