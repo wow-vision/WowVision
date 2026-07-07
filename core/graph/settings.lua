@@ -107,12 +107,20 @@ function settings.renderObjectInto(builder, obj)
         obj:renderGraphSettings(builder)
         return
     end
-    local fields = obj.class ~= nil and obj.class.info ~= nil and obj.class.info.fields or nil
+    local fields = nil
+    if obj.class ~= nil then
+        if obj.class.getFields ~= nil then
+            fields = obj.class:getFields()
+        end
+        if (fields == nil or #fields == 0) and obj.class.info ~= nil then
+            fields = obj.class.info.fields -- old InfoClass classes, during conversion
+        end
+    end
     if fields == nil then
         return
     end
     for _, field in ipairs(fields) do
-        if field.showInUI then
+        if field.showInUI ~= false then
             builder:addItem(ControlId.structural("field:" .. field.key), settings.controlFor(field, obj))
         end
     end

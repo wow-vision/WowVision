@@ -1,7 +1,7 @@
 local L = WowVision:getLocale()
 
-local ObjectItem = WowVision.Class("ObjectItem", WowVision.buffers.BufferItem):include(WowVision.InfoClass)
-ObjectItem.info:addFields({
+local ObjectItem = WowVision.Class("ObjectItem", WowVision.buffers.BufferItem)
+ObjectItem:addFields({
     {
         key = "object",
         type = "TrackingConfig",

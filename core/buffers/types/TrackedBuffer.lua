@@ -1,7 +1,7 @@
 local L = WowVision:getLocale()
 
 local TrackedBuffer = WowVision.buffers:createType("Tracked")
-TrackedBuffer.info:addFields({
+TrackedBuffer:addFields({
     {
         key = "source",
         type = "TrackingConfig",
@@ -16,7 +16,7 @@ function TrackedBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
 
     -- Subscribe to source field changes to restart tracking
-    local sourceField = self.class.info:getField("source")
+    local sourceField = self.class:getField("source")
     sourceField.events.valueChange:subscribe(self, function(subscriber, event, target, key, value)
         if target == self then
             subscriber:restartTracking()

@@ -420,6 +420,7 @@ local function buildField(def)
     built.get = nil
     built.set = nil
     built.fieldType = fieldType
+    built.typeKey = typeKey -- control dispatch key (matches old Field.typeKey)
     builtFields[def] = built
     return built
 end
@@ -740,8 +741,9 @@ end
 -- Assignment during restore goes through the normal set path (validation and
 -- valueChange both fire) but never writes back -- persistence is suspended.
 function ClassProto:setDB(pair)
-    if pair.char == nil and pair.global == nil and (pair[1] ~= nil or next(pair) ~= nil) then
-        -- Convenience: a bare node means a single-sided character pair.
+    if pair.char == nil and pair.global == nil then
+        -- Convenience: a bare node (even an empty one) means a single-sided
+        -- character pair. True pairs always carry at least one side.
         pair = { char = pair }
     end
     rawset(self, "_db", nil)

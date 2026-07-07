@@ -1,5 +1,5 @@
-local MessageItem = WowVision.Class("MessageItem", WowVision.buffers.BufferItem):include(WowVision.InfoClass)
-MessageItem.info:addFields({
+local MessageItem = WowVision.Class("MessageItem", WowVision.buffers.BufferItem)
+MessageItem:addFields({
     { key = "data" },
     { key = "getDataString" },
 })

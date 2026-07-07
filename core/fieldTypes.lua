@@ -263,3 +263,71 @@ classes.registerFieldType("TrackingConfig", {
         end,
     },
 })
+
+-- ---------------------------------------------------------------------------
+-- Template: nil (use default), { key = "templateKey" }, or
+-- { format = "custom string" }. def key: getTemplates(obj) -> registry.
+-- ---------------------------------------------------------------------------
+
+classes.registerFieldType("Template", {
+    validate = function(field, value)
+        if value == nil or type(value) ~= "table" then
+            return nil
+        end
+        if value.format ~= nil then
+            return { format = value.format }
+        end
+        if value.key ~= nil then
+            return { key = value.key }
+        end
+        return nil
+    end,
+
+    valueString = function(field, obj, value)
+        local L = WowVision:getLocale()
+        if value == nil then
+            return L["Default"]
+        end
+        if value.format ~= nil then
+            return L["Custom"]
+        end
+        if value.key ~= nil then
+            local templates = field:getAvailableTemplates(obj)
+            if templates ~= nil then
+                local template = templates:get(value.key)
+                if template ~= nil then
+                    return template.name
+                end
+            end
+            return value.key
+        end
+        return L["Default"]
+    end,
+
+    api = {
+        getAvailableTemplates = function(field, obj)
+            if field.getTemplates ~= nil then
+                return field.getTemplates(obj)
+            end
+            return nil
+        end,
+
+        -- The renderable format string or Template instance, nil for default.
+        resolve = function(field, obj)
+            local value = field:get(obj)
+            if value == nil then
+                return nil
+            end
+            if value.format ~= nil then
+                return value.format
+            end
+            if value.key ~= nil then
+                local templates = field:getAvailableTemplates(obj)
+                if templates ~= nil then
+                    return templates:get(value.key)
+                end
+            end
+            return nil
+        end,
+    },
+})

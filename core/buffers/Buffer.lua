@@ -1,22 +1,17 @@
 local L = WowVision:getLocale()
 
-local Buffer = WowVision.Class("Buffer"):include(WowVision.InfoClass)
+local Buffer = WowVision.Class("Buffer")
 Buffer:include(WowVision.ViewList)
-Buffer.info:addFields({
+Buffer:addFields({
+    -- Plain managed field: getEnabled/setEnabled below are thin wrappers
+    -- and MUST NOT be wired as accessors (they touch self.enabled).
     {
         key = "enabled",
         type = "Bool",
         label = L["Enabled"],
         default = true,
-        required = true,
         persist = true,
         sortPriority = 1,
-        get = function(obj, key)
-            return obj:getEnabled()
-        end,
-        set = function(obj, key, value)
-            obj:setEnabled(value)
-        end,
     },
     {
         key = "label",
@@ -36,7 +31,7 @@ function Buffer:initialize(obj)
         modify = WowVision.Event:new("modify"),
         remove = WowVision.Event:new("remove"),
     }
-    self:setInfo(obj)
+    self:applyFields(obj)
 end
 
 function Buffer:add(index, item)
@@ -79,14 +74,6 @@ function Buffer:getFocusString()
         result = result .. " " .. focus:getFocusString()
     end
     return result
-end
-
-function Buffer:getDefaultDB()
-    return self.info:getDefaultDB(self)
-end
-
-function Buffer:setDB(db)
-    self.info:setDB(self, db)
 end
 
 -- Create component registry for buffer types

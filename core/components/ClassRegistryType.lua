@@ -1,6 +1,5 @@
 local ClassRegistryType = WowVision.Class("ClassRegistryType", WowVision.components.RegistryType)
-    :include(WowVision.InfoClass)
-ClassRegistryType.info:addFields({
+ClassRegistryType:addFields({
     { key = "baseClass", required = true },
     { key = "mixins", default = {} },
     { key = "classNamePrefix", default = "" },
@@ -22,9 +21,6 @@ function ClassRegistryType:createType(config)
     -- Create new class with optional prefix/suffix
     local className = self.classNamePrefix .. config.key .. self.classNameSuffix
     local newClass = WowVision.Class(className, parentClass)
-
-    -- Always include InfoClass so each type gets its own info object
-    newClass:include(WowVision.InfoClass)
 
     -- Apply mixins
     for _, mixin in ipairs(self.mixins) do

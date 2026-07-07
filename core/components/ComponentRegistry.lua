@@ -1,12 +1,12 @@
-local ComponentRegistry = WowVision.Class("ComponentRegistry"):include(WowVision.InfoClass)
-ComponentRegistry.info:addFields({
+local ComponentRegistry = WowVision.Class("ComponentRegistry")
+ComponentRegistry:addFields({
     { key = "type", required = true },
 })
 
 function ComponentRegistry:initialize(config)
     self.types = WowVision.Registry:new()
     self.components = WowVision.Registry:new()
-    self:setInfo(config)
+    self:applyFields(config)
 
     local registryTypeClass = WowVision.components.registryTypes:get(self.type)
     if not registryTypeClass then

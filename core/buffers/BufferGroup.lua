@@ -2,7 +2,7 @@ local L = WowVision:getLocale()
 
 local BufferGroup, parent = WowVision.buffers:createType("Group")
 
-BufferGroup.info:addFields({
+BufferGroup:addFields({
     {
         key = "items",
         type = "ComponentArray",
@@ -33,13 +33,13 @@ end
 
 -- Convenience method to add a buffer
 function BufferGroup:addBuffer(buffer)
-    local field = self.class.info:getField("items")
+    local field = self.class:getField("items")
     field:addElement(self, buffer)
 end
 
 -- Convenience method to remove a buffer by index
 function BufferGroup:removeBuffer(index)
-    local field = self.class.info:getField("items")
+    local field = self.class:getField("items")
     field:removeElement(self, index)
 end
 
@@ -57,7 +57,7 @@ WowVision.buffers.BufferGroup = BufferGroup
 -- Root group allows adding child groups (one level of nesting only)
 local RootBufferGroup = WowVision.buffers.registry:createType({ key = "RootGroup", parent = "Group" })
 
-RootBufferGroup.info:updateField({
+RootBufferGroup:updateField({
     key = "items",
     availableTypes = {
         { key = "Group", label = L["Buffer Group"] },

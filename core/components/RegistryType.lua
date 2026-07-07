@@ -1,8 +1,8 @@
-local RegistryType = WowVision.Class("RegistryType"):include(WowVision.InfoClass)
+local RegistryType = WowVision.Class("RegistryType")
 
 function RegistryType:initialize(registry, config)
     self.registry = registry
-    self:setInfo(config)
+    self:applyFields(config)
 end
 
 function RegistryType:createType(config)

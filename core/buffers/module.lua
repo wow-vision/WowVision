@@ -35,7 +35,7 @@ end
 
 function module:getGraphMenuItems(builder)
     if self.root then
-        local field = self.root.class.info:getField("items")
+        local field = self.root.class:getField("items")
         builder:addItem(
             WowVision.graph.ControlId.structural("buffers"),
             WowVision.graph.settings.controlFor(field, self.root)

@@ -1,5 +1,5 @@
 local MessageBuffer = WowVision.buffers:createType("Message")
-MessageBuffer.info:addFields({
+MessageBuffer:addFields({
     { key = "source" },
     { key = "sourceKey" },
 })

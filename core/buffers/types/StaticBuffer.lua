@@ -1,7 +1,7 @@
 local L = WowVision:getLocale()
 
 local StaticBuffer = WowVision.buffers:createType("Static")
-StaticBuffer.info:addFields({
+StaticBuffer:addFields({
     {
         key = "items",
         type = "ComponentArray",

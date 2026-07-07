@@ -71,6 +71,43 @@ loadAddonFile("core/components/tests.lua")
 -- catches recursion/typo failures the parse check cannot.
 loadAddonFile("core/info/InfoFrame.lua")
 loadAddonFile("core/alerts/alerts.lua")
+-- The buffer family on the new class system: construction and db round trip.
+loadAddonFile("core/ViewList.lua")
+loadAddonFile("core/buffers/Buffer.lua")
+loadAddonFile("core/buffers/BufferItem.lua")
+loadAddonFile("core/buffers/items/ObjectItem.lua")
+loadAddonFile("core/buffers/items/MessageItem.lua")
+loadAddonFile("core/buffers/BufferGroup.lua")
+loadAddonFile("core/buffers/types/StaticBuffer.lua")
+loadAddonFile("core/buffers/types/TrackedBuffer.lua")
+WowVision.testing.testRunner:addSuite("BufferConstruction", {
+    ["a static buffer constructs and persists through the root group"] = function(t)
+        local db = { items = { _type = "array" } }
+        local root = WowVision.buffers.RootBufferGroup:new(db)
+        root:setDB(db)
+        t:assertEqual(root.enabled, true)
+
+        local group = WowVision.buffers:create("Group", { label = "My Group" })
+        root:addBuffer(group)
+        t:assertEqual(db.items[1].label, "My Group")
+        t:assertEqual(db.items[1].type, "Group")
+
+        local static = WowVision.buffers:create("Static", { label = "Things" })
+        group:addBuffer(static)
+        t:assertEqual(db.items[1].items[1].label, "Things")
+
+        -- Field writes persist into the nested config
+        static.label = "Renamed"
+        t:assertEqual(db.items[1].items[1].label, "Renamed")
+
+        -- Restore rebuilds the whole tree from configs
+        local again = WowVision.buffers.RootBufferGroup:new(db)
+        again:setDB(db)
+        t:assertEqual(again.items[1].label, "My Group")
+        t:assertEqual(again.items[1].items[1].label, "Renamed")
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("AlertConstruction", {
     ["an alert with an output constructs enabled"] = function(t)
         local alert = WowVision.alerts.Alert:new({ key = "smoke", label = "Smoke" })
