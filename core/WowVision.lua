@@ -166,6 +166,72 @@ function WowVision:registerCommands()
         end,
     })
 
+    -- Registered here in the bootstrap, not in the errors module, so it
+    -- works even when a load failure kills half the addon. BugGrabber
+    -- (BugSack) owns the error handler when installed and swallows
+    -- everything into its session db, including load-time errors our own
+    -- handler can never see -- read it first.
+    self.base:registerCommand({
+        name = "errors",
+        description = "Show a copyable list of recent Lua errors; 'clear' resets",
+        func = function(args)
+            local lines = {}
+            local lastMessage = nil
+            if BugGrabber ~= nil and BugGrabber.GetDB ~= nil then
+                local db = BugGrabber:GetDB()
+                if args == "clear" then
+                    if BugGrabber.Reset ~= nil then
+                        BugGrabber:Reset()
+                    end
+                    print("Errors cleared")
+                    return
+                end
+                local total = #db
+                local first = total > 15 and total - 14 or 1
+                for i = total, first, -1 do
+                    local err = db[i]
+                    local message = tostring(err.message or "?")
+                    tinsert(lines, "#" .. i .. " x" .. tostring(err.counter or 1) .. " " .. message)
+                    if err.stack ~= nil then
+                        tinsert(lines, tostring(err.stack))
+                    end
+                    tinsert(lines, "")
+                    if lastMessage == nil then
+                        lastMessage = message
+                    end
+                end
+            end
+            local moduleErrors = WowVision.base.errors ~= nil and WowVision.base.errors.luaErrors or nil
+            if moduleErrors ~= nil then
+                if args == "clear" then
+                    WowVision.base.errors.luaErrors = {}
+                    print("Errors cleared")
+                    return
+                end
+                for i = #moduleErrors, 1, -1 do
+                    local err = moduleErrors[i]
+                    tinsert(lines, err.time .. " " .. err.message)
+                    if err.stack ~= nil then
+                        tinsert(lines, err.stack)
+                    end
+                    tinsert(lines, "")
+                    if lastMessage == nil then
+                        lastMessage = err.message
+                    end
+                end
+            end
+            if #lines == 0 then
+                print("No Lua errors recorded")
+                return
+            end
+            local newline = string.char(10)
+            WowVision.testing.showResults(table.concat(lines, newline))
+            if lastMessage ~= nil then
+                WowVision:speak(lastMessage)
+            end
+        end,
+    })
+
     self.base:registerCommand({
         name = "gsettings",
         description = "Open a module's settings as a graph screen, for example gsettings speech",

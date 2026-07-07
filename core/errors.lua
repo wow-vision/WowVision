@@ -61,34 +61,6 @@ local function onLuaError(message)
     end
 end
 
-module:registerCommand({
-    name = "errors",
-    description = "Speak the last Lua error and show a copyable list; 'clear' resets",
-    func = function(args)
-        if args == "clear" then
-            module.luaErrors = {}
-            print("Lua errors cleared")
-            return
-        end
-        local count = #module.luaErrors
-        if count == 0 then
-            print("No Lua errors recorded")
-            return
-        end
-        local lines = {}
-        for i = count, 1, -1 do
-            local err = module.luaErrors[i]
-            tinsert(lines, err.time .. " " .. err.message)
-            if err.stack then
-                tinsert(lines, err.stack)
-            end
-            tinsert(lines, "")
-        end
-        WowVision.testing.showResults(table.concat(lines, "\n"))
-        WowVision:speak(module.luaErrors[count].message)
-    end,
-})
-
 function module:onEnable()
     WowVision.UIHost:hookFunc(UIErrorsFrame, "AddMessage", module.onMessage)
     WowVision.UIHost:hookFunc(UIErrorsFrame, "FlashFontString", module.onFlash)
