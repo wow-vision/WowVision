@@ -181,3 +181,85 @@ classes.registerFieldType("ComponentArray", {
         end,
     },
 })
+
+-- ---------------------------------------------------------------------------
+-- TrackingConfig: an object-tracking configuration table, e.g.
+-- { type = "Health", units = { "player" } } or { type = "Cooldown",
+-- params = { ... } }. def key: requireUnique (read by the graph control).
+-- ---------------------------------------------------------------------------
+
+classes.registerFieldType("TrackingConfig", {
+    default = function(field, obj)
+        return { type = nil }
+    end,
+
+    validate = function(field, value)
+        if value == nil or type(value) ~= "table" then
+            return { type = nil }
+        end
+        if value.class ~= nil then
+            return value -- an Object instance passes through directly
+        end
+        local result = {}
+        for k, v in pairs(value) do
+            result[k] = v
+        end
+        return result
+    end,
+
+    toDB = function(field, obj, value)
+        return classes.deepCopy(value)
+    end,
+
+    fromDB = function(field, obj, dbValue)
+        return classes.deepCopy(dbValue)
+    end,
+
+    valueString = function(field, obj, value)
+        local L = WowVision:getLocale()
+        if value == nil or value.type == nil then
+            return L["None"]
+        end
+        local objectType = WowVision.objects.types:get(value.type)
+        if objectType ~= nil then
+            if value.units ~= nil and #value.units > 0 then
+                return (objectType.label or value.type) .. " (" .. table.concat(value.units, ", ") .. ")"
+            end
+            return objectType.label or value.type
+        end
+        return value.type
+    end,
+
+    api = {
+        -- Change the tracked type, resetting the config to that type's
+        -- scaffolding (fresh params; unit-based types track the player).
+        setType = function(field, obj, typeKey)
+            local oldValue = field:get(obj)
+            if oldValue ~= nil and oldValue.type == typeKey then
+                return false
+            end
+            local value = { type = typeKey }
+            if typeKey ~= nil then
+                local objectType = WowVision.objects.types:get(typeKey)
+                if objectType ~= nil then
+                    value.params = {}
+                    if objectType:isInstanceOf(WowVision.objects.UnitType) then
+                        value.unit = "player"
+                        value.units = { "player" }
+                    end
+                    if objectType.parameters ~= nil then
+                        for _, paramField in ipairs(objectType.parameters.fields) do
+                            if value.params[paramField.key] == nil then
+                                local default = paramField:getDefault(value.params)
+                                if default ~= nil then
+                                    value.params[paramField.key] = default
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            return field:set(obj, value)
+        end,
+    },
+})

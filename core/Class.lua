@@ -336,10 +336,31 @@ function FieldAPI:getLabel()
 end
 
 function FieldAPI:getDefault(obj)
+    if self.default == nil and self.fieldType ~= nil and self.fieldType.default ~= nil then
+        if type(self.fieldType.default) == "function" then
+            return self.fieldType.default(self, obj)
+        end
+        return deepCopy(self.fieldType.default)
+    end
     if type(self.default) == "function" then
         return self.default(obj)
     end
     return deepCopy(self.default)
+end
+
+-- The spoken value: a def-provided getValueString wins, then the field
+-- type's valueString, then plain tostring.
+function FieldAPI:getValueString(obj, value)
+    if self.getValueStringFunc ~= nil then
+        return self.getValueStringFunc(obj, value)
+    end
+    if self.fieldType ~= nil and self.fieldType.valueString ~= nil then
+        return self.fieldType.valueString(self, obj, value)
+    end
+    if value == nil then
+        return nil
+    end
+    return tostring(value)
 end
 
 -- Field types can carry an `api` table of methods exposed on their built
@@ -391,6 +412,10 @@ local function buildField(def)
     end
     if def.set ~= nil then
         built.setFunc = def.set
+    end
+    if def.getValueString ~= nil then
+        built.getValueStringFunc = def.getValueString
+        built.getValueString = nil
     end
     built.get = nil
     built.set = nil
