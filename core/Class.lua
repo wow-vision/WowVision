@@ -13,16 +13,21 @@
 --   which structurally enforces "character containers force character
 --   children" -- a char-only pair can never reach the global store.
 --
--- Class creation:  local My = WowVision.NewClass("My", Parent)
+-- Class creation:  local My = WowVision.Class("My", Parent)
 -- Fields:          My:addFields({ { key = "enabled", type = "Bool",
 --                      default = true, persist = true, global = false } })
 -- Instances:       local obj = My:new(...)   -- calls My.initialize(obj, ...)
 -- DB:              obj:setDB({ char = node, global = node })
+--
+-- This file loads before everything else (including the WowVision global),
+-- so it publishes through the addon namespace and depends on nothing.
+
+local void, WowVisionNamespace = ...
 
 local classes = {
     debug = false, -- true: warn on scope misdeclarations and similar
 }
-WowVision.classes = classes
+WowVisionNamespace.classes = classes
 
 local function warn(message)
     if classes.debug then
@@ -70,6 +75,51 @@ end
 
 classes.deepEqual = deepEqual
 classes.deepCopy = deepCopy
+
+-- A minimal event with the same contract as WowVision.Event (this file loads
+-- before core/Event.lua, so it carries its own): handlers subscribed with a
+-- subscriber receive (subscriber, eventName, ...), bare handlers (eventName, ...).
+local EventAPI = {}
+local eventMeta = { __index = EventAPI }
+
+function classes.newEvent(name)
+    return setmetatable({ name = name, subscribers = {}, handlers = {} }, eventMeta)
+end
+
+function EventAPI:subscribe(subscriber, handler)
+    if subscriber == nil then
+        tinsert(self.handlers, handler)
+        return
+    end
+    if self.subscribers[subscriber] == nil then
+        self.subscribers[subscriber] = { handler }
+        return
+    end
+    tinsert(self.subscribers[subscriber], handler)
+end
+
+function EventAPI:unsubscribe(subscriber)
+    self.subscribers[subscriber] = nil
+end
+
+function EventAPI:emit(...)
+    for subscriber, handlers in pairs(self.subscribers) do
+        local handlerList = {}
+        for _, handler in ipairs(handlers) do
+            tinsert(handlerList, handler)
+        end
+        for _, handler in ipairs(handlerList) do
+            handler(subscriber, self.name, ...)
+        end
+    end
+    local handlerList = {}
+    for _, handler in ipairs(self.handlers) do
+        tinsert(handlerList, handler)
+    end
+    for _, handler in ipairs(handlerList) do
+        handler(self.name, ...)
+    end
+end
 
 -- ---------------------------------------------------------------------------
 -- Field types: a plain registry. A type is a table of optional functions:
@@ -314,6 +364,7 @@ local function buildField(def)
     for k, v in pairs(def) do
         built[k] = v
     end
+    built.events = { valueChange = classes.newEvent("valueChange") }
     -- Custom accessors are declared as `get`/`set` but stored under names
     -- that cannot collide with field API methods. Merged defs from
     -- updateField already carry getFunc/setFunc, which pairs() copied above.
@@ -326,7 +377,6 @@ local function buildField(def)
     built.get = nil
     built.set = nil
     built.fieldType = fieldType
-    built.events = { valueChange = WowVision.Event:new("valueChange") }
     builtFields[def] = built
     return built
 end
@@ -681,4 +731,6 @@ function classes.NewClass(name, super)
     return class
 end
 
-WowVision.NewClass = classes.NewClass
+-- THE class factory for the whole addon (replaces middleclass, whose
+-- assignment this overwrites -- this file loads after libs).
+WowVisionNamespace.Class = classes.NewClass

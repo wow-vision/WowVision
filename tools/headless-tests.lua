@@ -28,9 +28,12 @@ local function loadAddonFile(path)
 end
 
 loadAddonFile("libs/middleclass.lua")
+loadAddonFile("core/Class.lua")
 
 WowVision = {
-    Class = namespace.Class,
+    Class = namespace.Class, -- the new class library (core/Class.lua)
+    NewClass = namespace.Class,
+    classes = namespace.classes,
 }
 
 function WowVision:getLocale()
@@ -45,8 +48,23 @@ end
 loadAddonFile("core/testing/TestRunner.lua")
 
 loadAddonFile("core/Event.lua")
-loadAddonFile("core/Class.lua")
 loadAddonFile("core/ClassTests.lua")
+
+-- The OLD info system and the component registry, running on the new class
+-- library: exercises the InfoClass compatibility path the game relies on
+-- during the conversion window.
+loadAddonFile("core/Registry.lua")
+loadAddonFile("core/info/Info.lua")
+loadAddonFile("core/info/Field.lua")
+loadAddonFile("core/info/types/Bool.lua")
+loadAddonFile("core/info/types/String.lua")
+loadAddonFile("core/info/types/Number.lua")
+loadAddonFile("core/info/types/Choice.lua")
+loadAddonFile("core/components/components.lua")
+loadAddonFile("core/components/RegistryType.lua")
+loadAddonFile("core/components/ClassRegistryType.lua")
+loadAddonFile("core/components/ComponentRegistry.lua")
+loadAddonFile("core/components/tests.lua")
 
 loadAddonFile("core/graph/ControlId.lua")
 loadAddonFile("core/graph/types.lua")
