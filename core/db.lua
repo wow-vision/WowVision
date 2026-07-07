@@ -96,4 +96,23 @@ function dbManager:beginReconcile(default, db)
     return dbManager:reconcile(default, db)
 end
 
+-- The account-wide store: its own migration list and version stamp,
+-- reconciled the same way.
+local globalMigrations = {}
+
+local GLOBAL_DB_VERSION = 1
+
+function dbManager:beginReconcileGlobal(default, db)
+    local dbVersion = db._version or 0
+    if next(db) then
+        for _, migration in ipairs(globalMigrations) do
+            if dbVersion < migration.version then
+                migration.migrate(db)
+            end
+        end
+    end
+    db._version = GLOBAL_DB_VERSION
+    return dbManager:reconcile(default, db)
+end
+
 WowVision.dbManager = dbManager

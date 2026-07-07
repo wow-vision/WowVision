@@ -24,7 +24,21 @@ function WowVision:OnInitialize()
         WowVisionDB = {}
     end
     self.db = WowVision.dbManager:beginReconcile(defaultDB, WowVisionDB)
-    self.base:setDBObj(self.db)
+
+    -- The account-wide store. The first character to log in after the
+    -- update seeds it from their per-character values (copies stay behind,
+    -- so seeding is reversible); later characters skip.
+    if WowVisionGlobalDB == nil then
+        WowVisionGlobalDB = {}
+    end
+    local globalDefault = self.base:getDefaultGlobalDBRecursive()
+    self.globalDb = WowVision.dbManager:beginReconcileGlobal(globalDefault, WowVisionGlobalDB)
+    if not self.globalDb._seeded then
+        self.base:seedGlobalDB(self.db, self.globalDb)
+        self.globalDb._seeded = true
+    end
+
+    self.base:setDBObj(self.db, self.globalDb)
 
     -- Global binding DB (profile-independent)
     local bindingDefaults = WowVision.input:getDefaultDB()

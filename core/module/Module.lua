@@ -114,9 +114,38 @@ function Module:getDefaultDBRecursive()
     return db
 end
 
-function Module:setDBObj(db)
+-- The account-wide default tree: module skeletons with only the
+-- global-scoped settings defaults. Data and alerts stay per-character in
+-- this phase.
+function Module:getDefaultGlobalDBRecursive()
+    local db = {
+        submodules = {},
+        settings = self.settingsObj ~= nil and self.settingsObj:getDefaultDB("global") or {},
+    }
+    for _, submodule in ipairs(self.submodules) do
+        db.submodules[submodule.key] = submodule:getDefaultGlobalDBRecursive()
+    end
+    return db
+end
+
+-- First-login seeding: the account store adopts this character's settings
+-- values wholesale (per-character copies stay behind, so this is
+-- reversible). Guarded by the _seeded stamp at the caller.
+function Module:seedGlobalDB(db, globalDB)
+    if db.settings ~= nil then
+        globalDB.settings = WowVision.classes.deepCopy(db.settings)
+    end
+    for _, submodule in ipairs(self.submodules) do
+        if db.submodules[submodule.key] ~= nil and globalDB.submodules[submodule.key] ~= nil then
+            submodule:seedGlobalDB(db.submodules[submodule.key], globalDB.submodules[submodule.key])
+        end
+    end
+end
+
+function Module:setDBObj(db, globalDB)
     self.enabled = db.enabled
     self.db = db
+    self.globalDB = globalDB
     if db.alerts == nil then
         error("No alerts db found for module " .. self.key .. ".")
     end
@@ -128,11 +157,17 @@ function Module:setDBObj(db)
         v:setDB(alertDB)
     end
     if self.settingsObj then
-        self.settingsObj:setDB({ char = db.settings })
+        self.settingsObj:setDB({
+            char = db.settings,
+            global = globalDB ~= nil and globalDB.settings or nil,
+        })
     end
     self.data = db.data
     for _, submodule in ipairs(self.submodules) do
-        submodule:setDBObj(db.submodules[submodule.key])
+        submodule:setDBObj(
+            db.submodules[submodule.key],
+            globalDB ~= nil and globalDB.submodules[submodule.key] or nil
+        )
     end
 end
 

@@ -5,7 +5,7 @@
 ## OptionalDeps: Sku
 ## Notes: Provides accessibility for the visually impaired.
 ## SavedVariablesPerCharacter: WowVisionDB
-## SavedVariables: WowVisionDump
+## SavedVariables: WowVisionDump, WowVisionGlobalDB
 
 libs.xml
 classic/setup.lua
