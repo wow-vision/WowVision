@@ -126,9 +126,7 @@ local function renderMain(builder)
     builder:beginStop("text")
     builder:addItem(
         ControlId.structural("macroText"),
-        -- Raw string as in the old screen; "Macro Text" needs a locale
-        -- submodule addition.
-        nodes.proxyEditBox({ editBox = MacroFrameText, label = "Macro Text" })
+        nodes.proxyEditBox({ editBox = MacroFrameText, label = L["Macro Text"] })
     )
 
     for _, button in ipairs({ MacroCancelButton, MacroSaveButton, MacroDeleteButton, MacroNewButton }) do

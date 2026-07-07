@@ -326,7 +326,7 @@ function nodes.choice(config)
                         -- spoken state and landing on it when the list opens.
                         text = function()
                             if get() == value then
-                                return L["Checked"]
+                                return L["Selected"]
                             end
                             return nil
                         end,
