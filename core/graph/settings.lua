@@ -93,6 +93,34 @@ local function fallbackControl(field, infoFrame)
     })
 end
 
+-- A Scope submenu entry: radio buttons for Global and this character's
+-- name, driven by isGlobal/setScope callbacks.
+local function scopeSubmenu(isGlobal, setScope)
+    return {
+        label = L["Scope"],
+        submenu = function(addEntry)
+            addEntry({
+                label = L["Global"],
+                radio = true,
+                isChecked = isGlobal,
+                onActivate = function()
+                    setScope("global")
+                end,
+            })
+            addEntry({
+                label = UnitName("player"),
+                radio = true,
+                isChecked = function()
+                    return not isGlobal()
+                end,
+                onActivate = function()
+                    setScope("char")
+                end,
+            })
+        end,
+    }
+end
+
 -- Persisted fields on scope-aware owners contribute a Scope submenu to the
 -- context menu: radio buttons for Global and this character's name.
 local function attachScopeMenu(vtable, field, owner)
@@ -113,31 +141,11 @@ local function attachScopeMenu(vtable, field, owner)
                 add(entry)
             end
         end
-        add({
-            label = L["Scope"],
-            submenu = function(addEntry)
-                addEntry({
-                    label = L["Global"],
-                    radio = true,
-                    isChecked = function()
-                        return classes.effectiveScope(field, pair) == "global"
-                    end,
-                    onActivate = function()
-                        classes.setFieldScope(owner, field, "global")
-                    end,
-                })
-                addEntry({
-                    label = UnitName("player"),
-                    radio = true,
-                    isChecked = function()
-                        return classes.effectiveScope(field, pair) == "char"
-                    end,
-                    onActivate = function()
-                        classes.setFieldScope(owner, field, "char")
-                    end,
-                })
-            end,
-        })
+        add(scopeSubmenu(function()
+            return classes.effectiveScope(field, pair) == "global"
+        end, function(scope)
+            classes.setFieldScope(owner, field, scope)
+        end))
     end
 end
 
@@ -441,15 +449,26 @@ function settings.renderModuleInto(builder, module)
     end
     table.sort(submodules, moduleSortComp)
     for _, submodule in ipairs(submodules) do
-        builder:addItem(
-            ControlId.structural("module:" .. tostring(submodule.key)),
-            nodes.button({
-                label = submodule:getLabel() or tostring(submodule.key),
-                onActivate = function()
-                    pushModuleScreen(submodule)
-                end,
-            })
-        )
+        local vtable = nodes.button({
+            label = submodule:getLabel() or tostring(submodule.key),
+            onActivate = function()
+                pushModuleScreen(submodule)
+            end,
+        })
+        -- A module button's context menu switches the whole module's
+        -- settings scope at once (clearing per-setting choices).
+        if submodule.settingsObj ~= nil then
+            local settingsObj = submodule.settingsObj
+            vtable.contextActions = function(add)
+                local classes = WowVision.classes
+                add(scopeSubmenu(function()
+                    return classes.effectiveObjectScope(settingsObj) == "global"
+                end, function(scope)
+                    classes.setObjectScope(settingsObj, scope)
+                end))
+            end
+        end
+        builder:addItem(ControlId.structural("module:" .. tostring(submodule.key)), vtable)
     end
 
     if module.getGraphMenuItems ~= nil then

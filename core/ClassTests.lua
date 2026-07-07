@@ -652,6 +652,31 @@ testRunner:addSuite("ClassSystem", {
         t:assertEqual(char.volume, 30) -- the local copy stays behind
     end,
 
+    ["object-wide scope clears field overrides and moves everything"] = function(t)
+        local A = NewClass("A")
+        A:addFields({
+            { key = "volume", type = "Number", default = 80, persist = true },
+            { key = "muted", type = "Bool", default = false, persist = true },
+        })
+        local a = A:new()
+        local char, global, overrides = {}, { volume = 60, muted = true }, {}
+        a:setDB({ char = char, global = global, overrides = overrides })
+        WowVision.classes.setFieldScope(a, A:getField("volume"), "char")
+        a.volume = 10
+
+        WowVision.classes.setObjectScope(a, "char")
+        t:assertEqual(overrides["*"], "char")
+        t:assertNil(overrides.volume) -- per-field choices cleared
+        a.muted = false
+        t:assertEqual(char.muted, false)
+        t:assertEqual(global.muted, true) -- account side untouched
+
+        WowVision.classes.setObjectScope(a, "global")
+        t:assertEqual(a.volume, 60) -- adopted the account values
+        t:assertEqual(a.muted, true)
+        t:assertEqual(WowVision.classes.effectiveObjectScope(a), "global")
+    end,
+
     ["onSetDB hook fires after restore"] = function(t)
         local A = NewClass("A")
         A:addFields({ { key = "x", persist = true } })

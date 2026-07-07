@@ -258,6 +258,9 @@ classes.registerFieldType("Table", {
 -- wins over the field's own flag (DEFAULT GLOBAL).
 local function wantsGlobalStore(field, pair)
     local override = pair.overrides ~= nil and pair.overrides[field.key] or nil
+    if override == nil and pair.overrides ~= nil then
+        override = pair.overrides["*"] -- the object-wide choice
+    end
     if override == "global" then
         return true
     end
@@ -319,6 +322,63 @@ function classes.setFieldScope(obj, field, scope)
         end
     end
     return true
+end
+
+-- Flip a whole object's scope: clear per-field overrides, record the
+-- object-wide choice under the reserved "*" key, and adopt or fork every
+-- persisted field with the same direction semantics as setFieldScope.
+function classes.setObjectScope(obj, scope)
+    local pair = rawget(obj, "_db")
+    if pair == nil or pair.overrides == nil then
+        return false
+    end
+    for key in pairs(pair.overrides) do
+        pair.overrides[key] = nil
+    end
+    pair.overrides["*"] = scope
+    for _, field in ipairs(obj.class:getFields()) do
+        if field.persist then
+            if scope == "global" then
+                local store = pair.global
+                if store ~= nil then
+                    local dbValue = store[field.key]
+                    local value
+                    if dbValue == nil then
+                        value = field:get(obj)
+                    elseif field.fieldType.fromDB ~= nil then
+                        value = field.fieldType.fromDB(field, obj, dbValue, pair)
+                    else
+                        value = dbValue
+                    end
+                    field:set(obj, value)
+                end
+            else
+                local store = pair.char
+                if store ~= nil then
+                    local value = field:get(obj)
+                    if value ~= nil and type(value) ~= "function" then
+                        if field.fieldType.toDB ~= nil then
+                            store[field.key] = field.fieldType.toDB(field, obj, value)
+                        else
+                            store[field.key] = value
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return true
+end
+
+function classes.effectiveObjectScope(obj)
+    local pair = rawget(obj, "_db")
+    if pair == nil or pair.overrides == nil then
+        return "char"
+    end
+    if pair.overrides["*"] ~= nil then
+        return pair.overrides["*"]
+    end
+    return pair.global ~= nil and "global" or "char"
 end
 
 -- The side a field persists to: its scope choice when that side exists,
