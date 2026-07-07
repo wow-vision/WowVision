@@ -754,7 +754,12 @@ function ClassProto:setDB(pair)
                 fieldType.setDB(field, self, pair)
             else
                 local store = resolveStore(field, pair)
-                local dbValue = store ~= nil and store[field.key] or nil
+                -- No and-or here: a stored FALSE must stay false, not
+                -- collapse to nil and resurrect the default.
+                local dbValue = nil
+                if store ~= nil then
+                    dbValue = store[field.key]
+                end
                 local value
                 if dbValue == nil then
                     value = field:getDefault(self)

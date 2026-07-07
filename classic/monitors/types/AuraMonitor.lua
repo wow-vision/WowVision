@@ -8,7 +8,7 @@ local stateOutputs = {
 -- AuraStateRule: extends StateRule with aura-specific fields
 local AuraStateRule = WowVision.monitors.ruleRegistry:createType({ key = "AuraState", parent = "State" })
 
-AuraStateRule.info:addFields({
+AuraStateRule:addFields({
     { key = "spell", type = "Spell", persist = true, label = L["Spell"], sortPriority = 2 },
     { key = "playerOnly", type = "Bool", persist = true, default = true, label = L["Applied by Player"], sortPriority = 2 },
     { key = "pandemicThreshold", type = "Number", persist = true, default = 30, label = L["Pandemic Window (%)"], sortPriority = 2 },
@@ -163,7 +163,7 @@ function AuraStateRule:getLabel()
         return self.label
     end
     if self.spell then
-        local spellField = self.class.info:getField("spell")
+        local spellField = self.class:getField("spell")
         if spellField then
             local valueStr = spellField:getValueString(self, self.spell)
             if valueStr then
@@ -177,12 +177,12 @@ end
 -- AuraMonitor: extends Monitor with unit tracking for auras
 local AuraMonitor = WowVision.monitors:createType("Aura")
 
-AuraMonitor.info:addFields({
+AuraMonitor:addFields({
     { key = "unit", type = "String", default = "target", persist = true, label = L["Unit"], sortPriority = 2 },
     { key = "announceOnUnitChange", type = "Bool", default = false, persist = true, label = L["Announce on Target Change"], sortPriority = 2 },
 })
 
-AuraMonitor.info:updateFields({
+AuraMonitor:updateFields({
     {
         key = "rules",
         availableTypes = function()

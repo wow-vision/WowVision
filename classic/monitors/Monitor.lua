@@ -1,8 +1,8 @@
 local L = WowVision:getLocale()
 
-local Monitor = WowVision.Class("Monitor"):include(WowVision.InfoClass)
+local Monitor = WowVision.Class("Monitor")
 
-Monitor.info:addFields({
+Monitor:addFields({
     { key = "enabled", type = "Bool", default = true, persist = true, label = L["Enabled"], sortPriority = 1 },
     { key = "label", type = "String", persist = true, label = L["Label"], sortPriority = 1 },
     {
@@ -31,11 +31,11 @@ function Monitor:initialize(config)
     self.trackedObjects = {}
     self.pendingEvents = {}
     self.tracker = nil
-    self:setInfo(config)
+    self:applyFields(config)
 
     -- Subscribe to tracking field changes to flag tracking for restart
     for _, key in ipairs(self:getTrackingFields()) do
-        local field = self.class.info:getField(key)
+        local field = self.class:getField(key)
         if field then
             field.events.valueChange:subscribe(self, function(self, event, target, fieldKey, value)
                 if target == self then
@@ -46,7 +46,7 @@ function Monitor:initialize(config)
     end
 
     -- Subscribe to rules array changes (add/remove)
-    local rulesField = self.class.info:getField("rules")
+    local rulesField = self.class:getField("rules")
     if rulesField then
         rulesField.events.valueChange:subscribe(self, function(self, event, target, fieldKey, value)
             if target == self then
@@ -192,21 +192,7 @@ function Monitor:getLabel()
     return self.label or self.class.name
 end
 
-function Monitor:getDefaultDBRecursive()
-    local db = self.class.info:getData(self)
-    local rulesField = self.class.info:getField("rules")
-    if rulesField and self.rules then
-        db.rules = { _type = "array" }
-        for _, rule in ipairs(self.rules) do
-            tinsert(db.rules, rule:getDefaultDBRecursive())
-        end
-    end
-    return db
-end
-
-function Monitor:setDB(db)
-    self.db = db
-    self.class.info:setDB(self, db)
+function Monitor:onSetDB()
     self:onRulesChanged(self.rules or {})
 end
 

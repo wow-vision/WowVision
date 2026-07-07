@@ -108,6 +108,45 @@ WowVision.testing.testRunner:addSuite("BufferConstruction", {
     end,
 })
 
+-- Monitors and rules on the new class system.
+loadAddonFile("classic/monitors/Rule.lua")
+loadAddonFile("classic/monitors/Monitor.lua")
+loadAddonFile("classic/monitors/rules/StateRule.lua")
+WowVision.testing.testRunner:addSuite("MonitorConstruction", {
+    ["a monitor with a state rule round-trips its db"] = function(t)
+        local StateRule = WowVision.monitors.ruleRegistry.types:get("State")
+        t:assertNotNil(StateRule)
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return "Aura"
+            end,
+        })
+        -- A plain Monitor stands in for the WoW-API-dependent types here.
+        WowVision.monitors.registry.types:register("Aura", WowVision.monitors.Monitor)
+        field:setDB(container, db)
+
+        field:addElement(container, { type = "Aura", label = "Test Monitor" })
+        t:assertEqual(db.monitors[1].label, "Test Monitor")
+
+        local monitor = container.monitors[1]
+        monitor.enabled = false
+        t:assertEqual(db.monitors[1].enabled, false)
+
+        local container2 = { monitors = {} }
+        field:setDB(container2, db)
+        t:assertEqual(container2.monitors[1].label, "Test Monitor")
+        t:assertEqual(container2.monitors[1].enabled, false)
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("AlertConstruction", {
     ["an alert with an output constructs enabled"] = function(t)
         local alert = WowVision.alerts.Alert:new({ key = "smoke", label = "Smoke" })

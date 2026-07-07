@@ -24,7 +24,7 @@ function module:getDefaultData()
 
     generalGroup:add(generalBuffer)
     root:add(generalGroup)
-    return root.info:getData(root)
+    return WowVision.classes.instanceConfig(root)
 end
 
 function module:onFullEnable()

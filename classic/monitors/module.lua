@@ -2,8 +2,8 @@ local module = WowVision.base:createModule("monitors")
 local L = module.L
 module:setLabel(L["Monitors"])
 
-local ComponentArrayField = WowVision.info.fieldTypes:get("ComponentArray")
-local monitorsField = ComponentArrayField:new({
+local monitorsField = WowVision.classes.newField({
+    type = "ComponentArray",
     key = "monitors",
     label = L["Monitors"],
     persist = true,

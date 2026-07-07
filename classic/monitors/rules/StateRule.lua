@@ -15,7 +15,7 @@ function StateRule:getStates()
 end
 
 function StateRule:getStateAlert(stateKey)
-    local field = self.class.info:getField(stateKey)
+    local field = self.class:getField(stateKey)
     if field and field.getAlert then
         return field:getAlert(self)
     end

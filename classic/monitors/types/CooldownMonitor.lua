@@ -8,7 +8,7 @@ local stateOutputs = {
 -- CooldownStateRule: extends StateRule with cooldown-specific fields
 local CooldownStateRule = WowVision.monitors.ruleRegistry:createType({ key = "CooldownState", parent = "State" })
 
-CooldownStateRule.info:addFields({
+CooldownStateRule:addFields({
     { key = "spell", type = "Spell", persist = true, label = L["Spell"], sortPriority = 2 },
     -- State alerts
     {
@@ -163,7 +163,7 @@ function CooldownStateRule:getLabel()
         return self.label
     end
     if self.spell then
-        local spellField = self.class.info:getField("spell")
+        local spellField = self.class:getField("spell")
         if spellField then
             local valueStr = spellField:getValueString(self, self.spell)
             if valueStr then
@@ -177,7 +177,7 @@ end
 -- CooldownMonitor: player-only cooldown tracking
 local CooldownMonitor = WowVision.monitors:createType("Cooldown")
 
-CooldownMonitor.info:updateFields({
+CooldownMonitor:updateFields({
     {
         key = "rules",
         availableTypes = function()

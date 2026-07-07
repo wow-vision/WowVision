@@ -1,8 +1,8 @@
 local L = WowVision:getLocale()
 
-local Rule = WowVision.Class("Rule"):include(WowVision.InfoClass)
+local Rule = WowVision.Class("Rule")
 
-Rule.info:addFields({
+Rule:addFields({
     { key = "enabled", type = "Bool", default = true, persist = true, label = L["Enabled"], sortPriority = 1 },
     { key = "label", type = "String", persist = true, label = L["Label"], sortPriority = 1 },
 })
@@ -11,11 +11,11 @@ function Rule:initialize(config)
     self.events = {
         trackingDirty = WowVision.Event:new("trackingDirty"),
     }
-    self:setInfo(config)
+    self:applyFields(config)
 
     -- Subscribe to own tracking-relevant fields
     for _, key in ipairs(self:getTrackingFields()) do
-        local field = self.class.info:getField(key)
+        local field = self.class:getField(key)
         if field then
             field.events.valueChange:subscribe(self, function(self, event, target, fieldKey, value)
                 if target == self then
@@ -24,11 +24,6 @@ function Rule:initialize(config)
             end)
         end
     end
-end
-
--- Cascade DB to nested fields (Alert/Output linking)
-function Rule:setDB(db)
-    self.class.info:setDB(self, db)
 end
 
 function Rule:getTrackingFields()
