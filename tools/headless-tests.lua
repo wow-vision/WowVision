@@ -29,6 +29,7 @@ end
 
 loadAddonFile("libs/middleclass.lua")
 loadAddonFile("core/Class.lua")
+loadAddonFile("core/fieldTypes.lua")
 
 WowVision = {
     Class = namespace.Class, -- the new class library (core/Class.lua)

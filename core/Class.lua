@@ -403,6 +403,27 @@ end
 -- its own collection, like the monitors module's component array.
 classes.newField = buildField
 
+-- Old-convention restore for STANDALONE fields over plain containers:
+-- field:setDB(obj, db) with a single backing node.
+function FieldAPI:setDB(obj, db)
+    local pair = { char = db }
+    rawset(obj, "_db", pair)
+    if self.fieldType.setDB ~= nil then
+        self.fieldType.setDB(self, obj, pair)
+        obj.db = db
+    else
+        obj.db = nil
+        local value = db[self.key]
+        if value == nil then
+            value = self:getDefault(obj)
+        elseif self.fieldType.fromDB ~= nil then
+            value = self.fieldType.fromDB(self, obj, value, pair)
+        end
+        self:set(obj, value)
+        obj.db = db
+    end
+end
+
 -- ---------------------------------------------------------------------------
 -- Per-class schema: declarations in external weak maps, effective field list
 -- computed by a super-chain walk, cached per class, invalidated by a global

@@ -2,6 +2,7 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="Class.lua" />
+  <Script file="fieldTypes.lua" />
   <Script file = "WowVision.lua" />
   <Include file="testing/modules.xml" />
     <Include file="../locale/modules.xml" />

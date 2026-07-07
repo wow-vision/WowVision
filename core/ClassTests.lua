@@ -517,6 +517,86 @@ testRunner:addSuite("ClassSystem", {
         t:assertEqual(char.kids.one.mine, "c")
     end,
 
+    ["component arrays round-trip instances through configs"] = function(t)
+        local Widget = NewClass("Widget")
+        Widget:addFields({
+            { key = "label", type = "String", persist = true },
+            { key = "size", type = "Number", persist = true, default = 1 },
+        })
+        function Widget:initialize(config)
+            self:applyFields(config)
+        end
+        local Holder = NewClass("Holder")
+        Holder:addFields({
+            {
+                key = "items",
+                type = "ComponentArray",
+                persist = true,
+                factory = function(config)
+                    return Widget:new(config)
+                end,
+                getTypeKey = function(instance)
+                    return "Widget"
+                end,
+                availableTypes = { "Widget" },
+            },
+        })
+        local field = Holder:getField("items")
+        local holder = Holder:new()
+        local global = {}
+        holder:setDB({ global = global })
+
+        field:addElement(holder, { label = "first", size = 3 })
+        t:assertEqual(field:getLength(holder), 1)
+        t:assertEqual(global.items[1].label, "first")
+        t:assertEqual(global.items[1].type, "Widget")
+
+        -- Instance writes persist into its config entry
+        holder.items[1].size = 9
+        t:assertEqual(global.items[1].size, 9)
+
+        -- Restore builds fresh instances from the configs
+        local again = Holder:new()
+        again:setDB({ global = global })
+        t:assertEqual(again.items[1].label, "first")
+        t:assertEqual(again.items[1].size, 9)
+
+        -- Removal shifts later entries and rebinds them
+        field:addElement(again, { label = "second" })
+        field:removeElement(again, 1)
+        t:assertEqual(field:getLength(again), 1)
+        t:assertEqual(global.items[1].label, "second")
+        again.items[1].size = 5
+        t:assertEqual(global.items[1].size, 5)
+    end,
+
+    ["standalone component arrays work over plain containers"] = function(t)
+        local Widget = NewClass("SWidget")
+        Widget:addFields({ { key = "label", type = "String", persist = true } })
+        function Widget:initialize(config)
+            self:applyFields(config)
+        end
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            global = false,
+            factory = function(config)
+                return Widget:new(config)
+            end,
+            getTypeKey = function()
+                return "SWidget"
+            end,
+        })
+        local container = { monitors = {} }
+        local db = { monitors = { _type = "array", { label = "old", type = "SWidget" } } }
+        field:setDB(container, db)
+        t:assertEqual(#container.monitors, 1)
+        t:assertEqual(container.monitors[1].label, "old")
+        field:addElement(container, { label = "new" })
+        t:assertEqual(db.monitors[2].label, "new")
+    end,
+
     ["onSetDB hook fires after restore"] = function(t)
         local A = NewClass("A")
         A:addFields({ { key = "x", persist = true } })
