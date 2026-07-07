@@ -11,7 +11,7 @@ Alert:addFields({
 
 function Alert:initialize(info)
     self.outputs = {}
-    self.parameters = WowVision.info.InfoFrame:new({
+    self.parameters = WowVision.classes.newFieldSet({
         key = info.key,
         label = info.label,
     })
@@ -23,7 +23,7 @@ function Alert:initialize(info)
             return self.defaultEnabled
         end,
     })
-    enabledParam.events.valueChange:subscribe(self, function(self, event, source, value)
+    enabledParam.events.valueChange:subscribe(self, function(self, event, source, key, value)
         self:setEnabled(value)
     end)
     self:applyFields(info)
@@ -113,7 +113,7 @@ Output:addFields({
 })
 
 function Output:initialize(info)
-    self.parameters = WowVision.info.InfoFrame:new({
+    self.parameters = WowVision.classes.newFieldSet({
         key = info.key,
         label = info.label,
     })
@@ -125,7 +125,7 @@ function Output:initialize(info)
             return self.defaultEnabled
         end,
     })
-    enabledParam.events.valueChange:subscribe(self, function(self, event, source, value)
+    enabledParam.events.valueChange:subscribe(self, function(self, event, source, key, value)
         self:setEnabled(value)
     end)
     self:applyFields(info)

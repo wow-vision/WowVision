@@ -2,8 +2,8 @@ local ObjectType = WowVision.Class("ObjectType")
 
 function ObjectType:initialize(key)
     self.key = key
-    self.parameters = WowVision.info.InfoManager:new()
-    self.fields = WowVision.info.InfoManager:new()
+    self.parameters = WowVision.classes.newFieldSet({ key = key, label = key })
+    self.fields = WowVision.classes.newFieldSet({ key = key })
     self.templates = WowVision.Registry:new()
 end
 
@@ -408,60 +408,6 @@ function UnitType:onUpdate()
             self:changeUnit(unitTable, newGUID)
         end
     end
-end
-
--- Override tracking generator for unit-based objects
--- For now, uses single unit string that gets converted to units array
-function UnitType:getTrackingGenerator(config)
-    local L = WowVision:getLocale()
-    config = config or {}
-    config.params = config.params or {}
-    -- Initialize unit from units array if editing existing config
-    if config.units and config.units[1] then
-        config.unit = config.units[1]
-    end
-    config.unit = config.unit or "player"
-
-    local children = {}
-
-    -- Create a proxy that updates config.units when unit changes
-    local unitProxy = setmetatable({}, {
-        __index = function(t, k)
-            if k == "unit" then
-                return config.unit
-            end
-        end,
-        __newindex = function(t, k, v)
-            if k == "unit" then
-                config.unit = v
-                config.units = { v }
-            end
-        end,
-    })
-
-    -- Unit field
-    local unitField = WowVision.info.fieldTypes:get("String"):new({
-        key = "unit",
-        label = L["Unit"],
-    })
-    tinsert(children, unitField:getGenerator(unitProxy))
-
-    -- Add other parameters excluding unit
-    if #self.parameters.fields > 1 then
-        local paramsGen = self.parameters:getGenerator(config.params, { excludedFields = { unit = true } })
-        paramsGen.key = "params"
-        paramsGen.label = L["Parameters"]
-        tinsert(children, paramsGen)
-    end
-
-    -- Ensure units array is initialized
-    config.units = { config.unit }
-
-    return {
-        "List",
-        label = self.label or self.key,
-        children = children,
-    }, config
 end
 
 WowVision.objects.UnitType = UnitType

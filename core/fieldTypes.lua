@@ -576,3 +576,378 @@ classes.registerFieldType("Category", {
         end,
     },
 })
+
+
+-- ---------------------------------------------------------------------------
+-- Time: a number spoken as a duration ("1 hour 5 seconds") or a timestamp.
+-- def key: timeType = "duration" (default) | "timestamp".
+-- ---------------------------------------------------------------------------
+
+local function formatDuration(seconds)
+    if seconds == nil then
+        return nil
+    end
+    local L = WowVision:getLocale()
+    seconds = math.floor(seconds)
+    if seconds < 0 then
+        seconds = 0
+    end
+    local days = math.floor(seconds / 86400)
+    seconds = seconds - days * 86400
+    local hours = math.floor(seconds / 3600)
+    seconds = seconds - hours * 3600
+    local minutes = math.floor(seconds / 60)
+    seconds = seconds - minutes * 60
+    local parts = {}
+    if days > 0 then
+        tinsert(parts, days .. " " .. (days == 1 and L["day"] or L["days"]))
+    end
+    if hours > 0 then
+        tinsert(parts, hours .. " " .. (hours == 1 and L["hour"] or L["hours"]))
+    end
+    if minutes > 0 then
+        tinsert(parts, minutes .. " " .. (minutes == 1 and L["minute"] or L["minutes"]))
+    end
+    if seconds > 0 or #parts == 0 then
+        tinsert(parts, seconds .. " " .. (seconds == 1 and L["second"] or L["seconds"]))
+    end
+    return table.concat(parts, " ")
+end
+
+local function formatTime(field, value)
+    if value == nil then
+        return nil
+    end
+    if field.timeType == "timestamp" then
+        return date("%B %d, %Y %I:%M %p", value)
+    end
+    return formatDuration(value)
+end
+
+classes.registerFieldType("Time", {
+    validate = classes.fieldTypes.Number.validate,
+    valueString = function(field, obj, value)
+        return formatTime(field, value)
+    end,
+    api = {
+        formatTime = function(field, value)
+            return formatTime(field, value)
+        end,
+        -- Template context builders format raw values through this.
+        formatForDisplay = function(field, value)
+            return formatTime(field, value)
+        end,
+    },
+})
+
+-- ---------------------------------------------------------------------------
+-- VoicePack: a voice pack key, spoken as the pack label.
+-- ---------------------------------------------------------------------------
+
+classes.registerFieldType("VoicePack", {
+    valueString = function(field, obj, value)
+        if value ~= nil then
+            local voicePacks = WowVision.audio.packs:get("Voice")
+            local pack = voicePacks.packs:get(value)
+            if pack ~= nil then
+                return pack:getLabel()
+            end
+        end
+        return nil
+    end,
+})
+
+-- ---------------------------------------------------------------------------
+-- DataBrowse: a path into a data directory (sound picker, beacon picker).
+-- def key: directory = DataDirectory | function(obj) -> DataDirectory.
+-- ---------------------------------------------------------------------------
+
+classes.registerFieldType("DataBrowse", {
+    valueString = function(field, obj, value)
+        if value == nil then
+            return nil
+        end
+        local directory = field:getDirectory(obj)
+        if directory ~= nil then
+            local source = directory:getPath(value)
+            if source ~= nil and source.getLabel ~= nil then
+                return source:getLabel()
+            end
+        end
+        return tostring(value)
+    end,
+    api = {
+        getDirectory = function(field, obj)
+            if type(field.directory) == "function" then
+                return field.directory(obj)
+            end
+            return field.directory
+        end,
+    },
+})
+
+-- ---------------------------------------------------------------------------
+-- Array: a list of scalar elements, each validated by an element field.
+-- def key: elementField = a field definition table (key defaults to
+-- _element). The api mirrors the old ArrayField the graph control uses.
+-- ---------------------------------------------------------------------------
+
+local function arrayStorageOf(field, obj)
+    local values = rawget(obj, "_values")
+    return values ~= nil and values or obj
+end
+
+local function arrayOf(field, obj, create)
+    local holder = arrayStorageOf(field, obj)
+    local arr = holder[field.key]
+    if arr == nil and create then
+        arr = {}
+        holder[field.key] = arr
+    end
+    return arr
+end
+
+local function arrayChanged(field, obj)
+    local arr = arrayOf(field, obj)
+    if field.persist and obj.db ~= nil then
+        local dbArr = {}
+        for i, v in ipairs(arr or {}) do
+            dbArr[i] = v
+        end
+        obj.db[field.key] = dbArr
+    end
+    field.events.valueChange:emit(obj, field.key, arr)
+end
+
+classes.registerFieldType("Array", {
+    default = function(field, obj)
+        return {}
+    end,
+
+    valueString = function(field, obj, value)
+        if value == nil then
+            return "0 items"
+        end
+        return #value .. " items"
+    end,
+
+    api = {
+        getElementField = function(field)
+            if field._elementField == nil then
+                local def = {}
+                for k, v in pairs(field.elementField or {}) do
+                    def[k] = v
+                end
+                def.key = def.key or "_element"
+                field._elementField = classes.newField(def)
+            end
+            return field._elementField
+        end,
+
+        validateElement = function(field, value)
+            local elementField = field:getElementField()
+            if elementField.validate ~= nil then
+                return elementField.validate(elementField, value)
+            end
+            if elementField.fieldType.validate ~= nil then
+                return elementField.fieldType.validate(elementField, value)
+            end
+            return value
+        end,
+
+        -- Index-aware get/set, matching the old ArrayField the element
+        -- proxies rely on.
+        get = function(field, obj, index)
+            local arr = arrayOf(field, obj)
+            if index ~= nil then
+                return arr ~= nil and arr[index] or nil
+            end
+            return arr
+        end,
+
+        set = function(field, obj, value, index)
+            if index ~= nil then
+                local arr = arrayOf(field, obj, true)
+                arr[index] = field:validateElement(value)
+            else
+                local holder = arrayStorageOf(field, obj)
+                if value ~= nil then
+                    local validated = {}
+                    for i, v in ipairs(value) do
+                        validated[i] = field:validateElement(v)
+                    end
+                    holder[field.key] = validated
+                else
+                    holder[field.key] = {}
+                end
+            end
+            arrayChanged(field, obj)
+        end,
+
+        setDB = function(field, obj, pair)
+            local store = classes.resolveStore(field, classes.constrainPair(field, pair))
+            local arr = store ~= nil and store[field.key] or nil
+            field:set(obj, arr or {})
+        end,
+
+        addElement = function(field, obj, value)
+            local arr = arrayOf(field, obj, true)
+            tinsert(arr, field:validateElement(value))
+            arrayChanged(field, obj)
+            return #arr
+        end,
+
+        removeElement = function(field, obj, index)
+            local arr = arrayOf(field, obj)
+            if arr ~= nil and arr[index] ~= nil then
+                local removed = tremove(arr, index)
+                arrayChanged(field, obj)
+                return removed
+            end
+            return nil
+        end,
+
+        getLength = function(field, obj)
+            local arr = arrayOf(field, obj)
+            return arr ~= nil and #arr or 0
+        end,
+
+        createElementProxy = function(field, obj, index)
+            local elementKey = field:getElementField().key
+            return setmetatable({}, {
+                __index = function(t, k)
+                    if k == elementKey then
+                        return field:get(obj, index)
+                    end
+                end,
+                __newindex = function(t, k, v)
+                    if k == elementKey then
+                        field:set(obj, v, index)
+                    end
+                end,
+            })
+        end,
+    },
+})
+
+
+-- ---------------------------------------------------------------------------
+-- FieldSet: a standalone, self-owned collection of fields -- the InfoFrame
+-- and standalone-InfoManager replacement (alert/output parameters, object
+-- type parameters). The set IS the value owner: field values live on it and
+-- restore from a single db node. `set.info = set` keeps the old render
+-- surface (renderers read owner.info.fields and owner.children).
+-- ---------------------------------------------------------------------------
+
+local FieldSet = {}
+local fieldSetMeta = { __index = FieldSet }
+
+function classes.newFieldSet(config)
+    config = config or {}
+    local set = setmetatable({
+        key = config.key,
+        label = config.label,
+        fields = {},
+        children = {},
+    }, fieldSetMeta)
+    set.info = set
+    return set
+end
+
+function FieldSet:add(def)
+    if def.persist == nil then
+        def.persist = true
+    end
+    local field = classes.newField(def)
+    tinsert(self.fields, field)
+    self.fields[field.key] = field
+    return field
+end
+
+FieldSet.addField = FieldSet.add
+
+function FieldSet:addFields(defs)
+    local result = {}
+    for _, def in ipairs(defs) do
+        tinsert(result, self:add(def))
+    end
+    return result
+end
+
+function FieldSet:getField(key)
+    return self.fields[key]
+end
+
+-- The old InfoFrame:get returned the field object; keep that.
+FieldSet.get = FieldSet.getField
+
+function FieldSet:addRef(key, target)
+    tinsert(self.children, { key = key, label = target.label, ref = true, target = target })
+end
+
+-- Both calling conventions: (key) reads this set's own value;
+-- (obj, key) reads through the schema on an external object.
+function FieldSet:getFieldValue(a, b)
+    local obj, key = self, a
+    if b ~= nil then
+        obj, key = a, b
+    end
+    local field = self.fields[key]
+    if field == nil then
+        return nil
+    end
+    return field:get(obj)
+end
+
+function FieldSet:setFieldValue(a, b, c)
+    local obj, key, value = self, a, b
+    if c ~= nil or (b ~= nil and self.fields[a] == nil) then
+        obj, key, value = a, b, c
+    end
+    local field = self.fields[key]
+    if field ~= nil then
+        field:set(obj, value)
+    end
+end
+
+-- Apply a config table onto an external object through the schema:
+-- validation, defaults, and required checks (the old InfoManager:set).
+function FieldSet:applyTo(obj, config, ignoreRequired)
+    config = config or {}
+    for _, field in ipairs(self.fields) do
+        local value = config[field.key]
+        if value == nil then
+            value = field:getDefault(obj)
+        end
+        if value ~= nil then
+            field:set(obj, value)
+        elseif field.required and not ignoreRequired then
+            error("Field " .. field.key .. " must have a value")
+        end
+    end
+    return obj
+end
+
+function FieldSet:getDefaultDB()
+    local result = {}
+    for _, field in ipairs(self.fields) do
+        if field.persist then
+            local default = field:getDefault(self)
+            if field.fieldType.toDB ~= nil and default ~= nil then
+                result[field.key] = field.fieldType.toDB(field, self, default)
+            else
+                result[field.key] = default
+            end
+        end
+    end
+    return result
+end
+
+function FieldSet:setDB(db)
+    for _, field in ipairs(self.fields) do
+        if field.persist then
+            field:setDB(self, db)
+        end
+    end
+    self.db = db
+end

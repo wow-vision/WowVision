@@ -10,10 +10,8 @@
   <Script file="db.lua" />
     <Script file="Event.lua" />
   <Script file="ClassTests.lua" />
-  <Include file="info/modules.xml" />
     <Script file="MessageStore.lua" />
     <Include file="components/modules.xml" />
-  <Include file="dataBinding/modules.xml" />
   <Include file="commands/modules.xml" />
   <Script file="utils.lua" />
   <Include file="templates/modules.xml" />

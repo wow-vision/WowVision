@@ -2,13 +2,13 @@ local testRunner = WowVision.testing.testRunner
 
 -- Helper: create a simple base class for testing
 local function createTestBaseClass()
-    local TestBase = WowVision.Class("TestBase"):include(WowVision.InfoClass)
-    TestBase.info:addFields({
+    local TestBase = WowVision.Class("TestBase")
+    TestBase:addFields({
         { key = "key", required = true },
         { key = "label", default = "" },
     })
     function TestBase:initialize(config)
-        self:setInfo(config)
+        self:applyFields(config)
     end
     return TestBase
 end

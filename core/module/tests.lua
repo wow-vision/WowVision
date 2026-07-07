@@ -162,10 +162,10 @@ testRunner:addSuite("Module", {
 
     ["createComponentRegistry creates registry"] = function(t)
         local module = createTestModule("test")
-        local TestBase = WowVision.Class("TestBase"):include(WowVision.InfoClass)
-        TestBase.info:addFields({ { key = "key", required = true } })
+        local TestBase = WowVision.Class("TestBase")
+        TestBase:addFields({ { key = "key", required = true } })
         function TestBase:initialize(config)
-            self:setInfo(config)
+            self:applyFields(config)
         end
 
         local registry = module:createComponentRegistry({
@@ -179,10 +179,10 @@ testRunner:addSuite("Module", {
 
     ["createComponentRegistry assigns to module key"] = function(t)
         local module = createTestModule("test")
-        local TestBase = WowVision.Class("TestBase2"):include(WowVision.InfoClass)
-        TestBase.info:addFields({ { key = "key", required = true } })
+        local TestBase = WowVision.Class("TestBase2")
+        TestBase:addFields({ { key = "key", required = true } })
         function TestBase:initialize(config)
-            self:setInfo(config)
+            self:applyFields(config)
         end
 
         local registry = module:createComponentRegistry({

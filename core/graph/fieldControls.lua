@@ -260,7 +260,7 @@ end
 
 local function pushTrackingParams(field, owner, objectType)
     -- Edited as a copy; nothing applies until Save validates.
-    local editCopy = WowVision.info.deepCopy(field:get(owner) or { type = nil })
+    local editCopy = WowVision.classes.deepCopy(field:get(owner) or { type = nil })
     editCopy.params = editCopy.params or {}
 
     settings.pushScreen("trackingParams:" .. field.key, function(builder)

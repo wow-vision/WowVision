@@ -1,7 +1,7 @@
 local L = WowVision:getLocale()
 local db = WowVision.gameDB:get("Power")
 
-local powerInfo = WowVision.info.InfoManager:new()
+local powerInfo = WowVision.classes.newFieldSet({ key = "power" })
 powerInfo:addFields({
     { key = "key", required = true, once = true },
     { key = "id", required = true },
@@ -11,7 +11,7 @@ powerInfo:addFields({
 
 local function addPower(info)
     local obj = {}
-    powerInfo:set(obj, info)
+    powerInfo:applyTo(obj, info)
     db:register(obj.key, obj)
     return obj
 end

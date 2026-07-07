@@ -27,7 +27,6 @@ local function loadAddonFile(path)
     return chunk("WowVision", namespace)
 end
 
-loadAddonFile("libs/middleclass.lua")
 loadAddonFile("core/Class.lua")
 loadAddonFile("core/fieldTypes.lua")
 
@@ -51,16 +50,8 @@ loadAddonFile("core/testing/TestRunner.lua")
 loadAddonFile("core/Event.lua")
 loadAddonFile("core/ClassTests.lua")
 
--- The OLD info system and the component registry, running on the new class
--- library: exercises the InfoClass compatibility path the game relies on
--- during the conversion window.
+-- The component registry and the systems above it, all on the class library.
 loadAddonFile("core/Registry.lua")
-loadAddonFile("core/info/Info.lua")
-loadAddonFile("core/info/Field.lua")
-loadAddonFile("core/info/types/Bool.lua")
-loadAddonFile("core/info/types/String.lua")
-loadAddonFile("core/info/types/Number.lua")
-loadAddonFile("core/info/types/Choice.lua")
 loadAddonFile("core/components/components.lua")
 loadAddonFile("core/components/RegistryType.lua")
 loadAddonFile("core/components/ClassRegistryType.lua")
@@ -69,7 +60,6 @@ loadAddonFile("core/components/tests.lua")
 
 -- Alerts construct at every module load in game; a construction smoke here
 -- catches recursion/typo failures the parse check cannot.
-loadAddonFile("core/info/InfoFrame.lua")
 loadAddonFile("core/alerts/alerts.lua")
 -- The buffer family on the new class system: construction and db round trip.
 loadAddonFile("core/ViewList.lua")

@@ -42,7 +42,7 @@ function TrackedBuffer:restartTracking()
     end
 
     -- Deep copy config so tracker has stable reference
-    local configCopy = WowVision.info.deepCopy(self.source)
+    local configCopy = WowVision.classes.deepCopy(self.source)
     self.tracker = WowVision.objects:track(configCopy)
 
     -- Populate from existing tracked objects
