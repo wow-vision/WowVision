@@ -253,11 +253,59 @@ classes.registerFieldType("Table", {
 -- DB pairs
 -- ---------------------------------------------------------------------------
 
--- The side a field persists to: its global flag (DEFAULT GLOBAL) when that
--- side exists, else whichever side does. Char-only pairs therefore force
--- every descendant to char -- the nesting rule, enforced structurally.
+-- Whether a field wants the global side: a per-character override on the
+-- pair (pair.overrides[key] = "global"|"char", the user's scope choice)
+-- wins over the field's own flag (DEFAULT GLOBAL).
+local function wantsGlobalStore(field, pair)
+    local override = pair.overrides ~= nil and pair.overrides[field.key] or nil
+    if override == "global" then
+        return true
+    end
+    if override == "char" then
+        return false
+    end
+    return field.global ~= false
+end
+
+-- The user-visible effective scope of a field against its bound pair.
+function classes.effectiveScope(field, pair)
+    if pair == nil then
+        return "char"
+    end
+    if wantsGlobalStore(field, pair) and pair.global ~= nil then
+        return "global"
+    end
+    return "char"
+end
+
+-- Flip a field's scope on a live object: record the override, copy the
+-- current value to the newly chosen side (the old side keeps its copy, so
+-- switching is reversible), and let future writes follow the override.
+function classes.setFieldScope(obj, field, scope)
+    local pair = rawget(obj, "_db")
+    if pair == nil or pair.overrides == nil then
+        return false
+    end
+    pair.overrides[field.key] = scope
+    local store = scope == "global" and pair.global or pair.char
+    if store ~= nil then
+        local value = field:get(obj)
+        if value ~= nil and type(value) ~= "function" then
+            if field.fieldType.toDB ~= nil then
+                store[field.key] = field.fieldType.toDB(field, obj, value)
+            else
+                store[field.key] = value
+            end
+        end
+    end
+    return true
+end
+
+-- The side a field persists to: its scope choice when that side exists,
+-- else whichever side does. Char-only pairs therefore force every
+-- descendant to char -- the nesting rule, enforced structurally.
 local function resolveStore(field, pair)
-    local wantsGlobal = field.global ~= false
+    local wantsGlobal = wantsGlobalStore(field, pair)
     if wantsGlobal then
         if pair.global ~= nil then
             return pair.global

@@ -152,6 +152,7 @@ function nodes.proxyButton(config)
     end
     return nodes.attachHover({
         controlType = graph.controlTypes.button,
+        contextActions = nodes.proxyContextActions(target),
         announcements = {
             { text = config.label or nodes.frameText(target), kind = kinds.label },
             -- Disabled state reads (and changes live: a Post button enabling
@@ -171,6 +172,26 @@ function nodes.proxyButton(config)
             { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = target },
         },
     }, target)
+end
+
+-- The default context menu for proxy elements over real frames: the raw
+-- interactions a mouse user has. Click entries fire securely; Drag runs the
+-- frame's own drag script.
+function nodes.proxyContextActions(target)
+    return function(add)
+        add({ label = L["Left Click"], click = { emulatedKey = "LeftButton", target = target } })
+        add({ label = L["Right Click"], click = { emulatedKey = "RightButton", target = target } })
+        add({
+            label = L["Drag"],
+            onActivate = function()
+                local frame = type(target) == "function" and target() or target
+                local script = frame ~= nil and frame.GetScript ~= nil and frame:GetScript("OnDragStart") or nil
+                if script ~= nil then
+                    script(frame)
+                end
+            end,
+        })
+    end
 end
 
 -- A synthetic button: Enter runs the handler. An optional value part reads
@@ -372,6 +393,7 @@ function nodes.proxyEditBox(config)
     if editBox == nil then
         error("proxyEditBox requires an editBox")
     end
+    local contextActions = nodes.proxyContextActions(editBox)
     if not config.allowHidden and editBox.IsShown ~= nil then
         local ok, shown = pcall(editBox.IsShown, editBox)
         if not ok then
@@ -403,6 +425,7 @@ function nodes.proxyEditBox(config)
     end
     local vtable = {
         controlType = graph.controlTypes.editBox,
+        contextActions = contextActions,
         announcements = {
             { text = config.label, kind = kinds.label },
             {
@@ -435,11 +458,13 @@ function nodes.proxyDropdown(config)
     if target == nil then
         error("proxyDropdown requires a target frame")
     end
+    local contextActions = nodes.proxyContextActions(target)
     if not config.allowHidden and target.IsShown ~= nil and not target:IsShown() then
         return nil
     end
     return nodes.attachHover({
         controlType = graph.controlTypes.dropdown,
+        contextActions = contextActions,
         announcements = {
             { text = config.label or nodes.frameText(target), kind = kinds.label },
             {

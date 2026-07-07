@@ -106,6 +106,7 @@ function Module:getDefaultDBRecursive()
         submodules = {},
         alerts = self:getDefaultAlerts(),
         settings = self:getDefaultSettings(),
+        settingScopes = {},
         data = self:getDefaultData(),
     }
     for _, submodule in ipairs(self.submodules) do
@@ -157,9 +158,15 @@ function Module:setDBObj(db, globalDB)
         v:setDB(alertDB)
     end
     if self.settingsObj then
+        if db.settingScopes == nil then
+            db.settingScopes = {}
+        end
         self.settingsObj:setDB({
             char = db.settings,
             global = globalDB ~= nil and globalDB.settings or nil,
+            -- Per-character scope overrides: this character's choices about
+            -- which settings follow the account and which stay local.
+            overrides = db.settingScopes,
         })
     end
     self.data = db.data

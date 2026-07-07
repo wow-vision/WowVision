@@ -93,11 +93,61 @@ local function fallbackControl(field, infoFrame)
     })
 end
 
+-- Persisted fields on scope-aware owners contribute a Scope submenu to the
+-- context menu: radio buttons for Global and this character's name.
+local function attachScopeMenu(vtable, field, owner)
+    if vtable == nil or field.persist ~= true then
+        return
+    end
+    local pair = rawget(owner, "_db")
+    if pair == nil or pair.overrides == nil or pair.global == nil then
+        return
+    end
+    local classes = WowVision.classes
+    local previous = vtable.contextActions
+    vtable.contextActions = function(add, node)
+        if type(previous) == "function" then
+            previous(add, node)
+        elseif type(previous) == "table" then
+            for _, entry in ipairs(previous) do
+                add(entry)
+            end
+        end
+        add({
+            label = L["Scope"],
+            submenu = function(addEntry)
+                addEntry({
+                    label = L["Global"],
+                    radio = true,
+                    isChecked = function()
+                        return classes.effectiveScope(field, pair) == "global"
+                    end,
+                    onActivate = function()
+                        classes.setFieldScope(owner, field, "global")
+                    end,
+                })
+                addEntry({
+                    label = UnitName("player"),
+                    radio = true,
+                    isChecked = function()
+                        return classes.effectiveScope(field, pair) == "char"
+                    end,
+                    onActivate = function()
+                        classes.setFieldScope(owner, field, "char")
+                    end,
+                })
+            end,
+        })
+    end
+end
+
 -- The control vtable for one field against one owner object (an InfoFrame or
 -- any InfoClass instance).
 function settings.controlFor(field, owner)
     local make = fieldControls[field.typeKey] or fallbackControl
-    return make(field, owner)
+    local vtable = make(field, owner)
+    attachScopeMenu(vtable, field, owner)
+    return vtable
 end
 
 -- Emit an InfoClass instance's own fields (a component's editor body). An

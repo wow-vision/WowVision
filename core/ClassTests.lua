@@ -621,6 +621,33 @@ testRunner:addSuite("ClassSystem", {
         t:assertEqual(db.monitors[2].label, "new")
     end,
 
+    ["scope overrides reroute persistence with copy-on-switch"] = function(t)
+        local A = NewClass("A")
+        A:addFields({ { key = "volume", type = "Number", default = 80, persist = true } })
+        local a = A:new()
+        local char, global, overrides = {}, { volume = 60 }, {}
+        a:setDB({ char = char, global = global, overrides = overrides })
+        t:assertEqual(a.volume, 60) -- global by default
+        t:assertEqual(WowVision.classes.effectiveScope(A:getField("volume"), rawget(a, "_db")), "global")
+
+        WowVision.classes.setFieldScope(a, A:getField("volume"), "char")
+        t:assertEqual(char.volume, 60) -- copied on switch
+        a.volume = 30
+        t:assertEqual(char.volume, 30) -- writes follow the override
+        t:assertEqual(global.volume, 60) -- the other side keeps its copy
+        t:assertEqual(overrides.volume, "char")
+
+        -- A fresh restore with the same override reads the char side
+        local b = A:new()
+        b:setDB({ char = char, global = global, overrides = overrides })
+        t:assertEqual(b.volume, 30)
+
+        WowVision.classes.setFieldScope(b, A:getField("volume"), "global")
+        b.volume = 99
+        t:assertEqual(global.volume, 99)
+        t:assertEqual(char.volume, 30)
+    end,
+
     ["onSetDB hook fires after restore"] = function(t)
         local A = NewClass("A")
         A:addFields({ { key = "x", persist = true } })

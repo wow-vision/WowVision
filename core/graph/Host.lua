@@ -41,6 +41,7 @@ local NAV_KEYMAPS = {
     "previousWindow",
     "home",
     "end",
+    "contextMenu",
 }
 
 function GraphHost:initialize()
@@ -450,6 +451,8 @@ function GraphHost:_dispatchKey(key)
         self:_jumpEdge(screen, false)
     elseif key == "close" then
         self:_close(screen)
+    elseif key == "contextMenu" then
+        WowVision.graph.contextMenu.open()
     end
 end
 

@@ -138,6 +138,14 @@ module:registerBindings({
         emulatedKey = "END",
     },
     {
+        type = "Virtual",
+        key = "contextMenu",
+        dorment = true,
+        label = L["Context Menu"],
+        inputs = { "SHIFT-F10" },
+        emulatedKey = "SHIFT-F10",
+    },
+    {
         type = "Flexible",
         key = "tooltip",
         dorment = true,

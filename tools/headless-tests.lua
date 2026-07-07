@@ -267,6 +267,7 @@ local parseOnly = {
     "tbc/character/Skills.lua",
     "tbc/auction/module.lua",
     "core/navigation/maps/ui.lua",
+    "core/graph/contextMenu.lua",
     "core/commands/SlashCommand.lua",
     "core/data.lua",
     "core/MessageStore.lua",
