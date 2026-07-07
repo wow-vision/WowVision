@@ -9,8 +9,7 @@ local kinds = graph.kinds
 
 -- The trade skill window: search, the filter dropdown, the recipe list (a
 -- Faux pool over the trade skill API), the live details pane with reagents,
--- the quantity box, and create buttons. The opened filter menu itself is
--- still handled by the legacy MenuManager during coexistence.
+-- the quantity box, and create buttons.
 
 local difficultyColors = {
     optimal = L["Orange"],

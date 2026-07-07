@@ -1,8 +1,8 @@
 # Graph UI Framework
 
-The graph framework is WowVision's replacement UI system, ported from the WrathAccess/Tanglebeep key-graph design (which descends from Factorio Access). It is migrating screens away from the virtual-DOM system described in [UI System](./ui-system.md); both run side by side until the migration finishes. The design rationale and migration plan live in [ui-rewrite-plan.md](./ui-rewrite-plan.md).
+The graph framework is WowVision's UI system, ported from the WrathAccess/Tanglebeep key-graph design (which descends from Factorio Access). The migration from the old virtual-DOM system is COMPLETE and the old framework is deleted; every screen on every client version renders through the graph. The original design rationale lives in [ui-rewrite-plan.md](./ui-rewrite-plan.md).
 
-Status: the game menu is the first migrated screen. New screens should be written on this framework; copy the closest existing graph screen as your starting point.
+New screens are written on this framework; copy the closest existing graph screen as your starting point.
 
 ## The model in one paragraph
 
