@@ -136,31 +136,6 @@ end
 
 function ObjectType:onUpdate() end
 
--- Returns UI generator for configuring tracking
--- config: optional existing config for editing
--- Returns a generator spec and the config object being edited
-function ObjectType:getTrackingGenerator(config)
-    local L = WowVision:getLocale()
-    config = config or {}
-    config.params = config.params or {}
-
-    local children = {}
-
-    -- Add parameters UI
-    if #self.parameters.fields > 0 then
-        local paramsGen = self.parameters:getGenerator(config.params)
-        paramsGen.key = "params"
-        paramsGen.label = L["Parameters"]
-        tinsert(children, paramsGen)
-    end
-
-    return {
-        "List",
-        label = self.label or self.key,
-        children = children,
-    }, config
-end
-
 WowVision.objects.ObjectType = ObjectType
 
 -- GlobalType: tracking lifecycle for non-unit object types.

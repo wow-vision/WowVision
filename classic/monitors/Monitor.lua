@@ -210,10 +210,6 @@ function Monitor:setDB(db)
     self:onRulesChanged(self.rules or {})
 end
 
-function Monitor:getSettingsGenerator()
-    return self.class.info:getGenerator(self)
-end
-
 -- Component registry for monitor types
 local registry = WowVision.components.createRegistry({
     path = "monitors/monitor",

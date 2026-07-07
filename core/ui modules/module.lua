@@ -3,21 +3,6 @@ local L = module.L
 module:setLabel(L["UI"])
 module:setVital(true)
 
-local function BindingsButton_Click(source, button)
-    local root = { "binding/List", bindings = WowVision.input.bindings }
-    WowVision.UIHost:openTemporaryWindow({
-        generated = true,
-        rootElement = root,
-        hookEscape = true,
-    })
-end
-
-function module:getAdditionalMenuUI()
-    return { "Button", label = L["Bindings"], events = {
-        click = BindingsButton_Click,
-    } }
-end
-
 local settings = module:hasSettings()
 
 settings:add({

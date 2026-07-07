@@ -72,16 +72,3 @@ function AlertField:set(obj, value)
     local alert = self:getAlert(obj)
     alert:setDB(value)
 end
-
-function AlertField:getGenerator(obj)
-    local alert = self:getAlert(obj)
-    return {
-        "Button",
-        label = self:getLabel() or self.key,
-        events = {
-            click = function(event, button)
-                button.context:addGenerated(alert.parameters:getGenerator())
-            end,
-        },
-    }
-end

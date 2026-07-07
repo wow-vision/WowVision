@@ -1,7 +1,6 @@
 local module = WowVision.base:createModule("targeting")
 local L = module.L
 module:setLabel(L["Targeting"])
-local gen = module:hasUI()
 local settings = module:hasSettings()
 
 -- Register event for caching target GUID (avoids UnitGUID call every frame)

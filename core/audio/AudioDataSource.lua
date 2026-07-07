@@ -30,9 +30,3 @@ function AudioDataSource:preview(channel)
     return willPlay, soundHandle
 end
 
-function AudioDataSource:getElement()
-    local button = WowVision.ui:CreateElement("AudioButton")
-    button:setLabel(self:getLabel() or self.key)
-    button:setProp("source", self)
-    return button
-end

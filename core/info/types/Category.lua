@@ -103,31 +103,6 @@ function CategoryField:setDB(obj, db)
     end
 end
 
--- UI Generation
-local function categoryButton_Click(event, button)
-    button.context:addGenerated(button.userdata)
-end
-
-function CategoryField:buildChildList(obj)
-    local nested = self:get(obj) or {}
-    local result = { "List", label = self:getLabel(), children = {} }
-    for _, field in ipairs(self.fieldManager.fields) do
-        tinsert(result.children, field:getGenerator(nested))
-    end
-    return result
-end
-
-function CategoryField:getGenerator(obj)
-    return {
-        "Button",
-        label = self:getLabel(),
-        userdata = self:buildChildList(obj),
-        events = {
-            click = categoryButton_Click,
-        },
-    }
-end
-
 -- No meaningful value string for a category
 function CategoryField:getValueString(obj, value)
     return nil

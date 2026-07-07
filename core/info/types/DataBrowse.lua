@@ -38,35 +38,3 @@ function DataBrowseField:getValueString(obj, value)
     end
     return tostring(value)
 end
-
-function DataBrowseField:getGenerator(obj)
-    local field = self
-    local value = self:get(obj)
-    local label = self:getLabel() or self.key
-    local valueStr = self:getValueString(obj, value)
-
-    return {
-        "Button",
-        label = label,
-        extras = valueStr,
-        events = {
-            click = function(event, button)
-                local directory = field:getDirectory(obj)
-                if not directory then
-                    return
-                end
-                local browseContext = WowVision.ui:CreateElement("DataBrowseContext", {
-                    directory = directory,
-                })
-                browseContext.events.confirm:subscribe(nil, function(event, context, source, path)
-                    field:set(obj, path)
-                    button.context:pop()
-                end)
-                browseContext.events.cancel:subscribe(nil, function(event, context)
-                    button.context:pop()
-                end)
-                button.context:add(browseContext)
-            end,
-        },
-    }
-end

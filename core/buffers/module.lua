@@ -33,13 +33,6 @@ function module:onFullEnable()
     self.root = root
 end
 
-function module:getAdditionalMenuUI()
-    if self.root then
-        local field = self.root.class.info:getField("items")
-        return field:getGenerator(self.root)
-    end
-end
-
 function module:getGraphMenuItems(builder)
     if self.root then
         local field = self.root.class.info:getField("items")

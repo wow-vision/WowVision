@@ -123,36 +123,3 @@ function InfoFrame:setDB(db)
         end
     end
 end
-
--- UI Generation
-
-local function childButton_Click(event, button)
-    local target = button.userdata
-    button.context:addGenerated(target:getGenerator())
-end
-
-function InfoFrame:getGenerator()
-    local children = {}
-
-    -- Field generators
-    for _, field in ipairs(self.info.fields) do
-        if field.showInUI then
-            tinsert(children, field:getGenerator(self))
-        end
-    end
-
-    -- Child InfoFrame / ref buttons
-    for _, child in ipairs(self.children) do
-        local target = child.ref and child.target or child
-        tinsert(children, {
-            "Button",
-            label = target.label,
-            userdata = target,
-            events = {
-                click = childButton_Click,
-            },
-        })
-    end
-
-    return { "List", label = self.label, children = children }
-end

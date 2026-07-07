@@ -39,13 +39,11 @@ function module:onFullEnable()
     monitorsField:setDB(container, self.db.data)
 end
 
-function module:getAdditionalMenuUI()
-    monitorsField:ensureVirtualElements()
-    return {
-        "ComponentArrayField/list",
-        field = monitorsField,
-        obj = container,
-    }
+function module:getGraphMenuItems(builder)
+    builder:addItem(
+        WowVision.graph.ControlId.structural("monitors"),
+        WowVision.graph.settings.controlFor(monitorsField, container)
+    )
 end
 
 module:hasUpdate(function(self)

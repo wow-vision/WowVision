@@ -55,10 +55,6 @@ function Rule:getLabel()
     return self.label or self.class.name
 end
 
-function Rule:getSettingsGenerator()
-    return self.class.info:getGenerator(self)
-end
-
 -- Component registry for rule types
 local registry = WowVision.components.createRegistry({
     path = "monitors/rule",

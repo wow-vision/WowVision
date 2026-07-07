@@ -124,25 +124,4 @@ function ObjectItem:getLabel()
     return L["Empty Object"]
 end
 
--- For ComponentArray: returns UI for editing this item's settings
-function ObjectItem:getSettingsGenerator()
-    local objectField = self.class.info:getField("object")
-    local templateField = self.class.info:getField("template")
-    local children = {}
-
-    -- Type dropdown
-    tinsert(children, objectField:buildTypeButton(self))
-
-    -- Parameters button (only if type has params)
-    local paramsButton = objectField:buildParamsButton(self)
-    if paramsButton then
-        tinsert(children, paramsButton)
-    end
-
-    -- Template selector
-    tinsert(children, templateField:getGenerator(self))
-
-    return { "List", label = self:getLabel(), children = children }
-end
-
 WowVision.buffers.ObjectItem = ObjectItem
