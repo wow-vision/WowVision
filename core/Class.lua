@@ -342,6 +342,24 @@ function FieldAPI:getDefault(obj)
     return deepCopy(self.default)
 end
 
+-- Field types can carry an `api` table of methods exposed on their built
+-- field objects (field:addElement(obj, x) on ComponentArray fields, etc.);
+-- api methods win over the shared FieldAPI. One metatable per field type.
+local typeMetas = setmetatable({}, { __mode = "k" })
+local function metaFor(fieldType)
+    local meta = typeMetas[fieldType]
+    if meta == nil then
+        if fieldType.api ~= nil then
+            local lookup = setmetatable(fieldType.api, { __index = FieldAPI })
+            meta = { __index = lookup }
+        else
+            meta = fieldMeta
+        end
+        typeMetas[fieldType] = meta
+    end
+    return meta
+end
+
 -- Built field objects are cached per raw definition table so they are STABLE:
 -- recomputing a class schema returns the same objects, and event subscribers
 -- survive. Sibling classes inheriting the same declaration share one object.
@@ -360,7 +378,7 @@ local function buildField(def)
     if fieldType == nil then
         error("Unknown field type " .. tostring(typeKey) .. " on field " .. def.key)
     end
-    built = setmetatable({}, fieldMeta)
+    built = setmetatable({}, metaFor(fieldType))
     for k, v in pairs(def) do
         built[k] = v
     end
@@ -380,6 +398,10 @@ local function buildField(def)
     builtFields[def] = built
     return built
 end
+
+-- Standalone field objects (not attached to a class) for code that manages
+-- its own collection, like the monitors module's component array.
+classes.newField = buildField
 
 -- ---------------------------------------------------------------------------
 -- Per-class schema: declarations in external weak maps, effective field list
@@ -499,6 +521,54 @@ local function setField(obj, field, value)
 
     persistField(obj, field, persistValue)
     field.events.valueChange:emit(obj, field.key, persistValue)
+    return true
+end
+
+-- Old-style field access methods: field:get(obj) / field:set(obj, value) /
+-- field:setDB(obj, db). On class instances these route through the managed
+-- path; on PLAIN TABLES (standalone fields over bare containers) the value
+-- lives at obj[key] and persists to obj.db, matching the old Field contract.
+function FieldAPI:get(obj)
+    if rawget(obj, "_values") ~= nil then
+        return getField(obj, self)
+    end
+    if self.getFunc ~= nil then
+        return self.getFunc(obj, self.key)
+    end
+    local value = obj[self.key]
+    if value == nil and self.default ~= nil then
+        return self:getDefault(obj)
+    end
+    return value
+end
+
+function FieldAPI:set(obj, value)
+    if rawget(obj, "_values") ~= nil then
+        return setField(obj, self, value)
+    end
+    if self.validate ~= nil then
+        value = self.validate(self, value)
+    elseif self.fieldType.validate ~= nil then
+        value = self.fieldType.validate(self, value)
+    end
+    local old = self:get(obj)
+    if deepEqual(old, value) then
+        return false
+    end
+    local persistValue = value
+    if self.setFunc ~= nil then
+        persistValue = self.setFunc(obj, self.key, value) or value
+    else
+        obj[self.key] = value
+    end
+    if self.persist and obj.db ~= nil and type(persistValue) ~= "function" then
+        if self.fieldType.toDB ~= nil then
+            obj.db[self.key] = self.fieldType.toDB(self, obj, persistValue)
+        else
+            obj.db[self.key] = persistValue
+        end
+    end
+    self.events.valueChange:emit(obj, self.key, persistValue)
     return true
 end
 
