@@ -725,6 +725,18 @@ testRunner:addSuite("ClassSystem", {
         t:assertEqual(WowVision.classes.effectiveObjectScope(a), "global")
     end,
 
+    ["field set params toggle bound to their set"] = function(t)
+        local set = WowVision.classes.newFieldSet({ key = "params", label = "Params" })
+        local enabled = set:add({ key = "enabled", type = "Bool", default = false })
+        local db = {}
+        set:setDB(db)
+        t:assertEqual(enabled:toggle(), true)
+        t:assertEqual(enabled:get(set), true)
+        t:assertEqual(db.enabled, true)
+        t:assertEqual(enabled:toggle(), false)
+        t:assertEqual(db.enabled, false)
+    end,
+
     ["onSetDB hook fires after restore"] = function(t)
         local A = NewClass("A")
         A:addFields({ { key = "x", persist = true } })

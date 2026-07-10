@@ -187,12 +187,24 @@ function WowVision:registerCommands()
     -- handler can never see -- read it first.
     self.base:registerCommand({
         name = "errors",
-        description = "Show a copyable list of recent Lua errors; 'clear' resets",
+        description = "Show this session's Lua errors ('all' includes history; 'clear' resets)",
         func = function(args)
             local lines = {}
             local lastMessage = nil
             if BugGrabber ~= nil and BugGrabber.GetDB ~= nil then
                 local db = BugGrabber:GetDB()
+                -- Only this session's errors unless asked for all: stale
+                -- history from fixed bugs reads as if it were current.
+                if args ~= "all" and BugGrabber.GetSessionId ~= nil then
+                    local session = BugGrabber:GetSessionId()
+                    local filtered = {}
+                    for _, err in ipairs(db) do
+                        if err.session == session then
+                            tinsert(filtered, err)
+                        end
+                    end
+                    db = filtered
+                end
                 if args == "clear" then
                     if BugGrabber.Reset ~= nil then
                         BugGrabber:Reset()

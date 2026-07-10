@@ -859,6 +859,7 @@ function FieldSet:add(def)
         def.persist = true
     end
     local field = classes.newField(def)
+    field._set = self -- bound operations (field:toggle()) default to the set
     tinsert(self.fields, field)
     self.fields[field.key] = field
     return field

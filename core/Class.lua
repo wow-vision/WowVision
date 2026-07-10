@@ -506,6 +506,15 @@ function FieldAPI:getDefault(obj)
     return deepCopy(self.default)
 end
 
+-- Flip a boolean field and return the new value. The owner defaults to the
+-- owning FieldSet for parameter fields (the old proxy toggle).
+function FieldAPI:toggle(obj)
+    obj = obj or self._set
+    local value = not self:get(obj)
+    self:set(obj, value)
+    return value
+end
+
 -- The spoken value: a def-provided getValueString wins, then the field
 -- type's valueString, then plain tostring.
 function FieldAPI:getValueString(obj, value)

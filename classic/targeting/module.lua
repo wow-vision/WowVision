@@ -156,7 +156,7 @@ local function addSoftTarget(info)
     if not enabled then
         error("Could not retrieve enabled parameter on " .. info.key .. " alert.")
     end
-    enabled.events.valueChange:subscribe(nil, function(event, setting, value)
+    enabled.events.valueChange:subscribe(nil, function(event, obj, key, value)
         if value == true then
             SetCVar(info.cvar, 3)
         else
