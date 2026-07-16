@@ -47,6 +47,50 @@ function module:newDataset(key)
     return data
 end
 
+-- All waypoints on the player's continent from enabled atlas datasets,
+-- merged into one id -> waypoint map for the router. World coordinates are
+-- continent-wide, so routes can leave the current zone.
+function module:currentWaypoints()
+    local _, _, _, instanceId = UnitPosition("player")
+    local merged = {}
+    WowVision.atlas:forEachEnabledDataset(function(dataset)
+        local bucket = dataset.waypointsByContinent[instanceId]
+        if bucket ~= nil then
+            for id, wp in pairs(bucket) do
+                merged[id] = wp
+            end
+        end
+    end)
+    return merged
+end
+
+-- Route to a waypoint through the link graph and follow it with the beacon.
+function module:navigateTo(waypointId, waypoints)
+    local px, py = UnitPosition("player")
+    if px == nil then
+        WowVision:speak(L["Position unavailable"])
+        return false
+    end
+    waypoints = waypoints or self:currentWaypoints()
+    local route, reason = WowVision.Router.route(waypoints, px, py, waypointId)
+    if route == nil then
+        WowVision:speak(L["No route found"] .. " " .. tostring(reason))
+        return false
+    end
+    local path = self.Path:new()
+    for _, wp in ipairs(route.waypoints) do
+        path:add(wp)
+    end
+    path.events.complete:subscribe(self, function()
+        self.path = nil
+        local last = route.waypoints[#route.waypoints]
+        WowVision:speak(L["Arrived"] .. (last.n ~= nil and (" " .. last.n) or ""))
+    end)
+    self:pathfind(path)
+    WowVision:speak(string.format("%d %s, %d %s", #route.waypoints, L["waypoints"], route.distance, L["yards"]))
+    return true
+end
+
 function module:pathfind(path)
     self.beacon = nil
     self.path = path
