@@ -506,8 +506,9 @@ function nodes.proxyCheckButton(config)
     return vtable
 end
 
--- A text value: Enter opens typed entry.
--- config: { label, get, set, valueText = function? }
+-- A text value: Enter opens typed entry; arriving by TAB (not arrows)
+-- opens it immediately so typing just works, matching real edit boxes.
+-- config: { label, get, set, valueText = function?, autoInput = false? }
 function nodes.textInput(config)
     if config.label == nil or config.get == nil or config.set == nil then
         error("textInput requires label, get, and set")
@@ -519,25 +520,30 @@ function nodes.textInput(config)
             local value = get()
             return value ~= nil and tostring(value) or nil
         end
-    return {
+    local function openEntry()
+        WowVision.graphHost:openTextEntry({
+            label = config.label,
+            text = tostring(get() or ""),
+            onCommit = function(text)
+                if pcall(set, text) then
+                    WowVision:speak(valueText() or "")
+                end
+            end,
+        })
+    end
+    local vtable = {
         controlType = graph.controlTypes.editBox,
         announcements = {
             { text = config.label, kind = kinds.label },
             { text = valueText, kind = kinds.value, live = "focus" },
         },
-        onActivate = function()
-            WowVision.graphHost:openTextEntry({
-                label = config.label,
-                text = tostring(get() or ""),
-                onCommit = function(text)
-                    if pcall(set, text) then
-                        WowVision:speak(valueText() or "")
-                    end
-                end,
-            })
-        end,
+        onActivate = openEntry,
         stateText = valueText,
     }
+    if config.autoInput ~= false then
+        vtable.onTabFocus = openEntry
+    end
+    return vtable
 end
 
 -- Push a confirmation child screen: a prompt line and confirm/cancel buttons.
