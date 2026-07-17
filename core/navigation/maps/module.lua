@@ -64,6 +64,45 @@ function module:currentWaypoints()
     return merged
 end
 
+-- Straight-line beacon to a world position (no routing).
+function module:beaconTo(wx, wy, label)
+    local px, py = UnitPosition("player")
+    local path = self.Path:new()
+    path:add({ x = wx, y = wy, n = label })
+    path.events.complete:subscribe(self, function()
+        self.path = nil
+        WowVision:speak(L["Arrived"])
+    end)
+    self:pathfind(path)
+    if px ~= nil then
+        local dx, dy = wx - px, wy - py
+        local distance = math.sqrt(dx * dx + dy * dy)
+        WowVision:speak(string.format("%s %d %s", L["Beacon set"], distance, L["yards"]))
+    else
+        WowVision:speak(L["Beacon set"])
+    end
+end
+
+-- Map-percentage coordinates ("50.5 30.4") on the current zone map, the
+-- numbers quest guides use: converted to a world position, then a straight
+-- beacon. GetWorldPosFromMapPos returns coordinates in UnitPosition's
+-- convention, which is exactly what Beacon consumes.
+function module:beaconToMapCoords(xPercent, yPercent)
+    local mapId = C_Map.GetBestMapForUnit("player")
+    if mapId == nil then
+        WowVision:speak(L["Position unavailable"])
+        return false
+    end
+    local _, worldPos = C_Map.GetWorldPosFromMapPos(mapId, CreateVector2D(xPercent / 100, yPercent / 100))
+    if worldPos == nil then
+        WowVision:speak(L["Position unavailable"])
+        return false
+    end
+    local wx, wy = worldPos:GetXY()
+    self:beaconTo(wx, wy, string.format("%.1f %.1f", xPercent, yPercent))
+    return true
+end
+
 -- Route to a waypoint through the link graph and follow it with the beacon.
 function module:navigateTo(waypointId, waypoints)
     local px, py = UnitPosition("player")
@@ -111,8 +150,10 @@ function module:updatePath()
     end
 end
 
--- /beacon            -> report current position (and active beacon bearing)
--- /beacon x y        -> drop a beacon at world coords (x, y) and start guiding
+-- /beacon            -> report current map position (and active beacon bearing)
+-- /beacon x y        -> beacon to MAP coordinates on the current zone map
+--                       ("50.5 30.4", the numbers quest guides use)
+-- /beacon world x y  -> beacon to raw world coordinates
 -- /beacon stop       -> clear the active beacon
 function module:handleBeaconCommand(args)
     args = args and strtrim(args) or ""
@@ -120,14 +161,21 @@ function module:handleBeaconCommand(args)
     if args == "" then
         local px, py = UnitPosition("player")
         if not px then
-            WowVision:speak("Position unavailable")
+            WowVision:speak(L["Position unavailable"])
             return
         end
-        WowVision:speak(string.format("Position x %.1f y %.1f", px, py))
+        local mapId = C_Map.GetBestMapForUnit("player")
+        local mapPos = mapId ~= nil and C_Map.GetPlayerMapPosition(mapId, "player") or nil
+        if mapPos ~= nil then
+            local mx, my = mapPos:GetXY()
+            WowVision:speak(string.format("%.1f %.1f", mx * 100, my * 100))
+        else
+            WowVision:speak(string.format("Position x %.1f y %.1f", px, py))
+        end
         if self.path and self.path.beacon then
             local distance, relative = self.path.beacon:compute()
             if distance then
-                WowVision:speak(string.format("Beacon %.0f yards, %.0f degrees", distance, relative))
+                WowVision:speak(string.format("Beacon %.0f %s, %.0f degrees", distance, L["yards"], relative))
             end
         end
         return
@@ -135,7 +183,14 @@ function module:handleBeaconCommand(args)
 
     if args:lower() == "stop" then
         self:stopPath()
-        WowVision:speak("Beacon stopped")
+        WowVision:speak(L["Beacon stopped"])
+        return
+    end
+
+    local worldX, worldY = args:match("^[Ww]orld%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)$")
+    worldX, worldY = tonumber(worldX), tonumber(worldY)
+    if worldX ~= nil and worldY ~= nil then
+        self:beaconTo(worldX, worldY)
         return
     end
 
@@ -145,21 +200,13 @@ function module:handleBeaconCommand(args)
         WowVision:speak("Usage beacon x y")
         return
     end
-
-    local path = self.Path:new()
-    path:add({ x = x, y = y })
-    path.events.complete:subscribe(self, function()
-        self.path = nil
-        WowVision:speak("Arrived")
-    end)
-    self:pathfind(path)
-    WowVision:speak("Beacon set")
+    self:beaconToMapCoords(x, y)
 end
 
 module:registerCommand({
     name = "beacon",
     scope = "Global",
-    description = "Set a navigation beacon. Usage: /beacon x y, /beacon stop, or /beacon for current position.",
+    description = "Set a navigation beacon. Usage: /beacon x y (map coordinates), /beacon world x y, /beacon stop, or /beacon for current position.",
     func = function(args)
         module:handleBeaconCommand(args)
     end,
