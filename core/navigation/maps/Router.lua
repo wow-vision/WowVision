@@ -101,6 +101,9 @@ end
 
 -- Route from world position (startX, startY) to the waypoint destId.
 -- opts.entryCount: how many nearby waypoints seed the search (default 5).
+-- opts.entryId: enter the graph through EXACTLY this waypoint (the user
+-- picked their door into the network; 3D geometry makes closest-guessing
+-- unreliable).
 --
 -- Returns { waypoints = orderedList, distance = graphYards } where distance
 -- includes the leg from the player to the entry waypoint -- or nil and a
@@ -112,7 +115,16 @@ function Router.route(waypoints, startX, startY, destId, opts)
         return nil, "unknown destination"
     end
 
-    local entries = Router.nearest(waypoints, startX, startY, opts.entryCount or 5)
+    local entries
+    if opts.entryId ~= nil then
+        local entry = waypoints[opts.entryId]
+        if entry == nil then
+            return nil, "no entry"
+        end
+        entries = { { waypoint = entry, distance = distanceBetween(startX, startY, entry.x, entry.y) } }
+    else
+        entries = Router.nearest(waypoints, startX, startY, opts.entryCount or 5)
+    end
     if #entries == 0 then
         return nil, "no entry"
     end

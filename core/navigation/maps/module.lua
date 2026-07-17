@@ -127,14 +127,15 @@ function module:beaconToMapCoords(xPercent, yPercent)
 end
 
 -- Route to a waypoint through the link graph and follow it with the beacon.
-function module:navigateTo(waypointId, waypoints)
+-- opts passes through to the router (entryId for a user-chosen entry point).
+function module:navigateTo(waypointId, waypoints, opts)
     local px, py = UnitPosition("player")
     if px == nil then
         WowVision:speak(L["Position unavailable"])
         return false
     end
     waypoints = waypoints or self:currentWaypoints()
-    local route, reason = WowVision.Router.route(waypoints, px, py, waypointId)
+    local route, reason = WowVision.Router.route(waypoints, px, py, waypointId, opts)
     if route == nil then
         WowVision:speak(L["No route found"] .. " " .. tostring(reason))
         return false

@@ -167,6 +167,22 @@ testRunner:addSuite("MapRouter", {
         t:assertEqual(route.distance, 10)
     end,
 
+    ["a chosen entry overrides proximity"] = function(t)
+        -- The nearest waypoint would win by distance; the picked entry is
+        -- used instead (the user knows their 3D surroundings better).
+        local waypoints = graph({
+            { id = "below", x = 1, y = 0, links = { "elsewhere" } },
+            { id = "bridge", x = 3, y = 0, links = { "goal" } },
+            { id = "elsewhere", x = 50, y = 50, links = { "below" } },
+            { id = "goal", x = 10, y = 0, links = { "bridge" } },
+        })
+        local route = Router.route(waypoints, 0, 0, "goal", { entryId = "bridge" })
+        t:assertEqual(ids(route), "bridge,goal")
+        local missing, reason = Router.route(waypoints, 0, 0, "goal", { entryId = "nope" })
+        t:assertNil(missing)
+        t:assertEqual(reason, "no entry")
+    end,
+
     ["nearest sorts, limits, and filters"] = function(t)
         local waypoints = graph({
             { id = "close", x = 1, y = 0 },
