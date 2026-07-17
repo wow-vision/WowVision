@@ -50,6 +50,8 @@ loadAddonFile("core/testing/TestRunner.lua")
 loadAddonFile("core/Event.lua")
 loadAddonFile("core/navigation/maps/Router.lua")
 loadAddonFile("core/navigation/maps/routerTests.lua")
+loadAddonFile("core/navigation/atlas/MapDataset.lua")
+loadAddonFile("core/navigation/atlas/datasetTests.lua")
 loadAddonFile("core/ClassTests.lua")
 
 -- The component registry and the systems above it, all on the class library.

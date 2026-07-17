@@ -2,6 +2,7 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="MapDataset.lua" />
+  <Script file="datasetTests.lua" />
   <Script file="module.lua" />
 
 </Ui>
