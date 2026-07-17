@@ -38,6 +38,26 @@ function GraphHost:openTextEntry(config)
         frame:SetScript("OnEditFocusLost", function(f)
             finish(f, false)
         end)
+        -- Tab commits and moves on, exactly like the real edit boxes'
+        -- hooked OnTabPressed -- without this the entry box traps Tab.
+        frame:SetScript("OnTabPressed", function(f)
+            local previous = IsShiftKeyDown()
+            finish(f, true)
+            self:onKey(previous and "previous" or "next")
+        end)
+        -- Speak the content as it changes, like the live watch does for
+        -- real edit boxes (this shared box is not a graph node, so nothing
+        -- else is watching it). Interrupt first: each keystroke should read
+        -- the latest content, not queue behind the previous one.
+        frame:SetScript("OnTextChanged", function(f, userInput)
+            if userInput then
+                WowVision.base.speech:uiStop()
+                local text = f:GetText()
+                if text ~= nil and text ~= "" then
+                    self:_speak(text)
+                end
+            end
+        end)
         self.editFrame = frame
     end
     self._textEntry = config
