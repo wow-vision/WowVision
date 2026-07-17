@@ -64,6 +64,29 @@ function module:currentWaypoints()
     return merged
 end
 
+-- Route to the nearest waypoint whose name contains the fragment
+-- (case-insensitive): the test path for routed navigation before the
+-- destination picker exists.
+function module:navigateToName(fragment)
+    local px, py = UnitPosition("player")
+    if px == nil then
+        WowVision:speak(L["Position unavailable"])
+        return false
+    end
+    local waypoints = self:currentWaypoints()
+    local needle = fragment:lower()
+    local matches = WowVision.Router.nearest(waypoints, px, py, 1, function(wp)
+        return wp.n ~= nil and wp.n:lower():find(needle, 1, true) ~= nil
+    end)
+    if #matches == 0 then
+        WowVision:speak(L["No route found"] .. " " .. fragment)
+        return false
+    end
+    local target = matches[1].waypoint
+    WowVision:speak(target.n)
+    return self:navigateTo(target.id, waypoints)
+end
+
 -- Straight-line beacon to a world position (no routing).
 function module:beaconTo(wx, wy, label)
     local px, py = UnitPosition("player")
@@ -181,6 +204,12 @@ function module:handleBeaconCommand(args)
         return
     end
 
+    local fragment = args:match("^[Tt]o%s+(.+)$")
+    if fragment ~= nil then
+        self:navigateToName(fragment)
+        return
+    end
+
     if args:lower() == "stop" then
         self:stopPath()
         WowVision:speak(L["Beacon stopped"])
@@ -206,7 +235,7 @@ end
 module:registerCommand({
     name = "beacon",
     scope = "Global",
-    description = "Set a navigation beacon. Usage: /beacon x y (map coordinates), /beacon world x y, /beacon stop, or /beacon for current position.",
+    description = "Set a navigation beacon. Usage: /beacon x y (map coordinates), /beacon to name, /beacon world x y, /beacon stop, or /beacon for current position.",
     func = function(args)
         module:handleBeaconCommand(args)
     end,
