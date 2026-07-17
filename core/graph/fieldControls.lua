@@ -228,7 +228,7 @@ settings.registerFieldControl("Object", function(field, owner)
                     local proxy = field:createParamsProxy(owner)
                     builder:pushContext("params", L["Parameters"])
                     for _, paramField in ipairs(objectType.parameters.fields) do
-                        if paramField.showInUI then
+                        if paramField.showInUI ~= false then
                             builder:addItem(
                                 ControlId.structural("param:" .. paramField.key),
                                 settings.controlFor(paramField, proxy)
@@ -280,7 +280,7 @@ local function pushTrackingParams(field, owner, objectType)
                         end,
                     })
                 )
-            elseif paramField.showInUI then
+            elseif paramField.showInUI ~= false then
                 builder:addItem(
                     ControlId.structural("param:" .. paramField.key),
                     settings.controlFor(paramField, editCopy.params)

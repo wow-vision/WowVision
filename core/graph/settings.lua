@@ -247,7 +247,8 @@ function settings.renderInto(builder, infoFrame)
         builder:pushContext(tostring(infoFrame.key or infoFrame.label), infoFrame.label)
     end
     for _, field in ipairs(infoFrame.info.fields) do
-        if field.showInUI then
+        -- Not-false, not truthy: FieldSet fields leave showInUI nil.
+        if field.showInUI ~= false then
             builder:addItem(ControlId.structural("field:" .. field.key), settings.controlFor(field, infoFrame))
         end
     end
