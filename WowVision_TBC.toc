@@ -1,7 +1,7 @@
 ## Title: WowVision
 ## Version: @project-version@
 ## Author: bradjrenshaw
-## Interface: 20505
+## Interface: 20505,20506
 ## OptionalDeps: Sku
 ## Notes: Provides accessibility for the visually impaired.
 ## SavedVariables: WowVisionDump, WowVisionPriceDB, WowVisionGlobalDB
