@@ -5,6 +5,7 @@
   <Script file="stuckMath.lua" />
   <Script file="stuckTests.lua" />
   <Script file="walls.lua" />
+  <Script file="falling.lua" />
   <Script file="compass.lua" />
   <Script file="follow.lua" />
   <Include file="atlas/modules.xml" />
