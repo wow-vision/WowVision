@@ -52,6 +52,8 @@ loadAddonFile("core/navigation/maps/Router.lua")
 loadAddonFile("core/navigation/maps/routerTests.lua")
 loadAddonFile("core/navigation/atlas/MapDataset.lua")
 loadAddonFile("core/navigation/atlas/datasetTests.lua")
+loadAddonFile("core/navigation/stuckMath.lua")
+loadAddonFile("core/navigation/stuckTests.lua")
 loadAddonFile("core/ClassTests.lua")
 
 -- The component registry and the systems above it, all on the class library.
@@ -261,6 +263,8 @@ local parseOnly = {
     "tbc/character/Skills.lua",
     "tbc/auction/module.lua",
     "core/navigation/maps/ui.lua",
+    "core/movement.lua",
+    "core/navigation/walls.lua",
     "core/navigation/maps/module.lua",
     "core/navigation/maps/Beacon.lua",
     "core/navigation/maps/Path.lua",
