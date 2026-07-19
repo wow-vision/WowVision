@@ -13,7 +13,7 @@ local ALIGN_DEGREES = 10
 
 function Beacon:initialize(waypoint)
     self.waypoint = waypoint
-    self.nextPlay = 0
+    self.lastPlay = 0
 end
 
 -- Returns distance (yards) to the waypoint and the bearing to it RELATIVE to the
@@ -87,11 +87,15 @@ function Beacon:update()
         pingRate = 0.7
     end
 
+    -- Compare elapsed time against the CURRENT rate rather than scheduling
+    -- the next ping at play time: turning onto the target mid-wait shortens
+    -- the gap immediately, and if the fast interval has already elapsed the
+    -- ping fires the moment the beacon centers.
     local now = GetTime()
-    if now < self.nextPlay then
+    if now - self.lastPlay < pingRate then
         return
     end
-    self.nextPlay = now + pingRate
+    self.lastPlay = now
 
     -- The Beacon output maps yards to the file's compressed distance index and
     -- plays the directional sound.
