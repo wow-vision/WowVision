@@ -163,6 +163,41 @@ function module:pathfind(path)
     self.path:start()
 end
 
+-- Sku's next/previous waypoint keys: manually step along the active route
+-- when displaced or realigning. The step plays the arrival cue (moveBy
+-- emits arriveAtWaypoint) and announces how many waypoints remain,
+-- current one included, like Sku's count-down.
+function module:stepWaypoint(offset)
+    if self.path == nil then
+        WowVision:speak(L["No active waypoint"])
+        return false
+    end
+    local waypoint = self.path:moveBy(offset)
+    if waypoint == nil then
+        WowVision:speak(offset > 0 and L["End of route"] or L["Start of route"])
+        return false
+    end
+    local remaining = #self.path.waypoints - self.path.currentIndex + 1
+    WowVision:speak(string.format("%d %s", remaining, L["remaining"]))
+    return true
+end
+
+module:registerBinding({
+    type = "Script",
+    key = "maps/nextWaypoint",
+    label = L["Next Waypoint"],
+    inputs = { "CTRL-W" },
+    script = "/run WowVision.base.navigation.maps:stepWaypoint(1)",
+})
+
+module:registerBinding({
+    type = "Script",
+    key = "maps/previousWaypoint",
+    label = L["Previous Waypoint"],
+    inputs = { "CTRL-S" },
+    script = "/run WowVision.base.navigation.maps:stepWaypoint(-1)",
+})
+
 function module:stopPath()
     self.path = nil
     self.beacon = nil

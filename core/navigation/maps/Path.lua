@@ -35,6 +35,32 @@ function Path:start()
     end
 end
 
+-- Manually shift the active waypoint (Sku's next/previous waypoint keys,
+-- for when you are displaced or realigning after a mistake). Treated
+-- exactly like arriving: the arrival cue fires and the beacon retargets.
+-- The index clamps at the route's ends -- only physically reaching the
+-- final waypoint completes the route. Returns the new waypoint, or nil if
+-- already at that end.
+function Path:moveBy(offset)
+    if not self.active or self.complete then
+        return nil
+    end
+    local target = self.currentIndex + offset
+    if target > #self.waypoints then
+        target = #self.waypoints
+    elseif target < 1 then
+        target = 1
+    end
+    if target == self.currentIndex then
+        return nil
+    end
+    self.events.arriveAtWaypoint:emit(self, self.currentWaypoint)
+    self.currentIndex = target
+    self.currentWaypoint = self.waypoints[target]
+    self.beacon = module.Beacon:new(self.currentWaypoint)
+    return self.currentWaypoint
+end
+
 function Path:update()
     if not self.active or self.complete then
         return nil
