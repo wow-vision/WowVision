@@ -40,24 +40,40 @@ beaconAlert:addOutput({
 })
 
 -- How close (yards) counts as reaching a waypoint. Waypoints are treated
--- as points; this is the whole arrival bubble, calibrated to taste.
-settings:add({
-    key = "arrivalDistance",
-    type = "Number",
-    label = L["Arrival Distance"],
-    default = 3,
-    min = 1,
-    max = 10,
-})
+-- as points; the player tunes THREE arrival radii -- short, medium, long
+-- -- and Alt-P cycles between them mid-route for precise or forgiving
+-- movement on demand.
+local arrivalRanges = {
+    { key = "arrivalShort", label = L["Short Range"], default = 1 },
+    { key = "arrivalMedium", label = L["Medium Range"], default = 3 },
+    { key = "arrivalLong", label = L["Long Range"], default = 5 },
+}
+for _, range in ipairs(arrivalRanges) do
+    settings:add({
+        key = range.key,
+        type = "Number",
+        label = range.label,
+        default = range.default,
+        min = 1,
+        max = 20,
+    })
+end
+-- Which of the three is active (1..3); cycled by key, not the settings UI.
+settings:add({ key = "arrivalRange", type = "Number", default = 2, showInUI = false })
+
+function module:arrivalDistance()
+    local range = arrivalRanges[self.settings.arrivalRange] or arrivalRanges[2]
+    return self.settings[range.key] or range.default
+end
 
 settings:addRef("beacon", beaconAlert.parameters)
 
--- Alt-P quick-cycles the common arrival sizes without opening settings.
+-- Alt-P cycles short -> medium -> long without opening settings.
 function module:cycleArrivalDistance()
-    local current = self.settings.arrivalDistance
-    local value = current == 1 and 2 or current == 2 and 3 or 1
-    self.settings.arrivalDistance = value
-    WowVision:speak(string.format("%d %s", value, L["yards"]))
+    local index = (self.settings.arrivalRange or 2) % #arrivalRanges + 1
+    self.settings.arrivalRange = index
+    local range = arrivalRanges[index]
+    WowVision:speak(string.format("%s, %d %s", range.label, self.settings[range.key] or range.default, L["yards"]))
 end
 
 module:registerBinding({
