@@ -188,14 +188,10 @@ local function sweepStep()
             end
             snapCharacterToCamera()
             local endFacing = math.deg(GetPlayerFacing() or 0)
-            -- GetPlayerFacing increases counterclockwise; positive
-            -- requested = clockwise. Turned degrees in the requested
-            -- direction:
-            local turned = wrapDegrees(current.startFacing - endFacing)
-            if current.requested < 0 then
-                turned = -turned
-            end
-            if turned > 0 then
+            -- Only the MAGNITUDE matters for calibration (the sweep itself
+            -- owns direction; sign conventions here burned us once already).
+            local turned = math.abs(wrapDegrees(current.startFacing - endFacing))
+            if turned >= 1 then
                 recordSample(current.duration, turned)
             end
             finishTurn(true)
@@ -238,7 +234,7 @@ module:registerCommand({
             tinsert(lines, string.format("%d: duration %.3fs -> turned %.1f deg", i, sample.duration, sample.turned))
         end
         WowVision.testing.showResults(table.concat(lines, string.char(10)))
-        WowVision:speak(lines[1])
+        WowVision:speak(#samples .. " samples. " .. lines[1])
     end,
 })
 
