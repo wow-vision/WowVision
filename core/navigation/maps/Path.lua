@@ -74,7 +74,8 @@ function Path:update()
     end
     local x1, y1 = UnitPosition("player")
     local x2, y2 = self.currentWaypoint.x, self.currentWaypoint.y
-    if distanceSquared(x1, y1, x2, y2) <= 9 then
+    local range = module.settings.arrivalDistance or 3
+    if distanceSquared(x1, y1, x2, y2) <= range * range then
         self.events.arriveAtWaypoint:emit(self, self.currentWaypoint)
         self.currentIndex = self.currentIndex + 1
         self.currentWaypoint = self.waypoints[self.currentIndex]

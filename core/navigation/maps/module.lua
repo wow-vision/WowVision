@@ -39,7 +39,34 @@ beaconAlert:addOutput({
     path = "Sound/WowVision/alerts/success2.mp3",
 })
 
+-- How close (yards) counts as reaching a waypoint. Waypoints are treated
+-- as points; this is the whole arrival bubble, calibrated to taste.
+settings:add({
+    key = "arrivalDistance",
+    type = "Number",
+    label = L["Arrival Distance"],
+    default = 3,
+    min = 1,
+    max = 10,
+})
+
 settings:addRef("beacon", beaconAlert.parameters)
+
+-- Alt-P quick-cycles the common arrival sizes without opening settings.
+function module:cycleArrivalDistance()
+    local current = self.settings.arrivalDistance
+    local value = current == 1 and 2 or current == 2 and 3 or 1
+    self.settings.arrivalDistance = value
+    WowVision:speak(string.format("%d %s", value, L["yards"]))
+end
+
+module:registerBinding({
+    type = "Script",
+    key = "maps/cycleArrivalDistance",
+    label = L["Cycle Arrival Distance"],
+    inputs = { "ALT-P" },
+    script = "/run WowVision.base.navigation.maps:cycleArrivalDistance()",
+})
 
 function module:newDataset(key)
     local data = WowVision.Dataset:new()
