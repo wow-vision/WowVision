@@ -22,10 +22,10 @@ local TOLERANCE = 2 -- degrees: close enough to stop iterating
 local MAX_SWEEPS = 3
 
 -- Positive relative bearing = target to the RIGHT (Beacon's convention).
--- Which MoveView* function sweeps the view rightward is empirical; flip
--- CAMERA_RIGHT/LEFT if the first in-game test turns the wrong way.
-local CAMERA_RIGHT_START = MoveViewRightStart
-local CAMERA_LEFT_START = MoveViewLeftStart
+-- Verified in game: MoveViewLeftStart yaws the character's facing RIGHT
+-- after a mouselook snap (the camera orbits opposite the view direction).
+local CAMERA_RIGHT_START = MoveViewLeftStart
+local CAMERA_LEFT_START = MoveViewRightStart
 
 local turning = nil -- { waypoint, sweeps, savedYawSpeed }
 
