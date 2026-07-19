@@ -36,7 +36,55 @@ local GLIDE_ALLOWANCE = 0.06
 local CAMERA_RIGHT_START = MoveViewLeftStart
 local CAMERA_LEFT_START = MoveViewRightStart
 
-local turning = nil -- { waypoint, sweeps, savedYawSpeed }
+local turning = nil -- { waypoint, savedYawSpeed, startFacing, requested, duration }
+
+-- ---------------------------------------------------------------------------
+-- Self-calibration: every completed turn records (commanded duration,
+-- degrees actually turned). With three or more samples a least-squares fit
+-- gives the TRUE effective sweep speed (slope) and the coast the glide adds
+-- (intercept), and later turns aim with those instead of the constants.
+-- /wv turnlog dumps the samples and the current fit, copyable.
+-- ---------------------------------------------------------------------------
+
+local samples = {}
+local calibration = nil -- { speed, coast }
+
+local function wrapDegrees(value)
+    while value > 180 do
+        value = value - 360
+    end
+    while value <= -180 do
+        value = value + 360
+    end
+    return value
+end
+
+local function recordSample(duration, turned)
+    tinsert(samples, { duration = duration, turned = turned })
+    if #samples > 50 then
+        tremove(samples, 1)
+    end
+    if #samples < 3 then
+        return
+    end
+    local n, sumX, sumY, sumXY, sumXX = #samples, 0, 0, 0, 0
+    for _, sample in ipairs(samples) do
+        sumX = sumX + sample.duration
+        sumY = sumY + sample.turned
+        sumXY = sumXY + sample.duration * sample.turned
+        sumXX = sumXX + sample.duration * sample.duration
+    end
+    local denom = n * sumXX - sumX * sumX
+    if math.abs(denom) < 1e-6 then
+        return -- all samples the same size; no usable spread
+    end
+    local speed = (n * sumXY - sumX * sumY) / denom
+    local coast = (sumY - speed * sumX) / n
+    -- Sanity clamp: reject nonsense fits rather than aiming with them.
+    if speed > 100 and speed < 1200 and coast > -30 and coast < 90 then
+        calibration = { speed = speed, coast = coast }
+    end
+end
 
 local function snapCharacterToCamera()
     MouselookStart()
@@ -109,24 +157,47 @@ local function sweepStep()
         return
     end
 
+    state.startFacing = math.deg(GetPlayerFacing() or 0)
+    state.requested = relative
+
     -- One sweep toward the target; the character follows at the final
-    -- snap after the glide settles.
+    -- snap after the glide settles. Aim with the measured calibration when
+    -- one exists, else the constants.
+    local duration
+    if calibration ~= nil then
+        duration = (math.abs(relative) - calibration.coast) / calibration.speed
+    else
+        duration = math.abs(relative) / YAW_SPEED - GLIDE_ALLOWANCE
+    end
+    if duration < 0.02 then
+        duration = 0.02
+    end
+    state.duration = duration
+
     if relative > 0 then
         CAMERA_RIGHT_START(1)
     else
         CAMERA_LEFT_START(1)
     end
-    local duration = math.abs(relative) / YAW_SPEED - GLIDE_ALLOWANCE
-    if duration < 0.02 then
-        duration = 0.02
-    end
     C_Timer.After(duration, function()
         stopCamera()
         C_Timer.After(SETTLE_DELAY, function()
-            if turning == nil then
+            local current = turning
+            if current == nil then
                 return
             end
             snapCharacterToCamera()
+            local endFacing = math.deg(GetPlayerFacing() or 0)
+            -- GetPlayerFacing increases counterclockwise; positive
+            -- requested = clockwise. Turned degrees in the requested
+            -- direction:
+            local turned = wrapDegrees(current.startFacing - endFacing)
+            if current.requested < 0 then
+                turned = -turned
+            end
+            if turned > 0 then
+                recordSample(current.duration, turned)
+            end
             finishTurn(true)
         end)
     end)
@@ -150,6 +221,26 @@ function module:turnToWaypoint()
     sweepStep()
     return true
 end
+
+-- Copyable diagnostics for tuning: every sample plus the current fit.
+module:registerCommand({
+    name = "turnlog",
+    description = "Show turn-to-waypoint calibration samples",
+    func = function()
+        local lines = {}
+        if calibration ~= nil then
+            tinsert(lines, string.format("fit: speed %.1f deg/s, coast %.1f deg", calibration.speed, calibration.coast))
+        else
+            tinsert(lines, "fit: none yet (need 3+ samples of different sizes)")
+        end
+        tinsert(lines, string.format("constants: speed %d, allowance %.2f, settle %.2f", YAW_SPEED, GLIDE_ALLOWANCE, SETTLE_DELAY))
+        for i, sample in ipairs(samples) do
+            tinsert(lines, string.format("%d: duration %.3fs -> turned %.1f deg", i, sample.duration, sample.turned))
+        end
+        WowVision.testing.showResults(table.concat(lines, string.char(10)))
+        WowVision:speak(lines[1])
+    end,
+})
 
 module:registerBinding({
     type = "Script",
