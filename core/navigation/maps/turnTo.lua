@@ -17,13 +17,19 @@ local L = module.L
 -- Any commanded movement or turning aborts immediately and restores the
 -- camera speed CVar.
 
-local YAW_SPEED = 400 -- degrees/second while sweeping (via cameraYawMoveSpeed)
+local YAW_SPEED = 400 -- cameraYawMoveSpeed while sweeping
+-- The MoveView argument MULTIPLIES the cvar speed (Sku passes 4): effective
+-- sweep = factor * cvar. Calibration measures the truth either way.
+local SWEEP_FACTOR = 4
+local ASSUMED_SPEED = YAW_SPEED * SWEEP_FACTOR -- until the fit takes over
+-- Changing the sweep setup invalidates stored calibrations.
+local CALIBRATION_VERSION = 2
 local TOLERANCE = 3 -- degrees: already facing it, skip the sweep
 -- MoveViewStop does not halt instantly: the camera eases out past the
 -- stop, so after stopping we wait for the glide to settle before the final
 -- snap. Corrective re-sweeps are disabled for now: single sweep, settle,
 -- snap, done.
-local SETTLE_DELAY = 0.35
+local SETTLE_DELAY = 0.1
 -- The glide covers ground after the stop, and it grows with speed: end the
 -- sweep this many seconds early and let the coast finish the angle. Tune
 -- together with YAW_SPEED -- landing consistently short means lower it,
@@ -88,11 +94,12 @@ local function recordSample(duration, turned, startFacing, endFacing)
     local speed = (n * sumXY - sumX * sumY) / denom
     local coast = (sumY - speed * sumX) / n
     -- Sanity clamp: reject nonsense fits rather than aiming with them.
-    if speed > 100 and speed < 1200 and coast > -30 and coast < 90 then
+    if speed > 100 and speed < 4000 and coast > -30 and coast < 120 then
         calibration = { speed = speed, coast = coast }
         -- Persist so calibration survives reloads (hidden settings).
         module.settings.turnSpeed = speed
         module.settings.turnCoast = coast
+        module.settings.turnCalVersion = CALIBRATION_VERSION
     end
 end
 
@@ -197,7 +204,7 @@ sweepAimed = function(state)
     if calibration ~= nil then
         duration = (math.abs(relative) - calibration.coast) / calibration.speed
     else
-        duration = math.abs(relative) / YAW_SPEED - GLIDE_ALLOWANCE
+        duration = math.abs(relative) / ASSUMED_SPEED - GLIDE_ALLOWANCE
     end
     if duration < 0.02 then
         duration = 0.02
@@ -205,9 +212,9 @@ sweepAimed = function(state)
     state.duration = duration
 
     if relative > 0 then
-        CAMERA_RIGHT_START(1)
+        CAMERA_RIGHT_START(SWEEP_FACTOR)
     else
-        CAMERA_LEFT_START(1)
+        CAMERA_LEFT_START(SWEEP_FACTOR)
     end
     C_Timer.After(duration, function()
         stopCamera()
@@ -282,6 +289,7 @@ module:registerCommand({
 local settings = module:hasSettings()
 settings:add({ key = "turnSpeed", type = "Number", persist = true, showInUI = false })
 settings:add({ key = "turnCoast", type = "Number", persist = true, showInUI = false })
+settings:add({ key = "turnCalVersion", type = "Number", persist = true, showInUI = false })
 
 local turnToEnableParent = module.onFullEnable
 function module:onFullEnable(...)
@@ -290,7 +298,13 @@ function module:onFullEnable(...)
     end
     local speed = self.settings.turnSpeed
     local coast = self.settings.turnCoast
-    if speed ~= nil and coast ~= nil and speed > 100 and speed < 1200 then
+    if
+        self.settings.turnCalVersion == CALIBRATION_VERSION
+        and speed ~= nil
+        and coast ~= nil
+        and speed > 100
+        and speed < 4000
+    then
         calibration = { speed = speed, coast = coast }
     end
 end
