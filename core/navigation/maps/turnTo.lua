@@ -17,13 +17,18 @@ local L = module.L
 -- Any commanded movement or turning aborts immediately and restores the
 -- camera speed CVar.
 
-local YAW_SPEED = 240 -- degrees/second while sweeping (via cameraYawMoveSpeed)
+local YAW_SPEED = 400 -- degrees/second while sweeping (via cameraYawMoveSpeed)
 local TOLERANCE = 3 -- degrees: already facing it, skip the sweep
 -- MoveViewStop does not halt instantly: the camera eases out past the
 -- stop, so after stopping we wait for the glide to settle before the final
 -- snap. Corrective re-sweeps are disabled for now: single sweep, settle,
 -- snap, done.
-local SETTLE_DELAY = 0.4
+local SETTLE_DELAY = 0.35
+-- The glide covers ground after the stop, and it grows with speed: end the
+-- sweep this many seconds early and let the coast finish the angle. Tune
+-- together with YAW_SPEED -- landing consistently short means lower it,
+-- consistently past means raise it.
+local GLIDE_ALLOWANCE = 0.06
 
 -- Positive relative bearing = target to the RIGHT (Beacon's convention).
 -- Verified in game: MoveViewLeftStart yaws the character's facing RIGHT
@@ -111,7 +116,11 @@ local function sweepStep()
     else
         CAMERA_LEFT_START(1)
     end
-    C_Timer.After(math.abs(relative) / YAW_SPEED, function()
+    local duration = math.abs(relative) / YAW_SPEED - GLIDE_ALLOWANCE
+    if duration < 0.02 then
+        duration = 0.02
+    end
+    C_Timer.After(duration, function()
         stopCamera()
         C_Timer.After(SETTLE_DELAY, function()
             if turning == nil then
