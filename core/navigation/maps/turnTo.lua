@@ -90,6 +90,9 @@ local function recordSample(duration, turned, startFacing, endFacing)
     -- Sanity clamp: reject nonsense fits rather than aiming with them.
     if speed > 100 and speed < 1200 and coast > -30 and coast < 90 then
         calibration = { speed = speed, coast = coast }
+        -- Persist so calibration survives reloads (hidden settings).
+        module.settings.turnSpeed = speed
+        module.settings.turnCoast = coast
     end
 end
 
@@ -273,6 +276,24 @@ module:registerCommand({
         WowVision:speak(#samples .. " samples. " .. lines[1])
     end,
 })
+
+-- Persisted calibration (hidden from the settings screen); restored on
+-- enable so a reload keeps aiming with measured numbers.
+local settings = module:hasSettings()
+settings:add({ key = "turnSpeed", type = "Number", persist = true, showInUI = false })
+settings:add({ key = "turnCoast", type = "Number", persist = true, showInUI = false })
+
+local turnToEnableParent = module.onFullEnable
+function module:onFullEnable(...)
+    if turnToEnableParent ~= nil then
+        turnToEnableParent(self, ...)
+    end
+    local speed = self.settings.turnSpeed
+    local coast = self.settings.turnCoast
+    if speed ~= nil and coast ~= nil and speed > 100 and speed < 1200 then
+        calibration = { speed = speed, coast = coast }
+    end
+end
 
 module:registerBinding({
     type = "Script",
