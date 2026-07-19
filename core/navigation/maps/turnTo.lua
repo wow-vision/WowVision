@@ -17,9 +17,16 @@ local L = module.L
 -- Any commanded movement or turning aborts immediately and restores the
 -- camera speed CVar.
 
-local YAW_SPEED = 360 -- degrees/second while sweeping (via cameraYawMoveSpeed)
-local TOLERANCE = 2 -- degrees: close enough to stop iterating
-local MAX_SWEEPS = 3
+local YAW_SPEED = 240 -- degrees/second while sweeping (via cameraYawMoveSpeed)
+local TOLERANCE = 3 -- degrees: close enough to stop iterating
+local MAX_SWEEPS = 5
+-- MoveViewStop does not halt instantly: the camera eases out, coasting well
+-- past the stop. So each sweep deliberately aims SHORT (the loop converges
+-- from one side instead of overshooting), and after stopping we wait for
+-- the glide to settle before snapping and measuring -- measuring against a
+-- still-coasting camera is how you end up facing away from the target.
+local SWEEP_FRACTION = 0.7
+local SETTLE_DELAY = 0.4
 
 -- Positive relative bearing = target to the RIGHT (Beacon's convention).
 -- Verified in game: MoveViewLeftStart yaws the character's facing RIGHT
@@ -101,16 +108,16 @@ local function sweepStep()
     end
     state.sweeps = state.sweeps + 1
 
-    -- Sweep the camera by the remaining angle at the speed we set; the
-    -- character follows at the next snap.
+    -- Sweep the camera toward the target, aiming short; the character
+    -- follows at the next snap, after the glide settles.
     if relative > 0 then
         CAMERA_RIGHT_START(1)
     else
         CAMERA_LEFT_START(1)
     end
-    C_Timer.After(math.abs(relative) / YAW_SPEED, function()
+    C_Timer.After((math.abs(relative) * SWEEP_FRACTION) / YAW_SPEED, function()
         stopCamera()
-        sweepStep()
+        C_Timer.After(SETTLE_DELAY, sweepStep)
     end)
 end
 
