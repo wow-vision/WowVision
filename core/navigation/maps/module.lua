@@ -48,6 +48,21 @@ local arrivalRanges = {
     { key = "arrivalMedium", label = L["Medium Range"], default = 3 },
     { key = "arrivalLong", label = L["Long Range"], default = 5 },
 }
+-- Which of the three is active: a dropdown above the sliders, also cycled
+-- in the field by the Alt-P binding.
+settings:add({
+    key = "arrivalRange",
+    type = "Choice",
+    label = L["Arrival Radius"],
+    default = 2,
+    choices = (function()
+        local choices = {}
+        for index, range in ipairs(arrivalRanges) do
+            tinsert(choices, { label = range.label, value = index })
+        end
+        return choices
+    end)(),
+})
 for _, range in ipairs(arrivalRanges) do
     settings:add({
         key = range.key,
@@ -58,8 +73,6 @@ for _, range in ipairs(arrivalRanges) do
         max = 20,
     })
 end
--- Which of the three is active (1..3); cycled by key, not the settings UI.
-settings:add({ key = "arrivalRange", type = "Number", default = 2, showInUI = false })
 
 function module:arrivalDistance()
     local range = arrivalRanges[self.settings.arrivalRange] or arrivalRanges[2]
