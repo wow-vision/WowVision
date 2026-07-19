@@ -18,12 +18,20 @@ local L = module.L
 -- camera speed CVar.
 
 local YAW_SPEED = 400 -- cameraYawMoveSpeed while sweeping
--- The MoveView argument MULTIPLIES the cvar speed (Sku passes 4): effective
--- sweep = factor * cvar. Calibration measures the truth either way.
-local SWEEP_FACTOR = 4
-local ASSUMED_SPEED = YAW_SPEED * SWEEP_FACTOR -- until the fit takes over
+-- The MoveView argument MULTIPLIES the cvar speed. But sweep length has a
+-- FLOOR: timers and the stop land on frame boundaries, so the shortest
+-- possible sweep covers a frame or two of rotation -- ~95 degrees at the
+-- 4x factor (measured). So: TWO TIERS. Big turns sweep fast; turns below
+-- the fast tier's floor sweep at 1x, whose floor is a few degrees. Each
+-- tier calibrates independently.
+local TIERS = {
+    fast = { factor = 4, assumedSpeed = 1600, assumedCoast = 72 },
+    slow = { factor = 1, assumedSpeed = 400, assumedCoast = 10 },
+}
+-- Use the fast tier only when the angle clears its floor with margin.
+local FAST_THRESHOLD = 130
 -- Changing the sweep setup invalidates stored calibrations.
-local CALIBRATION_VERSION = 2
+local CALIBRATION_VERSION = 3
 local TOLERANCE = 3 -- degrees: already facing it, skip the sweep
 -- MoveViewStop does not halt instantly: the camera eases out past the
 -- stop, so after stopping we wait for the glide to settle before the final
@@ -54,7 +62,7 @@ local sweepAimed
 -- ---------------------------------------------------------------------------
 
 local samples = {}
-local calibration = nil -- { speed, coast }
+local calibrations = { fast = nil, slow = nil } -- tier -> { speed, coast }
 
 local function wrapDegrees(value)
     while value > 180 do
@@ -66,41 +74,48 @@ local function wrapDegrees(value)
     return value
 end
 
-local function recordSample(duration, turned, startFacing, endFacing)
-    tinsert(samples, { duration = duration, turned = turned, startFacing = startFacing, endFacing = endFacing })
-    if #samples > 50 then
-        tremove(samples, 1)
-    end
-    local usable = 0
+local function fitTier(tier)
+    local n, sumX, sumY, sumXY, sumXX = 0, 0, 0, 0, 0
     for _, sample in ipairs(samples) do
-        if sample.turned ~= nil and sample.turned >= 1 then
-            usable = usable + 1
+        if sample.tier == tier and sample.turned ~= nil and sample.turned >= 1 then
+            n = n + 1
+            sumX = sumX + sample.duration
+            sumY = sumY + sample.turned
+            sumXY = sumXY + sample.duration * sample.turned
+            sumXX = sumXX + sample.duration * sample.duration
         end
     end
-    if usable < 3 then
+    if n < 3 then
         return
-    end
-    local n, sumX, sumY, sumXY, sumXX = #samples, 0, 0, 0, 0
-    for _, sample in ipairs(samples) do
-        sumX = sumX + sample.duration
-        sumY = sumY + sample.turned
-        sumXY = sumXY + sample.duration * sample.turned
-        sumXX = sumXX + sample.duration * sample.duration
     end
     local denom = n * sumXX - sumX * sumX
     if math.abs(denom) < 1e-6 then
-        return -- all samples the same size; no usable spread
+        return -- no usable spread
     end
     local speed = (n * sumXY - sumX * sumY) / denom
     local coast = (sumY - speed * sumX) / n
     -- Sanity clamp: reject nonsense fits rather than aiming with them.
-    if speed > 100 and speed < 4000 and coast > -30 and coast < 120 then
-        calibration = { speed = speed, coast = coast }
+    if speed > 50 and speed < 4000 and coast > -30 and coast < 150 then
+        calibrations[tier] = { speed = speed, coast = coast }
         -- Persist so calibration survives reloads (hidden settings).
-        module.settings.turnSpeed = speed
-        module.settings.turnCoast = coast
+        module.settings["turnSpeed_" .. tier] = speed
+        module.settings["turnCoast_" .. tier] = coast
         module.settings.turnCalVersion = CALIBRATION_VERSION
     end
+end
+
+local function recordSample(tier, duration, turned, startFacing, endFacing)
+    tinsert(samples, {
+        tier = tier,
+        duration = duration,
+        turned = turned,
+        startFacing = startFacing,
+        endFacing = endFacing,
+    })
+    if #samples > 60 then
+        tremove(samples, 1)
+    end
+    fitTier(tier)
 end
 
 local function snapCharacterToCamera()
@@ -197,14 +212,21 @@ sweepAimed = function(state)
     state.startFacing = math.deg(GetPlayerFacing() or 0)
     state.requested = relative
 
+    -- Pick the tier: fast only when the angle clears the fast floor.
+    local angle = math.abs(relative)
+    local tierName = angle >= FAST_THRESHOLD and "fast" or "slow"
+    local tier = TIERS[tierName]
+    state.tier = tierName
+
     -- One sweep toward the target; the character follows at the final
-    -- snap after the glide settles. Aim with the measured calibration when
-    -- one exists, else the constants.
+    -- snap after the glide settles. Aim with the tier's measured
+    -- calibration when one exists, else its assumptions.
+    local calibration = calibrations[tierName]
     local duration
     if calibration ~= nil then
-        duration = (math.abs(relative) - calibration.coast) / calibration.speed
+        duration = (angle - calibration.coast) / calibration.speed
     else
-        duration = math.abs(relative) / ASSUMED_SPEED - GLIDE_ALLOWANCE
+        duration = (angle - tier.assumedCoast) / tier.assumedSpeed
     end
     if duration < 0.02 then
         duration = 0.02
@@ -212,9 +234,9 @@ sweepAimed = function(state)
     state.duration = duration
 
     if relative > 0 then
-        CAMERA_RIGHT_START(SWEEP_FACTOR)
+        CAMERA_RIGHT_START(tier.factor)
     else
-        CAMERA_LEFT_START(SWEEP_FACTOR)
+        CAMERA_LEFT_START(tier.factor)
     end
     C_Timer.After(duration, function()
         stopCamera()
@@ -231,7 +253,7 @@ sweepAimed = function(state)
                 end
                 local endFacing = math.deg(GetPlayerFacing() or 0)
                 local turned = math.abs(wrapDegrees((current.startFacing or 0) - endFacing))
-                recordSample(current.duration, turned, current.startFacing, endFacing)
+                recordSample(current.tier, current.duration, turned, current.startFacing, endFacing)
                 finishTurn(true)
             end)
         end)
@@ -263,16 +285,20 @@ module:registerCommand({
     description = "Show turn-to-waypoint calibration samples",
     func = function()
         local lines = {}
-        if calibration ~= nil then
-            tinsert(lines, string.format("fit: speed %.1f deg/s, coast %.1f deg", calibration.speed, calibration.coast))
-        else
-            tinsert(lines, "fit: none yet (need 3+ samples of different sizes)")
+        for tierName, tier in pairs(TIERS) do
+            local calibration = calibrations[tierName]
+            if calibration ~= nil then
+                tinsert(lines, string.format("%s fit: speed %.1f deg/s, coast %.1f deg", tierName, calibration.speed, calibration.coast))
+            else
+                tinsert(lines, string.format("%s fit: none yet (assumed %d deg/s, %d coast)", tierName, tier.assumedSpeed, tier.assumedCoast))
+            end
         end
-        tinsert(lines, string.format("constants: speed %d, allowance %.2f, settle %.2f", YAW_SPEED, GLIDE_ALLOWANCE, SETTLE_DELAY))
+        tinsert(lines, string.format("fast threshold: %d deg, settle %.2f", FAST_THRESHOLD, SETTLE_DELAY))
         for i, sample in ipairs(samples) do
             tinsert(lines, string.format(
-                "%d: duration %.3fs -> turned %.1f deg (facing %.1f -> %.1f)",
+                "%d [%s]: duration %.3fs -> turned %.1f deg (facing %.1f -> %.1f)",
                 i,
+                sample.tier or "?",
                 sample.duration or -1,
                 sample.turned or -1,
                 sample.startFacing or -1,
@@ -287,8 +313,10 @@ module:registerCommand({
 -- Persisted calibration (hidden from the settings screen); restored on
 -- enable so a reload keeps aiming with measured numbers.
 local settings = module:hasSettings()
-settings:add({ key = "turnSpeed", type = "Number", persist = true, showInUI = false })
-settings:add({ key = "turnCoast", type = "Number", persist = true, showInUI = false })
+settings:add({ key = "turnSpeed_fast", type = "Number", persist = true, showInUI = false })
+settings:add({ key = "turnCoast_fast", type = "Number", persist = true, showInUI = false })
+settings:add({ key = "turnSpeed_slow", type = "Number", persist = true, showInUI = false })
+settings:add({ key = "turnCoast_slow", type = "Number", persist = true, showInUI = false })
 settings:add({ key = "turnCalVersion", type = "Number", persist = true, showInUI = false })
 
 local turnToEnableParent = module.onFullEnable
@@ -296,16 +324,14 @@ function module:onFullEnable(...)
     if turnToEnableParent ~= nil then
         turnToEnableParent(self, ...)
     end
-    local speed = self.settings.turnSpeed
-    local coast = self.settings.turnCoast
-    if
-        self.settings.turnCalVersion == CALIBRATION_VERSION
-        and speed ~= nil
-        and coast ~= nil
-        and speed > 100
-        and speed < 4000
-    then
-        calibration = { speed = speed, coast = coast }
+    if self.settings.turnCalVersion == CALIBRATION_VERSION then
+        for tierName in pairs(TIERS) do
+            local speed = self.settings["turnSpeed_" .. tierName]
+            local coast = self.settings["turnCoast_" .. tierName]
+            if speed ~= nil and coast ~= nil and speed > 50 and speed < 4000 then
+                calibrations[tierName] = { speed = speed, coast = coast }
+            end
+        end
     end
 end
 
