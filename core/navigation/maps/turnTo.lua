@@ -14,8 +14,9 @@ local L = module.L
 -- MEASURE the error and run up to two short corrective sweeps -- Sku aims
 -- once, open loop, with a hard-coded five-degree fudge; we converge.
 --
--- Any commanded movement or turning aborts immediately and restores the
--- camera speed CVar.
+-- Manual turn keys abort immediately and restore the camera speed CVar;
+-- translation (running, strafing) is allowed -- turning on the move works,
+-- at reduced accuracy, and such turns are excluded from calibration.
 
 local YAW_SPEED = 400 -- cameraYawMoveSpeed while sweeping
 -- The MoveView argument MULTIPLIES the cvar speed. But sweep length has a
@@ -163,9 +164,21 @@ local function finishTurn(announce)
     end
 end
 
+-- Moving is ALLOWED during a turn (hold W and hit the key to curve toward
+-- the waypoint, like Sku) -- it just costs accuracy, since the bearing
+-- shifts under us mid-sweep. Only the manual turn keys abort: they fight
+-- the camera sweep directly.
 local function playerInterfered()
     local flags = WowVision.movement.flags
-    return WowVision.movement:isTranslating() or flags.turnLeft or flags.turnRight
+    return flags.turnLeft or flags.turnRight
+end
+
+-- Turns taken while moving skip calibration: the follow-camera and the
+-- shifting bearing corrupt the duration-to-degrees measurement.
+local function noteMovement(state)
+    if WowVision.movement:isTranslating() then
+        state.moved = true
+    end
 end
 
 -- The mouselook flicker applies its facing change on the NEXT frame, not
@@ -184,6 +197,7 @@ local function sweepStep()
         finishTurn(false)
         return
     end
+    noteMovement(state)
 
     snapCharacterToCamera()
     C_Timer.After(SNAP_LATENCY, function()
@@ -199,6 +213,7 @@ sweepAimed = function(state)
         finishTurn(false)
         return
     end
+    noteMovement(state)
     local relative = relativeBearing(state.waypoint.x, state.waypoint.y)
     if relative == nil then
         finishTurn(false)
@@ -251,9 +266,12 @@ sweepAimed = function(state)
                 if turning ~= current then
                     return
                 end
+                noteMovement(current)
                 local endFacing = math.deg(GetPlayerFacing() or 0)
                 local turned = math.abs(wrapDegrees((current.startFacing or 0) - endFacing))
-                recordSample(current.tier, current.duration, turned, current.startFacing, endFacing)
+                if not current.moved then
+                    recordSample(current.tier, current.duration, turned, current.startFacing, endFacing)
+                end
                 finishTurn(true)
             end)
         end)
