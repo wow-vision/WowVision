@@ -266,6 +266,7 @@ local parseOnly = {
     "core/movement.lua",
     "core/navigation/walls.lua",
     "core/navigation/falling.lua",
+    "core/navigation/maps/turnTo.lua",
     "core/navigation/maps/module.lua",
     "core/navigation/maps/Beacon.lua",
     "core/navigation/maps/Path.lua",

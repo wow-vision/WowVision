@@ -1,7 +1,7 @@
 ## Title: WowVision
 ## Version: @project-version@
 ## Author: bradjrenshaw
-## Interface: 11507
+## Interface: 11508
 ## OptionalDeps: Sku
 ## Notes: Provides accessibility for the visually impaired.
 ## SavedVariablesPerCharacter: WowVisionDB
