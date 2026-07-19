@@ -59,12 +59,18 @@ local function wrapDegrees(value)
     return value
 end
 
-local function recordSample(duration, turned)
-    tinsert(samples, { duration = duration, turned = turned })
+local function recordSample(duration, turned, startFacing, endFacing)
+    tinsert(samples, { duration = duration, turned = turned, startFacing = startFacing, endFacing = endFacing })
     if #samples > 50 then
         tremove(samples, 1)
     end
-    if #samples < 3 then
+    local usable = 0
+    for _, sample in ipairs(samples) do
+        if sample.turned ~= nil and sample.turned >= 1 then
+            usable = usable + 1
+        end
+    end
+    if usable < 3 then
         return
     end
     local n, sumX, sumY, sumXY, sumXX = #samples, 0, 0, 0, 0
@@ -189,11 +195,10 @@ local function sweepStep()
             snapCharacterToCamera()
             local endFacing = math.deg(GetPlayerFacing() or 0)
             -- Only the MAGNITUDE matters for calibration (the sweep itself
-            -- owns direction; sign conventions here burned us once already).
-            local turned = math.abs(wrapDegrees(current.startFacing - endFacing))
-            if turned >= 1 then
-                recordSample(current.duration, turned)
-            end
+            -- owns direction). Record EVERY turn, raw facings included, so
+            -- the log shows exactly what was measured.
+            local turned = math.abs(wrapDegrees((current.startFacing or 0) - endFacing))
+            recordSample(current.duration, turned, current.startFacing, endFacing)
             finishTurn(true)
         end)
     end)
@@ -231,7 +236,14 @@ module:registerCommand({
         end
         tinsert(lines, string.format("constants: speed %d, allowance %.2f, settle %.2f", YAW_SPEED, GLIDE_ALLOWANCE, SETTLE_DELAY))
         for i, sample in ipairs(samples) do
-            tinsert(lines, string.format("%d: duration %.3fs -> turned %.1f deg", i, sample.duration, sample.turned))
+            tinsert(lines, string.format(
+                "%d: duration %.3fs -> turned %.1f deg (facing %.1f -> %.1f)",
+                i,
+                sample.duration or -1,
+                sample.turned or -1,
+                sample.startFacing or -1,
+                sample.endFacing or -1
+            ))
         end
         WowVision.testing.showResults(table.concat(lines, string.char(10)))
         WowVision:speak(#samples .. " samples. " .. lines[1])
