@@ -37,6 +37,7 @@ local CAMERA_RIGHT_START = MoveViewLeftStart
 local CAMERA_LEFT_START = MoveViewRightStart
 
 local turning = nil -- { waypoint, savedYawSpeed, startFacing, requested, duration }
+local sweepAimed
 
 -- ---------------------------------------------------------------------------
 -- Self-calibration: every completed turn records (commanded duration,
@@ -142,6 +143,13 @@ local function playerInterfered()
     return WowVision.movement:isTranslating() or flags.turnLeft or flags.turnRight
 end
 
+-- The mouselook flicker applies its facing change on the NEXT frame, not
+-- synchronously -- reading GetPlayerFacing right after the snap returns the
+-- old value (proven by calibration logs with identical start and end
+-- facings while the character visibly turned). Every measurement therefore
+-- waits a beat after its snap.
+local SNAP_LATENCY = 0.05
+
 local function sweepStep()
     local state = turning
     if state == nil then
@@ -153,6 +161,19 @@ local function sweepStep()
     end
 
     snapCharacterToCamera()
+    C_Timer.After(SNAP_LATENCY, function()
+        if turning ~= state then
+            return
+        end
+        sweepAimed(state)
+    end)
+end
+
+sweepAimed = function(state)
+    if playerInterfered() then
+        finishTurn(false)
+        return
+    end
     local relative = relativeBearing(state.waypoint.x, state.waypoint.y)
     if relative == nil then
         finishTurn(false)
@@ -193,13 +214,16 @@ local function sweepStep()
                 return
             end
             snapCharacterToCamera()
-            local endFacing = math.deg(GetPlayerFacing() or 0)
-            -- Only the MAGNITUDE matters for calibration (the sweep itself
-            -- owns direction). Record EVERY turn, raw facings included, so
-            -- the log shows exactly what was measured.
-            local turned = math.abs(wrapDegrees((current.startFacing or 0) - endFacing))
-            recordSample(current.duration, turned, current.startFacing, endFacing)
-            finishTurn(true)
+            -- The snap lands next frame; measure after it has.
+            C_Timer.After(SNAP_LATENCY, function()
+                if turning ~= current then
+                    return
+                end
+                local endFacing = math.deg(GetPlayerFacing() or 0)
+                local turned = math.abs(wrapDegrees((current.startFacing or 0) - endFacing))
+                recordSample(current.duration, turned, current.startFacing, endFacing)
+                finishTurn(true)
+            end)
         end)
     end)
 end
