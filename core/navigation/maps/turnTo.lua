@@ -138,6 +138,6 @@ module:registerBinding({
     type = "Script",
     key = "maps/turnToWaypoint",
     label = L["Turn to Waypoint"],
-    inputs = { "CTRL-F10" },
+    inputs = { "I" },
     script = "/run WowVision.base.navigation.maps:turnToWaypoint()",
 })
