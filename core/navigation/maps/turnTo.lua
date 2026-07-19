@@ -18,14 +18,11 @@ local L = module.L
 -- camera speed CVar.
 
 local YAW_SPEED = 240 -- degrees/second while sweeping (via cameraYawMoveSpeed)
-local TOLERANCE = 3 -- degrees: close enough to stop iterating
-local MAX_SWEEPS = 5
--- MoveViewStop does not halt instantly: the camera eases out, coasting well
--- past the stop. So each sweep deliberately aims SHORT (the loop converges
--- from one side instead of overshooting), and after stopping we wait for
--- the glide to settle before snapping and measuring -- measuring against a
--- still-coasting camera is how you end up facing away from the target.
-local SWEEP_FRACTION = 0.7
+local TOLERANCE = 3 -- degrees: already facing it, skip the sweep
+-- MoveViewStop does not halt instantly: the camera eases out past the
+-- stop, so after stopping we wait for the glide to settle before the final
+-- snap. Corrective re-sweeps are disabled for now: single sweep, settle,
+-- snap, done.
 local SETTLE_DELAY = 0.4
 
 -- Positive relative bearing = target to the RIGHT (Beacon's convention).
@@ -102,22 +99,27 @@ local function sweepStep()
         finishTurn(false)
         return
     end
-    if math.abs(relative) <= TOLERANCE or state.sweeps >= MAX_SWEEPS then
+    if math.abs(relative) <= TOLERANCE then
         finishTurn(true)
         return
     end
-    state.sweeps = state.sweeps + 1
 
-    -- Sweep the camera toward the target, aiming short; the character
-    -- follows at the next snap, after the glide settles.
+    -- One sweep toward the target; the character follows at the final
+    -- snap after the glide settles.
     if relative > 0 then
         CAMERA_RIGHT_START(1)
     else
         CAMERA_LEFT_START(1)
     end
-    C_Timer.After((math.abs(relative) * SWEEP_FRACTION) / YAW_SPEED, function()
+    C_Timer.After(math.abs(relative) / YAW_SPEED, function()
         stopCamera()
-        C_Timer.After(SETTLE_DELAY, sweepStep)
+        C_Timer.After(SETTLE_DELAY, function()
+            if turning == nil then
+                return
+            end
+            snapCharacterToCamera()
+            finishTurn(true)
+        end)
     end)
 end
 
@@ -133,7 +135,6 @@ function module:turnToWaypoint()
     end
     turning = {
         waypoint = waypoint,
-        sweeps = 0,
         savedYawSpeed = GetCVar("cameraYawMoveSpeed"),
     }
     SetCVar("cameraYawMoveSpeed", YAW_SPEED)
