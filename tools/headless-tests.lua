@@ -60,6 +60,8 @@ loadAddonFile("core/colors/names.lua")
 loadAddonFile("core/colors/colors.lua")
 loadAddonFile("core/colors/tests.lua")
 loadAddonFile("core/ClassTests.lua")
+loadAddonFile("core/errors/utils.lua")
+loadAddonFile("core/errors/tests.lua")
 
 -- The component registry and the systems above it, all on the class library.
 loadAddonFile("core/Registry.lua")
@@ -212,7 +214,7 @@ local parseOnly = {
     "core/ui/Window.lua",
     "core/ui/WindowManager.lua",
     "core/windows/GameMenu.lua",
-    "core/errors.lua",
+    "core/errors/module.lua",
     "core/ui modules/graphBindings.lua",
     "core/buffers/module.lua",
     "core/windows/options/ui.lua",
