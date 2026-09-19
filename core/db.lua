@@ -59,7 +59,10 @@ local migrations = {
     {
         version = 1,
         migrate = function(db)
-            db.submodules.buffers.data = nil
+            local buffers = db.submodules and db.submodules.buffers
+            if buffers ~= nil then
+                buffers.data = nil
+            end
         end,
     },
     {
@@ -68,7 +71,9 @@ local migrations = {
             if db.bindings == nil then
                 db.bindings = {}
             end
-            migrateBindings(db.submodules, db.bindings)
+            if db.submodules ~= nil then
+                migrateBindings(db.submodules, db.bindings)
+            end
         end,
     },
 }

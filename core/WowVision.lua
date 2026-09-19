@@ -29,7 +29,10 @@ function WowVision:OnInitialize()
         globalSeeded = WowVisionGlobalDB ~= nil and WowVisionGlobalDB._seeded == true,
         trigger = tostring(self.baseName),
     }
-    if WowVisionDB == nil or WowVision.profiles ~= nil then
+    -- An AceDB-shaped store (profileKeys/profiles) is from WowVision 0.3 and
+    -- earlier; nothing in it maps onto the current layout, and migrating it
+    -- crashes, so it starts fresh.
+    if WowVisionDB == nil or WowVisionDB.profiles ~= nil then
         WowVisionDB = {}
     end
     self.db = WowVision.dbManager:beginReconcile(defaultDB, WowVisionDB)

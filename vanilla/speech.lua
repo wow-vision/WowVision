@@ -5,15 +5,24 @@ function SpeechStyle:initialize(config)
     self.module = config.module
 end
 
+-- Patch 12.0.0, ported to Classic Era 1.15.9, removed the destination
+-- argument: SpeakText(voiceID, text, rate, volume [, overlap]). Enum.
+-- VoiceTtsDestination is gone with it. overlap is left at its default
+-- (false), which queues like the old QueuedLocalPlayback destination did.
 function SpeechStyle:output(text)
     local text = string.gsub(text, "/", " / ")
-    local destination = Enum.VoiceTtsDestination.QueuedLocalPlayback
+    -- Volume above 100 silences TTS entirely, so clamp it.
+    local volume = self.module.settings.speechVolume or 100
+    if volume < 0 then
+        volume = 0
+    elseif volume > 100 then
+        volume = 100
+    end
     C_VoiceChat.SpeakText(
         self.module.settings.voiceID,
-        text,
-        destination,
+        WowVision.ttsCacheBust.bust(text),
         self.module.settings.speechRate,
-        self.module.settings.speechVolume
+        volume
     )
 end
 

@@ -37,9 +37,10 @@ end
 
 -- Replacement for C_VoiceChat.SpeakText that routes all TTS through our queue.
 -- Blizzard's own queueing (the overlap arg) is the thing we are replacing, so it
--- is intentionally ignored.
+-- is intentionally ignored. Other callers' text gets the cache-buster too (see
+-- core/ttsCacheBust.lua); ours arrives already busted and passes through.
 local function queuedSpeak(id, text, rate, volume, overlap)
-    enqueue(id, text, rate, volume)
+    enqueue(id, WowVision.ttsCacheBust.bustForeign(text), rate, volume)
 end
 
 -- Install or remove the global queue depending on the setting. When disabled we
@@ -147,7 +148,8 @@ function module:speak(text)
     end
     -- Route through the (possibly replaced) global so the Speech Queue setting is
     -- the single switch: when on, this hits our queue; when off, Blizzard's
-    -- original SpeakText runs directly.
+    -- original SpeakText runs directly. Busted here so both paths get it.
+    text = WowVision.ttsCacheBust.bust(text)
     C_VoiceChat.SpeakText(self.settings.voiceID, text, self.settings.speechRate, volume, false)
 end
 
