@@ -425,6 +425,11 @@ local function printLines(lines)
 end
 
 function module:handleCommand(args)
+    -- The probe reads the game's own APIs, with or without a source.
+    if args:match("^%s*probe") then
+        self:runProbe()
+        return
+    end
     local lines = {}
     if not self:hasSource() then
         tinsert(lines, L["No quest data source"])
@@ -512,7 +517,7 @@ end
 module:registerCommand({
     name = "quests",
     scope = "WowVision",
-    description = "Quest data check. Usage: /wv quests near, /wv quests log, /wv quests go questId [start|objectives|finish]",
+    description = "Quest data check. Usage: /wv quests near, /wv quests log, /wv quests go questId [start|objectives|finish], /wv quests probe (every quest and map point API, one report)",
     func = function(args)
         module:handleCommand(args or "")
     end,
