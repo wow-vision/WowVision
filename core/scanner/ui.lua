@@ -62,7 +62,7 @@ local function beaconTo(node)
     if m == nil then
         return
     end
-    m:beaconTo(node.x, node.y, node.label)
+    m:beaconTo(node.x, node.y, node.label, node.onArrive)
     WowVision.UIHost:closeWindow(WINDOW)
 end
 
@@ -92,6 +92,15 @@ local function pushDetails(node)
 end
 
 local function vtableFor(node, screen, id)
+    if node.toggle ~= nil then
+        local vtable = nodes.toggle({ label = node.label, get = node.toggle.get, set = node.toggle.set })
+        if node.details ~= nil then
+            vtable.onSecondary = function()
+                pushDetails(node)
+            end
+        end
+        return vtable
+    end
     local announcements = { { text = node.label, kind = kinds.label } }
     if node.detail ~= nil then
         tinsert(announcements, { text = node.detail, kind = kinds.value })

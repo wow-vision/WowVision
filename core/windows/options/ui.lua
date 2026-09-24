@@ -264,6 +264,36 @@ local function unimplementedRow(builder, id, template)
     builder:addItem(id, nodes.text({ label = "Setting type " .. tostring(template) .. " not implemented" }))
 end
 
+-- Social's Discord sign-in row computes its caption, tooltip and enabled
+-- state through C_Discord.IsUserOAuthed, which is protected: calling any of
+-- them from addon code is ADDON_ACTION_FORBIDDEN (pcall does not stop it),
+-- and so is evaluating the modify predicate of the display-name row under
+-- it. Blizzard writes the caption onto the button itself, so the sign-in
+-- state is read from there and remembered for the child row.
+local DISCORD_AUTH_TAG = "SOCIAL_ENABLE_DISCORD_FUNCTIONALITY"
+local discordSignedIn = nil
+
+local function isDiscordAuth(elementData)
+    local d = elementData ~= nil and dataOf(elementData) or nil
+    return d ~= nil and d.newTagID == DISCORD_AUTH_TAG
+end
+
+local function readDiscordSignedIn(helpers)
+    local caption = frameChildText(helpers, "Button")()
+    if caption ~= nil and caption ~= "" then
+        discordSignedIn = caption == SOCIAL_DISCORD_DISCONNECT
+    end
+    return discordSignedIn
+end
+
+local function discordAuthTooltip(helpers)
+    local text = OPTION_TOOLTIP_SOCIAL_ENABLE_DISCORD_FUNCTIONALITY
+    if readDiscordSignedIn(helpers) then
+        text = OPTION_TOOLTIP_SOCIAL_DISCONNECT_DISCORD
+    end
+    return { type = "Text", text = text or "" }
+end
+
 -- Whether a row is enabled, per Blizzard's own rule (SettingsControlMixin:
 -- IsEnabled): the initializer's modify predicates all hold -- a child
 -- setting greys out while its parent checkbox is off. Rows without
@@ -271,6 +301,12 @@ end
 local function rowEnabled(elementData)
     if elementData == nil or elementData.EvaluateModifyPredicates == nil then
         return true
+    end
+    if isDiscordAuth(elementData) then
+        return discordSignedIn ~= true
+    end
+    if isDiscordAuth(elementData.parentInitializer) then
+        return discordSignedIn == true
     end
     local ok, enabled = pcall(elementData.EvaluateModifyPredicates, elementData)
     return not ok or enabled ~= false
@@ -386,7 +422,8 @@ end
 
 -- A button within a row, secure-clicked. Labels may read from the frame:
 -- these are secondary nodes reached by moving within an already-scrolled row.
-local function rowButtonNode(elementData, helpers, label, childKey)
+-- `tooltip` overrides the row's own tooltip (see the Discord row).
+local function rowButtonNode(elementData, helpers, label, childKey, tooltip)
     return {
         controlType = graph.controlTypes.button,
         announcements = { { text = label, kind = kinds.label }, disabledPart(elementData) },
@@ -401,7 +438,7 @@ local function rowButtonNode(elementData, helpers, label, childKey)
         onFocus = helpers.onFocus,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
-        tooltip = rowTooltip(elementData),
+        tooltip = tooltip or rowTooltip(elementData),
     }
 end
 
@@ -628,13 +665,19 @@ settingEmitters["SettingsAudioLocaleTemplate"] = settingEmitters["SettingsDropdo
 -- name (Blizzard registers several that way). The caption lives in the
 -- row data as text or a function, so it reads even before the row frame
 -- exists; the frame's button text is the last resort.
+-- Social's Discord sign-in row: see discordSignedIn above.
 settingEmitters["SettingButtonControlTemplate"] = function(builder, elementData, index, helpers)
+    local discordAuth = isDiscordAuth(elementData)
     local label = function()
         local d = dataOf(elementData) or {}
         local caption = d.buttonText
         if type(caption) == "function" then
-            local ok, text = pcall(caption)
-            caption = ok and text or nil
+            if discordAuth then
+                caption = nil
+            else
+                local ok, text = pcall(caption)
+                caption = ok and text or nil
+            end
         end
         if caption == nil or caption == "" then
             caption = frameChildText(helpers, "Button")()
@@ -645,7 +688,8 @@ settingEmitters["SettingButtonControlTemplate"] = function(builder, elementData,
         end
         return name or caption
     end
-    builder:addItem(helpers.id, rowButtonNode(elementData, helpers, label, "Button"))
+    local tooltip = discordAuth and discordAuthTooltip(helpers) or nil
+    builder:addItem(helpers.id, rowButtonNode(elementData, helpers, label, "Button", tooltip))
 end
 
 settingEmitters["VoiceTestMicrophoneTemplate"] = function(builder, elementData, index, helpers)
@@ -1245,19 +1289,15 @@ local function render(builder, screen)
         builder:popContext()
     end
 
+    -- Focus the real search box and let the player type into it: a SetText
+    -- from addon code runs the panel's OnTextChanged search tainted, and the
+    -- rebuilt result rows then hit protected calls (C_Discord.IsUserOAuthed
+    -- in the Social category) -> ADDON_ACTION_FORBIDDEN.
     if frame.SearchBox ~= nil then
         builder:beginStop("search")
         builder:addItem(
             ControlId.structural("search"),
-            nodes.textInput({
-                label = L["Search"],
-                get = function()
-                    return frame.SearchBox:GetText()
-                end,
-                set = function(text)
-                    frame.SearchBox:SetText(text or "")
-                end,
-            })
+            nodes.proxyEditBox({ editBox = frame.SearchBox, label = L["Search"] })
         )
     end
 

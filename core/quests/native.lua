@@ -39,6 +39,7 @@ function Native:initialize()
     self._linesByMap = {}
     self._byQuest = {}
     self._requested = {}
+    self._requestedAt = {}
     self._updated = {}
     self._pois = nil
     self._worldCache = {}
@@ -136,6 +137,7 @@ function Native:requestLines(mapId)
         return
     end
     self._requested[mapId] = true
+    self._requestedAt[mapId] = GetTime()
     pcall(C_QuestLine.RequestQuestLinesForMap, mapId)
 end
 
@@ -150,8 +152,22 @@ function Native:onLinesUpdated(requestRequired)
     end
 end
 
+-- Seconds after a request before an unanswered map counts as empty (the
+-- Forever server sometimes never answers).
+local LINES_TIMEOUT = 5
+
 function Native:linesReady(mapId)
-    return mapId ~= nil and (self._updated[mapId] == true or #self:_lines(mapId) > 0)
+    if mapId == nil then
+        return false
+    end
+    if self._updated[mapId] == true or #self:_lines(mapId) > 0 then
+        return true
+    end
+    if quests.seen:hasGivers() then
+        return true
+    end
+    local requestedAt = self._requestedAt[mapId]
+    return requestedAt ~= nil and GetTime() - requestedAt > LINES_TIMEOUT
 end
 
 function Native:_lines(mapId)
@@ -232,7 +248,32 @@ function Native:nearbyQuests(opts)
             end
         end
     end
+    self:_addSeenGivers(result, ctx)
     return cap(sortByDistance(result), opts.maxCount)
+end
+
+-- Quest givers seen this session (see seen.lua), for maps where the
+-- server sends no quest offers; where it does, those already cover them
+-- and would only be listed twice.
+function Native:_addSeenGivers(result, ctx)
+    if #self:_lines(ctx.mapId) > 0 then
+        return
+    end
+    for _, giver in ipairs(quests.seen:givers()) do
+        local spawn = { mapId = giver.mapId, x = giver.x, y = giver.y, wx = giver.wx, wy = giver.wy, continent = giver.continent }
+        local starter = singleTarget("seenGiver", giver.guid, giver.name, spawn, ctx)
+        starter.subName = giver.subName
+        starter.onArrive = giver.onArrive
+        tinsert(result, {
+            seenGiver = true,
+            name = giver.name,
+            status = giver.status,
+            flag = giver.flag,
+            indoors = giver.indoors,
+            starter = starter,
+            distance = starter.distance,
+        })
+    end
 end
 
 -- ---- quests in progress ----
