@@ -37,18 +37,45 @@ local function isWhite(color)
     return type(color) == "table" and color.r ~= nil and color.r > 0.9 and color.g > 0.9 and color.b > 0.9
 end
 
+local function channels(code)
+    return tonumber(code:sub(1, 2), 16), tonumber(code:sub(3, 4), 16), tonumber(code:sub(5, 6), 16)
+end
+
 -- A colour code of equal grey channels ("|cffb0b0b0"): the game greys the
 -- names of dots on another level than the player (measured: NPCs inside
 -- the Northshire abbey read grey from outside, gold from inside).
 local function isGreyCode(code)
-    local r, g, b = code:sub(1, 2), code:sub(3, 4), code:sub(5, 6)
-    return r == g and g == b and tonumber(r, 16) < 0xe0
+    local r, g, b = channels(code)
+    return r == g and g == b and r < 0xe0
+end
+
+-- White text inside a gold line ("|cffffffff"): a detail under the dot
+-- before it, such as a quest objective under a quest's name.
+local function isWhiteCode(code)
+    local r, g, b = channels(code)
+    return r >= 0xe0 and g >= 0xe0 and b >= 0xe0
+end
+
+-- The colour code (6 hex digits, nil: the line's own colour) in force
+-- where a part's text starts, and the one in force after it. A code runs
+-- until its "|r", across parts.
+local function partColour(part, carried)
+    local atStart = part:match("^%s*|c%x%x(%x%x%x%x%x%x)") or carried
+    local after = carried
+    for kind, hex in part:gmatch("|([cr])(%x*)") do
+        if kind == "c" then
+            after = hex:sub(3, 8)
+        else
+            after = nil
+        end
+    end
+    return atStart, after
 end
 
 -- Tooltip data -> list of dots { name, subtitle, otherLevel }. White
--- lines are detail lines under the dot before them (never seen on Forever
--- yet, but that is the tooltip layout elsewhere), so they never become
--- dots themselves. A colour code runs until its "|r", across parts.
+-- text, a whole line or a colour code inside one, is detail under the dot
+-- before it (measured on Forever: "Quest name|cffffffff\n-Objective: 1/8|r"
+-- from quest objective tracking), so it never becomes a dot itself.
 function Scan.parseMouseover(data, isSecret)
     local dots = {}
     if type(data) ~= "table" or type(data.lines) ~= "table" then
@@ -58,12 +85,10 @@ function Scan.parseMouseover(data, isSecret)
         local text = line.leftText
         if text ~= nil and not (isSecret ~= nil and isSecret(text)) then
             local detailLine = isWhite(line.leftColor) and not isGold(line.leftColor) and #dots > 0
-            local grey = false
+            local carried = nil
             for part in tostring(text):gmatch("[^\n]+") do
-                local code = part:match("|c%x%x(%x%x%x%x%x%x)")
-                if code ~= nil then
-                    grey = isGreyCode(code)
-                end
+                local code, after = partColour(part, carried)
+                carried = after
                 local clean = trim(part:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
                 if clean ~= "" then
                     local last = dots[#dots]
@@ -71,12 +96,9 @@ function Scan.parseMouseover(data, isSecret)
                         if last ~= nil and last.subtitle == nil then
                             last.subtitle = clean:sub(2, -2)
                         end
-                    elseif not detailLine then
-                        tinsert(dots, { name = clean, otherLevel = grey })
+                    elseif not detailLine and not (code ~= nil and isWhiteCode(code)) then
+                        tinsert(dots, { name = clean, otherLevel = code ~= nil and isGreyCode(code) })
                     end
-                end
-                if part:find("|r", 1, true) then
-                    grey = false
                 end
             end
         end

@@ -52,6 +52,16 @@ testRunner:addSuite("MinimapScan", {
         t:assertEqual(names(Scan.parseMouseover(data)), "Peacebloom")
     end,
 
+    ["a white objective inside the line is detail, not a dot"] = function(t)
+        -- Quest objective tracking on, Northshire, 2026-09-24.
+        local dots = Scan.parseMouseover(tooltip(
+            "Goldhain\nStormwind\nDeputy Willem\nWölfe an der Grenze|cffffffff\n-Zähes Wolfsfleisch: 1/8|r\nMailbox"
+        ))
+        t:assertEqual(names(dots), "Goldhain,Stormwind,Deputy Willem,Wölfe an der Grenze,Mailbox")
+        t:assertFalse(dots[4].otherLevel)
+        t:assertFalse(dots[5].otherLevel)
+    end,
+
     ["grey names are on another level, until the colour ends"] = function(t)
         -- Northshire from outside the abbey, 2026-09-24.
         local dots = Scan.parseMouseover(tooltip(
