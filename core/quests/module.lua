@@ -34,6 +34,38 @@ settings:add({
     default = true,
 })
 
+-- Quest areas: the game tells us when the player enters or leaves the
+-- shaded objective area of a tracked quest (PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED,
+-- one event per quest, also in combat). We speak each one as it comes.
+local areaAlert = module:addAlert({
+    key = "questArea",
+    label = L["Quest Area Alert"],
+})
+areaAlert:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    buildMessage = function(self, message)
+        return message.text
+    end,
+})
+areaAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
+})
+settings:addRef("questAreaAlert", areaAlert.parameters)
+
+function module:onQuestArea(questId, isInside)
+    local title = C_QuestLog.GetTitleForQuestID(questId)
+    if title == nil or WowVision.isSecret(title) then
+        title = L["Unknown"]
+    end
+    local prefix = isInside and L["Entering area"] or L["Leaving area"]
+    areaAlert:fire({ text = prefix .. ": " .. title, questId = questId, inside = isInside })
+end
+
 module.updateReasons = { accepted = "accepted", updated = "updated", turnedIn = "turnedIn", abandoned = "abandoned" }
 
 module.events = {
@@ -325,8 +357,13 @@ module:registerEvent("event", "QUEST_LOG_UPDATE")
 module:registerEvent("event", "QUEST_ACCEPTED")
 module:registerEvent("event", "QUEST_TURNED_IN")
 module:registerEvent("event", "QUEST_REMOVED")
+module:registerEvent("event", "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED")
 
-function module:onEvent(event, arg1)
+function module:onEvent(event, arg1, arg2)
+    if event == "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED" then
+        self:onQuestArea(arg1, arg2)
+        return
+    end
     local adapter = self.adapter
     if adapter == nil then
         return
