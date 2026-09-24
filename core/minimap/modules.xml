@@ -5,6 +5,7 @@
   <Script file="engine.lua" />
   <Script file="module.lua" />
   <Script file="scanner.lua" />
+  <Script file="tracking.lua" />
   <Script file="tests.lua" />
 
 </Ui>

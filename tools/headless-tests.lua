@@ -263,6 +263,7 @@ local parseOnly = {
     "core/minimap/engine.lua",
     "core/minimap/module.lua",
     "core/minimap/scanner.lua",
+    "core/minimap/tracking.lua",
     "core/scanner/module.lua",
     "core/scanner/ui.lua",
     "core/scanner/providers.lua",
