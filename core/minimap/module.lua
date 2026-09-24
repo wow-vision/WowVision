@@ -512,6 +512,14 @@ function module:scanBody(task)
     task.facing = GetPlayerFacing() or 0
     local state = Engine.capture()
     task.state = state
+    -- Switching quest objective tracking reads as leaving and entering
+    -- quest areas; silent until tracking is back (cleanups run newest
+    -- first, so this one runs last).
+    local quests = WowVision.base.quests
+    quests:muteAreaAlerts(true)
+    Engine.onCleanup(function()
+        quests:muteAreaAlerts(false)
+    end)
     Engine.onCleanup(function()
         Engine.restoreFrame(state)
     end)

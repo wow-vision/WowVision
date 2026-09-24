@@ -57,7 +57,36 @@ areaAlert:addOutput({
 })
 settings:addRef("questAreaAlert", areaAlert.parameters)
 
+-- The last state spoken per quest: a repeat of it stays silent. While
+-- muted, the state from before the first muted change is kept instead,
+-- and taken over on unmuting, so events that only flip back are silent.
+local areaInside, areaBefore = {}, nil
+
+-- The minimap scanner switches tracking off and on, which the game
+-- reports as leaving and entering every quest area.
+function module:muteAreaAlerts(muted)
+    if muted then
+        areaBefore = areaBefore or {}
+        return
+    end
+    for questId, inside in pairs(areaBefore or {}) do
+        areaInside[questId] = inside
+    end
+    areaBefore = nil
+end
+
 function module:onQuestArea(questId, isInside)
+    isInside = isInside == true
+    if areaBefore ~= nil then
+        if areaBefore[questId] == nil then
+            areaBefore[questId] = not isInside
+        end
+        return
+    end
+    if areaInside[questId] == isInside then
+        return
+    end
+    areaInside[questId] = isInside
     local title = C_QuestLog.GetTitleForQuestID(questId)
     if title == nil or WowVision.isSecret(title) then
         title = L["Unknown"]
