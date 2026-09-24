@@ -4,6 +4,11 @@
 -- which a reload starts fresh (and which Forever does not keep enabled
 -- across launches). Loaded right after WowVision.lua so the frame listens
 -- from the first moment. Read with /wv taint; /wv taint clear resets.
+--
+-- Every block is recorded, but only WowVision's own are spoken: the game
+-- blames the addon whose code made the call, and other addons' blocks are
+-- theirs to fix. Macro blocks carry no addon and are always spoken
+-- (WowVision clicks through secure macros).
 
 local MAX_ENTRIES = 30
 
@@ -49,7 +54,8 @@ local function record(event, addon, func)
     while #list > MAX_ENTRIES do
         tremove(list, 1)
     end
-    if WowVision.base ~= nil and WowVision.base.speech ~= nil then
+    local ours = addon == nil or addon == "WowVision"
+    if ours and WowVision.base ~= nil and WowVision.base.speech ~= nil then
         WowVision:speak("Blocked: " .. tostring(func))
     end
 end
@@ -63,7 +69,12 @@ for _, event in ipairs({
 }) do
     pcall(frame.RegisterEvent, frame, event)
 end
-frame:SetScript("OnEvent", function(_, event, addon, func)
+frame:SetScript("OnEvent", function(_, event, ...)
+    -- Macro events carry only the function; the addon ones name the addon first.
+    local addon, func = ...
+    if event:find("^MACRO") then
+        addon, func = nil, ...
+    end
     pcall(record, event, addon, func)
 end)
 

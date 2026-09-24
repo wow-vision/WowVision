@@ -7,7 +7,7 @@ Status: a collection of known issues whose real fix is a framework change, not a
 WowVision records every blocked or forbidden protected call itself (`core/taintWatch.lua`):
 
 - It listens for `ADDON_ACTION_BLOCKED`, `ADDON_ACTION_FORBIDDEN`, `MACRO_ACTION_BLOCKED` and `MACRO_ACTION_FORBIDDEN` from load on.
-- On each one it says "Blocked: <function>". Some blocks show no popup, so this is the only signal.
+- On each block blamed on WowVision (and each macro block) it says "Blocked: <function>". Some blocks show no popup, so this is the only signal. Blocks blamed on other addons are recorded silently.
 - It keeps the last 30 in the `WowVisionDump.taint` saved variable: time, event, addon, function, the full stack, and the focused graph screen, node, row template and setting name.
 - The events fire synchronously, so the stack shows the exact code path that made the call.
 
