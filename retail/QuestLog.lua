@@ -111,6 +111,10 @@ local function emitHeader(builder, kid)
     })
 end
 
+local function isTracked(questID)
+    return questID ~= nil and C_QuestLog.GetQuestWatchType(questID) ~= nil
+end
+
 local function emitQuest(builder, kid)
     local questID = kid.questID
     builder:addItem(ControlId.structural("quest:" .. tostring(questID)), {
@@ -136,6 +140,13 @@ local function emitQuest(builder, kid)
                     return nil
                 end,
                 kind = kinds.selected,
+                live = "focus",
+            },
+            {
+                text = function()
+                    return isTracked(questID) and L["tracked"] or nil
+                end,
+                kind = kinds.value,
                 live = "focus",
             },
         },
@@ -226,8 +237,9 @@ local function renderDetails(builder, detailsFrame)
     builder:popContext()
 
     actionButton(builder, detailsFrame.AbandonButton)
-    -- Icon-only toggle, no caption of its own to read.
-    actionButton(builder, detailsFrame.TrackButton, L["Track"])
+    -- Reads the game's own caption, which flips between Track and Untrack
+    -- (spoken again after the click, like any focused part).
+    actionButton(builder, detailsFrame.TrackButton)
     actionButton(builder, detailsFrame.ShareButton)
     actionButton(builder, detailsFrame.WaypointMapButton)
 end

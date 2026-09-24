@@ -256,6 +256,7 @@ local parseOnly = {
     "core/quests/scanner.lua",
     "core/quests/places.lua",
     "core/quests/native.lua",
+    "core/quests/probe.lua",
     "core/scanner/module.lua",
     "core/scanner/ui.lua",
     "core/scanner/providers.lua",

@@ -231,6 +231,8 @@ function WowVision:registerCommands()
     -- Register the main /wv entry point (uses Ace3)
     self:RegisterChatCommand("wv", "SlashCommand")
 
+    self:registerTaintCommand()
+
     -- Register WowVision-scoped subcommands (/wv <name>)
     self.base:registerCommand({
         name = "dev",

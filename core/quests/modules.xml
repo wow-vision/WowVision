@@ -5,6 +5,7 @@
   <Script file="places.lua" />
   <Script file="native.lua" />
   <Script file="module.lua" />
+  <Script file="probe.lua" />
   <Script file="scanner.lua" />
   <Script file="tests.lua" />
 
