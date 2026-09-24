@@ -10,7 +10,8 @@ local settings = module:hasSettings()
 -- Refresh stop rebuilds it on demand). Only distance and direction are
 -- live, computed per focused node from the player's current position.
 --
--- A provider: { key, label, order?, build = function(ctx) -> nodes }
+-- A provider: { key, label, order?, optional?, build = function(ctx) -> nodes }
+-- An optional provider's category is left out while it has no nodes.
 -- ctx: { radius, maxEntries } from the settings, plus whatever the
 -- provider needs from the game.
 --
@@ -23,6 +24,8 @@ local settings = module:hasSettings()
 --   children   list of nodes, or function() -> list (built when expanded)
 --   expanded   true to start expanded on first sight
 --   onActivate function -> replaces the beacon action
+--   onArrive   function, run when the beacon Enter set arrives
+--   toggle     { get, set }: a checkbox instead; Enter flips it
 --   details    list of strings, or function -> list: Backspace opens them
 --              as a read-only child screen
 
@@ -81,12 +84,14 @@ function module:buildTree()
             geterrorhandler()(children)
             children = { { key = "error", label = L["Error"] .. " " .. tostring(children) } }
         end
-        tinsert(tree, {
-            key = provider.key,
-            label = provider.label,
-            children = children or {},
-            expanded = provider.expanded ~= false,
-        })
+        if not (provider.optional and (children == nil or #children == 0)) then
+            tinsert(tree, {
+                key = provider.key,
+                label = provider.label,
+                children = children or {},
+                expanded = provider.expanded ~= false,
+            })
+        end
     end
     return tree
 end

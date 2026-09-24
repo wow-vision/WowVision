@@ -203,14 +203,18 @@ function module:navigateToName(fragment)
     return self:navigateTo(target.id, waypoints)
 end
 
--- Straight-line beacon to a world position (no routing).
-function module:beaconTo(wx, wy, label)
+-- Straight-line beacon to a world position (no routing). onArrive, if
+-- given, runs after "Arrived" is spoken.
+function module:beaconTo(wx, wy, label, onArrive)
     local px, py = UnitPosition("player")
     local path = self.Path:new()
     path:add({ x = wx, y = wy, n = label })
     path.events.complete:subscribe(self, function()
         self.path = nil
         WowVision:speak(L["Arrived"])
+        if onArrive ~= nil then
+            onArrive()
+        end
     end)
     self:pathfind(path)
     if px ~= nil then
