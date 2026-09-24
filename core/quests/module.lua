@@ -448,17 +448,21 @@ function module:handleCommand(args)
             tinsert(lines, L["No nearby quests"])
         end
         for _, entry in ipairs(list) do
-            tinsert(
-                lines,
-                string.format(
-                    "%s, %s %s, %s, %s",
-                    entry.name,
-                    L["Level"],
-                    tostring(entry.level),
-                    describeTarget(entry.starter),
-                    tostring(entry.questId)
+            if entry.seenGiver then
+                tinsert(lines, string.format("%s, %s, %s", tostring(entry.name), L["seen"], formatDistance(entry.distance)))
+            else
+                tinsert(
+                    lines,
+                    string.format(
+                        "%s, %s %s, %s, %s",
+                        entry.name,
+                        L["Level"],
+                        tostring(entry.level),
+                        describeTarget(entry.starter),
+                        tostring(entry.questId)
+                    )
                 )
-            )
+            end
         end
     elseif word == "raw" then
         if self.adapter.debugLines ~= nil then

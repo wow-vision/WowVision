@@ -4,6 +4,7 @@
   <Script file="Adapter.lua" />
   <Script file="places.lua" />
   <Script file="native.lua" />
+  <Script file="seen.lua" />
   <Script file="module.lua" />
   <Script file="probe.lua" />
   <Script file="scanner.lua" />

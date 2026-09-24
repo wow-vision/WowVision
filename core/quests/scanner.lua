@@ -63,13 +63,19 @@ local function targetNode(target, seen)
             key = key .. ":" .. count
         end
     end
-    local node = { key = key, label = label }
+    local node = { key = key, label = label, onArrive = target.onArrive }
     if target.nearest ~= nil then
         node.x, node.y = target.nearest.wx, target.nearest.wy
     end
     local detail = {}
     if target.subName ~= nil and target.subName ~= "" then
         tinsert(detail, target.subName)
+    end
+    if target.seen then
+        tinsert(detail, L["seen"])
+    end
+    if target.indoors then
+        tinsert(detail, L["indoors"])
     end
     if #target.spawns > 1 then
         tinsert(detail, tostring(#target.spawns) .. " " .. L["spawns"])
@@ -113,6 +119,7 @@ local function pointAt(node, target)
         return node
     end
     node.x, node.y = target.nearest.wx, target.nearest.wy
+    node.onArrive = target.onArrive
     if #target.spawns > 1 then
         node.detail = (node.detail ~= nil and (node.detail .. ", ") or "")
             .. tostring(#target.spawns) .. " " .. L["spawns"]
@@ -140,8 +147,32 @@ end
 -- and when that place is an NPC with several spawns the node expands to
 -- them.
 
--- A nearby quest points at its giver.
+-- A nearby quest points at its giver. A giver only seen with the quest
+-- icon (no quest data) is the NPC itself, tagged "seen"; the minimap
+-- scanner adds whether it offers a quest or takes one in.
+local SEEN_STATUS = {
+    available = L["quest available"],
+    turnIn = L["turn in"],
+}
+
 local function nearbyQuestNode(entry)
+    if entry.seenGiver then
+        local detail = { L["seen"] }
+        if SEEN_STATUS[entry.status] ~= nil then
+            tinsert(detail, SEEN_STATUS[entry.status])
+        end
+        if entry.flag == "trivial" then
+            tinsert(detail, L["low level"])
+        end
+        if entry.indoors then
+            tinsert(detail, L["indoors"])
+        end
+        return pointAt({
+            key = "seenGiver:" .. tostring(entry.starter.id),
+            label = entry.name or unknown(),
+            detail = table.concat(detail, ", "),
+        }, entry.starter)
+    end
     local detail = L["Level"] .. " " .. tostring(entry.level)
     if entry.daily then
         detail = detail .. ", " .. L["Daily"]
@@ -254,6 +285,45 @@ local roleLabels = {
     spiritHealer = L["Spirit Healers"],
 }
 
+-- NPCs seen this session (see seen.lua), as targets of one role.
+local function seenTargets(roleKey, radius)
+    return WowVision.quests.seen:npcs(roleKey, radius)
+end
+
+-- Database targets plus seen ones, nearest first. A seen NPC whose name
+-- the database already lists is left out: the database wins.
+local function withSeen(targets, roleKey, ctx)
+    local seen = seenTargets(roleKey, ctx.radius)
+    if #seen == 0 then
+        return targets
+    end
+    local out, names = {}, {}
+    for _, target in ipairs(targets) do
+        if target.name ~= nil then
+            names[target.name] = true
+        end
+        tinsert(out, target)
+    end
+    for _, target in ipairs(seen) do
+        if not names[target.name] then
+            tinsert(out, target)
+        end
+    end
+    table.sort(out, function(a, b)
+        if a.distance == nil then
+            return false
+        end
+        if b.distance == nil then
+            return true
+        end
+        return a.distance < b.distance
+    end)
+    while #out > ctx.maxEntries do
+        tremove(out)
+    end
+    return out
+end
+
 -- Givers of nearby quests, one node per giver with its quests beneath.
 local function questGiverNodes(ctx)
     local byGiver = {}
@@ -271,16 +341,21 @@ local function questGiverNodes(ctx)
         end
         tinsert(giver.quests, entry)
     end
-    for _, giver in ipairs(order) do
+    for index, giver in ipairs(order) do
         local entries = giver.quests
         giver.quests = nil
-        giver.detail = tostring(#entries) .. " " .. L["quests"]
-        giver.children = function()
-            local out = {}
-            for _, entry in ipairs(entries) do
-                tinsert(out, nearbyQuestNode(entry))
+        if entries[1].seenGiver then
+            -- No quests known beneath a seen giver: the NPC is the node.
+            order[index] = nearbyQuestNode(entries[1])
+        else
+            giver.detail = tostring(#entries) .. " " .. L["quests"]
+            giver.children = function()
+                local out = {}
+                for _, entry in ipairs(entries) do
+                    tinsert(out, nearbyQuestNode(entry))
+                end
+                return out
             end
-            return out
         end
     end
     return order
@@ -307,10 +382,9 @@ scanner:registerProvider({
                 end,
             },
         }
-        -- The native source knows quest points only: givers, nothing else.
-        if not quests:hasNpcIndex() then
-            return categories
-        end
+        -- The native source knows quest points only; its NPC categories
+        -- come from the minimap scanner alone and show once it saw some.
+        local hasIndex = quests:hasNpcIndex()
         -- Role buckets share one pass over the zone index; resolved on
         -- the first role expanded, then reused by the others.
         local buckets = nil
@@ -320,43 +394,57 @@ scanner:registerProvider({
             end
             return buckets[key] or {}
         end
+        local roles = {}
         for _, role in ipairs(Adapter.roles) do
             local roleKey = role.key
-            tinsert(categories, {
+            tinsert(roles, {
                 key = roleKey,
                 label = roleLabels[roleKey] or roleKey,
-                children = function()
-                    if not quests:indexReady() then
-                        return { loadingNode() }
-                    end
-                    return targetNodes(bucket(roleKey))
+                needsIndex = true,
+                index = function()
+                    return bucket(roleKey)
                 end,
             })
         end
-        tinsert(categories, {
+        tinsert(roles, {
             key = "classTrainers",
             label = L["Class Trainers"],
-            children = function()
-                return targetNodes(quests:placeTargets("npc", quests:townsfolk("Class Trainer"), opts))
+            index = function()
+                return quests:placeTargets("npc", quests:townsfolk("Class Trainer"), opts)
             end,
         })
-        tinsert(categories, {
+        tinsert(roles, {
             key = "mailboxes",
             label = L["Mailboxes"],
-            children = function()
-                return targetNodes(quests:placeTargets("object", quests:townsfolk("Mailbox"), opts))
+            index = function()
+                return quests:placeTargets("object", quests:townsfolk("Mailbox"), opts)
             end,
         })
-        tinsert(categories, {
+        tinsert(roles, { key = "other", label = L["Other NPCs"] })
+        tinsert(roles, {
             key = "rares",
             label = L["Rares"],
-            children = function()
-                if not quests:indexReady() then
-                    return { loadingNode() }
-                end
-                return targetNodes(bucket("rare"))
+            needsIndex = true,
+            index = function()
+                return bucket("rare")
             end,
         })
+        for _, role in ipairs(roles) do
+            local fromIndex = hasIndex and role.index ~= nil
+            if fromIndex or #seenTargets(role.key, ctx.radius) > 0 then
+                tinsert(categories, {
+                    key = role.key,
+                    label = role.label,
+                    children = function()
+                        if fromIndex and role.needsIndex and not quests:indexReady() then
+                            return { loadingNode() }
+                        end
+                        local targets = fromIndex and role.index() or {}
+                        return targetNodes(withSeen(targets, role.key, ctx))
+                    end,
+                })
+            end
+        end
         return categories
     end,
 })
