@@ -56,6 +56,8 @@ loadAddonFile("core/navigation/stuckMath.lua")
 loadAddonFile("core/navigation/stuckTests.lua")
 loadAddonFile("core/quests/Adapter.lua")
 loadAddonFile("core/quests/tests.lua")
+loadAddonFile("core/minimap/logic.lua")
+loadAddonFile("core/minimap/tests.lua")
 loadAddonFile("core/colors/names.lua")
 loadAddonFile("core/colors/colors.lua")
 loadAddonFile("core/colors/tests.lua")
@@ -257,6 +259,10 @@ local parseOnly = {
     "core/quests/places.lua",
     "core/quests/native.lua",
     "core/quests/probe.lua",
+    "core/quests/seen.lua",
+    "core/minimap/engine.lua",
+    "core/minimap/module.lua",
+    "core/minimap/scanner.lua",
     "core/scanner/module.lua",
     "core/scanner/ui.lua",
     "core/scanner/providers.lua",
