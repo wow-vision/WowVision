@@ -9,6 +9,7 @@
   <!-- The collections journal and mount journal match Mists apart from the
        tab bar, which the module reads in both styles. -->
   <Include file="..\mists\collections\modules.xml" />
+  <Include file="collections\modules.xml" />
   <!-- Forever's spellbook is the modern PlayerSpellsFrame, not Mists'. -->
   <Script file="spellbook.lua" />
 

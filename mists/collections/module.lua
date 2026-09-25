@@ -7,9 +7,19 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
 
--- The collections journal: tabs, then the selected tab's body. Tab 1 is the
--- mount journal (module.renderMountJournal, in its file); other tabs are
--- not implemented yet.
+-- The collections journal: tabs, then the selected tab's body. Each tab's
+-- body is a module.render* function in its own file (TAB_RENDERERS); a
+-- client without one for the selected tab reads "not implemented yet".
+
+-- Each tab's body renderer, by tab id. Mists defines the mount journal;
+-- WoW: Forever adds the rest from camelot/collections/.
+local TAB_RENDERERS = {
+    "renderMountJournal",
+    "renderPetJournal",
+    "renderToyBox",
+    "renderHeirlooms",
+    "renderWardrobe",
+}
 
 -- Each tab's content frame, by tab id.
 local TAB_FRAMES = {
@@ -120,8 +130,10 @@ local function render(builder, screen)
     builder:popContext()
 
     local tab = getSelectedTab()
-    if tab == 1 and MountJournal ~= nil and MountJournal:IsShown() and MountJournal:IsVisible() then
-        module.renderMountJournal(builder)
+    local renderer = tab ~= nil and module[TAB_RENDERERS[tab] or ""] or nil
+    local content = tab ~= nil and TAB_FRAMES[tab] ~= nil and _G[TAB_FRAMES[tab]] or nil
+    if renderer ~= nil and content ~= nil and content:IsShown() and content:IsVisible() then
+        renderer(builder)
     else
         builder:beginStop("unimplemented")
         builder:addItem(ControlId.structural("unimplemented"), nodes.text({ label = "Not implemented yet" }))
