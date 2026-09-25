@@ -34,7 +34,11 @@ end
 
 function Screen:buildRender()
     local builder = graph.Builder:new(self.state.expanded)
-    local ok, err = pcall(self.config.render, builder, self)
+    -- xpcall keeps the failing render's stack; a plain pcall would leave the
+    -- error handler only this frame's stack to record.
+    local ok, err = xpcall(self.config.render, function(message)
+        return tostring(message) .. "\n" .. debugstack(2)
+    end, builder, self)
     if not ok then
         -- Report once and close the screen; erroring every rebuild tick would
         -- flood the error list and TTS.
