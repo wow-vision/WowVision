@@ -23,6 +23,18 @@ local kinds = graph.kinds
 -- patch 1.60.1) returns (name, category, spellID, levelReq, rank) instead.
 -- The two are told apart by the 3rd value's type -- a category string on the
 -- old signature, a numeric spellID on the new one.
+-- Tree-backed ScrollBoxes (WoW: Forever) hand emitters the tree node, not its
+-- payload -- Find(index, true) returns the node so collapse state stays
+-- readable; the actual { skillIndex, playerMoney, trainerType } table lives
+-- behind node:GetData(). Flat providers (Classic/TBC/Mists) already return
+-- the payload directly, so this is a no-op there.
+local function servicePayload(data)
+    if type(data) == "table" and data.GetData ~= nil then
+        return data:GetData()
+    end
+    return data
+end
+
 local function getServiceInfo(index)
     local a, b, c, d, e = GetTrainerServiceInfo(index)
     if type(c) == "number" then
@@ -58,7 +70,7 @@ local function serviceLabel(index)
 end
 
 local function emitService(builder, data, position, helpers)
-    local index = data.skillIndex
+    local index = servicePayload(data).skillIndex
     local category = getServiceInfo(index).category
 
     local announcements = {
@@ -181,7 +193,7 @@ local function render(builder, screen)
             key = "services",
             label = L["Training"],
             id = function(data)
-                return ControlId.structural("services:" .. tostring(data.skillIndex))
+                return ControlId.structural("services:" .. tostring(servicePayload(data).skillIndex))
             end,
             emit = emitService,
         })
