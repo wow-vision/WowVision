@@ -140,6 +140,19 @@ end
 -- and when that place is an NPC with several spawns the node expands to
 -- them.
 
+-- The giver's name for a nearby quest's starter: the item that starts it
+-- (used-item quests) takes priority since that is what the player actually
+-- needs, otherwise the NPC's or object's own name (e.g. a wanted poster).
+local function giverName(starter)
+    if starter == nil then
+        return nil
+    end
+    if starter.item ~= nil and starter.item.name ~= nil then
+        return starter.item.name
+    end
+    return starter.name
+end
+
 -- A nearby quest points at its giver.
 local function nearbyQuestNode(entry)
     local detail = L["Level"] .. " " .. tostring(entry.level)
@@ -147,6 +160,10 @@ local function nearbyQuestNode(entry)
         detail = detail .. ", " .. L["Daily"]
     elseif entry.repeatable then
         detail = detail .. ", " .. L["Repeatable"]
+    end
+    local giver = giverName(entry.starter)
+    if giver ~= nil then
+        detail = detail .. ", " .. giver
     end
     return pointAt({
         key = "quest:" .. entry.questId,
