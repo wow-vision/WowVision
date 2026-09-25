@@ -13,6 +13,91 @@ local kinds = graph.kinds
 -- gameDB Merchant item type (name, count, price, stock, alternate costs) and
 -- are live: page flips reuse the same buttons under focus.
 
+local settings = module:hasSettings()
+settings:add({
+    type = "Bool",
+    key = "autoSellPoorItems",
+    label = L["Automatically Sell Poor Items"],
+    default = true,
+})
+settings:add({
+    type = "Bool",
+    key = "autoRepair",
+    label = L["Automatically Repair If Possible"],
+    default = true,
+})
+
+-- Vendor sell price for a bag item, in copper; nil when the item isn't
+-- cached yet or has none (matches how the tooltip and merchant labels
+-- read prices elsewhere in gameDB/items.lua).
+local function getSellPrice(itemID)
+    local getInfo = C_Item ~= nil and C_Item.GetItemInfo or GetItemInfo
+    if getInfo == nil or itemID == nil then
+        return nil
+    end
+    local ok, price = pcall(function()
+        return select(11, getInfo(itemID))
+    end)
+    if ok and price ~= nil and price > 0 then
+        return price
+    end
+    return nil
+end
+
+-- Sells every Poor quality (grey) bag item that actually has a vendor
+-- value. UseContainerItem sells the slot directly, the same action a
+-- manual right click performs while a merchant is open.
+local function sellPoorItems()
+    local soldCount = 0
+    local soldValue = 0
+    for bag = 0, NUM_BAG_SLOTS do
+        for slot = 1, C_Container.GetContainerNumSlots(bag) do
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info ~= nil and info.quality == 0 and not info.hasNoValue and not info.isLocked then
+                local price = getSellPrice(info.itemID)
+                if price ~= nil then
+                    soldValue = soldValue + price * (info.stackCount or 1)
+                end
+                C_Container.UseContainerItem(bag, slot)
+                soldCount = soldCount + 1
+            end
+        end
+    end
+    if soldCount > 0 then
+        print(format(L["Sold %d poor quality items for %s."], soldCount, C_CurrencyInfo.GetCoinText(soldValue)))
+    end
+end
+
+-- Repairs everything using the player's own money. Silently skipped when
+-- the vendor can't repair, nothing is damaged, or the player can't
+-- afford it -- the same conditions that leave the Repair All button
+-- doing nothing.
+local function repairAll()
+    if not CanMerchantRepair() then
+        return
+    end
+    local cost, canRepair = GetRepairAllCost()
+    if not canRepair or cost == nil or cost <= 0 or GetMoney() < cost then
+        return
+    end
+    RepairAllItems()
+    print(format(L["Repaired all items for %s."], C_CurrencyInfo.GetCoinText(cost)))
+end
+
+module:registerEvent("event", "MERCHANT_SHOW")
+
+function module:onEvent(event)
+    if event ~= "MERCHANT_SHOW" then
+        return
+    end
+    if self.settings.autoSellPoorItems then
+        sellPoorItems()
+    end
+    if self.settings.autoRepair then
+        repairAll()
+    end
+end
+
 local function merchantItemLabel(button, buyback)
     local itemType = WowVision.gameDB:get("Item"):get("Merchant")
     if itemType == nil or itemType.getLabel == nil then

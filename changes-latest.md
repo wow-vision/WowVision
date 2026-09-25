@@ -17,6 +17,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5. The UI has 
 * Fixed a bug where certain popups in the options screen would softlock the game.
 * Added the scanner. The scanner acts as traditionally seen in other mods, providing a categorized list of various things in the world. These include quest givers, nearby quests, and the location of your corpse for now. Press f9 to use it. Important: The scanner can only give you straight line paths currently pathfinding solutions are being worked on.
 * Added the /wv speech command to quickly adjust your speech settings. The syntax is /wv speech voiceID rate volume, for example /wv speech 1 8 100. Note: your first voice has ID 0.
+* Added two Merchant settings (Windows > Merchant): "Automatically Sell Poor Items" and "Automatically Repair If Possible", both on by default. Opening a vendor now sells your grey items and repairs your gear on its own, with a chat message confirming what was sold or repaired. Repair is skipped if the vendor doesn't offer it or you can't afford it.
 
 ### Modern
 * Added support for the bags window.
