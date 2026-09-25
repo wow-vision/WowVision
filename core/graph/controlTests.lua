@@ -634,3 +634,69 @@ testRunner:addSuite("GraphNodes", {
         t:assertNil(first.transitions.down, "single-node stops have no arrow edges")
     end,
 })
+
+testRunner:addSuite("GraphFoundButton", {
+    ["joinLabel keeps the parts after a missing one"] = function(t)
+        local nodes = graph.nodes
+        t:assertEqual(nodes.joinLabel("Toy", nil, "Favorite"), "Toy, Favorite")
+        t:assertEqual(nodes.joinLabel("Toy", false, "", "Favorite"), "Toy, Favorite")
+        t:assertEqual(nodes.joinLabel(nil, nil), "")
+    end,
+
+    ["proxyFoundButton resolves the frame on every read"] = function(t)
+        local first = { name = "First" }
+        local second = { name = "Second" }
+        local current = first
+        local vtable = graph.nodes.proxyFoundButton({
+            find = function()
+                return current
+            end,
+            label = function(frame)
+                return frame.name
+            end,
+        })
+        local label = vtable.announcements[1].text
+        t:assertEqual(label(), "First")
+        current = second
+        t:assertEqual(label(), "Second")
+        current = nil
+        t:assertNil(label())
+        t:assertEqual(vtable.bindings[1].target, vtable.bindings[2].target)
+        t:assertNil(vtable.tooltip)
+    end,
+
+    ["proxyFoundButton rightClick=false drops the right click everywhere"] = function(t)
+        local dragged = false
+        local vtable = graph.nodes.proxyFoundButton({
+            find = function()
+                return {}
+            end,
+            label = function()
+                return "Tab"
+            end,
+            rightClick = false,
+            drag = function()
+                dragged = true
+            end,
+        })
+        for _, binding in ipairs(vtable.bindings) do
+            t:assertNotEqual(binding.binding, "rightClick")
+        end
+        local labels = {}
+        vtable.contextActions(function(entry)
+            tinsert(labels, entry)
+        end)
+        t:assertEqual(#labels, 2, "left click and drag")
+        labels[2].onActivate()
+        t:assertEqual(dragged, true)
+    end,
+
+    ["pickupAction records a reference pickup"] = function(t)
+        local picked = false
+        graph.nodes.pickupAction(function()
+            picked = true
+        end, true)()
+        t:assertEqual(picked, true)
+        t:assertEqual(WowVision.cursor.pickupIsActionBar, true)
+    end,
+})

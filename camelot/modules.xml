@@ -6,15 +6,16 @@
        the quests module prefers it over the native quest lines (which
        the beta serves empty), so the Questie backend loads here too. -->
   <Script file="..\classic\quests\questie.lua" />
-  <!-- The collections journal and mount journal match Mists apart from the
-       tab bar, which the module reads in both styles. -->
-  <Include file="..\mists\collections\modules.xml" />
-  <Include file="collections\modules.xml" />
-  <!-- Forever's spellbook is the modern PlayerSpellsFrame, not Mists'. -->
-  <Script file="spellbook.lua" />
 
   <!-- WoW: Forever (client codename Camelot, TOC suffix _Camelot). The
        client is the modern engine with vanilla content, so the retail
        modules load first and Forever-only modules go here. -->
+
+  <!-- The collections journal and its mount journal come from Mists;
+       collections/ replaces the tab bar and adds the other tabs. -->
+  <Include file="..\mists\collections\modules.xml" />
+  <Include file="collections\modules.xml" />
+  <!-- Forever's spellbook is the modern PlayerSpellsFrame, not Mists'. -->
+  <Script file="spellbook.lua" />
 
 </Ui>

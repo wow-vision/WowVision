@@ -108,3 +108,5 @@ function module.renderMountJournal(builder)
         )
     end
 end
+
+module.addTab(1, { frame = "MountJournal", render = module.renderMountJournal })

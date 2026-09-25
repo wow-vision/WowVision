@@ -666,3 +666,158 @@ function nodes.proxyButtonMenu(builder, config)
     end
     return builder
 end
+
+-- The text of a FontString when shown and non-empty, else nil: for labels
+-- assembled from a Blizzard frame's text regions.
+function nodes.shownText(fontString)
+    if fontString == nil or not fontString:IsShown() then
+        return nil
+    end
+    local text = fontString:GetText()
+    if text == nil or text == "" then
+        return nil
+    end
+    return text
+end
+
+-- Join label parts with commas, skipping nil, false, and empty parts, so
+-- callers can pass conditional parts (isFavorite and FAVORITE). Varargs, not
+-- a table: a table built with conditional nils would end ipairs at the first
+-- hole and drop every part after it.
+function nodes.joinLabel(...)
+    local out = {}
+    for i = 1, select("#", ...) do
+        local part = select(i, ...)
+        if part ~= nil and part ~= false and part ~= "" then
+            tinsert(out, part)
+        end
+    end
+    return table.concat(out, ", ")
+end
+
+-- A drag handler that picks up with the game API instead of running the
+-- frame's OnDragStart as the addon (modern engine drag scripts are often
+-- unreachable through GetScript, and running them writes addon-tainted state
+-- onto Blizzard frames). isReference marks what lands on the cursor: a spell,
+-- toy, pet, or action is a reference that the Destroy Cursor Item binding
+-- just clears, a bag item goes through the destroy confirmation (see the
+-- cursor module's pickupIsActionBar flag).
+function nodes.pickupAction(pickup, isReference)
+    return function()
+        WowVision.cursor = WowVision.cursor or {}
+        WowVision.cursor.pickupIsActionBar = isReference == true
+        pickup()
+    end
+end
+
+-- A real Blizzard button that is found again on every read and press: for
+-- pooled and paged frames (spellbook pages, the toy box grid) a button shows
+-- a different entry after every page flip or refilter, so the node is keyed
+-- by what it SHOWS and find() returns the button showing it now. The host
+-- re-engages the secure clicks when find() resolves to a different frame.
+-- No hover scripts (see proxyButton): the tooltip, when given, is filled
+-- directly.
+-- config: {
+--   find = function() -> frame?,
+--   label = function(frame) -> string,
+--   selected = function() -> bool?,
+--   tooltip = function(tooltip, frame)?,
+--   rightClick = false?,           -- the right button does nothing here
+--   drag = function()?,            -- a nodes.pickupAction handler
+-- }
+function nodes.proxyFoundButton(config)
+    local find = config.find
+    local announcements = {
+        {
+            text = function()
+                local frame = find()
+                return frame ~= nil and config.label(frame) or nil
+            end,
+            kind = kinds.label,
+        },
+    }
+    if config.selected ~= nil then
+        tinsert(announcements, {
+            text = function()
+                return config.selected() and L["selected"] or nil
+            end,
+            kind = kinds.selected,
+        })
+    end
+    local bindings = {
+        { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = find },
+    }
+    if config.rightClick ~= false then
+        tinsert(bindings, { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = find })
+    end
+    if config.drag ~= nil then
+        tinsert(bindings, { binding = "drag", type = "Function", func = config.drag })
+    end
+    -- The standard click entries, and Drag only through config.drag (the
+    -- default Drag entry would run OnDragStart).
+    local clickActions = nodes.proxyContextActions(find)
+    local vtable = {
+        controlType = graph.controlTypes.button,
+        contextActions = function(add)
+            clickActions(function(entry)
+                local click = entry.click
+                if click ~= nil and (config.rightClick ~= false or click.emulatedKey ~= "RightButton") then
+                    add(entry)
+                end
+            end)
+            if config.drag ~= nil then
+                add({ label = L["Drag"], onActivate = config.drag })
+            end
+        end,
+        announcements = announcements,
+        bindings = bindings,
+    }
+    if config.tooltip ~= nil then
+        -- The tooltip reader anchors to this frame; without one it reads
+        -- nothing.
+        vtable.tooltipFrame = find
+        vtable.tooltip = {
+            type = "Game",
+            mode = "immediate",
+            populate = function(tooltip)
+                local frame = find()
+                if frame ~= nil then
+                    config.tooltip(tooltip, frame)
+                end
+            end,
+        }
+    end
+    return vtable
+end
+
+-- A page row for Blizzard paging controls (the collections paging frame, the
+-- modern spellbook's paging controls: both carry PrevPageButton, PageText,
+-- NextPageButton): previous page, the page text, next page. Nothing while
+-- the controls are hidden or there is a single page.
+function nodes.pagingRow(builder, key, paging)
+    if paging == nil or not paging:IsShown() or (paging.GetMaxPages ~= nil and paging:GetMaxPages() <= 1) then
+        return builder
+    end
+    builder:beginStop(key .. "Paging")
+    builder:startRow()
+    builder:addItem(
+        ControlId.forObject(paging.PrevPageButton),
+        nodes.proxyButton({ target = paging.PrevPageButton, label = L["Previous Page"] })
+    )
+    if paging.PageText ~= nil then
+        builder:addItem(
+            ControlId.structural(key .. "PageText"),
+            nodes.text({
+                label = function()
+                    return paging.PageText:GetText() or ""
+                end,
+            })
+        )
+    end
+    builder:addItem(
+        ControlId.forObject(paging.NextPageButton),
+        nodes.proxyButton({ target = paging.NextPageButton, label = L["Next Page"] })
+    )
+    builder:endRow()
+    return builder
+end

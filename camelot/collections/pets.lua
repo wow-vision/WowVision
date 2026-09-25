@@ -13,7 +13,7 @@ local kinds = graph.kinds
 -- A pet list entry's label: its name (a custom name first, then the
 -- species), and whether it is collected or a favorite.
 local function petLabel(index)
-    local petID, _, isOwned, customName, _, favorite, _, name = C_PetJournal.GetPetInfoByIndex(index)
+    local _, _, isOwned, customName, _, favorite, _, name = C_PetJournal.GetPetInfoByIndex(index)
     if name == nil then
         return nil
     end
@@ -21,15 +21,11 @@ local function petLabel(index)
     if customName ~= nil and customName ~= "" then
         label = customName .. " (" .. name .. ")"
     end
-    return module.joinLabel({
-        label,
-        not isOwned and NOT_COLLECTED or nil,
-        favorite and FAVORITE or nil,
-    })
+    return nodes.joinLabel(label, not isOwned and NOT_COLLECTED, favorite and FAVORITE)
 end
 
 local function petRow(data, index, helpers)
-    return {
+    local vtable = {
         controlType = graph.controlTypes.button,
         announcements = {
             {
@@ -41,10 +37,7 @@ local function petRow(data, index, helpers)
             {
                 text = function()
                     local card = PetJournalPetCard
-                    if card == nil or card.speciesID ~= data.speciesID then
-                        return nil
-                    end
-                    if card.petID == data.petID then
+                    if card ~= nil and card.speciesID == data.speciesID and card.petID == data.petID then
                         return L["selected"]
                     end
                     return nil
@@ -57,22 +50,22 @@ local function petRow(data, index, helpers)
             -- favorite) for owned pets, which the dropdown watcher picks up.
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
             { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = helpers.target },
-            {
-                binding = "drag",
-                type = "Function",
-                func = function()
-                    local row = helpers.target()
-                    local script = row ~= nil and row:GetScript("OnDragStart") or nil
-                    if script ~= nil then
-                        script(row)
-                    end
-                end,
-            },
         },
         onFocus = helpers.onFocus,
         onFocusTick = helpers.onFocusTick,
         onUnfocus = helpers.onUnfocus,
     }
+    -- Only owned pets can be picked up (to an action bar).
+    if data.petID ~= nil then
+        tinsert(vtable.bindings, {
+            binding = "drag",
+            type = "Function",
+            func = nodes.pickupAction(function()
+                C_PetJournal.PickupPet(data.petID)
+            end, true),
+        })
+    end
+    return vtable
 end
 
 -- The selected pet's card: name (and species under a custom name), where
@@ -89,7 +82,7 @@ local function renderPetCard(builder)
         ControlId.structural("petCardName"),
         nodes.text({
             label = function()
-                return module.joinLabel({ module.shownText(info.name), module.shownText(info.subName) })
+                return nodes.joinLabel(nodes.shownText(info.name), nodes.shownText(info.subName))
             end,
         })
     )
@@ -102,7 +95,7 @@ local function renderPetCard(builder)
     builder:popContext()
 end
 
-function module.renderPetJournal(builder)
+local function renderPetJournal(builder)
     local journal = PetJournal
     module.renderSearchAndFilter(builder, "pet", journal.searchBox, journal.FilterDropdown)
 
@@ -122,11 +115,8 @@ function module.renderPetJournal(builder)
 
     renderPetCard(builder)
 
-    if PetJournalSummonButton ~= nil and PetJournalSummonButton:IsShown() then
-        builder:beginStop("summon")
-        builder:addItem(
-            ControlId.forObject(PetJournalSummonButton),
-            nodes.proxyButton({ target = PetJournalSummonButton })
-        )
-    end
+    builder:beginStop("summon")
+    builder:addItem(ControlId.forObject(PetJournalSummonButton), nodes.proxyButton({ target = PetJournalSummonButton }))
 end
+
+module.addTab(2, { frame = "PetJournal", render = renderPetJournal })

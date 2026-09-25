@@ -9,7 +9,7 @@ local kinds = graph.kinds
 -- The WoW: Forever appearances tab (WardrobeCollectionFrame, journal side,
 -- not the transmogrifier): the Items / Sets sub-tabs, search, filter, the
 -- class filter, then the active view.
---   Items: the slot buttons, the weapon type dropdown on weapon slots, the
+--   Items: the slot list, the weapon type dropdown on weapon slots, the
 --   current page of appearances (eighteen models), and the page controls.
 --   Forever lists collected appearances only.
 --   Sets: the set list and the selected set's details.
@@ -38,10 +38,20 @@ end
 
 -- ---- Items ----
 
+-- A slot button's name, as its tooltip gives it: shoulders split into left
+-- and right while the equipped shoulder shows a second appearance, and
+-- weapon illusion slots add the enchantment word.
 local function slotLabel(button)
-    local name = button.slot ~= nil and _G[button.slot] or nil
-    if button.transmogLocation ~= nil and button.transmogLocation:IsIllusion() then
-        return module.joinLabel({ name, WEAPON_ENCHANTMENT })
+    local location = button.transmogLocation
+    local name = _G[button.slot]
+    if location:GetSlotName() == "SHOULDERSLOT" then
+        local itemLocation = TransmogUtil.GetItemLocationFromTransmogLocation(location)
+        if TransmogUtil.IsSecondaryTransmoggedForItemLocation(itemLocation) then
+            name = location:IsSecondary() and LEFTSHOULDERSLOT or RIGHTSHOULDERSLOT
+        end
+    end
+    if location:IsIllusion() then
+        return nodes.joinLabel(name, WEAPON_ENCHANTMENT)
     end
     return name
 end
@@ -49,13 +59,9 @@ end
 -- Slot buttons as a vertical list, like the character window's equipment;
 -- the active slot reads selected.
 local function renderSlots(builder, items)
-    local slots = items.SlotsFrame ~= nil and items.SlotsFrame.Buttons or nil
-    if slots == nil then
-        return
-    end
     builder:beginStop("wardrobeSlots")
     builder:pushContext("wardrobeSlots", L["Items"])
-    for _, button in ipairs(slots) do
+    for _, button in ipairs(items.SlotsFrame.Buttons) do
         if button:IsShown() then
             local captured = button
             local vtable = nodes.proxyButton({
@@ -67,7 +73,7 @@ local function renderSlots(builder, items)
             })
             tinsert(vtable.announcements, {
                 text = function()
-                    return captured.SelectedTexture ~= nil and captured.SelectedTexture:IsShown() and L["selected"] or nil
+                    return captured.SelectedTexture:IsShown() and L["selected"] or nil
                 end,
                 kind = kinds.selected,
             })
@@ -79,7 +85,7 @@ end
 
 -- The model showing this appearance (by visual id), or nil.
 local function findModel(items, visualID)
-    for _, model in ipairs(items.Models or {}) do
+    for _, model in ipairs(items.Models) do
         if model:IsShown() and model.visualInfo ~= nil and model.visualInfo.visualID == visualID then
             return model
         end
@@ -87,21 +93,18 @@ local function findModel(items, visualID)
     return nil
 end
 
--- The appearance's sources (the items that grant it), best first.
-local function appearanceSources(items, visualID)
-    if CollectionWardrobeUtil == nil or CollectionWardrobeUtil.GetSortedAppearanceSources == nil then
-        return {}
-    end
-    return CollectionWardrobeUtil.GetSortedAppearanceSources(
+local function isIllusionView(items)
+    return items:GetTransmogLocation():IsIllusion()
+end
+
+-- The first item granting an appearance (the list is sorted best first).
+local function firstSource(items, visualID)
+    local sources = CollectionWardrobeUtil.GetSortedAppearanceSources(
         visualID,
         items:GetActiveCategory(),
         items:GetTransmogLocation()
-    ) or {}
-end
-
-local function isIllusionView(items)
-    local location = items:GetTransmogLocation()
-    return location ~= nil and location:IsIllusion()
+    )
+    return sources[1]
 end
 
 -- An appearance's label: the name of its first source item (or the
@@ -109,17 +112,17 @@ end
 local function appearanceLabel(items, model)
     local info = model.visualInfo
     local name
-    if isIllusionView(items) and info.sourceID ~= nil then
-        name = C_TransmogCollection.GetIllusionStrings(info.sourceID)
+    if isIllusionView(items) then
+        name = info.sourceID ~= nil and C_TransmogCollection.GetIllusionStrings(info.sourceID) or nil
     else
-        local source = appearanceSources(items, info.visualID)[1]
+        local source = firstSource(items, info.visualID)
         name = source ~= nil and source.name or nil
     end
-    return module.joinLabel({
+    return nodes.joinLabel(
         name or tostring(info.visualID),
-        not info.isCollected and NOT_COLLECTED or nil,
-        info.isFavorite and FAVORITE or nil,
-    })
+        not info.isCollected and NOT_COLLECTED,
+        info.isFavorite and FAVORITE
+    )
 end
 
 -- An appearance: the models are not buttons and a plain click does nothing
@@ -150,14 +153,8 @@ local function appearanceNode(items, visualID)
                     if model == nil then
                         return
                     end
-                    local down = model:GetScript("OnMouseDown")
-                    if down ~= nil then
-                        down(model, "RightButton")
-                    end
-                    local up = model:GetScript("OnMouseUp")
-                    if up ~= nil then
-                        up(model, "RightButton")
-                    end
+                    model:GetScript("OnMouseDown")(model, "RightButton")
+                    model:GetScript("OnMouseUp")(model, "RightButton")
                 end,
             },
         },
@@ -174,7 +171,7 @@ local function appearanceNode(items, visualID)
                     tooltip:SetText(appearanceLabel(items, model))
                     return
                 end
-                local source = appearanceSources(items, visualID)[1]
+                local source = firstSource(items, visualID)
                 if source ~= nil and source.itemID ~= nil then
                     tooltip:SetItemByID(source.itemID)
                 end
@@ -186,7 +183,7 @@ end
 local function renderItems(builder, items)
     renderSlots(builder, items)
 
-    if items.WeaponDropdown ~= nil and items.WeaponDropdown:IsShown() then
+    if items.WeaponDropdown:IsShown() then
         builder:beginStop("wardrobeWeapon")
         builder:addItem(ControlId.forObject(items.WeaponDropdown), module.namedDropdown(items.WeaponDropdown, L["Type"]))
     end
@@ -194,13 +191,10 @@ local function renderItems(builder, items)
     builder:beginStop("appearances")
     builder:pushContext("appearances", L["Appearances"])
     local emitted = 0
-    for _, model in ipairs(items.Models or {}) do
+    for _, model in ipairs(items.Models) do
         local info = model.visualInfo
         if model:IsShown() and info ~= nil and info.visualID ~= nil then
-            builder:addItem(
-                ControlId.structural("appearance:" .. info.visualID),
-                appearanceNode(items, info.visualID)
-            )
+            builder:addItem(ControlId.structural("appearance:" .. info.visualID), appearanceNode(items, info.visualID))
             emitted = emitted + 1
         end
     end
@@ -209,27 +203,45 @@ local function renderItems(builder, items)
     end
     builder:popContext()
 
-    module.renderPaging(builder, "wardrobe", items.PagingFrame)
+    nodes.pagingRow(builder, "wardrobe", items.PagingFrame)
 end
 
 -- ---- Sets ----
 
--- A set's label: name, its label (the set's group, e.g. a raid tier),
--- and collected pieces out of all.
-local function setLabel(data)
+local function setCounts(setID)
     local collected, total = 0, 0
-    for _, appearance in ipairs(C_TransmogSets.GetSetPrimaryAppearances(data.setID) or {}) do
+    for _, appearance in ipairs(C_TransmogSets.GetSetPrimaryAppearances(setID) or {}) do
         total = total + 1
         if appearance.collected then
             collected = collected + 1
         end
     end
-    return module.joinLabel({
+    return collected, total
+end
+
+-- A set's collected pieces as the list shows them: the base set or its best
+-- collected variant (Blizzard's GetSetSourceTopCounts).
+local function setTopCounts(setID)
+    local topCollected, topTotal = setCounts(setID)
+    for _, variant in ipairs(C_TransmogSets.GetVariantSets(setID) or {}) do
+        local collected, total = setCounts(variant.setID)
+        if collected > topCollected then
+            topCollected, topTotal = collected, total
+        end
+    end
+    return topCollected, topTotal
+end
+
+-- A set's label: name, its group (e.g. a raid tier), collected pieces out
+-- of all, favorite.
+local function setLabel(data)
+    local collected, total = setTopCounts(data.setID)
+    return nodes.joinLabel(
         data.name,
         data.label,
-        total > 0 and (collected .. "/" .. total) or nil,
-        data.favorite and FAVORITE or nil,
-    })
+        total > 0 and (collected .. "/" .. total),
+        data.favorite and FAVORITE
+    )
 end
 
 local function setRow(sets)
@@ -263,11 +275,22 @@ local function setRow(sets)
     end
 end
 
--- The selected set's details: its name and group, the variant dropdown,
--- and each piece with whether it is collected, in layout order.
+-- One piece of the selected set: its item name and whether it is collected,
+-- read when spoken.
+local function setPieceNode(sourceID, collected)
+    return nodes.text({
+        label = function()
+            local info = C_TransmogCollection.GetSourceInfo(sourceID)
+            return nodes.joinLabel(info ~= nil and info.name or tostring(sourceID), collected and COLLECTED or NOT_COLLECTED)
+        end,
+    })
+end
+
+-- The selected set's details: its name and group, each piece in layout
+-- order, and the variant dropdown.
 local function renderSetDetails(builder, sets)
     local details = sets.DetailsFrame
-    if details == nil or not details:IsShown() or sets:GetSelectedSetID() == nil then
+    if not details:IsShown() or sets:GetSelectedSetID() == nil then
         return
     end
     builder:beginStop("setDetails")
@@ -276,46 +299,32 @@ local function renderSetDetails(builder, sets)
         ControlId.structural("setDetailsName"),
         nodes.text({
             label = function()
-                return module.joinLabel({
-                    module.shownText(details.Name) or module.shownText(details.LongName),
-                    module.shownText(details.Label),
-                })
+                return nodes.joinLabel(
+                    nodes.shownText(details.Name) or nodes.shownText(details.LongName),
+                    nodes.shownText(details.Label)
+                )
             end,
         })
     )
-    if details.itemFramesPool ~= nil then
-        local pieces = {}
-        for piece in details.itemFramesPool:EnumerateActive() do
-            if piece.sourceID ~= nil then
-                tinsert(pieces, piece)
-            end
+    local pieces = {}
+    for piece in details.itemFramesPool:EnumerateActive() do
+        if piece.sourceID ~= nil then
+            tinsert(pieces, piece)
         end
-        table.sort(pieces, function(a, b)
-            return (a:GetLeft() or 0) < (b:GetLeft() or 0)
-        end)
-        for _, piece in ipairs(pieces) do
-            local sourceID, collected = piece.sourceID, piece.collected
-            local info = C_TransmogCollection.GetSourceInfo(sourceID)
-            builder:addItem(
-                ControlId.structural("setPiece:" .. sourceID),
-                nodes.text({
-                    label = module.joinLabel({
-                        info ~= nil and info.name or tostring(sourceID),
-                        collected and COLLECTED or NOT_COLLECTED,
-                    }),
-                })
-            )
-        end
+    end
+    table.sort(pieces, function(a, b)
+        return (a:GetLeft() or 0) < (b:GetLeft() or 0)
+    end)
+    for _, piece in ipairs(pieces) do
+        builder:addItem(ControlId.structural("setPiece:" .. piece.sourceID), setPieceNode(piece.sourceID, piece.collected))
     end
     builder:popContext()
 
-    if details.VariantSetsDropdown ~= nil and details.VariantSetsDropdown:IsShown() then
-        builder:beginStop("setVariants")
-        builder:addItem(
-            ControlId.forObject(details.VariantSetsDropdown),
-            nodes.proxyDropdown({ target = details.VariantSetsDropdown })
-        )
-    end
+    builder:beginStop("setVariants")
+    builder:addItem(
+        ControlId.forObject(details.VariantSetsDropdown),
+        nodes.proxyDropdown({ target = details.VariantSetsDropdown })
+    )
 end
 
 local function renderSets(builder, sets)
@@ -332,19 +341,21 @@ local function renderSets(builder, sets)
     renderSetDetails(builder, sets)
 end
 
-function module.renderWardrobe(builder)
+local function renderWardrobe(builder)
     local frame = WardrobeCollectionFrame
     renderSubTabs(builder, frame)
     module.renderSearchAndFilter(builder, "wardrobe", frame.SearchBox, frame.FilterButton)
-    if frame.ClassDropdown ~= nil and frame.ClassDropdown:IsShown() then
+    if frame.ClassDropdown:IsShown() then
         builder:beginStop("wardrobeClass")
         builder:addItem(ControlId.forObject(frame.ClassDropdown), module.namedDropdown(frame.ClassDropdown, CLASS))
     end
 
     local items, sets = frame.ItemsCollectionFrame, frame.SetsCollectionFrame
-    if items ~= nil and items:IsShown() then
+    if items:IsShown() then
         renderItems(builder, items)
-    elseif sets ~= nil and sets:IsShown() then
+    elseif sets:IsShown() then
         renderSets(builder, sets)
     end
 end
+
+module.addTab(5, { frame = "WardrobeCollectionFrame", render = renderWardrobe })

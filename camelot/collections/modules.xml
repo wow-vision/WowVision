@@ -1,8 +1,9 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
 
-  <!-- The Forever collection tabs after the mount journal: each file adds
-       its tab's module.render* body to the collections module. -->
+  <!-- WoW: Forever's collections journal: its side tab bar, then each tab
+       after the mount journal registers its body (module.addTab). -->
+  <Script file="tabs.lua" />
   <Script file="shared.lua" />
   <Script file="pets.lua" />
   <Script file="toys.lua" />

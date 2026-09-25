@@ -7,107 +7,43 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
 
--- The collections journal: tabs, then the selected tab's body. Each tab's
--- body is a module.render* function in its own file (TAB_RENDERERS); a
--- client without one for the selected tab reads "not implemented yet".
+-- The collections journal: the tab bar, then the selected tab's body. Each
+-- implemented tab registers itself with module.addTab (the mount journal in
+-- its file); a selected tab without one reads "not implemented yet".
+--
+-- The tab bar and the selected tab below are Mists' bottom tabs. Clients with
+-- a different journal replace module.renderTabBar and module.getSelectedTab
+-- from their own folder (WoW: Forever: camelot/collections/tabs.lua).
 
--- Each tab's body renderer, by tab id. Mists defines the mount journal;
--- WoW: Forever adds the rest from camelot/collections/.
-local TAB_RENDERERS = {
-    "renderMountJournal",
-    "renderPetJournal",
-    "renderToyBox",
-    "renderHeirlooms",
-    "renderWardrobe",
-}
+module.tabs = {}
 
--- Each tab's content frame, by tab id.
-local TAB_FRAMES = {
-    "MountJournal",
-    "PetJournal",
-    "ToyBox",
-    "HeirloomsJournal",
-    "WardrobeCollectionFrame",
-    "WarbandSceneJournal",
-}
-
--- The selected tab index. Mists keeps it on the journal. On Forever it is
--- read from which tab's content is shown: when the remembered tab is
--- hidden (tabs for empty collections hide while the "only show collected"
--- option is on), the journal shows the first valid tab but never records
--- it (Blizzard passes the journal instead of its tab container to the
--- side-tab override), so the container's selectedTab goes stale.
-local function getSelectedTab()
-    if CollectionsJournal.numTabs ~= nil then
-        return CollectionsJournal.selectedTab
-    end
-    for index, frameName in ipairs(TAB_FRAMES) do
-        local frame = _G[frameName]
-        if frame ~= nil and frame:IsShown() then
-            return index
-        end
-    end
-    local container = CollectionsJournal.TabContainer
-    return container ~= nil and container.selectedTab or nil
+-- Register a tab body. config: { frame = content frame name, render =
+-- function(builder) }. The body renders only while its frame is visible.
+function module.addTab(tabIndex, config)
+    module.tabs[tabIndex] = config
 end
 
-local function selectedAnnouncement(tabIndex)
-    return {
-        text = function()
-            if getSelectedTab() == tabIndex then
-                return L["selected"]
-            end
-            return nil
-        end,
-        kind = kinds.selected,
-    }
+function module.getSelectedTab()
+    return CollectionsJournal.selectedTab
 end
 
--- Mists: bottom tabs, CollectionsJournalTab1..numTabs, real clicks.
-local function renderBottomTabs(builder)
+-- Bottom tabs CollectionsJournalTab1..numTabs, as real clicks.
+function module.renderTabBar(builder)
     for i = 1, CollectionsJournal.numTabs do
         local tab = _G["CollectionsJournalTab" .. i]
+        local tabIndex = i
         if tab ~= nil and tab:IsShown() then
             local vtable = nodes.proxyButton({ target = tab })
-            tinsert(vtable.announcements, selectedAnnouncement(i))
-            builder:addItem(ControlId.forObject(tab), vtable)
-        end
-    end
-end
-
--- WoW: Forever: icon-only side tabs in TabContainer.Tabs. They carry their
--- name as tooltip text, and they switch on mouse UP through a custom
--- handler, not OnClick, so a click would do nothing: activation runs the
--- tab's own OnMouseUp as a left-button release inside the tab.
-local function renderSideTabs(builder)
-    local container = CollectionsJournal.TabContainer
-    if container == nil or container.Tabs == nil then
-        return
-    end
-    for _, tab in ipairs(container.Tabs) do
-        if tab:IsShown() then
-            local captured = tab
-            local tabIndex = tab:GetID()
-            local vtable = nodes.proxyButton({
-                target = captured,
-                hover = false,
-                label = function()
-                    local data = CollectionsJournal.TABS_DATA ~= nil and CollectionsJournal.TABS_DATA[tabIndex] or nil
-                    return captured.tooltipText or (data ~= nil and data.title) or nil
+            tinsert(vtable.announcements, {
+                text = function()
+                    if module.getSelectedTab() == tabIndex then
+                        return L["selected"]
+                    end
+                    return nil
                 end,
+                kind = kinds.selected,
             })
-            local function activate()
-                local script = captured:GetScript("OnMouseUp")
-                if script ~= nil then
-                    script(captured, "LeftButton", true)
-                end
-            end
-            vtable.bindings = {
-                { binding = "leftClick", type = "Function", func = activate },
-            }
-            vtable.contextActions = nil
-            tinsert(vtable.announcements, selectedAnnouncement(tabIndex))
-            builder:addItem(ControlId.forObject(captured), vtable)
+            builder:addItem(ControlId.forObject(tab), vtable)
         end
     end
 end
@@ -121,22 +57,17 @@ local function render(builder, screen)
     builder:beginStop("tabs")
     builder:pushContext("tabs", L["Tabs"])
     builder:startRow()
-    if CollectionsJournal.numTabs ~= nil then
-        renderBottomTabs(builder)
-    else
-        renderSideTabs(builder)
-    end
+    module.renderTabBar(builder)
     builder:endRow()
     builder:popContext()
 
-    local tab = getSelectedTab()
-    local renderer = tab ~= nil and module[TAB_RENDERERS[tab] or ""] or nil
-    local content = tab ~= nil and TAB_FRAMES[tab] ~= nil and _G[TAB_FRAMES[tab]] or nil
-    if renderer ~= nil and content ~= nil and content:IsShown() and content:IsVisible() then
-        renderer(builder)
+    local tab = module.tabs[module.getSelectedTab() or 0]
+    local content = tab ~= nil and _G[tab.frame] or nil
+    if content ~= nil and content:IsVisible() then
+        tab.render(builder)
     else
         builder:beginStop("unimplemented")
-        builder:addItem(ControlId.structural("unimplemented"), nodes.text({ label = "Not implemented yet" }))
+        builder:addItem(ControlId.structural("unimplemented"), nodes.text({ label = L["Not implemented yet"] }))
     end
 
     builder:popContext()

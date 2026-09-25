@@ -81,6 +81,20 @@ actions:register("Target", {
     end,
 })
 
+-- A game key binding command (a Bindings.xml name such as
+-- "TOGGLECOLLECTIONSTOYBOX"), run as if its own key were pressed: the
+-- binding's code runs secure, where calling it from the addon would taint
+-- everything it touches. The input binds straight to the command; the pooled
+-- frame only owns the override, which its release clears.
+-- spec: { command = bindingName }
+actions:register("Command", {
+    configure = function(frame, spec, emulatedKey) end,
+    clear = function(frame, spec) end,
+    bind = function(frame, spec, input)
+        SetOverrideBinding(frame, true, input, spec.command)
+    end,
+})
+
 -- Raw macro text.
 -- spec: { script = macrotext }
 actions:register("Script", {

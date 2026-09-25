@@ -15,46 +15,24 @@ local kinds = graph.kinds
 -- page's spells grouped under their headers, then the page controls.
 -- PlayerSpellsFrame also hosts the talent tree, which is not covered yet.
 
--- A spell row's label: name, subtext (rank, passive), and the unlearned
--- note (available at level N, trainable) when the frame shows one.
-local function spellLabel(item)
-    local parts = {}
-    for _, fontString in ipairs({ item.Name, item.SubName, item.RequiredLevel }) do
-        if fontString ~= nil and fontString:IsShown() then
-            local text = fontString:GetText()
-            if text ~= nil and text ~= "" then
-                tinsert(parts, text)
-            end
-        end
-    end
-    return table.concat(parts, ", ")
-end
-
--- A spell's identity: its bank and action (spell, flyout, or pet action
--- id). Not the slot index: learning a spell shifts every slot after it.
-local function spellAction(item)
-    local info = item.spellBookItemInfo
-    return info ~= nil and info.actionID or item.slotIndex
-end
-
+-- A spell's identity: its action (spell, flyout, or pet action id). Not the
+-- slot index: learning a spell shifts every slot after it.
 local function spellKey(item)
-    return "spell:" .. tostring(item.spellBank) .. ":" .. tostring(spellAction(item))
+    return "spell:" .. tostring(item.spellBank) .. ":" .. tostring(item.spellBookItemInfo.actionID)
 end
 
--- The item frame currently showing the spell with this key, or nil. Item
--- frames are pooled: a page rebuild (spells changed, a filter toggled)
--- hands the spell to a different frame, so clicks resolve the frame at
--- press time, and the host re-engages when the resolution drifts.
--- Runs every tick for the focused row (live label, click drift check), so
--- it compares fields instead of building keys.
-local function findItem(book, bank, action)
+-- The item frame currently showing this spell, or nil. Item frames are
+-- pooled: a page rebuild (spells changed, a filter toggled) hands the spell
+-- to a different frame. Runs every tick for the focused row, so it compares
+-- fields instead of building keys.
+local function findItem(book, bank, actionID)
     for _, frame in book.PagedSpellsFrame:EnumerateFrames() do
         if
             frame.HasValidData ~= nil
             and frame.spellBank == bank
             and frame:IsShown()
             and frame:HasValidData()
-            and spellAction(frame) == action
+            and frame.spellBookItemInfo.actionID == actionID
         then
             return frame
         end
@@ -62,64 +40,42 @@ local function findItem(book, bank, action)
     return nil
 end
 
--- A spell row over the item's icon button: real clicks cast (left), toggle
--- pet autocast (right), or open a flyout. No hover scripts: the item's
--- OnEnter rewrites action bar highlight marks and updates the pet bar, and
--- run as the addon that taints the bars in combat. The tooltip is filled
--- straight from the spellbook slot instead.
-local function spellNode(book, bank, action)
-    local function target()
-        local item = findItem(book, bank, action)
+-- A spell row over the item's icon button: left casts (or opens a flyout),
+-- right toggles pet autocast, drag picks the spell up. The item's own
+-- OnEnter rewrites action bar highlight marks and updates the pet bar, so
+-- the tooltip is filled straight from the spellbook slot instead.
+local function spellNode(book, bank, actionID)
+    local function findButton()
+        local item = findItem(book, bank, actionID)
         return item ~= nil and item.Button or nil
     end
-    return {
-        controlType = graph.controlTypes.button,
-        contextActions = nodes.proxyContextActions(target),
-        announcements = {
-            {
-                text = function()
-                    local item = findItem(book, bank, action)
-                    return item ~= nil and spellLabel(item) or nil
-                end,
-                kind = kinds.label,
-            },
-        },
-        bindings = {
-            { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
-            { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = target },
-            {
-                binding = "drag",
-                type = "Function",
-                func = function()
-                    local button = target()
-                    local script = button ~= nil and button:GetScript("OnDragStart") or nil
-                    if script ~= nil then
-                        script(button)
-                    end
-                end,
-            },
-        },
-        -- The reader anchors the tooltip to this frame; without one it
-        -- reads nothing.
-        tooltipFrame = target,
-        tooltip = {
-            type = "Game",
-            mode = "immediate",
-            populate = function(tooltip)
-                local item = findItem(book, bank, action)
-                if item ~= nil then
-                    tooltip:SetSpellBookItem(item.slotIndex, item.spellBank)
-                end
-            end,
-        },
-    }
+    return nodes.proxyFoundButton({
+        find = findButton,
+        label = function(button)
+            local item = button:GetParent()
+            return nodes.joinLabel(
+                nodes.shownText(item.Name),
+                nodes.shownText(item.SubName),
+                nodes.shownText(item.RequiredLevel)
+            )
+        end,
+        tooltip = function(tooltip, button)
+            local item = button:GetParent()
+            tooltip:SetSpellBookItem(item.slotIndex, item.spellBank)
+        end,
+        drag = nodes.pickupAction(function()
+            local item = findItem(book, bank, actionID)
+            if item ~= nil then
+                C_SpellBook.PickupSpellBookItem(item.slotIndex, item.spellBank)
+            end
+        end, true),
+    })
 end
 
 -- Category tabs (TabSystem buttons): real clicks. The selected tab is
 -- disabled by the tab system, so it reads as selected rather than disabled.
 -- The tab system releases and re-acquires its pooled tabs on every spell
--- data refresh (SPELLS_CHANGED while open), so a tab is found by name at
--- press time and keyed by name.
+-- data refresh (SPELLS_CHANGED while open), so a tab is found by name.
 local function tabName(tab)
     return tab.tabText or tab.tooltipText
 end
@@ -135,37 +91,26 @@ end
 
 local function renderCategoryTabs(builder, book)
     local tabSystem = book.CategoryTabSystem
-    if tabSystem == nil or tabSystem.tabs == nil then
-        return
-    end
     builder:beginStop("tabs")
     builder:pushContext("tabs", L["Tabs"])
     builder:startRow()
     for _, tab in ipairs(tabSystem.tabs) do
         local name = tabName(tab)
         if tab:IsShown() and name ~= nil then
-            local function target()
-                return findTab(tabSystem, name)
-            end
-            builder:addItem(ControlId.structural("tab:" .. name), {
-                controlType = graph.controlTypes.button,
-                announcements = {
-                    { text = name, kind = kinds.label },
-                    {
-                        text = function()
-                            local current = target()
-                            if current ~= nil and current.isSelected then
-                                return L["selected"]
-                            end
-                            return nil
-                        end,
-                        kind = kinds.selected,
-                    },
-                },
-                bindings = {
-                    { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
-                },
-            })
+            builder:addItem(
+                ControlId.structural("tab:" .. name),
+                nodes.proxyFoundButton({
+                    find = function()
+                        return findTab(tabSystem, name)
+                    end,
+                    label = tabName,
+                    selected = function()
+                        local current = findTab(tabSystem, name)
+                        return current ~= nil and current.isSelected
+                    end,
+                    rightClick = false,
+                })
+            )
         end
     end
     builder:endRow()
@@ -176,21 +121,17 @@ end
 -- them (both page halves, in display order). Pooled frames carry stale
 -- data while released, so only frames holding valid data are read.
 local function renderSpells(builder, book)
-    local paged = book.PagedSpellsFrame
-    if paged == nil then
-        return
-    end
     builder:beginStop("spells")
     builder:pushContext("spells", L["Spells"])
     local inHeader = false
     local emitted = 0
-    for _, frame in paged:EnumerateFrames() do
+    for _, frame in book.PagedSpellsFrame:EnumerateFrames() do
         if frame:IsShown() then
             if frame.HasValidData ~= nil then
-                if frame:HasValidData() and frame.Button ~= nil then
+                if frame:HasValidData() then
                     builder:addItem(
                         ControlId.structural(spellKey(frame)),
-                        spellNode(book, frame.spellBank, spellAction(frame))
+                        spellNode(book, frame.spellBank, frame.spellBookItemInfo.actionID)
                     )
                     emitted = emitted + 1
                 end
@@ -213,55 +154,22 @@ local function renderSpells(builder, book)
     builder:popContext()
 end
 
--- Previous page, the page text ("Page 1/3"), next page, as one row.
-local function renderPaging(builder, book)
-    local controls = book.PagedSpellsFrame ~= nil and book.PagedSpellsFrame.PagingControls or nil
-    if controls == nil or not controls:IsShown() then
-        return
-    end
-    builder:beginStop("paging")
-    builder:startRow()
-    builder:addItem(
-        ControlId.forObject(controls.PrevPageButton),
-        nodes.proxyButton({ target = controls.PrevPageButton, label = L["Previous Page"] })
-    )
-    if controls.PageText ~= nil then
-        builder:addItem(
-            ControlId.structural("pageText"),
-            nodes.text({
-                label = function()
-                    return controls.PageText:GetText() or ""
-                end,
-            })
-        )
-    end
-    builder:addItem(
-        ControlId.forObject(controls.NextPageButton),
-        nodes.proxyButton({ target = controls.NextPageButton, label = L["Next Page"] })
-    )
-    builder:endRow()
-end
-
 local function renderSpellBook(builder, book)
     renderCategoryTabs(builder, book)
 
-    if book.SearchBox ~= nil then
-        builder:beginStop("search")
-        -- No clear button stop, like the other search boxes: emptying the
-        -- box and pressing Enter leaves search results the same way.
-        builder:addItem(ControlId.structural("search"), nodes.proxyEditBox({ editBox = book.SearchBox, label = L["Search"] }))
-    end
+    builder:beginStop("search")
+    -- No clear button stop, like the other search boxes: emptying the box and
+    -- pressing Enter leaves search results the same way.
+    builder:addItem(ControlId.structural("search"), nodes.proxyEditBox({ editBox = book.SearchBox, label = L["Search"] }))
 
-    if book.SettingsDropdown ~= nil then
-        builder:beginStop("options")
-        builder:addItem(
-            ControlId.forObject(book.SettingsDropdown),
-            nodes.proxyDropdown({ target = book.SettingsDropdown, label = L["Options"] })
-        )
-    end
+    builder:beginStop("options")
+    builder:addItem(
+        ControlId.forObject(book.SettingsDropdown),
+        nodes.proxyDropdown({ target = book.SettingsDropdown, label = L["Options"] })
+    )
 
     renderSpells(builder, book)
-    renderPaging(builder, book)
+    nodes.pagingRow(builder, "spells", book.PagedSpellsFrame.PagingControls)
 end
 
 local function render(builder, screen)
@@ -271,11 +179,11 @@ local function render(builder, screen)
     end
     builder:pushContext("spellbook", L["Spellbook"])
     local book = frame.SpellBookFrame
-    if book ~= nil and book:IsShown() then
+    if book:IsShown() then
         renderSpellBook(builder, book)
     else
         builder:beginStop("unimplemented")
-        builder:addItem(ControlId.structural("unimplemented"), nodes.text({ label = "Not implemented yet" }))
+        builder:addItem(ControlId.structural("unimplemented"), nodes.text({ label = L["Not implemented yet"] }))
     end
     builder:popContext()
 end
@@ -289,7 +197,9 @@ module:registerWindow({
 
 -- The spell flyout (action bar and spellbook flyout arrows). Not a UIPanel:
 -- the game will not close it on Escape, so the screen holds close and hides
--- the frame itself.
+-- the frame itself. The flyout is a secure frame: it cannot be hidden in
+-- combat, and its buttons' OnEnter writes their tooltip refresh field, so
+-- the tooltip is filled directly.
 local function renderFlyout(builder, screen)
     if SpellFlyout == nil or not SpellFlyout:IsShown() then
         return
@@ -303,9 +213,17 @@ local function renderFlyout(builder, screen)
                 ControlId.forObject(captured),
                 nodes.proxyButton({
                     target = captured,
+                    hover = false,
                     label = function()
                         return C_Spell.GetSpellName(captured.spellID)
                     end,
+                    tooltip = {
+                        type = "Game",
+                        mode = "immediate",
+                        populate = function(tooltip)
+                            tooltip:SetSpellByID(captured.spellID)
+                        end,
+                    },
                 })
             )
         end
@@ -321,7 +239,9 @@ module:registerWindow({
         render = renderFlyout,
         captureClose = true,
         onRequestClose = function()
-            SpellFlyout:Hide()
+            if not InCombatLockdown() then
+                SpellFlyout:Hide()
+            end
         end,
     },
 })
