@@ -311,8 +311,24 @@ end
 -- Lua script errors: the default error dialog is not accessible, so capture
 -- them for TTS and a copyable window. /wv errors speaks the most recent error
 -- and shows the full list with stacks; /wv errors clear resets it.
+-- The list lives in the account-wide WowVisionDump saved variable, so errors
+-- survive /reload and logout and can be read from the SavedVariables file.
+local function persistentErrors()
+    WowVisionDump = WowVisionDump or {}
+    if type(WowVisionDump.luaErrors) ~= "table" then
+        WowVisionDump.luaErrors = {}
+    end
+    return WowVisionDump.luaErrors
+end
+
 module.luaErrors = {}
 local MAX_LUA_ERRORS = 20
+
+function module:clearLuaErrors()
+    self.luaErrors = {}
+    WowVisionDump = WowVisionDump or {}
+    WowVisionDump.luaErrors = self.luaErrors
+end
 local previousHandler = nil
 local inHandler = false
 local lastSpokenError = nil
@@ -327,6 +343,7 @@ local function onLuaError(message)
         message = message,
         stack = debugstack(3),
         time = date("%H:%M:%S"),
+        date = date("%Y-%m-%d"),
     })
     if #module.luaErrors > MAX_LUA_ERRORS then
         table.remove(module.luaErrors, 1)
@@ -347,6 +364,7 @@ end
 
 function module:onEnable()
     WowVision.UIHost:hookFunc(UIErrorsFrame, "AddMessage", module.onDisplay)
+    module.luaErrors = persistentErrors()
     previousHandler = geterrorhandler()
     seterrorhandler(onLuaError)
 end

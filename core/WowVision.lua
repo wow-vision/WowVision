@@ -384,7 +384,7 @@ function WowVision:registerCommands()
             local moduleErrors = WowVision.base.errors ~= nil and WowVision.base.errors.luaErrors or nil
             if moduleErrors ~= nil then
                 if args == "clear" then
-                    WowVision.base.errors.luaErrors = {}
+                    WowVision.base.errors:clearLuaErrors()
                     print("Errors cleared")
                     return
                 end
