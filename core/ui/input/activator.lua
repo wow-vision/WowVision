@@ -39,7 +39,13 @@ function Handle:_engage(inputs, emulatedKey)
                 end
             end)
         end
-        SetOverrideBindingClick(frame, true, input, frame:GetName(), emulatedKey)
+        -- Actions that are not a secure click of the frame bind the input
+        -- themselves (a game binding command, for example).
+        if self.action.bind ~= nil then
+            self.action.bind(frame, self.spec, input)
+        else
+            SetOverrideBindingClick(frame, true, input, frame:GetName(), emulatedKey)
+        end
         tinsert(self.frames, frame)
     end
     self.active = #self.frames > 0

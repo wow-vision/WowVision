@@ -11,4 +11,11 @@
        client is the modern engine with vanilla content, so the retail
        modules load first and Forever-only modules go here. -->
 
+  <!-- The collections journal and its mount journal come from Mists;
+       collections/ replaces the tab bar and adds the other tabs. -->
+  <Include file="..\mists\collections\modules.xml" />
+  <Include file="collections\modules.xml" />
+  <!-- Forever's spellbook is the modern PlayerSpellsFrame, not Mists'. -->
+  <Script file="spellbook.lua" />
+
 </Ui>
