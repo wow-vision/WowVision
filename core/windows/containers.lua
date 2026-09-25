@@ -47,6 +47,8 @@ function module.itemSlotNode(itemButton, label, clickLabels)
         binding = "drag",
         type = "Function",
         func = function()
+            WowVision.cursor = WowVision.cursor or {}
+            WowVision.cursor.pickupIsActionBar = false
             local script = itemButton:GetScript("OnDragStart")
             if script ~= nil then
                 script(itemButton)

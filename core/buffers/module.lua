@@ -96,7 +96,7 @@ module:registerBinding({
     func = function()
         local buffer = module:getCurrentBuffer()
         if buffer then
-            buffer:UIFocusDirection(1)
+            buffer:UIFocusDirection(-1)
         end
     end,
 })
@@ -110,7 +110,7 @@ module:registerBinding({
     func = function()
         local buffer = module:getCurrentBuffer()
         if buffer then
-            buffer:UIFocusDirection(-1)
+            buffer:UIFocusDirection(1)
         end
     end,
 })

@@ -26,6 +26,12 @@ WoW uses a cursor system for moving items around. When you left click (Enter) an
 
 Right clicking (Backspace) an item typically uses it directly — equipping gear, drinking a potion, or opening a container, depending on the item and context.
 
+## Action Bars
+
+Action bar slots work with the same cursor system. Focus a slot and use the **Drag** command (available from the context menu, or its keybinding — see [Keybindings](./keybindings.md)) to pick up whatever is assigned to it: a spell, item, macro, mount, or anything else. The slot empties immediately, and the assignment moves to your cursor.
+
+From there, you can either drag another slot to move it there, or press **Delete** (or **Alt+Ctrl+\**) to take it off the action bar for good without placing it anywhere. Since a spell, macro, or item reference picked up from an action bar is only an assignment — not a real item — Delete simply clears it, with no confirmation prompt. Delete still asks you to confirm before destroying a real item picked up from your bags, so your inventory stays safe either way.
+
 ## Reading Tooltips
 
 Many elements in WoW have tooltips with additional information — item stats, spell descriptions, NPC details. WowVision gives you full access to these:

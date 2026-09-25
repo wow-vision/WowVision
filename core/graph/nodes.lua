@@ -224,6 +224,8 @@ function nodes.proxyContextActions(target, clickLabels)
         add({
             label = L["Drag"],
             onActivate = function()
+                WowVision.cursor = WowVision.cursor or {}
+                WowVision.cursor.pickupIsActionBar = false
                 local frame = type(target) == "function" and target() or target
                 local script = frame ~= nil and frame.GetScript ~= nil and frame:GetScript("OnDragStart") or nil
                 if script ~= nil then

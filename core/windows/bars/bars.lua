@@ -147,6 +147,17 @@ function module.actionButtonNode(button, label, populate)
         binding = "drag",
         type = "Function",
         func = function()
+            -- Retail/Forever action buttons wire pickup through Edit Mode's
+            -- secure handlers, so their OnDragStart script is invisible to
+            -- GetScript and silently does nothing when called directly.
+            -- PickupAction is the same public API Blizzard's own drag
+            -- handler calls, and works on both Classic and Retail.
+            if button.action ~= nil then
+                WowVision.cursor = WowVision.cursor or {}
+                WowVision.cursor.pickupIsActionBar = true
+                PickupAction(button.action)
+                return
+            end
             local script = button:GetScript("OnDragStart")
             if script ~= nil then
                 script(button)

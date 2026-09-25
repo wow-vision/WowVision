@@ -49,6 +49,8 @@ local function itemNode(itemButton, buyback)
         binding = "drag",
         type = "Function",
         func = function()
+            WowVision.cursor = WowVision.cursor or {}
+            WowVision.cursor.pickupIsActionBar = false
             local script = itemButton:GetScript("OnDragStart")
             if script ~= nil then
                 script(itemButton)
