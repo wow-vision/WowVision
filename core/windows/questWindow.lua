@@ -46,6 +46,39 @@ local function actionButton(builder, button, scrollFrame, label)
     builder:addItem(ControlId.forObject(button), vtable)
 end
 
+-- The greeting panel's quest title buttons. Classic-era clients still expose
+-- the fixed QuestTitleButton1..32 globals; newer clients (this addon has seen
+-- it on the "Forever"/Camelot build and on Retail) pool them anonymously in
+-- QuestFrameGreetingPanel.titleButtonPool instead, so the globals are never
+-- created at all. Feature-detect the pool rather than branching on game
+-- version: a client keeps reading whatever it actually has, and nothing
+-- changes for a client without the pool.
+local function greetingTitleButtons(panel)
+    local pool = panel ~= nil and panel.titleButtonPool or nil
+    if pool ~= nil and pool.EnumerateActive ~= nil then
+        local buttons = {}
+        for button in pool:EnumerateActive() do
+            if button:IsShown() then
+                tinsert(buttons, button)
+            end
+        end
+        -- The pool has no guaranteed order; lay them out top to bottom like
+        -- the legacy fixed slots did.
+        table.sort(buttons, function(a, b)
+            return a:GetTop() > b:GetTop()
+        end)
+        return buttons
+    end
+    local buttons = {}
+    for i = 1, 32 do
+        local button = _G["QuestTitleButton" .. i]
+        if button ~= nil and button:IsShown() then
+            tinsert(buttons, button)
+        end
+    end
+    return buttons
+end
+
 local function getItemLabel(item)
     local label = item.Name ~= nil and item.Name:GetText() or nil
     if label == nil then
@@ -143,24 +176,21 @@ local function renderGreeting(builder)
         contentText(builder, ControlId.structural("greetingText"), GreetingText, scrollFrame)
     end
     builder:pushContext("greetingQuests", L["Quests"])
-    for i = 1, 32 do
-        local button = _G["QuestTitleButton" .. i]
-        if button ~= nil and button:IsShown() then
-            local captured = button
-            builder:beginStop()
-            local vtable = nodes.proxyButton({
-                target = captured,
-                label = function()
-                    local title = captured:GetText() or ""
-                    if captured.isActive == 1 then
-                        return L["Accepted Quest"] .. ": " .. title
-                    end
-                    return L["Available Quest"] .. ": " .. title
-                end,
-            })
-            nodes.attachScrollFrame(vtable, scrollFrame, captured)
-            builder:addItem(ControlId.forObject(captured), vtable)
-        end
+    for _, button in ipairs(greetingTitleButtons(QuestFrameGreetingPanel)) do
+        local captured = button
+        builder:beginStop()
+        local vtable = nodes.proxyButton({
+            target = captured,
+            label = function()
+                local title = captured:GetText() or ""
+                if captured.isActive == 1 then
+                    return L["Accepted Quest"] .. ": " .. title
+                end
+                return L["Available Quest"] .. ": " .. title
+            end,
+        })
+        nodes.attachScrollFrame(vtable, scrollFrame, captured)
+        builder:addItem(ControlId.forObject(captured), vtable)
     end
     builder:popContext()
     actionButton(builder, QuestFrameGreetingGoodbyeButton)
