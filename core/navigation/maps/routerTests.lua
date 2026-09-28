@@ -73,11 +73,11 @@ testRunner:addSuite("MapRouter", {
         local waypoints = graph({
             { id = "a", x = 0, y = 0, links = { "b" } },
             { id = "b", x = 10, y = 0, links = { "a" } },
-            { id = "island", x = 100, y = 100, links = {} },
+            { id = "island", x = 100, y = 100, links = { "shore" } },
+            { id = "shore", x = 110, y = 100, links = { "island" } },
         })
-        -- Entry seeding considers the island too, so route TO it succeeds
-        -- directly; route THROUGH the graph to it must fail when entries
-        -- are limited to the connected part.
+        -- The island is linked, just not to the player's part, so no last
+        -- leg applies; entries limited to the connected part must fail.
         local route, reason = Router.route(waypoints, 0, 0, "island", { entryCount = 2 })
         t:assertNil(route)
         t:assertEqual(reason, "unreachable")
@@ -181,6 +181,72 @@ testRunner:addSuite("MapRouter", {
         local missing, reason = Router.route(waypoints, 0, 0, "goal", { entryId = "nope" })
         t:assertNil(missing)
         t:assertEqual(reason, "no entry")
+    end,
+
+    ["an unlinked destination ends with a straight last leg"] = function(t)
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b" } },
+            { id = "b", x = 100, y = 0, links = { "a" } },
+            { id = "wolf", x = 100, y = 30 },
+        })
+        local route = Router.route(waypoints, 0, 0, "wolf", { entryCount = 1 })
+        t:assertNotNil(route)
+        t:assertEqual(ids(route), "a,b,wolf")
+        t:assertEqual(route.lastLeg, 30)
+        t:assertEqual(route.distance, 130) -- real yards, not the weighted cost
+    end,
+
+    ["the last leg prefers a close exit over a short route"] = function(t)
+        -- "road" is closer along the graph but 50 yards from the spawn;
+        -- "cave" costs 60 more route yards and leaves only 5 straight.
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "road", "c1" } },
+            { id = "road", x = 50, y = 0, links = { "a" } },
+            { id = "c1", x = 0, y = 60, links = { "a", "cave" } },
+            { id = "cave", x = 50, y = 55, links = { "c1" } },
+            { id = "spawn", x = 50, y = 50 },
+        })
+        local route = Router.route(waypoints, 0, 0, "spawn", { entryCount = 1 })
+        t:assertEqual(ids(route), "a,c1,cave,spawn")
+        t:assertEqual(route.lastLeg, 5)
+    end,
+
+    ["a linked destination has no last leg"] = function(t)
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b" } },
+            { id = "b", x = 10, y = 0, links = { "a" } },
+        })
+        local route = Router.route(waypoints, 0, 0, "b", { entryCount = 1 })
+        t:assertNil(route.lastLeg)
+    end,
+
+    ["a one-way link into an unlinked destination beats the last leg"] = function(t)
+        -- The spawn has no links of its own but a one-way link reaches it:
+        -- the real edge wins over the weighted straight leg.
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b" } },
+            { id = "b", x = 10, y = 0, links = { "a" } },
+            { id = "spawn", x = 10, y = 20 },
+        })
+        waypoints.b.links.spawn = 1
+        local route = Router.route(waypoints, 0, 0, "spawn", { entryCount = 1 })
+        t:assertEqual(ids(route), "a,b,spawn")
+        t:assertNil(route.lastLeg)
+    end,
+
+    ["last-leg exits stay within the distance limit"] = function(t)
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b" } },
+            { id = "b", x = 10, y = 0, links = { "a" } },
+            { id = "far", x = 10, y = 600 },
+        })
+        local route, reason = Router.route(waypoints, 0, 0, "far", { entryCount = 1 })
+        t:assertNil(route)
+        t:assertEqual(reason, "unreachable")
+        route = Router.route(waypoints, 0, 0, "far", { entryCount = 1, maxExitDistance = 1000 })
+        t:assertNotNil(route)
+        t:assertEqual(route.waypoints[#route.waypoints].id, "far")
+        t:assertNotNil(route.lastLeg)
     end,
 
     ["nearest sorts, limits, and filters"] = function(t)
