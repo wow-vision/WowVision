@@ -258,18 +258,20 @@ function module:onEnable()
     self.isSwimming = IsSwimming()
     self.isSubmerged = IsSubmerged()
     self:hasUpdate(function(self)
+        -- GetPlayerFacing is nil inside instances. Only the facing alert
+        -- needs it; returning here used to silence the indoors/outdoors,
+        -- flying, swimming, and diving checks below as well.
         local angle = GetPlayerFacing()
-        if not angle then
-            return
+        if angle then
+            local direction = self:getDirection(angle)
+            if direction and direction ~= self.direction then
+                directionAlert:fire({
+                    angle = angle,
+                    direction = direction,
+                })
+            end
+            self.angle, self.direction = angle, direction
         end
-        local direction = self:getDirection(angle)
-        if direction and direction ~= self.direction then
-            directionAlert:fire({
-                angle = angle,
-                direction = direction,
-            })
-        end
-        self.angle, self.direction = angle, direction
 
         local outdoorsIndoors = self:getOutdoorsIndoors()
         if outdoorsIndoors ~= self.outdoorsIndoors and outdoorsIndoors ~= nil then

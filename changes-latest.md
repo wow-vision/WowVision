@@ -20,6 +20,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5. The UI has 
 * The first time a character logs in with WowVision, the game's Lock Action Bars setting is turned off, so dragging spells and items off your action bars works without holding the pick up key. This happens once per character; if you lock the bars again in the game options, they stay locked.
 * Buffers: Alt+Down now moves toward the newest item in a buffer and Alt+Up toward the first. A new Invert Item Direction setting in the Buffers menu swaps the two keys back for anyone used to the old way.
 * Added two Merchant settings (Windows > Merchant): "Automatically Sell Poor Items" and "Automatically Repair If Possible", both off by default. When turned on, opening a vendor sells your grey items and repairs your gear on its own, with a chat message confirming what was sold or repaired. Repair is skipped if the vendor doesn't offer it or you can't afford it.
+* Fixed the compass's indoors/outdoors, flying, swimming, and diving announcements never firing inside dungeons and other instances, where the game does not report your facing.
 
 ### Modern
 * Added support for the bags window.
