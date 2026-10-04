@@ -44,10 +44,11 @@ jobs:
       # packager script runs here directly, told that it is building the
       # beta tag: that both passes the check and makes it pick the beta tag
       # over any release tag on the same commit.
+      # The runner ignores GITHUB_* values set through the step's env map, so
+      # the shell exports them itself.
       - name: Package and update the pre-release
-        env:
-          GITHUB_REF: refs/tags/beta
-          GITHUB_REF_NAME: beta
         run: |
+          export GITHUB_REF=refs/tags/beta
+          export GITHUB_REF_NAME=beta
           curl -sSL https://raw.githubusercontent.com/BigWigsMods/packager/v2/release.sh -o /tmp/release.sh
           bash /tmp/release.sh
