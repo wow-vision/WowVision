@@ -726,3 +726,193 @@ testRunner:addSuite("GraphFoundButton", {
         t:assertTrue(true)
     end,
 })
+
+--
+-- Dropdown menu rows with attached utility buttons
+--
+
+local function fakeFontString(text)
+    return {
+        GetObjectType = function()
+            return "FontString"
+        end,
+        GetText = function()
+            return text
+        end,
+    }
+end
+
+-- A utility button as MenuTemplates attaches it: hidden, with a click
+-- script and hover scripts that write its name into the game tooltip.
+local function fakeUtilityButton(tooltipTitle, left, tooltipState)
+    local scripts = {}
+    local button = {
+        GetObjectType = function()
+            return "Button"
+        end,
+        IsShown = function()
+            return false
+        end,
+        GetLeft = function()
+            return left
+        end,
+        GetScript = function(self, name)
+            return scripts[name]
+        end,
+        HasScript = function(self, name)
+            return scripts[name] ~= nil
+        end,
+    }
+    scripts.OnClick = function() end
+    scripts.OnEnter = function()
+        tooltipState.shown = true
+        tooltipState.line = tooltipTitle
+    end
+    scripts.OnLeave = function()
+        tooltipState.shown = false
+        tooltipState.line = nil
+    end
+    return button
+end
+
+local function fakeMenuRow(fontStrings, children)
+    return {
+        GetObjectType = function()
+            return "Button"
+        end,
+        IsShown = function()
+            return true
+        end,
+        GetRegions = function()
+            return unpack(fontStrings)
+        end,
+        GetChildren = function()
+            return unpack(children)
+        end,
+    }
+end
+
+-- Runs body with stand-ins for the tooltip globals the label probe reads.
+local function withTooltipGlobals(body)
+    local state = { shown = false, line = nil }
+    local saved = { GameTooltip, GameTooltipTextLeft1, ExecuteFrameScript, GetTime }
+    GameTooltip = {
+        IsShown = function()
+            return state.shown
+        end,
+        GetOwner = function()
+            return nil
+        end,
+    }
+    GameTooltipTextLeft1 = {
+        GetText = function()
+            return state.line
+        end,
+    }
+    ExecuteFrameScript = function(frame, name)
+        local script = frame:GetScript(name)
+        if script ~= nil then
+            script(frame)
+        end
+    end
+    local clock = 0
+    GetTime = function()
+        clock = clock + 1
+        return clock
+    end
+    local ok, err = pcall(body, state)
+    GameTooltip, GameTooltipTextLeft1, ExecuteFrameScript, GetTime = unpack(saved, 1, 4)
+    if not ok then
+        error(err, 0)
+    end
+end
+
+testRunner:addSuite("GraphDropdownRows", {
+    ["a row with attached buttons becomes a horizontal row in screen order"] = function(t)
+        withTooltipGlobals(function(state)
+            local play = fakeUtilityButton("Play Sample", 10, state)
+            local gear = fakeUtilityButton("Edit", 200, state)
+            local delete = fakeUtilityButton("Delete", 180, state)
+            local row = fakeMenuRow(
+                { fakeFontString("Low Thud"), fakeFontString("On Aura Applied") },
+                { play, gear, delete }
+            )
+            local builder = Builder:new()
+            builder:beginStop("menu")
+            graph.dropdown.emitRow(builder, row)
+            local render = builder:build()
+            t:assertEqual(#render.order, 4)
+            t:assertEqual(graph.resolveText(render.order[1].vtable.announcements[1]), "Low Thud, On Aura Applied")
+            t:assertEqual(render.order[2].id.reference, play)
+            t:assertEqual(render.order[3].id.reference, delete, "sorted by screen position, not creation order")
+            t:assertEqual(render.order[4].id.reference, gear)
+            t:assertEqual(graph.resolveText(render.order[2].vtable.announcements[1]), "Play Sample")
+            t:assertEqual(graph.resolveText(render.order[3].vtable.announcements[1]), "Delete")
+            t:assertEqual(graph.resolveText(render.order[4].vtable.announcements[1]), "Edit")
+            t:assertEqual(render.order[1].transitions.right.destination, render.order[2].id)
+            t:assertEqual(render.order[4].transitions.left.destination, render.order[3].id)
+            t:assertEqual(render.order[2].positionIndex, 2)
+            t:assertEqual(render.order[2].positionCount, 4)
+            t:assertFalse(state.shown, "the label probe leaves the tooltip hidden")
+        end)
+    end,
+
+    ["a row without buttons stays a single item"] = function(t)
+        withTooltipGlobals(function()
+            local row = fakeMenuRow({ fakeFontString("Rename Layout") }, {})
+            local builder = Builder:new()
+            builder:beginStop("menu")
+            graph.dropdown.emitRow(builder, row)
+            local render = builder:build()
+            t:assertEqual(#render.order, 1)
+            t:assertEqual(graph.resolveText(render.order[1].vtable.announcements[1]), "Rename Layout")
+            t:assertNil(render.order[1].transitions.right)
+        end)
+    end,
+
+    ["child frames without a click script are not buttons"] = function(t)
+        local swatch = {
+            GetObjectType = function()
+                return "Button"
+            end,
+            GetScript = function()
+                return nil
+            end,
+        }
+        local label = {
+            GetObjectType = function()
+                return "Frame"
+            end,
+        }
+        local row = fakeMenuRow({ fakeFontString("Red") }, { swatch, label })
+        t:assertEqual(#graph.dropdown.rowButtons(row), 0)
+    end,
+
+    ["the label is read from a tooltip the button already owns without re-hovering"] = function(t)
+        withTooltipGlobals(function(state)
+            local button = fakeUtilityButton("Delete Layout", 5, state)
+            state.shown = true
+            state.line = "Delete Layout"
+            GameTooltip.GetOwner = function()
+                return button
+            end
+            local entered = false
+            local enter = button:GetScript("OnEnter")
+            local scripts = { OnEnter = enter }
+            button.HasScript = function()
+                return true
+            end
+            button.GetScript = function(self, name)
+                if name == "OnEnter" then
+                    return function()
+                        entered = true
+                    end
+                end
+                return scripts[name]
+            end
+            t:assertEqual(graph.dropdown.rowButtonLabel(button)(), "Delete Layout")
+            t:assertFalse(entered)
+            t:assertTrue(state.shown, "the owned tooltip is left showing")
+        end)
+    end,
+})

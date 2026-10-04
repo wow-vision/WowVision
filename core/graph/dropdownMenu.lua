@@ -88,26 +88,43 @@ local function isDescriptionEnabled(description)
 end
 
 local function itemRegions(item)
-    local labelRegion, legacyCheck
+    local fontStrings, legacyCheck = {}, nil
     for _, region in ipairs({ item:GetRegions() }) do
         local kind = region:GetObjectType()
-        if kind == "FontString" and labelRegion == nil then
-            labelRegion = region
+        if kind == "FontString" then
+            tinsert(fontStrings, region)
         elseif kind == "Texture" and region:GetTexture() == LEGACY_CHECK_TEXTURE then
             legacyCheck = region
         end
     end
-    return labelRegion, legacyCheck
+    return fontStrings, legacyCheck
+end
+
+-- A row's text: every text region in order, empties skipped. Most rows have
+-- one; a cooldown alert row writes the event under the sound name, so it
+-- reads "Low Thud, On Aura Applied".
+local function rowLabel(fontStrings)
+    return function()
+        local parts = {}
+        for _, fontString in ipairs(fontStrings) do
+            local text = fontString:GetText()
+            if text ~= nil and text ~= "" then
+                tinsert(parts, text)
+            end
+        end
+        if #parts == 0 then
+            return nil
+        end
+        return table.concat(parts, ", ")
+    end
 end
 
 local function emitItem(builder, item)
-    local labelRegion, legacyCheck = itemRegions(item)
-    local label = function()
-        return labelRegion ~= nil and labelRegion:GetText() or nil
-    end
+    local fontStrings, legacyCheck = itemRegions(item)
+    local label = rowLabel(fontStrings)
 
     if item:GetObjectType() ~= "Button" then
-        if labelRegion ~= nil then
+        if #fontStrings > 0 then
             builder:addItem(ControlId.forObject(item), nodes.text({ label = label }))
         end
         return
@@ -210,6 +227,106 @@ local function emitItem(builder, item)
     builder:addItem(ControlId.forObject(item), vtable)
 end
 
+-- Buttons the menu attaches to a row: the gear and delete buttons on a layout
+-- row, play sample / edit / delete on a cooldown alert row. They are real
+-- Button children of the row carrying a click script (MenuTemplates'
+-- utility buttons), returned in screen order, left to right. Most are hidden
+-- until the mouse is over the row, so they are clicked while hidden.
+function dropdown.rowButtons(item)
+    local buttons = {}
+    if item.GetChildren == nil then
+        return buttons
+    end
+    for _, child in ipairs({ item:GetChildren() }) do
+        if
+            child.GetObjectType ~= nil
+            and child:GetObjectType() == "Button"
+            and child.GetScript ~= nil
+            and child:GetScript("OnClick") ~= nil
+        then
+            tinsert(buttons, child)
+        end
+    end
+    local lefts, order, placed = {}, {}, true
+    for index, button in ipairs(buttons) do
+        local left = button.GetLeft ~= nil and button:GetLeft() or nil
+        if left == nil then
+            placed = false
+        end
+        lefts[button] = left
+        order[button] = index
+    end
+    if placed then
+        table.sort(buttons, function(a, b)
+            if lefts[a] ~= lefts[b] then
+                return lefts[a] < lefts[b]
+            end
+            return order[a] < order[b]
+        end)
+    end
+    return buttons
+end
+
+-- A row button's name lives only in its tooltip: MenuUtil.HookTooltipScripts
+-- writes the title from an OnEnter closure and stores nothing on the frame.
+-- The label runs the hover scripts once and takes the tooltip's first line,
+-- cached per frame time so a tick probes each button once. A tooltip the
+-- button already owns (focus hovered it) is read as is, so the probe never
+-- hides the tooltip the reader is about to speak.
+local labelCache = setmetatable({}, { __mode = "k" })
+function dropdown.rowButtonLabel(button)
+    return function()
+        local now = GetTime ~= nil and GetTime() or 0
+        local cached = labelCache[button]
+        if cached ~= nil and cached.time == now then
+            return cached.text
+        end
+        local text = nil
+        local tooltip = GameTooltip
+        if tooltip ~= nil and ExecuteFrameScript ~= nil and button.HasScript ~= nil and button:HasScript("OnEnter") then
+            local owned = tooltip.IsShown ~= nil and tooltip:IsShown()
+                and tooltip.GetOwner ~= nil and tooltip:GetOwner() == button
+            if not owned then
+                pcall(ExecuteFrameScript, button, "OnEnter")
+            end
+            local line = GameTooltipTextLeft1
+            text = line ~= nil and line:GetText() or nil
+            if not owned then
+                pcall(ExecuteFrameScript, button, "OnLeave")
+            end
+        end
+        if text == "" then
+            text = nil
+        end
+        labelCache[button] = { time = now, text = text }
+        return text
+    end
+end
+
+-- A menu row with attached buttons is a horizontal row: the row first, then
+-- each button on the right arrow. Up and down between rows land on the row
+-- text. A row without buttons stays a single item.
+function dropdown.emitRow(builder, item)
+    local buttons = dropdown.rowButtons(item)
+    if #buttons == 0 then
+        emitItem(builder, item)
+        return
+    end
+    builder:startRow()
+    emitItem(builder, item)
+    for _, button in ipairs(buttons) do
+        builder:addItem(
+            ControlId.forObject(button),
+            nodes.proxyButton({
+                target = button,
+                allowHidden = true,
+                label = dropdown.rowButtonLabel(button),
+            })
+        )
+    end
+    builder:endRow()
+end
+
 -- Menu frames attach through the Window API, not SetParent, so neither
 -- parent walks nor EnumerateFrames can find them reliably. Instead, capture
 -- every menu frame at creation: MenuProxyMixin is the global mixin on
@@ -247,12 +364,7 @@ local function titleText(item)
     if not item:IsShown() or item:GetObjectType() == "Button" then
         return nil
     end
-    local labelRegion = itemRegions(item)
-    local text = labelRegion ~= nil and labelRegion:GetText() or nil
-    if text == nil or text == "" then
-        return nil
-    end
-    return text
+    return rowLabel(itemRegions(item))()
 end
 
 -- Title rows are structure, not stops: each becomes the CONTEXT of the rows
@@ -310,7 +422,7 @@ local function renderOneMenu(builder, menuFrame, levelIndex)
                 pendingTitle, pendingItem = title, item
             elseif item:GetObjectType() == "Button" then
                 beforeRow()
-                emitItem(builder, item)
+                dropdown.emitRow(builder, item)
             else
                 emitItem(builder, item)
             end
