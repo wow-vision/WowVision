@@ -2,6 +2,25 @@ local module = WowVision.base:createModule("buffers")
 local L = module.L
 module:setLabel(L["Buffers"])
 
+-- Alt-Up and Alt-Down walk the current buffer's items. Items are appended,
+-- so the newest sits last: Alt-Down moves toward it and Alt-Up toward the
+-- first. Invert swaps both keys for players used to the earlier scheme,
+-- where Alt-Up moved toward the newest item.
+local settings = module:hasSettings()
+settings:add({
+    type = "Bool",
+    key = "invertItemDirection",
+    label = L["Invert Item Direction"],
+    default = false,
+})
+
+local function itemDirection(direction)
+    if module.settings.invertItemDirection then
+        return -direction
+    end
+    return direction
+end
+
 function module:getDefaultData()
     -- Root group contains child groups
     local root = WowVision.buffers.RootBufferGroup:new()
@@ -96,7 +115,7 @@ module:registerBinding({
     func = function()
         local buffer = module:getCurrentBuffer()
         if buffer then
-            buffer:UIFocusDirection(-1)
+            buffer:UIFocusDirection(itemDirection(-1))
         end
     end,
 })
@@ -110,7 +129,7 @@ module:registerBinding({
     func = function()
         local buffer = module:getCurrentBuffer()
         if buffer then
-            buffer:UIFocusDirection(1)
+            buffer:UIFocusDirection(itemDirection(1))
         end
     end,
 })
