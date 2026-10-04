@@ -65,7 +65,12 @@ module:hasUpdate(function(self)
         local actual = math.sqrt(dx * dx + dy * dy)
         -- Speed is a secret value in combat on the modern engine, and the
         -- grading compares it; no reading until it is plain again.
-        local speed = GetUnitSpeed("player")
+        local speed, _, _, swimSpeed = GetUnitSpeed("player")
+        -- In water the first return stays the run speed, which would read
+        -- every stroke as a shortfall.
+        if IsSwimming() then
+            speed = swimSpeed
+        end
         if WowVision.isSecret(speed) then
             speed = nil
         end

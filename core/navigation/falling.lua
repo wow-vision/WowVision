@@ -59,10 +59,24 @@ end)
 
 local fallStart = nil
 local soundNumber = 0
+local lastSwim = -math.huge
+local waterFall = false
 
 module:hasUpdate(function(self)
-    if IsFalling() then
-        local now = GetTime()
+    local now = GetTime()
+    -- Water is no fall: a fall that starts while swimming or right after
+    -- leaving the water (jumping out) stays silent until the player lands,
+    -- however long the arc lasts.
+    if IsSwimming() then
+        lastSwim = now
+    end
+    local falling = IsFalling()
+    if not falling then
+        waterFall = false
+    elseif fallStart == nil and (IsSwimming() or (now - lastSwim) <= JUMP_GRACE) then
+        waterFall = true
+    end
+    if falling and not waterFall then
         if fallStart == nil then
             fallStart = now
         end
