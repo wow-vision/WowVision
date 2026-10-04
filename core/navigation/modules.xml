@@ -2,12 +2,15 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="module.lua" />
+  <Script file="camera.lua" />
+  <Script file="cameraTests.lua" />
   <Script file="stuckMath.lua" />
   <Script file="stuckTests.lua" />
   <Script file="walls.lua" />
   <Script file="falling.lua" />
   <Script file="compass.lua" />
   <Script file="follow.lua" />
+  <Script file="pitchLock.lua" />
   <Include file="atlas/modules.xml" />
   <Include file="maps/modules.xml" />
 

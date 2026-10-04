@@ -29,3 +29,4 @@ WoW only supports one focus target by default. WowVision extends this with up to
 | `/disableaddon <name>` | Disable an addon and reload the UI |
 | `/wv soft` | Read the soft targeting mode and every soft targeting game value, and anything still waiting for combat to end; also printed to chat |
 | `/wv speech <voice> <rate> <volume>` | Set the speech voice, rate (-10 to 10) and volume (0 to 100) in one go, for example `/wv speech 1 9 100`; handy in a login macro. Rate and volume may be left off. `/wv speech` alone reads the current values and lists the voices |
+| `/wv turnlog` | List the last turns to a waypoint with their error, in a window and in chat |

@@ -4,6 +4,7 @@
   <Script file="speech.lua" />
   <Script file="QuestLog.lua" />
   <Script file="cooldownManager.lua" />
+  <Script file="pitchLock.lua" />
   <Include file="containers/modules.xml" />
 
 </Ui>

@@ -17,3 +17,21 @@ local autoMove = settings:add({
 autoMove.events.valueChange:subscribe(nil, function(event, obj, key, value)
     SetCVar("autoInteract", value)
 end)
+
+-- The camera settings turn to waypoint and the pitch lock need, set once
+-- per character (see camera.lua).
+settings:add({
+    type = "Bool",
+    key = "cameraStyleSet",
+    default = false,
+    global = false,
+    showInUI = false,
+})
+
+function module:onFullEnable()
+    local getCVar = C_CVar ~= nil and C_CVar.GetCVar or GetCVar
+    local setCVar = C_CVar ~= nil and C_CVar.SetCVar or SetCVar
+    if WowVision.navigationCamera.applyOnce(self.settings, getCVar, setCVar) then
+        print(L["WowVision set the camera to always follow behind your character, which turning to waypoints needs. You can change the camera following style in the game options under Controls."])
+    end
+end
