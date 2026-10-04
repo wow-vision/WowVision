@@ -38,5 +38,16 @@ jobs:
           git tag -f beta
           git push -f origin beta
 
+      # The packager action skips a branch build whose commit carries a tag
+      # ("future tag", it expects the tag push to build instead), and tag
+      # pushes made with the workflow token start no workflow. So the
+      # packager script runs here directly, told that it is building the
+      # beta tag: that both passes the check and makes it pick the beta tag
+      # over any release tag on the same commit.
       - name: Package and update the pre-release
-        uses: BigWigsMods/packager@v2
+        env:
+          GITHUB_REF: refs/tags/beta
+          GITHUB_REF_NAME: beta
+        run: |
+          curl -sSL https://raw.githubusercontent.com/BigWigsMods/packager/v2/release.sh -o /tmp/release.sh
+          bash /tmp/release.sh
