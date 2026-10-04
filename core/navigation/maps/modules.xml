@@ -7,6 +7,8 @@
   <Script file="Beacon.lua" />
   <Script file="Path.lua" />
   <Script file="routerTests.lua" />
+  <Script file="turnMath.lua" />
+  <Script file="turnTests.lua" />
   <Script file="turnTo.lua" />
   
 </Ui>
