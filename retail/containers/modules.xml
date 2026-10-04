@@ -3,6 +3,7 @@
 
   <Script file="containers.lua" />
   <Script file="Bags.lua" />
+  <Script file="Bank.lua" />
   <Script file="instances.lua" />
 
 </Ui>

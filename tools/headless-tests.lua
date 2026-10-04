@@ -256,6 +256,7 @@ local parseOnly = {
     "classic/containers/Bank.lua",
     "retail/containers/containers.lua",
     "retail/containers/Bags.lua",
+    "retail/containers/Bank.lua",
     "retail/QuestLog.lua",
     "retail/cooldownManager.lua",
     "core/windows/training.lua",

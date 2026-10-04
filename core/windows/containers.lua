@@ -62,14 +62,27 @@ local function shown(frame)
     return frame ~= nil and frame:IsShown()
 end
 
+-- Where an item button points: bag id and slot id. Retail bank buttons
+-- carry a bank tab (a bag id) and a container slot, retail bag buttons
+-- their own bag id (the combined frame mixes bags), classic buttons their
+-- parent frame's.
+function module.slotLocation(itemButton)
+    if itemButton.GetBankTabID ~= nil and itemButton.GetContainerSlotID ~= nil then
+        return itemButton:GetBankTabID(), itemButton:GetContainerSlotID()
+    end
+    if itemButton.GetBagID ~= nil then
+        return itemButton:GetBagID(), itemButton:GetID()
+    end
+    return itemButton:GetParent():GetID(), itemButton:GetID()
+end
+
 -- What clicking an item slot does right now. The game decides a right click
 -- by which window is open (the same order its own click handler and
 -- UseContainerItem follow), so the label does too. nil means "nothing worth
 -- naming" and leaves the bare click name.
 function module.itemClickLabels(itemButton)
     local function slotInfo()
-        local bagID = itemButton.GetBagID ~= nil and itemButton:GetBagID() or itemButton:GetParent():GetID()
-        local slotID = itemButton:GetID()
+        local bagID, slotID = module.slotLocation(itemButton)
         return bagID, slotID, C_Container.GetContainerItemInfo(bagID, slotID)
     end
     return {
@@ -94,7 +107,10 @@ function module.itemClickLabels(itemButton)
                 end
                 return L["Sell"]
             end
-            if bagID == BANK_CONTAINER or bagID > NUM_BAG_SLOTS then
+            -- Held bags: the backpack, the bag slots and (modern) the reagent
+            -- bag; everything above is a bank bag or bank tab.
+            local heldBags = NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS
+            if bagID == BANK_CONTAINER or bagID > heldBags then
                 return L["Move to Bags"]
             end
             if shown(BankFrame) then
