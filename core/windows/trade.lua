@@ -32,6 +32,8 @@ local function slotNode(button, label)
         binding = "drag",
         type = "Function",
         func = function()
+            WowVision.cursor = WowVision.cursor or {}
+            WowVision.cursor.pickupIsActionBar = false
             local script = button:GetScript("OnDragStart")
             if script ~= nil then
                 script(button)

@@ -695,6 +695,8 @@ end
 -- returning the frame that shows the entry now.
 function nodes.dragScript(target)
     return function()
+        WowVision.cursor = WowVision.cursor or {}
+        WowVision.cursor.pickupIsActionBar = false
         local frame = target
         if type(target) == "function" then
             -- Not "target() or target": a finder that finds nothing must

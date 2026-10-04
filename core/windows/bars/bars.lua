@@ -147,6 +147,8 @@ function module.actionButtonNode(button, label, populate)
         binding = "drag",
         type = "Function",
         func = function()
+            WowVision.cursor = WowVision.cursor or {}
+            WowVision.cursor.pickupIsActionBar = true
             local script = button:GetScript("OnDragStart")
             if script ~= nil then
                 script(button)
