@@ -66,6 +66,12 @@ testRunner:addSuite("SoftTargeting", {
         t:assertNil(soft.lockValues(nil, true, true, false))
     end,
 
+    ["the game default mode leaves the game alone"] = function(t)
+        t:assertNil(soft.lockValues(soft.GAME_DEFAULT, true, true, false))
+        t:assertNil(soft.lockValues(soft.GAME_DEFAULT, false, false, false))
+        t:assertEqual(soft.lockModes[1], soft.GAME_DEFAULT)
+    end,
+
     ["a normalised number counts as the same value"] = function(t)
         t:assertTrue(soft.sameValue("15.000000", "15"))
         t:assertFalse(soft.sameValue("15", "20"))

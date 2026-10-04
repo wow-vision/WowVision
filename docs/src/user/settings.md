@@ -28,10 +28,11 @@ Soft targeting picks what is in front of you without a hard target: an enemy, a 
 
 **Soft Targeting With a Hard Target** decides what happens while you have a target locked:
 
-- **Only Without an Attackable Hard Target** (default) — with a living enemy targeted, soft targeting stays out of the way, so the interact key acts on that enemy instead of a corpse or a chair next to it. With a corpse, an NPC, or a player you follow targeted, soft targeting keeps working. This switches with every target change and when your target dies, in combat too.
+- **Game Default** (default) — WowVision leaves the game's own behaviour alone.
+- **Only Without an Attackable Hard Target** — with a living enemy targeted, soft targeting stays out of the way, so the interact key acts on that enemy instead of a corpse or a chair next to it. With a corpse, an NPC, or a player you follow targeted, soft targeting keeps working. This switches with every target change and when your target dies, in combat too.
 - **Only Without a Hard Target** — any locked target turns soft targeting off.
 - **Always** — soft targeting works whatever you have targeted.
 
-**Make Soft Target the Hard Target** lets your hard target follow the soft enemy or friend; it is off by default.
+**Make Soft Target the Hard Target** lets your hard target follow the soft enemy or friend; by default the game's own setting stays. The arc and range settings default to the game's values too: a range of 0 means the game's own range.
 
 The game locks the on/off switches and that last setting in combat. Changed in a fight, they apply when combat ends, and WowVision says "after combat". `/wv soft` reads every soft targeting value, including anything still waiting for combat to end.

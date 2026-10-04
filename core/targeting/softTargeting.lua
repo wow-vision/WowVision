@@ -14,11 +14,17 @@ local soft = {}
 -- "attackable only" value, so that mode switches WithLocked as the target
 -- changes. Neither variable is secure (C_CVar.GetCVarInfo on Forever 1.60.1),
 -- so the switch also works in combat.
-soft.lockModes = { "always", "noHardTarget", "noAttackableHardTarget" }
+-- "game" leaves both variables as the game has them (the default: WowVision
+-- changes nothing a player did not ask for).
+soft.GAME_DEFAULT = "game"
+soft.lockModes = { "game", "always", "noHardTarget", "noAttackableHardTarget" }
 
 -- Returns the WithLocked and MatchLocked values for a mode and the current
 -- hard target, or nil for an unknown mode (the game's values stay).
 function soft.lockValues(mode, hasTarget, canAttack, dead)
+    if mode == soft.GAME_DEFAULT then
+        return nil
+    end
     if mode == "always" then
         return 2, 0
     elseif mode == "noHardTarget" then

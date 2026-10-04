@@ -3,6 +3,11 @@
 -- the numbers rest on are written down there.
 local turnMath = {}
 
+-- Lua 5.1 (the game) has math.atan2; 5.3+ (the headless tests) folds it into math.atan.
+local atan2 = math.atan2 or function(y, x)
+    return math.atan(y, x)
+end
+
 turnMath.SPEED_MIN = 60
 -- cameraYawMoveSpeed does nothing above 360; the MoveView argument
 -- multiplies it, so speeds above 360 are CVar 360 times a factor up to 4.
@@ -90,7 +95,7 @@ end
 -- Bearing from (px, py) to (x, y) relative to facing (radians), in
 -- degrees, positive = to the right (Beacon's convention).
 function turnMath.relativeBearing(px, py, facing, x, y)
-    local bearing = -math.deg(math.atan2(y - py, x - px))
+    local bearing = -math.deg(atan2(y - py, x - px))
     return wrap(bearing + math.deg(facing))
 end
 
@@ -116,7 +121,7 @@ function turnMath.moveDirection(facing, flags)
     if forward == 0 and side == 0 then
         return nil
     end
-    return facing - math.atan2(side, forward)
+    return facing - atan2(side, forward)
 end
 
 -- Where the player will be when the turn lands: distance yards along

@@ -25,6 +25,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5. The UI has 
 * Windows that open on a search box, like the game options, take typing right away.
 * Fixed key bindings losing Alt when Alt was let go before the key.
 * Books and letters no longer read a page number line or stop silently when there is no author.
+* Targeting: new soft targeting settings (Soft Targeting With a Hard Target, Make Soft Target the Hard Target, and an arc and range per soft target). They all default to Game Default, so nothing changes unless you set them. Shift+I, Shift+P and Shift+O changed in combat now apply when combat ends. /wv soft reads every value.
 * Added two Merchant settings (Windows > Merchant): "Automatically Sell Poor Items" and "Automatically Repair If Possible", both off by default. When turned on, opening a vendor sells your grey items and repairs your gear on its own, with a chat message confirming what was sold or repaired. Repair is skipped if the vendor doesn't offer it or you can't afford it.
 * Fixed the compass's indoors/outdoors, flying, swimming, and diving announcements never firing inside dungeons and other instances, where the game does not report your facing.
 * Added Sku's Beacon 6 as a beacon sound.

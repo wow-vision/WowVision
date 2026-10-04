@@ -166,7 +166,13 @@ local writer = soft.Writer:new({
     inCombat = InCombatLockdown,
 })
 
+-- Every soft targeting setting defaults to the game's own value: a fresh
+-- install changes nothing, the way the module behaved before these settings
+-- existed. A range of 0 means the same for the number settings.
+local GAME_DEFAULT = soft.GAME_DEFAULT
+
 local arcChoices = {
+    { label = L["Game Default"], value = GAME_DEFAULT },
     { label = L["Directly in Front"], value = 0 },
     { label = L["15 Degrees in Front"], value = 1 },
     { label = L["180 Degrees in Front"], value = 2 },
@@ -205,16 +211,17 @@ local function addSoftTarget(info)
         key = info.key .. "Arc",
         type = "Choice",
         label = info.arcLabel,
-        default = info.defaultArc,
+        default = GAME_DEFAULT,
         choices = arcChoices,
     })
     arc.events.valueChange:subscribe(nil, onSoftTargetSettingChange)
+    -- 0 = the game's own range.
     local range = settings:add({
         key = info.key .. "Range",
         type = "Number",
         label = info.rangeLabel,
-        default = info.defaultRange,
-        min = info.minRange,
+        default = 0,
+        min = 0,
         max = info.maxRange,
     })
     range.events.valueChange:subscribe(nil, onSoftTargetSettingChange)
@@ -278,9 +285,6 @@ addSoftTarget({
     binding = "SHIFT-I",
     arcLabel = L["Soft Target Enemy Arc"],
     rangeLabel = L["Soft Target Enemy Range"],
-    defaultArc = 1,
-    defaultRange = 60,
-    minRange = 1,
     maxRange = 60,
 })
 
@@ -294,9 +298,6 @@ addSoftTarget({
     binding = "SHIFT-P",
     arcLabel = L["Soft Target Friend Arc"],
     rangeLabel = L["Soft Target Friend Range"],
-    defaultArc = 1,
-    defaultRange = 60,
-    minRange = 1,
     maxRange = 60,
 })
 
@@ -310,11 +311,8 @@ addSoftTarget({
     binding = "SHIFT-O",
     arcLabel = L["Soft Target Interact Arc"],
     rangeLabel = L["Soft Target Interact Range"],
-    defaultArc = 2,
-    -- Kept short on purpose: a long interact reach picks up mobs behind
-    -- walls and buildings. 20 is the game's own gamepad value.
-    defaultRange = 15,
-    minRange = 1,
+    -- A long interact reach picks up mobs behind walls and buildings; 20
+    -- is the game's own gamepad value.
     maxRange = 20,
 })
 
@@ -322,8 +320,9 @@ local lockMode = settings:add({
     key = "softTargetLock",
     type = "Choice",
     label = L["Soft Targeting With a Hard Target"],
-    default = "noAttackableHardTarget",
+    default = GAME_DEFAULT,
     choices = {
+        { label = L["Game Default"], value = GAME_DEFAULT },
         { label = L["Only Without an Attackable Hard Target"], value = "noAttackableHardTarget" },
         { label = L["Only Without a Hard Target"], value = "noHardTarget" },
         { label = L["Always"], value = "always" },
@@ -336,8 +335,9 @@ local force = settings:add({
     key = "softTargetForce",
     type = "Choice",
     label = L["Make Soft Target the Hard Target"],
-    default = 0,
+    default = GAME_DEFAULT,
     choices = {
+        { label = L["Game Default"], value = GAME_DEFAULT },
         { label = L["Off"], value = 0 },
         { label = L["Enemies"], value = 1 },
         { label = L["Friends"], value = 2 },
@@ -349,6 +349,15 @@ module:registerEvent("event", "PLAYER_REGEN_ENABLED")
 -- A target that dies stays locked: its death has to switch the lock too.
 module:registerEvent("unit", "UNIT_HEALTH", "target")
 
+-- Writes a value unless the setting is at its "game default", which leaves
+-- the variable as the game has it.
+local function writeUnlessDefault(name, value)
+    if value == nil or value == GAME_DEFAULT or value == 0 and name:find("Range$") ~= nil then
+        return
+    end
+    writer:write(name, value)
+end
+
 -- Every soft targeting variable, so a reload brings the game back in line
 -- with the settings. A switch that is off stays as the game has it: players
 -- may have turned the interact key on in Blizzard's own options.
@@ -357,10 +366,10 @@ function module:applySoftTargeting()
         if info.alert:getEnabled() then
             writer:write(info.cvar, 3)
         end
-        writer:write(info.cvar .. "Arc", self.settings[info.key .. "Arc"])
-        writer:write(info.cvar .. "Range", self.settings[info.key .. "Range"])
+        writeUnlessDefault(info.cvar .. "Arc", self.settings[info.key .. "Arc"])
+        writeUnlessDefault(info.cvar .. "Range", self.settings[info.key .. "Range"])
     end
-    writer:write("SoftTargetForce", self.settings.softTargetForce)
+    writeUnlessDefault("SoftTargetForce", self.settings.softTargetForce)
     self.lockWanted = nil
     self:updateSoftTargetLock()
 end
