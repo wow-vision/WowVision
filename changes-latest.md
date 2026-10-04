@@ -18,10 +18,12 @@ This is a massive refactor of the codebase thanks to Claude Fable 5. The UI has 
 * Added the scanner. The scanner acts as traditionally seen in other mods, providing a categorized list of various things in the world. These include quest givers, nearby quests, and the location of your corpse for now. Press f9 to use it. Important: The scanner can only give you straight line paths currently pathfinding solutions are being worked on.
 * Added the /wv speech command to quickly adjust your speech settings. The syntax is /wv speech voiceID rate volume, for example /wv speech 1 8 100. Note: your first voice has ID 0.
 * The first time a character logs in with WowVision, the game's Lock Action Bars setting is turned off, so dragging spells and items off your action bars works without holding the pick up key. This happens once per character; if you lock the bars again in the game options, they stay locked.
+* Buffers: Alt+Down now moves toward the newest item in a buffer and Alt+Up toward the first. A new Invert Item Direction setting in the Buffers menu swaps the two keys back for anyone used to the old way.
 * Added two Merchant settings (Windows > Merchant): "Automatically Sell Poor Items" and "Automatically Repair If Possible", both off by default. When turned on, opening a vendor sells your grey items and repairs your gear on its own, with a chat message confirming what was sold or repaired. Repair is skipped if the vendor doesn't offer it or you can't afford it.
 
 ### Modern
 * Added support for the bags window.
+* Added the cooldown manager settings window (/cdm): the Spells, Auras and Group Buffs tabs, search, the gear menu, each category with its items, the layout dropdown and Revert Changes. Enter on an item picks it up and Enter on another item or on a category's empty slot drops it there; Backspace opens the item's menu for alerts and moves. The alert editor is its own window. Changes made with the keyboard take effect after the interface reloads, because the game rebuilds its on-screen cooldown data from them; the window says so and offers a Reload Interface button. Menu rows with attached buttons (play sample, edit, delete) now read as rows: right arrow reaches the buttons.
 * Fixed an entirely unnecessary 1.5 second delay when clicking on gossip options before the text refreshed. This was caused by retail changing which events fire for gossip dialogue.
 
 #### Forever
