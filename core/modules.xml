@@ -20,6 +20,8 @@
   <Script file="utilsTests.lua" />
   <Script file="ttsCacheBust.lua" />
   <Script file="ttsCacheBustTests.lua" />
+  <Script file="speechSounds.lua" />
+  <Script file="speechSoundsTests.lua" />
   <Include file="templates/modules.xml" />
   <Include file="colors/modules.xml" />
   <Script file="Profiler.lua" />

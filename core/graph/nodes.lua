@@ -423,8 +423,10 @@ end
 -- A real Blizzard edit box as a node: Enter hands it keyboard focus and its
 -- own handlers take over; the current text reads as the value. Tabbing TO
 -- the node also hands it keyboard focus, so typing starts immediately and
--- the tab pair flows through edit boxes (autoInput = false opts out); Tab is
--- hooked to leave the box and move graph focus (hookTab = false opts out);
+-- the tab pair flows through edit boxes (autoInput = false opts out); a new
+-- screen that LANDS on the node does the same, so a window opening on its
+-- search box takes typing at once. Tab is hooked to leave the box and move
+-- graph focus (hookTab = false opts out);
 -- fixAutoFocus = true turns off Blizzard's autofocus so the box cannot
 -- re-grab the keyboard on its own refreshes (icon selectors do).
 -- config: { editBox, label, autoInput?, hookTab?, fixAutoFocus? }
@@ -484,6 +486,7 @@ function nodes.proxyEditBox(config)
         vtable.onTabFocus = function()
             editBox:SetFocus()
         end
+        vtable.onOpenFocus = vtable.onTabFocus
     end
     return vtable
 end

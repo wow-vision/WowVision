@@ -108,16 +108,27 @@ testRunner:addSuite("TTS cache bust", {
         t:assertEqual(store.keys, 0)
     end),
 
-    ["secret values pass through untouched"] = isolated(function(t, store)
+    ["secret values are busted from one shared counter"] = isolated(function(t, store)
         local previous = issecretvalue
-        issecretvalue = function()
-            return true
+        issecretvalue = function(value)
+            return value == "health" or value == "power"
         end
-        local ok, result = pcall(cacheBust.bust, "secret")
+        local ok, err = pcall(function()
+            local first = cacheBust.bust("health")
+            local second = cacheBust.bust("health")
+            local other = cacheBust.bust("power")
+            t:assertNotEqual(first, second, "a repeated secret line must differ")
+            t:assertEqual(strip(first), "health")
+            t:assertEqual(strip(other), "power")
+            -- Not keyed by their text: one counter serves every secret.
+            t:assertEqual(store.keys, 1)
+            t:assertEqual(store.seen["#secret"], 3)
+            t:assertNil(store.seen["health"])
+            -- Foreign secret text is busted too; its buster cannot be checked.
+            t:assertNotEqual(cacheBust.bustForeign("health"), "health")
+        end)
         issecretvalue = previous
-        t:assertTrue(ok, result)
-        t:assertEqual(result, "secret")
-        t:assertEqual(store.keys, 0)
+        t:assertTrue(ok, err)
     end),
 
     ["foreign text is busted unless it carries a buster"] = isolated(function(t)

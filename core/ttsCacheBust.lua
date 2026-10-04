@@ -130,11 +130,23 @@ local function nextRun(key)
     return run
 end
 
+-- Retail and WoW: Forever hand addons SECRET values (unit health and power
+-- among them). Any string operation on a secret throws, but concatenation does
+-- not, and the speech API accepts them. A secret text cannot be read, so it
+-- cannot be keyed per text: every secret utterance draws from one shared
+-- counter instead. A collision needs the same secret line exactly MAX secret
+-- utterances later. Left unbusted, a repeated secret line (the player's health
+-- in a buffer, visited twice) replays the engine's cached audio, which is
+-- silence on a screen-reader voice.
+local SECRET_KEY = "#secret"
+
+local function isSecret(text)
+    return issecretvalue ~= nil and issecretvalue(text)
+end
+
 local function speakable(text)
-    -- Retail's secret values throw on any string operation; they pass through
-    -- untouched (the speech API accepts them).
-    if issecretvalue ~= nil and issecretvalue(text) then
-        return false
+    if isSecret(text) then
+        return true
     end
     return type(text) == "string" and text ~= ""
 end
@@ -144,7 +156,13 @@ function cacheBust.bust(text)
     if not speakable(text) then
         return text
     end
-    local run = nextRun(cacheBust.textKey(text))
+    local key
+    if isSecret(text) then
+        key = SECRET_KEY
+    else
+        key = cacheBust.textKey(text)
+    end
+    local run = nextRun(key)
     local trail = ((run - 1) % TRAIL) + 1
     local lead = math.floor((run - 1) / TRAIL)
     return string.rep(NBSP, lead) .. text .. string.rep(NBSP, trail)
@@ -160,8 +178,12 @@ end
 -- For text from other callers (Blizzard, other addons) routed through our
 -- speech queue: bust it unless it already carries a buster, so lines from an
 -- addon with its own buster do not churn our table.
+-- A secret cannot be inspected for a buster, so it is always busted.
 function cacheBust.bustForeign(text)
-    if not speakable(text) or cacheBust.isBusted(text) then
+    if not speakable(text) then
+        return text
+    end
+    if not isSecret(text) and cacheBust.isBusted(text) then
         return text
     end
     return cacheBust.bust(text)

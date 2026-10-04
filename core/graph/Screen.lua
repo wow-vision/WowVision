@@ -30,6 +30,8 @@ function Screen:initialize(config)
     self._liveKey = nil
     self._liveValues = {}
     self._alwaysValues = nil
+    -- The first focused tick runs the landing node's onOpenFocus, once.
+    self._landingPending = true
 end
 
 function Screen:buildRender()

@@ -4,7 +4,9 @@ local GraphHost = graph.GraphHost
 -- Capture one key combination through a shared keyboard-capturing frame. All
 -- keys are blocked from the game and from our own bindings while it is up --
 -- that is what capturing means. Modifiers speak as they build; releasing the
--- main key commits "ALT-CTRL-SHIFT-KEY"; Escape cancels.
+-- main key commits "ALT-CTRL-SHIFT-KEY"; Escape cancels. The combination is
+-- the one held when the main key went DOWN: people let go of Alt a moment
+-- before the letter, and a combination read at the release lost its Alt.
 -- config: { label = string|function?, onCommit = function(mapping), onCancel = function? }
 function GraphHost:openKeyCapture(config)
     local frame = self.captureFrame
@@ -27,16 +29,22 @@ function GraphHost:openKeyCapture(config)
             return key
         end
 
+        -- A modifier counts as held when we saw it go down or the game says it
+        -- is down (it may have been pressed before the capture opened).
+        local function held(name, isDown)
+            return frame.modifiers[name] or (isDown ~= nil and isDown() == true)
+        end
+
         local function currentMapping()
             -- Modifier order is the one the WoW binding API requires.
             local parts = {}
-            if frame.modifiers.ALT then
+            if held("ALT", IsAltKeyDown) then
                 tinsert(parts, "ALT")
             end
-            if frame.modifiers.CTRL then
+            if held("CTRL", IsControlKeyDown) then
                 tinsert(parts, "CTRL")
             end
-            if frame.modifiers.SHIFT then
+            if held("SHIFT", IsShiftKeyDown) then
                 tinsert(parts, "SHIFT")
             end
             if frame.mainKey ~= nil then
@@ -48,6 +56,7 @@ function GraphHost:openKeyCapture(config)
         frame.resetCapture = function()
             frame.modifiers = { CTRL = false, SHIFT = false, ALT = false }
             frame.mainKey = nil
+            frame.mapping = nil
         end
 
         frame:SetScript("OnKeyDown", function(f, key)
@@ -68,8 +77,9 @@ function GraphHost:openKeyCapture(config)
                 f.modifiers[k] = true
             elseif f.mainKey == nil then
                 f.mainKey = k
+                f.mapping = currentMapping()
             end
-            local mapping = currentMapping()
+            local mapping = f.mapping or currentMapping()
             if mapping ~= "" then
                 self:_speak(mapping)
             end
@@ -86,7 +96,7 @@ function GraphHost:openKeyCapture(config)
                 return
             end
             if f.mainKey == k then
-                local mapping = currentMapping()
+                local mapping = f.mapping or currentMapping()
                 self._keyCapture = nil
                 f:Hide()
                 if entry.onCommit ~= nil then

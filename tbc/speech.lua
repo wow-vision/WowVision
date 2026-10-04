@@ -95,6 +95,11 @@ queueSetting.events.valueChange:subscribe(nil, function(event, obj, key, value)
     applyQueueSetting(value)
 end)
 
+-- The game's sounds around text-to-speech (see core/speechSounds.lua): two
+-- toggles that are the game's own settings, and the line-break sound
+-- turned off once per character.
+WowVision.speechSounds.attach(module, settings, L)
+
 local function frame_OnEvent(frame, event, utteranceID)
     if event == "VOICE_CHAT_TTS_PLAYBACK_STARTED" then
         module.speaking = true

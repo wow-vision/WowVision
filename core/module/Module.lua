@@ -56,8 +56,10 @@ end
 
 -- Settings are fields on a per-module settings class; module.settings.rate
 -- reads a managed field. hasSettings returns a facade keeping the old
--- declaration API: settings:add(def) declares a persisted field and returns
--- it; settings:addRef links an alert's parameter frame into the screen.
+-- declaration API: settings:add(def) declares a field and returns it,
+-- persisted unless the def says persist = false (a setting whose value
+-- lives in the game, not in WowVision's store); settings:addRef links an
+-- alert's parameter frame into the screen.
 function Module:hasSettings()
     if self.settingsFacade == nil then
         local settingsClass = WowVision.Class("Settings:" .. self.key)
@@ -66,7 +68,9 @@ function Module:hasSettings()
         self.settings = settingsObj
         local facade = { refs = {} }
         function facade:add(def)
-            def.persist = true
+            if def.persist == nil then
+                def.persist = true
+            end
             def.setting = true
             settingsClass:addFields({ def })
             return settingsClass:getField(def.key)

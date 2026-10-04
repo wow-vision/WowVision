@@ -91,9 +91,14 @@ local queueSetting = settings:add({
     default = true,
 })
 
-queueSetting.events.valueChange:subscribe(nil, function(event, proxy, value)
+queueSetting.events.valueChange:subscribe(nil, function(event, obj, key, value)
     applyQueueSetting(value)
 end)
+
+-- The game's sounds around text-to-speech (see core/speechSounds.lua): two
+-- toggles that are the game's own settings, and the line-break sound
+-- turned off once per character.
+WowVision.speechSounds.attach(module, settings, L)
 
 local function frame_OnEvent(frame, event, utteranceID)
     if event == "VOICE_CHAT_TTS_PLAYBACK_STARTED" then
@@ -140,8 +145,8 @@ end
 -- No string handling on the text here: retail hands addons SECRET values
 -- (unit health among them) that survive concatenation into a label but
 -- throw on any string operation. The speech API accepts secret strings,
--- so the text goes through untouched (the cache-buster checks for secrets
--- first and leaves them alone).
+-- so the text goes through untouched (the cache-buster only concatenates
+-- onto a secret, from a shared counter it cannot key by text).
 function module:speak(text)
     -- Volume above 100 silences TTS entirely in Mists Classic, so clamp it.
     local volume = self.settings.speechVolume or 100

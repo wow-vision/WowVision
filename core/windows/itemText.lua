@@ -10,6 +10,11 @@ local ControlId = graph.ControlId
 -- turns rewrite the live text in place. The text arrives async
 -- (ITEM_TEXT_READY), so labels resolve nil until the client has it and the
 -- live watch speaks it when it lands.
+--
+-- Paging follows the merchant and the spellbook: the Previous/Next Page
+-- buttons are the whole page control (the client shows them only on
+-- multi-page texts). No page-number line, and no creator line unless the
+-- item has one -- a text node with a nil label is a silent stop.
 
 local function contentText(builder, id, label)
     builder:addItem(id, nodes.text({ label = label }))
@@ -25,20 +30,16 @@ local function render(builder, screen)
     contentText(builder, ControlId.structural("name"), function()
         return ItemTextGetItem()
     end)
-    contentText(builder, ControlId.structural("creator"), function()
-        local creator = ItemTextGetCreator()
-        if creator ~= nil and creator ~= "" then
-            return creator
-        end
-        return nil
-    end)
-    contentText(builder, ControlId.structural("page"), function()
-        local page = ItemTextGetPage()
-        if page ~= nil and page > 0 then
-            return L["Page"] .. " " .. page
-        end
-        return nil
-    end)
+    local creator = ItemTextGetCreator()
+    if creator ~= nil and creator ~= "" then
+        contentText(builder, ControlId.structural("creator"), function()
+            local current = ItemTextGetCreator()
+            if current ~= nil and current ~= "" then
+                return L["From"] .. " " .. current
+            end
+            return nil
+        end)
+    end
     contentText(builder, ControlId.structural("body"), function()
         return ItemTextGetText()
     end)

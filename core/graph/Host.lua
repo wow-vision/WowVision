@@ -181,6 +181,14 @@ function GraphHost:update()
     end
     self:_watchAlways(screen, node)
     self:_syncNodeFocus(screen)
+    -- A new screen landing on an edit box hands it the keyboard, as a tab
+    -- arrival would; returning to a screen (pop, stack cycling) does not.
+    if screen._landingPending then
+        screen._landingPending = nil
+        if node ~= nil and node.vtable.onOpenFocus ~= nil then
+            pcall(node.vtable.onOpenFocus)
+        end
+    end
 end
 
 -- Secure clicks bind to a FRAME at engage time, but scrolled pools rebind

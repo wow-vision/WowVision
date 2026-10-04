@@ -319,10 +319,35 @@ module:registerBinding({
     script = "/run WowVision.base.navigation.maps:stepWaypoint(-1)",
 })
 
+-- Whether a beacon leads the way (a route or a straight line).
+function module:isGuiding()
+    return self.path ~= nil
+end
+
 function module:stopPath()
     self.path = nil
     self.beacon = nil
 end
+
+-- Shift-F12 and "/beacon stop" end whatever leads the way, a route or a
+-- straight beacon (the beacon alert falls silent with it).
+function module:cancelNavigation()
+    if not self:isGuiding() then
+        WowVision:speak(L["No active waypoint"])
+        return false
+    end
+    self:stopPath()
+    WowVision:speak(L["Beacon stopped"])
+    return true
+end
+
+module:registerBinding({
+    type = "Script",
+    key = "maps/cancelNavigation",
+    label = L["Cancel Navigation"],
+    inputs = { "SHIFT-F12" },
+    script = "/run WowVision.base.navigation.maps:cancelNavigation()",
+})
 
 function module:updatePath()
     if self.path then
@@ -368,8 +393,7 @@ function module:handleBeaconCommand(args)
     end
 
     if args:lower() == "stop" then
-        self:stopPath()
-        WowVision:speak(L["Beacon stopped"])
+        self:cancelNavigation()
         return
     end
 
