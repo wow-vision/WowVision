@@ -190,9 +190,10 @@ function module:navigateToName(fragment)
         return false
     end
     local waypoints = self:currentWaypoints()
-    local needle = fragment:lower()
+    local foldCase = WowVision.utils.foldCase
+    local needle = foldCase(fragment)
     local matches = WowVision.Router.nearest(waypoints, px, py, 1, function(wp)
-        return wp.n ~= nil and wp.n:lower():find(needle, 1, true) ~= nil
+        return wp.n ~= nil and foldCase(wp.n):find(needle, 1, true) ~= nil
     end)
     if #matches == 0 then
         WowVision:speak(L["No route found"] .. " " .. fragment)

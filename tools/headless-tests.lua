@@ -66,6 +66,8 @@ loadAddonFile("core/windows/bars/lock.lua")
 loadAddonFile("core/windows/bars/tests.lua")
 loadAddonFile("core/db.lua")
 loadAddonFile("core/dbTests.lua")
+loadAddonFile("core/utils.lua")
+loadAddonFile("core/utilsTests.lua")
 loadAddonFile("core/ttsCacheBust.lua")
 loadAddonFile("core/ttsCacheBustTests.lua")
 loadAddonFile("core/chat/links.lua")
@@ -206,6 +208,7 @@ loadAddonFile("core/graph/KeyGraph.lua")
 loadAddonFile("core/graph/Builder.lua")
 loadAddonFile("core/graph/ControlTypes.lua")
 loadAddonFile("core/graph/nodes.lua")
+loadAddonFile("core/graph/dropdownMenu.lua")
 loadAddonFile("core/graph/scrollBox.lua")
 loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/fieldControls.lua")
@@ -250,6 +253,7 @@ local parseOnly = {
     "retail/containers/containers.lua",
     "retail/containers/Bags.lua",
     "retail/QuestLog.lua",
+    "retail/cooldownManager.lua",
     "core/windows/training.lua",
     "core/windows/ready.lua",
     "core/windows/taxi.lua",
@@ -290,7 +294,6 @@ local parseOnly = {
     "mists/socketing.lua",
     "mists/itemUpgrade.lua",
     "mists/QuestChoice.lua",
-    "core/graph/dropdownMenu.lua",
     "mists/collections/module.lua",
     "mists/collections/MountJournal.lua",
     "core/chat/ui.lua",

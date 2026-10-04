@@ -60,10 +60,11 @@ local function destinations(screen)
     if screen._destinations ~= nil then
         return screen._destinations
     end
-    local needle = screen._search ~= "" and screen._search:lower() or nil
+    local foldCase = WowVision.utils.foldCase
+    local needle = screen._search ~= "" and foldCase(screen._search) or nil
     local found = {}
     for _, wp in pairs(screen._waypoints) do
-        if wp.n ~= nil and (needle == nil or wp.n:lower():find(needle, 1, true) ~= nil) then
+        if wp.n ~= nil and (needle == nil or foldCase(wp.n):find(needle, 1, true) ~= nil) then
             local dx = wp.x - screen._px
             local dy = wp.y - screen._py
             tinsert(found, { waypoint = wp, distance = math.sqrt(dx * dx + dy * dy) })

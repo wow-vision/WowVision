@@ -17,6 +17,7 @@
     <Include file="components/modules.xml" />
   <Include file="commands/modules.xml" />
   <Script file="utils.lua" />
+  <Script file="utilsTests.lua" />
   <Script file="ttsCacheBust.lua" />
   <Script file="ttsCacheBustTests.lua" />
   <Include file="templates/modules.xml" />
