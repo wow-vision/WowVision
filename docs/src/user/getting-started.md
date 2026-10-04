@@ -4,6 +4,12 @@
 
 Download the latest release from the [WowVision releases page](https://github.com/wow-vision/wowvision/releases/latest). The release is a `.zip` file containing the addon.
 
+The zip contains two addon folders: WowVision itself and WowVision_MapData_TBC, the map data for navigation on The Burning Crusade anniversary realms and WoW Forever. Both are installed by the same extraction. Other map data addons can be installed beside them.
+
+### Beta builds
+
+Between releases there is one pre-release called **beta**, rebuilt from the latest changes, for testers and for WoW Forever, which changes quickly. It is always at the same address: [the beta pre-release](https://github.com/wow-vision/WowVision/releases/tag/beta), with the zip at `https://github.com/wow-vision/WowVision/releases/download/beta/WowVision-beta.zip`. Its release notes list every change since the last release. Install it the same way as a release; extracting it over an existing WowVision folder replaces the files.
+
 ## Installation
 
 Extract the downloaded zip file into your World of Warcraft addons folder. The addons folder is located inside the `Interface/AddOns` directory for the game version you play.

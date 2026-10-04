@@ -14,6 +14,12 @@ externals:
   # for Mists Classic (spell-ID range checking), so we vendor it directly
   # instead of fetching it. See libs/LibRangeCheck-3.0/LibRangeCheck-3.0.lua.
 
+# The TBC map data addon ships inside the WowVision zip as its own addon
+# folder (a git submodule here), so one download installs both. Other
+# dataset addons keep working the same way, beside it.
+move-folders:
+  WowVision/mapdata/WowVision_MapData_TBC: WowVision_MapData_TBC
+
 ignore:
   - .stylua.toml
   - .gitignore
@@ -22,3 +28,7 @@ ignore:
   - .vscode
   - packager
   - changes-latest.md
+  - mapdata/WowVision_MapData_TBC/.github
+  - mapdata/WowVision_MapData_TBC/.gitignore
+  - mapdata/WowVision_MapData_TBC/.pkgmeta
+  - mapdata/WowVision_MapData_TBC/tools

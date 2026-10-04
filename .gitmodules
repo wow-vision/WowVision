@@ -4,3 +4,6 @@
 [submodule "audio"]
 	path = audio
 	url = https://github.com/wow-vision/vision-default-audio
+[submodule "mapdata/WowVision_MapData_TBC"]
+	path = mapdata/WowVision_MapData_TBC
+	url = https://github.com/wow-vision/WowVision_MapData_TBC
