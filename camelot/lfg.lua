@@ -144,9 +144,11 @@ local function whoLabel(info)
 end
 
 -- The who tab (LFGWhoListFrame): the search box (Enter in it searches), the
--- search button and filter menu, the results, and the totals line. A result
--- row selects on a left click and opens the player menu on a right click;
--- its invite button sits beside it.
+-- search button and filter menu, then the results. A result selects on a
+-- left click and opens the player menu on a right click; its invite button
+-- is in the result's context menu, so the results stay one list with their
+-- positions. The totals line reads only when the server found more players
+-- than it sent (it sends 50 at most); otherwise the list's size says it.
 local function renderWhoTab(builder)
     local frame = LFGWhoListFrame
     if frame == nil or not frame:IsShown() then
@@ -180,11 +182,14 @@ local function renderWhoTab(builder)
             local info = type(data) == "table" and data.info or nil
             return ControlId.structural("who:" .. tostring(info ~= nil and info.fullName or index))
         end,
-        emit = function(builder, data, index, helpers)
+        row = function(data, index, helpers)
             local info = type(data) == "table" and data.info or nil
-            local name = tostring(info ~= nil and info.fullName or index)
-            builder:startRow()
-            builder:addItem(helpers.id, {
+            local inviteButton = function()
+                local row = helpers.target()
+                return row ~= nil and row.InviteButton or nil
+            end
+            local rowActions = nodes.proxyContextActions(helpers.target)
+            return {
                 controlType = graph.controlTypes.button,
                 announcements = {
                     {
@@ -209,36 +214,20 @@ local function renderWhoTab(builder)
                     { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
                     { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = helpers.target },
                 },
+                contextActions = function(add)
+                    add({ label = L["Invite"], click = { emulatedKey = "LeftButton", target = inviteButton } })
+                    rowActions(add)
+                end,
                 onFocus = helpers.onFocus,
                 onFocusTick = helpers.onFocusTick,
                 onUnfocus = helpers.onUnfocus,
                 tooltipFrame = helpers.target,
-            })
-            builder:addItem(ControlId.structural("whoInvite:" .. name), {
-                controlType = graph.controlTypes.button,
-                announcements = {
-                    { text = L["Invite"], kind = kinds.label },
-                },
-                bindings = {
-                    {
-                        binding = "leftClick",
-                        type = "Click",
-                        emulatedKey = "LeftButton",
-                        target = function()
-                            local row = helpers.target()
-                            return row ~= nil and row.InviteButton or nil
-                        end,
-                    },
-                },
-                onFocus = helpers.onFocus,
-                onFocusTick = helpers.onFocusTick,
-                onUnfocus = helpers.onUnfocus,
-            })
-            builder:endRow()
+            }
         end,
     })
 
-    if frame.WhoFrameTotals ~= nil then
+    local numWhos, totalCount = C_FriendList.GetNumWhoResults()
+    if frame.WhoFrameTotals ~= nil and (totalCount or 0) > (numWhos or 0) then
         builder:beginStop("whoTotals")
         builder:addItem(
             ControlId.structural("who:totals"),
