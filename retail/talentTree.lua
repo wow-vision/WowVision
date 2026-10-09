@@ -9,9 +9,9 @@ local kinds = graph.kinds
 
 -- Talent trees built on the shared talent frame (TalentFrameBaseMixin),
 -- the modern talent UI of retail and WoW: Forever. Used by Forever's class
--- talents (camelot/talents.lua); written against the shared frame only, so
--- a retail talent window can use it too, though none does yet and nothing
--- here is tested on retail.
+-- talents (camelot/talents.lua) and Legacy trees (camelot/legacy/tree.lua);
+-- written against the shared frame only, so a retail talent window can use
+-- it too, though none does yet and nothing here is tested on retail.
 -- Each talent reads its name, rank, and state; Enter buys a rank (a choice
 -- node opens its options), Backspace refunds one. The talents read row by
 -- row as drawn, each row a context; a tree holding several groups (the

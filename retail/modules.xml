@@ -5,8 +5,8 @@
   <Script file="QuestLog.lua" />
   <Script file="cooldownManager.lua" />
   <!-- Shared by the windows built on the modern talent frame and spell
-       search box (on WoW: Forever, the spellbook and the class talents in
-       camelot/); no retail window uses them yet. -->
+       search box (on WoW: Forever, the class talents and the Legacy trees
+       in camelot/); no retail window uses them yet. -->
   <Script file="talentTree.lua" />
   <Script file="spellSearch.lua" />
   <Script file="pitchLock.lua" />
