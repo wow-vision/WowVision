@@ -699,6 +699,26 @@ testRunner:addSuite("GraphFoundButton", {
         t:assertEqual(dragged, frame)
     end,
 
+    ["proxyFoundButton leftClick=false drops the left click everywhere"] = function(t)
+        local vtable = graph.nodes.proxyFoundButton({
+            find = function()
+                return {}
+            end,
+            label = function()
+                return "Choice"
+            end,
+            leftClick = false,
+        })
+        t:assertEqual(#vtable.bindings, 1)
+        t:assertEqual(vtable.bindings[1].binding, "rightClick")
+        local entries = {}
+        vtable.contextActions(function(entry)
+            tinsert(entries, entry)
+        end)
+        t:assertEqual(#entries, 1, "right click only")
+        t:assertEqual(entries[1].click.emulatedKey, "RightButton")
+    end,
+
     ["proxyFoundButton without drag offers no Drag entry"] = function(t)
         local vtable = graph.nodes.proxyFoundButton({
             find = function()

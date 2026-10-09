@@ -745,8 +745,10 @@ end
 --   label = function(frame) -> string,
 --   selected = function() -> bool?,
 --   tooltip = function(tooltip, frame)?,
+--   leftClick = false?,            -- the left button does nothing here
 --   rightClick = false?,           -- the right button does nothing here
 --   drag = true?,                  -- Drag runs the found button's drag script
+--   clickLabels = { left, right }?, -- what each click does (proxyButton's)
 -- }
 function nodes.proxyFoundButton(config)
     local find = config.find
@@ -767,18 +769,19 @@ function nodes.proxyFoundButton(config)
             kind = kinds.selected,
         })
     end
-    local bindings = {
-        { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = find },
-    }
+    local bindings = {}
+    if config.leftClick ~= false then
+        tinsert(bindings, { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = find })
+    end
     if config.rightClick ~= false then
         tinsert(bindings, { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = find })
     end
     if config.drag then
         tinsert(bindings, { binding = "drag", type = "Function", func = nodes.dragScript(find) })
     end
-    -- The standard click entries, and the standard Drag entry only when the
-    -- caller asked for drag.
-    local clickActions = nodes.proxyContextActions(find)
+    -- The standard click entries for the buttons that act, and the standard
+    -- Drag entry only when the caller asked for drag.
+    local clickActions = nodes.proxyContextActions(find, config.clickLabels)
     local vtable = {
         controlType = graph.controlTypes.button,
         contextActions = function(add)
@@ -788,7 +791,11 @@ function nodes.proxyFoundButton(config)
                     if config.drag then
                         add(entry)
                     end
-                elseif config.rightClick ~= false or click.emulatedKey ~= "RightButton" then
+                elseif click.emulatedKey == "LeftButton" then
+                    if config.leftClick ~= false then
+                        add(entry)
+                    end
+                elseif config.rightClick ~= false then
                     add(entry)
                 end
             end)
