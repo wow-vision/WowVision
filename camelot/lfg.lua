@@ -146,11 +146,10 @@ end
 -- The who tab (LFGWhoListFrame): the search box (Enter in it searches with
 -- the box's text and the filters, so the search button beside it is left
 -- out, like other search boxes' extra buttons), the filter menu (class,
--- race, zone, sort order), then the results. A left click on a result only
--- highlights it -- nothing in this build reads that selection -- so Enter
--- opens the player menu, the right click, where whisper and invite live;
--- the invite button leads the result's context menu, so the results stay
--- one list with their positions. The totals line reads only when the server found more players
+-- race, zone, sort order), then the results. A result highlights on a left
+-- click and opens the player menu (whisper, invite) on a right click; its
+-- invite button leads the result's context menu, so the results stay one
+-- list with their positions. The totals line reads only when the server found more players
 -- than it sent (it sends 50 at most); otherwise the list's size says it.
 local function renderWhoTab(builder)
     local frame = LFGWhoListFrame
@@ -195,9 +194,20 @@ local function renderWhoTab(builder)
                         end,
                         kind = kinds.label,
                     },
+                    {
+                        text = function()
+                            local selection = frame.selectionBehavior
+                            if selection ~= nil and selection:IsElementDataSelected(data) then
+                                return L["selected"]
+                            end
+                            return nil
+                        end,
+                        kind = kinds.selected,
+                        live = "focus",
+                    },
                 },
                 bindings = {
-                    { binding = "leftClick", type = "Click", emulatedKey = "RightButton", target = helpers.target },
+                    { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
                     { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = helpers.target },
                 },
                 contextActions = function(add)
