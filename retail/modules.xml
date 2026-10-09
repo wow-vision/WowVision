@@ -4,6 +4,9 @@
   <Script file="speech.lua" />
   <Script file="QuestLog.lua" />
   <Script file="cooldownManager.lua" />
+  <!-- Retail's auction house is the same Blizzard_AuctionHouseUI as Mists
+       (also on WoW: Forever, which loads these modules too). -->
+  <Script file="..\mists\auction.lua" />
   <Script file="pitchLock.lua" />
   <Include file="containers/modules.xml" />
 

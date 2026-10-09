@@ -393,12 +393,25 @@ local function trackBuyTransitions(screen)
     end
 end
 
+-- The WoW Token panels (the token category on Buy, a token placed on Sell)
+-- are not read; say so instead of leaving the body empty.
+local function renderTokenUnsupported(builder)
+    builder:beginStop("token")
+    builder:addItem(ControlId.structural("token"), nodes.text({ label = L["This tab is not supported yet"] }))
+end
+
+local function isShown(frame)
+    return frame ~= nil and frame:IsShown()
+end
+
 local function renderBuyTab(builder, screen)
     trackBuyTransitions(screen)
     renderCategories(builder)
     renderSearchBar(builder)
     if AuctionHouseFrame.BrowseResultsFrame:IsShown() then
         renderBrowseResults(builder)
+    elseif isShown(AuctionHouseFrame.WoWTokenResults) then
+        renderTokenUnsupported(builder)
     end
     if AuctionHouseFrame.CommoditiesBuyFrame:IsShown() then
         renderCommoditiesBuy(builder)
@@ -561,6 +574,8 @@ local function renderSellTab(builder)
         renderItemSell(builder)
     elseif AuctionHouseFrame.CommoditiesSellFrame:IsShown() then
         renderCommoditySell(builder)
+    elseif isShown(AuctionHouseFrame.WoWTokenSellFrame) then
+        renderTokenUnsupported(builder)
     end
 end
 
