@@ -439,7 +439,21 @@ local function renderSellForm(builder, frame, itemSell, comparables)
     builder:beginStop("placeItem")
     builder:addItem(ControlId.structural("placeItem"), {
         controlType = graph.controlTypes.button,
-        announcements = { { text = L["Place Item Here"], kind = kinds.label } },
+        announcements = {
+            {
+                -- The game writes the placed item's name (quality colored,
+                -- item level for equipment) into the slot; empty until an
+                -- item is in it.
+                text = function()
+                    local name = frame.ItemDisplay.Name:GetText()
+                    if name ~= nil and name ~= "" then
+                        return WowVision.chatLinks.plainText(name)
+                    end
+                    return L["Place Item Here"]
+                end,
+                kind = kinds.label,
+            },
+        },
         onActivate = function()
             frame:OnOverlayClick()
         end,
