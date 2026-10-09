@@ -6,6 +6,7 @@ local graph = WowVision.graph
 local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
+local spellSearch = WowVision.spellSearch
 
 -- The WoW: Forever spellbook. Forever runs the modern PlayerSpellsFrame
 -- (the retail spellbook, restyled), not the classic SpellBookFrame the
@@ -156,7 +157,7 @@ local function renderSpellBook(builder, book)
     builder:beginStop("search")
     -- No clear button stop, like the other search boxes: emptying the box and
     -- pressing Enter leaves search results the same way.
-    builder:addItem(ControlId.structural("search"), nodes.proxyEditBox({ editBox = book.SearchBox, label = L["Search"] }))
+    builder:addItem(ControlId.structural("search"), spellSearch.node(book.SearchBox))
 
     builder:beginStop("options")
     builder:addItem(

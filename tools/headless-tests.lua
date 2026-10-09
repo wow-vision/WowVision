@@ -266,6 +266,7 @@ local parseOnly = {
     "retail/QuestLog.lua",
     "retail/cooldownManager.lua",
     "retail/talentTree.lua",
+    "retail/spellSearch.lua",
     "core/windows/training.lua",
     "core/windows/ready.lua",
     "core/windows/taxi.lua",

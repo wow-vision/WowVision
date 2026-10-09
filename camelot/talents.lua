@@ -6,6 +6,7 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
 local talentTree = WowVision.talentTree
+local spellSearch = WowVision.spellSearch
 
 -- The WoW: Forever class talents: the talents page of PlayerSpellsFrame,
 -- opened by the talents key. One tree holds the class's three
@@ -147,10 +148,7 @@ function module.renderClassTalents(builder, talentsFrame)
     renderUnspentPoints(builder, talentsFrame)
 
     builder:beginStop("search")
-    builder:addItem(
-        ControlId.structural("search"),
-        nodes.proxyEditBox({ editBox = talentsFrame.SearchBox, label = L["Search"] })
-    )
+    builder:addItem(ControlId.structural("search"), spellSearch.node(talentsFrame.SearchBox))
     builder:beginStop("searchOptions")
     builder:addItem(
         ControlId.forObject(talentsFrame.SearchOptionsDropdown),
