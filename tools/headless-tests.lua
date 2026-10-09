@@ -314,6 +314,7 @@ local parseOnly = {
     "tbc/talents.lua",
     "tbc/tradeskill.lua",
     "tbc/lfg.lua",
+    "camelot/lfg.lua",
     "tbc/character/character.lua",
     "tbc/character/PaperDoll.lua",
     "tbc/character/Pet.lua",

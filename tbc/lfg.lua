@@ -10,6 +10,22 @@ local kinds = graph.kinds
 -- The TBC anniversary LFG tool: the listing tab (category or activity
 -- selection, roles, comment, post) and the browse tab (filters, results
 -- with data-first labels from the LFG list API, contact buttons).
+--
+-- WoW: Forever runs a newer build of the same Blizzard addon. Its client
+-- folder replaces module.renderTabBar (side tabs instead of the bottom
+-- ones), fills module.renderListingOptions (the controls only that build
+-- has) and registers a third tab body with module.addTab
+-- (camelot/lfg.lua).
+
+module.tabs = {}
+
+-- Register a tab body: render(builder) runs while that tab is selected.
+function module.addTab(tabIndex, render)
+    module.tabs[tabIndex] = render
+end
+
+-- Listing controls a client adds after the comment box; none here.
+function module.renderListingOptions(builder) end
 
 local function findCheckButton(parent)
     local children = { parent:GetChildren() }
@@ -199,6 +215,8 @@ local function renderListingTab(builder)
         )
     end
 
+    module.renderListingOptions(builder)
+
     if LFGListingFramePostButton ~= nil and LFGListingFramePostButton:IsShown() then
         builder:beginStop("post")
         builder:addItem(
@@ -206,6 +224,27 @@ local function renderListingTab(builder)
             nodes.proxyButton({ target = LFGListingFramePostButton })
         )
     end
+end
+
+-- A browse row's own table: { resultID } or, on WoW: Forever, the header
+-- { dividerType }. Forever's browse list is a tree (results grouped under
+-- collapsible solo and group headers), whose rows are tree nodes holding
+-- that table; TBC's is a flat list of the tables themselves.
+local function browseRowData(data)
+    if type(data) == "table" and data.GetData ~= nil then
+        return data:GetData()
+    end
+    return data
+end
+
+local function browseDividerLabel(dividerType)
+    local types = LFGVanillaBrowseDividerType
+    if types ~= nil and dividerType == types.CategorySolo then
+        return LFG_LIST_CATEGORY_SOLO_PLAYERS
+    elseif types ~= nil and dividerType == types.CategoryGroup then
+        return LFG_LIST_CATEGORY_GROUPS
+    end
+    return GROUP
 end
 
 local function browseResultLabel(data)
@@ -272,13 +311,61 @@ local function renderBrowseTab(builder)
         key = "groups",
         label = L["Browse Groups"],
         id = function(data, index)
-            if data ~= nil and data.resultID ~= nil then
-                return ControlId.structural("group:" .. data.resultID)
+            local row = browseRowData(data)
+            if row ~= nil and row.resultID ~= nil then
+                return ControlId.structural("group:" .. row.resultID)
+            elseif row ~= nil and row.dividerType ~= nil then
+                return ControlId.structural("groupHeader:" .. row.dividerType)
             end
             return ControlId.structural("group:" .. index)
         end,
-        rowLabel = function(data)
-            return browseResultLabel(data)
+        row = function(data, index, helpers)
+            local row = browseRowData(data)
+            local state
+            if row ~= nil and row.dividerType ~= nil then
+                state = {
+                    text = function()
+                        return data.collapsed and L["Collapsed"] or L["Expanded"]
+                    end,
+                    kind = kinds.value,
+                    live = "focus",
+                }
+            else
+                state = {
+                    text = function()
+                        local selection = LFGBrowseFrame.selectionBehavior
+                        if selection ~= nil and selection:IsElementDataSelected(data) then
+                            return L["selected"]
+                        end
+                        return nil
+                    end,
+                    kind = kinds.selected,
+                    live = "focus",
+                }
+            end
+            return {
+                controlType = graph.controlTypes.button,
+                announcements = {
+                    {
+                        text = function()
+                            if row ~= nil and row.dividerType ~= nil then
+                                return browseDividerLabel(row.dividerType)
+                            end
+                            return browseResultLabel(row)
+                        end,
+                        kind = kinds.label,
+                    },
+                    state,
+                },
+                bindings = {
+                    { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+                    { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = helpers.target },
+                },
+                onFocus = helpers.onFocus,
+                onFocusTick = helpers.onFocusTick,
+                onUnfocus = helpers.onUnfocus,
+                tooltipFrame = helpers.target,
+            }
         end,
     })
 
@@ -290,15 +377,11 @@ local function renderBrowseTab(builder)
     end
 end
 
-local function render(builder, screen)
-    if LFGParentFrame == nil or not LFGParentFrame:IsShown() then
-        return
-    end
-    builder:pushContext("lfg", L["Looking for Group"])
+module.addTab(1, renderListingTab)
+module.addTab(2, renderBrowseTab)
 
-    builder:beginStop("tabs")
-    builder:pushContext("tabs", L["Tabs"])
-    builder:startRow()
+-- The bottom tabs LFGParentFrameTab1..2, as real clicks.
+function module.renderTabBar(builder)
     for i = 1, 2 do
         local tab = _G["LFGParentFrameTab" .. i]
         local tabIndex = i
@@ -318,14 +401,24 @@ local function render(builder, screen)
             end
         end
     end
+end
+
+local function render(builder, screen)
+    if LFGParentFrame == nil or not LFGParentFrame:IsShown() then
+        return
+    end
+    builder:pushContext("lfg", L["Looking for Group"])
+
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    module.renderTabBar(builder)
     builder:endRow()
     builder:popContext()
 
-    local tab = PanelTemplates_GetSelectedTab(LFGParentFrame)
-    if tab == 1 then
-        renderListingTab(builder)
-    elseif tab == 2 then
-        renderBrowseTab(builder)
+    local body = module.tabs[PanelTemplates_GetSelectedTab(LFGParentFrame) or 0]
+    if body ~= nil then
+        body(builder)
     end
 
     builder:popContext()
