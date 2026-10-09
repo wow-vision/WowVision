@@ -13,7 +13,8 @@ local kinds = graph.kinds
 -- box, an options menu, and a paged grid of spells built from frame pools.
 -- The screen mirrors the current page: category tabs, search, options, the
 -- page's spells grouped under their headers, then the page controls.
--- PlayerSpellsFrame also hosts the talent tree, which is not covered yet.
+-- PlayerSpellsFrame also hosts the class talents (talents.lua), opened on
+-- their own by the talents key; Forever shows no tabs between the two.
 
 -- A spell's identity: its action (spell, flyout, or pet action id). Not the
 -- slot index: learning a spell shifts every slot after it.
@@ -170,6 +171,10 @@ end
 local function render(builder, screen)
     local frame = PlayerSpellsFrame
     if frame == nil or not frame:IsShown() then
+        return
+    end
+    if frame.TalentsFrame:IsShown() then
+        module.renderClassTalents(builder, frame.TalentsFrame)
         return
     end
     builder:pushContext("spellbook", L["Spellbook"])
