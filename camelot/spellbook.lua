@@ -6,6 +6,7 @@ local graph = WowVision.graph
 local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
+local spellSearch = WowVision.spellSearch
 
 -- The WoW: Forever spellbook. Forever runs the modern PlayerSpellsFrame
 -- (the retail spellbook, restyled), not the classic SpellBookFrame the
@@ -13,7 +14,8 @@ local kinds = graph.kinds
 -- box, an options menu, and a paged grid of spells built from frame pools.
 -- The screen mirrors the current page: category tabs, search, options, the
 -- page's spells grouped under their headers, then the page controls.
--- PlayerSpellsFrame also hosts the talent tree, which is not covered yet.
+-- PlayerSpellsFrame also hosts the class talents (talents.lua), opened on
+-- their own by the talents key; Forever shows no tabs between the two.
 
 -- A spell's identity: its action (spell, flyout, or pet action id). Not the
 -- slot index: learning a spell shifts every slot after it.
@@ -155,7 +157,7 @@ local function renderSpellBook(builder, book)
     builder:beginStop("search")
     -- No clear button stop, like the other search boxes: emptying the box and
     -- pressing Enter leaves search results the same way.
-    builder:addItem(ControlId.structural("search"), nodes.proxyEditBox({ editBox = book.SearchBox, label = L["Search"] }))
+    builder:addItem(ControlId.structural("search"), spellSearch.node(book.SearchBox))
 
     builder:beginStop("options")
     builder:addItem(
@@ -170,6 +172,10 @@ end
 local function render(builder, screen)
     local frame = PlayerSpellsFrame
     if frame == nil or not frame:IsShown() then
+        return
+    end
+    if frame.TalentsFrame:IsShown() then
+        module.renderClassTalents(builder, frame.TalentsFrame)
         return
     end
     builder:pushContext("spellbook", L["Spellbook"])
