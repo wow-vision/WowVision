@@ -252,6 +252,8 @@ local parseOnly = {
     "core/windows/popups.lua",
     "core/windows/colorPicker.lua",
     "camelot/character.lua",
+    "camelot/spellbook.lua",
+    "camelot/talents.lua",
     "core/graph/hybridScroll.lua",
     "mists/QuestLog.lua",
     "core/windows/merchant.lua",
