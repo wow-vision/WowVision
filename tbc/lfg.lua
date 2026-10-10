@@ -508,42 +508,17 @@ module:registerWindow({
     graphScreen = { render = render },
 })
 
--- Blocked-call records (/wv taint) and the taint timeline list the fields
--- of these tables that addon code wrote: the values the listing's post and
--- the browse search read. WowVision.taintWatch exists from the taint recorder on.
-if WowVision.taintWatch ~= nil then
-    local watch = WowVision.taintWatch.watch
-    watch("LFGParentFrame", function()
-        return LFGParentFrame
-    end)
-    watch("LFGListingFrame", function()
-        return LFGListingFrame
-    end)
-    watch("LFGListingFrame.ActivityView", function()
-        return LFGListingFrame ~= nil and LFGListingFrame.ActivityView or nil
-    end)
-    watch("LFGListingFrame.CategoryView", function()
-        return LFGListingFrame ~= nil and LFGListingFrame.CategoryView or nil
-    end)
-    watch("ActivityView.PlayStyleDropdown", function()
-        local view = LFGListingFrame ~= nil and LFGListingFrame.ActivityView or nil
-        return view ~= nil and view.PlayStyleDropdown or nil
-    end)
-    watch("ActivityView.VoiceChatDropdown", function()
-        local view = LFGListingFrame ~= nil and LFGListingFrame.ActivityView or nil
-        return view ~= nil and view.VoiceChatDropdown or nil
-    end)
-    watch("LFGBrowseFrame", function()
-        return LFGBrowseFrame
-    end)
-    watch("LFGBrowseFrame.CategoryDropdown", function()
-        return LFGBrowseFrame ~= nil and LFGBrowseFrame.CategoryDropdown or nil
-    end)
-    watch("LFGBrowseFrame.ActivityDropdown", function()
-        return LFGBrowseFrame ~= nil and LFGBrowseFrame.ActivityDropdown or nil
-    end)
-    watch("LFGBrowseFrame.ActivityDropdown.selectedValues", function()
-        local dropdown = LFGBrowseFrame ~= nil and LFGBrowseFrame.ActivityDropdown or nil
-        return dropdown ~= nil and dropdown.selectedValues or nil
-    end)
+-- The play style and voice chat menus open from addon code (proxyDropdown:
+-- these dropdowns open only on a real mouse press), so the game counts
+-- their picks as WowVision's. After a post the game's own handler reads
+-- them and its follow-up search (C_LFGList.Search, restricted) is blocked;
+-- the browse frame then believes a search is still running and keeps its
+-- Search button disabled until a reload. The block itself is only "Blocked:
+-- Search()", so the way out is said after it.
+module:registerEvent("event", "ADDON_ACTION_BLOCKED")
+
+function module:onEvent(event, addon, func)
+    if event == "ADDON_ACTION_BLOCKED" and addon == "WowVision" and func == "Search()" then
+        WowVision:speak(L["Group search blocked, reload to search again"])
+    end
 end
