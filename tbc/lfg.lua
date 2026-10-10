@@ -245,39 +245,6 @@ local function renderRoles(builder)
     builder:popContext()
 end
 
--- A game dropdown whose pick a protected call reads later (the listing's
--- play style and voice chat feed the post handler; the browse category
--- feeds C_LFGList.Search). proxyDropdown opens the menu from addon code, so
--- the game builds it, entries included, as WowVision's: a pick then counts
--- as written by WowVision and the post handler's search is blocked. TRIAL:
--- Enter is a real secure left click on the dropdown instead; the addon-code
--- opener stays in the context menu as Open. The taint timeline
--- (core/taintWatch.lua) shows whether picks stay clean.
-function module.secureDropdown(config)
-    local vtable = nodes.proxyDropdown(config)
-    if vtable == nil then
-        return nil
-    end
-    local target = config.target
-    vtable.onActivate = nil
-    vtable.bindings = {
-        { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
-    }
-    local actions = vtable.contextActions
-    vtable.contextActions = function(add, node)
-        add({
-            label = L["Open"],
-            onActivate = function()
-                nodes.openDropdown(target)
-            end,
-        })
-        if type(actions) == "function" then
-            actions(add, node)
-        end
-    end
-    return vtable
-end
-
 -- The options menu (top right of a tab): its one check box, "Ignore
 -- suggested level", shows activities outside the player's level in both
 -- tabs. TBC has it on both tabs, WoW: Forever on the browse tab only.
@@ -396,7 +363,7 @@ local function renderBrowseTab(builder)
         builder:beginStop("categoryFilter")
         builder:addItem(
             ControlId.forObject(LFGBrowseFrameCategoryDropdown),
-            module.secureDropdown({ target = LFGBrowseFrameCategoryDropdown })
+            nodes.proxyDropdown({ target = LFGBrowseFrameCategoryDropdown })
         )
     end
     if LFGBrowseFrameActivityDropdown ~= nil and LFGBrowseFrameActivityDropdown:IsShown() then
