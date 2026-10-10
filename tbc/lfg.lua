@@ -10,6 +10,22 @@ local kinds = graph.kinds
 -- The TBC anniversary LFG tool: the listing tab (category or activity
 -- selection, roles, comment, post) and the browse tab (filters, results
 -- with data-first labels from the LFG list API, contact buttons).
+--
+-- WoW: Forever runs a newer build of the same Blizzard addon. Its client
+-- folder replaces module.renderTabBar (side tabs instead of the bottom
+-- ones), fills module.renderListingOptions (the controls only that build
+-- has) and registers a third tab body with module.addTab
+-- (camelot/lfg.lua).
+
+module.tabs = {}
+
+-- Register a tab body: render(builder) runs while that tab is selected.
+function module.addTab(tabIndex, render)
+    module.tabs[tabIndex] = render
+end
+
+-- Listing controls a client adds after the comment box; none here.
+function module.renderListingOptions(builder) end
 
 local function findCheckButton(parent)
     local children = { parent:GetChildren() }
@@ -27,6 +43,18 @@ local function findEditBox(parent)
             return child
         end
     end
+end
+
+-- A list row's own table. Tree lists (the listing's activities, Forever's
+-- browse results) hold tree nodes wrapping that table; flat lists (TBC's
+-- browse results) hold the tables themselves. Browse rows are { resultID }
+-- or, on WoW: Forever, the header { dividerType } of the collapsible solo
+-- and group sections.
+local function rowData(data)
+    if type(data) == "table" and data.GetData ~= nil then
+        return data:GetData()
+    end
+    return data
 end
 
 local function renderLockedView(builder)
@@ -82,6 +110,26 @@ local function activityName(data)
     return nil
 end
 
+-- An activity's suggested levels as the row shows them; nil for a group
+-- and for an activity without levels.
+local function activityLevels(row)
+    if row == nil or row.activityID == nil then
+        return nil
+    end
+    local minLevel, maxLevel = row.minLevel or 0, row.maxLevel or 0
+    if minLevel == maxLevel or maxLevel == 0 then
+        if minLevel == 0 then
+            return nil
+        end
+        return format(LFD_LEVEL_FORMAT_SINGLE, minLevel)
+    end
+    return format(LFD_LEVEL_FORMAT_RANGE, minLevel, maxLevel)
+end
+
+-- The activity list is a tree: activities sit under activity groups
+-- (dungeons, raids, ...). With several groups each folds; a group without
+-- an activity at the player's level starts folded. A group's check box
+-- selects its whole group; folding is its context menu's Expand/Collapse.
 local function renderActivityList(builder)
     builder:beginStop("activities")
     nodes.scrollBoxList(builder, {
@@ -99,6 +147,14 @@ local function renderActivityList(builder)
             return findCheckButton(rowFrame) or rowFrame
         end,
         row = function(data, index, helpers)
+            local row = rowData(data)
+            local isGroup = row ~= nil and row.activityGroupID ~= nil and row.activityID == nil
+            local foldable = isGroup and row.showExpandCollapseButton and data.IsCollapsed ~= nil
+            local expandButton = function()
+                local check = helpers.target()
+                local rowFrame = check ~= nil and check:GetParent() or nil
+                return rowFrame ~= nil and rowFrame.ExpandOrCollapseButton or nil
+            end
             return {
                 controlType = graph.controlTypes.toggle,
                 announcements = {
@@ -110,6 +166,12 @@ local function renderActivityList(builder)
                     },
                     {
                         text = function()
+                            return activityLevels(row)
+                        end,
+                        kind = kinds.value,
+                    },
+                    {
+                        text = function()
                             local check = helpers.target()
                             if check ~= nil and check.GetChecked ~= nil then
                                 return check:GetChecked() and L["Checked"] or L["Unchecked"]
@@ -117,11 +179,25 @@ local function renderActivityList(builder)
                             return nil
                         end,
                         kind = kinds.value,
+                        live = "focus",
+                    },
+                    {
+                        text = function()
+                            if foldable then
+                                return data:IsCollapsed() and L["Collapsed"] or L["Expanded"]
+                            end
+                            return nil
+                        end,
+                        kind = kinds.value,
+                        live = "focus",
                     },
                 },
                 bindings = {
                     { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
                 },
+                contextActions = foldable and function(add)
+                    add({ label = L["Expand/Collapse"], click = { emulatedKey = "LeftButton", target = expandButton } })
+                end or nil,
                 onFocus = helpers.onFocus,
                 onFocusTick = helpers.onFocusTick,
                 onUnfocus = helpers.onUnfocus,
@@ -169,11 +245,38 @@ local function renderRoles(builder)
     builder:popContext()
 end
 
+-- The options menu (top right of a tab): its one check box, "Ignore
+-- suggested level", shows activities outside the player's level in both
+-- tabs. TBC has it on both tabs, WoW: Forever on the browse tab only.
+-- The stop is named after that check box and says its state (the console
+-- variable the box reads); Enter still opens the game's menu, where the
+-- box itself is ticked.
+local function renderOptionsButton(builder, button)
+    if button == nil or not button:IsShown() then
+        return
+    end
+    local vtable = nodes.proxyDropdown({ target = button, label = LFG_LIST_IGNORE_SUGGESTED_LEVEL or L["Options"] })
+    if vtable == nil then
+        return
+    end
+    tinsert(vtable.announcements, {
+        text = function()
+            return GetCVarBool("disableSuggestedLevelActivityFilter") and L["Checked"] or L["Unchecked"]
+        end,
+        kind = kinds.value,
+        live = "focus",
+    })
+    builder:beginStop("options")
+    builder:addItem(ControlId.forObject(button), vtable)
+end
+
 local function renderListingTab(builder)
     if LFGListingFrameLockedView:IsShown() then
         renderLockedView(builder)
         return
     end
+
+    renderOptionsButton(builder, LFGListingFrame.OptionsButton)
 
     if LFGListingFrameActivityView:IsShown() then
         renderActivityList(builder)
@@ -199,6 +302,8 @@ local function renderListingTab(builder)
         )
     end
 
+    module.renderListingOptions(builder)
+
     if LFGListingFramePostButton ~= nil and LFGListingFramePostButton:IsShown() then
         builder:beginStop("post")
         builder:addItem(
@@ -206,6 +311,16 @@ local function renderListingTab(builder)
             nodes.proxyButton({ target = LFGListingFramePostButton })
         )
     end
+end
+
+local function browseDividerLabel(dividerType)
+    local types = LFGVanillaBrowseDividerType
+    if types ~= nil and dividerType == types.CategorySolo then
+        return LFG_LIST_CATEGORY_SOLO_PLAYERS
+    elseif types ~= nil and dividerType == types.CategoryGroup then
+        return LFG_LIST_CATEGORY_GROUPS
+    end
+    return GROUP
 end
 
 local function browseResultLabel(data)
@@ -265,6 +380,7 @@ local function renderBrowseTab(builder)
             nodes.proxyButton({ target = LFGBrowseFrameRefreshButton, label = L["Search"] })
         )
     end
+    renderOptionsButton(builder, LFGBrowseFrame.OptionsButton)
 
     builder:beginStop("groups")
     nodes.scrollBoxList(builder, {
@@ -272,13 +388,61 @@ local function renderBrowseTab(builder)
         key = "groups",
         label = L["Browse Groups"],
         id = function(data, index)
-            if data ~= nil and data.resultID ~= nil then
-                return ControlId.structural("group:" .. data.resultID)
+            local row = rowData(data)
+            if row ~= nil and row.resultID ~= nil then
+                return ControlId.structural("group:" .. row.resultID)
+            elseif row ~= nil and row.dividerType ~= nil then
+                return ControlId.structural("groupHeader:" .. row.dividerType)
             end
             return ControlId.structural("group:" .. index)
         end,
-        rowLabel = function(data)
-            return browseResultLabel(data)
+        row = function(data, index, helpers)
+            local row = rowData(data)
+            local state
+            if row ~= nil and row.dividerType ~= nil then
+                state = {
+                    text = function()
+                        return data.collapsed and L["Collapsed"] or L["Expanded"]
+                    end,
+                    kind = kinds.value,
+                    live = "focus",
+                }
+            else
+                state = {
+                    text = function()
+                        local selection = LFGBrowseFrame.selectionBehavior
+                        if selection ~= nil and selection:IsElementDataSelected(data) then
+                            return L["selected"]
+                        end
+                        return nil
+                    end,
+                    kind = kinds.selected,
+                    live = "focus",
+                }
+            end
+            return {
+                controlType = graph.controlTypes.button,
+                announcements = {
+                    {
+                        text = function()
+                            if row ~= nil and row.dividerType ~= nil then
+                                return browseDividerLabel(row.dividerType)
+                            end
+                            return browseResultLabel(row)
+                        end,
+                        kind = kinds.label,
+                    },
+                    state,
+                },
+                bindings = {
+                    { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+                    { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = helpers.target },
+                },
+                onFocus = helpers.onFocus,
+                onFocusTick = helpers.onFocusTick,
+                onUnfocus = helpers.onUnfocus,
+                tooltipFrame = helpers.target,
+            }
         end,
     })
 
@@ -290,15 +454,11 @@ local function renderBrowseTab(builder)
     end
 end
 
-local function render(builder, screen)
-    if LFGParentFrame == nil or not LFGParentFrame:IsShown() then
-        return
-    end
-    builder:pushContext("lfg", L["Looking for Group"])
+module.addTab(1, renderListingTab)
+module.addTab(2, renderBrowseTab)
 
-    builder:beginStop("tabs")
-    builder:pushContext("tabs", L["Tabs"])
-    builder:startRow()
+-- The bottom tabs LFGParentFrameTab1..2, as real clicks.
+function module.renderTabBar(builder)
     for i = 1, 2 do
         local tab = _G["LFGParentFrameTab" .. i]
         local tabIndex = i
@@ -318,14 +478,24 @@ local function render(builder, screen)
             end
         end
     end
+end
+
+local function render(builder, screen)
+    if LFGParentFrame == nil or not LFGParentFrame:IsShown() then
+        return
+    end
+    builder:pushContext("lfg", L["Looking for Group"])
+
+    builder:beginStop("tabs")
+    builder:pushContext("tabs", L["Tabs"])
+    builder:startRow()
+    module.renderTabBar(builder)
     builder:endRow()
     builder:popContext()
 
-    local tab = PanelTemplates_GetSelectedTab(LFGParentFrame)
-    if tab == 1 then
-        renderListingTab(builder)
-    elseif tab == 2 then
-        renderBrowseTab(builder)
+    local body = module.tabs[PanelTemplates_GetSelectedTab(LFGParentFrame) or 0]
+    if body ~= nil then
+        body(builder)
     end
 
     builder:popContext()
@@ -337,3 +507,18 @@ module:registerWindow({
     frameName = "LFGParentFrame",
     graphScreen = { render = render },
 })
+
+-- The play style and voice chat menus open from addon code (proxyDropdown:
+-- these dropdowns open only on a real mouse press), so the game counts
+-- their picks as WowVision's. After a post the game's own handler reads
+-- them and its follow-up search (C_LFGList.Search, restricted) is blocked;
+-- the browse frame then believes a search is still running and keeps its
+-- Search button disabled until a reload. The block itself is only "Blocked:
+-- Search()", so the way out is said after it.
+module:registerEvent("event", "ADDON_ACTION_BLOCKED")
+
+function module:onEvent(event, addon, func)
+    if event == "ADDON_ACTION_BLOCKED" and addon == "WowVision" and func == "Search()" then
+        WowVision:speak(L["Group search blocked, reload to search again"])
+    end
+end
