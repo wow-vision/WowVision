@@ -248,11 +248,26 @@ end
 -- The options menu (top right of a tab): its one check box, "Ignore
 -- suggested level", shows activities outside the player's level in both
 -- tabs. TBC has it on both tabs, WoW: Forever on the browse tab only.
+-- The stop is named after that check box and says its state (the console
+-- variable the box reads); Enter still opens the game's menu, where the
+-- box itself is ticked.
 local function renderOptionsButton(builder, button)
-    if button ~= nil and button:IsShown() then
-        builder:beginStop("options")
-        builder:addItem(ControlId.forObject(button), nodes.proxyDropdown({ target = button, label = L["Options"] }))
+    if button == nil or not button:IsShown() then
+        return
     end
+    local vtable = nodes.proxyDropdown({ target = button, label = LFG_LIST_IGNORE_SUGGESTED_LEVEL or L["Options"] })
+    if vtable == nil then
+        return
+    end
+    tinsert(vtable.announcements, {
+        text = function()
+            return GetCVarBool("disableSuggestedLevelActivityFilter") and L["Checked"] or L["Unchecked"]
+        end,
+        kind = kinds.value,
+        live = "focus",
+    })
+    builder:beginStop("options")
+    builder:addItem(ControlId.forObject(button), vtable)
 end
 
 local function renderListingTab(builder)
