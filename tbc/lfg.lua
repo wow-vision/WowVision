@@ -492,3 +492,29 @@ module:registerWindow({
     frameName = "LFGParentFrame",
     graphScreen = { render = render },
 })
+
+-- Blocked-call records (/wv taint) list the fields of these tables that
+-- addon code wrote: the values the listing's post and the browse search
+-- read. WowVision.taintWatch exists from the taint recorder on.
+if WowVision.taintWatch ~= nil then
+    local watch = WowVision.taintWatch.watch
+    watch("LFGParentFrame", function()
+        return LFGParentFrame
+    end)
+    watch("LFGListingFrame", function()
+        return LFGListingFrame
+    end)
+    watch("LFGBrowseFrame", function()
+        return LFGBrowseFrame
+    end)
+    watch("LFGBrowseFrame.CategoryDropdown", function()
+        return LFGBrowseFrame ~= nil and LFGBrowseFrame.CategoryDropdown or nil
+    end)
+    watch("LFGBrowseFrame.ActivityDropdown", function()
+        return LFGBrowseFrame ~= nil and LFGBrowseFrame.ActivityDropdown or nil
+    end)
+    watch("LFGBrowseFrame.ActivityDropdown.selectedValues", function()
+        local dropdown = LFGBrowseFrame ~= nil and LFGBrowseFrame.ActivityDropdown or nil
+        return dropdown ~= nil and dropdown.selectedValues or nil
+    end)
+end
