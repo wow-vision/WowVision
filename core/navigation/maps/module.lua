@@ -271,7 +271,15 @@ function module:navigateTo(waypointId, waypoints, opts)
         WowVision:speak(L["Arrived"] .. (last.n ~= nil and (" " .. last.n) or ""))
     end)
     self:pathfind(path)
-    WowVision:speak(string.format("%d %s, %d %s", #route.waypoints, L["waypoints"], route.distance, L["yards"]))
+    local text = string.format("%d %s, %d %s", #route.waypoints, L["waypoints"], route.distance, L["yards"])
+    -- The destination is off the network: say how much is walked straight,
+    -- without a road to follow. A leg inside the arrival distance is no
+    -- walk of its own, so it goes unsaid ("last 0 yards direct").
+    local lastLeg = route.lastLeg ~= nil and math.floor(route.lastLeg + 0.5) or 0
+    if lastLeg > self:arrivalDistance() then
+        text = text .. ", " .. string.format(L["last %d yards direct"], lastLeg)
+    end
+    WowVision:speak(text)
     return true
 end
 

@@ -13,17 +13,39 @@
 -- The player is rarely standing on a waypoint, so routes enter the graph
 -- through a virtual start connected to the nearest few waypoints -- the
 -- absolute nearest is not always the best door into the network.
+--
+-- The same holds at the other end: most creature and object spawns carry
+-- no links. A destination without links is reached through a virtual last
+-- leg from the nearby linked waypoints, walked in a straight line.
 
 local Router = {}
 WowVision.Router = Router
 
 local sqrt = math.sqrt
 
+-- Last-leg candidates: how many linked waypoints near an unlinked
+-- destination may end the graph part, and how far from it they may be.
+local EXIT_COUNT = 10
+local MAX_EXIT_DISTANCE = 500
+-- A straight leg crosses unknown terrain, so when choosing where to leave
+-- the network each of its yards costs this many route yards: a 10 yard
+-- shorter leg is worth up to 90 yards of extra route. Only the choice is
+-- weighted; the reported distance stays real.
+local LAST_LEG_WEIGHT = 10
+
 local function distanceBetween(ax, ay, bx, by)
     local dx = bx - ax
     local dy = by - ay
     return sqrt(dx * dx + dy * dy)
 end
+
+-- Whether a waypoint is part of the link network, so a route can enter or
+-- leave there. Most creature and object spawns are not.
+function Router.hasLinks(wp)
+    return wp.links ~= nil and next(wp.links) ~= nil
+end
+
+local hasLinks = Router.hasLinks
 
 -- ---------------------------------------------------------------------------
 -- Binary min-heap on .f, for the A* open set
@@ -104,15 +126,32 @@ end
 -- opts.entryId: enter the graph through EXACTLY this waypoint (the user
 -- picked their door into the network; 3D geometry makes closest-guessing
 -- unreliable).
+-- opts.exitCount / opts.maxExitDistance: last-leg candidates for a
+-- destination without links (defaults EXIT_COUNT / MAX_EXIT_DISTANCE).
 --
--- Returns { waypoints = orderedList, distance = graphYards } where distance
--- includes the leg from the player to the entry waypoint -- or nil and a
--- reason: "unknown destination", "no entry", "unreachable".
+-- Returns { waypoints = orderedList, distance = graphYards, lastLeg = yards }
+-- where distance includes the leg from the player to the entry waypoint and
+-- lastLeg is set only when the route ends with a straight leg off the
+-- network -- or nil and a reason: "unknown destination", "no entry",
+-- "unreachable".
 function Router.route(waypoints, startX, startY, destId, opts)
     opts = opts or {}
     local destination = waypoints[destId]
     if destination == nil then
         return nil, "unknown destination"
+    end
+
+    -- id -> straight yards to the destination, for the linked waypoints
+    -- that may end the graph part when the destination has no links.
+    local exits = {}
+    if not hasLinks(destination) then
+        local maxExit = opts.maxExitDistance or MAX_EXIT_DISTANCE
+        local candidates = Router.nearest(waypoints, destination.x, destination.y, opts.exitCount or EXIT_COUNT, hasLinks)
+        for _, candidate in ipairs(candidates) do
+            if candidate.distance <= maxExit then
+                exits[candidate.waypoint.id] = candidate.distance
+            end
+        end
     end
 
     local entries
@@ -135,6 +174,7 @@ function Router.route(waypoints, startX, startY, destId, opts)
     local cameFrom = {} -- id -> previous id on the best path
     local closed = {}
     local heap = {}
+    local lastLeg = nil -- straight yards of the best known way into destId
 
     for _, entry in ipairs(entries) do
         local wp = entry.waypoint
@@ -163,11 +203,28 @@ function Router.route(waypoints, startX, startY, destId, opts)
                     tinsert(route, 1, waypoints[id])
                     id = cameFrom[id]
                 end
-                return { waypoints = route, distance = current.g }
+                local distance = current.g
+                if lastLeg ~= nil then
+                    distance = distance - lastLeg * (LAST_LEG_WEIGHT - 1)
+                end
+                return { waypoints = route, distance = distance, lastLeg = lastLeg }
             end
             closed[current.id] = true
 
             local wp = waypoints[current.id]
+
+            -- Virtual last leg: straight from this exit to the destination
+            local leg = exits[current.id]
+            if leg ~= nil then
+                local tentative = current.g + leg * LAST_LEG_WEIGHT
+                if tentative < (best[destId] or math.huge) then
+                    best[destId] = tentative
+                    cameFrom[destId] = current.id
+                    lastLeg = leg
+                    heapPush(heap, { id = destId, g = tentative, f = tentative })
+                end
+            end
+
             for linkId in pairs(wp.links or {}) do
                 local neighbor = waypoints[linkId]
                 -- Data may reference waypoints that were filtered out or
@@ -177,6 +234,9 @@ function Router.route(waypoints, startX, startY, destId, opts)
                     if tentative < (best[linkId] or math.huge) then
                         best[linkId] = tentative
                         cameFrom[linkId] = current.id
+                        if linkId == destId then
+                            lastLeg = nil
+                        end
                         heapPush(heap, {
                             id = linkId,
                             g = tentative,

@@ -43,9 +43,7 @@ local function ensureData(screen)
     end
     screen._px, screen._py = px, py
     screen._waypoints = module:currentWaypoints()
-    screen._entries = WowVision.Router.nearest(screen._waypoints, px, py, ENTRY_COUNT, function(wp)
-        return wp.links ~= nil and next(wp.links) ~= nil
-    end)
+    screen._entries = WowVision.Router.nearest(screen._waypoints, px, py, ENTRY_COUNT, WowVision.Router.hasLinks)
     if screen._entries[1] ~= nil then
         screen._entryId = screen._entries[1].waypoint.id
     end
