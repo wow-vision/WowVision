@@ -227,7 +227,7 @@ local function renderRoles(builder)
     elseif LFGListingFrameGroupRoleButtons:IsShown() then
         builder:addItem(
             ControlId.forObject(LFGListingFrameGroupRoleButtonsRoleDropdown),
-            nodes.proxyDropdown({ target = LFGListingFrameGroupRoleButtonsRoleDropdown })
+            module.dropdown({ target = LFGListingFrameGroupRoleButtonsRoleDropdown })
         )
         builder:addItem(
             ControlId.forObject(LFGListingFrameGroupRoleButtonsInitiateRolePoll),
@@ -245,6 +245,27 @@ local function renderRoles(builder)
     builder:popContext()
 end
 
+-- The group finder's dropdowns. A pick in a game menu that addon code opened
+-- counts as WowVision's (the game builds the whole menu in that call), and
+-- C_LFGList.Search refuses such values: after a post, the game's own search
+-- was blocked by the play style and voice chat picks. These dropdowns open
+-- only on a real mouse press, so Enter cannot click them. TRIAL: Enter
+-- hands the dropdown's own OpenMenu, bound to it by the game's
+-- GenerateFlatClosure, to a next-frame timer, so the game's timer runs the
+-- game's code; the taint timeline (core/taintWatch.lua) shows whether the
+-- picks then stay clean.
+function module.dropdown(config)
+    local vtable = nodes.proxyDropdown(config)
+    if vtable == nil then
+        return nil
+    end
+    local target = config.target
+    vtable.onActivate = function()
+        C_Timer.After(0, GenerateFlatClosure(target.OpenMenu, target))
+    end
+    return vtable
+end
+
 -- The options menu (top right of a tab): its one check box, "Ignore
 -- suggested level", shows activities outside the player's level in both
 -- tabs. TBC has it on both tabs, WoW: Forever on the browse tab only.
@@ -255,7 +276,7 @@ local function renderOptionsButton(builder, button)
     if button == nil or not button:IsShown() then
         return
     end
-    local vtable = nodes.proxyDropdown({ target = button, label = LFG_LIST_IGNORE_SUGGESTED_LEVEL or L["Options"] })
+    local vtable = module.dropdown({ target = button, label = LFG_LIST_IGNORE_SUGGESTED_LEVEL or L["Options"] })
     if vtable == nil then
         return
     end
@@ -363,14 +384,14 @@ local function renderBrowseTab(builder)
         builder:beginStop("categoryFilter")
         builder:addItem(
             ControlId.forObject(LFGBrowseFrameCategoryDropdown),
-            nodes.proxyDropdown({ target = LFGBrowseFrameCategoryDropdown })
+            module.dropdown({ target = LFGBrowseFrameCategoryDropdown })
         )
     end
     if LFGBrowseFrameActivityDropdown ~= nil and LFGBrowseFrameActivityDropdown:IsShown() then
         builder:beginStop("activityFilter")
         builder:addItem(
             ControlId.forObject(LFGBrowseFrameActivityDropdown),
-            nodes.proxyDropdown({ target = LFGBrowseFrameActivityDropdown })
+            module.dropdown({ target = LFGBrowseFrameActivityDropdown })
         )
     end
     if LFGBrowseFrameRefreshButton ~= nil and LFGBrowseFrameRefreshButton:IsShown() then

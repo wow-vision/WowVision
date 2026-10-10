@@ -56,6 +56,14 @@ function module.renderTabBar(builder)
                 label = tab.tooltipText or tostring(tabIndex),
                 selected = selected,
                 onActivate = function()
+                    -- TRIAL: the game's own tab 2 function from a next-frame
+                    -- timer, which may run clean (see module.dropdown);
+                    -- running the tab's mouse-up script from addon code
+                    -- taints the selected tab.
+                    if tabIndex == 2 and LFGParentFrameTab2_OnClick ~= nil then
+                        C_Timer.After(0, LFGParentFrameTab2_OnClick)
+                        return
+                    end
                     local script = captured:GetScript("OnMouseUp")
                     if script ~= nil then
                         script(captured, "LeftButton", true)
@@ -90,7 +98,7 @@ function module.renderListingOptions(builder)
         builder:beginStop("playStyle")
         builder:addItem(
             ControlId.forObject(playStyle),
-            nodes.proxyDropdown({
+            module.dropdown({
                 target = playStyle,
                 label = function()
                     return nodes.joinLabel(L["Play Style"], plainText(current()))
@@ -115,7 +123,7 @@ function module.renderListingOptions(builder)
         builder:beginStop("voiceChat")
         builder:addItem(
             ControlId.forObject(voiceChat),
-            nodes.proxyDropdown({
+            module.dropdown({
                 target = voiceChat,
                 label = function()
                     return nodes.joinLabel(name(), plainText(current()))
@@ -166,7 +174,7 @@ local function renderWhoTab(builder)
     builder:beginStop("whoFilter")
     builder:addItem(
         ControlId.forObject(frame.FilterDropdown),
-        nodes.proxyDropdown({ target = frame.FilterDropdown, label = L["Filter"] })
+        module.dropdown({ target = frame.FilterDropdown, label = L["Filter"] })
     )
 
     builder:beginStop("whoList")
