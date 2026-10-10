@@ -39,9 +39,13 @@ local function distanceBetween(ax, ay, bx, by)
     return sqrt(dx * dx + dy * dy)
 end
 
-local function hasLinks(wp)
+-- Whether a waypoint is part of the link network, so a route can enter or
+-- leave there. Most creature and object spawns are not.
+function Router.hasLinks(wp)
     return wp.links ~= nil and next(wp.links) ~= nil
 end
+
+local hasLinks = Router.hasLinks
 
 -- ---------------------------------------------------------------------------
 -- Binary min-heap on .f, for the A* open set

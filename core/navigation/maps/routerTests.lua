@@ -220,6 +220,12 @@ testRunner:addSuite("MapRouter", {
         t:assertNil(route.lastLeg)
     end,
 
+    ["hasLinks tells network waypoints from bare spawns"] = function(t)
+        t:assertEqual(Router.hasLinks({ links = { b = true } }), true)
+        t:assertEqual(Router.hasLinks({ links = {} }), false)
+        t:assertEqual(Router.hasLinks({}), false)
+    end,
+
     ["a one-way link into an unlinked destination beats the last leg"] = function(t)
         -- The spawn has no links of its own but a one-way link reaches it:
         -- the real edge wins over the weighted straight leg.
