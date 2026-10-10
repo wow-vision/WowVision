@@ -45,6 +45,18 @@ local function findEditBox(parent)
     end
 end
 
+-- A list row's own table. Tree lists (the listing's activities, Forever's
+-- browse results) hold tree nodes wrapping that table; flat lists (TBC's
+-- browse results) hold the tables themselves. Browse rows are { resultID }
+-- or, on WoW: Forever, the header { dividerType } of the collapsible solo
+-- and group sections.
+local function rowData(data)
+    if type(data) == "table" and data.GetData ~= nil then
+        return data:GetData()
+    end
+    return data
+end
+
 local function renderLockedView(builder)
     builder:beginStop("locked")
     builder:addItem(
@@ -98,6 +110,26 @@ local function activityName(data)
     return nil
 end
 
+-- An activity's suggested levels as the row shows them; nil for a group
+-- and for an activity without levels.
+local function activityLevels(row)
+    if row == nil or row.activityID == nil then
+        return nil
+    end
+    local minLevel, maxLevel = row.minLevel or 0, row.maxLevel or 0
+    if minLevel == maxLevel or maxLevel == 0 then
+        if minLevel == 0 then
+            return nil
+        end
+        return format(LFD_LEVEL_FORMAT_SINGLE, minLevel)
+    end
+    return format(LFD_LEVEL_FORMAT_RANGE, minLevel, maxLevel)
+end
+
+-- The activity list is a tree: activities sit under activity groups
+-- (dungeons, raids, ...). With several groups each folds; a group without
+-- an activity at the player's level starts folded. A group's check box
+-- selects its whole group; folding is its context menu's Expand/Collapse.
 local function renderActivityList(builder)
     builder:beginStop("activities")
     nodes.scrollBoxList(builder, {
@@ -115,6 +147,14 @@ local function renderActivityList(builder)
             return findCheckButton(rowFrame) or rowFrame
         end,
         row = function(data, index, helpers)
+            local row = rowData(data)
+            local isGroup = row ~= nil and row.activityGroupID ~= nil and row.activityID == nil
+            local foldable = isGroup and row.showExpandCollapseButton and data.IsCollapsed ~= nil
+            local expandButton = function()
+                local check = helpers.target()
+                local rowFrame = check ~= nil and check:GetParent() or nil
+                return rowFrame ~= nil and rowFrame.ExpandOrCollapseButton or nil
+            end
             return {
                 controlType = graph.controlTypes.toggle,
                 announcements = {
@@ -126,6 +166,12 @@ local function renderActivityList(builder)
                     },
                     {
                         text = function()
+                            return activityLevels(row)
+                        end,
+                        kind = kinds.value,
+                    },
+                    {
+                        text = function()
                             local check = helpers.target()
                             if check ~= nil and check.GetChecked ~= nil then
                                 return check:GetChecked() and L["Checked"] or L["Unchecked"]
@@ -133,11 +179,25 @@ local function renderActivityList(builder)
                             return nil
                         end,
                         kind = kinds.value,
+                        live = "focus",
+                    },
+                    {
+                        text = function()
+                            if foldable then
+                                return data:IsCollapsed() and L["Collapsed"] or L["Expanded"]
+                            end
+                            return nil
+                        end,
+                        kind = kinds.value,
+                        live = "focus",
                     },
                 },
                 bindings = {
                     { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
                 },
+                contextActions = foldable and function(add)
+                    add({ label = L["Expand/Collapse"], click = { emulatedKey = "LeftButton", target = expandButton } })
+                end or nil,
                 onFocus = helpers.onFocus,
                 onFocusTick = helpers.onFocusTick,
                 onUnfocus = helpers.onUnfocus,
@@ -185,11 +245,23 @@ local function renderRoles(builder)
     builder:popContext()
 end
 
+-- The options menu (top right of a tab): its one check box, "Ignore
+-- suggested level", shows activities outside the player's level in both
+-- tabs. TBC has it on both tabs, WoW: Forever on the browse tab only.
+local function renderOptionsButton(builder, button)
+    if button ~= nil and button:IsShown() then
+        builder:beginStop("options")
+        builder:addItem(ControlId.forObject(button), nodes.proxyDropdown({ target = button, label = L["Options"] }))
+    end
+end
+
 local function renderListingTab(builder)
     if LFGListingFrameLockedView:IsShown() then
         renderLockedView(builder)
         return
     end
+
+    renderOptionsButton(builder, LFGListingFrame.OptionsButton)
 
     if LFGListingFrameActivityView:IsShown() then
         renderActivityList(builder)
@@ -224,17 +296,6 @@ local function renderListingTab(builder)
             nodes.proxyButton({ target = LFGListingFramePostButton })
         )
     end
-end
-
--- A browse row's own table: { resultID } or, on WoW: Forever, the header
--- { dividerType }. Forever's browse list is a tree (results grouped under
--- collapsible solo and group headers), whose rows are tree nodes holding
--- that table; TBC's is a flat list of the tables themselves.
-local function browseRowData(data)
-    if type(data) == "table" and data.GetData ~= nil then
-        return data:GetData()
-    end
-    return data
 end
 
 local function browseDividerLabel(dividerType)
@@ -304,6 +365,7 @@ local function renderBrowseTab(builder)
             nodes.proxyButton({ target = LFGBrowseFrameRefreshButton, label = L["Search"] })
         )
     end
+    renderOptionsButton(builder, LFGBrowseFrame.OptionsButton)
 
     builder:beginStop("groups")
     nodes.scrollBoxList(builder, {
@@ -311,7 +373,7 @@ local function renderBrowseTab(builder)
         key = "groups",
         label = L["Browse Groups"],
         id = function(data, index)
-            local row = browseRowData(data)
+            local row = rowData(data)
             if row ~= nil and row.resultID ~= nil then
                 return ControlId.structural("group:" .. row.resultID)
             elseif row ~= nil and row.dividerType ~= nil then
@@ -320,7 +382,7 @@ local function renderBrowseTab(builder)
             return ControlId.structural("group:" .. index)
         end,
         row = function(data, index, helpers)
-            local row = browseRowData(data)
+            local row = rowData(data)
             local state
             if row ~= nil and row.dividerType ~= nil then
                 state = {
