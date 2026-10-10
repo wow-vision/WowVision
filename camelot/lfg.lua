@@ -90,7 +90,7 @@ function module.renderListingOptions(builder)
         builder:beginStop("playStyle")
         builder:addItem(
             ControlId.forObject(playStyle),
-            nodes.proxyDropdown({
+            module.secureDropdown({
                 target = playStyle,
                 label = function()
                     return nodes.joinLabel(L["Play Style"], plainText(current()))
@@ -115,7 +115,7 @@ function module.renderListingOptions(builder)
         builder:beginStop("voiceChat")
         builder:addItem(
             ControlId.forObject(voiceChat),
-            nodes.proxyDropdown({
+            module.secureDropdown({
                 target = voiceChat,
                 label = function()
                     return nodes.joinLabel(name(), plainText(current()))
