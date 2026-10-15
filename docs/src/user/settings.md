@@ -36,3 +36,13 @@ Soft targeting picks what is in front of you without a hard target: an enemy, a 
 **Make Soft Target the Hard Target** lets your hard target follow the soft enemy or friend; by default the game's own setting stays. The arc and range settings default to the game's values too: a range of 0 means the game's own range.
 
 The game locks the on/off switches and that last setting in combat. Changed in a fight, they apply when combat ends, and WowVision says "after combat". `/wv soft` reads every soft targeting value, including anything still waiting for combat to end.
+
+## Enemy Count
+
+In a fight WowVision says how many enemies are in it whenever the number changes: "1", "3", "2", and "0" when the last one is gone. The settings are under UI, Combat:
+
+- **Enemy Count Alert** — on by default, spoken by text to speech; a voice pack output plays the numbers instead if you turn it on.
+- **Count Enemies** — **Attacking You or Your Group** (default) counts every enemy that you, your pet or anyone in your group is fighting; **Attacking You** counts only the enemies whose aggro you hold.
+- **Count Elite Enemies Only** — leaves normal mobs out (elites, rare elites and world bosses still count).
+
+The count comes from enemy nameplates, so it needs them: turn on **Enemy Units** in the game's Nameplates options (off by default in some game versions; WowVision says so once if you enter combat without them). Turning on **Minor** and **Minions** below it counts small trash mobs and enemy pets too. An enemy counts once it is within nameplate range (45 yards on WoW: Forever).

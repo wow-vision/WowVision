@@ -4,6 +4,7 @@
   <Script file="module.lua" />
   <Script file="graphBindings.lua" />
   <Script file="cursor.lua" />
+  <Script file="enemyCount.lua" />
   <Script file="combat.lua" />
   <Script file="tooltip.lua" />
   <Script file="tooltipQuality.lua" />
