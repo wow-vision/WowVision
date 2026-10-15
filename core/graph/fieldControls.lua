@@ -56,6 +56,23 @@ settings.registerFieldControl("VoicePack", function(field, owner)
     })
 end)
 
+-- TtsVoice: a choice over the game's text-to-speech voices.
+settings.registerFieldControl("TtsVoice", function(field, owner)
+    return nodes.choice({
+        label = field:getLabel(),
+        get = function()
+            return field:shownVoice(owner, field:get(owner))
+        end,
+        set = function(value)
+            field:set(owner, field:pickedVoice(owner, value))
+        end,
+        choices = function()
+            return field:getChoices(owner)
+        end,
+        valueText = valueTextOf(owner, field),
+    })
+end)
+
 -- Spell: typed entry resolving a name or id (the field's validate does the
 -- lookup), plus the recent-spell history as quick picks.
 settings.registerFieldControl("Spell", function(field, owner)

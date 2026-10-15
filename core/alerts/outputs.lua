@@ -4,9 +4,10 @@ local tts = WowVision.alerts:createOutput("TTS")
 tts:addFields({
     { key = "buildMessage" },
     { key = "message" },
-    -- A game TTS voice index: the text is spoken by the game with that voice (at the speech
-    -- module's rate and volume) instead of through the speech module. For announcements made while
-    -- walking: a screen reader cuts its own speech off at every key press.
+    -- A game TTS voice index: when set, the text is spoken by the game (at the speech module's rate
+    -- and volume) instead of through the speech module, with the voice the output's Voice setting
+    -- picks; this index is that setting's default. For announcements made while walking: a screen
+    -- reader cuts its own speech off at every key press.
     { key = "voice" },
     {
         key = "interrupt",
@@ -30,6 +31,24 @@ function tts:initialize(info)
             default = function()
                 return self.defaultInterrupt
             end,
+        })
+        -- Spoken in the queue like all speech. Until a voice of its own is
+        -- picked here, it follows the Speech Voice setting (and shows it).
+        self:addParameter({
+            key = "voice",
+            type = "TtsVoice",
+            label = L["Voice"],
+            followVoice = function()
+                return WowVision.base.speech.settings.voiceID
+            end,
+            default = WowVision.classes.SPEECH_VOICE,
+        })
+    else
+        self:addParameter({
+            key = "voice",
+            type = "TtsVoice",
+            label = L["Voice"],
+            default = self.voice,
         })
     end
     if not self.buildMessage then
@@ -59,20 +78,28 @@ function tts:onFire(message)
     if self.voice ~= nil then
         local settings = WowVision.base.speech.settings
         local volume = math.max(0, math.min(100, settings.speechVolume or 100))
-        C_VoiceChat.SpeakText(self.voice, WowVision.ttsCacheBust.bust(text), settings.speechRate, volume, false)
+        local voice = self.parameters:getFieldValue("voice")
+        if voice == nil then
+            voice = self.voice
+        end
+        C_VoiceChat.SpeakText(voice, WowVision.ttsCacheBust.bust(text), settings.speechRate, volume, false)
         return
+    end
+    local voice = self.parameters:getFieldValue("voice")
+    if voice == WowVision.classes.SPEECH_VOICE then
+        voice = nil
     end
     if self.db.interrupt then
         WowVision.base.speech:uiStop()
         if WowVision.consts.UI_DELAY > 0 then
             C_Timer.After(0.05, function()
-                WowVision:speak(text)
+                WowVision:speak(text, voice)
             end)
         else
-            WowVision:speak(text)
+            WowVision:speak(text, voice)
         end
     else
-        WowVision:speak(text)
+        WowVision:speak(text, voice)
     end
 end
 

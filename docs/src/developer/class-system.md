@@ -85,7 +85,7 @@ The stores themselves: `WowVisionDB` (per character) and `WowVisionGlobalDB` (ac
 }
 ```
 
-Scalars (`Bool`, `String`, `Number`, `Choice`, `Table`) live in `core/Class.lua`; complex types (`ComponentArray`, `TrackingConfig`, `Template`, `Alert`, `Spell`, `Category`, `Time`, `VoicePack`, `DataBrowse`, `Array`, `Dict`, `InstanceArray`) in `core/fieldTypes.lua`. The `api` table is how a type exposes methods on its built field objects — `field:addElement(obj, x)` on component arrays, `field:getChoices(obj)` on choices.
+Scalars (`Bool`, `String`, `Number`, `Choice`, `Table`) live in `core/Class.lua`; complex types (`ComponentArray`, `TrackingConfig`, `Template`, `Alert`, `Spell`, `Category`, `Time`, `VoicePack`, `TtsVoice` (a game voice, saved by name; def key `followVoice` makes it follow another voice setting until a voice is picked), `DataBrowse`, `Array`, `Dict`, `InstanceArray`) in `core/fieldTypes.lua`. The `api` table is how a type exposes methods on its built field objects — `field:addElement(obj, x)` on component arrays, `field:getChoices(obj)` on choices.
 
 The graph settings renderer picks a control per field by `field.typeKey` (`settings.registerFieldControl`).
 

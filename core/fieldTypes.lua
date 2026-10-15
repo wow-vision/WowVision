@@ -658,6 +658,118 @@ classes.registerFieldType("VoicePack", {
 })
 
 -- ---------------------------------------------------------------------------
+-- TtsVoice: a game text-to-speech voice. Read and written as the game's
+-- voiceID (what C_VoiceChat.SpeakText takes), persisted as the voice's
+-- NAME: the game numbers its voices by their place in the Windows voice
+-- list, so installing a voice moves the numbers, and a stored number would
+-- then speak with another voice. Restore pins: a stored number (saved
+-- before this type) or a missing value is rewritten as the name of the
+-- voice it means now. A stored name whose voice is not installed reads as
+-- the default but stays stored, so the choice returns with the voice (a
+-- Windows update can drop added voices for a while).
+-- def key followVoice = function() -> voiceID: the value may be
+-- classes.SPEECH_VOICE, saved as itself, meaning "the voice followVoice
+-- names now" (the Speech Voice setting). It is shown as that voice, with no
+-- entry of its own, and picking that voice keeps the field following it.
+-- ---------------------------------------------------------------------------
+
+classes.SPEECH_VOICE = -1
+
+local function ttsVoices()
+    if C_VoiceChat == nil or C_VoiceChat.GetTtsVoices == nil then
+        return {}
+    end
+    return C_VoiceChat.GetTtsVoices() or {}
+end
+
+local function ttsVoiceName(voiceID)
+    for _, voice in ipairs(ttsVoices()) do
+        if voice.voiceID == voiceID then
+            return voice.name
+        end
+    end
+    return nil
+end
+
+local function ttsVoiceFromDB(field, obj, dbValue)
+    if type(dbValue) ~= "string" then
+        return dbValue
+    end
+    for _, voice in ipairs(ttsVoices()) do
+        if voice.name == dbValue then
+            return voice.voiceID
+        end
+    end
+    return field:getDefault(obj)
+end
+
+classes.registerFieldType("TtsVoice", {
+    default = 0,
+    valueString = function(field, obj, value)
+        if value == classes.SPEECH_VOICE and field.followVoice ~= nil then
+            value = field.followVoice()
+        end
+        local name = ttsVoiceName(value)
+        if name == nil and value ~= nil then
+            return tostring(value)
+        end
+        return name
+    end,
+    toDB = function(field, obj, value)
+        return ttsVoiceName(value) or value
+    end,
+    fromDB = ttsVoiceFromDB,
+    setDB = function(field, obj, pair)
+        local store = classes.resolveStore(field, pair)
+        local dbValue = nil
+        if store ~= nil then
+            dbValue = store[field.key]
+        end
+        local value = ttsVoiceFromDB(field, obj, dbValue)
+        if value == nil then
+            value = field:getDefault(obj)
+        end
+        -- Restoring never writes back through the owner's previous node
+        -- (a plain owner like a FieldSet still holds it here).
+        if rawget(obj, "_values") == nil then
+            obj.db = nil
+        end
+        field:set(obj, value)
+        if store ~= nil and type(dbValue) ~= "string" then
+            local name = ttsVoiceName(value)
+            if name ~= nil then
+                store[field.key] = name
+            end
+        end
+    end,
+    api = {
+        getChoices = function(field, obj)
+            local result = {}
+            for _, voice in ipairs(ttsVoices()) do
+                tinsert(result, { label = voice.name, value = voice.voiceID })
+            end
+            return result
+        end,
+        -- The voice to mark as chosen: a following value shows the voice
+        -- it follows.
+        shownVoice = function(field, obj, value)
+            if value == classes.SPEECH_VOICE and field.followVoice ~= nil then
+                return field.followVoice()
+            end
+            return value
+        end,
+        -- The value to store for a picked voice: the followed voice keeps
+        -- the field following it.
+        pickedVoice = function(field, obj, value)
+            if field.followVoice ~= nil and value == field.followVoice() then
+                return classes.SPEECH_VOICE
+            end
+            return value
+        end,
+    },
+})
+
+-- ---------------------------------------------------------------------------
 -- DataBrowse: a path into a data directory (sound picker, beacon picker).
 -- def key: directory = DataDirectory | function(obj) -> DataDirectory.
 -- ---------------------------------------------------------------------------

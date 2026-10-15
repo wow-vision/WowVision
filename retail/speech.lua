@@ -56,19 +56,13 @@ local function applyQueueSetting(enabled)
     end
 end
 
-local voiceSetting = settings:add({
-    type = "Choice",
+-- Saved by the voice's name, so installing voices keeps it (core/fieldTypes.lua).
+settings:add({
+    type = "TtsVoice",
     key = "voiceID",
     label = L["Speech Voice"],
     default = 0,
 })
-
-for _, v in ipairs(C_VoiceChat.GetTtsVoices()) do
-    voiceSetting:addChoice({
-        label = v.name,
-        value = v.voiceID,
-    })
-end
 
 settings:add({
     type = "Number",
@@ -147,7 +141,7 @@ end
 -- throw on any string operation. The speech API accepts secret strings,
 -- so the text goes through untouched (the cache-buster only concatenates
 -- onto a secret, from a shared counter it cannot key by text).
-function module:speak(text)
+function module:speak(text, voice)
     -- Volume above 100 silences TTS entirely in Mists Classic, so clamp it.
     local volume = self.settings.speechVolume or 100
     if volume < 0 then
@@ -159,7 +153,7 @@ function module:speak(text)
     -- the single switch: when on, this hits our queue; when off, Blizzard's
     -- original SpeakText runs directly. Busted here so both paths get it.
     text = WowVision.ttsCacheBust.bust(text)
-    C_VoiceChat.SpeakText(self.settings.voiceID, text, self.settings.speechRate, volume, false)
+    C_VoiceChat.SpeakText(voice or self.settings.voiceID, text, self.settings.speechRate, volume, false)
 end
 
 function module:stop()

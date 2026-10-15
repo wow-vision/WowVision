@@ -142,8 +142,9 @@ function WowVision:OnUpdate()
     profiler:endFrame()
 end
 
-function WowVision:speak(text)
-    self.base.speech:speak(text)
+-- voice: a game voice id for this text; nil speaks with the Speech Voice.
+function WowVision:speak(text, voice)
+    self.base.speech:speak(text, voice)
 end
 
 function WowVision:SlashCommand(msg)

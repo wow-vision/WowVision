@@ -13,6 +13,7 @@
     <Script file="Event.lua" />
     <Script file="movement.lua" />
   <Script file="ClassTests.lua" />
+  <Script file="ttsVoiceTests.lua" />
     <Script file="MessageStore.lua" />
     <Include file="components/modules.xml" />
   <Include file="commands/modules.xml" />

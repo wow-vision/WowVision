@@ -85,9 +85,10 @@ local dotAlert = module:addAlert({
     key = "newDot",
     label = L["New Minimap Dot Alert"],
 })
--- For the moment the walking announcements speak with game voice 0, not
--- the player's speech voice: with an NVDA SAPI voice there they were cut
--- off by the screen reader's own speech.
+-- The walking announcements speak with a game voice (voice 0 unless the
+-- alert's Voice setting picks another), not the player's speech voice:
+-- with an NVDA SAPI voice there they were cut off by the screen reader's
+-- own speech.
 dotAlert:addOutput({
     type = "TTS",
     key = "tts",
