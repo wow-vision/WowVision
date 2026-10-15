@@ -51,11 +51,15 @@ WowVision.MessageStore = MessageStore
 
 -- Global registry for MessageStores
 WowVision.messageStores = WowVision.Registry:new()
+-- (key, store) once a store registers: buffers restored before their store
+-- exists (chat tabs appear after load) attach on it.
+WowVision.messageStoreAdded = WowVision.Event:new("messageStoreAdded")
 
 -- Helper to create and register a MessageStore
 function WowVision.createMessageStore(key, config)
     local store = MessageStore:new(config)
     WowVision.messageStores:register(key, store)
+    WowVision.messageStoreAdded:emit(key, store)
     return store
 end
 

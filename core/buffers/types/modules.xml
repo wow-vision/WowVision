@@ -3,6 +3,7 @@
 
   <Script file="StaticBuffer.lua" />
   <Script file="MessageBuffer.lua" />
+  <Script file="ChatTabBuffer.lua" />
   <Script file="TrackedBuffer.lua" />
 
 </Ui>

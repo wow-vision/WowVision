@@ -3,6 +3,8 @@
 
   <Script file="links.lua" />
   <Script file="linkTests.lua" />
+  <Script file="tabs.lua" />
+  <Script file="tabTests.lua" />
   <Script file="module.lua" />
     <Script file="ui.lua" />
 

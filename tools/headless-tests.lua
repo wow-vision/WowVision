@@ -84,6 +84,8 @@ loadAddonFile("core/speechSounds.lua")
 loadAddonFile("core/speechSoundsTests.lua")
 loadAddonFile("core/chat/links.lua")
 loadAddonFile("core/chat/linkTests.lua")
+loadAddonFile("core/chat/tabs.lua")
+loadAddonFile("core/chat/tabTests.lua")
 loadAddonFile("core/ClassTests.lua")
 loadAddonFile("core/errors/utils.lua")
 loadAddonFile("core/errors/tests.lua")
@@ -110,6 +112,9 @@ loadAddonFile("core/buffers/items/MessageItem.lua")
 loadAddonFile("core/buffers/BufferGroup.lua")
 loadAddonFile("core/buffers/types/StaticBuffer.lua")
 loadAddonFile("core/buffers/types/TrackedBuffer.lua")
+loadAddonFile("core/MessageStore.lua")
+loadAddonFile("core/buffers/types/MessageBuffer.lua")
+loadAddonFile("core/buffers/types/ChatTabBuffer.lua")
 WowVision.testing.testRunner:addSuite("BufferConstruction", {
     ["a static buffer constructs and persists through the root group"] = function(t)
         local db = { items = { _type = "array" } }
@@ -135,6 +140,40 @@ WowVision.testing.testRunner:addSuite("BufferConstruction", {
         again:setDB(db)
         t:assertEqual(again.items[1].label, "My Group")
         t:assertEqual(again.items[1].items[1].label, "Renamed")
+    end,
+
+    ["a chat tab buffer waits for its tab's store and follows the tab choice"] = function(t)
+        local db = { items = { _type = "array" } }
+        local root = WowVision.buffers.RootBufferGroup:new(db)
+        root:setDB(db)
+        local group = WowVision.buffers:create("Group", { label = "Chat" })
+        root:addBuffer(group)
+        local buffer = WowVision.buffers:create("ChatTab", { tab = "chat.test1" })
+        group:addBuffer(buffer)
+        t:assertEqual(db.items[1].items[1].type, "ChatTab")
+        t:assertEqual(db.items[1].items[1].tab, "chat.test1")
+        t:assertEqual(#buffer.items, 0)
+
+        -- The store appears later (chat tabs open after the buffers restore)
+        local store = WowVision.createMessageStore("chat.test1", { messages = { "old line" } })
+        t:assertEqual(#buffer.items, 1)
+        store:add("new line")
+        t:assertEqual(#buffer.items, 2)
+        t:assertEqual(buffer.items[2]:getFocusString(), "new line")
+
+        -- Choosing another tab swaps the lines
+        WowVision.createMessageStore("chat.test2", { messages = { "other tab" } })
+        buffer.tab = "chat.test2"
+        t:assertEqual(db.items[1].items[1].tab, "chat.test2")
+        t:assertEqual(#buffer.items, 1)
+        t:assertEqual(buffer.items[1]:getFocusString(), "other tab")
+        store:add("ignored now")
+        t:assertEqual(#buffer.items, 1)
+
+        -- Restored from the saved config, it attaches to the existing store
+        local again = WowVision.buffers.RootBufferGroup:new(db)
+        again:setDB(db)
+        t:assertEqual(#again.items[1].items[1].items, 1)
     end,
 })
 
@@ -317,6 +356,7 @@ local parseOnly = {
     "mists/QuestChoice.lua",
     "mists/collections/module.lua",
     "mists/collections/MountJournal.lua",
+    "core/chat/module.lua",
     "core/chat/ui.lua",
     "core/ui/tooltip/types/HyperlinkTooltip.lua",
     "mists/auction.lua",

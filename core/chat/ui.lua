@@ -6,6 +6,7 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
 local chatLinks = WowVision.chatLinks
+local chatTabs = WowVision.chatTabs
 
 -- The chat reader (Shift-F3): the message log is ONE node holding a cursor
 -- over the message buffer (up to 5000 entries), not a node per message --
@@ -18,6 +19,10 @@ local chatLinks = WowVision.chatLinks
 -- sender, links, in line order (chatLinks.parse). Enter, Backspace, and the
 -- shift click act on the selected part exactly as a mouse click on that
 -- piece of the line would; the tooltip keys read a selected link.
+--
+-- Left and right switch the chat tab from the message log, by a real click
+-- on the neighbouring tab (the tab strip stop does the same with Enter), and
+-- land on its newest message.
 
 -- Keymaps for the part cursor; engaged per node, so they only hold their
 -- keys while the message log is focused.
@@ -46,8 +51,36 @@ module:registerBinding({
 local function currentBuffer()
     local frame = SELECTED_CHAT_FRAME
     local index = frame ~= nil and frame:GetID() or nil
-    local entry = index ~= nil and module.frames[index] or nil
+    local entry = index ~= nil and module.frames ~= nil and module.frames[index] or nil
     return entry ~= nil and entry.buffer or nil
+end
+
+local function tabButton(frame)
+    return _G[frame:GetName() .. "Tab"]
+end
+
+-- The tabs a sighted player can click, in screen order.
+local function visibleTabFrames()
+    local result = {}
+    for _, frame in ipairs(module:orderedFrames()) do
+        local tab = tabButton(frame)
+        if tab ~= nil and tab:IsShown() then
+            tinsert(result, frame)
+        end
+    end
+    return result
+end
+
+-- The tab button beside the selected tab, or nil at either end.
+local function neighbourTab(step)
+    local frames = visibleTabFrames()
+    for i, frame in ipairs(frames) do
+        if frame == SELECTED_CHAT_FRAME then
+            local target = frames[i + step]
+            return target ~= nil and tabButton(target) or nil
+        end
+    end
+    return nil
 end
 
 local function messagesNode(screen)
@@ -171,6 +204,23 @@ local function messagesNode(screen)
         C_Timer.After(0.2, function()
             WowVision.graphHost:openCopyBox(text)
         end)
+    end
+
+    -- After a tab click: the new tab's name and its newest message. Nothing
+    -- changed (the first or last tab): silent, like any boundary bump.
+    local function afterTabSwitch()
+        local buffer = currentBuffer()
+        if buffer == screen._chatBuffer then
+            return
+        end
+        screen._chatBuffer = buffer
+        screen._chatIndex = buffer ~= nil and #buffer.items or 0
+        currentParts()
+        refreshTooltip()
+        local item = buffer ~= nil and buffer.items[screen._chatIndex] or nil
+        local line = item ~= nil and item:getFocusString() or L["Empty"]
+        WowVision.base.speech:stop()
+        WowVision:speak(WowVision.secrets.join({ chatTabs.tabName(SELECTED_CHAT_FRAME), line }, ", "))
     end
 
     local function moveTo(target)
@@ -321,6 +371,24 @@ local function messagesNode(screen)
                 end,
             },
             {
+                binding = "left",
+                type = "Click",
+                emulatedKey = "LeftButton",
+                target = function()
+                    return neighbourTab(-1)
+                end,
+                postClick = afterTabSwitch,
+            },
+            {
+                binding = "right",
+                type = "Click",
+                emulatedKey = "LeftButton",
+                target = function()
+                    return neighbourTab(1)
+                end,
+                postClick = afterTabSwitch,
+            },
+            {
                 binding = "chat/previousPart",
                 type = "Function",
                 interruptSpeech = true,
@@ -352,36 +420,39 @@ local function renderChat(builder, screen)
     builder:pushContext("chat", L["Chat"])
 
     builder:beginStop("messages")
-    builder:pushContext("messages", SELECTED_CHAT_FRAME ~= nil and SELECTED_CHAT_FRAME.name or L["Chat"], nil, false)
+    builder:pushContext(
+        "messages",
+        SELECTED_CHAT_FRAME ~= nil and chatTabs.tabName(SELECTED_CHAT_FRAME) or L["Chat"],
+        nil,
+        false
+    )
     builder:addItem(ControlId.structural("messages"), messagesNode(screen))
     builder:popContext()
 
     builder:beginStop("tabs")
     builder:pushContext("tabs", L["Tabs"])
     builder:startRow()
-    local remaining = FCF_GetNumActiveChatFrames()
-    for i = 1, 10 do
-        if remaining < 1 then
-            break
-        end
-        local tab = _G["ChatFrame" .. i .. "Tab"]
-        if tab ~= nil and tab:IsShown() then
-            remaining = remaining - 1
-            local frameIndex = i
-            local vtable = nodes.proxyButton({ target = tab })
-            if vtable ~= nil then
-                tinsert(vtable.announcements, {
-                    text = function()
-                        local frame = _G["ChatFrame" .. frameIndex]
-                        if frame ~= nil and frame:IsShown() then
-                            return L["selected"]
-                        end
-                        return nil
-                    end,
-                    kind = kinds.selected,
-                })
-                builder:addItem(ControlId.forObject(tab), vtable)
-            end
+    for _, frame in ipairs(visibleTabFrames()) do
+        local tab = tabButton(frame)
+        -- The label comes from the frame: a whisper tab's text can be a
+        -- secret, which the button's own text reader would compare.
+        local vtable = nodes.proxyButton({
+            target = tab,
+            label = function()
+                return chatTabs.tabName(frame)
+            end,
+        })
+        if vtable ~= nil then
+            tinsert(vtable.announcements, {
+                text = function()
+                    if frame:IsShown() then
+                        return L["selected"]
+                    end
+                    return nil
+                end,
+                kind = kinds.selected,
+            })
+            builder:addItem(ControlId.forObject(tab), vtable)
         end
     end
     builder:endRow()
