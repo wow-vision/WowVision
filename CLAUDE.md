@@ -51,7 +51,7 @@ m:setDB({ char = charNode, global = globalNode })
 
 **DB pairs and scope:** `setDB({ char = node, global = node, overrides = map })`. Each field routes by scope: per-field override, then object-wide override (reserved `"*"` key), then the field's `global` flag. A char-only pair structurally traps everything below it (nesting rule). Containers (Dict, InstanceArray, ComponentArray) cascade setDB to child instances. Scope switching: `classes.setFieldScope` / `classes.setObjectScope` -- switching TO GLOBAL adopts the account value; switching TO CHARACTER forks the current value; nothing is ever deleted.
 
-**Field types** (`classes.registerFieldType(key, {validate, toDB, fromDB, setDB, getDefaultDB, valueString, default, api}`): scalars live in `core/Class.lua`; complex types (ComponentArray, TrackingConfig, Template, Alert, Spell, Category, Time, VoicePack, DataBrowse, Array) in `core/fieldTypes.lua`. The `api` table exposes methods on built fields (`field:addElement(obj, x)`).
+**Field types** (`classes.registerFieldType(key, {validate, toDB, fromDB, setDB, getDefaultDB, valueString, default, api}`): scalars live in `core/Class.lua`; complex types (ComponentArray, TrackingConfig, Template, Alert, Spell, Category, Time, VoicePack, TtsVoice, DataBrowse, Array) in `core/fieldTypes.lua`. The `api` table exposes methods on built fields (`field:addElement(obj, x)`).
 
 **FieldSet** (`classes.newFieldSet`): a standalone self-owned field collection (alert/output parameters, ObjectType parameters). `set:add(def)` returns the field; values live on the set; `set:setDB(node)` restores; `set:applyTo(obj, config)` applies a schema to an external object.
 

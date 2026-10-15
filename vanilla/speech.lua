@@ -37,19 +37,13 @@ module:setLabel(L["Speech"])
 module:setVital(true)
 local settings = module:hasSettings()
 
-local voiceSetting = settings:add({
-    type = "Choice",
+-- Saved by the voice's name, so installing voices keeps it (core/fieldTypes.lua).
+settings:add({
+    type = "TtsVoice",
     key = "voiceID",
     label = L["Speech Voice"],
     default = 0,
 })
-
-for _, v in ipairs(C_VoiceChat.GetTtsVoices()) do
-    voiceSetting:addChoice({
-        label = v.name,
-        value = v.voiceID,
-    })
-end
 
 settings:add({
     type = "Number",

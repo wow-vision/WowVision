@@ -8,6 +8,7 @@
 - [Using the Interface](./user/using-the-interface.md)
 - [Buffers](./user/buffers.md)
 - [Monitors](./user/monitors.md)
+- [Group Health Monitor](./user/group-health.md)
 - [Keybindings](./user/keybindings.md)
 - [Chat](./user/chat.md)
 - [Settings & the WowVision Menu](./user/settings.md)

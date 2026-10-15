@@ -412,6 +412,7 @@ testRunner:addSuite("GraphNodes", {
             "ComponentArray",
             "Time",
             "VoicePack",
+            "TtsVoice",
             "Spell",
             "Alert",
             "Template",

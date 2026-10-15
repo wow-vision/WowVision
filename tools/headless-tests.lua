@@ -63,6 +63,12 @@ loadAddonFile("core/quests/tests.lua")
 loadAddonFile("core/minimap/logic.lua")
 loadAddonFile("core/minimap/gatheringNames.lua")
 loadAddonFile("core/minimap/tests.lua")
+loadAddonFile("retail/groupHealth/logic.lua")
+loadAddonFile("retail/groupHealth/voices.lua")
+loadAddonFile("retail/groupHealth/tests.lua")
+loadAddonFile("retail/groupHealth/readback.lua")
+loadAddonFile("retail/groupHealth/checks.lua")
+loadAddonFile("tools/groupHealthSimTests.lua")
 loadAddonFile("core/colors/names.lua")
 loadAddonFile("core/colors/colors.lua")
 loadAddonFile("core/colors/tests.lua")
@@ -85,6 +91,7 @@ loadAddonFile("core/speechSoundsTests.lua")
 loadAddonFile("core/chat/links.lua")
 loadAddonFile("core/chat/linkTests.lua")
 loadAddonFile("core/ClassTests.lua")
+loadAddonFile("core/ttsVoiceTests.lua")
 loadAddonFile("core/errors/utils.lua")
 loadAddonFile("core/errors/tests.lua")
 
@@ -101,6 +108,7 @@ loadAddonFile("core/components/tests.lua")
 -- Alerts construct at every module load in game; a construction smoke here
 -- catches recursion/typo failures the parse check cannot.
 loadAddonFile("core/alerts/alerts.lua")
+loadAddonFile("core/alerts/outputs.lua")
 -- The buffer family on the new class system: construction and db round trip.
 loadAddonFile("core/ViewList.lua")
 loadAddonFile("core/buffers/Buffer.lua")
@@ -211,6 +219,49 @@ WowVision.testing.testRunner:addSuite("AlertConstruction", {
         t:assertEqual(alert.enabled, false)
         t:assertEqual(alert.defaultEnabled, true)
     end,
+
+    ["a TTS output with a game voice keeps that voice when voices are installed"] = function(t)
+        local voices = { { voiceID = 0, name = "Hedda" }, { voiceID = 1, name = "Zira" } }
+        local spoken = {}
+        C_VoiceChat = {
+            GetTtsVoices = function()
+                return voices
+            end,
+            SpeakText = function(voice, text)
+                tinsert(spoken, voice)
+            end,
+        }
+        WowVision.base = { speech = { settings = { speechVolume = 100, speechRate = 0 } } }
+        local alert = WowVision.alerts.Alert:new({ key = "walk", label = "Walk" })
+        alert:addOutput({
+            type = "TTS",
+            key = "tts",
+            label = "TTS",
+            voice = 0,
+            buildMessage = function(self, message)
+                return message.text
+            end,
+        })
+        -- A db saved before the Voice setting existed: pinned to voice 0's name.
+        local db = alert:getDefaultDBRecursive()
+        db.outputs.tts.voice = nil
+        alert:setDB(db)
+        t:assertEqual(db.outputs.tts.voice, "Hedda")
+        alert:fire({ text = "Brunnen" })
+        t:assertEqual(spoken[1], 0)
+        -- Two voices installed ahead of Hedda: the same voice, a new number.
+        voices = {
+            { voiceID = 0, name = "Katja" },
+            { voiceID = 1, name = "Stefan" },
+            { voiceID = 2, name = "Hedda" },
+            { voiceID = 3, name = "Zira" },
+        }
+        alert:setDB(db)
+        alert:fire({ text = "Tor" })
+        t:assertEqual(spoken[2], 2)
+        C_VoiceChat = nil
+        WowVision.base = nil
+    end,
 })
 
 loadAddonFile("core/graph/ControlId.lua")
@@ -292,6 +343,8 @@ local parseOnly = {
     "core/minimap/module.lua",
     "core/minimap/scanner.lua",
     "core/minimap/tracking.lua",
+    "retail/groupHealth/module.lua",
+    "retail/groupHealth/log.lua",
     "core/scanner/module.lua",
     "core/scanner/ui.lua",
     "core/scanner/providers.lua",
@@ -356,7 +409,6 @@ local parseOnly = {
     "core/WowVision.lua",
     "core/module/Module.lua",
     "core/alerts/alerts.lua",
-    "core/alerts/outputs.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)

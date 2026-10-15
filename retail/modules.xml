@@ -17,5 +17,6 @@
   <Script file="spellSearch.lua" />
   <Script file="pitchLock.lua" />
   <Include file="containers/modules.xml" />
+  <Include file="groupHealth/modules.xml" />
 
 </Ui>
