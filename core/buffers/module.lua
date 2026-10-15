@@ -37,6 +37,11 @@ function module:getDefaultData()
             { object = { type = "Power", units = { "player" } } },
             { object = { type = "PlayerXP" } },
             { object = { type = "PlayerMoney" } },
+            { object = { type = "PlayerBags" } },
+            { object = { type = "PlayerDurability" } },
+            { object = { type = "PlayerMail" } },
+            { object = { type = "Hearthstone" } },
+            { object = { type = "GameClock" } },
             { object = { type = "PVP", units = { "player" } } },
         },
     })

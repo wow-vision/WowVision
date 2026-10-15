@@ -98,6 +98,20 @@ loadAddonFile("core/components/ClassRegistryType.lua")
 loadAddonFile("core/components/ComponentRegistry.lua")
 loadAddonFile("core/components/tests.lua")
 
+-- Object types read the game on demand: their spoken lines run here with
+-- stand-ins for the game functions they call.
+loadAddonFile("core/templates/Template.lua")
+loadAddonFile("core/objects/objects.lua")
+loadAddonFile("core/objects/types/type.lua")
+loadAddonFile("core/objects/types/PlayerXP.lua")
+loadAddonFile("core/objects/types/PlayerMoney.lua")
+loadAddonFile("core/objects/types/PlayerBags.lua")
+loadAddonFile("core/objects/types/PlayerDurability.lua")
+loadAddonFile("core/objects/types/PlayerMail.lua")
+loadAddonFile("core/objects/types/Hearthstone.lua")
+loadAddonFile("core/objects/types/GameClock.lua")
+loadAddonFile("core/objects/types/tests.lua")
+
 -- Alerts construct at every module load in game; a construction smoke here
 -- catches recursion/typo failures the parse check cannot.
 loadAddonFile("core/alerts/alerts.lua")
@@ -347,7 +361,6 @@ local parseOnly = {
     "core/data.lua",
     "core/MessageStore.lua",
     "core/navigation/atlas/MapDataset.lua",
-    "core/templates/Template.lua",
     "core/ui/input/binding.lua",
     "core/ui/input/bindings.lua",
     "core/ui/input/input.lua",

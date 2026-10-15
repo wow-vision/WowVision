@@ -55,6 +55,57 @@ local function migrateBindings(submodules, target)
     end
 end
 
+-- Lines the General buffer gained after characters already had one. The
+-- General buffer is the first Static buffer holding the default XP and
+-- Money lines (players may rename or reorder it). Each new line it lacks
+-- goes in before PvP, which ends the default list, or at the end. Runs
+-- once per store, so a line removed later stays removed.
+local newGeneralLines = { "PlayerBags", "PlayerDurability", "PlayerMail", "Hearthstone", "GameClock" }
+
+local function findGeneralBuffer(groups)
+    for _, group in ipairs(groups) do
+        for _, buffer in ipairs(group.items or {}) do
+            if buffer.type == "Static" and buffer.items ~= nil then
+                local types = {}
+                for _, item in ipairs(buffer.items) do
+                    if item.object ~= nil and item.object.type ~= nil then
+                        types[item.object.type] = true
+                    end
+                end
+                if types.PlayerXP and types.PlayerMoney then
+                    return buffer, types
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function addGeneralBufferLines(db)
+    local buffers = db.submodules and db.submodules.buffers
+    local groups = buffers and buffers.data and buffers.data.items
+    if groups == nil then
+        return
+    end
+    local buffer, present = findGeneralBuffer(groups)
+    if buffer == nil then
+        return
+    end
+    local position = #buffer.items + 1
+    for i, item in ipairs(buffer.items) do
+        if item.object ~= nil and item.object.type == "PVP" then
+            position = i
+            break
+        end
+    end
+    for _, objectType in ipairs(newGeneralLines) do
+        if not present[objectType] then
+            tinsert(buffer.items, position, { type = objectType, object = { type = objectType } })
+            position = position + 1
+        end
+    end
+end
+
 local migrations = {
     {
         version = 1,
@@ -75,6 +126,10 @@ local migrations = {
                 migrateBindings(db.submodules, db.bindings)
             end
         end,
+    },
+    {
+        version = 3,
+        migrate = addGeneralBufferLines,
     },
 }
 
@@ -103,9 +158,14 @@ end
 
 -- The account-wide store: its own migration list and version stamp,
 -- reconciled the same way.
-local globalMigrations = {}
+local globalMigrations = {
+    {
+        version = 2,
+        migrate = addGeneralBufferLines,
+    },
+}
 
-local GLOBAL_DB_VERSION = 1
+local GLOBAL_DB_VERSION = globalMigrations[#globalMigrations].version
 
 function dbManager:beginReconcileGlobal(default, db)
     local dbVersion = db._version or 0

@@ -14,9 +14,16 @@ Out of the box, WowVision comes with a General group containing one buffer that 
 
 - **Health** — your current and maximum health
 - **Power** — your current resource (mana, energy, rage, etc.)
-- **XP** — your experience and progress to the next level
+- **XP** — your experience and progress to the next level, plus your rested XP when you have some
 - **Money** — your gold, silver, and copper
+- **Bags** — free slots in your normal bags (quivers and other special bags are not counted)
+- **Durability** — the percent of your most worn item, and how many items are broken
+- **Mail** — whether unread mail is waiting, and who sent it when the game knows
+- **Hearthstone** — ready or its cooldown, and where it takes you
+- **Time** — the game clock, following your clock settings (realm or local time, 12 or 24 hours)
 - **PvP Status** — whether you're flagged for PvP
+
+Characters made before these lines existed get the new ones added to their General buffer once, before the PvP line. Lines you remove afterwards stay removed.
 
 ## Navigating Buffers
 
@@ -34,7 +41,12 @@ These are the types of game state you can track in a buffer:
 | Power | A specific resource type for a unit | "50/100 Energy" |
 | Aura | A buff or debuff on a unit | "Blessing of Protection, 1 stack, 11s remaining" |
 | Money | Your total gold | "5g 23s 45c" |
-| XP | Experience progress | "XP: 45% (12500 of 25000)" |
+| XP | Experience progress and rested XP | "XP: 45% (12500 of 25000 to level 31), rested 3000" |
+| Bags | Free slots in normal bags | "Free Bag Slots: 12" |
+| Durability | Most worn item and broken items | "Durability: lowest item 45%, 1 broken" |
+| Mail | Unread mail and its senders | "Mail from Thrall, Jaina" |
+| Hearthstone | Cooldown and bind location | "Hearthstone: 20 minutes, Goldshire" |
+| Clock | The game clock | "Time: 8:05 PM" |
 | PvP | PvP flag status | "PVP: Enabled" |
 
 Unit-based objects (Health, Power, Aura) can be configured to track any unit — yourself, your target, a party member, and so on.

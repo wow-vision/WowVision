@@ -5,6 +5,12 @@
   <Include file="unit/modules.xml" />
   <Script file="PlayerXP.lua" />
   <Script file="PlayerMoney.lua" />
+  <Script file="PlayerBags.lua" />
+  <Script file="PlayerDurability.lua" />
+  <Script file="PlayerMail.lua" />
+  <Script file="Hearthstone.lua" />
+  <Script file="GameClock.lua" />
   <Script file="Cooldown.lua" />
+  <Script file="tests.lua" />
 
 </Ui>

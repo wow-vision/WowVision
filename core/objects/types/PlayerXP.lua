@@ -46,9 +46,30 @@ PlayerXP:addField({
     end,
 })
 
+-- Rested XP: the extra stretch the bar shows ahead of the fill. nil when
+-- there is none or XP gain is switched off, where the bar hides it too.
+PlayerXP:addField({
+    key = "rested",
+    type = "Number",
+    label = L["Rested"],
+    get = function(params)
+        local rested = GetXPExhaustion()
+        if rested == nil or rested <= 0 or IsXPUserDisabled() then
+            return nil
+        end
+        return rested
+    end,
+})
+
 function PlayerXP:getFocusString(params)
     if self:get(params, "nextLevel") == nil then
         return self:renderTemplate("[XP]: {percent}% ({current} [of] {maximum})", params)
     end
-    return self:renderTemplate("[XP]: {percent}% ({current} [of] {maximum} [to level] {nextLevel})", params)
+    if self:get(params, "rested") == nil then
+        return self:renderTemplate("[XP]: {percent}% ({current} [of] {maximum} [to level] {nextLevel})", params)
+    end
+    return self:renderTemplate(
+        "[XP]: {percent}% ({current} [of] {maximum} [to level] {nextLevel}), [rested] {rested}",
+        params
+    )
 end
