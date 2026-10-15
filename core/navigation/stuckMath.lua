@@ -30,6 +30,31 @@ function stuckMath.severity(actual, speed, dt)
     return nil
 end
 
+-- Without the speed only a standstill is judged: below this many yards per
+-- second the player is not getting anywhere. The slowest normal movement,
+-- walking (not running), is 2.5.
+stuckMath.STANDSTILL_SPEED = 1
+
+-- Severity 1 when the player barely moved in dt seconds, else nil.
+function stuckMath.standstill(actual, dt)
+    if dt == nil or dt <= 0 then
+        return nil
+    end
+    if actual / dt < stuckMath.STANDSTILL_SPEED then
+        return 1
+    end
+    return nil
+end
+
+-- Whether a walk the game made (the interact key) ended short of its goal:
+-- its last check was slowed. An arrival keeps full pace to the end (graded
+-- 5 at worst, from frame jitter); a walk the game gives up against something
+-- was slowed first. A very short walk says nothing: next to an NPC just out
+-- of reach the game walks a yard and arrives.
+function stuckMath.walkEndedShort(lastSeverity)
+    return lastSeverity ~= nil and lastSeverity <= 4
+end
+
 -- The cadence counter: impeded checks fire a sound every `period` in a row
 -- (rhythmic clunks, not a machine gun); moving freely resets the rhythm.
 -- Returns the severity to SOUND, or nil.
