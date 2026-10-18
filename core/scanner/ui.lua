@@ -74,6 +74,29 @@ local function beaconTo(node)
     end
 end
 
+-- Backspace (or the context menu) on a category: the nearest placed entry in
+-- it, subcategories included, is announced and routed to like Enter on it.
+local function navigateNearest(node)
+    local m = maps()
+    if m == nil then
+        return
+    end
+    local nearest, distance = WowVision.scannerNearest.pick(resolveChildren(node), function(x, y)
+        return m:distanceTo(x, y)
+    end, resolveChildren)
+    if nearest == nil then
+        WowVision:speak(L["Nothing to navigate to"])
+        return
+    end
+    local text = nearest.label
+    local where = whereText(nearest)
+    if where ~= nil then
+        text = text .. ", " .. where
+    end
+    WowVision:speak(text)
+    beaconTo(nearest)
+end
+
 local function pushDetails(node)
     local host = WowVision.graphHost
     local stack = host:focusedStack()
@@ -150,6 +173,19 @@ local function vtableFor(node, screen, id)
             local expanded = screen.state.expanded[id.key] == true
             return graph.announcer.expandedStateText(expanded)
         end
+        -- Backspace on a category routes to its nearest entry; the context
+        -- menu (Shift-F10) offers the same.
+        vtable.onSecondary = function()
+            navigateNearest(node)
+        end
+        vtable.contextActions = {
+            {
+                label = L["Navigate to Nearest"],
+                onActivate = function()
+                    navigateNearest(node)
+                end,
+            },
+        }
     end
     if node.details ~= nil then
         vtable.onSecondary = function()
