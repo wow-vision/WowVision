@@ -29,6 +29,7 @@ ignore:
   - packager
   - changes-latest.md
   - tools
+  - installer
   - mapdata/WowVision_MapData_TBC/.github
   - mapdata/WowVision_MapData_TBC/.gitignore
   - mapdata/WowVision_MapData_TBC/.pkgmeta
