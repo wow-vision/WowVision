@@ -1381,6 +1381,51 @@ loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
 loadAddonFile("core/graph/controlTests.lua")
 
+-- Native quest source and the scanner's quest categories: the adapter and
+-- the provider load against stand-ins for the quest module and the scanner;
+-- the suite installs the game's map and quest log APIs per test and points
+-- the stand-in module at its own source.
+do
+    local savedBase = WowVision.base
+    local harness = { providers = {}, source = nil }
+    local questModule = { L = WowVision:getLocale() }
+    function questModule:hasSource()
+        return true
+    end
+    function questModule:isReady()
+        return true
+    end
+    function questModule:inProgress()
+        return harness.source:inProgress()
+    end
+    function questModule:targets(questId, phase)
+        return harness.source:targets(questId, phase)
+    end
+    function questModule:objectiveTargets(questId, index)
+        return harness.source:objectiveTargets(questId, index)
+    end
+    function questModule:quest(questId)
+        return harness.source:quest(questId)
+    end
+    function questModule:placeName()
+        return nil
+    end
+    WowVision.base = {
+        quests = questModule,
+        scanner = {
+            registerProvider = function(_, provider)
+                harness.providers[provider.key] = provider
+            end,
+        },
+    }
+    loadAddonFile("core/quests/Adapter.lua")
+    loadAddonFile("core/quests/native.lua")
+    loadAddonFile("core/quests/scanner.lua")
+    WowVision.quests._nativeTestHarness = harness
+    loadAddonFile("core/quests/nativeTests.lua")
+    WowVision.base = savedBase
+end
+
 -- Files that need the game client to run but should at least parse cleanly.
 local parseOnly = {
     "vanilla/speech.lua",

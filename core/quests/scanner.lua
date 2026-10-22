@@ -25,6 +25,14 @@ local function unknown()
     return L["Unknown"]
 end
 
+-- Whether a target or spawn lies on the player's continent: the sources
+-- give a distance only there. World coordinates of another continent mean
+-- nothing from here, so nodes take a position only from these (the
+-- scanner's nearest pick and the beacon would otherwise aim at them).
+local function reachable(placed)
+    return placed ~= nil and placed.distance ~= nil
+end
+
 -- One node per spawn of a target: "Valley of the Four Winds, Halfhill
 -- Market, 80 yards, ahead". Spawns Questie believes are in the player's
 -- phase come first, nearest first; the rest follow marked "phased out",
@@ -48,8 +56,8 @@ local function spawnNodes(target)
                 key = key,
                 label = quests:placeName(spawn) or unknown(),
                 detail = spawn.phased and L["phased out"] or nil,
-                x = spawn.wx,
-                y = spawn.wy,
+                x = reachable(spawn) and spawn.wx or nil,
+                y = reachable(spawn) and spawn.wy or nil,
             })
         end
     end
@@ -73,7 +81,7 @@ local function targetNode(target, seen)
         end
     end
     local node = { key = key, label = label, onArrive = target.onArrive }
-    if target.nearest ~= nil then
+    if target.nearest ~= nil and reachable(target) then
         node.x, node.y = target.nearest.wx, target.nearest.wy
     end
     local detail = {}
@@ -114,7 +122,7 @@ end
 
 local function firstTarget(targets)
     local first = targets ~= nil and targets[1] or nil
-    if first ~= nil and first.nearest ~= nil then
+    if first ~= nil and first.nearest ~= nil and reachable(first) then
         return first
     end
     return nil
@@ -124,7 +132,7 @@ end
 -- target with several spawns (NPCs move around) expands to one node per
 -- spawn so the player can pick another.
 local function pointAt(node, target)
-    if target == nil or target.nearest == nil then
+    if target == nil or target.nearest == nil or not reachable(target) then
         return node
     end
     node.x, node.y = target.nearest.wx, target.nearest.wy

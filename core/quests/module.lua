@@ -569,7 +569,7 @@ end
 module:registerCommand({
     name = "quests",
     scope = "WowVision",
-    description = "Quest data check. Usage: /wv quests near, /wv quests log, /wv quests go questId [start|objectives|finish], /wv quests probe (every quest and map point API, one report)",
+    description = "Quest data check. Usage: /wv quests near, /wv quests log, /wv quests go questId [start|objectives|finish], /wv quests raw (map and quest point state, per log quest where its point is), /wv quests probe (every quest and map point API, one report)",
     func = function(args)
         module:handleCommand(args or "")
     end,
