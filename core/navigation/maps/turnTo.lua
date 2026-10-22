@@ -164,13 +164,16 @@ local function onUpdate()
     end
 end
 
--- Turn to the active route's current waypoint.
-function module:turnToWaypoint()
-    local waypoint = self.path ~= nil and self.path.currentWaypoint or nil
-    if waypoint == nil then
-        WowVision:speak(L["No active waypoint"])
-        return false
-    end
+-- Without a beacon the turn key asks this for a facing to turn to instead (radians, as
+-- GetPlayerFacing; nil: nothing here). WowNav routes set it at a tram, ship or zeppelin dock (the
+-- boarding point, or the noted dock near it).
+module.facingWithoutWaypoint = nil
+
+-- Far enough that the lead of a moving player does not bend the bearing to it.
+local FACING_REACH = 10000
+
+-- Turn to face the world point (x, y), aiming where it lies when the turn lands.
+local function turnToPoint(x, y)
     if current ~= nil then
         return false
     end
@@ -186,7 +189,7 @@ function module:turnToWaypoint()
     -- Aim at the bearing the waypoint will have when the turn lands. Close
     -- to a waypoint the bearing moves fast; without the lead, moving
     -- players circle it.
-    local raw = turnMath.relativeBearing(px, py, facing, waypoint.x, waypoint.y)
+    local raw = turnMath.relativeBearing(px, py, facing, x, y)
     local relative = raw
     local moving = 0
     local direction = turnMath.moveDirection(facing, WowVision.movement.flags)
@@ -195,8 +198,8 @@ function module:turnToWaypoint()
         moving = speed
         local _, steps = turnMath.plan(math.abs(raw), frameTime)
         local landsIn = (steps + 2) * frameTime + LEAD_EXTRA
-        local lx, ly = turnMath.leadPoint(px, py, waypoint.x, waypoint.y, direction, speed * landsIn)
-        relative = turnMath.relativeBearing(lx, ly, facing, waypoint.x, waypoint.y)
+        local lx, ly = turnMath.leadPoint(px, py, x, y, direction, speed * landsIn)
+        relative = turnMath.relativeBearing(lx, ly, facing, x, y)
     end
 
     if math.abs(relative) <= TOLERANCE then
@@ -208,8 +211,8 @@ function module:turnToWaypoint()
     local sweepSpeed, steps = turnMath.plan(target, frameTime)
     local cvar = math.min(sweepSpeed, turnMath.CVAR_MAX)
     local turn = {
-        x = waypoint.x,
-        y = waypoint.y,
+        x = x,
+        y = y,
         target = target,
         direction = relative > 0 and 1 or -1,
         speed = sweepSpeed,
@@ -254,6 +257,30 @@ function module:turnToWaypoint()
         addLog("watchdog stopped a turn")
     end)
     return true
+end
+
+-- Turn to the active route's current waypoint; with no beacon to facingWithoutWaypoint's facing.
+function module:turnToWaypoint()
+    local waypoint = self.path ~= nil and self.path.currentWaypoint or nil
+    if waypoint == nil then
+        local facing = self.facingWithoutWaypoint and self.facingWithoutWaypoint()
+        if facing ~= nil then
+            return self:turnToFacing(facing)
+        end
+        WowVision:speak(L["No active waypoint"])
+        return false
+    end
+    return turnToPoint(waypoint.x, waypoint.y)
+end
+
+-- Turn to a facing (radians, as GetPlayerFacing), with the same sweep.
+function module:turnToFacing(facing)
+    local px, py = UnitPosition("player")
+    if px == nil then
+        WowVision:speak(L["Turning is not available here"])
+        return false
+    end
+    return turnToPoint(px + math.cos(facing) * FACING_REACH, py + math.sin(facing) * FACING_REACH)
 end
 
 -- Copyable diagnostics: one line per turn, also printed to chat.

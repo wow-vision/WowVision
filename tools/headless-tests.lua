@@ -55,6 +55,31 @@ loadAddonFile("core/navigation/atlas/datasetTests.lua")
 loadAddonFile("core/navigation/stuckMath.lua")
 loadAddonFile("core/navigation/stuckTests.lua")
 
+-- WowNav routes: Broesel's engine (camelot/wownav/engine) on his real data, packed into mapdata/WowNavPacked by
+-- tools/wownav-pack.lua (its data.xml); without the packed data only the parts that need no network run.
+loadAddonFile("camelot/wownav/engine/NavNetwork.lua")
+loadAddonFile("camelot/wownav/engine/Guidance.lua")
+loadAddonFile("camelot/wownav/engine/TargetCatalog.lua")
+loadAddonFile("camelot/wownav/engine/TargetResolver.lua")
+loadAddonFile("camelot/wownav/engine/DockNavigation.lua")
+loadAddonFile("camelot/wownav/engine/TransitActivation.lua")
+do
+    local base = "mapdata/WowNavPacked/"
+    local xml = io.open(base .. "data.xml", "r")
+    if xml ~= nil then
+        local text = xml:read("*a")
+        xml:close()
+        for name in text:gmatch('<Script file="([^"]+)"') do
+            dofile(base .. name:gsub("\\", "/"))
+        end
+    end
+end
+loadAddonFile("camelot/wownav/text.lua")
+loadAddonFile("camelot/wownav/catalog.lua")
+loadAddonFile("camelot/wownav/route.lua")
+loadAddonFile("camelot/wownav/dock.lua")
+loadAddonFile("camelot/wownav/tests.lua")
+
 -- Movement intent: stand-ins record the hooks and the event frame so the
 -- suite can play the game's side.
 do
