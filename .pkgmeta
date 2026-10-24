@@ -33,3 +33,6 @@ ignore:
   - mapdata/WowVision_MapData_TBC/.gitignore
   - mapdata/WowVision_MapData_TBC/.pkgmeta
   - mapdata/WowVision_MapData_TBC/tools
+  - mapdata/WoW_NavigationData/DemoAddon
+  - mapdata/WoW_NavigationData/ReadMe.txt
+  - mapdata/WoW_NavigationData/.git*

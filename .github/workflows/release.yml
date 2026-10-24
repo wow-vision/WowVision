@@ -21,5 +21,17 @@ jobs:
           fetch-depth: 0
           submodules: true
 
+      # camelot/modules.xml loads mapdata/WowNavPacked/data.xml, which tools/wownav-pack.lua
+      # generates from the navigation data submodule. The packager leaves out every file git
+      # does not know (it lists them with "git ls-files --others"), so the generated folder
+      # is staged (not committed) to be packaged. Branches without the packer skip this.
+      - name: Pack the WowNav navigation data
+        run: |
+          if [ -f tools/wownav-pack.lua ]; then
+            sudo apt-get install -y --no-install-recommends luajit
+            luajit tools/wownav-pack.lua
+            git add -f mapdata/WowNavPacked
+          fi
+
       - name: Package and release
         uses: BigWigsMods/packager@v2
