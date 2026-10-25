@@ -157,6 +157,64 @@ function module:whereText(x, y)
     return text
 end
 
+-- Sku's distance key: speaks how far the waypoint being walked to is. The
+-- distance goes to speech only, never to the chat.
+function module:announceDistance()
+    local waypoint = self.path ~= nil and self.path.currentWaypoint or nil
+    if waypoint == nil then
+        WowVision:speak(L["No active waypoint"])
+        return false
+    end
+    local distance = self:distanceTo(waypoint.x, waypoint.y)
+    if distance == nil then
+        WowVision:speak(L["Position unavailable"])
+        return false
+    end
+    WowVision:speak(string.format("%d %s", distance, L["yards"]))
+    return true
+end
+
+-- Sku announces on Alt Gr, which Windows reports as Ctrl and Alt held
+-- together, so Ctrl+Alt does the same. Alt Gr is no key the binding system
+-- can take on its own, so the update loop watches the chord and a held chord
+-- repeats while the player walks. Typing with Alt Gr (@, {, [) must stay
+-- silent: a focused edit box, or Shift, holds the announcement back.
+local DISTANCE_REPEAT_SECONDS = 1
+
+settings:add({
+    key = "announceDistanceAltGr",
+    type = "Bool",
+    label = L["Announce Distance with Alt Gr"],
+    default = true,
+})
+
+function module:updateDistanceKey()
+    local held = self.settings.announceDistanceAltGr
+        and IsControlKeyDown()
+        and IsAltKeyDown()
+        and not IsShiftKeyDown()
+        and GetCurrentKeyBoardFocus() == nil
+    if not held then
+        self.distanceKeyAt = nil
+        return
+    end
+    local now = GetTime()
+    if self.distanceKeyAt == nil or now - self.distanceKeyAt >= DISTANCE_REPEAT_SECONDS then
+        self.distanceKeyAt = now
+        self:announceDistance()
+    end
+end
+
+-- The same announcement on a key of the player's choosing; no default key,
+-- Alt Gr is covered above.
+module:registerBinding({
+    type = "Script",
+    key = "maps/announceDistance",
+    label = L["Announce Distance"],
+    inputs = {},
+    script = "/run WowVision.base.navigation.maps:announceDistance()",
+})
+
 function module:newDataset(key)
     local data = WowVision.Dataset:new()
     self.datasets:register(key, data)
@@ -453,5 +511,6 @@ module:registerCommand({
 function module:onEnable()
     self:hasUpdate(function(self)
         self:updatePath()
+        self:updateDistanceKey()
     end)
 end
