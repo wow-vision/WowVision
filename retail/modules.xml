@@ -27,6 +27,11 @@
        Friend. Tested on Forever; Retail ships the same window with small
        differences. -->
   <Script file="socialUI.lua" />
+  <!-- The guild and communities window and guild control: the same
+       Blizzard_Communities and Blizzard_GuildControlUI on Retail and WoW:
+       Forever. -->
+  <Script file="communities.lua" />
+  <Script file="guildControl.lua" />
   <Include file="containers/modules.xml" />
 
 </Ui>
