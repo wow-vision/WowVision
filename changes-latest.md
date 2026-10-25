@@ -82,6 +82,8 @@ This is a massive refactor of the codebase thanks to Claude Fable 5. The UI has 
 #### The Burning Crusade Classic
 * Updated the TBC speech module to use the retail speech module. Speech output for TBC works again.
 * Implemented Sku's pathfinding data into TBC Anniversary. You can pathfind using f10. Note: pathfinding to scanner entries is not yet supported.
+* Added the craft window, used by Enchanting and the hunter's Beast Training: the skill bar, the filters, the craft list, the details with reagents, and the Enchant or Train button.
+* Added the hunter's stable: the selected pet, the current pet and stable slots, buying a slot. Enter on a slot selects it or puts down the pet you picked up; Drag in a slot's context menu picks the pet up.
 
 #### Mists of Pandaria Classic
 * Fixed a number of issues with the mounts tab of the collections pane.
