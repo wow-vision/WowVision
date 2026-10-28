@@ -10,6 +10,17 @@ The zip contains two addon folders: WowVision itself and WowVision_MapData_TBC, 
 
 Between releases there is one pre-release called **beta**, rebuilt from the latest changes, for testers and for WoW Forever, which changes quickly. It is always at the same address: [the beta pre-release](https://github.com/wow-vision/WowVision/releases/tag/beta), with the zip at `https://github.com/wow-vision/WowVision/releases/download/beta/WowVision-beta.zip`. Its release notes list every change since the last release. Install it the same way as a release; extracting it over an existing WowVision folder replaces the files.
 
+### The installer
+
+On Windows, the WowVision installer does all of the steps below and keeps
+WowVision up to date: download `WowVisionInstaller.exe` from the
+[latest release](https://github.com/wow-vision/WowVision/releases/latest) and
+run it. It is fully usable with a screen reader. It finds your game versions,
+installs WowVision into each one you pick (beta or stable, one choice for all),
+and can add the WoW Login Tool and well-known extra addons such as Questie and
+Deadly Boss Mods. It leaves a "WowVision Updater" shortcut; run it again to
+update. Details for developers are in `installer/README.md`.
+
 ## Installation
 
 Extract the downloaded zip file into your World of Warcraft addons folder. The addons folder is located inside the `Interface/AddOns` directory for the game version you play.

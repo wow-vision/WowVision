@@ -1,0 +1,71 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- .NET Framework 4.8 WinForms, like the Sku installer it is built from.
+       Native WinForms controls are read correctly by NVDA/JAWS out of the box,
+       and ScreenReaderAnnouncer needs the System.Windows.Forms.Automation
+       notifications that only the 4.8 reference assemblies expose. 4.8 ships
+       with Windows 10 1903+ and every Windows 11. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>WowVisionInstaller</AssemblyName>
+    <RootNamespace>WowVisionInstaller</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Single source of truth for the installer's own version. Surfaced in the
+         window title (WizardForm.InstallerVersion) so it's announced by the
+         screen reader, compared by the self-updater, and written into
+         installer-version.txt by build.ps1.
+
+         This is the INSTALLER's version and is independent of the WowVision
+         addon version: an addon release needs no new installer (the installer
+         finds it by itself), and an installer fix ships without a new addon.
+
+         1.0 = first WowVision version, ported from the Sku installer 5.5:
+         guided wizard with spoken progress, several clients in one run
+         (WoW Forever, Anniversary, Classic Era, Mists Classic, Retail), the
+         one-zip release downloaded once per run, TOC interface sync per client,
+         game settings, NVDA voice bridge, Windows voices, remembered folders,
+         log collection, self-update, the WoW Login Tool (Forever, Anniversary,
+         Era) and Sku's extra addons with a check per game version. Left out:
+         voice packs (WowVision has none) and macOS. -->
+    <Version>1.0</Version>
+    <!-- File properties (Explorer "Details", and what antivirus reputation
+         scoring reads). The exe is NOT Authenticode-signed (no paid
+         certificate), so this is the only identity it carries. -->
+    <Company>WowVision</Company>
+    <Product>WowVision Installer</Product>
+    <AssemblyTitle>WowVision Installer - World of Warcraft accessibility addon setup</AssemblyTitle>
+    <Description>Installs and updates the WowVision accessibility addon for World of Warcraft. https://github.com/wow-vision/WowVision</Description>
+    <Authors>JeanStiletto</Authors>
+    <Copyright>Copyright (c) 2026 JeanStiletto and the WowVision and Sku contributors</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The .NET Framework reference assemblies as a package, so the build needs
+         no targeting pack installed (CI runners, a fresh dev machine). -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <!-- Required for the `dynamic` late-binding used to create .lnk shortcuts. -->
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Bundled SAPI2SR NVDA-SAPI bridge payload (x64 bookmark-fixed engine +
+         x86 + companions + the signing script), identical to the Sku
+         installer's. Extracted+installed at runtime by Sapi2SrInstaller. -->
+    <EmbeddedResource Include="payload\sapi2sr-payload.zip" />
+    <!-- Portable AutoHotkey v2 runtime + GPL license, dropped next to the WoW
+         Login Tool so it runs without a system-wide AHK install. Runs the
+         v2\START.ahk driver. Deployed at runtime by LoginToolInstaller. -->
+    <EmbeddedResource Include="payload\AutoHotkey64_v2.exe" />
+    <EmbeddedResource Include="payload\AutoHotkey-license.txt" />
+  </ItemGroup>
+
+</Project>

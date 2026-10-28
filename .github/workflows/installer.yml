@@ -1,0 +1,74 @@
+name: Installer
+
+# Builds the Windows installer (installer/) and attaches it to the release the
+# addon was just packaged into, so every release page carries
+# WowVisionInstaller.exe next to the addon zip:
+#   - after "Package and release" (a V* tag): the stable release of that tag;
+#   - after "Beta pre-release" (every push to main): the moving "beta" release.
+# Installed copies of the installer update themselves from these assets
+# (installer-version.txt holds the version and the SHA-256 of the exe), from
+# releases/latest for the stable channel and from the beta release for beta.
+# A manual run attaches the installer to any existing release, e.g. one made
+# before this workflow existed.
+on:
+  workflow_run:
+    workflows: ["Package and release", "Beta pre-release"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the installer to (e.g. V0.9.0 or beta)"
+        required: true
+
+concurrency:
+  group: installer-${{ github.event.workflow_run.head_branch || inputs.tag }}
+  cancel-in-progress: true
+
+jobs:
+  installer:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Work out the release
+        id: rel
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tag = "${{ inputs.tag }}"
+            $sha = "${{ github.sha }}"
+          } elseif ("${{ github.event.workflow_run.name }}" -eq "Beta pre-release") {
+            $tag = "beta"
+            $sha = "${{ github.event.workflow_run.head_sha }}"
+          } else {
+            # A tag push: the run's head_branch is the tag name.
+            $tag = "${{ github.event.workflow_run.head_branch }}"
+            $sha = "${{ github.event.workflow_run.head_sha }}"
+          }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "sha=$sha" >> $env:GITHUB_OUTPUT
+          Write-Host "Attaching the installer to $tag (commit $sha)"
+
+      - name: Clone project
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.rel.outputs.sha }}
+
+      - name: Build and test
+        shell: pwsh
+        run: ./installer/build.ps1 -RunTests
+
+      - name: Attach to the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The exe and the version file that describes it go up in ONE call,
+          # so a release never carries a new exe with an old checksum.
+          gh release upload "${{ steps.rel.outputs.tag }}" `
+            installer/dist/WowVisionInstaller.exe `
+            installer/dist/installer-version.txt `
+            installer/bootstrap/Install-WowVisionUpdater.ps1 `
+            --repo "${{ github.repository }}" --clobber
