@@ -68,7 +68,7 @@ local function beaconTo(node)
     end
     WowVision.UIHost:closeWindow(WINDOW)
     if m.openNavigationTo ~= nil then
-        m:openNavigationTo(node.x, node.y, node.label, node.onArrive)
+        m:openNavigationTo(node.x, node.y, node.label, node.onArrive, node.routeData)
     else
         m:beaconTo(node.x, node.y, node.label, node.onArrive)
     end

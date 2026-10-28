@@ -37,5 +37,10 @@
   <Script file="gamepadBars.lua" />
   <!-- Blizzard's gamepad main menu (the wheel) as a window. -->
   <Script file="gamepadRadial.lua" />
+  <!-- WowNav routes (a setting under Navigation): Broesel's engine and route rules, then his navigation data
+       (the WoW_NavigationData repository as a submodule), packed by tools/wownav-pack.lua into
+       mapdata/WowNavPacked. -->
+  <Include file="wownav\modules.xml" />
+  <Include file="..\mapdata\WowNavPacked\data.xml" />
 
 </Ui>
