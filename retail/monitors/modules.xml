@@ -5,5 +5,6 @@
        Forever), which tracks auras where the aura APIs are closed to
        addons. -->
   <Script file="CdmAuraMonitor.lua" />
+  <Script file="SpellCooldownMonitor.lua" />
 
 </Ui>

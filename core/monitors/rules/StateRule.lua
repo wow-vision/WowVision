@@ -103,9 +103,17 @@ function StateRule:getCurrentState()
     return self._currentState
 end
 
+-- Start over and announce the next state: the empty resolved set reads as
+-- a change for every output.
 function StateRule:reset()
     self._currentState = nil
     self._resolvedStates = {}
+end
+
+-- Start over in silence: the next state settles as if it were the first.
+function StateRule:forget()
+    self._currentState = nil
+    self._resolvedStates = nil
 end
 
 WowVision.monitors.StateRule = StateRule

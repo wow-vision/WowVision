@@ -157,10 +157,26 @@ local function describeEntry(frame, viewerTag)
             end
         end
     end
-    for _, key in ipairs({ "hasAura", "selfAura", "isKnown", "category" }) do
+    for _, key in ipairs({ "hasAura", "selfAura", "charges", "isKnown", "category" }) do
         local value = info[key]
         if value ~= nil then
             tinsert(parts, key .. " " .. (secrets.isSecret(value) and "secret" or tostring(value)))
+        end
+    end
+    if C_CooldownViewer ~= nil and C_CooldownViewer.GetValidAlertTypes ~= nil and info.cooldownID ~= nil and not secrets.isSecret(info.cooldownID) then
+        local ok, types = pcall(C_CooldownViewer.GetValidAlertTypes, info.cooldownID)
+        if ok and type(types) == "table" then
+            local names = {}
+            for _, eventType in ipairs(types) do
+                tinsert(names, tostring(eventType))
+            end
+            tinsert(parts, "alert events " .. (#names > 0 and table.concat(names, " ") or "none"))
+        end
+    end
+    if frame.GetSpellID ~= nil then
+        local ok, id = pcall(frame.GetSpellID, frame)
+        if ok then
+            tinsert(parts, "GetSpellID " .. (secrets.isSecret(id) and "secret" or (tostring(id) .. " " .. (spellNameOf(id) or "unnamed"))))
         end
     end
     return table.concat(parts, ", ")
@@ -854,20 +870,21 @@ if module ~= nil then
     if module.registerCommand ~= nil then
         module:registerCommand({
             name = "cdmlog",
-            description = "Show what the Cooldown Manager Auras rules saw ('clear' resets; 'spells' lists the tracked buff and bar entries)",
+            description = "Show what the Cooldown Manager Auras rules saw ('clear' resets; 'spells' lists the tracked buff and bar entries, 'cooldowns' the essential and utility ones)",
             func = function(args)
                 if args == "clear" then
                     clearTrace()
                     print("Cooldown manager log cleared")
                     return
                 end
-                if args == "spells" then
+                if args == "spells" or args == "cooldowns" then
                     local lines = {}
-                    for _, frame in ipairs(viewerItemFrames(AURA_VIEWERS)) do
+                    local viewers = args == "spells" and AURA_VIEWERS or { "EssentialCooldownViewer", "UtilityCooldownViewer" }
+                    for _, frame in ipairs(viewerItemFrames(viewers)) do
                         tinsert(lines, describeEntry(frame, viewerTag))
                     end
                     if #lines == 0 then
-                        print("No tracked buffs or bars")
+                        print(args == "spells" and "No tracked buffs or bars" or "No essential or utility spells")
                         return
                     end
                     WowVision.testing.showResults(table.concat(lines, string.char(10)))
@@ -891,7 +908,7 @@ if module ~= nil then
         func = function()
             local parts = {}
             for _, monitor in ipairs(module.getMonitors()) do
-                if monitor.enabled and monitor.currentTexts ~= nil then
+                if monitor.enabled and monitor.class == CdmAuraMonitor then
                     for _, text in ipairs(monitor:currentTexts()) do
                         tinsert(parts, text)
                     end

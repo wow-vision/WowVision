@@ -492,7 +492,7 @@ WowVision.testing.testRunner:addSuite("MonitorConstruction", {
 
 -- The cooldown manager aura monitor reads Blizzard's item frames; fake ones here.
 C_Spell = C_Spell or {}
-local fakeSpellNames = { [8921] = "Moonfire", [164812] = "Moonfire", [93402] = "Sunfire", [78674] = "Starsurge", [79577] = "Eclipse", [48518] = "Eclipse (Lunar)", [48517] = "Eclipse (Solar)" }
+local fakeSpellNames = { [8921] = "Moonfire", [164812] = "Moonfire", [93402] = "Sunfire", [78674] = "Starsurge", [79577] = "Eclipse", [48518] = "Eclipse (Lunar)", [48517] = "Eclipse (Solar)", [22812] = "Barkskin", [108853] = "Fire Blast" }
 C_Spell.GetSpellName = C_Spell.GetSpellName or function(id)
     return fakeSpellNames[id]
 end
@@ -537,11 +537,14 @@ local moonfireIcon = fakeItem(8921, true)
 local moonfireEssential = fakeItem(8921, false)
 local sunfireIcon = fakeItem(93402, true)
 local starsurgeEssential = fakeItem(78674, false)
+-- One entry with two linked spells, the item renaming itself between them
+local eclipseEssential = fakeItem(79577, false)
+eclipseEssential.info.cooldownID, eclipseEssential.info.linkedSpellIDs = 90, { 48518, 48517 }
 BuffIconCooldownViewer = { GetItemFrames = function()
     return { moonfireIcon, sunfireIcon }
 end }
 EssentialCooldownViewer = { GetItemFrames = function()
-    return { moonfireEssential, starsurgeEssential }
+    return { moonfireEssential, starsurgeEssential, eclipseEssential }
 end }
 -- Two bar entries sharing a base spell, told apart by their tooltip spell
 local eclipseLunar = fakeItem(79577, true)
@@ -812,6 +815,214 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         moonfireIcon.auraDataUnit, moonfireIcon.auraDataCached, moonfireIcon.active = nil, nil, false
         monitor:update()
         GetTime = savedGetTime
+    end,
+})
+
+-- Spell Cooldowns monitor: the cooldown APIs as the game answers them,
+-- with plain flags and a fake duration object
+local fakeCooldowns = {}
+local fakeCharges = {}
+local fakeOverlays = {}
+C_Spell.GetSpellCooldown = C_Spell.GetSpellCooldown or function(id)
+    return fakeCooldowns[id] or { isActive = false, isEnabled = true, startTime = 0, duration = 0 }
+end
+C_Spell.GetSpellCharges = C_Spell.GetSpellCharges or function(id)
+    return fakeCharges[id]
+end
+C_Spell.GetSpellCooldownDuration = C_Spell.GetSpellCooldownDuration or function(id)
+    return {
+        FormatRemainingDuration = function(_, formatter)
+            return formatter.format(fakeCooldowns[id] and fakeCooldowns[id].remaining or 0)
+        end,
+    }
+end
+C_Spell.GetSpellChargeDuration = C_Spell.GetSpellChargeDuration or function(id)
+    return {
+        FormatRemainingDuration = function(_, formatter)
+            return formatter.format(fakeCharges[id] and fakeCharges[id].remaining or 0)
+        end,
+    }
+end
+C_StringUtil = C_StringUtil or {}
+C_StringUtil.CreateNumericRuleFormatter = C_StringUtil.CreateNumericRuleFormatter or function()
+    local formatter = { breakpoints = {} }
+    function formatter:AddBreakpoint(breakpoint)
+        tinsert(self.breakpoints, breakpoint)
+    end
+    function formatter.format(seconds)
+        if seconds >= 60 then
+            return string.format(formatter.breakpoints[2].format, math.floor(seconds / 60), seconds % 60)
+        end
+        return string.format(formatter.breakpoints[1].format, seconds)
+    end
+    return formatter
+end
+Enum = Enum or {}
+Enum.NumericRuleFormatRounding = Enum.NumericRuleFormatRounding or { Nearest = 0, Up = 1, Down = 2 }
+C_SpellActivationOverlay = C_SpellActivationOverlay or {}
+C_SpellActivationOverlay.IsSpellOverlayed = C_SpellActivationOverlay.IsSpellOverlayed or function(id)
+    return fakeOverlays[id] == true
+end
+-- The game says which entries have a cooldown to alert on: Starsurge yes,
+-- Moonfire (an instant with only the global cooldown) no
+Enum.CooldownViewerAlertEventType = Enum.CooldownViewerAlertEventType or { Available = 1, PandemicTime = 2, OnCooldown = 3, ChargeGained = 4, OnAuraApplied = 5, OnAuraRemoved = 6 }
+C_CooldownViewer = C_CooldownViewer or {}
+C_CooldownViewer.GetValidAlertTypes = C_CooldownViewer.GetValidAlertTypes or function(cooldownID)
+    if cooldownID == 78674 or cooldownID == 90 then
+        return { 1, 3 }
+    end
+    return {}
+end
+loadAddonFile("retail/monitors/SpellCooldownMonitor.lua")
+WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {
+    ["the pickers list the Essential and Utility spells, cooldowns only for cooldown rules"] = function(t)
+        -- An entry's linked spells are picks of their own, the base is not
+        local spells = WowVision.monitors.SpellCooldownMonitor.cooldownSpells()
+        t:assertEqual(#spells, 3)
+        t:assertEqual(spells[1].name, "Eclipse (Lunar)")
+        t:assertEqual(spells[1].spellID, 48518)
+        t:assertEqual(spells[2].name, "Eclipse (Solar)")
+        t:assertEqual(spells[3].name, "Starsurge")
+        local procs = WowVision.monitors.SpellCooldownMonitor.procSpells()
+        t:assertEqual(#procs, 4)
+        t:assertEqual(procs[1].name, "Eclipse (Lunar)")
+        t:assertEqual(procs[3].name, "Moonfire")
+        t:assertEqual(procs[4].name, "Starsurge")
+        t:assertEqual(WowVision.classes.fieldTypes.CooldownSpell ~= nil, true)
+        t:assertEqual(WowVision.classes.fieldTypes.ProcSpell ~= nil, true)
+    end,
+    ["a cooldown rule walks Ready, On Cooldown and back, ignoring the global cooldown"] = function(t)
+        local savedGetTime = GetTime
+        local now = 500
+        GetTime = function()
+            return now
+        end
+        local monitor = WowVision.monitors:create("SpellCooldown", {})
+        t:assertEqual(monitor:getLabel(), "Spell Cooldowns")
+        local rulesField = monitor.class:getField("rules")
+        rulesField:addElement(monitor, { type = "SpellCooldownState", spell = 22812 })
+        local rule = monitor.rules[1]
+        t:assertEqual(rule:getLabel(), "Barkskin (22812)")
+
+        local fired = {}
+        for _, state in ipairs({ "ready", "charging", "on_cooldown" }) do
+            local alert = rule.class:getField(state):getAlert(rule)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(fired, message.text)
+                    end
+                end
+            end
+        end
+
+        -- The first tick settles silently on Ready
+        monitor:update()
+        t:assertEqual(rule:getCurrentState(), "ready")
+        t:assertEqual(#fired, 0)
+        t:assertEqual(rule:currentText(), "Barkskin, Ready")
+
+        -- The global cooldown alone is not a cooldown
+        fakeCooldowns[22812] = { isActive = true, isEnabled = true, isOnGCD = true, remaining = 1 }
+        monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+        t:assertEqual(rule:getCurrentState(), "ready")
+        t:assertEqual(#fired, 0)
+        fakeCooldowns[22812] = nil
+        monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+
+        -- A real cooldown: the event says so, with the time left in our words
+        fakeCooldowns[22812] = { isActive = true, isEnabled = true, remaining = 49 }
+        monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+        t:assertEqual(fired[#fired], "Barkskin On Cooldown")
+        t:assertEqual(rule:currentText(), "Barkskin, On Cooldown, 49 seconds")
+        fakeCooldowns[22812].remaining = 75
+        t:assertEqual(rule:currentText(), "Barkskin, On Cooldown, 1 minutes 15 seconds")
+
+        -- No event marks the end: the poll finds the flag down, on its
+        -- schedule rather than every tick
+        monitor:update()
+        fakeCooldowns[22812] = nil
+        monitor:update()
+        t:assertEqual(rule:getCurrentState(), "on_cooldown")
+        now = now + 0.2
+        monitor:update()
+        t:assertEqual(fired[#fired], "Barkskin Ready")
+        t:assertEqual(#fired, 2)
+
+        -- Charges: recharging with one in hand is Charging, none left is On Cooldown
+        rulesField:addElement(monitor, { type = "SpellCooldownState", spell = 108853 })
+        local charged = monitor.rules[2]
+        local chargedFired = {}
+        for _, state in ipairs({ "ready", "charging", "on_cooldown" }) do
+            local alert = charged.class:getField(state):getAlert(charged)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(chargedFired, message.text)
+                    end
+                end
+            end
+        end
+        monitor._trackingDirty = true
+        monitor:update()
+        t:assertEqual(charged:getCurrentState(), "ready")
+        fakeCharges[108853] = { maxCharges = 2, currentCharges = 1, isActive = true, remaining = 8 }
+        monitor:onCooldownEvent("SPELL_UPDATE_CHARGES")
+        t:assertEqual(chargedFired[#chargedFired], "Fire Blast Charging")
+        t:assertEqual(charged:currentText(), "Fire Blast, Charging, 1 charges, 8 seconds")
+        fakeCooldowns[108853] = { isActive = true, isEnabled = true, remaining = 8 }
+        fakeCharges[108853].currentCharges = 0
+        monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+        t:assertEqual(chargedFired[#chargedFired], "Fire Blast On Cooldown")
+        fakeCooldowns[108853] = nil
+        monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+        t:assertEqual(chargedFired[#chargedFired], "Fire Blast Charging")
+        fakeCharges[108853] = nil
+        now = now + 0.2
+        monitor:update()
+        t:assertEqual(chargedFired[#chargedFired], "Fire Blast Ready")
+        GetTime = savedGetTime
+    end,
+    ["a proc rule follows the glow"] = function(t)
+        local monitor = WowVision.monitors:create("SpellCooldown", {})
+        local rulesField = monitor.class:getField("rules")
+        rulesField:addElement(monitor, { type = "SpellProc", spell = 78674 })
+        local rule = monitor.rules[1]
+        local fired = {}
+        for _, state in ipairs({ "active", "inactive" }) do
+            local alert = rule.class:getField(state):getAlert(rule)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(fired, message.text)
+                    end
+                end
+            end
+        end
+        monitor:update()
+        t:assertEqual(rule:getCurrentState(), "inactive")
+        t:assertEqual(#fired, 0)
+        t:assertEqual(rule:currentText(), "Starsurge, No proc")
+        monitor:onGlow(78674, true)
+        t:assertEqual(fired[#fired], "Starsurge Proc")
+        t:assertEqual(rule:currentText(), "Starsurge, Proc")
+        monitor:onGlow(22812, false)
+        t:assertEqual(rule:getCurrentState(), "active")
+        monitor:onGlow(78674, false)
+        t:assertEqual(fired[#fired], "Starsurge Proc Ended")
+        t:assertEqual(#fired, 2)
+        -- A glow that starts before the rule exists is found on settling
+        fakeOverlays[78674] = true
+        monitor._trackingDirty = true
+        monitor:update()
+        t:assertEqual(rule:getCurrentState(), "active")
+        fakeOverlays[78674] = nil
     end,
 })
 

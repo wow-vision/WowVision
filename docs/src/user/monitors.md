@@ -80,6 +80,24 @@ A viewer you have set to show only in combat is read as empty while hidden, sinc
 
 The TTS alerts speak the spell and the state, "Moonfire Applied". The **Speak Tracked Auras** key (unbound by default, under Monitors in the keybinding window) reads every tracked aura as the cooldown manager draws it: the time left, the stacks, and Pandemic when it applies, or Missing.
 
+### Spell Cooldowns (Retail, WoW: Forever)
+
+Cooldown data is secret in combat and in instances on Retail, but the game leaves a few plain facts: whether a cooldown is running, whether it is only the global cooldown, and whether a charge is recharging. This monitor builds its states from those alone, so it works anywhere and for any spell, with no cooldown manager involved. The time left comes from the game's own duration object, formatted in plain words, and is speakable even while secret.
+
+**Spell Cooldown Rules** name a spell and alert on its states:
+
+| State | When It Fires |
+|---|---|
+| Ready | The spell is off cooldown with a charge in hand |
+| Charging | A charge is recharging while at least one remains |
+| On Cooldown | The spell is on a real cooldown, with no charge left |
+
+The global cooldown never counts as a cooldown. The TTS alerts speak the spell and the state, "Barkskin Ready".
+
+**Spell Proc Rules** follow the glow the game draws when a spell procs, with Proc and Proc Ended alerts.
+
+The Spell picker of a cooldown rule lists the spells in your cooldown manager's Essential and Utility lists that the game says have a cooldown to alert on, the same test its own alert editor applies, so an instant like Sunfire is not offered; a proc rule's picker lists them all. An entry that stands for several spells, like Eclipse for Lunar and Solar, is offered as each of those spells. You can still type any spell name or id. The **Speak Tracked Cooldowns** key (unbound by default, under Monitors in the keybinding window) reads every tracked spell: "Barkskin, On Cooldown, 49 seconds", "Fire Blast, Charging, 1 charges, 8 seconds", "Starsurge, Proc".
+
 ## Setting Up a Monitor
 
 1. Open the WowVision menu (`/wv`)
