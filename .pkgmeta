@@ -33,3 +33,5 @@ ignore:
   - mapdata/WowVision_MapData_TBC/.gitignore
   - mapdata/WowVision_MapData_TBC/.pkgmeta
   - mapdata/WowVision_MapData_TBC/tools
+  # the raw navigation data: the game loads its packed copy, mapdata/WowNavPacked
+  - mapdata/WoW_NavigationData
