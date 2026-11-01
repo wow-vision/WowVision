@@ -18,6 +18,32 @@ local function mapPositionNode(key, label, mapId, position)
     return { key = key, label = label, x = wx, y = wy }
 end
 
+-- The party or raid members whose position the game gives (they are on the map for everyone in the group). A
+-- node carries its unit (routeData), so a route engine can read the position again (WowNav: a new route).
+module:registerProvider({
+    key = "group",
+    label = L["Group"],
+    order = 6,
+    optional = true,
+    build = function()
+        local out = {}
+        local raid = IsInRaid ~= nil and IsInRaid()
+        local count = GetNumGroupMembers ~= nil and GetNumGroupMembers() or 0
+        for i = 1, raid and count or math.min(count, 4) do
+            local unit = raid and ("raid" .. i) or ("party" .. i)
+            if UnitExists(unit) and not UnitIsUnit(unit, "player") then
+                local ok, x, y = pcall(UnitPosition, unit)
+                if ok and type(x) == "number" and type(y) == "number"
+                    and not (issecretvalue ~= nil and (issecretvalue(x) or issecretvalue(y))) then
+                    tinsert(out, { key = "unit:" .. unit, label = UnitName(unit) or unit, x = x, y = y,
+                        routeData = { unit = unit } })
+                end
+            end
+        end
+        return out
+    end,
+})
+
 module:registerProvider({
     key = "player",
     label = L["Player"],

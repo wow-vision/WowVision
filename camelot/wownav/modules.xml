@@ -1,0 +1,22 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+  <!-- WowNav routes in WowVision. engine/: Broesel's NavNetwork, Guidance, TargetCatalog and TargetResolver (see
+       engine/README.md); text.lua names targets in WowVision's languages; catalog.lua lists the continent's targets;
+       route.lua follows a route with his rules; path.lua walks it with WowVision's beacon; module.lua takes the route
+       requests; dock.lua guides to tram, ship and zeppelin docks (his DockNavigation.lua); floorsUi.lua asks a
+       floor when there is a choice. The data is included after this file from
+       camelot/modules.xml. -->
+  <Script file="engine\NavNetwork.lua" />
+  <Script file="engine\Guidance.lua" />
+  <Script file="engine\TargetCatalog.lua" />
+  <Script file="engine\TargetResolver.lua" />
+  <Script file="engine\DockNavigation.lua" />
+  <Script file="engine\TransitActivation.lua" />
+  <Script file="text.lua" />
+  <Script file="catalog.lua" />
+  <Script file="route.lua" />
+  <Script file="path.lua" />
+  <Script file="dock.lua" />
+  <Script file="module.lua" />
+  <Script file="floorsUi.lua" />
+</Ui>

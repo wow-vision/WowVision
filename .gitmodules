@@ -7,3 +7,6 @@
 [submodule "mapdata/WowVision_MapData_TBC"]
 	path = mapdata/WowVision_MapData_TBC
 	url = https://github.com/wow-vision/WowVision_MapData_TBC
+[submodule "mapdata/WoW_NavigationData"]
+	path = mapdata/WoW_NavigationData
+	url = https://github.com/Broesel33/WoW_NavigationData.git
