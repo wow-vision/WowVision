@@ -44,6 +44,8 @@ Route.ACTION_PHASES = 3
 Route.TELEPORT_JUMP = 50.0
 -- WowVision's own: yd before a walk-in transit's source volume where it is announced once (its teleport comes at once)
 Route.TRANSIT_AHEAD = 15.0
+-- WowVision's own: yd above and below a walk-in transit's source volume within which the route is at its height
+Route.TRANSIT_HEIGHT = 5.0
 
 -- His chokeFallback setting (WowVisionNavigationDB, written from WowVision's settings by the module): on unless false.
 function Route.chokeFallback()
@@ -792,6 +794,21 @@ local function aheadReach(volume)
     return max(volume.radius or 0, volume.half_x or 0, volume.half_y or 0) + Route.TRANSIT_AHEAD
 end
 
+-- The route works in the plane, so the player's height is that of the waypoint he walks to: he is at the portal only
+-- when that waypoint is at the portal's height, within its volume and Route.TRANSIT_HEIGHT. Stormwind's Wizard's
+-- Sanctum: its ramp passes 4.1 yd beside the centre of the portal at the top of the tower, 39 yd below it.
+local function atVolumeHeight(route, volume)
+    local id = route.path and route.path[route.pathIndex]
+    if type(volume) ~= "table" or type(volume.z) ~= "number" or id == nil then
+        return true
+    end
+    local _, _, z = route.N.Position(id)
+    if type(z) ~= "number" then
+        return true
+    end
+    return abs(z - volume.z) <= (volume.half_z or volume.radius or 0) + Route.TRANSIT_HEIGHT
+end
+
 -- During a route with a portal on the way: the transit event when the player is in the portal (sourceEntered) or
 -- came out at its far end (teleported); once, when he comes near it, the transitAhead event (the teleport leaves no
 -- time for a text in the portal); else nil. lastX, lastY: the position of the previous update.
@@ -800,13 +817,15 @@ function Route:walkInTransit(x, y, lastX, lastY)
     if not walksInto(action) or not x then
         return nil
     end
-    if inVolume2D(action.sourceVolume, x, y) then
+    local level = atVolumeHeight(self, action.sourceVolume)
+    if level and inVolume2D(action.sourceVolume, x, y) then
         return { kind = "transit", action = action, sourceEntered = true, announced = self.transitAheadSaid }
     end
     if teleported(action, x, y, lastX, lastY) then
-        return { kind = "transit", action = action, teleported = true }
+        return { kind = "transit", action = action, teleported = true, announced = self.transitAheadSaid }
     end
-    if not self.transitAheadSaid and inVolume2D(action.sourceVolume, x, y, aheadReach(action.sourceVolume)) then
+    if level and not self.transitAheadSaid
+        and inVolume2D(action.sourceVolume, x, y, aheadReach(action.sourceVolume)) then
         self.transitAheadSaid = true
         return { kind = "transitAhead", action = action }
     end
