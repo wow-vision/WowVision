@@ -175,23 +175,44 @@ function engine:entryPoints(px, py, map, count, swimming)
         { showAuto = module.settings.showAuto == true, swimming = swimming })
 end
 
--- Ctrl-Shift-N (his /vn new, asked for by the player): the start at the player's position, only when it is clear --
--- the one place WowNav binds the position itself. Says why not otherwise (floor not clear, no network) and returns nil.
-function engine:startHere(px, py, map)
-    -- WowVision:speak, not say: this file's say is declared further down
+-- The start at the player's position, only when it is clear -- the one place WowNav binds the position itself (Ctrl-Shift-N,
+-- the route to the target). Says nothing; returns the start, or nil and why ("ambiguous": the floor is not clear,
+-- "none": no network here).
+function engine:startAt(px, py, map)
     local N = ready(module)
     if N == nil or px == nil or not catalog.covers(N, map) then
-        WowVision:speak(L["No WowNav network here"])
-        return nil
+        return nil, "none"
     end
     N.activeMapId = map
     local id, why = route:startBinding(px, py)
     if id == nil then
-        WowVision:speak(why == "ambiguous" and L["Your floor is not clear here"] or L["No WowNav network here"])
-        return nil
+        return nil, why == "ambiguous" and "ambiguous" or "none"
     end
     local _, _, z = N.Position(id)
     return { nodeId = id, z = z }
+end
+
+-- Ctrl-Shift-N (his /vn new, asked for by the player): the start at the player's position (engine:startAt). Says why
+-- not otherwise (floor not clear, no network) and returns nil.
+function engine:startHere(px, py, map)
+    local start, why = self:startAt(px, py, map)
+    if start == nil then
+        -- WowVision:speak, not say: this file's say is declared further down
+        WowVision:speak(why == "ambiguous" and L["Your floor is not clear here"] or L["No WowNav network here"])
+    end
+    return start
+end
+
+-- The route to the target: the catalogue's nearest target with the creature's ID (catalog.creatureRow), as a row of
+-- the list; nil where WowNav has no data or no such creature near the player.
+function engine:unitTarget(creatureId, px, py, map)
+    local N = ready(module)
+    if N == nil or px == nil or not catalog.covers(N, map) then
+        return nil
+    end
+    N.activeMapId = map
+    return catalog.creatureRow(N, _G.WowVisionNavigationTargetCatalog, map, creatureId, px, py,
+        WowVision.targetFind.UNIT_RADIUS)
 end
 
 -- Shift-F12 (his /vn stop): ends the search, the route, a transit waiting for its far end and the dock guidance.

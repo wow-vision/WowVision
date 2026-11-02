@@ -1127,6 +1127,19 @@ if haveNetwork then
         t:assertTrue(seen.activation == true, "the capture circle is said")
         t:assertTrue(route.activationInside == true)
     end
+
+    suite["the route to the target: a creature is found by its ID near the player, only there"] = function(t)
+        setup()
+        -- Innkeeper Allison of Stormwind, creature 6740
+        local inn = zoneRows(STORMWIND, "allison")[1]
+        t:assertNotNil(inn, "the innkeeper is listed")
+        local row = catalog.creatureRow(N, C, 0, 6740, inn.x + 10, inn.y + 10, 120)
+        t:assertNotNil(row)
+        t:assertEqual(row.tid, inn.tid, "the same target as the list's")
+        t:assertTrue(row.distance < 15)
+        t:assertNil(catalog.creatureRow(N, C, 0, 6740, inn.x + 300, inn.y, 120), "too far: another spawn")
+        t:assertNil(catalog.creatureRow(N, C, 0, 999999, inn.x, inn.y, 120), "no such creature")
+    end
 end
 
 testRunner:addSuite("WowNav routes", suite)

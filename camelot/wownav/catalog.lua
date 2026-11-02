@@ -215,11 +215,15 @@ local function listRow(N, item, german)
     }
 end
 
+-- The kinds of the catalogue a creature of the game is listed as (TargetCatalog's kinds).
+local CREATURE_KINDS = { npc = true, mob = true, creature = true }
+
 -- The search of the destination list. filterText "" lists the nearest targets. opts: { showAuto, german, R, extra,
 -- limit, start, direct } (extra: rows that already are rows, each with .entry, the target its text is searched in,
 -- and .distance: the boarding points of the docks, his Dock:BoardingTargets; limit: fewer rows than C.SEARCH_LIMIT;
 -- start: only targets that resolve to a network point, the ones a route can start at; direct: no target is
--- resolved or dropped, his list for /vn direct, where no route leads to the point).
+-- resolved or dropped, his list for /vn direct, where no route leads to the point; entry: only the creatures with
+-- this ID, the creature kinds of CREATURE_KINDS).
 -- Returns the rows (nearest first, at most the limit, each with .distance) and info { total, limit, shown,
 -- capped } (total = matches before the reachability check). Without the catalogue: {}, info with .reason.
 function catalog.search(N, C, map, filterText, x, y, opts)
@@ -238,7 +242,11 @@ function catalog.search(N, C, map, filterText, x, y, opts)
     local filter = lower((filterText or ""):match("^%s*(.-)%s*$"))
     local auto = opts.showAuto == true
     local R = opts.R or _G.WowVisionNavigationTargetResolver
+    local wantedEntry = opts.entry
     local function accept(entry, zoneId)
+        if wantedEntry ~= nil and (entry.entry ~= wantedEntry or not CREATURE_KINDS[entry.kind]) then
+            return false
+        end
         return (auto or not automaticListEntry(entry)) and matches(N, entry, filter, zoneId, german)
     end
     local n, rows, owners, d2 = C:Scan(nav.zoneSet, nav.nativeMapId, accept, x, y, nil)
@@ -301,6 +309,17 @@ function catalog.search(N, C, map, filterText, x, y, opts)
     end
     info.shown, info.capped = count, count >= limit and position < n
     return list, info
+end
+
+-- The row of a creature of the game (the route to the target): the nearest target of the catalogue with its ID that a
+-- route can reach, within radius of the player (a farther one is another spawn); nil without one.
+function catalog.creatureRow(N, C, map, creatureId, x, y, radius)
+    local rows = catalog.search(N, C, map, "", x, y, { limit = 1, entry = creatureId, showAuto = false })
+    local row = rows[1]
+    if row == nil or row.distance == nil or row.distance > radius then
+        return nil
+    end
+    return row
 end
 
 -- The automatic waypoints near a position (his NODE_SELECTION_RADIUS list): the network's own waypoints of the zones

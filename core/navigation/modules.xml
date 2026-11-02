@@ -19,5 +19,8 @@
   <Script file="corpseFind.lua" />
   <Script file="corpseTests.lua" />
   <Script file="corpse.lua" />
+  <Script file="targetFind.lua" />
+  <Script file="targetTests.lua" />
+  <Script file="targetRoute.lua" />
 
 </Ui>
