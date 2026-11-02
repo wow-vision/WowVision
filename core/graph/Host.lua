@@ -49,10 +49,25 @@ local NAV_KEYMAPS = {
     "contextMenu",
 }
 
+-- Letter navigation (typeAhead.lua): only where the focused stack or screen opts in with letterNavigation (the
+-- WowVision menu, context and dropdown menus -- lists that own the keyboard; never a window the player walks or
+-- fights with open, such as F10). While engaged the letters do nothing in the game, so they wait for every letter
+-- key to be up and release with the navigation keys (combat, all stacks closed). Plain letters only, and the
+-- umlauts of a German keyboard as Sku binds them; an edit box with the keyboard gets its letters as before.
+local LETTER_KEYS = {}
+for code = string.byte("A"), string.byte("Z") do
+    tinsert(LETTER_KEYS, string.char(code))
+end
+for _, key in ipairs({ "Ä", "Ö", "Ü", "ä", "ö", "ü", "ß" }) do
+    tinsert(LETTER_KEYS, key)
+end
+
 function GraphHost:initialize()
     self.stacks = {}
     self.focusedIndex = 0
     self._navHandles = {}
+    self._letterHandles = {}
+    self._typeAheadState = graph.typeAhead.newState()
     self._nodeHandles = {}
     self._focusNodeId = nil
     self._focusNode = nil
@@ -173,6 +188,7 @@ function GraphHost:update()
         end
     end
     self:_syncCloseKey()
+    self:_syncLetterKeys()
 
     local stack = self:focusedStack()
     local screen = self:focusedScreen()
@@ -444,6 +460,7 @@ function GraphHost:_releaseNavBindings()
         handle:release()
     end
     self._navHandles = {}
+    self:_releaseLetterKeys()
     if self._closeHandle ~= nil then
         self._closeHandle:release()
         self._closeHandle = nil
@@ -488,6 +505,86 @@ function GraphHost:_syncCloseKey()
     elseif not wantsGame and self._gameCloseHandle ~= nil then
         self._gameCloseHandle:release()
         self._gameCloseHandle = nil
+    end
+end
+
+-- Whether the focused list takes letters: its stack or screen opts in, and the setting (UI module) is on.
+function GraphHost:_wantsLetters()
+    local ui = WowVision.base ~= nil and WowVision.base.ui or nil
+    if ui == nil or ui.settings == nil or ui.settings.letterNavigation == false then
+        return false
+    end
+    local stack = self:focusedStack()
+    local screen = self:focusedScreen()
+    if stack == nil or screen == nil then
+        return false
+    end
+    return (stack.config ~= nil and stack.config.letterNavigation == true)
+        or (screen.config ~= nil and screen.config.letterNavigation == true)
+end
+
+function GraphHost:_syncLetterKeys()
+    local wants = self:_wantsLetters()
+    if wants and #self._letterHandles == 0 then
+        -- a letter held (walking on W as the menu opened): its release would be eaten; retried every tick
+        if WowVision.inputActivator:inputsHeld(LETTER_KEYS) then
+            return
+        end
+        for _, key in ipairs(LETTER_KEYS) do
+            local letter = key
+            tinsert(self._letterHandles, WowVision.inputActivator:activateInputs({ letter }, {
+                type = "Function",
+                delay = 0,
+                func = function()
+                    self:onLetter(letter)
+                end,
+            }))
+        end
+        self:_logKeys("took the letter keys")
+    elseif not wants and #self._letterHandles > 0 then
+        self:_releaseLetterKeys()
+    end
+end
+
+function GraphHost:_releaseLetterKeys()
+    if #self._letterHandles > 0 then
+        self:_logKeys("released the letter keys")
+    end
+    for _, handle in ipairs(self._letterHandles) do
+        handle:release()
+    end
+    self._letterHandles = {}
+end
+
+-- A letter in a list that takes letters: stop speech first, as for the navigation keys.
+function GraphHost:onLetter(letter)
+    local stopped = WowVision.base.speech:uiStop()
+    if stopped and (WowVision.consts.UI_DELAY or 0) > 0 then
+        C_Timer.After(WowVision.consts.UI_DELAY, function()
+            self:_typeLetter(letter)
+        end)
+    else
+        self:_typeLetter(letter)
+    end
+end
+
+-- The next entry of the focused list starting with the typed text (one letter cycles; letters typed quickly search
+-- as one text). The only match being the focused entry reads it again; no match says so, like Sku's menu.
+function GraphHost:_typeLetter(letter)
+    local screen = self:focusedScreen()
+    if screen == nil then
+        return
+    end
+    local text, cycle = graph.typeAhead.feed(self._typeAheadState, letter, GetTime())
+    local move = screen.keyGraph:moveToText(text, cycle)
+    if move.moved then
+        self:_announceMove(screen, move)
+    elseif move.found then
+        if cycle then
+            self:_speakFocusedState(screen)
+        end
+    else
+        self:_speak(WowVision:getLocale()["No results"])
     end
 end
 

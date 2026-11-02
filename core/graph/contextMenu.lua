@@ -128,6 +128,8 @@ function contextMenu.pushEntries(label, entriesOrFn)
     host:push(stack, {
         key = "contextMenu:" .. tostring(label),
         _contextMenu = true,
+        -- a context menu takes letters (letter navigation, Host.lua), whatever window it opened in
+        letterNavigation = true,
         render = function(builder)
             local entries
             if type(entriesOrFn) == "function" then

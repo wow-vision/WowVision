@@ -12,6 +12,15 @@ settings:add({
     default = false,
 })
 
+-- Letters jump to the next entry starting with them in the lists that own the keyboard: the WowVision menu, context
+-- and dropdown menus (graph/typeAhead.lua, graph/Host.lua).
+settings:add({
+    type = "Bool",
+    key = "letterNavigation",
+    label = L["Letter Navigation in Menus"],
+    default = true,
+})
+
 -- Chasing stuck movement keys with testers: prints when windows take, wait
 -- for and release the navigation keys, and what the held check saw.
 module:registerCommand({

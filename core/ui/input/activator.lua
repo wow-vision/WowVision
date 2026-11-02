@@ -127,6 +127,25 @@ function Activator:activate(spec)
     return handle
 end
 
+-- Activate a spec on raw key names instead of a keymap: keys that are no
+-- binding the player rebinds (the letters of letter navigation, see
+-- graph/Host.lua). Same handle as activate.
+function Activator:activateInputs(inputs, spec)
+    local action = self.actions:get(spec.type)
+    if action == nil then
+        error("Unknown input action type: " .. tostring(spec.type))
+    end
+    local handle = Handle:new(self.inputManager, action, spec)
+    handle:_engage(inputs, nil, spec.emulatedKey)
+    return handle
+end
+
+-- Whether one of these raw key names is physically held (see anyInputHeld).
+function Activator:inputsHeld(inputs)
+    local heldKeys = WowVision.heldKeys
+    return heldKeys.anyHeld(inputs, heldKeys.gameEnv())
+end
+
 -- Whether a key any of these keymaps would take is physically held. An
 -- override set on a held key eats its release and leaves the game's command
 -- (a turn, a move) running; callers wait a tick and ask again.
