@@ -18,6 +18,14 @@ autoMove.events.valueChange:subscribe(nil, function(event, obj, key, value)
     SetCVar("autoInteract", value)
 end)
 
+-- A ghost (spirit released, or logged in as one) gets a route to the corpse at once (corpse.lua).
+settings:add({
+    key = "autoCorpse",
+    type = "Bool",
+    label = L["Automatically Navigate to Corpse"],
+    default = true,
+})
+
 -- The camera settings turn to waypoint and the pitch lock need, set once
 -- per character (see camera.lua).
 settings:add({

@@ -16,5 +16,8 @@
   <Script file="visitedStore.lua" />
   <Script file="visitedTests.lua" />
   <Script file="visited.lua" />
+  <Script file="corpseFind.lua" />
+  <Script file="corpseTests.lua" />
+  <Script file="corpse.lua" />
 
 </Ui>

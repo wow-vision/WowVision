@@ -178,15 +178,16 @@ end
 -- Ctrl-Shift-N (his /vn new, asked for by the player): the start at the player's position, only when it is clear --
 -- the one place WowNav binds the position itself. Says why not otherwise (floor not clear, no network) and returns nil.
 function engine:startHere(px, py, map)
+    -- WowVision:speak, not say: this file's say is declared further down
     local N = ready(module)
     if N == nil or px == nil or not catalog.covers(N, map) then
-        say(L["No WowNav network here"])
+        WowVision:speak(L["No WowNav network here"])
         return nil
     end
     N.activeMapId = map
     local id, why = route:startBinding(px, py)
     if id == nil then
-        say(why == "ambiguous" and L["Your floor is not clear here"] or L["No WowNav network here"])
+        WowVision:speak(why == "ambiguous" and L["Your floor is not clear here"] or L["No WowNav network here"])
         return nil
     end
     local _, _, z = N.Position(id)
@@ -566,7 +567,7 @@ function module:routeTo(target)
     end
     local request = { contract = contract, label = target.label, onArrive = target.onArrive, dockTarget = dockTarget,
         activationTarget = activationTarget, approx = type(target.data) == "table" and target.data.approx == true,
-        start = start }
+        lowestFloor = type(target.data) == "table" and target.data.lowestFloor == true, start = start }
     if bindStart(self, request) then
         self:stopRoute()
         search(self, request)
@@ -639,7 +640,15 @@ local function onOutcome(self, request, outcome)
         startRoute(self, request, outcome)
     elseif outcome.kind == "choose" then
         local contract = request.contract or {}
-        askFloor(targetFloors(outcome, contract.x, contract.y), function(floor)
+        local floors = targetFloors(outcome, contract.x, contract.y)
+        if request.lowestFloor then
+            -- a target without a height that is walked to on the ground (the corpse run): the lowest floor a route
+            -- reaches, no question
+            request.contract.heightBand = WowVision.corpseFind.lowestFloor(floors).band
+            search(self, request)
+            return
+        end
+        askFloor(floors, function(floor)
             request.contract.heightBand = floor.band
             search(self, request)
         end)
