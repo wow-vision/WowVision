@@ -269,11 +269,13 @@ function settings.renderInto(builder, infoFrame)
     end
 end
 
--- A graphScreen config for a settings tree (frameless: Escape closes it).
+-- A graphScreen config for a settings tree (frameless: Escape closes it). Like every menu screen it takes letters
+-- (letter navigation, Host.lua).
 function settings.screen(infoFrame)
     return {
         key = "settings:" .. tostring(infoFrame.key or infoFrame.label),
         captureClose = true,
+        letterNavigation = true,
         render = function(builder)
             settings.renderInto(builder, infoFrame)
         end,
@@ -506,11 +508,13 @@ function settings.renderModuleInto(builder, module)
     builder:popContext()
 end
 
--- A graphScreen config for a module's menu (frameless: Escape closes it).
+-- A graphScreen config for a module's menu (frameless: Escape closes it). The menu takes letters (letter
+-- navigation, Host.lua), its child screens too: they are pushed on this stack.
 function settings.moduleScreen(module)
     return {
         key = "menu:" .. tostring(module.key or module:getLabel()),
         captureClose = true,
+        letterNavigation = true,
         render = function(builder)
             settings.renderModuleInto(builder, module)
         end,

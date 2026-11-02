@@ -484,6 +484,8 @@ function dropdown.update()
         dropdown.stack = host:open({
             key = "dropdown",
             captureClose = true,
+            -- an open dropdown menu takes letters (letter navigation, Host.lua)
+            letterNavigation = true,
             onRequestClose = function()
                 closeMenuFrame(dropdown.frame)
             end,

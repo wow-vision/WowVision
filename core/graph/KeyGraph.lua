@@ -542,6 +542,99 @@ function KeyGraph:moveToSiblingEdge(first)
     return result
 end
 
+-- ---- letter navigation (typeAhead.lua) ----
+
+-- The entries of the focused node's list, in order: the same list Home and End use -- the siblings in a tree, else
+-- the row (left/right) or column (up/down) the node stands in.
+function KeyGraph:listNodes(node)
+    if KeyGraph.inTree(node) then
+        local siblings = {}
+        for _, n in ipairs(self.current.order) do
+            if n.parent == node.parent then
+                tinsert(siblings, n)
+            end
+        end
+        return siblings
+    end
+    local back, forward = "up", "down"
+    if node.transitions.left ~= nil or node.transitions.right ~= nil then
+        back, forward = "left", "right"
+    end
+    local first, seen = node, { [node] = true }
+    while first.transitions[back] ~= nil do
+        local dest = self.current:nodeAt(first.transitions[back].destination)
+        if dest == nil or seen[dest] then
+            break
+        end
+        seen[dest] = true
+        first = dest
+    end
+    local list, cur = { first }, first
+    seen = { [first] = true }
+    while cur.transitions[forward] ~= nil do
+        local dest = self.current:nodeAt(cur.transitions[forward].destination)
+        if dest == nil or seen[dest] then
+            break
+        end
+        seen[dest] = true
+        tinsert(list, dest)
+        cur = dest
+    end
+    return list
+end
+
+-- The text a node is found by: its label announcement (the first one without another kind).
+local function labelOf(node)
+    for _, announcement in ipairs(node.vtable ~= nil and node.vtable.announcements or {}) do
+        if announcement.kind == nil or announcement.kind == graph.kinds.label then
+            local text = announcement.text
+            if type(text) == "function" then
+                local ok, value = pcall(text)
+                text = ok and value or nil
+            end
+            if type(text) == "string" then
+                return text
+            end
+        end
+    end
+    return nil
+end
+
+-- Focus the entry of the current list that starts with text (cycle: the next one after the focused entry; else the
+-- focused entry counts). A move result like move(); found is false when no entry starts with text.
+function KeyGraph:moveToText(text, cycle)
+    local result = { moved = false, found = false }
+    if not self:rerender() then
+        return result
+    end
+    local node = self:currentNode()
+    result.from = node
+    result.to = node
+    if node == nil then
+        return result
+    end
+    local list = self:listNodes(node)
+    local labels, current = {}, nil
+    for i, n in ipairs(list) do
+        labels[i] = graph.typeAhead.matchText(labelOf(n))
+        if n == node then
+            current = i
+        end
+    end
+    local index = graph.typeAhead.find(labels, current, text, cycle)
+    if index == nil then
+        return result
+    end
+    result.found = true
+    local target = list[index]
+    if target ~= node then
+        self:_setCurrent(target)
+        result.to = target
+        result.moved = true
+    end
+    return result
+end
+
 -- ---- behavior invokers (the host announces fallbacks / state) ----
 
 -- Run the focused control's primary activation. False = it has none.
