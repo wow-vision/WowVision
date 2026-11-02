@@ -107,6 +107,18 @@ settings:add({
     label = L["Silent Out of Combat"],
     default = false,
 })
+-- Off: every member takes a turn at the role's interval, and silence
+-- means healthy (Sku's continuous monitor). On: a turn only after a health
+-- event for the member since their last turn, so a member hit once is said
+-- once and then stays quiet, and silence means nothing changed (closer to
+-- Sku's pitch monitor, which speaks on changes). The interval still caps
+-- the rate: heal and damage ticks cost at most one turn per interval.
+settings:add({
+    key = "repeatOnlyAfterChange",
+    type = "Bool",
+    label = L["Repeat Only After a Change"],
+    default = false,
+})
 
 local raidGroupFields = {}
 for group = 1, GroupHealth.MAX_RAID_GROUPS do
@@ -282,9 +294,11 @@ local function plainGuid(unit)
 end
 
 -- A member; `old` is the same person before the roster update, who keeps
--- their repeat timing and death. Unit tokens move when someone leaves, so
--- the person is found by GUID. Someone already dead when first seen is not
--- announced: their death is old news (the snapshot says it).
+-- their repeat timing, death and pending change. Unit tokens move when
+-- someone leaves, so the person is found by GUID. Someone already dead when
+-- first seen is not announced: their death is old news (the snapshot says
+-- it). A new member counts as changed, so Repeat Only After a Change says
+-- them once.
 local function newMember(unit, number, role, old)
     local member = {
         unit = unit,
@@ -292,10 +306,12 @@ local function newMember(unit, number, role, old)
         number = number,
         role = role,
         dead = plainTrue(UnitIsDeadOrGhost, unit),
+        changed = true,
     }
     if old ~= nil then
         member.lastRepeat = old.lastRepeat
         member.dead = old.dead
+        member.changed = old.changed
     end
     return member
 end
@@ -471,7 +487,7 @@ function module:announce(member, lane)
     return true
 end
 
--- Health events: deaths only ----------------------------------------------------------
+-- Health events: deaths, and the mark for Repeat Only After a Change -----------------------
 
 function module:silenced()
     return self.settings.silentOutOfCombat and not InCombatLockdown()
@@ -482,6 +498,9 @@ function module:onHealth(unit)
     if member == nil then
         return
     end
+    -- That the event fired is plain (every addon gets it, the bar moves
+    -- for everyone); what the health is stays secret.
+    member.changed = true
     if plainTrue(UnitIsDeadOrGhost, member.unit) then
         if not member.dead then
             member.dead = true
@@ -515,13 +534,18 @@ function module:checkRepeats()
     if self:silenced() or not WowVision.base.speech:idle() then
         return
     end
+    local onlyAfterChange = self.settings.repeatOnlyAfterChange
     local member = GroupHealth.mostOverdue(self.members, now, function(m)
+        if onlyAfterChange and not m.changed then
+            return nil
+        end
         return roleSetting(m.role, "repeatInterval")
     end)
     if member == nil then
         return
     end
     member.lastRepeat = now
+    member.changed = false
     if not member.dead and not plainFalse(UnitIsConnected, member.unit) then
         self:announce(member, "repeat")
     end
@@ -543,6 +567,7 @@ function module:snapshot()
     local now = GetTime()
     for _, member in ipairs(list) do
         member.lastRepeat = now
+        member.changed = false
         if plainTrue(UnitIsDeadOrGhost, member.unit) then
             self:announce(member, "dead")
         else

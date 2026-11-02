@@ -39,6 +39,7 @@ Every role (tanks, healers, damage dealers, no role) has its own **Repeat Below*
 - **Raid Groups**: which raid groups to watch, for example only the groups you heal.
 - **Announce Full Health**, **Announce Deaths**.
 - **Silent Out of Combat**: no repeat and no deaths out of combat; the snapshot key still works.
+- **Repeat Only After a Change** (off by default): a member takes a turn only when their health changed since their last turn. A member hit once is said once and then stays quiet, so the monitor is much quieter, closer to Sku's pitch monitor that speaks on changes. Heal and damage ticks count as changes, but the interval still caps every member at one turn. Mind what silence means: with the setting off, silence means healthy; with it on, silence means nothing changed, and a member sitting at low health is not said again.
 
 ## Limits
 
