@@ -163,11 +163,16 @@ local function destinationCursor(screen)
         return list, index, count
     end
 
-    -- an engine's row may add a detail after the distance (WowNav: its categories and zone)
+    -- an engine's row may add a detail after the distance (WowNav: its categories and zone); a destination reached
+    -- in the last minutes says so first (navigation/visited.lua)
+    local visited = WowVision.base.navigation.visited
     local function labelOf(entry)
         local text = string.format("%s, %d %s", entry.waypoint.n, entry.distance, L["yards"])
         if entry.waypoint.detail ~= nil then
             text = text .. ", " .. entry.waypoint.detail
+        end
+        if visited ~= nil and visited:isVisited(entry.waypoint) then
+            text = L["Visited"] .. ", " .. text
         end
         return text
     end
@@ -237,8 +242,11 @@ local function destinationCursor(screen)
             end
             WowVision.UIHost:closeWindow("atlas")
             local wp = entry.waypoint
+            -- the picked destination (not a waypoint on the way) is remembered as visited once reached
+            module.lastDestination = wp
+            local onArrive = module:arrivalFor(wp)
             if screen._direct then
-                module:directTo(wp.x, wp.y, wp.n, wp.onArrive)
+                module:directTo(wp.x, wp.y, wp.n, onArrive)
                 return
             end
             if screen._engine ~= nil then
@@ -248,21 +256,21 @@ local function destinationCursor(screen)
                     data = wp.routeData
                 end
                 local start = selectedEntry(screen)
-                if module:routeTo(wp.x, wp.y, wp.n, wp.onArrive, wp.z, data, start and start.waypoint) then
+                if module:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, data, start and start.waypoint) then
                     return
                 end
                 if wp.virtual then
-                    module:beaconTo(wp.x, wp.y, wp.n, wp.onArrive)
+                    module:beaconTo(wp.x, wp.y, wp.n, onArrive)
                 else
                     WowVision:speak(L["No route found"])
                 end
                 return
             end
-            local routed = module:navigateTo(wp.id, screen._waypoints, { entryId = screen._entryId, onArrive = wp.onArrive })
+            local routed = module:navigateTo(wp.id, screen._waypoints, { entryId = screen._entryId, onArrive = onArrive })
             -- A target too far from the network for a last leg still gets a
             -- straight beacon, as the scanner gave before.
             if not routed and wp.virtual then
-                module:beaconTo(wp.x, wp.y, wp.n, wp.onArrive)
+                module:beaconTo(wp.x, wp.y, wp.n, onArrive)
             end
         end,
         bindings = {

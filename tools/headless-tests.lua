@@ -54,6 +54,8 @@ loadAddonFile("core/navigation/atlas/MapDataset.lua")
 loadAddonFile("core/navigation/atlas/datasetTests.lua")
 loadAddonFile("core/navigation/stuckMath.lua")
 loadAddonFile("core/navigation/stuckTests.lua")
+loadAddonFile("core/navigation/visitedStore.lua")
+loadAddonFile("core/navigation/visitedTests.lua")
 
 -- WowNav routes: Broesel's engine (camelot/wownav/engine) on his real data, packed into mapdata/WowNavPacked by
 -- tools/wownav-pack.lua (its data.xml); without the packed data only the parts that need no network run.
@@ -1217,6 +1219,7 @@ local parseOnly = {
     "core/scanner/providers.lua",
     "core/navigation/maps/module.lua",
     "core/navigation/maps/ui.lua",
+    "core/navigation/visited.lua",
     "core/windows/Macros.lua",
     "core/windows/itemText.lua",
     "core/windows/RolePoll.lua",

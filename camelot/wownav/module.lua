@@ -6,7 +6,8 @@
 -- searches them: the nearest 1000 hits (catalog.lua). Like his zone loader, the player's zone and the zones that share
 -- a seam with it are decoded in the background, one per frame, so the first route there does not wait for them.
 --
--- The start is never searched by WowNav (his N.Bind of the player's position): F10 lists the nearest targets that have
+-- The start is never searched by WowNav (his N.Bind of the player's position) -- except for Ctrl-Shift-N, which starts
+-- the route again from where the player stands when that is clear (engine:startHere): F10 lists the nearest targets that have
 -- a network point (and the network's own waypoints with "Show Automatic Waypoints") as entry points, like the route
 -- data's, and the route starts at the one the player picks (his start-point mode, /vn hier, for every route); while
 -- swimming the nearest water point is preselected. A route searched again
@@ -172,6 +173,24 @@ function engine:entryPoints(px, py, map, count, swimming)
     N.activeMapId = map
     return catalog.entryPoints(N, _G.WowVisionNavigationTargetCatalog, map, px, py, count,
         { showAuto = module.settings.showAuto == true, swimming = swimming })
+end
+
+-- Ctrl-Shift-N (his /vn new, asked for by the player): the start at the player's position, only when it is clear --
+-- the one place WowNav binds the position itself. Says why not otherwise (floor not clear, no network) and returns nil.
+function engine:startHere(px, py, map)
+    local N = ready(module)
+    if N == nil or px == nil or not catalog.covers(N, map) then
+        say(L["No WowNav network here"])
+        return nil
+    end
+    N.activeMapId = map
+    local id, why = route:startBinding(px, py)
+    if id == nil then
+        say(why == "ambiguous" and L["Your floor is not clear here"] or L["No WowNav network here"])
+        return nil
+    end
+    local _, _, z = N.Position(id)
+    return { nodeId = id, z = z }
 end
 
 -- Shift-F12 (his /vn stop): ends the search, the route, a transit waiting for its far end and the dock guidance.
@@ -737,6 +756,10 @@ function module:onRouteEvent(path, event)
         local targetNodeId, result = route.targetBindingId, route.result
         route:reset()
         route:startAction(event.action, request, targetNodeId, result)
+        local action, sv, av = event.action, event.action.sourceVolume or {}, event.action.arrivalVolume or {}
+        logLine(string.format("transit %s: waiting for its far end (%s), source %.1f %.1f r %s, arrival %.1f %.1f r %s",
+            tostring(action.kind), tostring(action.arrival and action.arrival.mode), sv.x or 0, sv.y or 0,
+            tostring(sv.radius or sv.half_x), av.x or 0, av.y or 0, tostring(av.radius or av.half_x)))
     elseif kind == "lost" then
         self:stopRoute()
         say(L["Route ended"])
@@ -744,12 +767,32 @@ function module:onRouteEvent(path, event)
 end
 
 -- The transit continuation: once the player came out at the far end, the route goes on from there.
+-- The saved trail notes a jump of the player (a portal's teleport) while a transit waits: where he came out, how far
+-- from the transit's arrival, and whether the source was entered first -- so a missed arrival can be read later.
+local function traceAction(current, x, y, map)
+    if x == nil then
+        return
+    end
+    if current.traceX ~= nil and Route.distance(x, y, current.traceX, current.traceY) > 50 then
+        local av = current.action.arrivalVolume
+        logLine(string.format("transit: jumped to %.1f %.1f map %s, %.0f yd from its arrival, source %s", x, y,
+            tostring(map), type(av) == "table" and type(av.x) == "number" and Route.distance(x, y, av.x, av.y) or -1,
+            current.sourceEntered and "entered" or "never entered"))
+    end
+    current.traceX, current.traceY = x, y
+end
+
 local function checkAction(self)
     if route == nil or route.action == nil or job ~= nil then
         return
     end
     local x, y, map = route.env.position()
+    local current = route.action
     local state = route:observeAction(x, y, map, maps:arrivalDistance())
+    traceAction(current, x, y, map)
+    if state ~= nil then
+        logLine(string.format("transit: %s at %.1f %.1f", state, x or 0, y or 0))
+    end
     if state == "timeout" then
         say(L["The transit took too long; route ended"])
     elseif state == "arrived" then

@@ -220,14 +220,17 @@ function module:navigateToName(fragment)
         return false
     end
     WowVision:speak(target.n)
+    -- the destination of Ctrl-Shift-N and the visited waypoints, as if picked in F10
+    self.lastDestination = target
+    local onArrive = self:arrivalFor(target)
     if engine ~= nil then
         -- no window to pick the entry point in: the one F10 would preselect
         local start = self:preselectedEntry(self:entryPoints(waypoints, px, py, map, engine))
-        if self:routeTo(target.x, target.y, target.n, nil, target.z, target, start and start.waypoint) then
+        if self:routeTo(target.x, target.y, target.n, onArrive, target.z, target, start and start.waypoint) then
             return true
         end
     end
-    return self:navigateTo(target.id, waypoints)
+    return self:navigateTo(target.id, waypoints, { onArrive = onArrive })
 end
 
 -- How many entry points F10 offers.
@@ -283,6 +286,135 @@ function module:beaconTo(wx, wy, label, onArrive)
         WowVision:speak(L["Beacon set"])
     end
 end
+
+-- The destination last picked (F10's Enter, the visited waypoints' keys):
+-- what "the nearest unvisited of the same name" is named like.
+module.lastDestination = nil
+
+-- What runs when a picked destination is reached: it is remembered as
+-- visited (navigation/visited.lua), then its own onArrive runs. The route's
+-- waypoints on the way are never remembered, only the destination.
+function module:arrivalFor(wp)
+    local onArrive = wp.onArrive
+    return function()
+        local visited = WowVision.base.navigation.visited
+        if visited ~= nil then
+            visited:markVisited(wp)
+        end
+        if onArrive ~= nil then
+            onArrive()
+        end
+    end
+end
+
+-- The destinations named like `name` (the same object: the route data's
+-- name before its first field, WowNav's whole name), as { waypoint,
+-- distance } -- the route data's, or an active engine's (direct: without its
+-- reachability check).
+function module:destinationsNamed(name, direct)
+    local px, py, _, map = UnitPosition("player")
+    local store = WowVision.visitedStore
+    local fold = WowVision.utils.foldCase
+    local base = store.baseName(name, fold)
+    if px == nil or base == nil then
+        return {}
+    end
+    local found = {}
+    local function add(wp)
+        if store.baseName(wp.n, fold) == base then
+            local dx, dy = wp.x - px, wp.y - py
+            tinsert(found, { waypoint = wp, distance = math.sqrt(dx * dx + dy * dy) })
+        end
+    end
+    local waypoints, engine = self:destinationWaypoints()
+    for _, wp in pairs(waypoints) do
+        add(wp)
+    end
+    if engine ~= nil then
+        for _, row in ipairs(engine:search(base, px, py, map, { direct = direct }) or {}) do
+            add(row)
+        end
+    end
+    return found
+end
+
+-- To a destination without the window: a direct point, or a route from the
+-- entry point F10 would preselect (as /beacon to). It becomes the last
+-- picked destination and is remembered as visited once reached.
+function module:goToDestination(wp, direct)
+    self.lastDestination = wp
+    local onArrive = self:arrivalFor(wp)
+    if direct then
+        self:directTo(wp.x, wp.y, wp.n, onArrive)
+        return true
+    end
+    local px, py, _, map = UnitPosition("player")
+    if px == nil then
+        WowVision:speak(L["Position unavailable"])
+        return false
+    end
+    WowVision:speak(wp.n)
+    local waypoints, engine = self:destinationWaypoints()
+    if engine ~= nil then
+        local start = self:preselectedEntry(self:entryPoints(waypoints, px, py, map, engine))
+        if self:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, wp, start and start.waypoint) then
+            return true
+        end
+    end
+    return self:navigateTo(wp.id, waypoints, { onArrive = onArrive })
+end
+
+-- Ctrl-Shift-N: the last destination's route again, from where the player
+-- stands (WowNav's /vn new, without its penalty on the current link). The
+-- route data enter at the nearest waypoints, as for /beacon to; a route
+-- engine starts at the player's position only when that is clear
+-- (engine:startHere says why not). Whatever guided before ends, a transit
+-- waiting for its far end too.
+function module:restartRoute()
+    local wp = self.lastDestination
+    if wp == nil then
+        WowVision:speak(L["No route to start again"])
+        return false
+    end
+    local px, py, _, map = UnitPosition("player")
+    if px == nil then
+        WowVision:speak(L["Position unavailable"])
+        return false
+    end
+    local onArrive = self:arrivalFor(wp)
+    local waypoints, engine = self:destinationWaypoints()
+    if engine ~= nil then
+        local start = engine.startHere ~= nil and engine:startHere(px, py, map) or nil
+        if start == nil then
+            return false
+        end
+        local data = wp
+        if wp.virtual then
+            data = wp.routeData
+        end
+        if self:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, data, start) then
+            return true
+        end
+        WowVision:speak(L["No route found"])
+        return false
+    end
+    if wp.virtual then
+        waypoints[wp.id] = wp
+    end
+    local routed = self:navigateTo(wp.id, waypoints, { onArrive = onArrive })
+    if not routed and wp.virtual then
+        self:beaconTo(wp.x, wp.y, wp.n, onArrive)
+    end
+    return routed
+end
+
+module:registerBinding({
+    type = "Script",
+    key = "maps/restartRoute",
+    label = L["Start the Route Again From Here"],
+    inputs = { "CTRL-SHIFT-N" },
+    script = "/run WowVision.base.navigation.maps:restartRoute()",
+})
 
 -- Exactly one point, no route (F10's "Direct", WowNav's /vn direct): a
 -- straight beacon to the destination, whatever guidance ran before (a route
