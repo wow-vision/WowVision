@@ -1,5 +1,5 @@
 ### Summary
-This is a massive refactor of the codebase thanks to Claude Fable 5. The UI has been entirely redone to increase ease of development and efficiency. Many long-standing UI focus issues have been fixed and overall the game should feel much smoother now.
+This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5. The UI has been entirely redone to increase ease of development and efficiency. Many long-standing UI focus issues have been fixed and overall the game should feel much smoother now.
 
 ### All Versions
 * Much of the addon has been rewritten. The UI framework has been entirely redone, greatly improving efficiency and preventing significant lag spikes on some screens. This should also allow much faster development, as the older framework was overengineered and introducing unnecessary complexity. LLM models, such as Claude code, also have a much easier time with it, allowing us to iterate significantly faster.
@@ -25,6 +25,13 @@ This is a massive refactor of the codebase thanks to Claude Fable 5. The UI has 
 * Shift-F12 cancels the active route or beacon.
 * Alt-T opens your target's menu, the one a right click on the target's portrait opens (Copy Character Name, Whisper, Invite and the rest). Target yourself for Reset All Instances, loot and dungeon difficulty.
 * Dropdown menus: a submenu opened from a menu near the right edge of the screen (such as Set Loot Specialization) no longer reads the parent menu again. Menus long enough to scroll are read in full and scroll to follow your focus; before, they were not read at all. The tooltip key reads a menu row's tooltip. Controls inside a menu row are reachable with left and right, such as the Minimum and Maximum level boxes of the auction house filter; Enter or Escape leaves a box. Sliders in a menu row, such as the voice chat volumes in the player menu, get a line of their own: left and right move them, Enter types a value.
+* Letter navigation in menus: in the WowVision menu, its settings screens, context menus (Shift-F10) and dropdown menus, a letter jumps to the next entry starting with it, the same letter again to the one after, and letters typed quickly search together ("go" finds Goldshire). The Letter Navigation in Menus setting (UI) turns it off.
+* Shift-F1 opens the WowVision menu.
+* The German and French translations are complete: 194 strings were missing in German (among them the whole scanner) and 60 in French, and were spoken in English.
+* Navigation: the F10 window has a Direct checkbox: with it ticked, Enter on a destination sets exactly that point as a straight beacon, with no route.
+* Navigation: destinations you reach are remembered as visited for a while. F10 says "Visited" before them, and two key bindings (unbound by default) take you to the nearest unvisited spawn with the same name, by route or as a direct point.
+* Navigation: Ctrl-Shift-N starts the route to your last destination again from where you stand, and the Route to Your Target key (unbound by default) starts a route to your target: a group member where they stand, a creature at its nearest known spawn.
+* Navigation: when you die, a route to your corpse starts as soon as you are a ghost. The Automatically Navigate to Corpse setting (Navigation) turns it off.
 * Alt Gr (or Ctrl+Alt) speaks the distance to the waypoint you are walking to, like Sku. Holding it repeats the announcement every second. It stays silent while you type in an edit box. The Announce Distance Alt Gr setting in the Maps module turns it off, and the Announce Distance binding puts the same announcement on a key of your choice.
 * Speech through NVDA's SAPI bridge voice (SAPI2SR, as Sku's installer sets it up) is now cut when WowVision stops speech: the first line after a stop carries the bridge's interrupt mark, so a new line from a controller or a key no longer waits for the old one to finish. Real voices are unaffected.
 * The XP line in the general buffer names the level it fills towards.
@@ -76,9 +83,8 @@ This is a massive refactor of the codebase thanks to Claude Fable 5. The UI has 
 * The search boxes of the spellbook, the talent window and the Legacy trees read the game's suggestions: while typing, Up and Down speak the highlighted suggestion and its position, and Enter picks it (or searches the typed text when none is highlighted).
 * Added support for the Legacy window (the Toggle Legacy key, or the achievements key for its challenges page): the reward track with every level and its reward; the challenges with search, filter and the category tree (the list says which category it shows), each challenge with its Legacy points and a tooltip listing its description, reward and objectives, an opened challenge's objectives and track checkbox, and linking in chat from the context menu; and the three Legacy trees, each tree button with the points spent in it, the points left with the seasonal cap, the points still needed to open a row, and the talents as in the talent window.
 * Controller support. With the game's Enable Gamepad and Enable Gamepad UI options on, WowVision answers a gamepad next to the keyboard: the D-pad and face buttons work in WowVision windows (A left click, X right click, B close, Y tooltip, shoulders Tab and Shift-Tab), the right stick press turns to the waypoint and, held, puts the buffers on the D-pad, and the shortcut layer (both shoulders) opens navigation, chat, the scanner, the bars window and the WowVision menu. The gamepad main menu wheel reads as a window of two rows, the bars window lists the four gamepad action bars, and the keybinding window lets you add or remove controller buttons per binding. See the Controller page of the user guide. The left shoulder stands in for Alt, the left trigger for Shift and the right trigger for Ctrl. /wv padlog restarts the controller log kept for bug reports.
-* Known issue: I tried to support nearby quests and quest givers, but the functions to retrieve this data appear to be bugged in the Forever client.
-* Known Issue: WowVision settings are not persisting across reloads or game restarts. This appears to be a bug with the Forever client. I recommend setting up a macro to use the new /wv speech command to quickly set your speech settings upon login or /reload.
-* Known Issue: Range readouts are sparse and probably broken. I haven't been able to test this properly yet.
+* WowNav routes: with the Routes from WowNav setting (Navigation, off by default), every route request (F10, the scanner's Enter, the places list, /beacon to) is planned on Broesel33's navigation network for WoW: Forever and followed with his route rules: lifts, portals, the Deeprun Tram, ships and zeppelins with their docks, avoiding enemy outposts, and group members as targets. F10 then lists WowNav's targets and picks the start the same way as with the route data. Thanks to Broesel33 for the network and the engine.
+* WowNav routes: a route through a portal you walk into (the Teldrassil portals) announces the portal ahead and goes on after it, and a portal above or below the route no longer ends it early.
 
 ### Classic
 * Fixed a bug where edit fields for spell IDs (for example in monitors) would behave extremely inconsistently and often not actually set the spell ID correctly.
@@ -88,6 +94,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5. The UI has 
 #### The Burning Crusade Classic
 * Updated the TBC speech module to use the retail speech module. Speech output for TBC works again.
 * Implemented Sku's pathfinding data into TBC Anniversary. You can pathfind using f10. Note: pathfinding to scanner entries is not yet supported.
+* Fixed the spellbook staying silent for characters without a pet; the open tab is read.
 * Added the craft window, used by Enchanting and the hunter's Beast Training: the skill bar, the filters, the craft list, the details with reagents, and the Enchant or Train button.
 * Added the hunter's stable: the selected pet, the current pet and stable slots, buying a slot. Enter on a slot selects it or puts down the pet you picked up; Drag in a slot's context menu picks the pet up.
 
