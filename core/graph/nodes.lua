@@ -582,6 +582,73 @@ function nodes.openDropdown(target)
     end
 end
 
+-- A real Blizzard slider, as a number: left and right move it by a step,
+-- Enter types a value. The slider's own value-changed handler does the work
+-- (a voice volume slider calls C_VoiceChat.SetOutputVolume from it), so the
+-- control only sets the value, clamped to the slider's range. The step is
+-- the slider's own, at least a twentieth of the range. A disabled slider
+-- says so and is not moved.
+-- config: { slider, label?, valueText? }
+function nodes.proxySlider(config)
+    local slider = config.slider
+    if slider == nil then
+        error("proxySlider requires a slider")
+    end
+    local function range()
+        local low, high = slider:GetMinMaxValues()
+        return low or 0, high or 0
+    end
+    local low, high = range()
+    local span = high - low
+    local step = slider.GetValueStep ~= nil and slider:GetValueStep() or 0
+    if step == nil or step <= 0 or step < span / 20 then
+        step = span > 0 and span / 20 or 1
+    end
+    local function enabled()
+        return slider.IsEnabled == nil or slider:IsEnabled()
+    end
+    local vtable = nodes.number({
+        label = config.label or "",
+        get = function()
+            return slider:GetValue()
+        end,
+        set = function(value)
+            if not enabled() then
+                return
+            end
+            local lo, hi = range()
+            value = tonumber(value)
+            if value == nil then
+                return
+            end
+            slider:SetValue(math.max(lo, math.min(hi, value)))
+        end,
+        step = step,
+        largeStep = span > 0 and span / 4 or step * 5,
+        valueText = config.valueText or function()
+            local value = slider:GetValue()
+            if value == nil then
+                return nil
+            end
+            return tostring(math.floor(value + 0.5))
+        end,
+    })
+    if config.label == nil then
+        vtable.announcements[1].text = nil
+    end
+    tinsert(vtable.announcements, {
+        text = function()
+            if not enabled() then
+                return L["Disabled"]
+            end
+            return nil
+        end,
+        kind = kinds.enabled,
+    })
+    vtable.tooltipFrame = slider
+    return vtable
+end
+
 -- A real Blizzard check button: clicks are genuine, the checked state reads
 -- as the live value. Hidden targets yield nil, like proxyButton.
 -- config: { target, label?, allowHidden? }

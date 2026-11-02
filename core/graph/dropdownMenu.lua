@@ -176,10 +176,26 @@ end
 -- Controls inside a custom row (rootDescription:CreateTemplate / CreateFrame
 -- with an attached template): the level range's Min and Max edit boxes (the
 -- auction house filter, the Group Finder, crafting orders), the voice volume
--- rows' toggle button. Shown edit boxes, check buttons and buttons down to
--- three levels deep, in screen order (left to right, then top to bottom).
--- Sliders are not reached yet.
-local ROW_CONTROL_KINDS = { EditBox = true, CheckButton = true, Button = true }
+-- rows' toggle button and slider. Shown edit boxes, check buttons, buttons and
+-- sliders down to three levels deep, in screen order (left to right, then top
+-- to bottom).
+local ROW_CONTROL_KINDS = { EditBox = true, CheckButton = true, Button = true, Slider = true }
+
+-- The unit menu's voice volume sliders (UnitPopupCustomControls.lua) have no
+-- label of their own: named with the game's strings, by the mixin they carry.
+local function voiceSliderLabel(slider)
+    local named = {
+        { mixin = UnitPopupVoiceSpeakerVolumeSliderMixin, text = VOICE_CHAT_VOLUME },
+        { mixin = UnitPopupVoiceMicrophoneVolumeSliderMixin, text = VOICE_CHAT_MIC_VOLUME },
+        { mixin = UnitPopupVoiceUserVolumeSliderMixin, text = VOLUME },
+    }
+    for _, entry in ipairs(named) do
+        if entry.mixin ~= nil and entry.mixin.OnLoad ~= nil and slider.OnLoad == entry.mixin.OnLoad then
+            return entry.text
+        end
+    end
+    return nil
+end
 
 -- Labels for controls Blizzard leaves unlabelled, by their parentKey.
 local ROW_CONTROL_LABELS = { MinLevel = "Minimum", MaxLevel = "Maximum" }
@@ -228,6 +244,21 @@ local function rowControlLabel(control)
     if known ~= nil then
         return L[known]
     end
+    if control.kind == "Slider" then
+        local slider = control.frame
+        local voice = voiceSliderLabel(slider)
+        if voice ~= nil then
+            return voice
+        end
+        -- a slider template's own label (UISliderTemplateWithLabels: Text)
+        for _, key in ipairs({ "Label", "Text" }) do
+            local region = slider[key]
+            if region ~= nil and region.GetText ~= nil and (region:GetText() or "") ~= "" then
+                return region:GetText()
+            end
+        end
+        return nil
+    end
     if control.kind == "EditBox" then
         local instructions = control.frame.Instructions
         if instructions ~= nil and instructions.GetText ~= nil then
@@ -247,12 +278,21 @@ local function rowControlLabel(control)
     end
 end
 
+-- Sliders each get a line of their own after the row: on a slider, left and
+-- right move it (GraphHost:_arrow adjusts first), so one in a row would trap
+-- focus between its neighbours.
 local function emitRowControls(builder, item, controls, label, hasText, focus)
-    builder:startRow()
-    if hasText then
-        builder:addItem(ControlId.forObject(item), withFocus(nodes.text({ label = label }), focus))
-    end
+    local inRow, sliders = {}, {}
     for _, control in ipairs(controls) do
+        tinsert(control.kind == "Slider" and sliders or inRow, control)
+    end
+    if hasText or #inRow > 0 then
+        builder:startRow()
+        if hasText then
+            builder:addItem(ControlId.forObject(item), withFocus(nodes.text({ label = label }), focus))
+        end
+    end
+    for _, control in ipairs(inRow) do
         local controlLabel = rowControlLabel(control)
         local vtable
         if control.kind == "EditBox" then
@@ -279,7 +319,15 @@ local function emitRowControls(builder, item, controls, label, hasText, focus)
             builder:addItem(ControlId.forObject(control.frame), withFocus(vtable, focus))
         end
     end
-    builder:endRow()
+    if hasText or #inRow > 0 then
+        builder:endRow()
+    end
+    for _, control in ipairs(sliders) do
+        builder:addItem(
+            ControlId.forObject(control.frame),
+            withFocus(nodes.proxySlider({ slider = control.frame, label = rowControlLabel(control) }), focus)
+        )
+    end
 end
 
 local function emitItem(builder, item, focus)

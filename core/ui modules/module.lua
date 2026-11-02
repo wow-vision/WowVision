@@ -38,8 +38,9 @@ module:registerCommand({
 -- high character for: a real Blizzard context menu in scroll mode with a
 -- title, checkboxes, radio buttons, N buttons (default 60) and a scrolling
 -- submenu at the end; entries 1 and 50 and the submenu row have tooltips.
--- Custom rows: a level range (two edit boxes) and a row with a check button
--- and a button. A pick prints what was picked.
+-- Custom rows: a level range (two edit boxes), a row with a check button
+-- and a button, and a voice-style row with a button and a slider. A pick
+-- prints what was picked.
 module:registerCommand({
     name = "bigmenu",
     description = "Open a long scrolling test menu (optional number of entries)",
@@ -102,6 +103,33 @@ module:registerCommand({
                     print("Inner button clicked")
                 end)
                 return 160, 26
+            end)
+            -- a row shaped like the unit menu's voice volume rows: a toggle
+            -- button and a slider (0 to 100) with a label of its own
+            local volume = root:CreateFrame()
+            volume:AddInitializer(function(frame)
+                local mute = frame:AttachTemplate("UIPanelButtonTemplate")
+                mute:SetSize(60, 20)
+                mute:SetPoint("LEFT", frame, "LEFT", 0, 0)
+                mute:SetText("Test mute")
+                mute:SetScript("OnClick", function()
+                    print("Test mute clicked")
+                end)
+                local slider = frame:AttachTemplate("UISliderTemplate")
+                slider:SetSize(120, 17)
+                slider:SetPoint("LEFT", mute, "RIGHT", 6, 0)
+                slider:SetMinMaxValues(0, 100)
+                slider:SetValueStep(1)
+                if slider.SetObeyStepOnDrag ~= nil then
+                    slider:SetObeyStepOnDrag(true)
+                end
+                if slider.Label == nil then
+                    slider.Label = slider:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+                    slider.Label:SetPoint("BOTTOM", slider, "TOP", 0, 0)
+                end
+                slider.Label:SetText("Test volume")
+                slider:SetValue(50)
+                return 200, 30
             end)
             root:CreateTitle("Entries")
             for i = 1, count do
