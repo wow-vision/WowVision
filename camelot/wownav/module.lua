@@ -186,8 +186,8 @@ function engine:cancel()
     return running
 end
 
-function engine:search(text, px, py, map)
-    return module:search(text, px, py, map)
+function engine:search(text, px, py, map, opts)
+    return module:search(text, px, py, map, opts)
 end
 
 maps:setRouteEngine(engine)
@@ -235,7 +235,8 @@ end
 
 -- ---- destinations: his search of the WowNav catalogue of the player's map (the nearest 1000 hits), with the
 -- automatic waypoints nearby when they are shown. Returns the rows, nearest first, and the search info (capped).
-function module:search(text, px, py, map)
+-- opts.direct: F10's Direct (his /vn direct list): a point is set straight, so no hit is dropped as unreachable.
+function module:search(text, px, py, map, opts)
     local N = ready(self)
     if N == nil or map == nil or not catalog.covers(N, map) then
         return {}, nil
@@ -244,7 +245,7 @@ function module:search(text, px, py, map)
     -- the boarding points of the docks join the hits (his list with Dock:BoardingTargets)
     local extra = catalog.ensure(N, C, map) ~= nil and px ~= nil and dock.boardingRows(N, px, py) or nil
     local rows, info = catalog.search(N, C, map, text, px, py,
-        { showAuto = self.settings.showAuto == true, extra = extra })
+        { showAuto = self.settings.showAuto == true, extra = extra, direct = opts ~= nil and opts.direct == true })
     if info.reason ~= nil then
         say(string.format(L["WowNav catalogue not usable: %s"], tostring(info.reason)))
     end
@@ -349,8 +350,10 @@ end
 local function startRoute(self, request, outcome)
     local N = self:network()
     local trimmed = false
-    if request.dockTarget ~= nil then
-        -- a dock's route ends before a last drop (the tram's waiting nodes lie in the track bed)
+    if request.dockTarget ~= nil and request.dockTarget.facilityKind == "tram" then
+        -- a tram dock's route ends before a last drop (its waiting nodes lay in the track bed); a ship's pier slopes
+        -- down to the dock (Menethil: 3.6 yd over 30 yd to the dock to Auberdine), cut there it ended 70 yd early and
+        -- the boarding beacon had no point
         local cut = dock.trimDrop(N, outcome.plan.path)
         if cut ~= nil then
             outcome.plan.path = cut
@@ -478,16 +481,13 @@ function module:routeTo(target)
         end
         return true
     end
-    if type(target.data) == "table" and target.data.boardingTargetId ~= nil then
-        -- a boarding point: straight to it (his WowVisionNavigationStartDirect), no route
-        self:stopRoute(nil, true)
-        self.dockPath = dock.directPath(N, target.data)
-        maps:pathfind(self.dockPath)
-        return true
-    end
+    -- a boarding point ("At the vehicle") picked as a route's destination is a place like any other: routed to on the
+    -- network, never taken for its dock (it lies a few yards from the dock's waiting point); F10's Direct leads
+    -- straight to it instead
+    local boarding = type(target.data) == "table" and target.data.boardingTargetId ~= nil
     local dockTarget
-    local dockRow = dock.isDockRow(target.data) and target.data or nil
-    if dockRow == nil then
+    local dockRow = not boarding and dock.isDockRow(target.data) and target.data or nil
+    if dockRow == nil and not boarding then
         -- a position (scanner, places list, /beacon to, the route data's own points) that is a dock is that dock; a
         -- target at the far end of a line while the player is in its station is a ride to that end's dock
         local wownavRow = type(target.data) == "table" and target.data.tid ~= nil

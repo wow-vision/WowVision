@@ -216,9 +216,10 @@ local function listRow(N, item, german)
 end
 
 -- The search of the destination list. filterText "" lists the nearest targets. opts: { showAuto, german, R, extra,
--- limit, start } (extra: rows that already are rows, each with .entry, the target its text is searched in, and
--- .distance: the boarding points of the docks, his Dock:BoardingTargets; limit: fewer rows than C.SEARCH_LIMIT;
--- start: only targets that resolve to a network point, the ones a route can start at).
+-- limit, start, direct } (extra: rows that already are rows, each with .entry, the target its text is searched in,
+-- and .distance: the boarding points of the docks, his Dock:BoardingTargets; limit: fewer rows than C.SEARCH_LIMIT;
+-- start: only targets that resolve to a network point, the ones a route can start at; direct: no target is
+-- resolved or dropped, his list for /vn direct, where no route leads to the point).
 -- Returns the rows (nearest first, at most the limit, each with .distance) and info { total, limit, shown,
 -- capped } (total = matches before the reachability check). Without the catalogue: {}, info with .reason.
 function catalog.search(N, C, map, filterText, x, y, opts)
@@ -274,7 +275,7 @@ function catalog.search(N, C, map, filterText, x, y, opts)
                     -- a start needs its network point now; a destination may still have floors to choose or an
                     -- unchecked zone
                     local reachable = not opts.start
-                    if N.PointZoneLoaded(item.x, item.y) then
+                    if not opts.direct and N.PointZoneLoaded(item.x, item.y) then
                         local result = catalog.resolveListed(R, C, nav, item)
                         item.layerResolution = result
                         reachable = result.endNodeId ~= nil or (not opts.start and result.bands ~= nil)

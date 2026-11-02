@@ -284,6 +284,29 @@ function module:beaconTo(wx, wy, label, onArrive)
     end
 end
 
+-- Exactly one point, no route (F10's "Direct", WowNav's /vn direct): a
+-- straight beacon to the destination, whatever guidance ran before (a route
+-- engine's too) ends first. Arrival says the point's name; onArrive runs
+-- after it.
+function module:directTo(wx, wy, label, onArrive)
+    local engine = self.routeEngine
+    if engine ~= nil and engine.cancel ~= nil then
+        engine:cancel()
+    end
+    self:stopPath()
+    local path = self.Path:new()
+    path:add({ x = wx, y = wy, n = label })
+    path.events.complete:subscribe(self, function()
+        self.path = nil
+        WowVision:speak(L["Arrived"] .. (label ~= nil and (" " .. label) or ""))
+        if onArrive ~= nil then
+            onArrive()
+        end
+    end)
+    self:pathfind(path)
+    WowVision:speak(string.format(L["Direct: %s, %d yards"], label or "", self:distanceTo(wx, wy) or 0))
+end
+
 -- Another route engine can take over the routing (camelot/wownav registers
 -- WowNav). While its setting is on it gets every route request: the F10
 -- window's Enter (the scanner's Enter and the places list open F10 first,
@@ -296,8 +319,9 @@ end
 -- at, nearest first, { {id, n, x, y, z, water, distance} }, routeTo(target) ->
 -- true when it took the request (false: not here, the request goes the old
 -- way; target.start is the chosen entry point's row, the route starts there),
--- search(text, px, py, map) -> rows, info: its targets matching the text
--- ("" = all), nearest first, { {id, n, x, y, z, detail, distance} }
+-- search(text, px, py, map, opts) -> rows, info: its targets matching the
+-- text ("" = all), nearest first, { {id, n, x, y, z, detail, distance} }
+-- (opts.direct: for F10's Direct, no reachability check)
 -- (detail: said after the distance), info { capped, shown, total } when the
 -- engine cut the list; cancel() -> true when it ended guidance of its own
 -- (Shift-F12). While it is active, F10 lists its targets only.
