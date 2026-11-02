@@ -429,6 +429,29 @@ function Route:appendLogicalTarget(source, result)
     self.logicalPrepoint = physical
 end
 
+-- A route from a target picked as its start (the flight master in F10) begins at the target itself: its exact
+-- position is the first waypoint, its network point the second. Like the logical end point, it stays outside of graph
+-- and height proofs; its arrival radius is Route.ARRIVAL_START_RADIUS. Main thread, after Route:begin.
+Route.ARRIVAL_START_RADIUS = 3.0     -- yd: the start point at the picked target's position
+
+function Route:prependStart(x, y, z)
+    if not self.path or type(x) ~= "number" or type(y) ~= "number" then
+        return
+    end
+    local N = self.N
+    local first = self.path[1]
+    local fx, fy, fz = N.Position(first)
+    -- the target stands on its network point: nothing to walk before it
+    if distance(x, y, fx, fy) <= Route.ARRIVAL_START_RADIUS then
+        return
+    end
+    local id = N.NewVirtual({ x = x, y = y, z = z or fz, type = "logical", radius = Route.ARRIVAL_START_RADIUS })
+    table.insert(self.path, 1, id)
+    self.pathIndex = 1
+    self:setHeightAnchor(z or fz)
+    N.KeepVirtual(self.path, self.targetBindingId)
+end
+
 -- Makes a plan the running route (main thread). source/result: the target and its resolution.
 function Route:begin(plan, source, result, name)
     local N = self.N

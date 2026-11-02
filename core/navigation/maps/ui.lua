@@ -18,8 +18,11 @@ local kinds = graph.kinds
 -- by distance, presented as ONE cursor node (chat-reader pattern: tens of
 -- thousands of entries cannot be per-tick builder nodes). Enter on a
 -- destination routes from the selected entry and closes the window.
-
-local ENTRY_COUNT = 20
+--
+-- A route engine (WowNav) gets the same window: its nearest points to start
+-- at are the entry points and the route starts at the one selected.
+-- While the player swims or dives the nearest water point is preselected,
+-- in its place by distance (dry land may be nearer).
 
 local function entryLabel(entry)
     local wp = entry.waypoint
@@ -49,25 +52,23 @@ local function ensureData(screen)
     end
     local _, _, _, map = UnitPosition("player")
     screen._px, screen._py, screen._map = px, py, map
-    -- With a route engine on (WowNav), its targets join the list and it finds the entry point itself: no entry choice.
+    -- With a route engine on (WowNav), its targets are the destinations and its network's waypoints the entry points.
     screen._waypoints, screen._engine = module:destinationWaypoints()
-    -- an engine may say at once that no route can start here (WowNav: floor not clear, no network)
-    if screen._engine ~= nil and screen._engine.listOpened ~= nil then
-        screen._engine:listOpened()
+    screen._entries = module:entryPoints(screen._waypoints, px, py, map, screen._engine)
+    local entry, noWater = module:preselectedEntry(screen._entries)
+    if entry ~= nil then
+        screen._entryId = entry.waypoint.id
     end
-    if screen._engine ~= nil then
-        screen._entries = {}
-    else
-        screen._entries = WowVision.Router.nearest(screen._waypoints, px, py, ENTRY_COUNT, WowVision.Router.hasLinks)
-    end
-    if screen._entries[1] ~= nil then
-        screen._entryId = screen._entries[1].waypoint.id
+    -- only the engine's points know water: swimming without one nearby is said
+    if noWater and screen._engine ~= nil then
+        WowVision:speak(L["No water point nearby"])
     end
     screen._search = ""
     local target = module.pendingTarget
     module.pendingTarget = nil
     if target ~= nil then
-        local wp = { id = TARGET_ID, n = target.label, x = target.x, y = target.y, virtual = true, onArrive = target.onArrive }
+        local wp = { id = TARGET_ID, n = target.label, x = target.x, y = target.y, virtual = true, onArrive = target.onArrive,
+            routeData = target.data }
         screen._waypoints[TARGET_ID] = wp
         screen._target = wp
         screen._destIndex = 1
@@ -121,6 +122,16 @@ local function destinations(screen)
     end
     screen._destinations = found
     return found
+end
+
+-- The entry point the player selected (or the preselected one), nil without any.
+local function selectedEntry(screen)
+    for _, entry in ipairs(screen._entries) do
+        if entry.waypoint.id == screen._entryId then
+            return entry
+        end
+    end
+    return nil
 end
 
 local function destinationCursor(screen)
@@ -212,7 +223,21 @@ local function destinationCursor(screen)
             end
             WowVision.UIHost:closeWindow("atlas")
             local wp = entry.waypoint
-            if screen._engine ~= nil and module:routeTo(wp.x, wp.y, wp.n, wp.onArrive, wp.z, wp) then
+            if screen._engine ~= nil then
+                -- the engine's own row is its target data; the window's target brings its source's (scanner)
+                local data = wp
+                if wp.virtual then
+                    data = wp.routeData
+                end
+                local start = selectedEntry(screen)
+                if module:routeTo(wp.x, wp.y, wp.n, wp.onArrive, wp.z, data, start and start.waypoint) then
+                    return
+                end
+                if wp.virtual then
+                    module:beaconTo(wp.x, wp.y, wp.n, wp.onArrive)
+                else
+                    WowVision:speak(L["No route found"])
+                end
                 return
             end
             local routed = module:navigateTo(wp.id, screen._waypoints, { entryId = screen._entryId, onArrive = wp.onArrive })
@@ -260,7 +285,7 @@ local function destinationCursor(screen)
     }
 end
 
--- The entry point stop: the closest waypoints, Enter selects one (only without a route engine).
+-- The entry point stop: the closest waypoints, Enter selects one.
 local function renderEntries(builder, screen)
     builder:beginStop("entries")
     builder:pushContext("entries", L["Entry Points"])
@@ -302,9 +327,7 @@ local function render(builder, screen)
     end
     builder:pushContext("navigation", L["Navigation"])
 
-    if screen._engine == nil then
-        renderEntries(builder, screen)
-    end
+    renderEntries(builder, screen)
 
     builder:beginStop("search")
     builder:addItem(

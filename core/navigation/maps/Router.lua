@@ -117,6 +117,23 @@ function Router.nearest(waypoints, x, y, count, filter)
     return found
 end
 
+-- The entry point preselected among `entries` (nearest first, as from
+-- Router.nearest): the nearest; while swimming the nearest one marked water
+-- (wp.water), without moving it to the front -- dry land may be nearer.
+-- Returns the entry (nil for an empty list) and true when swimming found no
+-- water entry, so the nearest is preselected instead.
+function Router.preselectEntry(entries, swimming)
+    if swimming then
+        for _, entry in ipairs(entries) do
+            if entry.waypoint.water == true then
+                return entry, false
+            end
+        end
+        return entries[1], true
+    end
+    return entries[1], false
+end
+
 -- ---------------------------------------------------------------------------
 -- A*
 -- ---------------------------------------------------------------------------

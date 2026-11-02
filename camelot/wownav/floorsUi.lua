@@ -1,12 +1,10 @@
--- The floor choice for a WowNav route (his /vn ebene): opens only when floors are stacked at the start or at the
--- target and nothing tells which one is meant (no height from the game, no route state, no height of the target, or
--- a target over several certified floors). One button per floor, lowest first, with its height (his prompt names
--- the height of each band or level); a floor without a network path from here says so (his band_no_path). Enter
--- picks it and the route request goes on with that floor. Where a module knows the floors there by name
--- (maps.floorName(x, y, height), optional), the name stands in for the height; two floors of one name keep it.
---
--- For the player's own floor there is also his start-point mode (/vn hier): "Start from a nearby point" lists the
--- nearest waypoints of the network with their type, height and distance; the one picked is where the route starts.
+-- The target's floor choice for a WowNav route (his /vn ebene): opens only when floors are stacked at the target and
+-- nothing tells which one is meant (no height of the target, or a target over several certified floors). One button
+-- per floor, lowest first, with its height (his prompt names the height of each band or level); a floor without a
+-- network path from the start says so (his band_no_path). Enter picks it and the route request goes on with that
+-- floor. Where a module knows the floors there by name (maps.floorName(x, y, height), optional), the name stands in
+-- for the height; two floors of one name keep it. The player's own floor is never asked: the route starts at the
+-- entry point picked in F10.
 
 local module = WowVision.base.navigation.wownav
 local L = module.L
@@ -16,7 +14,6 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 
 local FLOORS = "wownavFloors"
-local START = "wownavStart"
 
 local maps = WowVision.base.navigation.maps
 
@@ -61,8 +58,7 @@ end
 local function renderFloors(builder, screen)
     local choice = module:floorChoice()
     builder:beginStop("floors")
-    local title = choice ~= nil and choice.kind == "start" and L["Choose your floor"] or L["Choose the target's floor"]
-    builder:pushContext("floors", title)
+    builder:pushContext("floors", L["Choose the target's floor"])
     if choice == nil then
         builder:addItem(ControlId.structural("empty"), nodes.text({ label = L["Empty"] }))
     else
@@ -77,15 +73,6 @@ local function renderFloors(builder, screen)
                 end,
             }))
         end
-        if choice.kind == "start" and choice.request ~= nil then
-            local request = choice.request
-            builder:addItem(ControlId.structural("startPoints"), nodes.button({
-                label = L["Start from a nearby point"],
-                onActivate = function()
-                    module:openStartPoints(request)
-                end,
-            }))
-        end
     end
     builder:popContext()
 end
@@ -94,30 +81,4 @@ module:registerWindow({
     type = "ManualWindow",
     name = FLOORS,
     graphScreen = { render = renderFloors, captureClose = true },
-})
-
-local function renderStart(builder, screen)
-    local choice = module:startChoice()
-    builder:beginStop("startPoints")
-    builder:pushContext("startPoints", L["Where are you standing?"])
-    if choice == nil or #choice.points == 0 then
-        builder:addItem(ControlId.structural("empty"), nodes.text({ label = L["No waypoint nearby"] }))
-    else
-        for index, point in ipairs(choice.points) do
-            local captured = point
-            builder:addItem(ControlId.structural("point:" .. index), nodes.button({
-                label = string.format("%s, %d %s", point.n, math.floor(point.distance + 0.5), L["yards"]),
-                onActivate = function()
-                    module:chooseStartPoint(captured)
-                end,
-            }))
-        end
-    end
-    builder:popContext()
-end
-
-module:registerWindow({
-    type = "ManualWindow",
-    name = START,
-    graphScreen = { render = renderStart, captureClose = true },
 })

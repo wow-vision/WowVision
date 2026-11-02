@@ -195,12 +195,8 @@ local suite = {
         t:assertEqual(text.targetName({ nameEn = "Guard", nameDe = "Wache" }, false), "Guard")
         t:assertEqual(text.categories({ category = { "quest_giver", "trainer" } }), "quest giver, trainer")
         t:assertEqual(text.categories({ category = "object_type_5" }), "object type 5")
-        -- automatic waypoints: his order decides the type when several codes are set
-        t:assertEqual(text.autoType(2), "gate")
-        t:assertEqual(text.autoType(1 + 2), "gate")
-        t:assertEqual(text.autoType(1 + 16), "level change")
-        t:assertEqual(text.autoType(0), "waypoint")
-        t:assertEqual(text.autoName(2, 33.6), "Automatic: gate, height 34")
+        -- automatic waypoints: named by their height only
+        t:assertEqual(text.autoName(33.6), "Auto, height 34")
     end,
 }
 
@@ -361,7 +357,7 @@ if haveNetwork then
         t:assertNotNil(arrived, "the route ends at the target")
     end
 
-    suite["automatic waypoints nearby: nearest first, named by type and height, routed to straight"] = function(t)
+    suite["automatic waypoints nearby: nearest first, named by height, routed to straight"] = function(t)
         setup()
         local game = newGame()
         local route = Route.new(game.env)
@@ -372,7 +368,7 @@ if haveNetwork then
         for i, p in ipairs(points) do
             t:assertTrue(p.distance <= catalog.NODE_SELECTION_RADIUS)
             t:assertNotNil(p.nodeId)
-            t:assertTrue(p.n:find("Automatic: ", 1, true) == 1, p.n)
+            t:assertTrue(p.n:find("Auto, height ", 1, true) == 1, p.n)
             if i > 1 then
                 t:assertTrue(p.distance >= points[i - 1].distance)
             end
@@ -385,6 +381,204 @@ if haveNetwork then
         local fixed = runJob(N.Job(route.prepareNode, route, far.nodeId, points[1].nodeId))
         t:assertEqual(fixed.kind, "start")
         t:assertEqual(fixed.plan.path[1], points[1].nodeId)
+    end
+
+    suite["F10's entry points: the nearest targets, automatic waypoints only with the setting"] = function(t)
+        setup()
+        local game = newGame()
+        local route = Route.new(game.env)
+        local x, y = bindablePosition(STORMWIND, game, route)
+        local function sorted(list)
+            for i = 2, #list do
+                if list[i].distance < list[i - 1].distance then
+                    return false
+                end
+            end
+            return true
+        end
+        local entries = catalog.entryPoints(N, C, 0, x, y, 20, { german = false })
+        t:assertEqual(#entries, 20)
+        t:assertTrue(sorted(entries), "nearest first")
+        for _, e in ipairs(entries) do
+            t:assertNotNil(e.tid, "a target of the catalogue")
+            t:assertNil(e.nodeId, "no automatic waypoint without the setting: " .. tostring(e.n))
+            t:assertNotNil(e.resolution and e.resolution.endNodeId, "a start needs its network point")
+        end
+        local withAuto = catalog.entryPoints(N, C, 0, x, y, 20, { showAuto = true, german = false })
+        t:assertEqual(#withAuto, 20)
+        t:assertTrue(sorted(withAuto), "nearest first, both kinds")
+        local auto = 0
+        for _, e in ipairs(withAuto) do
+            auto = auto + (e.nodeId ~= nil and 1 or 0)
+        end
+        t:assertTrue(auto > 0, "the setting adds the network's waypoints")
+    end
+
+    suite["standing at a flight master, it heads the entry points; the route starts at its network point"] = function(t)
+        setup()
+        local game = newGame()
+        local route = Route.new(game.env)
+        bindablePosition(STORMWIND, game, route)
+        local master = rowsWith(zoneRows(STORMWIND), "flight master")
+        t:assertNotNil(master, "Stormwind has a flight master")
+        local x, y = master.x + 1, master.y
+        for _, showAuto in ipairs({ false, true }) do
+            local entries = catalog.entryPoints(N, C, 0, x, y, 20, { showAuto = showAuto, german = false })
+            local found
+            for i, e in ipairs(entries) do
+                if e.tid == master.tid then
+                    found = i
+                end
+            end
+            t:assertNotNil(found, "the flight master is an entry point (showAuto " .. tostring(showAuto) .. ")")
+            for i = 1, found - 1 do
+                t:assertTrue(entries[i].distance <= entries[found].distance, "only nearer points before it")
+            end
+        end
+        -- the start is the flight master's network point, resolved when the route is asked for
+        local entries = catalog.entryPoints(N, C, 0, x, y, 20, { german = false })
+        local picked
+        for _, e in ipairs(entries) do
+            if e.tid == master.tid then
+                picked = e
+            end
+        end
+        local startId = catalog.startNode(N, R, catalog.activeNav(), picked, 0)
+        t:assertNotNil(startId)
+        local target = rowsWith(zoneRows(STORMWIND), "innkeeper")
+        local contract = catalog.contract(target, 0)
+        local outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = 0 }, startId))
+        if outcome.kind == "choose" then
+            contract.heightBand = 1
+            outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = 0 }, startId))
+        end
+        t:assertEqual(outcome.kind, "start", tostring(outcome.reason))
+        t:assertEqual(outcome.plan.path[1], startId, "the route starts at the picked entry point")
+        -- an automatic waypoint starts at itself
+        local node = catalog.autoPoints(N, x, y, nil, 1)[1]
+        t:assertEqual(catalog.startNode(N, R, catalog.activeNav(), node, 0), node.nodeId)
+    end
+
+    suite["a route from a picked target begins at the target itself, then at its network point"] = function(t)
+        setup()
+        local LOCH_MODAN = 1432
+        local game = newGame()
+        local route = Route.new(game.env)
+        N.LoadZone(LOCH_MODAN)
+        -- Thorgrum Borrelson, the gryphon master of Thelsamar: his network point lies on the road, yards away
+        local master = zoneRows(LOCH_MODAN, "thorgrum")[1]
+        t:assertNotNil(master, "Loch Modan's gryphon master")
+        game.x, game.y = master.x + 1, master.y
+        local picked
+        for _, e in ipairs(catalog.entryPoints(N, C, 0, game.x, game.y, 20, { german = false })) do
+            if e.tid == master.tid then
+                picked = e
+            end
+        end
+        t:assertNotNil(picked, "he is an entry point")
+        local startId, startZ = catalog.startNode(N, R, catalog.activeNav(), picked, 0)
+        local sx, sy = N.Position(startId)
+        t:assertTrue(Route.distance(sx, sy, master.x, master.y) > Route.ARRIVAL_START_RADIUS, "not where he stands")
+        route.anchor.last = startZ
+        -- a quest giver farther away (not the gryphon master, who gives quests too)
+        local target
+        for _, r in ipairs(zoneRows(LOCH_MODAN)) do
+            if target == nil and r.tid ~= master.tid and r.detail ~= nil and r.detail:find("quest giver", 1, true)
+                and Route.distance(r.x, r.y, master.x, master.y) > 200 then
+                target = r
+            end
+        end
+        t:assertNotNil(target, "a quest giver away from him")
+        local contract = catalog.contract(target, 0)
+        local outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = 0 }, startId))
+        if outcome.kind == "choose" then
+            contract.heightBand = 1
+            outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = 0 }, startId))
+        end
+        t:assertEqual(outcome.kind, "start", tostring(outcome.reason))
+        route:begin(outcome.plan, contract, outcome.result, target.n)
+        route:prependStart(picked.x, picked.y, picked.z)
+        local fx, fy = N.Position(route.path[1])
+        t:assertEqual(route.pathIndex, 1)
+        t:assertTrue(Route.distance(fx, fy, master.x, master.y) < 0.01, "the first waypoint is the gryphon master")
+        t:assertEqual(route.path[2], startId, "then his network point")
+        -- standing at him: the first waypoint is reached, the route goes on to his network point
+        local event
+        for _ = 1, 3 do
+            game.t = game.t + 0.5
+            event = route:update(game.x, game.y) or event
+        end
+        t:assertEqual(event and event.kind, "advance")
+        t:assertEqual(route.pathIndex, 2)
+    end
+
+    suite["swimming: water entry points are marked, the nearest in reach joins a list without one"] = function(t)
+        setup()
+        -- a water waypoint with a checked exit, and a land waypoint less than 90 yd from it
+        local water, land
+        for _, zoneId in ipairs({ STORMWIND, ELWYNN }) do
+            N.LoadZone(zoneId)
+            for i = 0, 20000 do
+                local id = zoneId * N.ZONE_BASE + i
+                if not N.Exists(id) then
+                    break
+                end
+                if water == nil and N.Area(id) == "WATER" and not N.NoExit(id) then
+                    water = id
+                end
+            end
+            if water ~= nil then
+                local wx, wy = N.Position(water)
+                for i = 0, 20000 do
+                    local id = zoneId * N.ZONE_BASE + i
+                    if not N.Exists(id) then
+                        break
+                    end
+                    local lx, ly = N.Position(id)
+                    if N.Area(id) ~= "WATER" and (lx - wx) ^ 2 + (ly - wy) ^ 2 < 90 * 90 then
+                        land = id
+                        break
+                    end
+                end
+                break
+            end
+        end
+        t:assertNotNil(water, "the data has a water waypoint")
+        t:assertNotNil(land, "with land near it")
+        local wx, wy = N.Position(water)
+        for _, showAuto in ipairs({ true, false }) do
+            local inWater = catalog.entryPoints(N, C, 0, wx, wy, 20, { showAuto = showAuto, swimming = true,
+                german = false })
+            local marked
+            for _, e in ipairs(inWater) do
+                if e.nodeId == water then
+                    marked = e
+                end
+                if e.water then
+                    t:assertNotNil(e.nodeId, "only the network's waypoints are water points")
+                end
+            end
+            t:assertNotNil(marked, "swimming on it, the water waypoint is listed (showAuto " .. tostring(showAuto) .. ")")
+            t:assertTrue(marked.water, "and marked water")
+        end
+        -- one entry asked for, without the setting: swimming adds the nearest water point, whatever the setting
+        local lx, ly = N.Position(land)
+        local dry = catalog.entryPoints(N, C, 0, lx, ly, 1, { german = false })
+        t:assertEqual(#dry, 1)
+        if not dry[1].water then
+            local wet = catalog.entryPoints(N, C, 0, lx, ly, 1, { swimming = true, german = false })
+            t:assertEqual(#wet, 2)
+            local waterRows = 0
+            for _, e in ipairs(wet) do
+                if e.water then
+                    waterRows = waterRows + 1
+                    t:assertNotNil(e.nodeId)
+                    t:assertTrue(e.distance <= N.WATER_EXIT_RADIUS)
+                end
+            end
+            t:assertEqual(waterRows, 1)
+            t:assertTrue(wet[2].distance >= wet[1].distance, "at its place by distance")
+        end
     end
 
     suite["a scanner target (a position without height) is resolved and routed like a list target"] = function(t)
