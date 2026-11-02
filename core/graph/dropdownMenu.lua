@@ -119,13 +119,67 @@ local function rowLabel(fontStrings)
     end
 end
 
-local function emitItem(builder, item)
+-- focus (scrolling menus, see menuRowFocus): { onFocus, onFocusTick } run
+-- before a node's own hooks.
+local function withFocus(vtable, focus)
+    if focus == nil then
+        return vtable
+    end
+    for _, key in ipairs({ "onFocus", "onFocusTick" }) do
+        local own, extra = vtable[key], focus[key]
+        if own == nil then
+            vtable[key] = extra
+        else
+            vtable[key] = function(...)
+                extra(...)
+                return own(...)
+            end
+        end
+    end
+    return vtable
+end
+
+-- A row's tooltip, read on the tooltip key like any control's. Blizzard shows
+-- it from the row's mouse-enter: the element description's onEnter
+-- (MenuUtil's SetTooltip, the unit menus' tooltip text). Running the row's
+-- whole OnEnter would also open and collapse submenus (the reason rows are
+-- never hovered), so only the description's onEnter runs, filling the menu's
+-- own tooltip frame, which is read and hidden again. Rows without one get no
+-- tooltip.
+local function attachMenuTooltip(vtable, item)
+    local description = descriptionOf(item)
+    if description == nil then
+        return vtable
+    end
+    local okEnter, onEnter = pcall(function()
+        if description.GetOnEnter ~= nil then
+            return description:GetOnEnter()
+        end
+        return description.onEnter
+    end)
+    if not okEnter or type(onEnter) ~= "function" then
+        return vtable
+    end
+    local okFrame, tooltipFrame = pcall(description.GetTooltipFrame, description)
+    vtable.tooltipFrame = item
+    vtable.tooltip = {
+        type = "Game",
+        mode = "immediate",
+        frame = okFrame and tooltipFrame or nil,
+        populate = function(_, frame)
+            onEnter(frame, description)
+        end,
+    }
+    return vtable
+end
+
+local function emitItem(builder, item, focus)
     local fontStrings, legacyCheck = itemRegions(item)
     local label = rowLabel(fontStrings)
 
     if item:GetObjectType() ~= "Button" then
         if #fontStrings > 0 then
-            builder:addItem(ControlId.forObject(item), nodes.text({ label = label }))
+            builder:addItem(ControlId.forObject(item), withFocus(nodes.text({ label = label }), focus))
         end
         return
     end
@@ -136,7 +190,7 @@ local function emitItem(builder, item)
         -- ForceOpenSubmenu bypasses the manager's IsMouseOver gate (the
         -- reason synthetic hover can never work).
         local captured = item
-        builder:addItem(ControlId.forObject(item), {
+        builder:addItem(ControlId.forObject(item), withFocus(attachMenuTooltip({
             controlType = graph.controlTypes.dropdown,
             announcements = { { text = label, kind = kinds.label } },
             onActivate = function()
@@ -150,7 +204,7 @@ local function emitItem(builder, item)
                     geterrorhandler()("dropdown submenu: " .. tostring(err))
                 end
             end,
-        })
+        }, captured), focus))
         return
     end
 
@@ -161,7 +215,7 @@ local function emitItem(builder, item)
     -- edit box instead. Menus opened by secure clicks keep the real row.
     if dropdown.copyName ~= nil and COPY_CHARACTER_NAME ~= nil and label() == COPY_CHARACTER_NAME then
         local name = dropdown.copyName
-        builder:addItem(ControlId.forObject(item), {
+        builder:addItem(ControlId.forObject(item), withFocus({
             controlType = graph.controlTypes.button,
             announcements = { { text = label, kind = kinds.label } },
             onActivate = function()
@@ -172,7 +226,7 @@ local function emitItem(builder, item)
                     WowVision.graphHost:openCopyBox(name)
                 end)
             end,
-        })
+        }, focus))
         return
     end
 
@@ -224,7 +278,7 @@ local function emitItem(builder, item)
             kind = kinds.value,
         })
     end
-    builder:addItem(ControlId.forObject(item), vtable)
+    builder:addItem(ControlId.forObject(item), withFocus(attachMenuTooltip(vtable, item), focus))
 end
 
 -- Buttons the menu attaches to a row: the gear and delete buttons on a layout
@@ -306,22 +360,25 @@ end
 -- A menu row with attached buttons is a horizontal row: the row first, then
 -- each button on the right arrow. Up and down between rows land on the row
 -- text. A row without buttons stays a single item.
-function dropdown.emitRow(builder, item)
+function dropdown.emitRow(builder, item, focus)
     local buttons = dropdown.rowButtons(item)
     if #buttons == 0 then
-        emitItem(builder, item)
+        emitItem(builder, item, focus)
         return
     end
     builder:startRow()
-    emitItem(builder, item)
+    emitItem(builder, item, focus)
     for _, button in ipairs(buttons) do
         builder:addItem(
             ControlId.forObject(button),
-            nodes.proxyButton({
-                target = button,
-                allowHidden = true,
-                label = dropdown.rowButtonLabel(button),
-            })
+            withFocus(
+                nodes.proxyButton({
+                    target = button,
+                    allowHidden = true,
+                    label = dropdown.rowButtonLabel(button),
+                }),
+                focus
+            )
         )
     end
     builder:endRow()
@@ -340,31 +397,148 @@ if MenuProxyMixin ~= nil and MenuProxyMixin.OnLoad ~= nil then
     end)
 end
 
--- Every open menu frame in the chain: the root from the manager plus every
--- tracked menu frame currently shown. Sorted by left edge -- submenus
--- anchor to their parent row's right, so this is chain order.
-local function openMenuFrames(root)
+-- The menu a submenu frame hangs from: a submenu is anchored to the row that
+-- opened it (MenuManagerMixin:GenerateSubmenuInternal, TOPLEFT to the row's
+-- TOPRIGHT), and that row lies in its menu: a child of it, or in a scrolling
+-- menu a child of its ScrollBox's scroll target, so the parents are walked up
+-- to the first menu frame. A submenu that would run off the screen is flipped
+-- to the row's other side, still anchored to it.
+local function anchorMenu(frame)
+    local ok, _, row = pcall(frame.GetPoint, frame, 1)
+    if not ok or type(row) ~= "table" or row.GetParent == nil then
+        return nil
+    end
+    local current = row
+    for _ = 1, 4 do
+        local okParent, parent = pcall(current.GetParent, current)
+        if not okParent or parent == nil then
+            return nil
+        end
+        if trackedMenus[parent] or parent == dropdown.frame then
+            return parent
+        end
+        current = parent
+    end
+    return nil
+end
+
+-- The chain in order, root first: each level is the shown menu anchored to a
+-- row of the level before. NOT by left edge: a flipped submenu (a menu opened
+-- at the cursor near the screen's right edge) lies left of its parent, and
+-- sorting by position read the root again as level 2 (Set Loot
+-- Specialization "opened the same menu"). Menus whose anchor cannot be
+-- followed come last, by left edge, as before. anchorOf(frame) -> parent menu.
+function dropdown.chainMenus(root, shown, anchorOf, leftOf)
     local menus = { root }
-    for frame in pairs(trackedMenus) do
-        if frame ~= root and frame:IsShown() then
-            tinsert(menus, frame)
+    local remaining = {}
+    for _, frame in ipairs(shown) do
+        if frame ~= root then
+            tinsert(remaining, frame)
         end
     end
-    table.sort(menus, function(a, b)
-        return (a:GetLeft() or 0) < (b:GetLeft() or 0)
+    local found = true
+    while found and #remaining > 0 do
+        found = false
+        local last = menus[#menus]
+        for i, frame in ipairs(remaining) do
+            if anchorOf(frame) == last then
+                tinsert(menus, frame)
+                table.remove(remaining, i)
+                found = true
+                break
+            end
+        end
+    end
+    table.sort(remaining, function(a, b)
+        return (leftOf(a) or 0) < (leftOf(b) or 0)
     end)
+    for _, frame in ipairs(remaining) do
+        tinsert(menus, frame)
+    end
     return menus
+end
+
+-- Every open menu frame in the chain: the root from the manager plus every
+-- tracked menu frame currently shown, in chain order.
+local function openMenuFrames(root)
+    local shown = {}
+    for frame in pairs(trackedMenus) do
+        if frame ~= root and frame:IsShown() then
+            tinsert(shown, frame)
+        end
+    end
+    return dropdown.chainMenus(root, shown, anchorMenu, function(frame)
+        return frame:GetLeft()
+    end)
 end
 graph.dropdown.openMenuFrames = openMenuFrames
 
 -- A title row (the player's name, "Interact", "Other Options"): a shown
 -- non-button row carrying text. Returns its text, or nil for anything else
 -- (buttons, dividers, spacers).
-local function titleText(item)
-    if not item:IsShown() or item:GetObjectType() == "Button" then
+local function titleText(item, shown)
+    if not shown or item:GetObjectType() == "Button" then
         return nil
     end
     return rowLabel(itemRegions(item))()
+end
+
+-- A menu's rows in order, and whether they all count as shown. A menu
+-- taller than its scroll extent (rootDescription:SetScrollMode) moves EVERY
+-- row frame into its ScrollBox's data provider (MenuMixin's layout:
+-- dataProvider:Insert(frame)): the rows are all built and initialized, but
+-- only those scrolled into view are shown, and they are no longer the menu
+-- frame's own children past the ScrollBox and ScrollBar. The provider holds
+-- the real row frames, so every row is read and clicked as in a short menu;
+-- rows out of view count as shown. A short menu: the frame's children after
+-- the ScrollBox and ScrollBar (the first two), shown ones only.
+local function menuRows(menuFrame)
+    local scrollBox = menuFrame.ScrollBox
+    if
+        scrollBox ~= nil
+        and scrollBox:IsShown()
+        and scrollBox.HasDataProvider ~= nil
+        and scrollBox:HasDataProvider()
+    then
+        local rows = {}
+        for _, frame in scrollBox:GetDataProvider():Enumerate() do
+            tinsert(rows, frame)
+        end
+        return rows, true
+    end
+    local children = { menuFrame:GetChildren() }
+    local rows = {}
+    for i = 3, #children do
+        tinsert(rows, children[i])
+    end
+    return rows, false
+end
+dropdown.menuRows = menuRows
+
+-- Scrolling menus, two ways to reach a row out of view:
+-- - true (the scroll way, as nodes.scrollBoxList in scrollBox.lua): focus
+--   scrolls the row into view with ScrollToElementDataIndex, and each tick
+--   pulls it back if it slipped out, so the screen follows focus and the
+--   click lands on a shown row. Not scrollBoxList itself: its focus also
+--   hovers the row, and menu rows are never hovered (see the top of the file).
+-- - false (the direct way): never scroll; rows out of view stay hidden and
+--   are clicked hidden. The menu's ScrollBox holds the real, initialized row
+--   frames, so that works too, and it never writes the scroll position. Set
+--   this to false if scrolling a menu ever taints its rows (addon-driven
+--   scrolling tainted the old hybrid scroll lists: wow-taint-scrolling).
+dropdown.SCROLL_INTO_VIEW = true
+
+-- The focus hooks that keep a scrolling menu's row in view (the scroll way).
+-- Scrolling only when the row is out of view: every scroll of a menu
+-- collapses its submenus (MenuMixin's OnScroll callback).
+local function menuRowFocus(menuFrame, index, item)
+    local scrollBox = menuFrame.ScrollBox
+    local function bringIntoView()
+        if not item:IsVisible() then
+            scrollBox:ScrollToElementDataIndex(index)
+        end
+    end
+    return { onFocus = bringIntoView, onFocusTick = bringIntoView }
 end
 
 -- Title rows are structure, not stops: each becomes the CONTEXT of the rows
@@ -376,15 +550,15 @@ end
 local function renderOneMenu(builder, menuFrame, levelIndex)
     builder:beginStop("menu:" .. levelIndex)
     builder:pushContext("menu:" .. levelIndex, L["Dropdown"])
-    local frames = { menuFrame:GetChildren() }
-    local pendingTitle, pendingItem = nil, nil
+    local rows, allShown = menuRows(menuFrame)
+    local pendingTitle, pendingItem, pendingFocus = nil, nil, nil
     local sectionOpen = false
     local sections = 0
 
     local function flushPendingAsText()
         if pendingTitle ~= nil then
-            emitItem(builder, pendingItem)
-            pendingTitle, pendingItem = nil, nil
+            emitItem(builder, pendingItem, pendingFocus)
+            pendingTitle, pendingItem, pendingFocus = nil, nil, nil
         end
     end
 
@@ -398,12 +572,13 @@ local function renderOneMenu(builder, menuFrame, levelIndex)
         sections = sections + 1
         builder:pushContext("section:" .. sections, pendingTitle)
         sectionOpen = true
-        pendingTitle, pendingItem = nil, nil
+        pendingTitle, pendingItem, pendingFocus = nil, nil, nil
     end
 
-    for i = 3, #frames do
-        local item = frames[i]
-        local index = i - 2
+    local scrollInto = allShown and dropdown.SCROLL_INTO_VIEW
+    for index, item in ipairs(rows) do
+        local shown = allShown or item:IsShown()
+        local focus = scrollInto and menuRowFocus(menuFrame, index, item) or nil
         local override = levelIndex == 1 and dropdown.active ~= nil and dropdown.active[index] or nil
         if type(override) == "function" then
             beforeRow()
@@ -411,20 +586,20 @@ local function renderOneMenu(builder, menuFrame, levelIndex)
             if not ok then
                 geterrorhandler()(err)
             end
-        elseif item:IsShown() then
-            local title = titleText(item)
+        elseif shown then
+            local title = titleText(item, shown)
             if title ~= nil then
                 -- Back-to-back titles (the player's name, then "Interact")
                 -- read as one: "Xynayya, Interact".
                 if pendingTitle ~= nil then
                     title = pendingTitle .. ", " .. title
                 end
-                pendingTitle, pendingItem = title, item
+                pendingTitle, pendingItem, pendingFocus = title, item, focus
             elseif item:GetObjectType() == "Button" then
                 beforeRow()
-                dropdown.emitRow(builder, item)
+                dropdown.emitRow(builder, item, focus)
             else
-                emitItem(builder, item)
+                emitItem(builder, item, focus)
             end
         end
     end

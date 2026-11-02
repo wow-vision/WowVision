@@ -642,6 +642,7 @@ function WowVision:registerCommands()
                 tinsert(lines, "open menus found: " .. #menus)
                 for i, menu in ipairs(menus) do
                     local parent = menu:GetParent()
+                    local rows, scrolling = dropdown.menuRows(menu)
                     tinsert(
                         lines,
                         "menu "
@@ -650,8 +651,9 @@ function WowVision:registerCommands()
                             .. tostring(menu:GetID())
                             .. ", parent "
                             .. tostring(parent ~= nil and (parent:GetName() or "unnamed") or "nil")
-                            .. ", children "
-                            .. select("#", menu:GetChildren())
+                            .. ", rows "
+                            .. #rows
+                            .. (scrolling and ", scrolling" or "")
                     )
                 end
             end

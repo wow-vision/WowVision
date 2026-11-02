@@ -22,6 +22,7 @@
   <Script file="keyCapture.lua" />
   <Script file="tests.lua" />
   <Script file="typeAheadTests.lua" />
+  <Script file="dropdownTests.lua" />
   <Script file="controlTests.lua" />
 
 </Ui>

@@ -33,6 +33,66 @@ module:registerCommand({
     end,
 })
 
+-- Testing the dropdown reader on a menu long enough to scroll, which the
+-- game's own scrolling menus (Group Finder, Delves, Guild Control) need a
+-- high character for: a real Blizzard context menu in scroll mode with a
+-- title, checkboxes, radio buttons, N buttons (default 60) and a scrolling
+-- submenu at the end; entries 1 and 50 and the submenu row have tooltips. A
+-- pick prints what was picked.
+module:registerCommand({
+    name = "bigmenu",
+    description = "Open a long scrolling test menu (optional number of entries)",
+    func = function(args)
+        if MenuUtil == nil or MenuUtil.CreateContextMenu == nil then
+            print("WowVision test menu: this client has no menu system")
+            return
+        end
+        local count = tonumber(args) or 60
+        local checked = {}
+        local radio = 1
+        MenuUtil.CreateContextMenu(nil, function(_, root)
+            root:SetTag("MENU_WOWVISION_TEST")
+            root:SetScrollMode(200)
+            root:CreateTitle("WowVision test menu")
+            for i = 1, 3 do
+                root:CreateCheckbox("Checkbox " .. i, function()
+                    return checked[i] == true
+                end, function()
+                    checked[i] = not checked[i]
+                    print("Checkbox " .. i .. (checked[i] and " checked" or " unchecked"))
+                end)
+            end
+            for i = 1, 3 do
+                root:CreateRadio("Radio " .. i, function()
+                    return radio == i
+                end, function()
+                    radio = i
+                    print("Radio " .. i .. " selected")
+                end)
+            end
+            for i = 1, count do
+                local entry = root:CreateButton("Entry " .. i, function()
+                    print("Picked entry " .. i)
+                end)
+                -- a tooltip on the first entry and on one far down (the tooltip key)
+                if (i == 1 or i == 50) and entry.SetTitleAndTextTooltip ~= nil then
+                    entry:SetTitleAndTextTooltip("Entry " .. i, "Tooltip text of entry " .. i)
+                end
+            end
+            local submenu = root:CreateButton("Submenu")
+            if submenu.SetTitleAndTextTooltip ~= nil then
+                submenu:SetTitleAndTextTooltip("Submenu", "Tooltip text of the submenu row")
+            end
+            submenu:SetScrollMode(200)
+            for i = 1, 30 do
+                submenu:CreateButton("Sub entry " .. i, function()
+                    print("Picked sub entry " .. i)
+                end)
+            end
+        end)
+    end,
+})
+
 -- Chasing controller problems with testers: the pad log (core/ui/input/
 -- pad.lua) runs by itself with the gamepad interface on; this starts it
 -- afresh.
