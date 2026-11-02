@@ -47,30 +47,38 @@ local function render(builder, screen)
     end
     builder:pushContext("spellbook", L["Spellbook"])
 
-    builder:beginStop("tabs")
-    builder:pushContext("tabs", L["Tabs"])
-    builder:startRow()
+    -- The bottom tabs (Spellbook / pet) are shown only while the character
+    -- has a pet with a spellbook; without one all three are hidden, and an
+    -- empty row is an error. They are not PanelTemplates tabs: the open one
+    -- is the tab whose bookType matches the frame's.
+    local tabs = {}
     for i = 1, 3 do
         local tab = _G["SpellBookFrameTabButton" .. i]
-        local tabIndex = i
         if tab ~= nil and tab:IsShown() then
-            local vtable = nodes.proxyButton({ target = tab })
-            if vtable ~= nil then
-                tinsert(vtable.announcements, {
-                    text = function()
-                        if PanelTemplates_GetSelectedTab(SpellBookFrame) == tabIndex then
-                            return L["selected"]
-                        end
-                        return nil
-                    end,
-                    kind = kinds.selected,
-                })
-                builder:addItem(ControlId.forObject(tab), vtable)
-            end
+            tinsert(tabs, tab)
         end
     end
-    builder:endRow()
-    builder:popContext()
+    if #tabs > 0 then
+        builder:beginStop("tabs")
+        builder:pushContext("tabs", L["Tabs"])
+        builder:startRow()
+        for _, tab in ipairs(tabs) do
+            local captured = tab
+            local vtable = nodes.proxyButton({ target = captured })
+            tinsert(vtable.announcements, {
+                text = function()
+                    if captured.bookType == SpellBookFrame.bookType then
+                        return L["selected"]
+                    end
+                    return nil
+                end,
+                kind = kinds.selected,
+            })
+            builder:addItem(ControlId.forObject(captured), vtable)
+        end
+        builder:endRow()
+        builder:popContext()
+    end
 
     if SpellBookSideTabsFrame ~= nil and SpellBookSideTabsFrame:IsShown() then
         builder:beginStop("sideTabs")
