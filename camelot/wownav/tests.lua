@@ -151,6 +151,43 @@ local suite = {
         t:assertEqual(route:observeAction(0, 0, 0, 3), "timeout")
     end,
 
+    ["a portal is walked into before the route's end, or proven by its teleport alone"] = function(t)
+        local game = newGame()
+        local route = Route.new(game.env)
+        local portal = {
+            kind = "portal", fromNativeMap = 1, toNativeMap = 1, timing = { timeout_seconds = 30 },
+            activation = { mode = "walk_into_volume" }, arrival = { mode = "same_map_distinct_volume" },
+            sourceVolume = { radius = 10, x = 9947.5, y = 2630.0 },
+            arrivalVolume = { radius = 10, x = 8786.4, y = 967.4 },
+        }
+        route.pendingAction = portal
+        t:assertNil(route:walkInTransit(9960.3, 2653.5, 9974.0, 2664.0), "before the portal")
+        local entered = route:walkInTransit(9951.6, 2636.8, 9951.3, 2640.3)
+        t:assertEqual(entered and entered.kind, "transit", "in the portal, not at the route's last waypoint")
+        t:assertTrue(entered.sourceEntered == true)
+        local jumped = route:walkInTransit(8787.0, 968.0, 9951.3, 2640.3)
+        t:assertTrue(jumped ~= nil and jumped.teleported == true, "out at its far end between two updates")
+        t:assertNil(route:walkInTransit(8787.0, 968.0, 8790.0, 970.0), "in the arrival volume without a jump")
+        route.pendingAction = { kind = "lift", activation = { mode = "board" }, sourceVolume = portal.sourceVolume,
+            arrivalVolume = portal.arrivalVolume }
+        t:assertNil(route:walkInTransit(9951.6, 2636.8, 9951.3, 2640.3), "a lift is boarded, not walked into")
+        route.pendingAction = nil
+
+        -- the continuation from the teleport event goes on at the next observation
+        route:startAction(portal, {}, nil, nil, jumped)
+        t:assertEqual(route:observeAction(8787.0, 968.0, 1, 3), "arrived")
+        -- the route ended at its last waypoint, outside the portal, and no observation saw the player inside it
+        route:startAction(portal, {})
+        t:assertNil(route:observeAction(9958.2, 2631.0, 1, 3), "at the route's end, 10.8 yd from the centre")
+        t:assertEqual(route:observeAction(8787.0, 968.0, 1, 3), "arrived", "the jump to the far end proves it")
+        -- a lift's far end needs the source left: no jump rule there
+        route:startAction({ kind = "lift", fromNativeMap = 0, toNativeMap = 0, timing = { timeout_seconds = 30 },
+            arrival = { mode = "transport_stop_volume" },
+            sourceVolume = { radius = 2, x = 0, y = 0 }, arrivalVolume = { radius = 2, x = 100, y = 0 } }, {})
+        t:assertNil(route:observeAction(10, 0, 0, 3))
+        t:assertNil(route:observeAction(100, 0, 0, 3), "a lift is not proven by a jump")
+    end,
+
     ["turning on the spot is no travel for the stagnation window"] = function(t)
         local game = newGame()
         local route = Route.new(game.env)
@@ -790,6 +827,85 @@ if haveNetwork then
         t:assertNil(seen.arrived, "no arrival at a walk-in target")
         t:assertTrue(seen.activation == true, "the capture circle is said")
         t:assertTrue(route.activationInside == true)
+    end
+
+    -- Teldrassil's two portals (map 1): a route from a waypoint of the source zone to the portal's far end, walked
+    -- waypoint by waypoint; the game teleports the player once he is in the portal's source volume. unseen: the
+    -- teleport comes before any update sees him in it. Returns the transit event, the continuation's state after the
+    -- landing and the walked route.
+    local function throughPortal(t, zoneId, portalId, unseen)
+        setup()
+        N.activeMapId = 1
+        local game = newGame()
+        game.map = 1
+        local route = Route.new(game.env)
+        local zone = N.LoadZone(zoneId)
+        local portal
+        for _, action in ipairs(zone.actions) do
+            if action.id == portalId then
+                portal = action
+            end
+        end
+        t:assertNotNil(portal, portalId)
+        local sv, av = portal.sourceVolume, portal.arrivalVolume
+        local startId
+        for i = 0, 5000 do
+            local id = zoneId * N.ZONE_BASE + i
+            local x, y = N.Position(id)
+            if startId == nil and x ~= nil and Route.distance(x, y, sv.x, sv.y) > 80 then
+                startId = id
+            end
+        end
+        local plan = runJob(N.Job(route.planToNode, route, portal.toNode, { id = startId }))
+        t:assertNotNil(plan, "a route to the far end")
+        t:assertEqual(plan.pendingAction and plan.pendingAction.id, portalId, "the route takes the portal")
+        route:begin(plan, {}, { quality = "exact" }, "far end")
+        local transit, teleported
+        for _ = 1, 400 do
+            game.t = game.t + 0.3
+            local x, y
+            if teleported then
+                x, y = av.x, av.y
+            else
+                x, y = N.Position(route.path[route.pathIndex])
+                teleported = Route.inVolume2D(sv, x, y)
+                if teleported and unseen then
+                    x, y = av.x, av.y
+                end
+            end
+            game.x, game.y, game.moving = x, y, true
+            local event = route:update(x, y)
+            if event and event.kind == "transit" then
+                transit = event
+                break
+            end
+        end
+        t:assertNotNil(transit, "the route waits for the portal")
+        route:startAction(transit.action, {}, portal.toNode, nil, transit)
+        -- at the route's end the player walks on into the portal, which teleports him (no observation inside it)
+        local state = route:observeAction(game.x, game.y, 1, 3)
+        if state == nil then
+            state = route:observeAction(av.x + 1, av.y + 1, 1, 3)
+        end
+        return transit, state, route
+    end
+
+    suite["a portal crossed before the route's end: the route waits for it as the player walks in"] = function(t)
+        -- Darnassus to Rut'theran: the route crosses the portal (waypoints 7.9 and 9.3 yd from its centre) before its
+        -- end, 10.8 yd outside
+        local transit, state = throughPortal(t, 1457, "portal:areatrigger:527", false)
+        t:assertTrue(transit.sourceEntered == true, "in the portal, before the route's last waypoint")
+        t:assertEqual(state, "arrived", "the route goes on in Rut'theran")
+        transit, state = throughPortal(t, 1457, "portal:areatrigger:527", true)
+        t:assertTrue(transit.teleported == true, "only the landing was seen")
+        t:assertEqual(state, "arrived")
+    end
+
+    suite["a portal right after the route's end: its teleport alone proves it"] = function(t)
+        -- Rut'theran to Darnassus: the route ends 10.5 yd from the centre of the 10 yd portal
+        local transit, state = throughPortal(t, 57, "portal:areatrigger:542", true)
+        t:assertNil(transit.teleported, "the transit at the route's last waypoint")
+        t:assertEqual(state, "arrived", "the route goes on in Darnassus")
     end
 end
 

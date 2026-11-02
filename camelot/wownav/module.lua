@@ -765,10 +765,13 @@ function module:onRouteEvent(path, event)
         if mode == "board" then
             text = text .. ". " .. WowVisionNavigationText("action_boarding")
         end
-        say(text)
+        -- already through the portal (its teleport came between two updates): "The route goes on" follows at once
+        if not event.teleported then
+            say(text)
+        end
         local targetNodeId, result = route.targetBindingId, route.result
         route:reset()
-        route:startAction(event.action, request, targetNodeId, result)
+        route:startAction(event.action, request, targetNodeId, result, event)
     elseif kind == "lost" then
         self:stopRoute()
         say(L["Route ended"])
