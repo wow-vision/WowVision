@@ -274,4 +274,24 @@ testRunner:addSuite("MapRouter", {
         end)
         t:assertEqual(filtered[1].waypoint.id, "mid")
     end,
+
+    ["the nearest entry is preselected, while swimming the nearest in water"] = function(t)
+        local entries = {
+            { waypoint = { id = "shore" }, distance = 2 },
+            { waypoint = { id = "lake", water = true }, distance = 6 },
+            { waypoint = { id = "deep", water = true }, distance = 9 },
+        }
+        local entry, noWater = Router.preselectEntry(entries, false)
+        t:assertEqual(entry.waypoint.id, "shore")
+        t:assertFalse(noWater)
+        entry, noWater = Router.preselectEntry(entries, true)
+        t:assertEqual(entry.waypoint.id, "lake", "the nearest water entry, not the nearest")
+        t:assertFalse(noWater)
+        t:assertEqual(entries[1].waypoint.id, "shore", "the list keeps its order by distance")
+
+        entry, noWater = Router.preselectEntry({ entries[1] }, true)
+        t:assertEqual(entry.waypoint.id, "shore", "no water entry: the nearest")
+        t:assertTrue(noWater)
+        t:assertNil(Router.preselectEntry({}, true))
+    end,
 })

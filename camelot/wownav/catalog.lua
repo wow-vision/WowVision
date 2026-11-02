@@ -215,14 +215,15 @@ local function listRow(N, item, german)
     }
 end
 
--- The search of the destination list. filterText "" lists the nearest targets. opts: { showAuto, german, R, extra }
--- (extra: rows that already are rows, each with .entry, the target its text is searched in, and .distance: the
--- boarding points of the docks, his Dock:BoardingTargets).
--- Returns the rows (nearest first, at most C.SEARCH_LIMIT, each with .distance) and info { total, limit, shown,
+-- The search of the destination list. filterText "" lists the nearest targets. opts: { showAuto, german, R, extra,
+-- limit, start } (extra: rows that already are rows, each with .entry, the target its text is searched in, and
+-- .distance: the boarding points of the docks, his Dock:BoardingTargets; limit: fewer rows than C.SEARCH_LIMIT;
+-- start: only targets that resolve to a network point, the ones a route can start at).
+-- Returns the rows (nearest first, at most the limit, each with .distance) and info { total, limit, shown,
 -- capped } (total = matches before the reachability check). Without the catalogue: {}, info with .reason.
 function catalog.search(N, C, map, filterText, x, y, opts)
     opts = opts or {}
-    local limit = C.SEARCH_LIMIT
+    local limit = opts.limit or C.SEARCH_LIMIT
     local info = { total = 0, limit = limit, shown = 0, capped = false }
     local nav, reason = catalog.ensure(N, C, map)
     if nav == nil then
@@ -270,11 +271,13 @@ function catalog.search(N, C, map, filterText, x, y, opts)
                 local item = C:Materialize(owner, row)
                 row = nil
                 if auto or not automaticListEntry(item) then
-                    local reachable = true
+                    -- a start needs its network point now; a destination may still have floors to choose or an
+                    -- unchecked zone
+                    local reachable = not opts.start
                     if N.PointZoneLoaded(item.x, item.y) then
                         local result = catalog.resolveListed(R, C, nav, item)
                         item.layerResolution = result
-                        reachable = result.endNodeId ~= nil or result.bands ~= nil
+                        reachable = result.endNodeId ~= nil or (not opts.start and result.bands ~= nil)
                     end
                     if reachable then
                         row = listRow(N, item, german)
@@ -304,6 +307,15 @@ end
 -- (no points on links), like his NodesWithin.
 catalog.NODE_SELECTION_RADIUS = 60.0
 
+-- A waypoint of the network as a list row: named by its height, routed to straight (nodeId).
+local function nodeRow(N, p)
+    local name = text.autoName(p.z)
+    return {
+        id = "wownav:node:" .. p.id, n = name, search = lower(name .. " " .. L["automatic"]),
+        x = p.x, y = p.y, z = p.z, nodeId = p.id, distance = p.distance, water = p.water == true,
+    }
+end
+
 function catalog.autoPoints(N, x, y, radius, limit)
     radius = radius or catalog.NODE_SELECTION_RADIUS
     local found = {}
@@ -321,14 +333,94 @@ function catalog.autoPoints(N, x, y, radius, limit)
     end)
     local rows = {}
     for i = 1, math.min(#found, limit or #found) do
-        local p = found[i]
-        local name = text.autoName(N.Bits(p.id), p.z)
-        rows[i] = {
-            id = "wownav:node:" .. p.id, n = name, search = lower(name .. " " .. L["automatic"]),
-            x = p.x, y = p.y, z = p.z, nodeId = p.id, distance = p.distance,
-        }
+        rows[i] = nodeRow(N, found[i])
     end
     return rows
+end
+
+-- The entry points of the navigation window (F10), the same kind of list as the route data's: the nearest targets of
+-- the catalogue that resolve to a network point here (the flight master in front of the player, a door, a portal),
+-- and with "Show Automatic Waypoints" (his showauto) the network's own waypoints as well, nearest first, at most
+-- count. The player picks where the route starts; WowNav never binds the position itself. The one exception to the
+-- setting: while the player swims or dives, the network's nearest water point (a waypoint of a WATER area with a
+-- checked exit; his swimming start takes these only) within his water exit reach (N.WATER_EXIT_RADIUS) is always in
+-- the list, at its place by distance and marked water, so F10 can preselect it. opts: { showAuto, swimming, german }
+catalog.ENTRY_RADIUS = 300.0
+
+-- The network's waypoints near a position, nearest first: { id, x, y, z, distance, water }.
+local function nearNodes(N, x, y, radius)
+    local found = {}
+    for _, zoneId in ipairs(N.ZonesForPoint(x, y)) do
+        if N.LoadZone(zoneId) then
+            for _, id in ipairs(N.NodesWithin(zoneId, x, y, radius)) do
+                local nx, ny, nz = N.Position(id)
+                local dx, dy = nx - x, ny - y
+                found[#found + 1] = { id = id, x = nx, y = ny, z = nz, distance = math.sqrt(dx * dx + dy * dy),
+                    water = N.Area(id) == "WATER" and not N.NoExit(id) }
+            end
+        end
+    end
+    table.sort(found, function(a, b)
+        return a.distance < b.distance
+    end)
+    return found
+end
+
+local function byDistance(a, b)
+    return a.distance < b.distance
+end
+
+function catalog.entryPoints(N, C, map, x, y, count, opts)
+    opts = opts or {}
+    -- the player's zones decoded, so the targets nearby are resolved now
+    local nodes = nearNodes(N, x, y, catalog.ENTRY_RADIUS)
+    local rows = catalog.search(N, C, map, "", x, y, { limit = count, start = true, german = opts.german })
+    if opts.showAuto then
+        for i = 1, math.min(#nodes, count) do
+            rows[#rows + 1] = nodeRow(N, nodes[i])
+        end
+        table.sort(rows, byDistance)
+        for i = #rows, count + 1, -1 do
+            rows[i] = nil
+        end
+    end
+    if opts.swimming then
+        -- already listed (the setting is on and it is among the nearest): nothing to add
+        for _, row in ipairs(rows) do
+            if row.water then
+                return rows
+            end
+        end
+        for _, p in ipairs(nodes) do
+            if p.distance > N.WATER_EXIT_RADIUS then
+                break
+            end
+            if p.water then
+                rows[#rows + 1] = nodeRow(N, p)
+                table.sort(rows, byDistance)
+                break
+            end
+        end
+    end
+    return rows
+end
+
+-- The network point a route starts at from an entry point: a waypoint's own, or a target's resolved anew (his
+-- resolution without a route context; its point may be a link point, made for this route). Returns the id and its
+-- height, or nil when the target has no single network point (floors to choose, none in reach).
+function catalog.startNode(N, R, nav, start, map)
+    if start.nodeId ~= nil then
+        return start.nodeId, start.z
+    end
+    if nav == nil or R == nil or start.tid == nil then
+        return nil
+    end
+    local result = R:Resolve(nav, catalog.contract(start, map), {})
+    if result == nil or result.endNodeId == nil then
+        return nil
+    end
+    local _, _, z = N.Position(result.endNodeId)
+    return result.endNodeId, z
 end
 
 -- The target contract of a row for the resolver (TargetCatalog.Validate).

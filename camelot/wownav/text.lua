@@ -205,26 +205,10 @@ local CATEGORY = {
     dungeon = L["dungeon"], portal = L["portal"], zeppelin = L["zeppelin"], lift = L["elevator"], dive = L["dive"],
 }
 
--- Automatic waypoints are named after their code (his AUTO_TYPES, in his order: the first bit that is set names the
--- point) and their height in whole yards (his auto_prefix_z: "the player finds re-entry points on the right level").
-local AUTO_TYPES = {
-    { 8, L["water exit"] }, { 64, L["zone border"] }, { 32, L["transit point"] }, { 2, L["gate"] },
-    { 16, L["level change"] }, { 4, L["road junction"] }, { 128, L["target access"] }, { 512, L["branch"] },
-    { 1, L["corner"] }, { 256, L["open ground"] },
-}
-
-function text.autoType(bits)
-    bits = bits or 0
-    for _, entry in ipairs(AUTO_TYPES) do
-        if bits % (entry[1] * 2) >= entry[1] then
-            return entry[2]
-        end
-    end
-    return L["waypoint"]
-end
-
-function text.autoName(bits, z)
-    return string.format(L["Automatic: %s, height %d"], text.autoType(bits), math.floor((z or 0) + 0.5))
+-- Automatic waypoints are named by their height in whole yards only (his auto_prefix_z: "the player finds re-entry
+-- points on the right level"); their type (his AUTO_TYPES) is not said.
+function text.autoName(z)
+    return string.format(L["Auto, height %d"], math.floor((z or 0) + 0.5))
 end
 
 -- What a list row adds to a target's name after its resolution (his TargetSelection:Describe): inexact by how much,
