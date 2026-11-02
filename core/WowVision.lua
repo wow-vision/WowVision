@@ -655,6 +655,36 @@ function WowVision:registerCommands()
                             .. #rows
                             .. (scrolling and ", scrolling" or "")
                     )
+                    -- the first rows: what the reader sees in each
+                    for r = 1, math.min(#rows, 15) do
+                        local row = rows[r]
+                        local okType, kind = pcall(row.GetObjectType, row)
+                        local texts = {}
+                        for _, region in ipairs({ row:GetRegions() }) do
+                            if region:GetObjectType() == "FontString" and (region:GetText() or "") ~= "" then
+                                tinsert(texts, region:GetText())
+                            end
+                        end
+                        local controls = dropdown.rowControls(row)
+                        local kinds = {}
+                        for _, control in ipairs(controls) do
+                            tinsert(kinds, control.kind)
+                        end
+                        tinsert(
+                            lines,
+                            "  row "
+                                .. r
+                                .. ": "
+                                .. tostring(okType and kind or "?")
+                                .. (row:IsShown() and ", shown" or ", hidden")
+                                .. ", text "
+                                .. (#texts > 0 and table.concat(texts, " / ") or "none")
+                                .. ", children "
+                                .. select("#", row:GetChildren())
+                                .. ", controls "
+                                .. (#kinds > 0 and table.concat(kinds, " ") or "none")
+                        )
+                    end
                 end
             end
             local host = WowVision.graphHost

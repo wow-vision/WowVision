@@ -37,8 +37,9 @@ module:registerCommand({
 -- game's own scrolling menus (Group Finder, Delves, Guild Control) need a
 -- high character for: a real Blizzard context menu in scroll mode with a
 -- title, checkboxes, radio buttons, N buttons (default 60) and a scrolling
--- submenu at the end; entries 1 and 50 and the submenu row have tooltips. A
--- pick prints what was picked.
+-- submenu at the end; entries 1 and 50 and the submenu row have tooltips.
+-- Custom rows: a level range (two edit boxes) and a row with a check button
+-- and a button. A pick prints what was picked.
 module:registerCommand({
     name = "bigmenu",
     description = "Open a long scrolling test menu (optional number of entries)",
@@ -48,6 +49,13 @@ module:registerCommand({
             return
         end
         local count = tonumber(args) or 60
+        -- "/wv bigmenu dump": the reader's view of the menu (/wv gdrop) a second
+        -- after it opens, since a command cannot be typed while it has the keys
+        if args == "dump" then
+            C_Timer.After(1, function()
+                WowVision:SlashCommand("gdrop")
+            end)
+        end
         local checked = {}
         local radio = 1
         MenuUtil.CreateContextMenu(nil, function(_, root)
@@ -70,6 +78,32 @@ module:registerCommand({
                     print("Radio " .. i .. " selected")
                 end)
             end
+            -- custom rows: Blizzard's level range (two edit boxes) and a row
+            -- with a check button and a button of its own
+            root:CreateTitle("Level range")
+            local levelRange = root:CreateTemplate("LevelRangeFrameTemplate")
+            levelRange:AddInitializer(function(frame)
+                if frame.Reset ~= nil then
+                    frame:Reset()
+                end
+            end)
+            local custom = root:CreateFrame()
+            custom:AddInitializer(function(frame)
+                local check = frame:AttachTemplate("UICheckButtonTemplate")
+                check:SetPoint("LEFT", frame, "LEFT", 0, 0)
+                check:SetScript("OnClick", function(self)
+                    print("Inner checkbox " .. (self:GetChecked() and "checked" or "unchecked"))
+                end)
+                local button = frame:AttachTemplate("UIPanelButtonTemplate")
+                button:SetSize(100, 22)
+                button:SetPoint("LEFT", check, "RIGHT", 4, 0)
+                button:SetText("Inner button")
+                button:SetScript("OnClick", function()
+                    print("Inner button clicked")
+                end)
+                return 160, 26
+            end)
+            root:CreateTitle("Entries")
             for i = 1, count do
                 local entry = root:CreateButton("Entry " .. i, function()
                     print("Picked entry " .. i)

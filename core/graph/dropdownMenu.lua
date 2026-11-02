@@ -173,12 +173,124 @@ local function attachMenuTooltip(vtable, item)
     return vtable
 end
 
+-- Controls inside a custom row (rootDescription:CreateTemplate / CreateFrame
+-- with an attached template): the level range's Min and Max edit boxes (the
+-- auction house filter, the Group Finder, crafting orders), the voice volume
+-- rows' toggle button. Shown edit boxes, check buttons and buttons down to
+-- three levels deep, in screen order (left to right, then top to bottom).
+-- Sliders are not reached yet.
+local ROW_CONTROL_KINDS = { EditBox = true, CheckButton = true, Button = true }
+
+-- Labels for controls Blizzard leaves unlabelled, by their parentKey.
+local ROW_CONTROL_LABELS = { MinLevel = "Minimum", MaxLevel = "Maximum" }
+
+local function parentKeyOf(parent, child)
+    for key, value in pairs(parent) do
+        if value == child and type(key) == "string" then
+            return key
+        end
+    end
+    return nil
+end
+
+function dropdown.rowControls(row)
+    local found = {}
+    local function walk(frame, depth)
+        for _, child in ipairs({ frame:GetChildren() }) do
+            local okKind, kind = pcall(child.GetObjectType, child)
+            if okKind and child:IsShown() then
+                if ROW_CONTROL_KINDS[kind] then
+                    tinsert(found, { frame = child, kind = kind, parent = frame, order = #found })
+                elseif depth < 3 then
+                    walk(child, depth + 1)
+                end
+            end
+        end
+    end
+    walk(row, 1)
+    table.sort(found, function(a, b)
+        local la, lb = a.frame:GetLeft(), b.frame:GetLeft()
+        local ta, tb = a.frame:GetTop(), b.frame:GetTop()
+        if ta ~= nil and tb ~= nil and math.abs(ta - tb) > 4 then
+            return ta > tb
+        end
+        if la ~= nil and lb ~= nil and la ~= lb then
+            return la < lb
+        end
+        return a.order < b.order
+    end)
+    return found
+end
+
+local function rowControlLabel(control)
+    local key = parentKeyOf(control.parent, control.frame)
+    local known = key ~= nil and ROW_CONTROL_LABELS[key] or nil
+    if known ~= nil then
+        return L[known]
+    end
+    if control.kind == "EditBox" then
+        local instructions = control.frame.Instructions
+        if instructions ~= nil and instructions.GetText ~= nil then
+            return instructions:GetText()
+        end
+        return nil
+    end
+    -- a button's own text, else its tooltip's title (icon buttons)
+    local button = control.frame
+    local tooltipLabel = dropdown.rowButtonLabel(button)
+    return function()
+        local text = button.GetText ~= nil and button:GetText() or nil
+        if text ~= nil and text ~= "" then
+            return text
+        end
+        return tooltipLabel()
+    end
+end
+
+local function emitRowControls(builder, item, controls, label, hasText, focus)
+    builder:startRow()
+    if hasText then
+        builder:addItem(ControlId.forObject(item), withFocus(nodes.text({ label = label }), focus))
+    end
+    for _, control in ipairs(controls) do
+        local controlLabel = rowControlLabel(control)
+        local vtable
+        if control.kind == "EditBox" then
+            -- Enter leaves the box, where Blizzard gives it nothing to do on
+            -- Enter (the level range's boxes only clear focus on Escape)
+            local editBox = control.frame
+            if editBox.GetScript ~= nil and editBox:GetScript("OnEnterPressed") == nil then
+                editBox:SetScript("OnEnterPressed", function(self)
+                    self:ClearFocus()
+                end)
+            end
+            vtable = nodes.proxyEditBox({
+                editBox = control.frame,
+                label = controlLabel,
+                autoInput = false,
+                allowHidden = true,
+            })
+        elseif control.kind == "CheckButton" then
+            vtable = nodes.proxyCheckButton({ target = control.frame, label = controlLabel, allowHidden = true })
+        else
+            vtable = nodes.proxyButton({ target = control.frame, label = controlLabel, allowHidden = true })
+        end
+        if vtable ~= nil then
+            builder:addItem(ControlId.forObject(control.frame), withFocus(vtable, focus))
+        end
+    end
+    builder:endRow()
+end
+
 local function emitItem(builder, item, focus)
     local fontStrings, legacyCheck = itemRegions(item)
     local label = rowLabel(fontStrings)
 
     if item:GetObjectType() ~= "Button" then
-        if #fontStrings > 0 then
+        local controls = dropdown.rowControls(item)
+        if #controls > 0 then
+            emitRowControls(builder, item, controls, label, #fontStrings > 0 and label() ~= nil, focus)
+        elseif #fontStrings > 0 then
             builder:addItem(ControlId.forObject(item), withFocus(nodes.text({ label = label }), focus))
         end
         return
@@ -480,6 +592,10 @@ local function titleText(item, shown)
     if not shown or item:GetObjectType() == "Button" then
         return nil
     end
+    -- a custom row with controls in it is a row, not a title
+    if #dropdown.rowControls(item) > 0 then
+        return nil
+    end
     return rowLabel(itemRegions(item))()
 end
 
@@ -599,6 +715,12 @@ local function renderOneMenu(builder, menuFrame, levelIndex)
                 beforeRow()
                 dropdown.emitRow(builder, item, focus)
             else
+                -- a custom row with controls (the level range) is a row of
+                -- its title's section, like a button row; without this its
+                -- title merged into the next one ("Level Range, Armor")
+                if #dropdown.rowControls(item) > 0 then
+                    beforeRow()
+                end
                 emitItem(builder, item, focus)
             end
         end
