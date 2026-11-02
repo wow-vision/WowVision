@@ -782,14 +782,22 @@ function module:onRouteEvent(path, event)
         if mode == "board" then
             text = text .. ". " .. WowVisionNavigationText("action_boarding")
         end
-        say(text)
+        -- said before the portal already (transitAhead), or through it (its teleport came between two updates):
+        -- "The route goes on" follows at once
+        if not event.teleported and not event.announced then
+            say(text)
+        end
         local targetNodeId, result = route.targetBindingId, route.result
         route:reset()
-        route:startAction(event.action, request, targetNodeId, result)
+        route:startAction(event.action, request, targetNodeId, result, event)
         local action, sv, av = event.action, event.action.sourceVolume or {}, event.action.arrivalVolume or {}
         logLine(string.format("transit %s: waiting for its far end (%s), source %.1f %.1f r %s, arrival %.1f %.1f r %s",
             tostring(action.kind), tostring(action.arrival and action.arrival.mode), sv.x or 0, sv.y or 0,
             tostring(sv.radius or sv.half_x), av.x or 0, av.y or 0, tostring(av.radius or av.half_x)))
+    elseif kind == "transitAhead" then
+        -- a portal teleports the moment it is entered: what to do is said before it
+        say(string.format(L["Ahead: walk into %s; the route goes on after it"],
+            TRANSIT_WORDS[event.action.kind] or L["the transit"]))
     elseif kind == "lost" then
         self:stopRoute()
         say(L["Route ended"])

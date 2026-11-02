@@ -40,6 +40,10 @@ Route.ZUNKNOWN_SKIP_RADIUS = 1.5      -- yd: the first node under the player is 
 -- The transit phases of his ActionNavigation (waiting, boarding/activating, travelling) each get one timeout of the
 -- action; WowVision has no confirmation commands, so the three run as one span.
 Route.ACTION_PHASES = 3
+-- WowVision's own: a jump of the player farther than this between two observations is a teleport (a portal walked into)
+Route.TELEPORT_JUMP = 50.0
+-- WowVision's own: yd before a walk-in transit's source volume where it is announced once (its teleport comes at once)
+Route.TRANSIT_AHEAD = 15.0
 
 -- His chokeFallback setting (WowVisionNavigationDB, written from WowVision's settings by the module): on unless false.
 function Route.chokeFallback()
@@ -343,6 +347,7 @@ function Route:reset(keepPenalties)
     self.activation = nil     -- the walk-in target of the route (his activationTarget), set after begin
     self.activationPrepointSaid = nil
     self.activationInside = nil
+    self.transitAheadSaid = nil -- the walk-in transit ahead was announced
     self.source = nil         -- the target (his layerTargetSource)
     self.anchor.height = nil
     if not keepPenalties then
@@ -458,6 +463,7 @@ function Route:begin(plan, source, result, name)
     self.active = true
     self.path = plan.path
     self.pendingAction = plan.pendingAction
+    self.transitAheadSaid = nil
     self.targetBindingId = plan.targetNodeId
     self.pathIndex = 1
     self.targetName = name
@@ -630,6 +636,8 @@ end
 --   { kind = "reentry", skipped = n } / { kind = "fallback" }
 --   { kind = "arrived", exact = bool, result }              target reached (his stop_target_position_reached / reached)
 --   { kind = "transit", action }                            the route ends at a transit; the continuation waits
+--   { kind = "transit", action, sourceEntered / teleported } a portal walked into before the route's end
+--   { kind = "transitAhead", action }                       a portal ahead, once (the transit then has announced)
 function Route:update(x, y)
     if not self.active or not self.path then
         return nil
@@ -640,6 +648,15 @@ function Route:update(x, y)
     end
     self.nextUpdate = now + Route.UPDATE_INTERVAL
     local N, G = self.N, self.G
+
+    -- a portal on the way teleports as soon as the player is in it, maybe before the route's last waypoint
+    local walkIn = self:walkInTransit(x, y, self.currentX, self.currentY)
+    if walkIn then
+        if walkIn.kind == "transit" then
+            self.active = false
+        end
+        return walkIn
+    end
 
     -- the blockage watch runs on every update (his separate frame)
     local blockage = self:checkBlockage(x, y, now)
@@ -710,7 +727,7 @@ function Route:update(x, y)
             if self.pendingAction then
                 local action = self.pendingAction
                 self.active = false
-                return { kind = "transit", action = action }
+                return { kind = "transit", action = action, announced = self.transitAheadSaid }
             end
             self.active = false
             return { kind = "arrived", exact = true, result = result }
@@ -750,13 +767,61 @@ local function inVolume2D(volume, x, y, widen)
 end
 Route.inVolume2D = inVolume2D
 
+-- A portal walked into (activation walk_into_volume) teleports the moment the player is in its source volume, and the
+-- route can cross that volume before its last waypoint (Darnassus to Rut'theran: waypoints 7.9 and 9.3 yd from the
+-- centre of a 10 yd volume, the route's end 10.8 yd outside). His route waits for the transit only at its last
+-- waypoint, so the teleport came first and the route was left behind. WowVision's own rule ends the walk at the
+-- transit as soon as the player is in the source volume; a teleport between two observations shows as a jump into the
+-- arrival volume, which proves the portal by itself.
+local function walksInto(action)
+    return type(action) == "table" and type(action.activation) == "table"
+        and action.activation.mode == "walk_into_volume"
+end
+
+local function teleported(action, x, y, lastX, lastY)
+    return lastX ~= nil and distance(x, y, lastX, lastY) > Route.TELEPORT_JUMP
+        and (action.toNativeMap == nil or action.toNativeMap == action.fromNativeMap)
+        and inVolume2D(action.arrivalVolume, x, y)
+end
+
+-- The source volume widened by Route.TRANSIT_AHEAD: where the transit is announced.
+local function aheadReach(volume)
+    if type(volume) ~= "table" then
+        return 0
+    end
+    return max(volume.radius or 0, volume.half_x or 0, volume.half_y or 0) + Route.TRANSIT_AHEAD
+end
+
+-- During a route with a portal on the way: the transit event when the player is in the portal (sourceEntered) or
+-- came out at its far end (teleported); once, when he comes near it, the transitAhead event (the teleport leaves no
+-- time for a text in the portal); else nil. lastX, lastY: the position of the previous update.
+function Route:walkInTransit(x, y, lastX, lastY)
+    local action = self.pendingAction
+    if not walksInto(action) or not x then
+        return nil
+    end
+    if inVolume2D(action.sourceVolume, x, y) then
+        return { kind = "transit", action = action, sourceEntered = true, announced = self.transitAheadSaid }
+    end
+    if teleported(action, x, y, lastX, lastY) then
+        return { kind = "transit", action = action, teleported = true }
+    end
+    if not self.transitAheadSaid and inVolume2D(action.sourceVolume, x, y, aheadReach(action.sourceVolume)) then
+        self.transitAheadSaid = true
+        return { kind = "transitAhead", action = action }
+    end
+    return nil
+end
+
 -- The route reached a transit: the continuation waits for its arrival. target: what to route to afterwards (the
 -- request); targetNodeId and result: the target's binding and resolution, which the continuation routes to again
 -- (his pendingAction keeps the targetId: after a transit into another map, such as the tram, the target cannot be
--- resolved from the new map).
-function Route:startAction(action, target, targetNodeId, result)
+-- resolved from the new map). event: the transit event, whose sourceEntered / teleported the observation starts from.
+function Route:startAction(action, target, targetNodeId, result, event)
+    local entered = event ~= nil and (event.sourceEntered or event.teleported) or false
     self.action = { action = action, target = target, targetNodeId = targetNodeId, result = result,
-        startedAt = self.env.now(), sourceEntered = false, sourceLeft = false }
+        startedAt = self.env.now(), sourceEntered = entered,
+        sourceLeft = event ~= nil and event.teleported or false }
 end
 
 function Route:cancelAction()
@@ -791,8 +856,12 @@ function Route:observeAction(x, y, map, widen)
             current.sourceEntered = true
         elseif current.sourceEntered then
             current.sourceLeft = true
+        elseif walksInto(action) and teleported(action, x, y, current.lastX, current.lastY) then
+            -- no observation inside the portal before its teleport: the jump to its far end proves it
+            current.sourceEntered, current.sourceLeft = true, true
         end
     end
+    current.lastX, current.lastY = x, y
     if map ~= toMap or not inVolume2D(action.arrivalVolume, x, y, widen) then
         return nil
     end
