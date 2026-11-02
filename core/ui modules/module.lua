@@ -207,13 +207,13 @@ module:registerBindings({
         inputs = {},
         func = function() end,
     },
-    -- Opens the WowVision menu, which otherwise needs /wv typed: the
-    -- controller's way in (the shortcut layer).
+    -- Opens the WowVision menu, which otherwise needs /wv typed: Shift-F1,
+    -- and the controller's way in (the shortcut layer).
     {
         type = "Function",
         key = "wowvision/menu",
         label = L["WowVision Menu"],
-        inputs = {},
+        inputs = { "SHIFT-F1" },
         interruptSpeech = true,
         func = function()
             WowVision.graph.settings.openMenu()

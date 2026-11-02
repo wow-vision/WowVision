@@ -13,5 +13,8 @@
   <Script file="pitchLock.lua" />
   <Include file="atlas/modules.xml" />
   <Include file="maps/modules.xml" />
+  <Script file="visitedStore.lua" />
+  <Script file="visitedTests.lua" />
+  <Script file="visited.lua" />
 
 </Ui>
