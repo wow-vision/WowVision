@@ -33,5 +33,6 @@
   <Script file="communities.lua" />
   <Script file="guildControl.lua" />
   <Include file="containers/modules.xml" />
+  <Include file="groupHealth/modules.xml" />
 
 </Ui>

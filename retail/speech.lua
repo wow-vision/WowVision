@@ -144,9 +144,13 @@ end
 -- throw on any string operation. The speech API accepts secret strings,
 -- so the text goes through untouched (the cache-buster only concatenates
 -- onto a secret, from a shared counter it cannot key by text).
-function module:speak(text, voice)
+--
+-- voice, rate and volume are optional: the Speech settings apply where a
+-- caller gives none (the group health monitor speaks with a voice, rate and
+-- volume of its own).
+function module:speak(text, voice, rate, volume)
     -- Volume above 100 silences TTS entirely in Mists Classic, so clamp it.
-    local volume = self.settings.speechVolume or 100
+    volume = volume or self.settings.speechVolume or 100
     if volume < 0 then
         volume = 0
     elseif volume > 100 then
@@ -160,7 +164,14 @@ function module:speak(text, voice)
         -- (without the queue this is the hand-over)
         text = handOver(text)
     end
-    C_VoiceChat.SpeakText(voice or self.settings.voiceID, text, self.settings.speechRate, volume, false)
+    C_VoiceChat.SpeakText(voice or self.settings.voiceID, text, rate or self.settings.speechRate, volume, false)
+end
+
+-- Whether nothing is queued or playing. The group health monitor sends its
+-- repeat one announcement at a time only while this holds, so its mostly
+-- silent announcements never hold back other speech.
+function module:idle()
+    return not self.speaking and #self.queue == 0
 end
 
 function module:stop()
