@@ -472,7 +472,12 @@ end
 -- (opts.direct: for F10's Direct, no reachability check)
 -- (detail: said after the distance), info { capped, shown, total } when the
 -- engine cut the list; cancel() -> true when it ended guidance of its own
--- (Shift-F12). While it is active, F10 lists its targets only.
+-- (Shift-F12); startAt(px, py, map) -> the start at the player's position
+-- when it is clear, else nil and why ("ambiguous": the floor is not clear),
+-- with startHere saying why (Ctrl-Shift-N, the route to the target);
+-- unitTarget(creatureId, px, py, map) -> its row of that creature near the
+-- player, nil without one (the route to the target, targetRoute.lua).
+-- While it is active, F10 lists its targets only.
 function module:setRouteEngine(engine)
     self.routeEngine = engine
 end
