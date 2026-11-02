@@ -809,6 +809,22 @@ local function atVolumeHeight(route, volume)
     return abs(z - volume.z) <= (volume.half_z or volume.radius or 0) + Route.TRANSIT_HEIGHT
 end
 
+-- A walk-in portal on its own map is a link of the network like any other: the player is through it once he is in its
+-- arrival volume and nearer to its far waypoint (toNode) than to its near one (fromNode). Where the portal drops
+-- straight down (Stormwind's Wizard's Sanctum: source and arrival 6.4 yd apart in the plane), the plane cannot tell
+-- leaving the source from arriving, but the portal's two waypoints lie 14.3 yd apart.
+local function pastLink(route, action, x, y)
+    if not walksInto(action) or type(action.fromNode) ~= "number" or type(action.toNode) ~= "number" then
+        return false
+    end
+    local fx, fy = route.N.Position(action.fromNode)
+    local tx, ty = route.N.Position(action.toNode)
+    if fx == nil or tx == nil then
+        return false
+    end
+    return distance(x, y, tx, ty) < distance(x, y, fx, fy)
+end
+
 -- During a route with a portal on the way: the transit event when the player is in the portal (sourceEntered) or
 -- came out at its far end (teleported); once, when he comes near it, the transitAhead event (the teleport leaves no
 -- time for a text in the portal); else nil. lastX, lastY: the position of the previous update.
@@ -890,11 +906,12 @@ function Route:observeAction(x, y, map, widen)
             return nil
         end
     else
-        if fromMap == toMap and not current.sourceLeft then
+        local through = fromMap == toMap and pastLink(self, action, x, y)
+        if fromMap == toMap and not current.sourceLeft and not through then
             return nil
         end
         local sv, av = action.sourceVolume, action.arrivalVolume
-        if type(sv) == "table" and type(sv.x) == "number" and fromMap == toMap
+        if not through and type(sv) == "table" and type(sv.x) == "number" and fromMap == toMap
             and distance(x, y, sv.x, sv.y) <= distance(x, y, av.x, av.y) then
             return nil
         end

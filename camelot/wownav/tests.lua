@@ -1290,15 +1290,60 @@ if haveNetwork then
 
     suite["a portal above the route: walking beneath it does not end the route"] = function(t)
         -- Stormwind's Wizard's Sanctum: the ramp up the tower passes 4.1 yd beside the centre of the portal at its top,
-        -- 39 yd below it; the route ends 11.7 yd from the centre of the 7 yd portal, at its height. The portal drops
-        -- straight down (its far end 6.4 yd away in the plane), so its arrival is not proven here.
-        local transit, _, route, at, aheadAt = throughPortal(t, 0, STORMWIND, "portal:areatrigger:704", false)
+        -- 39 yd below it; the route ends 11.7 yd from the centre of the 7 yd portal, at its height
+        local transit, state, route, at, aheadAt = throughPortal(t, 0, STORMWIND, "portal:areatrigger:704", false)
         t:assertEqual(at, #route.path, "the transit at the route's last waypoint, not on the ramp below the portal")
         t:assertNil(transit.sourceEntered, "the route ends outside the portal")
         t:assertTrue(transit.announced == true, "said before the portal, not again at the route's end")
         local _, _, z = N.Position(route.path[aheadAt])
         local sv = transit.action.sourceVolume
         t:assertTrue(math.abs(z - sv.z) <= sv.radius + Route.TRANSIT_HEIGHT, "said at the portal's height, not below it")
+        t:assertEqual(state, "arrived", "the landing below proves the portal")
+    end
+
+    suite["a portal that drops straight down is a link like any other: the route goes on to the portal trainer"] = function(t)
+        -- The Wizard's Sanctum again: its portal's source and far end lie 6.4 yd apart in the plane, so leaving the
+        -- one cannot be told from arriving at the other there; its two waypoints (the ramp's end above, the room
+        -- below) lie 14.3 yd apart, and the player is through once he is nearer to the one below
+        setup()
+        local game = newGame()
+        local route = Route.new(game.env)
+        local trainer = zoneRows(STORMWIND, "Larimaine")[1]
+        t:assertNotNil(trainer, "Larimaine Purdue, the portal trainer")
+        local startId = STORMWIND * N.ZONE_BASE + 1
+        game.x, game.y = N.Position(startId)
+        local outcome = runJob(N.Job(route.prepare, route, catalog.contract(trainer, 0), { nativeMapId = 0 }, startId))
+        t:assertEqual(outcome.kind, "start", tostring(outcome.reason))
+        t:assertEqual(outcome.plan.pendingAction and outcome.plan.pendingAction.id, "portal:areatrigger:704",
+            "up the ramp and through the portal at the top")
+        route:begin(outcome.plan, catalog.contract(trainer, 0), outcome.result, trainer.n)
+        local transit
+        for _ = 1, 3000 do
+            game.t = game.t + 0.3
+            game.x, game.y = N.Position(route.path[route.pathIndex])
+            game.moving = true
+            local event = route:update(game.x, game.y)
+            if event and event.kind == "transit" then
+                transit = event
+                break
+            end
+        end
+        t:assertNotNil(transit, "the route reaches the portal")
+        local action = transit.action
+        route:startAction(action, {}, route.targetBindingId, route.result, transit)
+        local fx, fy = N.Position(action.fromNode)
+        t:assertNil(route:observeAction(fx, fy, 0, 3), "at the ramp's end: not through yet")
+        local sv, av = action.sourceVolume, action.arrivalVolume
+        t:assertNil(route:observeAction(sv.x, sv.y - 2, 0, 3), "on the portal's near side above: not through yet")
+        t:assertEqual(route:observeAction(av.x, av.y, 0, 3), "arrived", "landed in the room below")
+        local _, toNode, targetNodeId, result = route:actionArrival()
+        t:assertEqual(toNode, action.toNode)
+        local next = runJob(N.Job(route.continueTo, route, toNode, targetNodeId, result))
+        t:assertEqual(next.kind, "start", tostring(next.reason))
+        local lx, ly = N.Position(next.plan.path[#next.plan.path])
+        t:assertEqual(next.plan.path[#next.plan.path], targetNodeId, "the route goes on to the trainer's binding")
+        local _, _, lz = N.Position(targetNodeId)
+        t:assertTrue(Route.distance(lx, ly, trainer.x, trainer.y) < 20 and math.abs(lz - trainer.z) < 3, "in the room below, by the trainer")
     end
 end
 
