@@ -25,7 +25,7 @@ Every voice shapes its sentences differently, so the pitch scale is tuned per vo
 
 The game keeps group health secret from addons on these clients, so the monitor never knows anyone's health and cannot speak on changes. Instead it prepares every announcement with its possible forms, and the game plays the one that matches the member's health. Three things speak:
 
-- **The repeat.** Every member below their role's **Repeat Below** is spoken again every **Repeat Every** seconds. The members take turns, one announcement at a time, and a turn only starts while WowVision has nothing else queued or playing, so the monitor never holds back what WowVision says. A member above the threshold takes a silent turn (it lasts as long as a spoken one), so a round through a party of five takes a few seconds whatever the fight does.
+- **The repeat.** Every member below their role's **Repeat Below** is spoken again every **Repeat Every** seconds. The members take turns, one announcement at a time, and a turn only starts while WowVision has nothing else queued or playing, so the monitor never holds back what WowVision says. A member above the threshold takes a silent turn. Whatever is silent is spoken at the fastest rate, so a silent turn takes about a quarter of a second, and a round through a healthy party of five takes about a second and a half.
 - **"number dead"**, once, when a member dies. Someone already dead when you join is not announced.
 - **The snapshot key**, **Speak Group Health** (default Alt+H; on a controller the right trigger with the right stick press): everyone once, in number order, at their current pitch; a member at full health as "number full" when **Announce Full Health** is on; dead members as "number dead". The repeat starts afresh after it. Change the key with `/wv bind`.
 
@@ -43,5 +43,5 @@ Every role (tanks, healers, damage dealers, no role) has its own **Repeat Below*
 ## Limits
 
 - The monitor never knows anyone's health: it cannot speak on changes, count incoming heals or say a percentage. The repeat and the snapshot are its only voice.
-- A silent turn costs the same time as a spoken one, so a large raid takes long to go round. Watch only the raid groups you heal, or set the roles you do not need to 0.
+- Every member costs a turn, heard or not (about a quarter of a second silent, about a third of a second spoken, plus the engine's start), so a large raid takes long to go round. Watch only the raid groups you heal, or set the roles you do not need to 0.
 - In battlegrounds and arenas, the game does not let addons read group members at all. The monitor then says once that it is unavailable.

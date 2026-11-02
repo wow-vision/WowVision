@@ -97,7 +97,8 @@ The whole method is in the docstring at the top of `measure.py`. In short:
 
 - Each announcement carries the number twice behind volume gates: the
   LOW copy (spoken first, rising melody, the urgent part of the scale) and
-  the HIGH copy (spoken last, falling melody, the healthy part). Both are
+  the HIGH copy (spoken last, falling melody, the healthy part). The silent
+  copy is spoken at the engine's fastest rate, as in game. Both are
   measured at every pitch from -10 to 10.
 - Pitch is taken on the loud vowel, at its peak, and a robust straight
   line is fitted per copy.

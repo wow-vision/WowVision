@@ -199,11 +199,57 @@ testRunner:addSuite("GroupHealth", {
         t:assertEqual(numbers[11], 36)
     end,
 
-    ["segment text carries volume, pitch and words"] = function(t)
+    ["segment text carries volume, pitch and words, and a rate when given"] = function(t)
         t:assertEqual(
             GroupHealth.segment(100, -4, "3"),
             '<volume level="100"><pitch absmiddle="-4">3</pitch></volume>'
         )
+        t:assertEqual(
+            GroupHealth.segment(0, -4, "3", 10),
+            '<volume level="0"><rate absspeed="10"><pitch absmiddle="-4">3</pitch></rate></volume>'
+        )
+    end,
+
+    ["rate gate: the spoken rate where the part is heard, the fastest elsewhere"] = function(t)
+        local points = GroupHealth.ratePoints(0.35, 0.8, 7)
+        t:assertEqual(evaluate(points, 0.2), 10)
+        t:assertEqual(evaluate(points, 0.35), 7)
+        t:assertEqual(evaluate(points, 0.79), 7)
+        t:assertEqual(evaluate(points, 0.8), 10)
+        t:assertEqual(evaluate(points, 1), 10)
+        -- From 0, and including full health above 1.
+        t:assertEqual(evaluate(GroupHealth.ratePoints(0, 0.6, 7), 0), 7)
+        t:assertEqual(evaluate(GroupHealth.ratePoints(0, 0.6, 7), 0.6), 10)
+        t:assertEqual(evaluate(GroupHealth.ratePoints(1, 2, 7), 0.999), 10)
+        t:assertEqual(evaluate(GroupHealth.ratePoints(1, 2, 7), 1), 7)
+        -- Slow rates make the same gate.
+        t:assertEqual(evaluate(GroupHealth.ratePoints(0, 0.6, -5), 0.3), -5)
+    end,
+
+    ["rate gate: nothing to hear, or already the fastest rate, is fast throughout"] = function(t)
+        for _, points in ipairs({
+            GroupHealth.ratePoints(0.8, 0.8, 7),
+            GroupHealth.ratePoints(0, 0, 7),
+            GroupHealth.ratePoints(0, 0.6, 10),
+            GroupHealth.ratePoints(0, 0.6, nil),
+        }) do
+            t:assertEqual(evaluate(points, 0), 10)
+            t:assertEqual(evaluate(points, 0.5), 10)
+            t:assertEqual(evaluate(points, 1), 10)
+        end
+    end,
+
+    ["rate gate and volume gate agree on where a part is heard"] = function(t)
+        local profile = GroupHealth.voices:get("hedda")
+        local lowCopy, highCopy = GroupHealth.copyRanges(0, 0.7, profile)
+        for _, copy in ipairs({ lowCopy, highCopy }) do
+            local volume = GroupHealth.bandPoints(copy[1], copy[2])
+            local rate = GroupHealth.ratePoints(copy[1], copy[2], 7)
+            for i = 0, 100 do
+                local x = i / 100
+                t:assertEqual(evaluate(rate, x) == 7, evaluate(volume, x) == 100, "health " .. x)
+            end
+        end
     end,
 
     ["points key tells gates apart"] = function(t)

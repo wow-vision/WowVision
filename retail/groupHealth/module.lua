@@ -438,7 +438,13 @@ function module:announce(member, lane)
     local lowRange, highRange = GroupHealth.copyRanges(low, high, profile)
     local lowVolume = through(member.unit, GroupHealth.bandPoints(lowRange[1], lowRange[2]))
     local highVolume = through(member.unit, GroupHealth.bandPoints(highRange[1], highRange[2]))
-    if pitch == nil or lowVolume == nil or highVolume == nil then
+    -- What is silent is spoken at the fastest rate (logic.lua, ratePoints):
+    -- it takes a third of the time and nobody hears it. The rate, like the
+    -- volume, is decided by the curve inside the secret.
+    local rate = self.settings.rate
+    local lowRate = through(member.unit, GroupHealth.ratePoints(lowRange[1], lowRange[2], rate))
+    local highRate = through(member.unit, GroupHealth.ratePoints(highRange[1], highRange[2], rate))
+    if pitch == nil or lowVolume == nil or highVolume == nil or lowRate == nil or highRate == nil then
         self:unavailable()
         return false
     end
@@ -453,13 +459,14 @@ function module:announce(member, lane)
     local fullPart = ""
     if lane == "snapshot" and self.settings.announceFull then
         local full = through(member.unit, fullPoints)
-        if full ~= nil then
-            fullPart = GroupHealth.segment(full, profile.scale[#profile.scale], number .. " " .. L["full"])
+        local fullRate = through(member.unit, GroupHealth.ratePoints(1, 2, rate))
+        if full ~= nil and fullRate ~= nil then
+            fullPart = GroupHealth.segment(full, profile.scale[#profile.scale], number .. " " .. L["full"], fullRate)
         end
     end
     local pad = GroupHealth.uniquePad(self:nextCount())
-    local lowPart = GroupHealth.segment(lowVolume, pitch, number .. pad)
-    local highPart = GroupHealth.segment(highVolume, pitch, number)
+    local lowPart = GroupHealth.segment(lowVolume, pitch, number .. pad, lowRate)
+    local highPart = GroupHealth.segment(highVolume, pitch, number, highRate)
     self:speak(lowPart .. highPart .. fullPart)
     return true
 end

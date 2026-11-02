@@ -20,8 +20,11 @@
 # monitor's default rate 7, three ways (retail/groupHealth/logic.lua,
 # GroupHealth.segment and module:announce):
 #   plain  the number alone (the reference: absmiddle 0 is 0 semitones)
-#   low    the LOW copy: the number spoken, then a silent copy
-#   high   the HIGH copy: a silent copy, then the number spoken
+#   low    the LOW copy: the number spoken, then a silent copy at rate 10
+#   high   the HIGH copy: a silent copy at rate 10, then the number spoken
+# (the silent copy is sped up as the monitor does it; measured 2026-11-02,
+# that moves the audible copy's pitch by less than 0.15 semitones at the
+# levels in use)
 # If the monitor's markup changes, change it here too and measure again.
 
 param(
@@ -94,8 +97,12 @@ $speaker = New-Object -ComObject SAPI.SpVoice
 $format = New-Object -ComObject SAPI.SpAudioFormat
 $format.Type = 22 # 22 kHz, 16 bit, mono
 
-function Segment($volume, $pitch, $words) {
-    "<volume level=`"$volume`"><pitch absmiddle=`"$pitch`">$words</pitch></volume>"
+# $rate: the silent copy is spoken at the engine's fastest rate, 10, as
+# the monitor does (GroupHealth.ratePoints); the audible copy at $Rate.
+function Segment($volume, $pitch, $words, $rate) {
+    $inner = "<pitch absmiddle=`"$pitch`">$words</pitch>"
+    if ($null -ne $rate) { $inner = "<rate absspeed=`"$rate`">$inner</rate>" }
+    "<volume level=`"$volume`">$inner</volume>"
 }
 
 foreach ($c in $chosen) {
@@ -106,8 +113,8 @@ foreach ($c in $chosen) {
     foreach ($p in -10..10) {
         $texts = @{
             plain = (Segment 100 $p "3")
-            low = (Segment 100 $p "3") + (Segment 0 $p "3")
-            high = (Segment 0 $p "3") + (Segment 100 $p "3")
+            low = (Segment 100 $p "3") + (Segment 0 $p "3" 10)
+            high = (Segment 0 $p "3" 10) + (Segment 100 $p "3")
         }
         foreach ($kind in $texts.Keys) {
             $stream = New-Object -ComObject SAPI.SpFileStream

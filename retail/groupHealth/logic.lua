@@ -181,6 +181,36 @@ function GroupHealth.fullPoints()
     return { { 0, 0 }, { 1, 100 } }
 end
 
+-- The engine's fastest rate, for what is silent anyway.
+GroupHealth.FAST_RATE = 10
+
+-- The rate curve of a part: `rate` (the monitor's setting) on [low, high),
+-- where the part can be heard, the fastest rate everywhere else. A silent
+-- word takes as long as a spoken one, and a silent part at rate 10 takes
+-- about a third of the time: two silent copies 0.23 instead of 0.70 s on
+-- Hedda, 0.29 instead of 0.66 on Zira (rendered offline through SAPI,
+-- 2026-11-02). The audible copy's pitch stays: measured within 0.15
+-- semitones at every level the profiles use, with the silent copy at rate
+-- 7 and at rate 10. A `high` above 1 includes full health.
+function GroupHealth.ratePoints(low, high, rate)
+    local fast = GroupHealth.FAST_RATE
+    local empty = high == nil or high <= 0 or (low ~= nil and low >= high)
+    if rate == nil or rate >= fast or empty then
+        return { { 0, fast } }
+    end
+    local points = {}
+    if low == nil or low <= 0 then
+        tinsert(points, { 0, rate })
+    else
+        tinsert(points, { 0, fast })
+        tinsert(points, { low, rate })
+    end
+    if high <= 1 then
+        tinsert(points, { high, fast })
+    end
+    return points
+end
+
 -- A cache key for a point list, so equal gates share one curve object.
 function GroupHealth.pointsKey(points)
     local parts = {}
@@ -217,10 +247,15 @@ function GroupHealth.raidNumbers(roster, maxIndex)
     return numbers
 end
 
--- One spoken part: the words at a volume and a pitch, either of which may
--- be a secret curve result. Plain concatenation only, which secrets allow.
-function GroupHealth.segment(volume, pitch, words)
-    return '<volume level="' .. volume .. '"><pitch absmiddle="' .. pitch .. '">' .. words .. "</pitch></volume>"
+-- One spoken part: the words at a volume and a pitch, and at a rate when
+-- given (ratePoints), any of which may be a secret curve result. Plain
+-- concatenation only, which secrets allow.
+function GroupHealth.segment(volume, pitch, words, rate)
+    local inner = '<pitch absmiddle="' .. pitch .. '">' .. words .. "</pitch>"
+    if rate ~= nil then
+        inner = '<rate absspeed="' .. rate .. '">' .. inner .. "</rate>"
+    end
+    return '<volume level="' .. volume .. '">' .. inner .. "</volume>"
 end
 
 -- The engine caches the audio of every text it speaks and replays it when
