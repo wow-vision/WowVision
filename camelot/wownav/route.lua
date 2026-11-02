@@ -42,6 +42,8 @@ Route.ZUNKNOWN_SKIP_RADIUS = 1.5      -- yd: the first node under the player is 
 Route.ACTION_PHASES = 3
 -- WowVision's own: a jump of the player farther than this between two observations is a teleport (a portal walked into)
 Route.TELEPORT_JUMP = 50.0
+-- WowVision's own: yd before a walk-in transit's source volume where it is announced once (its teleport comes at once)
+Route.TRANSIT_AHEAD = 15.0
 
 -- His chokeFallback setting (WowVisionNavigationDB, written from WowVision's settings by the module): on unless false.
 function Route.chokeFallback()
@@ -345,6 +347,7 @@ function Route:reset(keepPenalties)
     self.activation = nil     -- the walk-in target of the route (his activationTarget), set after begin
     self.activationPrepointSaid = nil
     self.activationInside = nil
+    self.transitAheadSaid = nil -- the walk-in transit ahead was announced
     self.source = nil         -- the target (his layerTargetSource)
     self.anchor.height = nil
     if not keepPenalties then
@@ -437,6 +440,7 @@ function Route:begin(plan, source, result, name)
     self.active = true
     self.path = plan.path
     self.pendingAction = plan.pendingAction
+    self.transitAheadSaid = nil
     self.targetBindingId = plan.targetNodeId
     self.pathIndex = 1
     self.targetName = name
@@ -610,6 +614,7 @@ end
 --   { kind = "arrived", exact = bool, result }              target reached (his stop_target_position_reached / reached)
 --   { kind = "transit", action }                            the route ends at a transit; the continuation waits
 --   { kind = "transit", action, sourceEntered / teleported } a portal walked into before the route's end
+--   { kind = "transitAhead", action }                       a portal ahead, once (the transit then has announced)
 function Route:update(x, y)
     if not self.active or not self.path then
         return nil
@@ -624,7 +629,9 @@ function Route:update(x, y)
     -- a portal on the way teleports as soon as the player is in it, maybe before the route's last waypoint
     local walkIn = self:walkInTransit(x, y, self.currentX, self.currentY)
     if walkIn then
-        self.active = false
+        if walkIn.kind == "transit" then
+            self.active = false
+        end
         return walkIn
     end
 
@@ -697,7 +704,7 @@ function Route:update(x, y)
             if self.pendingAction then
                 local action = self.pendingAction
                 self.active = false
-                return { kind = "transit", action = action }
+                return { kind = "transit", action = action, announced = self.transitAheadSaid }
             end
             self.active = false
             return { kind = "arrived", exact = true, result = result }
@@ -754,18 +761,31 @@ local function teleported(action, x, y, lastX, lastY)
         and inVolume2D(action.arrivalVolume, x, y)
 end
 
+-- The source volume widened by Route.TRANSIT_AHEAD: where the transit is announced.
+local function aheadReach(volume)
+    if type(volume) ~= "table" then
+        return 0
+    end
+    return max(volume.radius or 0, volume.half_x or 0, volume.half_y or 0) + Route.TRANSIT_AHEAD
+end
+
 -- During a route with a portal on the way: the transit event when the player is in the portal (sourceEntered) or
--- came out at its far end (teleported), else nil. lastX, lastY: the position of the previous update.
+-- came out at its far end (teleported); once, when he comes near it, the transitAhead event (the teleport leaves no
+-- time for a text in the portal); else nil. lastX, lastY: the position of the previous update.
 function Route:walkInTransit(x, y, lastX, lastY)
     local action = self.pendingAction
     if not walksInto(action) or not x then
         return nil
     end
     if inVolume2D(action.sourceVolume, x, y) then
-        return { kind = "transit", action = action, sourceEntered = true }
+        return { kind = "transit", action = action, sourceEntered = true, announced = self.transitAheadSaid }
     end
     if teleported(action, x, y, lastX, lastY) then
         return { kind = "transit", action = action, teleported = true }
+    end
+    if not self.transitAheadSaid and inVolume2D(action.sourceVolume, x, y, aheadReach(action.sourceVolume)) then
+        self.transitAheadSaid = true
+        return { kind = "transitAhead", action = action }
     end
     return nil
 end

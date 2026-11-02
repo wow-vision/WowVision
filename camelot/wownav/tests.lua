@@ -161,10 +161,15 @@ local suite = {
             arrivalVolume = { radius = 10, x = 8786.4, y = 967.4 },
         }
         route.pendingAction = portal
-        t:assertNil(route:walkInTransit(9960.3, 2653.5, 9974.0, 2664.0), "before the portal")
+        t:assertNil(route:walkInTransit(9974.0, 2664.0, 9990.0, 2680.0), "43 yd from its centre: not yet")
+        t:assertNil(route:walkInTransit(9960.3, 2653.5, 9974.0, 2664.0), "16.7 yd from its edge: not yet")
+        local ahead = route:walkInTransit(9955.0, 2648.0, 9960.3, 2653.5)
+        t:assertEqual(ahead and ahead.kind, "transitAhead", "within 15 yd of the portal: said before it")
+        t:assertNil(route:walkInTransit(9951.3, 2640.3, 9960.3, 2653.5), "said once")
         local entered = route:walkInTransit(9951.6, 2636.8, 9951.3, 2640.3)
         t:assertEqual(entered and entered.kind, "transit", "in the portal, not at the route's last waypoint")
         t:assertTrue(entered.sourceEntered == true)
+        t:assertTrue(entered.announced == true, "not said again in the portal")
         local jumped = route:walkInTransit(8787.0, 968.0, 9951.3, 2640.3)
         t:assertTrue(jumped ~= nil and jumped.teleported == true, "out at its far end between two updates")
         t:assertNil(route:walkInTransit(8787.0, 968.0, 8790.0, 970.0), "in the arrival volume without a jump")
@@ -860,7 +865,7 @@ if haveNetwork then
         t:assertNotNil(plan, "a route to the far end")
         t:assertEqual(plan.pendingAction and plan.pendingAction.id, portalId, "the route takes the portal")
         route:begin(plan, {}, { quality = "exact" }, "far end")
-        local transit, teleported
+        local transit, teleported, ahead
         for _ = 1, 400 do
             game.t = game.t + 0.3
             local x, y
@@ -875,12 +880,16 @@ if haveNetwork then
             end
             game.x, game.y, game.moving = x, y, true
             local event = route:update(x, y)
-            if event and event.kind == "transit" then
+            if event and event.kind == "transitAhead" then
+                t:assertNil(ahead, "the portal ahead is said once")
+                ahead = event
+            elseif event and event.kind == "transit" then
                 transit = event
                 break
             end
         end
         t:assertNotNil(transit, "the route waits for the portal")
+        t:assertNotNil(ahead, "the portal is said before it")
         route:startAction(transit.action, {}, portal.toNode, nil, transit)
         -- at the route's end the player walks on into the portal, which teleports him (no observation inside it)
         local state = route:observeAction(game.x, game.y, 1, 3)
@@ -895,6 +904,7 @@ if haveNetwork then
         -- end, 10.8 yd outside
         local transit, state = throughPortal(t, 1457, "portal:areatrigger:527", false)
         t:assertTrue(transit.sourceEntered == true, "in the portal, before the route's last waypoint")
+        t:assertTrue(transit.announced == true, "said before the portal, not again in it")
         t:assertEqual(state, "arrived", "the route goes on in Rut'theran")
         transit, state = throughPortal(t, 1457, "portal:areatrigger:527", true)
         t:assertTrue(transit.teleported == true, "only the landing was seen")
@@ -905,6 +915,7 @@ if haveNetwork then
         -- Rut'theran to Darnassus: the route ends 10.5 yd from the centre of the 10 yd portal
         local transit, state = throughPortal(t, 57, "portal:areatrigger:542", true)
         t:assertNil(transit.teleported, "the transit at the route's last waypoint")
+        t:assertTrue(transit.announced == true, "said before the portal, not again at the route's end")
         t:assertEqual(state, "arrived", "the route goes on in Darnassus")
     end
 end
