@@ -7,5 +7,6 @@
   <Include file="quests/modules.xml" />
   <Script file="mail.lua" />
   <Script file="friends.lua" />
+  <Script file="guild.lua" />
 
 </Ui>

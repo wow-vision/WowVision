@@ -2,7 +2,9 @@ local module = WowVision.base.windows:createModule("friends")
 local L = module.L
 module:setLabel(L["Friends"])
 
--- The social panel (FriendsFrame): friends list, ignore list, and who.
+-- The social panel (FriendsFrame): friends list, ignore list, who, and the
+-- guild tab (classic/guild.lua, shown when the game uses the classic guild
+-- window).
 -- Shared by Vanilla, TBC, and Mists -- Blizzard ships the identical
 -- FriendsFrame file on all classic clients; only a few Battle.net WRITE
 -- calls differ (C_BattleNet.SetAFK vs BNSetAFK), and this file reads
@@ -22,6 +24,15 @@ local kinds = graph.kinds
 if FriendsFrame == nil then
     return
 end
+
+-- Shared with the tab files loaded after this one (classic/guild.lua), which
+-- add their render functions here.
+WowVision.classic = WowVision.classic or {}
+local friends = {
+    module = module,
+    L = L,
+}
+WowVision.classic.friends = friends
 
 local function bnFriendCounts()
     if BNGetNumFriends == nil then
@@ -215,6 +226,7 @@ local function withEdgeBindings(bindings, helpers)
     end
     return bindings
 end
+friends.withEdgeBindings = withEdgeBindings
 
 -- A friend row: Enter selects (Blizzard's left click), Backspace opens the
 -- row's own dropdown menu (right click). Focusing any friend row clears
@@ -702,6 +714,7 @@ local function addTabStrip(builder, config)
     builder:endRow()
     builder:popContext()
 end
+friends.addTabStrip = addTabStrip
 
 local function render(builder, screen)
     if FriendsFrame == nil or not FriendsFrame:IsShown() then
@@ -715,6 +728,8 @@ local function render(builder, screen)
         renderIgnoreList(builder)
     elseif WhoFrame ~= nil and WhoFrame:IsShown() then
         renderWho(builder)
+    elseif GuildFrame ~= nil and GuildFrame:IsShown() and friends.renderGuild ~= nil then
+        friends.renderGuild(builder, screen)
     else
         builder:beginStop("body")
         builder:addItem(
