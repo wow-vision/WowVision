@@ -23,6 +23,13 @@ local kinds = graph.kinds
 -- at are the entry points and the route starts at the one selected.
 -- While the player swims or dives the nearest water point is preselected,
 -- in its place by distance (dry land may be nearer).
+--
+-- The first stop is the "Direct" checkbox (off on every open; the window
+-- still lands on the entry points, Shift-Tab reaches it). Checked, there is
+-- no entry point to pick: Tab goes from it to the search, then to the
+-- destinations, and Enter on a destination sets exactly that point -- a
+-- straight beacon, no route (WowNav's /vn direct). The destinations are the
+-- same, a route engine's without its reachability check.
 
 local function entryLabel(entry)
     local wp = entry.waypoint
@@ -75,7 +82,12 @@ local function ensureData(screen)
         if screen.state ~= nil then
             screen.state.nextSuggestedMove = ControlId.structural("destinations")
         end
+    elseif screen.state ~= nil then
+        -- the Direct checkbox comes first, the window lands on the selected entry point as before
+        screen.state.nextSuggestedMove = ControlId.structural(screen._entryId ~= nil and ("entry:" .. screen._entryId)
+            or "entriesEmpty")
     end
+    screen._direct = false
     return true
 end
 
@@ -101,7 +113,9 @@ local function destinations(screen)
         end
     end
     if screen._engine ~= nil then
-        local hits, info = screen._engine:search(screen._search, screen._px, screen._py, screen._map)
+        -- a direct point needs no route to it: the engine's hits without its reachability check
+        local hits, info = screen._engine:search(screen._search, screen._px, screen._py, screen._map,
+            { direct = screen._direct })
         for _, wp in ipairs(hits or {}) do
             local dx = wp.x - screen._px
             local dy = wp.y - screen._py
@@ -223,6 +237,10 @@ local function destinationCursor(screen)
             end
             WowVision.UIHost:closeWindow("atlas")
             local wp = entry.waypoint
+            if screen._direct then
+                module:directTo(wp.x, wp.y, wp.n, wp.onArrive)
+                return
+            end
             if screen._engine ~= nil then
                 -- the engine's own row is its target data; the window's target brings its source's (scanner)
                 local data = wp
@@ -327,7 +345,25 @@ local function render(builder, screen)
     end
     builder:pushContext("navigation", L["Navigation"])
 
-    renderEntries(builder, screen)
+    builder:beginStop("direct")
+    builder:addItem(ControlId.structural("direct"), nodes.toggle({
+        label = L["Direct"],
+        get = function()
+            return screen._direct
+        end,
+        set = function(value)
+            screen._direct = value == true
+            -- an engine's list depends on the mode (its reachability check)
+            if screen._engine ~= nil then
+                screen._destinations = nil
+                screen._destIndex = 1
+            end
+        end,
+    }))
+
+    if not screen._direct then
+        renderEntries(builder, screen)
+    end
 
     builder:beginStop("search")
     builder:addItem(

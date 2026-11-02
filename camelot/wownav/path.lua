@@ -84,7 +84,10 @@ function WowNavPath:update()
     end
     local event = self.route:update(x, y)
     if event ~= nil then
-        if event.kind == "advance" then
+        -- every waypoint reached plays the arrival cue, the last one too (the route's end, a dock, a transit), as on
+        -- the route data's paths
+        local kind = event.kind
+        if kind == "advance" or kind == "arrived" or kind == "transit" then
             self.events.arriveAtWaypoint:emit(self, self.currentWaypoint)
         end
         self:follow()

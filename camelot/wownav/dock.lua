@@ -8,20 +8,23 @@
 --   (his ride beacon); it ends there, or when the player leaves the dock.
 -- - Choosing the other dock of the same line while standing at a dock notes it (his passive mode): no route, no
 --   beacon. Near that dock the turn key (I) faces it.
--- - The boarding points are list entries ("At the vehicle"); choosing one leads straight to it.
+-- - The boarding points are list entries ("At the vehicle"); choosing one routes to it like to any place (F10's
+--   Direct leads straight to it).
 --
 -- What WowVision adds: being in the station of a dock (within 100 yd of it) counts as having reached the nearest
--- dock (his core needs the route there first), and choosing that dock itself means riding from it: the other dock of
--- its line is noted (the data names a dock after where its line goes, "Tram dock toward Ironforge" stands in
--- Stormwind); a dock chosen by its position (scanner, places list) is that dock; a dock
+-- dock (his core needs the route there first), so choosing the other dock of its line notes it; choosing a dock of
+-- the own station, that one or another one there ("Ship dock to Auberdine" in Menethil, beside the dock to the
+-- Southshore ferry: the data names a dock after where its line goes), walks to it like any dock; a dock chosen by
+-- its position (scanner, places list) is that dock; a dock
 -- of the other line at the same far stop is taken as that line's own dock (the Deeprun Tram has two lines with a
 -- dock each at both ends); and near the noted dock it is said once that the turn key faces it.
 -- Where the dock's waiting node lies outside its waiting circle (the Deeprun Tram in data 9423773: the waiting point
 -- is at track level, the route ends on the platform about 7 yd away), his circle rule could never end the route: there
 -- the route ends at the waiting node as any route does, standing at that node counts as standing at the dock, and the
--- boarding beacon starts only where his rule gives it a point. A route to a dock also ends before a last drop of more
--- than 3 yd: the tram's waiting nodes lay down in the track bed in data 9423773 (the platform is the place to wait);
--- since data 5b8b5f2 the Stormwind waiting node stands on the platform and these rules stay as guards.
+-- boarding beacon starts only where his rule gives it a point. A route to a tram dock also ends before a last drop of
+-- more than 3 yd: the tram's waiting nodes lay down in the track bed in data 9423773 (the platform is the place to
+-- wait); since data 5b8b5f2 the Stormwind waiting node stands on the platform and these rules stay as guards. Never
+-- for a ship: a pier slopes down to its dock (Menethil), and cut there the route ended far from the dock.
 
 -- (the headless tests load this file without WowVision's navigation: no beacon paths there)
 local maps = WowVision.base ~= nil and WowVision.base.navigation ~= nil and WowVision.base.navigation.maps or nil
@@ -271,19 +274,20 @@ function dock.choose(N, row, x, y)
             and string.format("WowNav dock: standing at %s (%.0f yd)", WowVisionNavigationTargetName(standing), yards)
         or "WowNav dock: not on a dock's platform"
     local source = standing
-    if source ~= nil and source.id == target.id then
-        -- the dock the player is at: ride from it, to the other dock of its line
-        for _, candidate in ipairs(facilities(nav)) do
-            if candidate.transportRouteId == source.transportRouteId and candidate.id ~= source.id
-                and candidate.interactionMode == "manual_wait" then
-                target = candidate
-            end
-        end
+    -- a dock of the player's own station (the one he is near, or another one there: Menethil has the docks to
+    -- Auberdine and to the Southshore ferry side by side) is walked to like any dock; only a dock at the far end of a
+    -- line is noted (his ChoosePassive)
+    local function near(ax, ay, bx, by)
+        return ax ~= nil and bx ~= nil and (ax - bx) ^ 2 + (ay - by) ^ 2 <= STATION_REACH * STATION_REACH
     end
-    target = sameLine(N, nav, target)
+    local ownStation = near(target.x, target.y, x, y)
+        or (standing ~= nil and near(target.x, target.y, standing.x, standing.y))
+    if not ownStation then
+        target = sameLine(N, nav, target)
+    end
     -- his ChoosePassive reads the nav of the player's zone (the reached dock's) and the fingerprint of the
     -- target's zone; its own text is replaced by one that names where the ride goes (dock.passiveText)
-    if Dock.reached ~= nil then
+    if Dock.reached ~= nil and not ownStation then
         local targetEntry = N.index[target.zoneId]
         local text = WowVision.wownavText
         local say = text.say
@@ -463,6 +467,8 @@ function PointPath:update(x, y)
         return
     end
     if reached then
+        -- the boarding point reached plays the arrival cue like any waypoint
+        self.events.arriveAtWaypoint:emit(self, self.currentWaypoint)
         self:finish()
         if maps.path == self then
             maps:stopPath()
@@ -504,23 +510,4 @@ function dock.boardingPath(N)
         WowVisionNavigationPrint(WowVisionNavigationText("stop_boarding_point_reached", name or ""))
     end)
     return path
-end
-
--- His WowVisionNavigationStartDirect for a boarding entry: straight to the point, checked against its proof.
-function dock.directPath(N, row)
-    local Dock = D()
-    local entry = row.entry
-    local context = { lastX = nil, lastY = nil }
-    return PointPath:new(function(x, y)
-        local nav = dock.nav(N, row.zoneId)
-        if nav == nil or not Dock:DirectTargetValid(entry, nav) then
-            return nil
-        end
-        local reached = Dock:PointReached(context, entry.x, entry.y, x, y, entry.arrivalRadius)
-        return entry.x, entry.y, reached
-    end, function()
-        WowVisionNavigationPrint(string.format(L["Arrived"] .. " %s", row.n or ""))
-    end, function()
-        WowVisionNavigationPrint(WowVisionNavigationText("stop_boarding_proof_changed"))
-    end)
 end
