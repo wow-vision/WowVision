@@ -35,6 +35,17 @@ If you ever find a WowVision window stuck after a fight, type /wv close. It clos
 
 Classic Era, The Burning Crusade and Mists of Pandaria do not have these limits.
 
+## Your own health and resources
+
+WowVision does not announce your own health or mana by itself. You read them whenever you want from the General buffer:
+
+1. Press Alt+Down (with no window open). The first two lines of the General buffer are your health, for example "250 / 500 Health", and your main resource, for example "50 / 100 MANA".
+2. Press Alt+Up to go back to the first line.
+
+The lines are always current, also in combat. A second resource, such as combo points, holy power or soul shards, can be added as a line of its own; see [Watch a power other than your main one](../information/buffers.md#watch-a-power-other-than-your-main-one). The whole General buffer is described in [The default setup: the General group](../information/buffers.md#the-default-setup-the-general-group).
+
+On Retail and WoW: Forever the [Group Health Monitor](../information/group-health.md) can include you: with Include Yourself on, you are number 1 and are announced when you are hurt.
+
 ## Combat alerts
 
 Two alerts tell you when a fight begins and ends. They sit in UI, Combat:

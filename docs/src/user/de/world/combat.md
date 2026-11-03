@@ -35,6 +35,17 @@ Sollte nach einem Kampf einmal ein WowVision-Fenster hängen bleiben, tippe /wv 
 
 Classic Era, The Burning Crusade und Mists of Pandaria haben diese Einschränkungen nicht.
 
+## Dein eigenes Leben und deine Ressourcen
+
+WowVision sagt dein eigenes Leben und dein Mana nicht von selbst an. Du liest beides jederzeit im Puffer Allgemein ab:
+
+1. Drücke Alt+Pfeil runter (ohne offenes Fenster). Die ersten beiden Zeilen des Puffers Allgemein sind dein Leben, zum Beispiel "250 / 500 Leben", und deine Hauptressource, zum Beispiel "50 / 100 MANA".
+2. Mit Alt+Pfeil hoch gehst du zurück zur ersten Zeile.
+
+Die Zeilen sind immer aktuell, auch im Kampf. Eine zweite Ressource wie Kombopunkte, Heilige Kraft oder Seelensplitter kannst du als eigene Zeile hinzufügen; siehe [Eine andere Kraft als deine Hauptkraft beobachten](../information/buffers.md#eine-andere-kraft-als-deine-hauptkraft-beobachten). Den ganzen Puffer Allgemein beschreibt [Die Standardeinrichtung: die Gruppe Allgemein](../information/buffers.md#die-standardeinrichtung-die-gruppe-allgemein).
+
+In Retail und WoW: Forever kann der [Gruppen-Gesundheitsmonitor](../information/group-health.md) dich einbeziehen: Mit Dich selbst einbeziehen bist du Nummer 1 und wirst angesagt, wenn du verletzt bist.
+
 ## Kampfalarme
 
 Zwei Alarme sagen dir, wann ein Kampf beginnt und endet. Sie stehen unter Benutzeroberfläche, Kampf:

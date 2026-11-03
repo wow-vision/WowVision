@@ -88,6 +88,10 @@ Yes. WowVision then leaves a number of windows and keys to Sku. See [Using WowVi
 
 Most settings are shared by all characters on the account. You can switch any module, buffer or monitor to per-character storage through its context menu. See [The WowVision Menu and Settings](../basics/menu-and-settings.md).
 
+### How do I hear my own health and mana?
+
+Press Alt+Down with no window open: the first two lines of the General buffer are your health and your main resource. WowVision does not announce them by itself. See [Your own health and resources](../world/combat.md#your-own-health-and-resources).
+
 ### How do I make WowVision talk faster?
 
 Open the WowVision menu (Shift+F1), go to Speech and raise Speech Rate, or type `/wv speech` followed by voice, rate and volume. See [Speech and Sound](../basics/speech.md).

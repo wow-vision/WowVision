@@ -90,6 +90,10 @@ Ja. WowVision überlässt dann einige Fenster und Tasten Sku. Siehe [WowVision z
 
 Die meisten Einstellungen teilen alle Charaktere auf dem Account. Du kannst jedes Modul, jeden Puffer und jeden Monitor über sein Kontextmenü auf Speicherung pro Charakter umstellen. Siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).
 
+### Wie höre ich mein eigenes Leben und mein Mana?
+
+Drücke Alt+Pfeil runter, ohne dass ein Fenster offen ist: Die ersten beiden Zeilen des Puffers Allgemein sind dein Leben und deine Hauptressource. Von selbst sagt WowVision sie nicht an. Siehe [Dein eigenes Leben und deine Ressourcen](../world/combat.md#dein-eigenes-leben-und-deine-ressourcen).
+
 ### Wie bringe ich WowVision dazu, schneller zu sprechen?
 
 Öffne das WowVision-Menü (Umschalt+F1), gehe zu Sprache und erhöhe Sprachgeschwindigkeit, oder tippe `/wv speech` gefolgt von Stimme, Geschwindigkeit und Lautstärke. Siehe [Sprache und Ton](../basics/speech.md).
