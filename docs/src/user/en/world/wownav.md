@@ -104,7 +104,7 @@ The beacon, its sounds, Ctrl+W, Ctrl+S, Shift+F12, Alt Gr and I all work as in [
 
 - A waypoint counts as reached by its own distance from the data, not by the Alt+P arrival distance. You can raise it for every waypoint with Minimum Arrival Distance for WowNav Waypoints (0 = Their Own). Only the transit areas below widen with Alt+P.
 - Ctrl+W and Ctrl+S step along the route's own waypoints.
-- Ctrl+Shift+N plans the last destination again from where you stand, but only if WowNav knows which floor you are on. Otherwise you hear "Your floor is not clear here" or "No WowNav network here".
+- Ctrl+Shift+N plans the last destination again from where you stand, but only if WowNav knows which floor you are on. If you stand beside the network, the route starts at its nearest point within 30 yards. Otherwise you hear "Your floor is not clear here", or "No WowNav network here" when nothing of the network is within 30 yards.
 - Shift+F12 ends everything WowNav does: the search, the route, a transit that waits for its far end, the dock guidance and the beacon at a fishing spot.
 - /beacon to name takes the nearest place with that name, from WowNav's list, with the entry point F10 would preselect.
 

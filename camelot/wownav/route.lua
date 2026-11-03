@@ -46,6 +46,9 @@ Route.TELEPORT_JUMP = 50.0
 Route.TRANSIT_AHEAD = 15.0
 -- WowVision's own: yd above and below a walk-in transit's source volume within which the route is at its height
 Route.TRANSIT_HEIGHT = 5.0
+-- WowVision's own: yd around the player within which the nearest cell is the start when the player stands in none
+-- (his N.START_RADIUS is 3; a step beside the network was "no network here")
+Route.START_RADIUS = 30.0
 
 -- His chokeFallback setting (WowVisionNavigationDB, written from WowVision's settings by the module): on unless false.
 function Route.chokeFallback()
@@ -104,7 +107,8 @@ function Route:estimatedHeight()
 end
 
 function Route:startOptions()
-    return { swimming = self.env.swimming(), preferred = self.anchor.preferred, lastHeight = self.anchor.last }
+    return { swimming = self.env.swimming(), preferred = self.anchor.preferred, lastHeight = self.anchor.last,
+        radius = Route.START_RADIUS }
 end
 
 -- Binds a position to the network. Returns id, binding | nil, reason ("ambiguous" | "no_attachment" | ...).

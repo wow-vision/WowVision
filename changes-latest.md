@@ -106,6 +106,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 * WowNav routes: the F10 entry points list the nearest 50 entries instead of 20. The network's own waypoints within 10 yards of you are always among them, so you can start where you stand even when the nearest place is far away; Show Automatic Waypoints adds the waypoints farther away, and to the destination list.
 * WowNav routes: on Zephras Isle the portals say to target and interact with them, the Wind Bridge says to wait for it and has no time limit, their estimated positions are said as such, and the portal to Valanaar is only used for your own faction. Dungeons with several entrances name the wing ("Dungeon entrance: Scarlet Monastery, Graveyard").
 * WowNav routes: Broesel33's navigation engine and data are at their latest version. A place on the bottom of a lake is bound to the water above it, and where the network has fine and coarse cells on your floor, the fine one is used.
+* WowNav routes: Ctrl+Shift+N and the route to your target start at the network's nearest point within 30 yards when you stand beside it, instead of saying "No WowNav network here" a few steps off the network.
 * Collections: Enter on the tab that is already open only says "selected", so it can no longer close the journal by accident.
 
 ### Classic
