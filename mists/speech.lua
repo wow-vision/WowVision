@@ -72,6 +72,8 @@ settings:add({
     key = "speechVolume",
     label = L["Speech Volume"],
     default = 100,
+    min = 0,
+    max = 100,
 })
 
 settings:add({
@@ -79,6 +81,9 @@ settings:add({
     key = "speechRate",
     label = L["Speech Rate"],
     default = 0,
+    -- The range the game's voices take.
+    min = -10,
+    max = 10,
 })
 
 local queueSetting = settings:add({

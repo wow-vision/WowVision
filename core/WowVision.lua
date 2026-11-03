@@ -27,7 +27,6 @@ function WowVision:OnInitialize()
         charLoaded = WowVisionDB ~= nil,
         globalLoaded = WowVisionGlobalDB ~= nil,
         globalSeeded = WowVisionGlobalDB ~= nil and WowVisionGlobalDB._seeded == true,
-        trigger = tostring(self.baseName),
     }
     -- An AceDB-shaped store (profileKeys/profiles) is from WowVision 0.3 and
     -- earlier; nothing in it maps onto the current layout, and migrating it
@@ -258,7 +257,6 @@ function WowVision:registerCommands()
             print("Character store loaded at init: " .. yesno(diag.charLoaded))
             print("Account store loaded at init: " .. yesno(diag.globalLoaded))
             print("Account store was seeded at init: " .. yesno(diag.globalSeeded))
-            print("Initialized by addon loaded event for: " .. tostring(diag.trigger))
             print("Account store last bound by: " .. tostring(diag.globalBoundBy))
             print("Account store restored from character mirror: " .. yesno(diag.restoredFromMirror))
             print("Live character store is the saved table: " .. yesno(WowVision.db == WowVisionDB))
@@ -346,6 +344,17 @@ function WowVision:registerCommands()
         name = "errors",
         description = "Show this session's Lua errors ('all' includes history; 'clear' resets)",
         func = function(args)
+            -- Clear BugGrabber's list and our own together.
+            if args == "clear" then
+                if BugGrabber ~= nil and BugGrabber.Reset ~= nil then
+                    BugGrabber:Reset()
+                end
+                if WowVision.base.errors ~= nil then
+                    WowVision.base.errors:clearLuaErrors()
+                end
+                print("Errors cleared")
+                return
+            end
             local lines = {}
             local lastMessage = nil
             if BugGrabber ~= nil and BugGrabber.GetDB ~= nil then
@@ -361,13 +370,6 @@ function WowVision:registerCommands()
                         end
                     end
                     db = filtered
-                end
-                if args == "clear" then
-                    if BugGrabber.Reset ~= nil then
-                        BugGrabber:Reset()
-                    end
-                    print("Errors cleared")
-                    return
                 end
                 local total = #db
                 local first = total > 15 and total - 14 or 1
@@ -386,11 +388,6 @@ function WowVision:registerCommands()
             end
             local moduleErrors = WowVision.base.errors ~= nil and WowVision.base.errors.luaErrors or nil
             if moduleErrors ~= nil then
-                if args == "clear" then
-                    WowVision.base.errors:clearLuaErrors()
-                    print("Errors cleared")
-                    return
-                end
                 for i = #moduleErrors, 1, -1 do
                     local err = moduleErrors[i]
                     tinsert(lines, err.time .. " " .. err.message)
@@ -792,11 +789,14 @@ function WowVision:registerCommands()
         name = "bind",
         description = "Show keybindings",
         func = function(args)
-            local root = { "binding/List", bindings = WowVision.input.bindings }
+            -- The same graph screen as WowVision menu > UI > Bindings.
             WowVision.UIHost:openTemporaryWindow({
-                generated = true,
-                rootElement = root,
-                hookEscape = true,
+                graphScreen = {
+                    key = "bindings",
+                    captureClose = true,
+                    letterNavigation = true,
+                    render = WowVision.base.ui.renderGraphBindings,
+                },
             })
         end,
     })

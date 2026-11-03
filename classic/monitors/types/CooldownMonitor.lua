@@ -100,6 +100,11 @@ function CooldownStateRule:reset()
     WowVision.monitors.StateRule.reset(self)
 end
 
+-- Spoken as "Rebirth On Cooldown" rather than "on_cooldown".
+function CooldownStateRule:stateMessage(stateKey)
+    return self:namedStateMessage(stateKey, self:spokenName())
+end
+
 function CooldownStateRule:computeState(object)
     local isReady = object:get("isReady")
     local hasCharges = object:get("hasCharges")
@@ -145,12 +150,16 @@ function CooldownStateRule:update()
             if charges > self._lastCharges then
                 local alert = self.charge_gained
                 if alert then
-                    alert:fire({ text = "charge gained", charges = charges, rule = self })
+                    local message = self:stateMessage("charge_gained")
+                    message.charges = charges
+                    alert:fire(message)
                 end
             elseif charges < self._lastCharges then
                 local alert = self.charge_lost
                 if alert then
-                    alert:fire({ text = "charge lost", charges = charges, rule = self })
+                    local message = self:stateMessage("charge_lost")
+                    message.charges = charges
+                    alert:fire(message)
                 end
             end
         end

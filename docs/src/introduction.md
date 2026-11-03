@@ -1,27 +1,28 @@
 # WowVision
 
-WowVision is a World of Warcraft accessibility addon for visually impaired players. It provides full keyboard-driven navigation, text-to-speech output, and accessible alternatives to standard UI elements.
+WowVision is a World of Warcraft addon for blind and visually impaired players. It reads the game's windows aloud and lets you operate them with the keyboard, announces what happens around you, keeps game information ready on demand, and guides you through the world.
 
-What is currently supported:
-* Configurable TTS output for voices Blizzard supports (note: NVDASapi does not currently work.)
-* Support for most UI screens for versions of the game marked as actively supported ( see below.) This is designed to work similarly to windows-style screenreader navigation.
-* A configurable alerts system for various state changes in the game (UI frame messages such as out of mana, zone changes, compass facing, outdoors/indoors, flying, etc.)
-* A configurable buffers system to track game state of your choice, including health, mana and unit resources/powers, xp, money, pvp status, and unit auras (buffs and debuffs.) More are frequently being added.
+WowVision ist ein Addon für World of Warcraft, das blinden und sehbehinderten Menschen das Spielen ermöglicht. Es liest die Spielfenster vor und macht sie mit der Tastatur bedienbar, sagt an, was um dich herum passiert, hält Spielinformationen auf Abruf bereit und führt dich durch die Spielwelt.
 
-Plannd additions:
-* A monitors system to add sound and tts alerts for various state changes (health, powers, buffs/debuffs on units of your choice, etc.) This will work similar to that of another WoW accessibility addon, Sku.
-* Navigation based on pathfinding, similar to Sku's implementation.
+## Choose your language / Sprache wählen
 
-## Supported Game Versions
-WowVision technically supports all versions of World of Warcraft, however The Burning Crusade Classic and Mists of Pandaria Classic are the primary supported versions currently. Versions marked as Minimal are supported as far as that the features core to any version of WowVision will work. Minimal support level versions will be actively worked on at a future time.
+- English: [User Manual — Getting Started](./user/en/getting-started/introduction.md)
+- Deutsch: [Benutzerhandbuch — Erste Schritte](./user/de/getting-started/introduction.md)
 
-| Version | Support Level |
+## Quick links / Schnellzugriff
+
+| English | Deutsch |
 |---|---|
-| Classic (Vanilla) | Minimal |
-| The Burning Crusade | Active |
-| Mists of Pandaria | Active |
-| Retail | Minimal |
+| [Installation](./user/en/getting-started/installation.md) | [Installation](./user/de/getting-started/installation.md) |
+| [Quick Start](./user/en/getting-started/quick-start.md) | [Schnellstart](./user/de/getting-started/quick-start.md) |
+| [Troubleshooting](./user/en/getting-started/troubleshooting.md) | [Fehlerbehebung](./user/de/getting-started/troubleshooting.md) |
+| [Keybinding Reference](./user/en/reference/keybindings.md) | [Tastenreferenz](./user/de/reference/keybindings.md) |
+| [Slash Commands](./user/en/reference/commands.md) | [Slash-Befehle](./user/de/reference/commands.md) |
 
-## Getting Help
+Developers will find the technical documentation in the Developer Guide at the end of the book.
 
-If you encounter issues or have questions, please visit the [GitHub repository](https://github.com/wow-vision/WowVision).
+## Getting help / Hilfe
+
+Questions and bug reports: [WowVision on GitHub](https://github.com/wow-vision/WowVision).
+
+Fragen und Fehlermeldungen: [WowVision auf GitHub](https://github.com/wow-vision/WowVision).

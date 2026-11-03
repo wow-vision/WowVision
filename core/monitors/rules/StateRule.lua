@@ -94,6 +94,36 @@ function StateRule:stateMessage(stateKey)
     return { text = stateKey, state = stateKey, rule = self }
 end
 
+-- "Moonfire Applied": a name (nil leaves it out), then the label of the
+-- state's alert field.
+function StateRule:namedStateMessage(stateKey, name)
+    local field = self.class:getField(stateKey)
+    local label = field ~= nil and field.label or stateKey
+    local text = name ~= nil and (name .. " " .. label) or label
+    return { text = text, state = stateKey, rule = self }
+end
+
+-- What a rule is called in its messages: the spell's name, else the rule's
+-- label (new rules are labeled "New ...", so the spell comes first).
+function StateRule:spokenName()
+    local spell = self.spell
+    local name = nil
+    if spell ~= nil then
+        if GetSpellInfo ~= nil then
+            name = (GetSpellInfo(spell))
+        elseif C_Spell ~= nil and C_Spell.GetSpellName ~= nil then
+            name = C_Spell.GetSpellName(spell)
+        end
+    end
+    if name ~= nil then
+        return name
+    end
+    if self.label ~= nil and self.label ~= "" then
+        return self.label
+    end
+    return nil
+end
+
 function StateRule:transitionTo(stateKey, message)
     self._currentState = stateKey
     self:updateResolved(stateKey)

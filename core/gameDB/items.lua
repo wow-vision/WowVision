@@ -78,7 +78,9 @@ db:register("Merchant", {
             label = label .. ", " .. numInStock .. " " .. L["in stock"]
         end
 
-        local alternativeCount = GetMerchantItemCostInfo(id)
+        -- Buying back costs gold only; the cost functions read the goods
+        -- list, so a buyback slot would get the extra costs of a good.
+        local alternativeCount = props.buyback and 0 or GetMerchantItemCostInfo(id)
         for i = 1, alternativeCount do
             local _, count, itemLink, currencyName = GetMerchantItemCostItem(id, i)
             if currencyName then

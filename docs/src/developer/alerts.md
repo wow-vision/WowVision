@@ -18,14 +18,14 @@ alert:addOutput({ type = "TTS", key = "tts", label = "TTS Alert", enabled = fals
 alert:fire({ text = "Something happened" })
 ```
 
-**Properties:**
+Properties:
 - `key` — Unique identifier (immutable)
 - `label` — Display label
 - `enabled` — Boolean, persisted
 - `outputs` — Array of AlertOutput instances
 - `parameters` — InfoFrame for UI configuration
 
-**Methods:**
+Methods:
 - `fire(message)` — If enabled, fires all enabled outputs with message
 - `update()` — Calls update on all outputs
 - `addOutput(info)` — Add output (TTS/Sound/Voice)
@@ -34,13 +34,13 @@ alert:fire({ text = "Something happened" })
 
 ## AlertOutput Class
 
-**Properties:**
+Properties:
 - `key`, `label`, `tag` — Identity
 - `shouldFire` — Optional conditional function
 - `enabled` — Boolean
 - `parameters` — InfoFrame for output-specific settings
 
-**Methods:**
+Methods:
 - `fire(message)` — Check shouldFire, call onFire
 - `onFire(message)` — Abstract, implemented by output type subclasses
 - `addParameter(info)` — Add configurable parameter

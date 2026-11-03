@@ -37,8 +37,18 @@ end
 -- a secure click cannot reach them, and running that handler as the addon
 -- would show the new tab's content tainted (the toy buttons then refuse to
 -- use toys). Enter instead runs the game binding that opens the journal on
--- that tab, securely, as its own key would.
+-- that tab, securely, as its own key would. Those bindings toggle, so on the
+-- tab already shown Enter would close the journal: that tab only says
+-- "selected", and when the shown tab changes the focused tab's bindings are
+-- engaged again.
+local lastSelected = nil
+
 function module.renderTabBar(builder)
+    local selected = module.getSelectedTab()
+    if lastSelected ~= nil and selected ~= lastSelected and not InCombatLockdown() then
+        WowVision.graphHost:refreshBindings()
+    end
+    lastSelected = selected
     for _, tab in ipairs(CollectionsJournal.TabContainer.Tabs) do
         local tabIndex = tab:GetID()
         local command = TABS[tabIndex] ~= nil and TABS[tabIndex].command or nil
@@ -61,7 +71,16 @@ function module.renderTabBar(builder)
                     },
                 },
                 bindings = {
-                    { binding = "leftClick", type = "Command", command = command },
+                    tabIndex == selected
+                            and {
+                                binding = "leftClick",
+                                type = "Function",
+                                interruptSpeech = true,
+                                func = function()
+                                    WowVision:speak(L["selected"])
+                                end,
+                            }
+                        or { binding = "leftClick", type = "Command", command = command },
                 },
             })
         end

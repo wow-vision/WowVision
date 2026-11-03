@@ -75,12 +75,12 @@ Type-wide tracker/object lifecycle for non-unit types. Objects belong to the typ
 local MyType = WowVision.objects:createGlobalType("MyType")
 ```
 
-**Methods:**
+Methods:
 - `addObject(key, data)` / `removeObject(key)` / `modifyObject(key, newData)` — Object lifecycle, notifies all trackers
 - `addTracker(tracker)` / `removeTracker(tracker)` — Tracker subscriptions
 - `track(info)` / `untrack(tracker)` — Create/destroy trackers
 
-**Subclass hooks:**
+Subclass hooks:
 - `getObjectParams(key, data)` — Return params for new objects
 - `getObjectKey(params)` — Extract key from params (for cache lookup)
 - `getCache(params)` — Default implementation uses `getObjectKey`
@@ -114,9 +114,9 @@ Each tracked unit has a `unitTable`:
 }
 ```
 
-**GUID detection:** `onUpdate()` polls `UnitGUID()` each frame. On change, `changeUnit()` removes all old objects, updates GUID, calls `onUnitChange()` to load new data, emits `unitsChanged`.
+GUID detection: `onUpdate()` polls `UnitGUID()` each frame. On change, `changeUnit()` removes all old objects, updates GUID, calls `onUnitChange()` to load new data, emits `unitsChanged`.
 
-**Event sequence during target change:**
+Event sequence during target change:
 1. Old objects removed → `tracker.events.remove`
 2. GUID updated
 3. `onUnitChange` → `fullUpdate` adds new objects → `tracker.events.add`

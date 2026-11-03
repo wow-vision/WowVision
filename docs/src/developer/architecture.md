@@ -130,9 +130,9 @@ Classes stored in ComponentArrays (like Rules, Monitors) need a `setDB(db)` meth
 ## Version-Specific Differences
 
 ### Speech API
-- **Classic/Mists:** `C_VoiceChat.SpeakText(voiceID, text, destination, rate, volume)`
-- **Retail:** `C_VoiceChat.SpeakText(voiceID, text, rate, volume, false)` (different param order)
+- Classic/Mists: `C_VoiceChat.SpeakText(voiceID, text, destination, rate, volume)`
+- Retail: `C_VoiceChat.SpeakText(voiceID, text, rate, volume, false)` (different param order)
 
 ### Setup Constants
-- **Classic:** `UI_DELAY = 0.01` (slower updates for older clients)
-- **Retail:** `UI_DELAY = 0` (immediate updates)
+- Classic: `UI_DELAY = 0.01` (slower updates for older clients)
+- Retail: `UI_DELAY = 0` (immediate updates)

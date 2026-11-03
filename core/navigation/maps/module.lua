@@ -613,7 +613,8 @@ function module:navigateTo(waypointId, waypoints, opts)
     waypoints = waypoints or self:currentWaypoints()
     local route, reason = WowVision.Router.route(waypoints, px, py, waypointId, opts)
     if route == nil then
-        WowVision:speak(L["No route found"] .. " " .. tostring(reason))
+        -- The router's reasons are keys ("no entry"); spoken translated.
+        WowVision:speak(L["No route found"] .. " " .. (reason ~= nil and L[reason] or ""))
         return false
     end
     local path = self.Path:new()

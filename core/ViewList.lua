@@ -58,40 +58,52 @@ function ViewList:focusIndex(index)
     return nil
 end
 
+-- Whether navigation may land on an item: one that reports itself disabled
+-- (a buffer or buffer group switched off) is skipped.
+local function isNavigable(item)
+    return type(item) ~= "table" or item.getEnabled == nil or item:getEnabled() ~= false
+end
+
+-- The index one step on from "from", wrapping if the list wraps; nil past
+-- an end otherwise.
+local function nextIndex(list, from, direction)
+    local target = from + direction
+    if target >= 1 and target <= #list.items then
+        return target
+    end
+    if list.wrap then
+        return target < 1 and #list.items or 1
+    end
+    return nil
+end
+
 function ViewList:focusDirection(direction)
     if #self.items == 0 or direction == 0 then
         return nil
     end
-    local target
     if self.reverse then
         direction = direction * -1
     end
+    local target
     if self.index < 1 or self.index > #self.items then
-        if direction > 0 then
-            target = 1
-        end
-        if direction < 0 then
-            if self.wrap then
-                target = #self.items
-            else
-                target = 1
-            end
-        end
+        target = (direction < 0 and self.wrap) and #self.items or 1
     else
-        target = self.index + direction
+        target = nextIndex(self, self.index, direction)
     end
-    if target >= 1 and target <= #self.items then
-        return self:focusIndex(target)
-    end
-    if self.wrap then
-        if target < 1 then
-            return self:focusIndex(#self.items)
+    -- Step past disabled items; one full pass without a navigable one stays put.
+    local steps = 0
+    while target ~= nil and not isNavigable(self.items[target]) do
+        steps = steps + 1
+        if steps >= #self.items then
+            target = nil
         else
-            return self:focusIndex(1)
+            target = nextIndex(self, target, direction)
         end
-    else
+    end
+    if target == nil then
         return self:focusIndex(self.index)
     end
+    return self:focusIndex(target)
 end
 
 function ViewList:UIFocusDirection(direction)

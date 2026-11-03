@@ -512,7 +512,7 @@ local function renderChatConfig(builder, screen)
     if ChatConfigFrame == nil or not ChatConfigFrame:IsShown() then
         return
     end
-    builder:pushContext("chatConfig", "Chat Settings")
+    builder:pushContext("chatConfig", L["Chat Settings"])
 
     if ChatConfigCategoryFrame ~= nil and ChatConfigCategoryFrame:IsShown() then
         builder:beginStop("categories")

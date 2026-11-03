@@ -87,11 +87,21 @@ module:registerBinding({
     key = "monitors/toggleAll",
     inputs = {},
     label = L["Toggle All Monitors"],
+    -- A mute: any monitor on turns them all off, all off turns them all on.
     func = function()
-        for _, monitor in ipairs(container.monitors or {}) do
-            if monitor then
-                monitor.enabled = not monitor.enabled
+        local monitors = container.monitors or {}
+        local anyOn = false
+        for _, monitor in ipairs(monitors) do
+            if monitor and monitor.enabled then
+                anyOn = true
+                break
             end
         end
+        for _, monitor in ipairs(monitors) do
+            if monitor then
+                monitor.enabled = not anyOn
+            end
+        end
+        WowVision:speak(anyOn and L["Monitors off"] or L["Monitors on"])
     end,
 })

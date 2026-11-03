@@ -235,7 +235,9 @@ end
 -- convention -- so a caller that knows can pass clickLabels: a string or
 -- function per button naming the effect ("Sell"), read before the click name
 -- ("Sell, Right Click"). A function returning nil leaves the bare click name.
-function nodes.proxyContextActions(target, clickLabels)
+-- An optional onDrag replaces the default Drag (an action bar slot marks
+-- its pickup as a bar reference, the way its drag key does).
+function nodes.proxyContextActions(target, clickLabels, onDrag)
     local function clickLabel(which, clickName)
         local effect = clickLabels ~= nil and clickLabels[which] or nil
         if type(effect) == "function" then
@@ -258,7 +260,7 @@ function nodes.proxyContextActions(target, clickLabels)
         })
         add({
             label = L["Drag"],
-            onActivate = nodes.dragScript(target),
+            onActivate = onDrag or nodes.dragScript(target),
         })
     end
 end

@@ -123,11 +123,11 @@ Alert parameters are automatically added to the module's settings UI.
 
 ## Lifecycle
 
-1. **Definition:** Module files create modules and configure them (alerts, settings, submodules)
-2. **Initialization:** `WowVision:OnInitialize()` reconciles DB, calls `setDBObj()` on the root module
-3. **Enable:** `onFullEnable()` hook fires when the module is ready
-4. **Update:** `hasUpdate` callbacks run each frame
-5. **Disable:** Module can be toggled via `enabled` flag
+1. Definition: Module files create modules and configure them (alerts, settings, submodules)
+2. Initialization: `WowVision:OnInitialize()` reconciles DB, calls `setDBObj()` on the root module
+3. Enable: `onFullEnable()` hook fires when the module is ready
+4. Update: `hasUpdate` callbacks run each frame
+5. Disable: Module can be toggled via `enabled` flag
 
 ## Key Methods
 
