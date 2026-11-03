@@ -36,7 +36,7 @@ The window has four stops. Move between them with Tab and Shift+Tab, and move in
 | Stop | What it is |
 |------|------------|
 | Direct | A checkbox. Off every time the window opens. |
-| Entry Points | The 20 closest points of the path network. Not shown while Direct is on. |
+| Entry Points | The 20 closest points of the path network (with WowNav the 50 closest). Not shown while Direct is on. |
 | Search | A text field that filters the destination list. |
 | Destinations | The list of places you can go to. |
 
@@ -44,7 +44,7 @@ When the window opens, you land on the entry point that is already selected, so 
 
 ### Entry points
 
-The entry point is where your route joins the network. WoW is fully three-dimensional, so the closest waypoint is sometimes the road under a bridge or the floor below you. That is why WowVision lists the 20 closest ones and lets you choose.
+The entry point is where your route joins the network. WoW is fully three-dimensional, so the closest waypoint is sometimes the road under a bridge or the floor below you. That is why WowVision lists the 20 closest ones (with WowNav the 50 closest, see [WowNav (WoW: Forever)](./wownav.md)) and lets you choose.
 
 Each entry reads its name, its distance and the direction relative to where you are facing, for example "Shailiea;Stormwind City;1;30.38;53.33, 4 yards, ahead left". The directions are ahead, ahead right, right, behind right, behind, behind left, left and ahead left. The entry that is chosen is announced with selected.
 

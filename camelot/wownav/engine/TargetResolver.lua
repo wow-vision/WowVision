@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/TargetResolver.lua at
--- 5b8b5f2), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 3684248), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Runtime attachment of targets to the network (schema 7, chapter 7 point 3). A target is bound to the attachment cell
 -- above its position; a target outside every cell is bound to the nearest cell within 30 yd and marked as an

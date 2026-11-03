@@ -26,7 +26,7 @@ The data comes with WowVision (in the release and beta downloads) and needs noth
 - The Deeprun Tram
 - Zephras Isle
 
-About 111,000 places (NPCs, creatures, objects) and 242 places to get somewhere else (dungeon entrances, portals, elevators, docks, tram stops, crossings between zones) can be chosen as destinations.
+About 111,000 places (NPCs, creatures, objects), 242 places to get somewhere else (dungeon entrances, portals, elevators, docks, tram stops, crossings between zones) and 788 fishing spots at the waters of 45 zones can be chosen as destinations.
 
 Things WowNav does not do:
 
@@ -43,7 +43,7 @@ On a map the data does not know, F10 lists nothing and /beacon to answers "No ro
 | | Classic routes | WowNav |
 |---|---|---|
 | Game versions | TBC and WoW: Forever | WoW: Forever |
-| Entry points in F10 | The 20 nearest linked waypoints, named like the places | The 20 nearest places (an NPC, a door, a portal) that sit on the path network. With Show Automatic Waypoints, the network's own waypoints too |
+| Entry points in F10 | The 20 nearest linked waypoints, named like the places | The 50 nearest entries: places that sit on the path network (an NPC, a door, a portal) and the network's own waypoints within 10 yards of you. With Show Automatic Waypoints, the network's waypoints farther away too |
 | Destinations | Every named waypoint of the continent, nearest first | The nearest 1000 places that match your search, each with its categories and zone |
 | Search | Matches the name, role and zone as one text | Matches names in English and German, categories, search aliases and the zone name |
 | Names | "Name;Role;Zone;1;30.38;53.33" | Plain names such as "Innkeeper Allison (Innkeeper)" (many NPCs carry their job in brackets), and descriptive names such as "Portal to Orgrimmar" |
@@ -58,9 +58,9 @@ F10 works as described in [Navigation](./navigation.md): Direct, Entry Points, S
 
 ### Entry points
 
-The entry points are the nearest places that sit on the network, not raw waypoints: the flight master in front of you, a door, a portal. You choose where your route starts, as with the classic routes. WowNav never works out your start by itself, except for Ctrl+Shift+N and the route to your target, which start where you stand if that is clear. When you choose a place as your start, your route begins at that place itself.
+The entry points are the 50 nearest entries: the places that sit on the network (the flight master in front of you, a door, a portal) and the network's own waypoints right beside you. You choose where your route starts, as with the classic routes. WowNav never works out your start by itself, except for Ctrl+Shift+N and the route to your target, which start where you stand if that is clear. When you choose a place as your start, your route begins at that place itself.
 
-- With Show Automatic Waypoints on, the network's own waypoints join the entry points. They are read as "Auto, height 54": only the height in yards is said.
+- The network's own waypoints within 10 yards of you are always in the list, so you can start right where you stand even when the nearest place is far away. With Show Automatic Waypoints on, the waypoints farther away join the list as well. A waypoint is read as "Auto, height 54": only its height in yards is said.
 - While you swim or dive, the nearest water point within 100 yards is always in the list and preselected. If there is none you hear "No water point nearby".
 - If there is nothing of the network near enough, the list says Empty, and a route request answers "No WowNav network here".
 
@@ -72,6 +72,8 @@ Each destination reads its name, its distance, what it is and where it is, for e
 - A destination with no network point near it (see Target Radius Around the Network (Yards)) is left out. A place whose zone has not been prepared yet is offered unchecked, and checked when you choose it.
 - Extra information may come first, before the categories: "inexact +3.2 yards" (the place is not exactly on the network), "choose the floor" (the place is over several floors), "floor unknown", "no network point within the radius" or "water surface, diving depth 12 yards".
 - Places to get somewhere else have descriptive names: "Dungeon entrance: The Deadmines", "Portal to Orgrimmar", "Ship dock to Auberdine", "Zeppelin dock to Grom'gol", "Tram dock toward Ironforge", "Deeprun Tram entrance", "Elevator: Thunder Bluff", "Crossing to Westfall", "Dive here" and "Surface here". Where two places of a zone would sound the same, they get "(lower)", "(upper)", a height or a number added. The place words in these names come from the game client. On a German client the names are German.
+- Fishing spots are named after the water they cast into: "Fishing spot on the shore: Crystal Lake" or "Fishing spot on pier or quay: The Temple Gardens", with a number when several spots of a zone have the same name. Search for "fishing" or "fishing spot". See [Fishing spots](#fishing-spots).
+- A dungeon with several entrances names the wing: "Dungeon entrance: Scarlet Monastery, Graveyard".
 - The boarding points of docks are listed too: "On the ship", "On the zeppelin" and "At the vehicle", with the name of the dock as the extra words.
 - With Direct on, no destination is dropped as unreachable, because a straight beacon needs no route.
 
@@ -103,7 +105,7 @@ The beacon, its sounds, Ctrl+W, Ctrl+S, Shift+F12, Alt Gr and I all work as in [
 - A waypoint counts as reached by its own distance from the data, not by the Alt+P arrival distance. You can raise it for every waypoint with Minimum Arrival Distance for WowNav Waypoints (0 = Their Own). Only the transit areas below widen with Alt+P.
 - Ctrl+W and Ctrl+S step along the route's own waypoints.
 - Ctrl+Shift+N plans the last destination again from where you stand, but only if WowNav knows which floor you are on. Otherwise you hear "Your floor is not clear here" or "No WowNav network here".
-- Shift+F12 ends everything WowNav does: the search, the route, a transit that waits for its far end, and the dock guidance.
+- Shift+F12 ends everything WowNav does: the search, the route, a transit that waits for its far end, the dock guidance and the beacon at a fishing spot.
 - /beacon to name takes the nearest place with that name, from WowNav's list, with the entry point F10 would preselect.
 
 ### While you walk
@@ -132,7 +134,7 @@ Two bindings are unbound by default; bind them in the keybinding window (WowVisi
 
 | Binding | What it does |
 |---------|--------------|
-| WowNav Route Status | Says what WowNav is doing: "Searching the route to Allison", "En route to Allison, waypoint 3 of 14", "Waiting for the far end of the portal", "Riding to the noted dock Ship dock to Auberdine", "At a dock, waiting" or "No active route". |
+| WowNav Route Status | Says what WowNav is doing: "Searching the route to Allison", "En route to Allison, waypoint 3 of 14", "Waiting for the far end of the portal", "Riding to the noted dock Ship dock to Auberdine", "At a dock, waiting", "At a fishing spot" or "No active route". |
 | New WowNav Route Around a Blocked Spot | Use it when you are stuck on a link (a fence, a closed door, a ramp you cannot climb). The link you are on is blocked in the plan, and a new route is searched from the last waypoint you reached. You hear "Searching a new route". Without a route you hear "No active route". |
 
 ## Transit: docks, boats, zeppelins, trams, portals and elevators
@@ -147,7 +149,7 @@ Being in a station (within about 100 yards of a dock) counts as having reached i
 
 ### Portals, the tram entrance and walk-in places
 
-Portals and the tram entrance work by walking into them. A route ends at the portal, and WowNav says so before you reach it, because a portal teleports at once: "Ahead: walk into the portal; the route goes on after it". Walk into it. When you come out at the far end, you hear "The route goes on", and WowNav searches the rest of the way from there. If nothing happens within about 90 seconds (longer for rides, which wait three full cycles of the vehicle) you hear "The transit took too long; route ended".
+Portals and the tram entrance work by walking into them. A route ends at the portal, and WowNav says so before you reach it, because a portal teleports at once: "Ahead: walk into the portal; the route goes on after it". Walk into it. When you come out at the far end, you hear "The route goes on", and WowNav searches the rest of the way from there. If nothing happens within about 90 seconds (longer for rides, which wait three full cycles of the vehicle) you hear "The transit took too long; route ended". The Wind Bridge of Zephras Isle has no such limit: it comes at its own time.
 
 If you choose the portal or the tram entrance itself as your destination, you are guided to a point just before it and told: "Prepoint reached. Walk straight ahead through the entrance or portal; the beacon stays on until the activation area." Then: "In the activation area. Keep walking straight ahead; only a map change confirms the transition. The route stays on until then." After the map change you hear "Map change after the activation area; route ended. The destination is not confirmed."
 
@@ -155,13 +157,28 @@ If you choose the portal or the tram entrance itself as your destination, you ar
 
 An elevator is a place to wait: "Use the elevator; the route goes on after it. Board only when the vehicle is safely there." A dive is "Dive here; the route goes on after it", and the way back up is "Surface here; the route goes on after it". The route goes on after you are at the other end.
 
-### The turn key at a dock
+### The turn key without a route
 
-The I key normally needs a route. At a dock it also works without one: at a reached dock it turns you to the boarding point, and near a noted dock it turns you to that dock.
+The I key normally needs a route. At a dock it also works without one: at a reached dock it turns you to the boarding point, and near a noted dock it turns you to that dock. At a fishing spot you reached, it turns you to the water.
 
 ### Zephras Isle
 
-The three portals and the Wind Bridge of Zephras Isle are included, but their positions are estimates, and you click the portal or wait for the bridge's signal yourself. A route to one ends there with "Use the portal; the route goes on after it" (for the Wind Bridge "Use the transit; ..."), and is planned on once you have arrived at the far end. WowVision gives no special guidance for the clicking or the waiting, so this part can be hard to do without sight.
+The portals and the Wind Bridge of Zephras Isle are included. Their positions are estimates, so WowNav adds "The position is approximate." to what it says there. The portals are not walked into: you target the portal and interact with it. A route through one ends there with "Target the portal with soft targeting and interact with it; the route goes on after it". The Wind Bridge comes at its own time: "Wait here until you hear the Wind Bridge, then step into the wind current; the route goes on after it". There is no time limit for it. Once you have arrived at the far end, the route goes on.
+
+The portal to Valanaar takes the Horde and the Alliance to different places. A route only uses the way that belongs to your faction.
+
+If you choose one of these portals or the waiting point of the Wind Bridge itself as your destination, you hear at the prepoint "Prepoint reached. Walk on to the portal; the beacon stays on until you are there." (for the bridge "Prepoint reached. Walk on to the waiting point of the Wind Bridge; the beacon stays on until then."). At the portal you hear "At the portal. Target it with soft targeting and interact with it; the route stays on until the transition is confirmed.", at the bridge "At the waiting point of the Wind Bridge. Wait until you hear the bridge, then step into the wind current."
+
+## Fishing spots
+
+WowNav knows 788 places to stand and fish, at the waters of 45 zones. A fishing spot stands on solid ground on the shore, or on a pier, a jetty, a quay or a bridge. You may wade in shallow water there, but you never have to swim. From the spot, the water lies 10 to 20 yards ahead in one direction, the range of your cast.
+
+1. Press F10, search "fishing" and choose a spot in Destinations, for example "Fishing spot on the shore: Crystal Lake (3), 120 yards, fishing spot, Elwynn Forest".
+2. Follow the route. When you arrive, you hear where the water lies, seen from the way you face: "Fishing spot on the shore: Crystal Lake (3) reached. The water is ahead to the left. Cast range about 10 to 20 yards. Press I to turn to the water." The directions are straight ahead, ahead to the left, to the left, behind to the left, behind you, behind to the right, to the right and ahead to the right.
+3. A beacon now sounds from the water, 15 yards out, in the middle of your cast range. Press I to face the water, then cast.
+4. The beacon stops when you walk away from the spot (more than 20 yards), when you press Shift+F12 or when you start a new route.
+
+The water point is only there to face. WowNav never routes you into the water. If the network ends farther from the spot than your cast range, you hear the usual "The network ends ... from the target" instead, and no beacon starts.
 
 ## Settings
 
@@ -173,7 +190,7 @@ Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
 | Routes from WowNav | Off | Sends every route request to WowNav instead of the classic routes. |
 | Road Preference (Percent Longer) | 60 | A route on roads and paths may be this many percent longer than the shortest way. 0 means always the shortest. Up to 300. Swimming also counts as this much longer. When you change it during a route, one second after you stop adjusting you hear "Searching the route again with the new road preference". |
 | Avoid Enemy Outposts | On | Routes go around the outposts and capitals of the opposing faction. Where there is no way around, the route leads through and warns you. Changing it re-plans a running route. |
-| Show Automatic Waypoints | Off | Adds the network's own waypoints near you (up to 300 yards for the entry points, 60 yards for the destination list) to both. They read "Auto, height N". |
+| Show Automatic Waypoints | Off | Adds the network's own waypoints within 60 yards of you to the destination list, and mixes the waypoints up to 300 yards away into the entry points. Without it, the entry points still list the waypoints within 10 yards of you. They read "Auto, height N". |
 | Target Radius Around the Network (Yards) | 30 | How far from the network a place may lie and still get a route (1 to 100). Farther places have no network point. |
 | Height Tolerance of a Floor (Yards) | 3 | The height band that counts as one floor (0 to 20). |
 | Step Back at Gates | On | When you drift sideways at a gate, the beacon goes back one waypoint ("One waypoint back"). |
@@ -184,7 +201,7 @@ Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
 
 ### Walk to a trainer in a city
 
-1. Press F10. The entry points are the nearest places on the network, for example a flight master. The closest is already selected.
+1. Press F10. The entry points are the network's waypoints right beside you and the nearest places on the network, for example a flight master. The closest is already selected.
 2. Press Tab and type "trainer", then Enter.
 3. Press Tab to reach Destinations. You hear, for example, "Einris Brightspear (Hunter Trainer), 140 yards, quest giver, trainer, Stormwind City". Down reads the next one.
 4. Press Enter. You hear the summary, such as "12 waypoints, 330 yards". Press I to turn and follow the beacon. At the end: "Arrived Einris Brightspear (Hunter Trainer)".

@@ -3,6 +3,7 @@ local Route = WowVision.wownavRoute
 local catalog = WowVision.wownavCatalog
 local text = WowVision.wownavText
 local dock = WowVision.wownavDock
+local fishing = WowVision.wownavFishing
 
 -- WowNav routes on Broesel's real data: tools/headless-tests.lua loads the engine (camelot/wownav/engine) and the
 -- packed data of mapdata/WowNavPacked (run tools/wownav-pack.lua first). Without the data only the parts that need
@@ -228,11 +229,51 @@ local suite = {
         _G.WowVisionNavigationDB = saved
     end,
 
+    ["a transit that waits for a signal has no time limit; the others end after theirs"] = function(t)
+        local clock = 0
+        local route = Route.new({ now = function()
+            return clock
+        end })
+        local far = { x = 1e6, y = 1e6, radius = 1 }
+        local timed = { kind = "portal", timing = { timeout_seconds = 30 }, sourceVolume = far, arrivalVolume = far }
+        local bridge = { kind = "wind_bridge", timing = { no_time_limit = true }, sourceVolume = far, arrivalVolume = far }
+        route:startAction(timed)
+        clock = 30 * Route.ACTION_PHASES + 1
+        t:assertEqual(route:observeAction(0, 0, 0, 0), "timeout")
+        clock = 0
+        route:startAction(bridge)
+        clock = 3600
+        t:assertNil(route:observeAction(0, 0, 0, 0), "the Wind Bridge comes when it comes")
+        t:assertNotNil(route.action)
+    end,
+
+    ["an action bound to a faction is only for that faction's players"] = function(t)
+        local saved = N.playerFaction
+        N.SetPlayerFaction("Horde")
+        t:assertTrue(N.FactionAction({}), "an action without a faction is for everybody")
+        t:assertTrue(N.FactionAction({ faction = "horde" }))
+        t:assertFalse(N.FactionAction({ faction = "alliance" }))
+        N.playerFaction = saved
+    end,
+
     ["a dyn target is named from its key and place, with its suffix"] = function(t)
         t:assertEqual(text.targetName({ nameKey = "portal", nameParam = "Darnassus" }), "Portal to Darnassus")
         t:assertEqual(text.targetName({ nameKey = "elevator", nameParam = "Undercity",
             nameSuffix = { key = "upper" } }), "Elevator: Undercity (upper)")
         t:assertEqual(text.targetName({ nameKey = "tram_entrance" }), "Deeprun Tram entrance")
+        t:assertEqual(text.targetName({ nameKey = "fishing_spot_shore", nameParam = "Crystal Lake",
+            nameSuffix = { key = "number", value = 2 } }), "Fishing spot on the shore: Crystal Lake (2)")
+        t:assertEqual(text.targetName({ nameKey = "fishing_spot_structure", nameParam = "Goldshire" }),
+            "Fishing spot on pier or quay: Goldshire")
+        -- a dungeon with several entrances names the wing (German: nameWingDe); the transitions of Zephras Isle
+        local wing = { nameKey = "dungeon_entrance", nameParam = "Scarlet Monastery", nameWing = "Graveyard",
+            nameWingDe = "Friedhof" }
+        t:assertEqual(text.targetName(wing, false), "Dungeon entrance: Scarlet Monastery, Graveyard")
+        t:assertEqual(text.targetName(wing, true), "Dungeon entrance: Scarlet Monastery, Friedhof")
+        t:assertEqual(text.targetName({ nameKey = "dungeon_entrance", nameParam = "Zul'Farrak" }),
+            "Dungeon entrance: Zul'Farrak")
+        t:assertEqual(text.targetName({ nameKey = "wind_bridge_wait", nameEn = "x" }), "Wind Bridge waiting point")
+        t:assertEqual(text.targetName({ nameKey = "valanaar_arrival_horde" }), "Horde arrival in Valanaar Sanctuary")
         t:assertEqual(text.targetName({ nameEn = "Guard", nameDe = "Wache" }, true), "Wache")
         t:assertEqual(text.targetName({ nameEn = "Guard", nameDe = "Wache" }, false), "Guard")
         t:assertEqual(text.categories({ category = { "quest_giver", "trainer" } }), "quest giver, trainer")
@@ -441,7 +482,7 @@ if haveNetwork then
         t:assertTrue(direct[#direct].distance <= routed[#routed].distance)
     end
 
-    suite["F10's entry points: the nearest targets, automatic waypoints only with the setting"] = function(t)
+    suite["F10's entry points: the nearest 50, waypoints beside the player always, farther ones with the setting"] = function(t)
         setup()
         local game = newGame()
         local route = Route.new(game.env)
@@ -454,22 +495,40 @@ if haveNetwork then
             end
             return true
         end
-        local entries = catalog.entryPoints(N, C, 0, x, y, 20, { german = false })
-        t:assertEqual(#entries, 20)
+        local near = catalog.autoPoints(N, x, y, catalog.ENTRY_NEAR)
+        t:assertTrue(#near > 0, "the player stands on a waypoint")
+        t:assertTrue(#near < catalog.ENTRY_COUNT, "the waypoints beside him leave room for targets")
+        local entries = catalog.entryPoints(N, C, 0, x, y, catalog.ENTRY_COUNT, { german = false })
+        t:assertEqual(#entries, catalog.ENTRY_COUNT)
         t:assertTrue(sorted(entries), "nearest first")
+        local auto, beyond = 0, false
         for _, e in ipairs(entries) do
-            t:assertNotNil(e.tid, "a target of the catalogue")
-            t:assertNil(e.nodeId, "no automatic waypoint without the setting: " .. tostring(e.n))
-            t:assertNotNil(e.resolution and e.resolution.endNodeId, "a start needs its network point")
+            if e.nodeId ~= nil then
+                auto = auto + 1
+                t:assertTrue(e.distance <= catalog.ENTRY_NEAR, "without the setting only the waypoints beside him")
+                t:assertNotNil(e.n:find("^Auto, height %-?%d+$"), "an automatic waypoint says its height: " .. e.n)
+            else
+                t:assertNotNil(e.tid, "a target of the catalogue")
+                t:assertNotNil(e.resolution and e.resolution.endNodeId, "a start needs its network point")
+                t:assertNil(e.n:find("%d%d%d"), "a target's name has no coordinates: " .. e.n)
+                beyond = beyond or e.distance > catalog.ENTRY_NEAR
+            end
         end
-        local withAuto = catalog.entryPoints(N, C, 0, x, y, 20, { showAuto = true, german = false })
-        t:assertEqual(#withAuto, 20)
+        t:assertEqual(auto, #near, "every waypoint within the radius is listed")
+        t:assertTrue(beyond, "the rest of the list is targets farther away")
+        local withAuto = catalog.entryPoints(N, C, 0, x, y, catalog.ENTRY_COUNT, { showAuto = true, german = false })
+        t:assertEqual(#withAuto, catalog.ENTRY_COUNT)
         t:assertTrue(sorted(withAuto), "nearest first, both kinds")
-        local auto = 0
+        local far = 0
         for _, e in ipairs(withAuto) do
-            auto = auto + (e.nodeId ~= nil and 1 or 0)
+            if e.nodeId ~= nil then
+                t:assertNotNil(e.n:find("^Auto, height %-?%d+$"), e.n)
+                far = far + (e.distance > catalog.ENTRY_NEAR and 1 or 0)
+            end
         end
-        t:assertTrue(auto > 0, "the setting adds the network's waypoints")
+        t:assertTrue(far > 0, "the setting mixes in the waypoints farther away")
+        t:assertEqual(text.autoName(nil), "Auto, height unknown", "a missing height is never said as 0")
+        t:assertEqual(text.autoName(-12.6), "Auto, height -13")
     end
 
     suite["standing at a flight master, it heads the entry points; the route starts at its network point"] = function(t)
@@ -1107,6 +1166,73 @@ if haveNetwork then
             local outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = TRAM_MAP }, start.nodeId))
             t:assertTrue(outcome.kind == "start" or outcome.kind == "choose", tostring(outcome.reason))
         end)
+    end
+
+    suite["a compact class names a dungeon entrance from its key; a dyn entrance names its wing"] = function(t)
+        setup()
+        local catalogue = N.LogicalTargets(1446)
+        t:assertNotNil(catalogue, "Tanaris")
+        local classes = C.ValidateCatalog(catalogue)
+        local found
+        for _, class in ipairs(classes) do
+            if class.nameKey == "dungeon_entrance" then
+                found = class
+            end
+        end
+        t:assertNotNil(found, "Tanaris has a dungeon entrance in its logical catalogue")
+        t:assertEqual(found.nameParam, "Zul'Farrak")
+        t:assertEqual(found.nameMapId, 209)
+        local rows = zoneRows(18, "graveyard")
+        local graveyard
+        for _, r in ipairs(rows) do
+            if r.n == "Dungeon entrance: Scarlet Monastery, Graveyard" then
+                graveyard = r
+            end
+        end
+        t:assertNotNil(graveyard, "Tirisfal lists the Scarlet Monastery graveyard wing")
+    end
+
+    suite["a fishing spot: listed by name, the arrival on its place says where the water is, I faces it"] = function(t)
+        setup()
+        local rows = zoneRows(ELWYNN, "fishing spot")
+        local row
+        for _, r in ipairs(rows) do
+            if r.kind == "fishing_spot" then
+                row = row or r
+                t:assertNotNil(r.n:find("^Fishing spot on "), r.n)
+                t:assertEqual(r.layer, "dyn")
+            end
+        end
+        t:assertNotNil(row, "Elwynn has fishing spots")
+        local german = catalog.search(N, C, 0, "angelplatz", row.x, row.y, { german = false })
+        t:assertTrue(#german > 0, "the German search word finds them too")
+        local contract = catalog.contract(row, 0)
+        t:assertTrue(C.Validate(contract), "a fishing spot makes a valid target")
+        local spot = fishing.spot(N, contract)
+        t:assertNotNil(spot, "the full row with the direction to the water")
+        local said
+        local savedSay, savedFacing = text.say, _G.GetPlayerFacing
+        text.say = function(message)
+            said = message
+        end
+        -- facing east (angle 0): the water's sector follows from the row's direction
+        _G.GetPlayerFacing = function()
+            return 0
+        end
+        t:assertFalse(fishing.arrived(N, contract, row.x + 30, row.y, 3), "not on the place: no arrival")
+        t:assertFalse(fishing.reached())
+        t:assertTrue(fishing.arrived(N, contract, row.x, row.y, 3))
+        t:assertTrue(fishing.reached())
+        t:assertNotNil(said and said:find("^" .. row.n:gsub("%p", "%%%0") .. " reached%. The water is "), said)
+        t:assertNotNil(said:find("Cast range about 10 to 20 yards. Press I to turn to the water.", 1, true), said)
+        local px, py, id = fishing.alignment(N, row.x + 1, row.y)
+        t:assertEqual(id, "fishing-water:" .. row.tid)
+        t:assertTrue(math.abs(px - (spot.x + spot.fishingDirX * 15)) < 0.01, "I faces the water point")
+        t:assertTrue(math.abs(py - (spot.y + spot.fishingDirY * 15)) < 0.01)
+        t:assertNil(fishing.alignment(N, row.x + 25, row.y), "off the place, I has no water to face")
+        fishing.reset()
+        t:assertFalse(fishing.reached())
+        text.say, _G.GetPlayerFacing = savedSay, savedFacing
     end
 
     suite["a walk-in target: on foot, the prepoint said, no arrival before the capture circle"] = function(t)

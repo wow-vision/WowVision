@@ -18,7 +18,8 @@
 -- the player has come out at its far end, the route goes on from there by itself.
 --
 -- Docks of the tram, ships and zeppelins follow his dock guidance (dock.lua): a dock is walked to and waited at; at a
--- dock, the other dock of the line is noted instead of walked to, and near it the turn key faces it.
+-- dock, the other dock of the line is noted instead of walked to, and near it the turn key faces it. At a fishing spot
+-- (fishing.lua) a beacon sounds from the water and the turn key faces it, until the player leaves the place.
 --
 -- With the standalone WowVisionNavigation addon loaded as well, this stays off (both use the same globals).
 
@@ -26,6 +27,7 @@ local maps = WowVision.base.navigation.maps
 local catalog = WowVision.wownavCatalog
 local Route = WowVision.wownavRoute
 local dock = WowVision.wownavDock
+local fishing = WowVision.wownavFishing
 
 local module = WowVision.base.navigation:createModule("wownav")
 local L = module.L
@@ -163,15 +165,16 @@ function engine:routeTo(target)
     return module:routeTo(target)
 end
 
--- F10's entry points: the nearest targets with a network point, and the network's waypoints with "Show Automatic
--- Waypoints" (catalog.entryPoints); {} where WowNav has no data.
+-- F10's entry points: the nearest 50 targets with a network point and waypoints of the network, all of them nearby
+-- with "Show Automatic Waypoints", else only those right beside the player (catalog.entryPoints); {} where WowNav has
+-- no data. The count of the route data's list (maps.ENTRY_COUNT) is not WowNav's.
 function engine:entryPoints(px, py, map, count, swimming)
     local N = ready(module)
     if N == nil or px == nil or not catalog.covers(N, map) then
         return {}
     end
     N.activeMapId = map
-    return catalog.entryPoints(N, _G.WowVisionNavigationTargetCatalog, map, px, py, count,
+    return catalog.entryPoints(N, _G.WowVisionNavigationTargetCatalog, map, px, py, catalog.ENTRY_COUNT,
         { showAuto = module.settings.showAuto == true, swimming = swimming })
 end
 
@@ -215,12 +218,13 @@ function engine:unitTarget(creatureId, px, py, map)
         WowVision.targetFind.UNIT_RADIUS)
 end
 
--- Shift-F12 (his /vn stop): ends the search, the route, a transit waiting for its far end and the dock guidance.
--- True when any of them was running.
+-- Shift-F12 (his /vn stop): ends the search, the route, a transit waiting for its far end, the dock guidance and the
+-- water beacon of a fishing spot. True when any of them was running.
 function engine:cancel()
     local Dock = _G.WowVisionNavigationDockNavigation
     local running = module:runningRequest() ~= nil or module.path ~= nil or module.dockPath ~= nil
         or (route ~= nil and route.action ~= nil) or (Dock ~= nil and (Dock.reached ~= nil or Dock.passive ~= nil))
+        or fishing.reached()
     if running then
         module:stopRoute()
     end
@@ -257,10 +261,58 @@ local function logLine(line)
 end
 
 local TRANSIT_WORDS = { portal = L["the portal"], tram = L["the tram"], lift = L["the elevator"], dive = L["a dive"],
-    surface = L["surfacing"] }
--- his KIND_TEXT (ActionNavigation.lua): the player dives and surfaces himself, the portal text does not fit
+    surface = L["surfacing"], wind_bridge = L["the Wind Bridge"] }
+-- his KIND_TEXT (ActionNavigation.lua): the player dives and surfaces himself, and waits for the Wind Bridge; the
+-- portal text does not fit
 local TRANSIT_TEXTS = { dive = L["Dive here; the route goes on after it"],
-    surface = L["Surface here; the route goes on after it"] }
+    surface = L["Surface here; the route goes on after it"],
+    wind_bridge = L["Wait here until you hear the Wind Bridge, then step into the wind current; the route goes on after it"] }
+-- his MODE_TEXT: a transit without a text of its own by how it is activated (a portal that is clicked, no trigger)
+local TRANSIT_MODE_TEXTS = {
+    click = L["Target the portal with soft targeting and interact with it; the route goes on after it"] }
+
+-- What a transit says (his ActionNavigation texts): by its kind, else by its activation mode, else the generic text;
+-- a transit whose positions are estimates says so (his approximateSuffix).
+local function transitText(action)
+    local mode = type(action.activation) == "table" and action.activation.mode or nil
+    local text = TRANSIT_TEXTS[action.kind] or (mode and TRANSIT_MODE_TEXTS[mode])
+        or string.format(L["Use %s; the route goes on after it"], TRANSIT_WORDS[action.kind] or L["the transit"])
+    -- his action_boarding: a vehicle (the elevator) is boarded only when it is safely there
+    if mode == "board" then
+        text = text .. ". " .. WowVisionNavigationText("action_boarding")
+    end
+    if action.approximate == true then
+        text = text .. ". " .. WowVisionNavigationText("approximate_position")
+    end
+    return text
+end
+
+-- What a walk-in target says at its prepoint and in its activation area (his Navigation.ActivationText): the text of
+-- its facility kind (dive, Wind Bridge), else of its action mode (click), else the generic one; approximate: said.
+local ACTIVATION_TEXT_KEYS = {
+    prepoint_reached = { generic = "prepoint_reached_go_through",
+        kinds = { dive = "prepoint_reached_dive", click = "prepoint_reached_click",
+            wind_bridge = "prepoint_reached_wind_bridge" } },
+    activation_area = { generic = "activation_area_entered",
+        kinds = { dive = "activation_area_dive", click = "activation_area_click",
+            wind_bridge = "activation_area_wind_bridge" } },
+}
+local function activationText(target, base)
+    local keys = ACTIVATION_TEXT_KEYS[base]
+    local key = keys.generic
+    target = target or {}
+    for _, kind in ipairs({ target.facilityKind or false, target.actionMode or false }) do
+        if keys.kinds[kind] ~= nil then
+            key = keys.kinds[kind]
+            break
+        end
+    end
+    local text = WowVisionNavigationText(key)
+    if target.approximate == true then
+        text = text .. " " .. WowVisionNavigationText("approximate_position")
+    end
+    return text
+end
 
 -- The resolver's and the planner's reasons as WowVision texts.
 local REASONS = {
@@ -625,9 +677,11 @@ local function freshContract(request, map)
 end
 
 -- Ends the running route, the search and a waiting transit; with them the dock guidance (his StopNavigation resets
--- the dock module unless the wait context is kept: keepDock, for the noted dock and a boarding point).
+-- the dock module unless the wait context is kept: keepDock, for the noted dock and a boarding point) and the fishing
+-- spot that was reached.
 function module:stopRoute(keepPenalties, keepDock)
     job = nil
+    fishing.reset()
     if not keepDock then
         local Dock = _G.WowVisionNavigationDockNavigation
         if Dock ~= nil then
@@ -745,7 +799,18 @@ function module:onRouteEvent(path, event)
         self.path = nil
         local label = request and request.label
         local result = event.result
-        if result == nil or result.quality == "exact" then
+        local x, y = route.env.position()
+        local N = self:network()
+        local radius = route.G.EffectiveRadius(Route.ARRIVAL_TARGET_RADIUS)
+        if request ~= nil and fishing.arrived(N, request.contract, x, y, radius) then
+            -- at a fishing spot: his Arrival says where the water lies; the beacon sounds from it
+            logLine(string.format("arrived at the fishing spot %s at %.1f %.1f", tostring(label), x or 0, y or 0))
+            local water = fishing.waterPath(N)
+            if water ~= nil then
+                self.dockPath = water
+                maps:pathfind(water)
+            end
+        elseif result == nil or result.quality == "exact" then
             say(L["Arrived"] .. (label ~= nil and (" " .. label) or ""))
         elseif result.normalizedWater then
             -- his stop_water_net_ends / stop_net_ends: how far the network ends from the target
@@ -760,28 +825,24 @@ function module:onRouteEvent(path, event)
         end
         route:reset()
     elseif kind == "prepoint" then
-        local key = event.unresolved and "prepoint_reached_unresolved"
-            or (event.dive and "prepoint_reached_dive" or "prepoint_reached_go_through")
-        say(WowVisionNavigationText(key))
+        if event.unresolved then
+            say(WowVisionNavigationText("prepoint_reached_unresolved"))
+        else
+            say(activationText(event.target, "prepoint_reached"))
+        end
     elseif kind == "activation" then
         if event.unresolved then
             say(WowVisionNavigationText("activation_position_reached",
                 event.heightUnconfirmed and WowVisionNavigationText("height_not_confirmed") or ""))
         else
-            say(WowVisionNavigationText(event.dive and "activation_area_dive" or "activation_area_entered"))
+            say(activationText(event.target, "activation_area"))
         end
     elseif kind == "transit" then
         local request = self.request
         path:finish()
         maps:stopPath()
         self.path = nil
-        local word = TRANSIT_WORDS[event.action.kind] or L["the transit"]
-        local text = TRANSIT_TEXTS[event.action.kind] or string.format(L["Use %s; the route goes on after it"], word)
-        -- his action_boarding: a vehicle (the elevator) is boarded only when it is safely there
-        local mode = type(event.action.activation) == "table" and event.action.activation.mode or nil
-        if mode == "board" then
-            text = text .. ". " .. WowVisionNavigationText("action_boarding")
-        end
+        local text = transitText(event.action)
         -- said before the portal already (transitAhead), or through it (its teleport came between two updates):
         -- "The route goes on" follows at once
         if not event.teleported and not event.announced then
@@ -1033,7 +1094,8 @@ local function checkPassive(self)
     end
 end
 
--- The turn key without a route (his I at a dock): at a reached dock the boarding point, near the noted dock that dock.
+-- The turn key without a route (his I at a dock): at a reached dock the boarding point, near the noted dock that dock,
+-- on a fishing spot that was reached its water.
 -- Other users of maps.facingWithoutWaypoint (the surroundings) answer when the dock has nothing to face.
 local turnHooked = false
 local function hookTurn(self)
@@ -1046,6 +1108,9 @@ local function hookTurn(self)
         if engine:isActive() then
             local x, y = route.env.position()
             local px, py = dock.alignment(self:network(), x, y)
+            if px == nil then
+                px, py = fishing.alignment(self:network(), x, y)
+            end
             if px ~= nil then
                 return math.atan2(py - y, px - x)
             end
@@ -1074,6 +1139,9 @@ function module:onEnable()
             -- his ZoneLoaded at a continent change: a reached dock is forgotten, a noted one is kept
             if dockMap ~= nil and _G.WowVisionNavigationDockNavigation ~= nil then
                 _G.WowVisionNavigationDockNavigation:ZoneLoaded(nil)
+            end
+            if dockMap ~= nil then
+                fishing.reset()
             end
             dockMap = map
         end
@@ -1106,6 +1174,8 @@ function module:status()
         say(string.format(L["Riding to the noted dock %s"], tostring(passive.name or "")))
     elseif Dock ~= nil and Dock.reached ~= nil then
         say(L["At a dock, waiting"])
+    elseif fishing.reached() then
+        say(L["At a fishing spot"])
     else
         say(L["No active route"])
     end
