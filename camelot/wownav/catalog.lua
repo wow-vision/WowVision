@@ -362,12 +362,17 @@ end
 
 -- The entry points of the navigation window (F10), the same kind of list as the route data's: the nearest targets of
 -- the catalogue that resolve to a network point here (the flight master in front of the player, a door, a portal),
--- and with "Show Automatic Waypoints" (his showauto) the network's own waypoints as well, nearest first, at most
--- count. The player picks where the route starts; WowNav never binds the position itself. The one exception to the
--- setting: while the player swims or dives, the network's nearest water point (a waypoint of a WATER area with a
--- checked exit; his swimming start takes these only) within his water exit reach (N.WATER_EXIT_RADIUS) is always in
--- the list, at its place by distance and marked water, so F10 can preselect it. opts: { showAuto, swimming, german }
+-- and the network's own waypoints, nearest first, at most count (catalog.ENTRY_COUNT). With "Show Automatic
+-- Waypoints" (his showauto) the waypoints mix in as far as the list reaches; without it only those within
+-- catalog.ENTRY_NEAR join, and the rest of the list is targets: the nearest target can lie far away, and a waypoint
+-- next to the player still gives a fine start. The player picks where the route starts; WowNav never binds the
+-- position itself. While the player swims or dives, the network's nearest water point (a waypoint of a WATER area
+-- with a checked exit; his swimming start takes these only) within his water exit reach (N.WATER_EXIT_RADIUS) is
+-- always in the list, at its place by distance and marked water, so F10 can preselect it.
+-- opts: { showAuto, swimming, german }
 catalog.ENTRY_RADIUS = 300.0
+catalog.ENTRY_COUNT = 50
+catalog.ENTRY_NEAR = 10.0
 
 -- The network's waypoints near a position, nearest first: { id, x, y, z, distance, water }.
 local function nearNodes(N, x, y, radius)
@@ -397,10 +402,16 @@ function catalog.entryPoints(N, C, map, x, y, count, opts)
     -- the player's zones decoded, so the targets nearby are resolved now
     local nodes = nearNodes(N, x, y, catalog.ENTRY_RADIUS)
     local rows = catalog.search(N, C, map, "", x, y, { limit = count, start = true, german = opts.german })
-    if opts.showAuto then
-        for i = 1, math.min(#nodes, count) do
-            rows[#rows + 1] = nodeRow(N, nodes[i])
+    local reach = opts.showAuto and math.huge or catalog.ENTRY_NEAR
+    local added = 0
+    for i = 1, math.min(#nodes, count) do
+        if nodes[i].distance > reach then
+            break
         end
+        rows[#rows + 1] = nodeRow(N, nodes[i])
+        added = added + 1
+    end
+    if added > 0 then
         table.sort(rows, byDistance)
         for i = #rows, count + 1, -1 do
             rows[i] = nil

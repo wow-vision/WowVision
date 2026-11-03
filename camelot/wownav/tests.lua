@@ -482,7 +482,7 @@ if haveNetwork then
         t:assertTrue(direct[#direct].distance <= routed[#routed].distance)
     end
 
-    suite["F10's entry points: the nearest targets, automatic waypoints only with the setting"] = function(t)
+    suite["F10's entry points: the nearest 50, waypoints beside the player always, farther ones with the setting"] = function(t)
         setup()
         local game = newGame()
         local route = Route.new(game.env)
@@ -495,22 +495,40 @@ if haveNetwork then
             end
             return true
         end
-        local entries = catalog.entryPoints(N, C, 0, x, y, 20, { german = false })
-        t:assertEqual(#entries, 20)
+        local near = catalog.autoPoints(N, x, y, catalog.ENTRY_NEAR)
+        t:assertTrue(#near > 0, "the player stands on a waypoint")
+        t:assertTrue(#near < catalog.ENTRY_COUNT, "the waypoints beside him leave room for targets")
+        local entries = catalog.entryPoints(N, C, 0, x, y, catalog.ENTRY_COUNT, { german = false })
+        t:assertEqual(#entries, catalog.ENTRY_COUNT)
         t:assertTrue(sorted(entries), "nearest first")
+        local auto, beyond = 0, false
         for _, e in ipairs(entries) do
-            t:assertNotNil(e.tid, "a target of the catalogue")
-            t:assertNil(e.nodeId, "no automatic waypoint without the setting: " .. tostring(e.n))
-            t:assertNotNil(e.resolution and e.resolution.endNodeId, "a start needs its network point")
+            if e.nodeId ~= nil then
+                auto = auto + 1
+                t:assertTrue(e.distance <= catalog.ENTRY_NEAR, "without the setting only the waypoints beside him")
+                t:assertNotNil(e.n:find("^Auto, height %-?%d+$"), "an automatic waypoint says its height: " .. e.n)
+            else
+                t:assertNotNil(e.tid, "a target of the catalogue")
+                t:assertNotNil(e.resolution and e.resolution.endNodeId, "a start needs its network point")
+                t:assertNil(e.n:find("%d%d%d"), "a target's name has no coordinates: " .. e.n)
+                beyond = beyond or e.distance > catalog.ENTRY_NEAR
+            end
         end
-        local withAuto = catalog.entryPoints(N, C, 0, x, y, 20, { showAuto = true, german = false })
-        t:assertEqual(#withAuto, 20)
+        t:assertEqual(auto, #near, "every waypoint within the radius is listed")
+        t:assertTrue(beyond, "the rest of the list is targets farther away")
+        local withAuto = catalog.entryPoints(N, C, 0, x, y, catalog.ENTRY_COUNT, { showAuto = true, german = false })
+        t:assertEqual(#withAuto, catalog.ENTRY_COUNT)
         t:assertTrue(sorted(withAuto), "nearest first, both kinds")
-        local auto = 0
+        local far = 0
         for _, e in ipairs(withAuto) do
-            auto = auto + (e.nodeId ~= nil and 1 or 0)
+            if e.nodeId ~= nil then
+                t:assertNotNil(e.n:find("^Auto, height %-?%d+$"), e.n)
+                far = far + (e.distance > catalog.ENTRY_NEAR and 1 or 0)
+            end
         end
-        t:assertTrue(auto > 0, "the setting adds the network's waypoints")
+        t:assertTrue(far > 0, "the setting mixes in the waypoints farther away")
+        t:assertEqual(text.autoName(nil), "Auto, height unknown", "a missing height is never said as 0")
+        t:assertEqual(text.autoName(-12.6), "Auto, height -13")
     end
 
     suite["standing at a flight master, it heads the entry points; the route starts at its network point"] = function(t)

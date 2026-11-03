@@ -165,15 +165,16 @@ function engine:routeTo(target)
     return module:routeTo(target)
 end
 
--- F10's entry points: the nearest targets with a network point, and the network's waypoints with "Show Automatic
--- Waypoints" (catalog.entryPoints); {} where WowNav has no data.
+-- F10's entry points: the nearest 50 targets with a network point and waypoints of the network, all of them nearby
+-- with "Show Automatic Waypoints", else only those right beside the player (catalog.entryPoints); {} where WowNav has
+-- no data. The count of the route data's list (maps.ENTRY_COUNT) is not WowNav's.
 function engine:entryPoints(px, py, map, count, swimming)
     local N = ready(module)
     if N == nil or px == nil or not catalog.covers(N, map) then
         return {}
     end
     N.activeMapId = map
-    return catalog.entryPoints(N, _G.WowVisionNavigationTargetCatalog, map, px, py, count,
+    return catalog.entryPoints(N, _G.WowVisionNavigationTargetCatalog, map, px, py, catalog.ENTRY_COUNT,
         { showAuto = module.settings.showAuto == true, swimming = swimming })
 end
 

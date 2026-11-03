@@ -243,9 +243,13 @@ local CATEGORY = {
 }
 
 -- Automatic waypoints are named by their height in whole yards only (his auto_prefix_z: "the player finds re-entry
--- points on the right level"); their type (his AUTO_TYPES) is not said.
+-- points on the right level"); their type (his AUTO_TYPES) is not said. Every waypoint of the data has its height; one
+-- without would be said so, never as height 0.
 function text.autoName(z)
-    return string.format(L["Auto, height %d"], math.floor((z or 0) + 0.5))
+    if type(z) ~= "number" or z ~= z or z == math.huge or z == -math.huge then
+        return L["Auto, height unknown"]
+    end
+    return string.format(L["Auto, height %d"], math.floor(z + 0.5))
 end
 
 -- What a list row adds to a target's name after its resolution (his TargetSelection:Describe): inexact by how much,
