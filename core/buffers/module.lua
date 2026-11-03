@@ -99,6 +99,31 @@ function module:getGraphMenuItems(builder)
     end
 end
 
+-- The focused item's tooltip becomes the current one, for the tooltip keys
+-- (Shift-Up and Shift-Down read it line by line): an item offering one
+-- (getTooltipData, an aura's) sets it after every buffer key; an item without
+-- one clears a tooltip the buffers set before, never one a window set.
+local tooltipFromBuffers = false
+function module:syncTooltip()
+    local tooltip = WowVision.UIHost ~= nil and WowVision.UIHost.tooltip or nil
+    if tooltip == nil then
+        return
+    end
+    local buffer = self:getCurrentBuffer()
+    local item = buffer ~= nil and buffer:getFocus() or nil
+    local data = item ~= nil and item.getTooltipData ~= nil and item:getTooltipData() or nil
+    if data ~= nil then
+        local ok, err = pcall(tooltip.set, tooltip, nil, data)
+        if not ok then
+            geterrorhandler()(err)
+        end
+        tooltipFromBuffers = ok
+    elseif tooltipFromBuffers then
+        tooltip:reset()
+        tooltipFromBuffers = false
+    end
+end
+
 -- Helper to get current group
 function module:getCurrentGroup()
     return self.root and self.root:getFocus()
@@ -121,6 +146,7 @@ module:registerBinding({
         local buffer = module:getCurrentBuffer()
         if buffer then
             buffer:UIFocusDirection(itemDirection(-1))
+            module:syncTooltip()
         end
     end,
 })
@@ -135,6 +161,7 @@ module:registerBinding({
         local buffer = module:getCurrentBuffer()
         if buffer then
             buffer:UIFocusDirection(itemDirection(1))
+            module:syncTooltip()
         end
     end,
 })
@@ -150,6 +177,7 @@ module:registerBinding({
         local group = module:getCurrentGroup()
         if group then
             group:UIFocusDirection(1)
+            module:syncTooltip()
         end
     end,
 })
@@ -164,6 +192,7 @@ module:registerBinding({
         local group = module:getCurrentGroup()
         if group then
             group:UIFocusDirection(-1)
+            module:syncTooltip()
         end
     end,
 })
@@ -178,6 +207,7 @@ module:registerBinding({
     func = function()
         if module.root then
             module.root:UIFocusDirection(1)
+            module:syncTooltip()
         end
     end,
 })
@@ -191,6 +221,7 @@ module:registerBinding({
     func = function()
         if module.root then
             module.root:UIFocusDirection(-1)
+            module:syncTooltip()
         end
     end,
 })

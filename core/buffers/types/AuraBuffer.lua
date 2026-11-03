@@ -189,6 +189,12 @@ function AuraItem:getFocusString()
     return text
 end
 
+-- The aura's whole tooltip, for the tooltip keys (Shift-Up and Shift-Down
+-- line by line): the game's own text, description included.
+function AuraItem:getTooltipData()
+    return { type = "Aura", unit = self.unit, index = self.index, filter = self.filter }
+end
+
 AuraBuffer.AuraItem = AuraItem
 
 -- How many auras a unit has under a filter: by the index read where

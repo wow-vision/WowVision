@@ -1259,6 +1259,7 @@ local parseOnly = {
     "core/chat/module.lua",
     "core/chat/ui.lua",
     "core/ui/tooltip/types/HyperlinkTooltip.lua",
+    "core/ui/tooltip/types/AuraTooltip.lua",
     "mists/auction.lua",
     "tbc/QuestLog.lua",
     "tbc/socketing.lua",

@@ -6,5 +6,6 @@
   <Script file="UnitTooltip.lua" />
   <Script file="TextTooltip.lua" />
   <Script file="HyperlinkTooltip.lua" />
+  <Script file="AuraTooltip.lua" />
 
 </Ui>
