@@ -46,7 +46,7 @@ local ROLE_DEFAULTS = {
 
 -- Saved by the voice's name: the pitch scales are tuned per voice, and
 -- installing a voice moves the game's voice numbers.
-settings:add({
+local voiceField = settings:add({
     key = "voice",
     type = "TtsVoice",
     label = L["Voice"],
@@ -594,9 +594,32 @@ function module:onEvent(event, ...)
     elseif event == "PLAYER_ENTERING_WORLD" then
         self.unavailableSaid = false
         self:rebuild()
+        -- The game lists its voices only in the world, so the voice name is
+        -- knowable now: warn here if the chosen voice is the NVDA bridge.
+        self:warnBridgeVoice()
     else
         self:rebuild()
     end
+end
+
+-- The NVDA bridge voice (SAPI2SR) cannot play the pitch scale: NVDA ignores
+-- the pitch our markup carries, which a real SAPI voice honours (confirmed
+-- on NVDA 2026.3 with both Eloquence and eSpeak). Warn once when the monitor
+-- is enabled, enters the world, or has its voice set to the bridge, so the
+-- player knows to pick a Windows voice for the pitch. Said once; switching
+-- back to a bridge voice after a Windows one warns again.
+function module:warnBridgeVoice()
+    local name = voiceName(self.settings.voice or 0)
+    local bridge = name ~= nil and name:lower():find("sapi2sr", 1, true) ~= nil
+    if not bridge then
+        self.bridgeWarned = false
+        return
+    end
+    if self.bridgeWarned then
+        return
+    end
+    self.bridgeWarned = true
+    WowVision:speak(L["This screen reader voice does not play the health pitch. For the pitch, choose a Windows voice such as Microsoft Zira in the Voice setting."])
 end
 
 function module:onEnable()
@@ -604,12 +627,18 @@ function module:onEnable()
         self:checkRepeats()
     end)
     self:rebuild()
+    self:warnBridgeVoice()
 end
 
 function module:onDisable()
     self.members = {}
     self.aliases = {}
 end
+
+-- Choosing the bridge voice while already enabled warns too.
+voiceField.events.valueChange:subscribe(module, function(subscriber)
+    subscriber:warnBridgeVoice()
+end)
 
 module:registerBinding({
     type = "Function",
