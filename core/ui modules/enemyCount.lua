@@ -97,16 +97,17 @@ end
 -- Crowd control -----------------------------------------------------------
 -- With the crowd control setting on, the count says only the enemies still
 -- free to fight, and crowd control is said apart: its shown text when it
--- lands, a sound when it ends. The shown text (the game's loss-of-control
--- text, "Stunned") is secret on WoW: Forever for every unit but you. Secret
--- text can be stored, joined and spoken, never compared, so two of the same
--- kind cannot be grouped, and the tracker below keys everything on plate
--- tokens and plain counts.
+-- lands, a sound when it ends. The shown text is the loss-of-control text
+-- for players ("Stunned"; the game keeps none for NPCs) and the crowd
+-- control aura's name for NPCs ("Polymorph"). Both are secret on WoW:
+-- Forever in combat. Secret text can be stored, joined and spoken, never
+-- compared, so two of the same kind cannot be grouped, and the tracker below
+-- keys everything on plate tokens and plain counts.
 --
 -- More api calls for it:
 --   controlCount(unit)          loss-of-control effects on the unit (number,
 --                               maybe secret), nil when unknown
---   controlAuras(unit)          crowd control auras by the game's own filter
+--   controlAuras(unit)          crowd control auras its plate shows
 --                               (readable number), nil when unknown
 --   controlText(unit)           the shown text, maybe secret, nil when none
 

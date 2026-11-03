@@ -51,14 +51,16 @@ In a fight WowVision says how many enemies are in it whenever the number changes
 
 With this setting on, a sheeped, stunned or feared enemy leaves the number, and you hear what happens to it in as few words as possible:
 
-- A crowd control lands: its text alone, the game's own word in your client's language, for example "Stunned". The number is one lower now; it is not said again.
+- A crowd control lands: its name alone, in your client's language. For monsters this is the spell, as the crowd control icon on their nameplate shows it ("Polymorph", "Frost Nova"); for enemy players the game's own word ("Stunned"). The number is one lower now; it is not said again.
 - A crowd control ends while the enemy is still in the fight: a short sound, then the new number.
 - Only controlled enemies are left: "0" and their texts, for example "0, Polymorphed", so it is not taken for the end of the fight.
 - A controlled enemy dies: nothing by itself; the number or the end of combat says the rest.
 - A kill in the same moment as a crowd control says both: "1, Feared".
 
-A typical pull: "3", "Polymorphed" (one sheeped), "1", "0, Polymorphed" (the others are dead), the sound and "1" (the sheep broke), then "0".
+A typical pull: "3", "Polymorph" (one sheeped), "1", "0, Polymorph" (the others are dead), the sound and "1" (the sheep broke), then "0".
 
-Two enemies with the same crowd control are said one after the other ("Stunned, Stunned"): on WoW: Forever the text is hidden from addons; WowVision can speak it but not compare it. Where no text can be read, WowVision says "controlled". The voice pack output plays only the numbers.
+What counts as crowd control is what the game puts in the Crowd Control list on an enemy's nameplate: stuns, fears, polymorphs, roots and the like, not slows. On WoW: Forever, in combat, that list is hidden from addons; WowVision then follows the game's crowd control filter, which may count a slow too.
+
+Two enemies with the same crowd control are said one after the other ("Polymorph, Polymorph"): on WoW: Forever the name is hidden from addons; WowVision can speak it but not compare it. Where no name can be read, WowVision says "controlled". The voice pack output plays only the numbers.
 
 The count comes from enemy nameplates, so it needs them: turn on **Enemy Units** in the game's Nameplates options (off by default in some game versions; WowVision says so once if you enter combat without them). Turning on **Minor** and **Minions** below it counts small trash mobs and enemy pets too. An enemy counts once it is within nameplate range (45 yards on WoW: Forever).

@@ -138,6 +138,70 @@ for i = 1, 40 do
     tinsert(RAID, "raidpet" .. i)
 end
 
+local spells = C_Spell or {}
+
+local function readable(value)
+    return value ~= nil and not secrets.isSecret(value)
+end
+
+-- Blizzard's rule for the Crowd Control list on an enemy NPC's plate: the
+-- spell is crowd control by the game's list, or the aura is flagged to show
+-- for everyone. nil when the answer is secret (Forever in combat).
+local function shownAsControl(aura)
+    local okShow, showAll = pcall(function()
+        return aura.nameplateShowAll
+    end)
+    if okShow and readable(showAll) and showAll == true then
+        return true
+    end
+    if spells.IsSpellCrowdControl == nil then
+        return nil
+    end
+    local ok, isControl = pcall(function()
+        return spells.IsSpellCrowdControl(aura.spellId)
+    end)
+    if not ok or not readable(isControl) then
+        return nil
+    end
+    return isControl == true
+end
+
+local function auraList(unit, filter)
+    if unitAuras.GetUnitAuras == nil then
+        return nil
+    end
+    local ok, auras = pcall(unitAuras.GetUnitAuras, unit, filter)
+    if not ok or type(auras) ~= "table" or secrets.isSecret(auras) then
+        return nil
+    end
+    return auras
+end
+
+-- The crowd control auras on a plate, the ones its Crowd Control list
+-- shows. Blizzard's rule where it can be read; where it is secret, the
+-- game's CROWD_CONTROL filter (looser: on TBC it takes a Frostbolt slow).
+-- nil when neither can be read.
+local function controlAuraList(unit)
+    local harmful = auraList(unit, "HARMFUL")
+    if harmful ~= nil then
+        local shown = {}
+        local known = true
+        for _, aura in ipairs(harmful) do
+            local verdict = shownAsControl(aura)
+            if verdict == nil then
+                known = false
+                break
+            elseif verdict then
+                tinsert(shown, aura)
+            end
+        end
+        if known then
+            return shown
+        end
+    end
+    return auraList(unit, CONTROL_FILTER)
+end
+
 local plates = {}
 local api = {
     plates = function()
@@ -176,27 +240,30 @@ local api = {
         return ok and count or nil
     end,
     controlAuras = function(unit)
-        if unitAuras.GetUnitAuras == nil then
-            return nil
-        end
-        local ok, auras = pcall(unitAuras.GetUnitAuras, unit, CONTROL_FILTER)
-        if not ok or auras == nil or secrets.isSecret(auras) then
-            return nil
-        end
-        local okLength, count = pcall(function()
-            return #auras
-        end)
-        return okLength and count or nil
+        local auras = controlAuraList(unit)
+        return auras and #auras or nil
     end,
+    -- The loss-of-control text where the game keeps one (players only: it
+    -- has none for NPCs), else the name of the crowd control aura, the one
+    -- text an enemy NPC's plate draws.
     controlText = function(unit)
-        if lossOfControl.GetActiveLossOfControlDataByUnit == nil then
+        if lossOfControl.GetActiveLossOfControlDataByUnit ~= nil then
+            local ok, text = pcall(function()
+                local data = lossOfControl.GetActiveLossOfControlDataByUnit(unit, CONTROL_INDEX)
+                return data and data.displayText
+            end)
+            if ok and text ~= nil then
+                return text
+            end
+        end
+        local auras = controlAuraList(unit)
+        if auras == nil or auras[1] == nil then
             return nil
         end
-        local ok, text = pcall(function()
-            local data = lossOfControl.GetActiveLossOfControlDataByUnit(unit, CONTROL_INDEX)
-            return data and data.displayText
+        local ok, name = pcall(function()
+            return auras[1].name
         end)
-        return ok and text or nil
+        return ok and name or nil
     end,
 }
 
