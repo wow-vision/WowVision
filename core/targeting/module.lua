@@ -155,6 +155,45 @@ hardTargetHealth:addOutput({
     enabled = false,
 })
 
+-- Crowd control on the current target (crowdControl.lua): fired with
+-- { controlled = true } when crowd control lands on it or a controlled
+-- target is chosen, { controlled = false } when it ends on the same target.
+local targetCrowdControl = module:addAlert({
+    key = "targetCrowdControl",
+    label = L["Target Crowd Control"],
+})
+module.targetCrowdControl = targetCrowdControl
+
+targetCrowdControl:addOutput({
+    type = "Sound",
+    key = "onSound",
+    label = L["Controlled Sound"],
+    shouldFire = function(self, message)
+        return message.controlled == true
+    end,
+    path = "Sound/WowVision/alerts/cc-on.mp3",
+})
+
+targetCrowdControl:addOutput({
+    type = "Sound",
+    key = "offSound",
+    label = L["Free Sound"],
+    shouldFire = function(self, message)
+        return message.controlled == false
+    end,
+    path = "Sound/WowVision/alerts/cc-off.mp3",
+})
+
+targetCrowdControl:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    buildMessage = function(self, message)
+        return message.controlled and L["Controlled"] or L["Free"]
+    end,
+    enabled = false,
+})
+
 local hardTarget = settings:add({
     type = "Category",
     key = "hardTarget",
@@ -163,6 +202,7 @@ local hardTarget = settings:add({
 
 hardTarget:addRef("targetChange", hardTargetChange.parameters)
 hardTarget:addRef("healthMonitor", hardTargetHealth.parameters)
+hardTarget:addRef("crowdControl", targetCrowdControl.parameters)
 
 local softTargets = {}
 

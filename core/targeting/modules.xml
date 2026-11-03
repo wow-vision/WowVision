@@ -5,6 +5,8 @@
   <Script file="softTargetingTests.lua" />
   <Script file="module.lua" />
   <Script file="focus.lua" />
+  <Script file="crowdControl.lua" />
   <Script file="unitMenus.lua" />
+  <Script file="ccTest.lua" />
 
 </Ui>
