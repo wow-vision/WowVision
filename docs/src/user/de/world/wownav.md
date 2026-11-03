@@ -37,7 +37,6 @@ Was WowNav nicht tut:
 - Keine Flugrouten.
 - Keine Gefahrenwarnungen vor Gegnern oder Kreaturenstufen. Die einzige Ausnahme ist die weiter unten beschriebene Warnung vor feindlichen Posten.
 - Das Tauchen ist deine Sache. Wasser ist in den Daten flach. Die einzige Tauchroute sind die Ruins of Blackfathom in Dunkelküste.
-- Die Ruins of Gilneas sind nicht enthalten, und Dalaran im Alteracgebirge ist nicht erreichbar.
 
 Auf einer Karte, die die Daten nicht kennen, listet F10 nichts auf, und /beacon to antwortet "Keine Route gefunden". Der Scanner setzt mit Eingabe dann ein gerades Signal, wie ohne Kartendaten. Kann die Ortsliste einer Karte gar nicht gelesen werden, hörst du "WowNav-Katalog nicht nutzbar", gefolgt von einem Grund; gib ihn bei einer Fehlermeldung an.
 
