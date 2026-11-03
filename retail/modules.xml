@@ -32,6 +32,8 @@
        Forever. -->
   <Script file="communities.lua" />
   <Script file="guildControl.lua" />
+  <!-- The group finder (PVEFrame): the tabs and the Dungeon Finder, follower dungeons included. -->
+  <Script file="groupFinder.lua" />
   <Include file="containers/modules.xml" />
   <Include file="groupHealth/modules.xml" />
 
