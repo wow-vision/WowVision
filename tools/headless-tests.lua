@@ -10,6 +10,8 @@
 tinsert = table.insert
 tremove = table.remove
 unpack = unpack or table.unpack
+-- WoW's Lua 5.1 has math.atan2 (WowNav's fishing code uses it); Lua 5.3+ folded it into math.atan.
+math.atan2 = math.atan2 or math.atan
 
 -- WoW API stand-in: records the run script on the fake frame.
 function ExecuteFrameScript(frame, script)
