@@ -255,24 +255,58 @@ function ControlTracker:change(free, controlled, readText)
     return message
 end
 
--- The words of a message: "1, Polymorphed". `join` carries secret texts
--- (secrets.join); `noText` stands in where no text could be read.
-function enemyCount.controlWords(message, noText, join)
+-- This many controls said together become a count: an area spell (Frost
+-- Nova, a fear) would otherwise be a long list of the same name.
+enemyCount.GROUP_AT = 3
+
+-- The one name all texts share, when every one is readable and the same.
+-- Secret names cannot be compared, so they never group by name.
+local function sharedName(texts, count, isSecret)
+    local first = texts[1]
+    if first == nil or isSecret(first) then
+        return nil
+    end
+    for i = 2, count do
+        local text = texts[i]
+        if text == nil or isSecret(text) or text ~= first then
+            return nil
+        end
+    end
+    return first
+end
+
+-- The words of a message: "1, Polymorph", "3 Frost Nova", "2 controlled".
+-- options:
+--   names     say the crowd control names; false says `noText` for all
+--   noText    the word where no name is said ("controlled")
+--   join      joins the parts and carries secret texts (secrets.join)
+--   isSecret  secrets.isSecret
+function enemyCount.controlWords(message, options)
+    local noText = options.noText
     local parts = {}
     if message.count ~= nil then
         table.insert(parts, tostring(message.count))
     end
-    for i = 1, message.textCount or 0 do
-        local text = message.texts[i]
-        if text == nil then
-            text = noText
+    local count = message.textCount or 0
+    if count > 0 then
+        if not options.names then
+            table.insert(parts, count == 1 and noText or (count .. " " .. noText))
+        elseif count >= enemyCount.GROUP_AT then
+            table.insert(parts, count .. " " .. (sharedName(message.texts, count, options.isSecret) or noText))
+        else
+            for i = 1, count do
+                local text = message.texts[i]
+                if text == nil then
+                    text = noText
+                end
+                table.insert(parts, text)
+            end
         end
-        table.insert(parts, text)
     end
     if #parts == 0 then
         return nil
     end
-    return join(parts, ", ")
+    return options.join(parts, ", ")
 end
 
 -- Holds a new count back until it stayed the same for `hold` seconds, so a

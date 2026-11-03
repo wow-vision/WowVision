@@ -46,7 +46,12 @@ enemyCountAlert:addOutput({
         if message.texts == nil then
             return message.count ~= nil and tostring(message.count) or nil
         end
-        return WowVision.enemyCount.controlWords(message, L["controlled"], WowVision.secrets.join)
+        return WowVision.enemyCount.controlWords(message, {
+            names = module.settings.enemyCountControlMode == "names",
+            noText = L["controlled"],
+            join = WowVision.secrets.join,
+            isSecret = WowVision.secrets.isSecret,
+        })
     end,
 })
 
@@ -101,12 +106,23 @@ settings:add({
     default = false,
 })
 
+-- Experimental: crowd controlled enemies leave the number and are said
+-- apart, with the crowd control's name or with one word for all.
 settings:add({
-    key = "enemyCountControl",
-    type = "Bool",
+    key = "enemyCountControlMode",
+    type = "Choice",
     label = L["Announce Crowd Control"],
-    default = false,
+    default = "off",
+    choices = {
+        { label = L["Off"], value = "off" },
+        { label = L["With Spell Names"], value = "names" },
+        { label = L["Without Names"], value = "word" },
+    },
 })
+
+local function controlOn()
+    return module.settings.enemyCountControlMode ~= "off"
+end
 
 local enemyCount = WowVision.enemyCount
 local secrets = WowVision.secrets
@@ -274,7 +290,7 @@ local recountQueued, settleQueued = false, false
 
 -- Whether a count is on or about to be said, so the ticker keeps checking.
 local function counting()
-    if module.settings.enemyCountControl then
+    if controlOn() then
         return controlSettler.said ~= enemyCount.CONTROL_IDLE or controlSettler.pending ~= nil
     end
     return settler.said ~= 0 or settler.pending ~= nil
@@ -303,7 +319,7 @@ local function recount(skip)
         return
     end
     local active
-    if module.settings.enemyCountControl then
+    if controlOn() then
         active = recountControl(skip)
     else
         local count = enemyCount.count(api, module.settings.enemyCountMode, module.settings.enemyCountEliteOnly, skip)
@@ -370,7 +386,7 @@ function module:onEvent(event, ...)
         tracker:forget(unit)
     elseif event == "UNIT_AURA" then
         local unit = ...
-        if module.settings.enemyCountControl and type(unit) == "string" and unit:find("^nameplate") then
+        if controlOn() and type(unit) == "string" and unit:find("^nameplate") then
             queueRecount()
         end
     else

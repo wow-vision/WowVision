@@ -44,7 +44,7 @@ In a fight WowVision says how many enemies are in it whenever the number changes
 - **Enemy Count Alert** — on by default, spoken by text to speech; a voice pack output plays the numbers instead if you turn it on.
 - **Count Enemies** — **Attacking You or Your Group** (default) counts every enemy that you, your pet or anyone in your group is fighting; **Attacking You** counts only the enemies whose aggro you hold.
 - **Count Elite Enemies Only** — leaves normal mobs out (elites, rare elites and world bosses still count).
-- **Announce Crowd Control** — off by default. When on, the number counts only the enemies still free to fight, and crowd control is said apart (see below).
+- **Announce Crowd Control** (experimental) — **Off** (default) keeps the plain count. **With Spell Names** and **Without Names** count only the enemies still free to fight and say crowd control apart (see below).
 - **Crowd Control Ended Alert** — the sound for a crowd control that ends, with Announce Crowd Control on.
 
 ### Announce Crowd Control
@@ -61,6 +61,10 @@ A typical pull: "3", "Polymorph" (one sheeped), "1", "0, Polymorph" (the others 
 
 What counts as crowd control is what the game puts in the Crowd Control list on an enemy's nameplate: stuns, fears, polymorphs, roots and the like, not slows. On WoW: Forever, in combat, that list is hidden from addons; WowVision then follows the game's crowd control filter, which may count a slow too.
 
-Two enemies with the same crowd control are said one after the other ("Polymorph, Polymorph"): on WoW: Forever the name is hidden from addons; WowVision can speak it but not compare it. Where no name can be read, WowVision says "controlled". The voice pack output plays only the numbers.
+One or two crowd controls landing together are named one after the other ("Polymorph, Frost Nova"). Three or more at once, usually one area spell, become a count: "3 Frost Nova" when every name is the same, else "3 controlled". On WoW: Forever the names are hidden from addons in combat: WowVision can speak them but not compare them, so three or more there always say "controlled". The same goes for "0" with three or more controlled enemies left: "0, 3 controlled". Where no name can be read, WowVision says "controlled".
+
+**Without Names** skips the names, which can be long ("Hammer of Justice"): one control says "controlled", two or more at once "2 controlled". The sound for a control that ends works the same in both.
+
+The voice pack output plays only the numbers.
 
 The count comes from enemy nameplates, so it needs them: turn on **Enemy Units** in the game's Nameplates options (off by default in some game versions; WowVision says so once if you enter combat without them). Turning on **Minor** and **Minions** below it counts small trash mobs and enemy pets too. An enemy counts once it is within nameplate range (45 yards on WoW: Forever).
