@@ -47,6 +47,15 @@ local function world(plates, group)
         isSecret = function(value)
             return value == SECRET
         end,
+        controlCount = function(unit)
+            return plates[unit].loc
+        end,
+        controlAuras = function(unit)
+            return plates[unit].ccAuras
+        end,
+        controlText = function(unit)
+            return plates[unit].text
+        end,
     }
 end
 
@@ -168,5 +177,181 @@ testRunner:addSuite("EnemyCount", {
         settler:update(3, 1)
         settler:update(0, 5)
         t:assertEqual(settler:update(0, 5.5), 0)
+    end,
+})
+
+-- Crowd control --------------------------------------------------------------
+
+local function plain(parts, separator)
+    return table.concat(parts, separator)
+end
+
+local function wordOptions(names)
+    return {
+        names = names,
+        noText = "controlled",
+        join = plain,
+        isSecret = function(value)
+            return value == SECRET
+        end,
+    }
+end
+
+-- What the tracker would have said for a fight state: free and controlled
+-- plate tokens, texts by token. `names` false: the no-names choice.
+local function step(tracker, free, controlled, texts, names)
+    local message = tracker:change(free, controlled, function(unit)
+        return texts and texts[unit]
+    end)
+    if message == nil then
+        return "silent"
+    end
+    local words = enemyCount.controlWords(message, wordOptions(names ~= false)) or ""
+    if message.ended then
+        words = "sound " .. words
+    end
+    return words
+end
+
+testRunner:addSuite("EnemyCountControl", {
+    ["a readable loss-of-control count marks a plate controlled"] = function(t)
+        local api = world({
+            nameplate1 = enemy({ player = 3 }, { loc = 1 }),
+            nameplate2 = enemy({ player = 3 }, { loc = 0 }),
+            nameplate3 = enemy({ player = 3 }),
+        })
+        local free, controlled = enemyCount.scan(api, "group", false)
+        t:assertEqual(#free, 2)
+        t:assertEqual(controlled[1], "nameplate1")
+    end,
+
+    ["a secret count falls back to the crowd control auras"] = function(t)
+        local api = world({
+            nameplate1 = enemy({ player = 3 }, { loc = SECRET, ccAuras = 1 }),
+            nameplate2 = enemy({ player = 3 }, { loc = SECRET }),
+        })
+        local free, controlled = enemyCount.scan(api, "group", false)
+        t:assertEqual(#free, 1)
+        t:assertEqual(#controlled, 1)
+    end,
+
+    ["the scan keeps the count rules"] = function(t)
+        local api = world({
+            nameplate1 = enemy({ player = 3 }, { loc = 1, dead = true }),
+            nameplate2 = enemy(nil, { loc = 1 }),
+            nameplate3 = enemy({ player = 3 }, { reaction = 5 }),
+        })
+        local free, controlled = enemyCount.scan(api, "group", false)
+        t:assertEqual(#free + #controlled, 0)
+    end,
+
+    ["the key changes when a control swaps plates at the same count"] = function(t)
+        local a = enemyCount.controlKey({ "nameplate2" }, { "nameplate1" })
+        local b = enemyCount.controlKey({ "nameplate1" }, {})
+        t:assertEqual(a == b, false)
+        t:assertEqual(enemyCount.controlKey({}, {}), enemyCount.CONTROL_IDLE)
+    end,
+
+    ["sheep one, kill the rest, then the sheep"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        local texts = { nameplate1 = "Polymorphed" }
+        t:assertEqual(step(tracker, { "nameplate1", "nameplate2", "nameplate3" }, {}), "3")
+        t:assertEqual(step(tracker, { "nameplate2", "nameplate3" }, { "nameplate1" }, texts), "Polymorphed")
+        t:assertEqual(step(tracker, { "nameplate3" }, { "nameplate1" }, texts), "1")
+        t:assertEqual(step(tracker, {}, { "nameplate1" }, texts), "0, Polymorphed")
+        t:assertEqual(step(tracker, { "nameplate1" }, {}, texts), "sound 1")
+        t:assertEqual(step(tracker, {}, {}), "0")
+    end,
+
+    ["a break while the other dies plays the sound at the same number"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        step(tracker, { "nameplate2" }, {})
+        step(tracker, { "nameplate2" }, { "nameplate1" }, { nameplate1 = "Polymorphed" })
+        t:assertEqual(step(tracker, { "nameplate1" }, {}), "sound 1")
+    end,
+
+    ["a controlled enemy that dies says nothing"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        step(tracker, { "nameplate1", "nameplate2" }, {})
+        step(tracker, { "nameplate2" }, { "nameplate1" }, { nameplate1 = "Stunned" })
+        t:assertEqual(step(tracker, { "nameplate2" }, {}), "silent")
+    end,
+
+    ["the last free enemy controlled says zero and what is left"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        step(tracker, { "nameplate1", "nameplate2" }, {})
+        step(tracker, { "nameplate2" }, { "nameplate1" }, { nameplate1 = "Polymorphed" })
+        t:assertEqual(step(tracker, {}, { "nameplate1", "nameplate2" }, { nameplate1 = "Polymorphed", nameplate2 = "Stunned" }),
+            "0, Polymorphed, Stunned")
+    end,
+
+    ["a kill in the same moment as a control says the number too"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        step(tracker, { "nameplate1", "nameplate2", "nameplate3" }, {})
+        t:assertEqual(step(tracker, { "nameplate3" }, { "nameplate1" }, { nameplate1 = "Feared" }), "1, Feared")
+    end,
+
+    ["a control without a readable text says the fallback word"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        step(tracker, { "nameplate1", "nameplate2" }, {})
+        t:assertEqual(step(tracker, { "nameplate2" }, { "nameplate1" }), "controlled")
+    end,
+
+    ["a forgotten plate token starts fresh"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        step(tracker, { "nameplate1", "nameplate2" }, {})
+        step(tracker, { "nameplate2" }, { "nameplate1" }, { nameplate1 = "Stunned" })
+        tracker:forget("nameplate1")
+        -- The token now shows a new, free enemy: no "ended" sound.
+        t:assertEqual(step(tracker, { "nameplate1", "nameplate2" }, {}), "2")
+    end,
+
+    ["three of the same name at once group by name"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        local nova = { nameplate1 = "Frost Nova", nameplate2 = "Frost Nova", nameplate3 = "Frost Nova" }
+        step(tracker, { "nameplate1", "nameplate2", "nameplate3", "nameplate4" }, {})
+        t:assertEqual(step(tracker, { "nameplate4" }, { "nameplate1", "nameplate2", "nameplate3" }, nova), "3 Frost Nova")
+    end,
+
+    ["three different or secret names at once group by the word"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        step(tracker, { "nameplate1", "nameplate2", "nameplate3", "nameplate4" }, {})
+        t:assertEqual(step(tracker, { "nameplate4" }, { "nameplate1", "nameplate2", "nameplate3" },
+            { nameplate1 = "Frost Nova", nameplate2 = "Polymorph", nameplate3 = "Frost Nova" }), "3 controlled")
+        local secretTracker = enemyCount.ControlTracker:new()
+        step(secretTracker, { "nameplate1", "nameplate2", "nameplate3", "nameplate4" }, {})
+        t:assertEqual(step(secretTracker, { "nameplate4" }, { "nameplate1", "nameplate2", "nameplate3" },
+            { nameplate1 = SECRET, nameplate2 = SECRET, nameplate3 = SECRET }), "3 controlled")
+    end,
+
+    ["two at once still say both names"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        step(tracker, { "nameplate1", "nameplate2", "nameplate3" }, {})
+        t:assertEqual(step(tracker, { "nameplate3" }, { "nameplate1", "nameplate2" },
+            { nameplate1 = "Frost Nova", nameplate2 = "Frost Nova" }), "Frost Nova, Frost Nova")
+    end,
+
+    ["only many controlled left says zero and the group"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        local nova = { nameplate1 = "Frost Nova", nameplate2 = "Frost Nova", nameplate3 = "Frost Nova" }
+        step(tracker, { "nameplate1", "nameplate2", "nameplate3", "nameplate4" }, {})
+        step(tracker, { "nameplate4" }, { "nameplate1", "nameplate2", "nameplate3" }, nova)
+        t:assertEqual(step(tracker, {}, { "nameplate1", "nameplate2", "nameplate3" }, nova), "0, 3 Frost Nova")
+    end,
+
+    ["the no-names choice says the word, counted from two on"] = function(t)
+        local tracker = enemyCount.ControlTracker:new()
+        local texts = { nameplate1 = "Hammer of Justice", nameplate2 = "Polymorph", nameplate3 = "Polymorph" }
+        step(tracker, { "nameplate1", "nameplate2", "nameplate3", "nameplate4" }, {})
+        t:assertEqual(step(tracker, { "nameplate2", "nameplate3", "nameplate4" }, { "nameplate1" }, texts, false), "controlled")
+        t:assertEqual(step(tracker, { "nameplate4" }, { "nameplate1", "nameplate2", "nameplate3" }, texts, false), "2 controlled")
+        t:assertEqual(step(tracker, {}, { "nameplate1", "nameplate2", "nameplate3" }, texts, false), "0, 3 controlled")
+    end,
+
+    ["the control settler starts idle"] = function(t)
+        local settler = enemyCount.Settler:new(0.5, enemyCount.CONTROL_IDLE)
+        t:assertEqual(settler:update(enemyCount.CONTROL_IDLE, 0), nil)
+        settler:update("2|", 1)
+        t:assertEqual(settler:update("2|", 1.5), "2|")
     end,
 })
