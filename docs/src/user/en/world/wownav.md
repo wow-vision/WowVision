@@ -17,8 +17,6 @@ From then on, every route request goes to WowNav: the navigation window (F10), t
 
 There is also an Enabled switch for the WowNav Routes module itself, which must stay on.
 
-If you also run the separate "WowVisionNavigation" addon (the original demo), WowNav inside WowVision stays off, because both would use the same names. Turn the demo off in the game's addon list. If you switch Routes from WowNav on while the demo is loaded, you hear "Turn off the WowVisionNavigation addon to use its routes here".
-
 ## What it covers
 
 The data comes with WowVision (in the release and beta downloads) and needs nothing else installed. It covers 51 zones on four maps:

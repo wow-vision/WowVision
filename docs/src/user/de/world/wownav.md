@@ -19,8 +19,6 @@ Von da an geht jede Routenanfrage an WowNav: das Navigationsfenster (F10), Einga
 
 Es gibt auch einen Schalter Aktiviert für das Modul WowNav-Routen selbst, der an bleiben muss.
 
-Läuft zusätzlich das separate Addon "WowVisionNavigation" (die ursprüngliche Demo), bleibt WowNav in WowVision aus, weil beide dieselben Namen benutzen würden. Schalte die Demo in der Addon-Liste des Spiels aus. Schaltest du Routen von WowNav ein, während die Demo geladen ist, hörst du "Schalte das Addon WowVisionNavigation aus, um seine Routen hier zu nutzen".
-
 ## Was es abdeckt
 
 Die Daten werden mit WowVision geliefert (in den Release- und Beta-Downloads) und brauchen nichts weiter. Sie decken 51 Gebiete auf vier Karten ab:
