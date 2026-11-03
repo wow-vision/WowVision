@@ -43,23 +43,45 @@ enemyCountAlert:addOutput({
     key = "tts",
     label = L["TTS Alert"],
     buildMessage = function(self, message)
-        return tostring(message.count)
+        if message.texts == nil then
+            return message.count ~= nil and tostring(message.count) or nil
+        end
+        return WowVision.enemyCount.controlWords(message, L["controlled"], WowVision.secrets.join)
     end,
 })
 
+-- Numbers only: crowd control texts are the game's own and have no file.
 enemyCountAlert:addOutput({
     type = "Voice",
     key = "voice",
     label = L["Voice Alert"],
     getPath = function(self, message)
+        if message.count == nil then
+            return nil
+        end
         return "Path", "numbers/" .. message.count .. ".mp3"
     end,
     enabled = false,
 })
 
+-- With Announce Crowd Control on: a control ended on an enemy still in the
+-- fight. Plays just before the new count.
+local controlEndedAlert = module:addAlert({
+    key = "enemyControlEnded",
+    label = L["Crowd Control Ended Alert"],
+})
+
+controlEndedAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    path = "Sound/WowVision/alerts/off1.mp3",
+})
+
 settings:addRef("combatStarted", combatStartedAlert.parameters)
 settings:addRef("combatEnded", combatEndedAlert.parameters)
 settings:addRef("enemyCount", enemyCountAlert.parameters)
+settings:addRef("enemyControlEnded", controlEndedAlert.parameters)
 
 settings:add({
     key = "enemyCountMode",
@@ -79,8 +101,21 @@ settings:add({
     default = false,
 })
 
+settings:add({
+    key = "enemyCountControl",
+    type = "Bool",
+    label = L["Announce Crowd Control"],
+    default = false,
+})
+
 local enemyCount = WowVision.enemyCount
 local secrets = WowVision.secrets
+
+local CONTROL_FILTER = "HARMFUL|CROWD_CONTROL"
+local CONTROL_INDEX = Constants and Constants.LossOfControlConsts
+    and Constants.LossOfControlConsts.LOSS_OF_CONTROL_ACTIVE_INDEX or 1
+local lossOfControl = C_LossOfControl or {}
+local unitAuras = C_UnitAuras or {}
 
 -- A new number is said once it held this long: a plate that blinks out
 -- and back is not spoken twice.
@@ -131,20 +166,87 @@ local api = {
     classification = UnitClassification,
     threat = UnitThreatSituation,
     isSecret = secrets.isSecret,
+    -- The crowd control reads are guarded: each game version has a
+    -- different part of them, and a refused read means "unknown".
+    controlCount = function(unit)
+        if lossOfControl.GetActiveLossOfControlDataCountByUnit == nil then
+            return nil
+        end
+        local ok, count = pcall(lossOfControl.GetActiveLossOfControlDataCountByUnit, unit)
+        return ok and count or nil
+    end,
+    controlAuras = function(unit)
+        if unitAuras.GetUnitAuras == nil then
+            return nil
+        end
+        local ok, auras = pcall(unitAuras.GetUnitAuras, unit, CONTROL_FILTER)
+        if not ok or auras == nil or secrets.isSecret(auras) then
+            return nil
+        end
+        local okLength, count = pcall(function()
+            return #auras
+        end)
+        return okLength and count or nil
+    end,
+    controlText = function(unit)
+        if lossOfControl.GetActiveLossOfControlDataByUnit == nil then
+            return nil
+        end
+        local ok, text = pcall(function()
+            local data = lossOfControl.GetActiveLossOfControlDataByUnit(unit, CONTROL_INDEX)
+            return data and data.displayText
+        end)
+        return ok and text or nil
+    end,
 }
 
 local settler = enemyCount.Settler:new(SETTLE)
+local controlSettler = enemyCount.Settler:new(SETTLE, enemyCount.CONTROL_IDLE)
+local tracker = enemyCount.ControlTracker:new()
 local recountQueued, settleQueued = false, false
+
+-- Whether a count is on or about to be said, so the ticker keeps checking.
+local function counting()
+    if module.settings.enemyCountControl then
+        return controlSettler.said ~= enemyCount.CONTROL_IDLE or controlSettler.pending ~= nil
+    end
+    return settler.said ~= 0 or settler.pending ~= nil
+end
+
+-- One recount with Announce Crowd Control on; returns the settler in use.
+local function recountControl(skip)
+    local settings = module.settings
+    local free, controlled = enemyCount.scan(api, settings.enemyCountMode, settings.enemyCountEliteOnly, skip)
+    if controlSettler:update(enemyCount.controlKey(free, controlled), GetTime()) ~= nil then
+        local message = tracker:change(free, controlled, api.controlText)
+        if message ~= nil then
+            if message.ended then
+                controlEndedAlert:fire({})
+            end
+            if message.count ~= nil or message.texts ~= nil then
+                enemyCountAlert:fire(message)
+            end
+        end
+    end
+    return controlSettler
+end
 
 local function recount(skip)
     if not enemyCountAlert.enabled then
         return
     end
-    local count = enemyCount.count(api, module.settings.enemyCountMode, module.settings.enemyCountEliteOnly, skip)
-    local say = settler:update(count, GetTime())
-    if say ~= nil then
-        enemyCountAlert:fire({ count = say })
-    elseif settler.pending ~= nil and not settleQueued then
+    local active
+    if module.settings.enemyCountControl then
+        active = recountControl(skip)
+    else
+        local count = enemyCount.count(api, module.settings.enemyCountMode, module.settings.enemyCountEliteOnly, skip)
+        local say = settler:update(count, GetTime())
+        if say ~= nil then
+            enemyCountAlert:fire({ count = say })
+        end
+        active = settler
+    end
+    if active.pending ~= nil and not settleQueued then
         settleQueued = true
         -- A little past the hold, so frame timing cannot land just short of it.
         C_Timer.After(SETTLE + 0.05, function()
@@ -179,6 +281,8 @@ module:registerEvent("event", "NAME_PLATE_UNIT_ADDED")
 module:registerEvent("event", "NAME_PLATE_UNIT_REMOVED")
 module:registerEvent("event", "UNIT_THREAT_LIST_UPDATE")
 module:registerEvent("event", "UNIT_FLAGS")
+-- Crowd control comes and goes as an aura on the enemy's plate.
+module:registerEvent("event", "UNIT_AURA")
 
 function module:onEvent(event, ...)
     if event == "PLAYER_REGEN_DISABLED" then
@@ -192,8 +296,16 @@ function module:onEvent(event, ...)
         combatEndedAlert:fire({})
         queueRecount()
     elseif event == "NAME_PLATE_UNIT_REMOVED" then
+        local unit = ...
         -- The plate still exists during its own removal.
-        recount(...)
+        recount(unit)
+        -- Its token may come back on another enemy.
+        tracker:forget(unit)
+    elseif event == "UNIT_AURA" then
+        local unit = ...
+        if module.settings.enemyCountControl and type(unit) == "string" and unit:find("^nameplate") then
+            queueRecount()
+        end
     else
         queueRecount()
     end
@@ -209,7 +321,7 @@ function module:onEnable()
             return
         end
         nextCheck = now + 1
-        if settler.said ~= 0 or settler.pending ~= nil or UnitAffectingCombat("player") then
+        if counting() or UnitAffectingCombat("player") then
             recount()
         end
     end)
