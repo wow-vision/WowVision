@@ -28,7 +28,7 @@ Die Daten werden mit WowVision geliefert (in den Release- und Beta-Downloads) un
 - Die Tiefenbahn
 - Zephras Isle
 
-Etwa 111.000 Orte (NPCs, Kreaturen, Objekte) und 242 Orte, um woandershin zu kommen (Dungeoneingänge, Portale, Aufzüge, Anleger, Haltestellen der Tiefenbahn, Übergänge zwischen Gebieten), lassen sich als Ziele wählen.
+Etwa 111.000 Orte (NPCs, Kreaturen, Objekte), 242 Orte, um woandershin zu kommen (Dungeoneingänge, Portale, Aufzüge, Anleger, Haltestellen der Tiefenbahn, Übergänge zwischen Gebieten), und 788 Angelplätze an den Gewässern von 45 Gebieten lassen sich als Ziele wählen.
 
 Was WowNav nicht tut:
 
@@ -45,7 +45,7 @@ Auf einer Karte, die die Daten nicht kennen, listet F10 nichts auf, und /beacon 
 | | Klassische Routen | WowNav |
 |---|---|---|
 | Spielversionen | TBC und WoW: Forever | WoW: Forever |
-| Einstiegspunkte in F10 | Die 20 nächsten verbundenen Wegpunkte, benannt wie die Orte | Die 20 nächsten Orte (ein NPC, eine Tür, ein Portal), die im Wegnetz liegen. Mit Automatische Wegpunkte zeigen auch die eigenen Wegpunkte des Netzes |
+| Einstiegspunkte in F10 | Die 20 nächsten verbundenen Wegpunkte, benannt wie die Orte | Die 50 nächsten Einträge: Orte, die im Wegnetz liegen (ein NPC, eine Tür, ein Portal), und die eigenen Wegpunkte des Netzes im Umkreis von 10 Metern. Mit Automatische Wegpunkte zeigen auch die Wegpunkte weiter weg |
 | Ziele | Jeder benannte Wegpunkt des Kontinents, der nächste zuerst | Die nächsten 1000 Orte, die zu deiner Suche passen, jeweils mit ihren Kategorien und dem Gebiet |
 | Suche | Findet Name, Rolle und Gebiet als einen Text | Findet Namen auf Englisch und Deutsch, Kategorien, Such-Aliase und den Gebietsnamen |
 | Namen | "Name;Role;Zone;1;30.38;53.33" | Schlichte Namen wie "Innkeeper Allison (Innkeeper)" (viele NPCs tragen ihren Beruf in Klammern) und beschreibende Namen wie "Portal nach Orgrimmar" |
@@ -60,9 +60,9 @@ F10 funktioniert wie in [Navigation und Routen](./navigation.md) beschrieben: Di
 
 ### Einstiegspunkte
 
-Die Einstiegspunkte sind die nächsten Orte, die im Netz liegen, keine rohen Wegpunkte: der Flugmeister vor dir, eine Tür, ein Portal. Du wählst, wo deine Route beginnt, wie bei den klassischen Routen. WowNav berechnet deinen Start nie selbst, außer bei Strg+Umschalt+N und bei der Route zu deinem Ziel, die dort starten, wo du stehst, wenn das eindeutig ist. Wählst du einen Ort als Start, beginnt deine Route an diesem Ort selbst.
+Die Einstiegspunkte sind die 50 nächsten Einträge: die Orte, die im Netz liegen (der Flugmeister vor dir, eine Tür, ein Portal), und die eigenen Wegpunkte des Netzes direkt neben dir. Du wählst, wo deine Route beginnt, wie bei den klassischen Routen. WowNav berechnet deinen Start nie selbst, außer bei Strg+Umschalt+N und bei der Route zu deinem Ziel, die dort starten, wo du stehst, wenn das eindeutig ist. Wählst du einen Ort als Start, beginnt deine Route an diesem Ort selbst.
 
-- Mit Automatische Wegpunkte zeigen an kommen die eigenen Wegpunkte des Netzes zu den Einstiegspunkten dazu. Sie werden als "Auto, Höhe 54" gelesen: Nur die Höhe in Metern wird gesagt.
+- Die eigenen Wegpunkte des Netzes im Umkreis von 10 Metern stehen immer in der Liste. So kannst du genau dort starten, wo du stehst, auch wenn der nächste Ort weit weg ist. Mit Automatische Wegpunkte zeigen an kommen auch die Wegpunkte weiter weg dazu. Ein Wegpunkt wird als "Auto, Höhe 54" gelesen: Nur seine Höhe in Metern wird gesagt.
 - Während du schwimmst oder tauchst, ist der nächste Wasserpunkt innerhalb von 100 Metern immer in der Liste und vorgewählt. Gibt es keinen, hörst du "Kein Wasserpunkt in der Nähe".
 - Ist nichts vom Netz nah genug, sagt die Liste Leer, und eine Routenanfrage antwortet "Hier kein WowNav-Netz".
 
@@ -74,6 +74,8 @@ Jedes Ziel liest seinen Namen, seine Entfernung, was es ist und wo es ist, zum B
 - Ein Ziel ohne Netzpunkt in der Nähe (siehe Zielradius um das Netz (Meter)) wird weggelassen. Ein Ort, dessen Gebiet noch nicht vorbereitet ist, wird ungeprüft angeboten und beim Wählen geprüft.
 - Zusätzliche Informationen können vor den Kategorien kommen: "ungenau +3.2 Meter" (der Ort liegt nicht genau im Netz), "Ebene wählen" (der Ort liegt über mehreren Ebenen), "Ebene unbekannt", "kein Netzpunkt im Radius" oder "Wasseroberfläche, Tauchtiefe 12 Meter".
 - Orte, um woandershin zu kommen, haben beschreibende Namen: "Dungeoneingang: The Deadmines", "Portal nach Orgrimmar", "Schiffsanleger nach Auberdine", "Zeppelinturm nach Grom'gol", "Tiefenbahn-Haltestelle Richtung Ironforge", "Eingang der Tiefenbahn", "Aufzug: Thunder Bluff", "Übergang nach Westfall", "Hier tauchen" und "Hier auftauchen". Wo zwei Orte eines Gebiets gleich klingen würden, bekommen sie "(unten)", "(oben)", eine Höhe oder eine Nummer angehängt. Die Ortswörter in diesen Namen stammen vom Spielclient. Auf einem deutschen Client sind die Namen deutsch.
+- Angelplätze heißen nach dem Gewässer, in das du wirfst: "Angelplatz am Ufer: Crystal Lake" oder "Angelplatz auf Steg oder Kai: The Temple Gardens", mit einer Nummer, wenn mehrere Plätze eines Gebiets gleich heißen. Suche nach "Angelplatz" oder "Angeln". Siehe [Angelplätze](#angelplätze).
+- Ein Dungeon mit mehreren Eingängen nennt den Flügel: "Dungeoneingang: Scarlet Monastery, Friedhof".
 - Die Einsteigpunkte von Anlegern sind ebenfalls aufgelistet: "Am Schiff", "Am Zeppelin" und "Am Fahrzeug", mit dem Namen des Anlegers als zusätzlichen Wörtern.
 - Mit Direkt an wird kein Ziel als unerreichbar weggelassen, weil ein gerades Signal keine Route braucht.
 
@@ -105,7 +107,7 @@ Das Signal, seine Töne, Strg+W, Strg+S, Umschalt+F12, Alt Gr und I funktioniere
 - Ein Wegpunkt gilt als erreicht durch seine eigene Distanz aus den Daten, nicht durch die Ankunftsdistanz von Alt+P. Du kannst sie für jeden Wegpunkt mit Mindest-Ankunftsabstand für WowNav-Wegpunkte (0 = ihr eigener) erhöhen. Nur die Verkehrsbereiche unten werden mit Alt+P weiter.
 - Strg+W und Strg+S gehen die eigenen Wegpunkte der Route entlang.
 - Strg+Umschalt+N plant das letzte Ziel von deinem Standort aus neu, aber nur, wenn WowNav weiß, auf welcher Ebene du bist. Sonst hörst du "Deine Ebene ist hier nicht eindeutig" oder "Hier kein WowNav-Netz".
-- Umschalt+F12 beendet alles, was WowNav tut: die Suche, die Route, ein Verkehrsmittel, das auf sein anderes Ende wartet, und die Anleger-Führung.
+- Umschalt+F12 beendet alles, was WowNav tut: die Suche, die Route, ein Verkehrsmittel, das auf sein anderes Ende wartet, die Anleger-Führung und das Signal an einem Angelplatz.
 - /beacon to name nimmt den nächsten Ort mit diesem Namen aus der Liste von WowNav, mit dem Einstiegspunkt, den F10 vorwählen würde.
 
 ### Beim Gehen
@@ -134,7 +136,7 @@ Zwei Belegungen sind standardmäßig nicht belegt; belege sie im Fenster für di
 
 | Belegung | Was sie tut |
 |----------|-------------|
-| WowNav-Routenstatus | Sagt, was WowNav gerade tut: "Suche die Route zu Allison", "Unterwegs zu Allison, Wegpunkt 3 von 14", "Warte auf das andere Ende von das Portal", "Fahrt zum vorgemerkten Anleger Schiffsanleger nach Auberdine", "Am Anleger, warten" oder "Keine aktive Route". |
+| WowNav-Routenstatus | Sagt, was WowNav gerade tut: "Suche die Route zu Allison", "Unterwegs zu Allison, Wegpunkt 3 von 14", "Warte auf das andere Ende von das Portal", "Fahrt zum vorgemerkten Anleger Schiffsanleger nach Auberdine", "Am Anleger, warten", "Am Angelplatz" oder "Keine aktive Route". |
 | Neue WowNav-Route um eine versperrte Stelle | Benutze sie, wenn du an einer Verbindung festhängst (ein Zaun, eine geschlossene Tür, eine Rampe, die du nicht hochkommst). Die Verbindung, auf der du bist, wird im Plan gesperrt, und ab dem letzten Wegpunkt, den du erreicht hast, wird eine neue Route gesucht. Du hörst "Neue Route wird gesucht". Ohne Route hörst du "Keine aktive Route". |
 
 ## Verkehrsmittel: Anleger, Schiffe, Zeppeline, Tiefenbahn, Portale und Aufzüge
@@ -149,7 +151,7 @@ Eine Station zu betreten (im Umkreis von etwa 100 Metern um einen Anleger) zähl
 
 ### Portale, der Eingang der Tiefenbahn und begehbare Orte
 
-Portale und der Eingang der Tiefenbahn funktionieren, indem du hineingehst. Eine Route endet am Portal, und WowNav sagt das, bevor du es erreichst, weil ein Portal sofort teleportiert: "Gleich vor dir: geh in das Portal, danach geht die Route weiter". Geh hinein. Wenn du am anderen Ende wieder herauskommst, hörst du "Die Route geht weiter", und WowNav sucht von dort den Rest des Weges. Passiert innerhalb von etwa 90 Sekunden nichts (länger bei Fahrten, die drei volle Umläufe des Fahrzeugs abwarten), hörst du "Die Fahrt dauerte zu lange; Route beendet".
+Portale und der Eingang der Tiefenbahn funktionieren, indem du hineingehst. Eine Route endet am Portal, und WowNav sagt das, bevor du es erreichst, weil ein Portal sofort teleportiert: "Gleich vor dir: geh in das Portal, danach geht die Route weiter". Geh hinein. Wenn du am anderen Ende wieder herauskommst, hörst du "Die Route geht weiter", und WowNav sucht von dort den Rest des Weges. Passiert innerhalb von etwa 90 Sekunden nichts (länger bei Fahrten, die drei volle Umläufe des Fahrzeugs abwarten), hörst du "Die Fahrt dauerte zu lange; Route beendet". Die Windbrücke von Zephras Isle hat keine solche Grenze: Sie kommt, wann sie kommt.
 
 Wählst du das Portal oder den Eingang der Tiefenbahn selbst als Ziel, wirst du zu einem Punkt kurz davor geführt und hörst: "Vorpunkt erreicht. Gehe geradeaus durch den Eingang oder das Portal; das Signal bleibt bis zum Aktivierungsbereich an." Dann: "Im Aktivierungsbereich. Gehe geradeaus weiter; erst ein Kartenwechsel bestätigt den Übergang. Die Route bleibt bis dahin an." Nach dem Kartenwechsel hörst du "Kartenwechsel nach dem Aktivierungsbereich; Route beendet. Der Zielort ist nicht bestätigt."
 
@@ -157,13 +159,28 @@ Wählst du das Portal oder den Eingang der Tiefenbahn selbst als Ziel, wirst du 
 
 Ein Aufzug ist ein Ort zum Warten: "Benutze den Aufzug, danach geht die Route weiter. Steige nur ein, wenn das Fahrzeug sicher da ist." Ein Tauchgang ist "Hier tauchen, danach geht die Route weiter", und der Weg zurück nach oben ist "Hier auftauchen, danach geht die Route weiter". Die Route geht weiter, nachdem du am anderen Ende bist.
 
-### Die Drehtaste an einem Anleger
+### Die Drehtaste ohne Route
 
-Die Taste I braucht normalerweise eine Route. An einem Anleger funktioniert sie auch ohne: An einem erreichten Anleger dreht sie dich zum Einsteigpunkt, und in der Nähe eines vorgemerkten Anlegers dreht sie dich zu diesem Anleger.
+Die Taste I braucht normalerweise eine Route. An einem Anleger funktioniert sie auch ohne: An einem erreichten Anleger dreht sie dich zum Einsteigpunkt, und in der Nähe eines vorgemerkten Anlegers dreht sie dich zu diesem Anleger. An einem erreichten Angelplatz dreht sie dich zum Wasser.
 
 ### Zephras Isle
 
-Die drei Portale und die Wind Bridge von Zephras Isle sind enthalten, aber ihre Positionen sind Schätzungen, und du klickst selbst auf das Portal oder wartest selbst auf das Signal der Wind Bridge. Eine Route zu einem von ihnen endet dort mit "Benutze das Portal, danach geht die Route weiter" (bei der Wind Bridge "Benutze das Verkehrsmittel, danach geht die Route weiter") und wird weitergeplant, sobald du am anderen Ende angekommen bist. WowVision gibt keine besondere Führung für das Klicken oder Warten, deshalb kann dieser Teil ohne Sehen schwierig sein.
+Die Portale und die Windbrücke (Wind Bridge) von Zephras Isle sind enthalten. Ihre Positionen sind Schätzungen, deshalb sagt WowNav dort zusätzlich "Die Position ist ungefähr." In die Portale gehst du nicht hinein: Du erfasst das Portal und interagierst damit. Eine Route durch eines endet dort mit "Erfasse das Portal mit der weichen Zielerfassung und interagiere damit; danach geht die Route weiter". Die Windbrücke kommt zu ihrer eigenen Zeit: "Warte hier, bis du die Windbrücke hörst, dann tritt in den Windstrom; danach geht die Route weiter". Dafür gibt es keine Zeitgrenze. Sobald du am anderen Ende angekommen bist, geht die Route weiter.
+
+Das Portal nach Valanaar bringt die Horde und die Allianz an verschiedene Orte. Eine Route nimmt nur den Weg, der zu deiner Fraktion gehört.
+
+Wählst du eines dieser Portale oder den Wartepunkt der Windbrücke selbst als Ziel, hörst du am Vorpunkt "Vorpunkt erreicht. Gehe weiter zum Portal; das Signal bleibt an, bis du dort bist." (bei der Brücke "Vorpunkt erreicht. Gehe weiter zum Wartepunkt der Windbrücke; das Signal bleibt bis dahin an."). Am Portal hörst du "Am Portal. Erfasse es mit der weichen Zielerfassung und interagiere damit; die Route bleibt an, bis der Übergang bestätigt ist.", an der Brücke "Am Wartepunkt der Windbrücke. Warte, bis du die Brücke hörst, dann tritt in den Windstrom."
+
+## Angelplätze
+
+WowNav kennt 788 Plätze zum Angeln an den Gewässern von 45 Gebieten. Ein Angelplatz liegt auf festem Boden am Ufer oder auf einem Steg, einer Mole, einem Kai oder einer Brücke. Dort darfst du durch flaches Wasser waten, schwimmen musst du nie. Vom Platz aus liegt das Wasser in einer Richtung 10 bis 20 Meter vor dir, so weit reicht dein Wurf.
+
+1. Drücke F10, suche "Angelplatz" und wähle in Ziele einen Platz, zum Beispiel "Angelplatz am Ufer: Crystal Lake (3), 120 Meter, Angelplatz, Elwynn Forest".
+2. Folge der Route. Wenn du ankommst, hörst du, wo das Wasser liegt, von deiner Blickrichtung aus: "Angelplatz am Ufer: Crystal Lake (3) erreicht. Das Wasser liegt links vorn. Wurfweite etwa 10 bis 20 Meter. Mit I drehst du dich zum Wasser." Die Richtungen sind vorn, links vorn, links, links hinten, hinten, rechts hinten, rechts und rechts vorn.
+3. Jetzt kommt ein Signal vom Wasser, 15 Meter weit draußen, in der Mitte deiner Wurfweite. Drücke I, um dich zum Wasser zu drehen, und wirf dann aus.
+4. Das Signal endet, wenn du dich vom Platz entfernst (mehr als 20 Meter), wenn du Umschalt+F12 drückst oder wenn du eine neue Route beginnst.
+
+Der Punkt im Wasser ist nur zum Ausrichten da. WowNav schickt dich nie ins Wasser. Endet das Netz weiter vom Platz entfernt als deine Wurfweite, hörst du stattdessen das übliche "Das Netz endet ... vom Ziel", und es kommt kein Signal.
 
 ## Einstellungen
 
@@ -175,7 +192,7 @@ Die drei Portale und die Wind Bridge von Zephras Isle sind enthalten, aber ihre 
 | Routen von WowNav | Aus | Schickt jede Routenanfrage an WowNav statt an die klassischen Routen. |
 | Straßen bevorzugen (Prozent länger) | 60 | Eine Route auf Straßen und Wegen darf um so viel Prozent länger sein als der kürzeste Weg. 0 heißt immer der kürzeste. Bis zu 300. Auch Schwimmen zählt um so viel länger. Änderst du es während einer Route, hörst du eine Sekunde nach dem letzten Verstellen "Route wird mit der neuen Straßenvorliebe neu gesucht". |
 | Feindliche Posten meiden | An | Routen führen um die Posten und Hauptstädte der gegnerischen Fraktion herum. Wo es keinen Weg drumherum gibt, führt die Route hindurch und warnt dich. Ändern plant eine laufende Route neu. |
-| Automatische Wegpunkte zeigen | Aus | Fügt beiden die eigenen Wegpunkte des Netzes in deiner Nähe hinzu (bis zu 300 Meter bei den Einstiegspunkten, 60 Meter bei der Zielliste). Sie lesen sich "Auto, Höhe N". |
+| Automatische Wegpunkte zeigen | Aus | Fügt der Zielliste die eigenen Wegpunkte des Netzes im Umkreis von 60 Metern hinzu und mischt die Wegpunkte bis 300 Meter unter die Einstiegspunkte. Ohne die Einstellung zeigen die Einstiegspunkte trotzdem die Wegpunkte im Umkreis von 10 Metern. Sie lesen sich "Auto, Höhe N". |
 | Zielradius um das Netz (Meter) | 30 | Wie weit vom Netz ein Ort liegen darf und trotzdem eine Route bekommt (1 bis 100). Weiter entfernte Orte haben keinen Netzpunkt. |
 | Höhentoleranz einer Ebene (Meter) | 3 | Das Höhenband, das als eine Ebene zählt (0 bis 20). |
 | An Engstellen einen Schritt zurück | An | Driftest du an einer Engstelle seitlich ab, geht das Signal einen Wegpunkt zurück ("Einen Wegpunkt zurück"). |
@@ -186,7 +203,7 @@ Die drei Portale und die Wind Bridge von Zephras Isle sind enthalten, aber ihre 
 
 ### Zu einem Lehrer in einer Stadt gehen
 
-1. Drücke F10. Die Einstiegspunkte sind die nächsten Orte im Netz, zum Beispiel ein Flugmeister. Der nächste ist schon ausgewählt.
+1. Drücke F10. Die Einstiegspunkte sind die Wegpunkte des Netzes direkt neben dir und die nächsten Orte im Netz, zum Beispiel ein Flugmeister. Der nächste ist schon ausgewählt.
 2. Drücke Tab und tippe "Lehrer", dann Eingabe.
 3. Drücke Tab, um zu Ziele zu kommen. Du hörst zum Beispiel "Einris Brightspear (Hunter Trainer), 140 Meter, Questgeber, Lehrer, Stormwind City". Pfeil runter liest den nächsten.
 4. Drücke Eingabe. Du hörst die Zusammenfassung, etwa "12 Wegpunkte, 330 Meter". Drücke I, um dich zu drehen, und folge dem Signal. Am Ende: "Angekommen Einris Brightspear (Hunter Trainer)".

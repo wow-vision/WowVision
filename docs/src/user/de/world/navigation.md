@@ -38,7 +38,7 @@ Das Fenster hat vier Stationen. Zwischen ihnen wechselst du mit Tab und Umschalt
 | Station | Was es ist |
 |---------|------------|
 | Direkt | Ein Kontrollkästchen. Bei jedem Öffnen des Fensters aus. |
-| Einstiegspunkte | Die 20 nächsten Punkte des Wegnetzes. Nicht sichtbar, solange Direkt an ist. |
+| Einstiegspunkte | Die 20 nächsten Punkte des Wegnetzes (mit WowNav die 50 nächsten). Nicht sichtbar, solange Direkt an ist. |
 | Suchen | Ein Textfeld, das die Zielliste filtert. |
 | Ziele | Die Liste der Orte, zu denen du gehen kannst. |
 
@@ -46,7 +46,7 @@ Wenn sich das Fenster öffnet, landest du auf dem Einstiegspunkt, der schon ausg
 
 ### Einstiegspunkte
 
-Der Einstiegspunkt ist die Stelle, an der deine Route ins Netz einmündet. WoW ist völlig dreidimensional, und so ist der nächste Wegpunkt manchmal die Straße unter einer Brücke oder der Boden unter dir. Deshalb listet WowVision die 20 nächsten auf und lässt dich wählen.
+Der Einstiegspunkt ist die Stelle, an der deine Route ins Netz einmündet. WoW ist völlig dreidimensional, und so ist der nächste Wegpunkt manchmal die Straße unter einer Brücke oder der Boden unter dir. Deshalb listet WowVision die 20 nächsten auf (mit WowNav die 50 nächsten, siehe [WowNav (WoW: Forever)](./wownav.md)) und lässt dich wählen.
 
 Jeder Eintrag liest seinen Namen, seine Entfernung und die Richtung relativ zu deiner Blickrichtung, zum Beispiel "Shailiea;Stormwind City;1;30.38;53.33, 4 Meter, voraus links". Die Richtungen sind voraus, voraus rechts, rechts, hinten rechts, hinten, hinten links, links und voraus links. Der gewählte Eintrag wird mit ausgewählt angesagt.
 
