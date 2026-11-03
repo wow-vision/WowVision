@@ -305,4 +305,42 @@ testRunner:addSuite("ViewList", {
         list:focusDirection(1) -- Should go backward due to reverse
         t:assertEqual(list.index, 1)
     end,
+
+    ["focusDirection skips disabled items"] = function(t)
+        local function item(enabled)
+            return {
+                getEnabled = function()
+                    return enabled
+                end,
+            }
+        end
+        local list = createViewList()
+        list.wrap = true
+        list:add(item(true))
+        list:add(item(false))
+        list:add(item(true))
+        list.index = 1
+        list:focusDirection(1)
+        t:assertEqual(list.index, 3)
+        list:focusDirection(1)
+        t:assertEqual(list.index, 1)
+    end,
+
+    ["focusDirection stays put when every other item is disabled"] = function(t)
+        local function item(enabled)
+            return {
+                getEnabled = function()
+                    return enabled
+                end,
+            }
+        end
+        local list = createViewList()
+        list.wrap = true
+        list:add(item(true))
+        list:add(item(false))
+        list:add(item(false))
+        list.index = 1
+        t:assertNil(list:focusDirection(1))
+        t:assertEqual(list.index, 1)
+    end,
 })

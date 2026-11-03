@@ -107,6 +107,11 @@ function AuraStateRule:reset()
     WowVision.monitors.StateRule.reset(self)
 end
 
+-- Spoken as "Moonfire Expiring" rather than "expiring".
+function AuraStateRule:stateMessage(stateKey)
+    return self:namedStateMessage(stateKey, self:spokenName())
+end
+
 function AuraStateRule:computeState(object)
     local duration = self._baseDuration
     local remaining = object:get("remainingDuration")

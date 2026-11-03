@@ -117,27 +117,42 @@ function Power:onUnitAdd(unit)
     end)
 end
 
+-- Adds the power when the unit has it. A secret maximum (Retail and WoW:
+-- Forever hide other units' values in combat) cannot be compared: skipped.
+local function addIfPresent(self, unit, power)
+    local powerMax = UnitPowerMax(unit.id, power.id)
+    if WowVision.isSecret(powerMax) or powerMax <= 0 then
+        return
+    end
+    local powerCurrent = UnitPower(unit.id, power.id)
+    local data = { key = power.key, id = power.id, minimum = power.minimum, current = powerCurrent, maximum = powerMax }
+    self:addObject(unit, power.key, data)
+end
+
 function Power:onUnitChange(unit)
     if unit.guid == nil then
         return
     end
     for _, power in ipairs(powersDB.items) do
-        local powerMax = UnitPowerMax(unit.id, power.id)
-        if powerMax > 0 then
-            local powerCurrent = UnitPower(unit.id, power.id)
-            local data =
-                { key = power.key, id = power.id, minimum = power.minimum, current = powerCurrent, maximum = powerMax }
-            self:addObject(unit, power.key, data)
-        end
+        addIfPresent(self, unit, power)
     end
 end
 
+-- The events name the power as a token ("COMBO_POINTS"); the list's keys
+-- have no underscores ("combopoints"). A power the unit gained since the
+-- last unit change is added; one the list lacks is ignored.
 function Power:onEvent(event, unit, powerType)
-    local key = strlower(powerType)
+    if powerType == nil then
+        return
+    end
+    local key = strlower(powerType):gsub("_", "")
     local power = unit.objects[key]
     if power == nil then
-        --should be impossible
-        error("Unknown power type" .. powerType)
+        local entry = powersDB:get(key)
+        if entry ~= nil then
+            addIfPresent(self, unit, entry)
+        end
+        return
     end
     power = power.data
     if event == "UNIT_POWER_FREQUENT" then

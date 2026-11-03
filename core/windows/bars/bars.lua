@@ -53,14 +53,17 @@ function module.getActionButtonLabel(button)
     elseif actionType == "macro" then
         name = GetMacroInfo(actionID)
     elseif actionType == "companion" then
-        if actionSubtype == "CRITTER" then
-            name = GetSpellInfo(actionID)
+        -- A mount reads its journal name where the client has a mount
+        -- journal (Classic Era and TBC do not); a pet, or a mount the
+        -- journal does not know, reads its spell's name.
+        if actionSubtype ~= "CRITTER" and C_MountJournal ~= nil then
+            local mountID = C_MountJournal.GetMountFromSpell(actionID)
+            if mountID then
+                name = C_MountJournal.GetMountInfoByID(mountID)
+            end
         end
-        local mountID = C_MountJournal.GetMountFromSpell(actionID)
-        if mountID then
-            name = C_MountJournal.GetMountInfoByID(mountID)
-        else
-            name = "Unknown Mount"
+        if name == nil then
+            name = GetSpellInfo(actionID)
         end
     elseif actionType == "equipmentset" then
         name = C_EquipmentSet.GetEquipmentSetInfo(actionID)
@@ -144,18 +147,21 @@ function module.actionButtonNode(button, label, populate)
             return module.getActionButtonLabel(button)
         end,
     })
+    local function drag()
+        WowVision.cursor = WowVision.cursor or {}
+        WowVision.cursor.pickupIsActionBar = true
+        local script = button:GetScript("OnDragStart")
+        if script ~= nil then
+            script(button)
+        end
+    end
     tinsert(vtable.bindings, {
         binding = "drag",
         type = "Function",
-        func = function()
-            WowVision.cursor = WowVision.cursor or {}
-            WowVision.cursor.pickupIsActionBar = true
-            local script = button:GetScript("OnDragStart")
-            if script ~= nil then
-                script(button)
-            end
-        end,
+        func = drag,
     })
+    -- The context menu's Drag is the same pickup as the drag key.
+    vtable.contextActions = nodes.proxyContextActions(button, nil, drag)
     return vtable
 end
 

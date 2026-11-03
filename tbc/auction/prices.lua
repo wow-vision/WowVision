@@ -163,6 +163,9 @@ function api.getFullScanWaitElapsed() return fullScanner:getWaitElapsed() end
 function api.getFullScanCooldownRemaining() return fullScanner:getCooldownRemaining() end
 
 fullScanner.events.scanStarted:subscribe(module, function(self, event, totalAuctions)
+    -- The server's cooldown runs from the query, so it is saved now: a scan
+    -- aborted before it completes still counts after a reload.
+    db.lastScan = time()
     WowVision:speak(L["Full scan started"] .. ", " .. totalAuctions .. " " .. L["auctions"])
 end)
 

@@ -23,9 +23,9 @@ Monitor (watches a thing)
 │   │       └── Outputs (TTS, Sound)
 ```
 
-- **Monitor** — Watches objects via ObjectTracker, dispatches events to rules
-- **Rule** — Matches objects, computes state, fires alerts
-- **StateRule** — State machine base with fallback chains and output resolution
+- Monitor — Watches objects via ObjectTracker, dispatches events to rules
+- Rule — Matches objects, computes state, fires alerts
+- StateRule — State machine base with fallback chains and output resolution
 
 ## Monitor Base Class
 
@@ -142,7 +142,7 @@ end
 - Changed state for same output → fire
 - Same state → skip
 
-**Initial state suppression:** When `_resolvedStates` is `nil` (first-ever evaluation, e.g., login), state is established silently without firing. After `reset()`, `_resolvedStates` is `{}` (empty, not nil), so the next evaluation fires normally — this preserves `announceOnUnitChange` behavior.
+Initial state suppression: When `_resolvedStates` is `nil` (first-ever evaluation, e.g., login), state is established silently without firing. After `reset()`, `_resolvedStates` is `{}` (empty, not nil), so the next evaluation fires normally — this preserves `announceOnUnitChange` behavior.
 
 ### State Transitions
 
@@ -157,7 +157,7 @@ end
 
 Watches buffs/debuffs on a unit via Aura ObjectTracker.
 
-**AuraStateRule** tracks a spell through lifecycle states: applied → pandemic → expiring → missing.
+AuraStateRule tracks a spell through lifecycle states: applied → pandemic → expiring → missing.
 
 ```lua
 function AuraStateRule:getTrackingFields()
@@ -171,7 +171,7 @@ The `playerOnly` check uses `UnitIsUnit(sourceUnit, "player")` to correctly filt
 
 Watches spell cooldowns. Creates tracker with specific `spellIds` from rules.
 
-**CooldownStateRule** tracks: ready → charging → on_cooldown. Also has event-based alerts for charge_gained/charge_lost.
+CooldownStateRule tracks: ready → charging → on_cooldown. Also has event-based alerts for charge_gained/charge_lost.
 
 ```lua
 function CooldownStateRule:getTrackingFields()

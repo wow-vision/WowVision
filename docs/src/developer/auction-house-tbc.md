@@ -31,11 +31,11 @@ Initial dump taken with Browse tab active, no search performed, no item placed f
 
 ### Browse Tab (`AuctionFrameBrowse`, shown=true)
 
-**Category Filters:**
+Category Filters:
 - `AuctionFilterButton1-15` - 11 visible (Weapons, Armor, Containers, Consumables, Crafting Materials, Projectiles, Quivers, Recipes, Gems, Miscellaneous, Quest Items), 4 hidden
 - `BrowseFilterScrollFrame` (ScrollFrame, shown=false) - for sub-category scrolling
 
-**Search Controls:**
+Search Controls:
 - `BrowseName` (EditBox) - item name search
 - `BrowseMinLevel` (EditBox) - minimum level filter
 - `BrowseMaxLevel` (EditBox) - maximum level filter
@@ -45,45 +45,45 @@ Initial dump taken with Browse tab active, no search performed, no item placed f
 - `BrowseSearchButton` (Button) - "Suchen" (Search)
 - `BrowseResetButton` (Button) - "Zurücksetzen" (Reset), disabled
 
-**Sort Headers:**
+Sort Headers:
 - `BrowseQualitySort` - "Seltenheit" (Rarity)
 - `BrowseLevelSort` - "St." (Level)
 - `BrowseDurationSort` - "Restzeit" (Time Left)
 - `BrowseHighBidderSort` - "Verkäufer" (Seller)
 - `BrowseCurrentBidSort` - "Aktuelles Gebot" (Current Bid)
 
-**Results List:**
+Results List:
 - `BrowseScrollFrame` (ScrollFrame, shown=false - no results yet)
 - `BrowseButton1-8` (all shown=false - no results yet)
 - Each BrowseButton contains: Item icon, ClosingTime, HighBidder, MoneyFrame (bid), YourBidText, BuyoutFrame
 
-**Page Controls:**
+Page Controls:
 - `BrowsePrevPageButton` (disabled)
 - `BrowseNextPageButton` (disabled)
 
-**Action Controls:**
+Action Controls:
 - `BrowseBidPrice` frame with Gold/Silver/Copper EditBoxes
 - `BrowseBidButton` (disabled)
 - `BrowseBuyoutButton` (disabled)
 
 ### Bids Tab (`AuctionFrameBid`, shown=false)
 
-**Sort Headers:** Quality, Level, Duration, Buyout, Status, Current Bid
+Sort Headers: Quality, Level, Duration, Buyout, Status, Current Bid
 
-**Results:** `BidButton1-9`, each with Item, ClosingTime, BuyoutMoneyFrame, CurrentBidMoneyFrame
+Results: `BidButton1-9`, each with Item, ClosingTime, BuyoutMoneyFrame, CurrentBidMoneyFrame
 
-**Action Controls:**
+Action Controls:
 - `BidBidPrice` frame with Gold/Silver/Copper EditBoxes
 - `BidBidButton` (disabled)
 - `BidBuyoutButton` (disabled)
 
 ### Auctions Tab (`AuctionFrameAuctions`, shown=false)
 
-**Sort Headers:** Quality, Duration, High Bidder, Current Bid
+Sort Headers: Quality, Duration, High Bidder, Current Bid
 
-**My Auctions List:** `AuctionsButton1-9`, each with Item, ClosingTime, HighBidder, MoneyFrame, BuyoutFrame
+My Auctions List: `AuctionsButton1-9`, each with Item, ClosingTime, HighBidder, MoneyFrame, BuyoutFrame
 
-**Create Auction Form:**
+Create Auction Form:
 - `AuctionsItemButton` (Button) - drag item here to sell
 - `AuctionsStackSizeEntry` (EditBox, hidden) - stack size
 - `AuctionsStackSizeMaxButton` (hidden)
@@ -147,25 +147,25 @@ auction (root Panel)
 
 These dumps would help verify and refine the implementation:
 
-1. **Browse tab with search results populated** - need to see BrowseButton1-8 with actual auction data to verify frame text content, item tooltip behavior, and button heights.
+1. Browse tab with search results populated - need to see BrowseButton1-8 with actual auction data to verify frame text content, item tooltip behavior, and button heights.
 
-2. **Category sub-categories expanded** - click a category like "Weapons" to see how AuctionFilterButton1-15 change and whether BrowseFilterScrollFrame becomes visible.
+2. Category sub-categories expanded - click a category like "Weapons" to see how AuctionFilterButton1-15 change and whether BrowseFilterScrollFrame becomes visible.
 
-3. **Auctions tab with an item placed for sale** - the stack size/number of stacks fields are hidden until an item is placed in AuctionsItemButton. Need to see the full create auction form.
+3. Auctions tab with an item placed for sale - the stack size/number of stacks fields are hidden until an item is placed in AuctionsItemButton. Need to see the full create auction form.
 
-4. **Browse tab with a result selected** - verify that BrowseBidButton/BrowseBuyoutButton become enabled and that the bid price input is populated.
+4. Browse tab with a result selected - verify that BrowseBidButton/BrowseBuyoutButton become enabled and that the bid price input is populated.
 
-5. **Bids tab with active bids** - verify BidButton1-9 data structure with actual bids.
+5. Bids tab with active bids - verify BidButton1-9 data structure with actual bids.
 
 ## Resolved Issues
 
-- **ProxyTabPanel incompatibility**: TBC's `AuctionFrame` doesn't have a `.Tabs` subtable (modern API), causing `ProxyTabPanel` to crash. Fixed by using manual tab handling with `_G["AuctionFrameTab" .. i]` and `PanelTemplates_GetSelectedTab()`, matching the pattern from `tbc/spellbook.lua`. Active tab content is determined by checking `IsShown()` on `AuctionFrameBrowse`, `AuctionFrameBid`, `AuctionFrameAuctions`.
+- ProxyTabPanel incompatibility: TBC's `AuctionFrame` doesn't have a `.Tabs` subtable (modern API), causing `ProxyTabPanel` to crash. Fixed by using manual tab handling with `_G["AuctionFrameTab" .. i]` and `PanelTemplates_GetSelectedTab()`, matching the pattern from `tbc/spellbook.lua`. Active tab content is determined by checking `IsShown()` on `AuctionFrameBrowse`, `AuctionFrameBid`, `AuctionFrameAuctions`.
 
 ## Known Uncertainties
 
-- **BrowseDropdown frame name**: Dump shows `BrowseDropdown` but classic WoW convention is `BrowseDropDown`. Using `BrowseDropDown or BrowseDropdown` fallback to handle both.
-- **ProxyDropdownButton compatibility**: Calls `frame:OpenMenu()` which is modern API. Works for `tbc/tradeskill.lua` dropdowns, should work here too.
-- **AUCTIONS_BUTTON_HEIGHT constant**: May or may not be a global in TBC Anniversary. Using it with a fallback comment.
-- **AuctionFrameBrowse_Update function**: Should be global in TBC Anniversary (Blizzard's update function for FauxScrollFrame). If not global, need alternative approach.
-- **C_CurrencyInfo.GetCoinText availability**: Used in core money.lua, should be available. If not in TBC Anniversary, use GetCoinText() or manual formatting.
-- **Filter sub-categories**: Current implementation renders visible buttons as a flat list. May need ProxyFauxScrollFrame wrapping for BrowseFilterScrollFrame when sub-categories exceed 15 items.
+- BrowseDropdown frame name: Dump shows `BrowseDropdown` but classic WoW convention is `BrowseDropDown`. Using `BrowseDropDown or BrowseDropdown` fallback to handle both.
+- ProxyDropdownButton compatibility: Calls `frame:OpenMenu()` which is modern API. Works for `tbc/tradeskill.lua` dropdowns, should work here too.
+- AUCTIONS_BUTTON_HEIGHT constant: May or may not be a global in TBC Anniversary. Using it with a fallback comment.
+- AuctionFrameBrowse_Update function: Should be global in TBC Anniversary (Blizzard's update function for FauxScrollFrame). If not global, need alternative approach.
+- C_CurrencyInfo.GetCoinText availability: Used in core money.lua, should be available. If not in TBC Anniversary, use GetCoinText() or manual formatting.
+- Filter sub-categories: Current implementation renders visible buttons as a flat list. May need ProxyFauxScrollFrame wrapping for BrowseFilterScrollFrame when sub-categories exceed 15 items.

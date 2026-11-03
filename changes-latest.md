@@ -57,6 +57,19 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 * Questie's one-time "Welcome to Questie" dialog, which asks you to choose between Questie, pfQuest and Blizzard quest objectives on WoW Forever and the newer classic clients, is now read as a window with its three buttons. It used to sit silently in the middle of the screen, where it also blocked every minimap scan.
 * The minimap scan's "Scan canceled, window" message now names the frame under the cursor, and the scan log records it.
 * Mac: speech no longer says "bookmark" after every line.
+* New user manual in English and German: every key, menu, window and setting from the player's point of view, with installation, the Sku login tool 4, troubleshooting, a key and command reference and features per game version. Written for screen readers, without bold or italic markers.
+* /wv bind opens the keybinding screen again (the same screen as WowVision menu, UI, Bindings); it used to fail with an error.
+* /focus1 to /focus5 without a name and without a target keep the old focus and say so, instead of storing an empty name.
+* /wv errors clear empties WowVision's own error list as well when BugGrabber is installed.
+* Toggle All Monitors works as a mute: if any monitor is on it turns them all off and says "Monitors off", otherwise it turns them all on and says "Monitors on".
+* Buffers: a buffer or buffer group switched off with its Enabled toggle is skipped by the buffer keys. The Chat Tab buffer editor no longer shows two internal rows.
+* Buffers: the Power Type list exists on every game version, starts on mana, and a tracked Power buffer no longer throws errors on combo points, holy power, soul shards, runic power, arcane charges or lunar power, or on a resource that appears later.
+* The health of a new target is announced even when it sits on the same five percent step as the last target's.
+* The voice pack choice of Voice alerts is labelled Voice Pack. Speech Rate (-10 to 10) and Speech Volume (0 to 100) are kept in range in the menu, too.
+* Action bars: a companion pet reads its name instead of "Unknown Mount" (and no longer errors on clients without a mount journal); Drag from a slot's context menu counts as a bar pickup, so Delete clears the slot instead of offering to destroy the item in your bags.
+* Merchant: the buyback tab no longer adds a good's currency costs to items you sold.
+* More messages are translated (Lua errors, the chat settings title, virtual focus messages, route failure reasons, the Mists glyph notice). German: an unchecked check box says "Nicht aktiviert", so it can be told from a disabled control; the demon hunter's Fury is "Zorn"; all navigation distances say "Meter".
+* Enemy count (UI, Combat): a new, experimental Announce Crowd Control choice, off by default. With Spell Names or Without Names, the number counts only the enemies still free to fight; a crowd control that lands is said by its name ("Polymorph", or "3 controlled" for an area spell), one that ends plays a short sound before the new number, and "0, Polymorph" means only controlled enemies are left.
 
 #### Forever
 * Fixed the minimap scanner and the walking announcements finding nothing after the October 16 client build. The minimap now names its dots only in its new soft cursor mode, which the scan switches on while it runs.
@@ -64,7 +77,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 
 ### Modern
 * Fixed errors on WoW: Forever and Retail when the game hides a unit's identity or raid marker from addons: the target change, soft target, range, tooltip and window announcements no longer fail, and the raid target marker is still announced on target change. Those clients hide which marker it is from addons entirely, so it is spoken as its number (1 Star, 2 Circle, 3 Diamond, 4 Triangle, 5 Moon, 6 Square, 7 X, 8 Skull) instead of its name.
-* Added the group health monitor for Retail and WoW: Forever, after Sku's health monitor (off by default): group members are spoken as their numbers (you are 1, your party 2 to 5, raid members by Sku's dial numbers) with a Windows voice of its own, the pitch telling how hurt they are, the lower the health the higher the pitch. Every member below their role's Repeat Below is repeated at the role's interval, one at a time while nothing else is speaking; a death is said once as "number dead"; Alt+H speaks everyone once in number order, "number full" at full health. Group health is secret on these clients, so the monitor never knows anyone's health: it prepares each announcement and the game plays the form whose health range matches. Pitch needs a real SAPI voice (Hedda, Zira and Katja have measured scales); the NVDA bridge voice speaks the numbers without pitch.
+* Added the group health monitor for Retail and WoW: Forever, after Sku's health monitor (off by default): group members are spoken as their numbers (you are 1, your party 2 to 5, raid members by Sku's dial numbers) with a Windows voice of its own, the pitch telling how hurt they are, the lower the health the higher the pitch. Every member below their role's Repeat Below is repeated at the role's interval, one at a time while nothing else is speaking; a death is said once as "number dead"; Alt+H speaks everyone once in number order, "number full" at full health. Group health is secret on these clients, so the monitor never knows anyone's health: it prepares each announcement and the game plays the form whose health range matches. Pitch needs a real SAPI voice (Hedda, Zira and Katja have measured scales); the NVDA bridge voice speaks the numbers without pitch, and the monitor says so once when the bridge is its voice.
 * Added support for the bags window.
 * Added the cooldown manager settings window (/cdm): the Spells, Auras and Group Buffs tabs, search, the gear menu, each category with its items, the layout dropdown and Revert Changes. Enter on an item picks it up and Enter on another item or on a category's empty slot drops it there; Backspace opens the item's menu for alerts and moves. The alert editor is its own window. Changes made with the keyboard take effect after the interface reloads, because the game rebuilds its on-screen cooldown data from them; the window says so and offers a Reload Interface button. Menu rows with attached buttons (play sample, edit, delete) now read as rows: right arrow reaches the buttons.
 * Fixed an entirely unnecessary 1.5 second delay when clicking on gossip options before the text refreshed. This was caused by retail changing which events fire for gossip dialogue.
@@ -91,11 +104,13 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 * Controller support. With the game's Enable Gamepad and Enable Gamepad UI options on, WowVision answers a gamepad next to the keyboard: the D-pad and face buttons work in WowVision windows (A left click, X right click, B close, Y tooltip, shoulders Tab and Shift-Tab), the right stick press turns to the waypoint and, held, puts the buffers on the D-pad, and the shortcut layer (both shoulders) opens navigation, chat, the scanner, the bars window and the WowVision menu. The gamepad main menu wheel reads as a window of two rows, the bars window lists the four gamepad action bars, and the keybinding window lets you add or remove controller buttons per binding. See the Controller page of the user guide. The left shoulder stands in for Alt, the left trigger for Shift and the right trigger for Ctrl. /wv padlog restarts the controller log kept for bug reports.
 * WowNav routes: with the Routes from WowNav setting (Navigation, off by default), every route request (F10, the scanner's Enter, the places list, /beacon to) is planned on Broesel33's navigation network for WoW: Forever and followed with his route rules: lifts, portals, the Deeprun Tram, ships and zeppelins with their docks, avoiding enemy outposts, and group members as targets. F10 then lists WowNav's targets and picks the start the same way as with the route data. Thanks to Broesel33 for the network and the engine.
 * WowNav routes: a route through a portal you walk into (the Teldrassil portals) announces the portal ahead and goes on after it, and a portal above or below the route no longer ends it early.
+* Collections: Enter on the tab that is already open only says "selected", so it can no longer close the journal by accident.
 
 ### Classic
 * Fixed a bug where edit fields for spell IDs (for example in monitors) would behave extremely inconsistently and often not actually set the spell ID correctly.
 * Added initial support for the social tab, including friends, ignore, and the who list.
 * The guild tab of the friends window (the classic guild window, which TBC Anniversary uses): the message of the day, the roster with level, class, zone or last online, rank and note, Show Offline, the column view and sort headers, Add Member, Guild Control and Guild Information. The member card, the guild information, the event log and guild control (ranks, permissions, guild bank tabs) are windows of their own.
+* Aura and Cooldown monitors speak the spell and the translated state ("Moonfire Expiring", "Rebirth On Cooldown", "Rebirth Charge Gained") instead of raw state names such as "on_cooldown".
 
 #### The Burning Crusade Classic
 * Updated the TBC speech module to use the retail speech module. Speech output for TBC works again.
@@ -103,7 +118,9 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 * Fixed the spellbook staying silent for characters without a pet; the open tab is read.
 * Added the craft window, used by Enchanting and the hunter's Beast Training: the skill bar, the filters, the craft list, the details with reagents, and the Enchant or Train button.
 * Added the hunter's stable: the selected pet, the current pet and stable slots, buying a slot. Enter on a slot selects it or puts down the pet you picked up; Drag in a slot's context menu picks the pet up.
+* Auction house: the Item Selected alert is in the menu (Windows, Auction House), and the full scan's 15 minute cooldown is kept after a reload even when the scan was aborted.
 
 #### Mists of Pandaria Classic
 * Fixed a number of issues with the mounts tab of the collections pane.
 * Add support for the Core Abilities and What Has Changed tabs of the spellbook.
+* Profession buttons in the spellbook read with a space before the rank in brackets.

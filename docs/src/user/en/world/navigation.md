@@ -1,0 +1,286 @@
+# Navigation: Maps, Routes and Beacons
+
+WowVision can guide you to a place on foot. You pick where you start and where you want to go in the navigation window (F10), WowVision works out a route along known paths, and then an audio beacon leads you from waypoint to waypoint until you arrive. This page covers the navigation window, the map data behind it, the beacon and all the keys you use while walking a route.
+
+If you play WoW: Forever, there is a second, newer route system called WowNav. It uses the same window and the same keys; see [WowNav](./wownav.md) for what is different.
+
+## How it works in short
+
+1. Press F10 to open the navigation window.
+2. Choose your entry point: the place on the known path network where your route starts. The nearest one is already selected for you.
+3. Search for a destination and press Enter on it.
+4. WowVision says how many waypoints the route has and how long it is, and a beacon starts to ping.
+5. Turn towards the beacon, walk, and listen. Each waypoint you reach plays a short sound and the beacon moves on to the next one. At the end you hear "Arrived" and the name of the place.
+
+You can also set a straight-line beacon with no route at all, from the Direct checkbox in the window, from the scanner, or with the /beacon command.
+
+## Map data
+
+Routes need map data: a network of waypoints that are linked to each other, plus the names of the places you can go to.
+
+- The Burning Crusade (TBC), WoW: Forever and Classic Era. The map data comes in its own addon folder named WowVision_MapData_TBC. It is inside the WowVision download zip next to the WowVision folder, so one extraction installs both (see [Installation](../getting-started/installation.md)). It is switched on automatically as long as the addon is enabled in the game's addon list. On Classic Era the game may flag it as out of date; turn on Load out of date AddOns there.
+- Mists of Pandaria and Retail. No map data is included. The navigation window opens but its lists are empty. Straight-line beacons, /beacon, the distance announcement and every other key on this page still work. Other map data addons for WowVision keep working beside the bundled one.
+
+The bundled data is derived from the survey data of the addon Sku: its waypoints, the links between them and the names of NPCs, creatures and objects. It covers Eastern Kingdoms, Kalimdor, the Deeprun Tram, Outland and Northrend. The Northrend and Death Knight starting area files are included but are never extended beyond what the survey held, so expect more gaps there than in the old world. On a German or French game client the place names are shown in your language.
+
+Names in this data are stored in a fixed form: the name, then its role if it has one, then the zone, a spawn number and the map coordinates, all separated by semicolons. For example: "Shailiea;Stormwind City;1;30.38;53.33" or "Eldraeith;Herbalism Supplies;Stormwind City;1;46.66;78.65". WowVision reads the name exactly like that. Your screen reader may pause at the semicolons or read them aloud. The role words are useful when you search: "Questgiver", "Trainer", "Banker", "Auctioneer", "Repair", "Stable Master" and many more are part of the name.
+
+When a destination is not on the link network (most creatures and objects are not), the route goes through the network to the closest linked waypoint and then ends with a straight leg to the destination. WowVision tells you how long that straight leg is, for example "last 40 yards direct".
+
+## The navigation window (F10)
+
+Press F10 to open the navigation window. Press Escape to close it. On a controller, hold both shoulder buttons and press D-pad up (see [Controller](../controller.md)). If the game cannot tell WowVision where you are (for example inside an instance on Retail), the window stays empty.
+
+The window has four stops. Move between them with Tab and Shift+Tab, and move inside a list with Up and Down. See [Interface](../basics/interface.md) for the general keys.
+
+| Stop | What it is |
+|------|------------|
+| Direct | A checkbox. Off every time the window opens. |
+| Entry Points | The 20 closest points of the path network. Not shown while Direct is on. |
+| Search | A text field that filters the destination list. |
+| Destinations | The list of places you can go to. |
+
+When the window opens, you land on the entry point that is already selected, so you can often skip straight to the search.
+
+### Entry points
+
+The entry point is where your route joins the network. WoW is fully three-dimensional, so the closest waypoint is sometimes the road under a bridge or the floor below you. That is why WowVision lists the 20 closest ones and lets you choose.
+
+Each entry reads its name, its distance and the direction relative to where you are facing, for example "Shailiea;Stormwind City;1;30.38;53.33, 4 yards, ahead left". The directions are ahead, ahead right, right, behind right, behind, behind left, left and ahead left. The entry that is chosen is announced with selected.
+
+- The closest entry point is selected when the window opens.
+- Press Enter on another entry to select that one instead. You hear selected at once, and again whenever you move back onto it. Only one entry is selected at a time.
+- While you swim or dive, the nearest entry that lies in water is preselected instead, if the data knows about water points. On the TBC data there are none, so the nearest entry stays selected. With WowNav, if there is no water point nearby, you hear "No water point nearby".
+
+The route you get includes the walk from where you stand to the entry point. So choose an entry that you can really walk to.
+
+### Direct
+
+Tick Direct (press Enter on the checkbox) if you do not want a route. The entry points disappear, and Enter on a destination sets a straight beacon to exactly that point. You hear, for example, "Direct: Shailiea;Stormwind City;1;30.38;53.33, 120 yards", and on arrival "Arrived" followed by the name. Use this when you are already close, when you are inside a building the network does not know, or when you want to go somewhere in a straight line.
+
+Direct is the first stop. To reach it, press Shift+Tab from the entry points.
+
+### Searching for a destination
+
+Press Tab from the entry points to reach Search. The edit box takes your typing immediately, and what you have typed is read as you type. Type a fragment of a name, for example "auctioneer", and press Enter to apply it. WowVision reads back what you typed. The list below is filtered at once. Tab applies the text as well and moves on to the next stop; Escape closes the edit box without changing the search.
+
+- The search is not case sensitive and matches any part of the whole name, including the role, the zone and the numbers. It is one text fragment, not several words: "auctioneer stormwind" finds nothing because the space is not in the data, but "auctioneer" or "stormwind" each work.
+- Leave the box empty to list everything on your continent.
+- The search covers all of the map data on the continent you are on, so routes can leave the zone you are in.
+
+### Destinations
+
+Press Tab again to reach Destinations. It is one long list, sorted by distance from where you opened the window, the nearest first. It can hold tens of thousands of entries, so it works like a single control rather than a real list of items:
+
+| Key | What it does |
+|-----|--------------|
+| Up / Down | Previous / next destination. |
+| Home / End | First / last destination. |
+| Enter | Close the window and start the route (or the straight beacon, if Direct is on). |
+
+Each destination reads its name and its distance, then its position in the list, for example "Shailiea;Stormwind City;1;30.38;53.33, 120 yards, 1 / 342". A destination you reached in the last few minutes is announced with Visited first; see [Visited places](#visited-places). An empty list reads "Empty".
+
+When you press Enter, you hear the route summary, for example "12 waypoints, 340 yards". The yards include the walk to your entry point. If the route ends with a straight leg, it adds "last 40 yards direct". If something is wrong you hear No route found, sometimes followed by a short reason such as "unreachable" (no path leads there from your entry point) or "no entry".
+
+### From the scanner
+
+In the scanner ([Scanner](./scanner.md)), Enter on a quest, an NPC or any other placed entry opens the navigation window already aimed at it. The closest entry point and the scanner's entry as destination are both selected, and the focus lands on the destination. Press Enter to route there; if you want a different entry point, press Shift+Tab twice first. Without map data for the continent the scanner sets a straight beacon directly and does not open the window.
+
+## Following a route
+
+### What you hear
+
+When the route starts, WowVision speaks the summary and the beacon begins to ping. Waypoints are not read out one by one. Instead you hear them:
+
+- The beacon pings towards the current waypoint. The ping changes with the direction and the distance to the waypoint. It pings faster the more directly you face the waypoint, about every 0.7 seconds when off course and about every 0.3 seconds when you are aimed at it. Distance is heard in steps of about 6 yards and works out to roughly 180 yards.
+- Aligned (a clack) plays when you turn to within 10 degrees of the waypoint. Off course (a click) plays when you turn away again. These only play when you cross that line by turning.
+- Waypoint reached (a success sound) plays every time you get close enough to a waypoint, including the last one.
+- Arrived is spoken at the end of a route, followed by the name of the destination.
+- Beacon stopped is spoken when you cancel.
+
+A waypoint counts as reached when you are within the arrival distance of it (see [Arrival distance](#arrival-distance)).
+
+### Beacon sounds
+
+All beacon sounds are one alert called Beacon in the Maps module (WowVision menu, Navigation, Maps, Beacon). The alert and each of its four sounds has its own Enabled switch and its own sound, so each cue can be turned off or changed on its own. See [Alerts](../basics/alerts.md) for how alerts work.
+
+| Sound | Default | When it plays |
+|-------|---------|---------------|
+| Beacon Sound | Probe (Mid) | The directional ping towards the current waypoint. |
+| Beacon Aligned | clack | You turned to face the waypoint. |
+| Beacon Off Course | click | You turned away from the waypoint. |
+| Waypoint Reached | success sound | You reached a waypoint. |
+
+For Beacon Sound you choose one of the beacon sets: Notification, Probe (Deep), Probe (Mid), Steel Gong and Beacon 6 (Sku's beacon 6). Moving onto an entry in the picker plays a sample. For the other three you pick any sound from the sound list.
+
+### Keys while you walk
+
+| Key | Binding name | What it does |
+|-----|--------------|--------------|
+| I | Turn to Waypoint | Turns your character to face the current waypoint. See below. |
+| Alt Gr or Ctrl+Alt | (setting) | Speaks the distance to the current waypoint. Held, it repeats every second. |
+| Unbound by default | Announce Distance | The same distance announcement on a key of your choice. |
+| Alt+P | Cycle Arrival Distance | Switches between the short, medium and long arrival distance. |
+| Ctrl+W | Next Waypoint | Skip to the next waypoint. |
+| Ctrl+S | Previous Waypoint | Go back to the previous waypoint. |
+| Ctrl+Shift+N | Start the Route Again From Here | Starts the last route again from where you stand. |
+| Shift+F12 | Cancel Navigation | Stops the route or beacon. |
+| F10 | Navigation | Opens the navigation window. |
+
+All of these can be changed in the keybinding window (WowVision menu, UI, Bindings); see [Keybindings](../basics/keybindings.md). The full list is in the [binding reference](../reference/keybindings.md).
+
+### Turn to waypoint (I)
+
+Addons cannot turn your character directly, so WowVision turns the camera and hands the new direction to your character. Press I while you follow a route and your character turns to face the current waypoint. The turn takes a few frames and works standing still or while walking; when you are moving, it aims at where the waypoint will be when the turn ends, so you do not circle a waypoint you are about to reach.
+
+Nothing is spoken when it works. A few things you should know:
+
+- If you already face the waypoint (within about 3 degrees), the press turns nothing. While you swim or fly with the pitch lock on, it levels your character instead; see [Movement](./movement.md).
+- A press while a turn is still running is ignored. Pressing a turn key yourself stops the turn where it is.
+- Without a route you hear No active waypoint. (The exception is WowNav at a dock or tram station; see [WowNav](./wownav.md).)
+- Where the game hides your position and facing from addons (instances on Retail) you hear Turning is not available here.
+- On a controller, press the right stick instead of I.
+
+Turning needs two camera settings: the camera following style Always (the game option "Always adjust camera") and instant switching between saved camera views. WowVision sets both once on each character, at the first login where one of them had to be changed, and tells you in the chat: "WowVision set the camera to always follow behind your character, which turning to waypoints needs. You can change the camera following style in the game options under Controls." If you change the following style back later, turns will land in the wrong places. WowVision does not set it again. WowVision also uses saved camera view 5 for turning, so anything you saved there is overwritten. During a turn it briefly changes the game's mouse look speed and puts your own value back afterwards. With a gamepad, free look is switched off for the length of the turn.
+
+### Arrival distance
+
+The arrival distance is how close, in yards, you must get to a waypoint for it to count as reached. A small distance makes you walk precisely onto each point; a large one forgives wandering. WowVision has three values and one of them is active at a time:
+
+| Name | Default distance |
+|------|------------------|
+| Short Range | 1 yard |
+| Medium Range | 3 yards (active by default) |
+| Long Range | 5 yards |
+
+Press Alt+P while following a route to cycle short, medium, long and back to short. WowVision speaks the name and the distance, for example "Long Range, 5 yards". Use the short range in tight places such as a doorway and the long range in open country. The settings are under [Settings](#settings).
+
+### Announce distance
+
+Alt Gr speaks the distance in yards to the waypoint you are walking to, for example "120 yards", just like Sku. Windows reports Alt Gr as Ctrl and Alt pressed together, so Ctrl+Alt does the same thing. If you hold the keys, the distance is repeated every second while you walk. Only the speech carries it; nothing is written to the chat.
+
+- Without a route you hear No active waypoint; if the game cannot give your position you hear Position unavailable.
+- It stays silent while you type in an edit box, so typing characters with Alt Gr (such as @, { or [) does not talk. It is also silent while Shift is held.
+- Any other shortcut that uses Ctrl+Alt will also trigger the announcement. If that bothers you, turn off the Announce Distance with Alt Gr setting and bind the Announce Distance binding to a key you do not use otherwise.
+
+### Next and previous waypoint
+
+When you have wandered off, or want to skip a waypoint you cannot reach, press Ctrl+W to move the beacon to the next waypoint or Ctrl+S to go back one. The step plays the waypoint-reached sound and speaks how many waypoints remain, current one included, for example "4 remaining". At the ends you hear End of route or Start of route; only walking to the last waypoint finishes the route. Without a route you hear No active waypoint.
+
+### Restart the route
+
+If you have strayed far from the route, press Ctrl+Shift+N. WowVision plans the last destination you chose again, starting from where you stand now. It works for destinations from the window, from the scanner, from the route to your target, and for the corpse run. With the classic map data you do not choose an entry point: the router picks whichever of the five nearest waypoints gives the best route. You hear the route summary again, or No route to start again if you have not chosen a destination yet.
+
+### Cancel navigation
+
+Shift+F12 stops the route or straight beacon: you hear Beacon stopped and the pings end. If nothing is running you hear No active waypoint. /beacon stop does the same.
+
+## Route to your target
+
+The Route to Your Target binding takes the creature or group member you are targeting as the destination. It is unbound by default; bind it in the keybinding window. See also [Targeting](./targeting.md).
+
+What happens depends on who you target:
+
+- A party or raid member. WowVision uses that player's current position.
+- An NPC or creature. With the classic map data, WowVision looks for the closest waypoint with exactly the same name within 120 yards. With WowNav, it uses the creature's position in the WowNav catalogue. Another spawn of the same kind further away than 120 yards does not count.
+- Anything else. You hear Your target's position is not known.
+
+Other things you may hear: You have no target, You are targeting yourself, Position unavailable, No route to your target (no map data here, or WowNav cannot start). With the classic map data a route that the router cannot find is reported as No route found with its reason. If it works, you hear the target's name (with the classic map data the name of the matching waypoint, in its long form) and then the route summary, and the route starts at once from the nearest entry point (classic data) or from your position (WowNav).
+
+With WowNav, if it cannot tell which floor you are on, you hear "Your floor is not clear here. Choose your start." and the navigation window opens with the target already selected, so you choose the start yourself.
+
+## Visited places
+
+When you walk to the same kind of thing again and again (herbs, ore veins, the spawns of a creature), you do not want to be sent back to a place you just checked. The visited places feature remembers it for you.
+
+- A destination you picked and reached counts as visited for a number of minutes (15 by default, a kind of respawn timer). Only the destination counts, not the waypoints on the way. This works for destinations from the window, the scanner, the route to your target and the corpse run.
+- In the destination list, a visited destination is announced with Visited first.
+- The memory is kept per character, uses real time, and survives logging out and reloading.
+- Forget Visited Waypoints (in the WowVision menu under Navigation, Visited Waypoints) wipes it. You hear "Visited waypoints forgotten".
+- The Enabled switch of the Visited Waypoints module turns the whole feature off.
+
+Two bindings, both unbound by default, lead you to the nearest unvisited destination with the same name as the last one you picked:
+
+| Binding | What it does |
+|---------|--------------|
+| Route to the Nearest Unvisited of the Same Name | Plans a route there, entering at the entry point the window would preselect. |
+| Direct to the Nearest Unvisited of the Same Name | Sets a straight beacon there. |
+
+"Same name" means the name before the first semicolon in the classic data ("Peacebloom") and the whole name in WowNav, ignoring capital letters. The spot you are already at, and the ones marked visited, are skipped. Chain the key and you walk through every spawn of that object, one after the other.
+
+Without a destination picked earlier you hear Choose a destination in the navigation window first. If every spawn is visited you hear "No unvisited" and the name, for example "No unvisited Peacebloom found".
+
+## Straight beacons and the /beacon command
+
+You can set a beacon without the window. Type these commands in the chat box:
+
+| Command | What it does |
+|---------|--------------|
+| /beacon | Speaks your position in map percentages, such as "50.5 30.4", and, if a beacon is active, its distance and angle. |
+| /beacon 50.5 30.4 | Straight beacon to map coordinates on your current zone map: the numbers quest guides give you. You hear "Beacon set" and the distance. |
+| /beacon to bank | Routes to the nearest known place whose name contains "bank". You hear its name, then the route summary. You do not choose an entry point: with the classic map data the router picks the best of the five nearest waypoints, with WowNav the entry point F10 would preselect is used. |
+| /beacon world x y | Straight beacon to raw world coordinates. |
+| /beacon stop | Same as Shift+F12. |
+
+With /beacon to, an unknown name gives "No route found" and the name. A beacon from /beacon with coordinates ends with "Arrived" when you get close enough, like any route.
+
+## Settings
+
+Open the WowVision menu (/wv), then Navigation, then Maps. Settings are shared by all your characters unless you change that in the module's context menu; see [Menu and settings](../basics/menu-and-settings.md).
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| Enabled | On | Turns the whole Maps module off, including the keys and /beacon. |
+| Arrival Radius | Medium Range | Which arrival distance is active. Alt+P changes it too. |
+| Short Range | 1 yard | The short arrival distance (1 to 20 yards). |
+| Medium Range | 3 yards | The medium arrival distance (1 to 20 yards). |
+| Long Range | 5 yards | The long arrival distance (1 to 20 yards). |
+| Announce Distance with Alt Gr | On | Whether Alt Gr and Ctrl+Alt speak the distance. The Announce Distance binding works either way. |
+| Beacon | (see above) | The beacon alert and its four sounds: Beacon Sound, Beacon Aligned, Beacon Off Course, Waypoint Reached. Each has Enabled and a sound choice. |
+
+The Visited Waypoints module (under Navigation) has one setting:
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| Visited For (Minutes) | 15 | How long a reached destination counts as visited (1 to 1440 minutes). |
+
+Two settings of the Navigation module are related: Automatically Navigate to Corpse (on by default) starts a route to your body as soon as you are a ghost, and Auto-move to Interact Target is explained with the movement features. See [Movement](./movement.md) for those, for the compass and for following a player.
+
+## Diagnostic commands
+
+| Command | What it does |
+|---------|--------------|
+| /wv turnlog | Lists the last turns made by the I key with their error in degrees, in a window and in the chat, and speaks a summary such as "10 turns, mean error 1.2 degrees". Include this in a bug report if turning goes wrong. |
+
+## Examples
+
+### Walk from the bank to the auction house (Stormwind, TBC or WoW: Forever)
+
+1. Stand outside the bank and press F10. You land on the closest entry point, announced with selected, for example "Name;Stormwind City;1;62.1;70.4, 3 yards, ahead, selected". That is fine, so leave it alone.
+2. Press Tab. You are in Search and can type straight away. Type "auctioneer" and press Enter. WowVision repeats your text.
+3. Press Tab to reach Destinations. You hear the nearest auctioneer with its distance and its position in the list. Press Down to hear the next one.
+4. Press Enter. The window closes and you hear a summary such as "9 waypoints, 410 yards".
+5. Press I to turn to the first waypoint, and walk. When you hear the beacon ping faster, you are facing the right way. Press Alt Gr at any time to hear how far the current waypoint is.
+6. If you get lost, press Ctrl+Shift+N to plan the route again from where you stand.
+7. At the end you hear "Arrived" and the name of the place.
+
+### Follow a route to a quest NPC
+
+1. Press F9 to open the scanner and find the quest, then its NPC (see [Scanner](./scanner.md)).
+2. Press Enter on the NPC. The navigation window opens with the closest entry point and the NPC both selected, focus on the destination.
+3. Press Enter. If you want a different starting point first, press Shift+Tab twice to reach the entry points, pick one with Enter, then return with Tab twice.
+4. Walk the route as above. If the NPC is not on the path network, the route ends with "last 25 yards direct": the final stretch is a straight line, so use the beacon and Alt Gr.
+
+### Find the next herb
+
+1. Search for "Peacebloom" in the window and walk to the nearest one. When you arrive it counts as visited.
+2. Bind Route to the Nearest Unvisited of the Same Name to a key.
+3. Press that key. You are routed to the nearest Peacebloom you have not visited. Keep pressing it after each arrival.
+
+## Related pages
+
+- [WowNav](./wownav.md): the newer route system on WoW: Forever.
+- [Movement](./movement.md): compass, facing, following, falling, walls and the corpse run.
+- [Scanner](./scanner.md): lists of things around you, with Enter handing over to the navigation window.
+- [Targeting](./targeting.md): selecting the target for the route to your target.
+- [Alerts](../basics/alerts.md): how to change the beacon sounds.

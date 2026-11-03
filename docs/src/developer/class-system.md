@@ -2,7 +2,7 @@
 
 ## Overview
 
-`core/Class.lua` is WowVision's object system: classes with **native fields** — declared properties that validate, store, persist, and emit change events through plain Lua assignment. It replaced middleclass and the old InfoClass/InfoManager stack in July 2026. All metatable machinery lives in this one file (plus the complex field types in `core/fieldTypes.lua`); code everywhere else reads and writes fields like ordinary attributes.
+`core/Class.lua` is WowVision's object system: classes with native fields — declared properties that validate, store, persist, and emit change events through plain Lua assignment. It replaced middleclass and the old InfoClass/InfoManager stack in July 2026. All metatable machinery lives in this one file (plus the complex field types in `core/fieldTypes.lua`); code everywhere else reads and writes fields like ordinary attributes.
 
 The whole system is pure Lua with no WoW API dependencies: `lua tools/headless-tests.lua` runs its full suite, plus construction smokes for alerts, buffers, and monitors.
 
@@ -28,7 +28,7 @@ print(m.enabled)               -- reads storage, falling back to the default
 
 Classes provide `new`, inheritance with direct parent calls (`Parent.initialize(self, ...)`), `isInstanceOf` / `isSubclassOf`, `instance.class`, `Class.name`, `Class.super`, and a minimal `include(mixin)`.
 
-Inheritance of fields is a **super-chain walk computed lazily**: a child declaring fields can never corrupt its parent, declaration order is preserved (parents first), and a child redeclaring a key replaces the parent's field in place. `Class:updateField(def)` overrides an inherited field for that class only.
+Inheritance of fields is a super-chain walk computed lazily: a child declaring fields can never corrupt its parent, declaration order is preserved (parents first), and a child redeclaring a key replaces the parent's field in place. `Class:updateField(def)` overrides an inherited field for that class only.
 
 ## Field declarations
 
@@ -38,7 +38,7 @@ Inheritance of fields is a **super-chain walk computed lazily**: a child declari
 | `type` | Field type registry key (default `Generic`). |
 | `default` | Value or `function(obj)`. Applied through the set path by `applyFields`; materialized lazily on reads. |
 | `persist` | Persist to the bound db. |
-| `global` | **Default true** (account store). `global = false` means per-character. |
+| `global` | Default true (account store). `global = false` means per-character. |
 | `setting` | Renders on the module settings screen. |
 | `label`, `showInUI`, `sortPriority` | Presentation. |
 | `required`, `once` | Construction constraints. |
@@ -47,10 +47,10 @@ Inheritance of fields is a **super-chain walk computed lazily**: a child declari
 
 ## Hard rules
 
-1. **Never wire `get`/`set` accessors that read or write `self.<key>`** — that re-enters the field metamethods and overflows the C stack at construction. Use a plain field and keep helper methods thin wrappers.
-2. **Change detection: scalars by value, tables by identity.** Assigning a different-but-equal table still stores it — code that aliases db tables relies on reference semantics.
-3. **A stored `false` is a value.** Never use `x and y or z` idioms on field or db reads.
-4. **Field definition objects are stable.** Subscribe with `Class:getField(key).events.valueChange:subscribe(subscriber, handler)`; handlers receive `(subscriber, eventName, obj, key, value)`. Sibling classes share inherited field objects.
+1. Never wire `get`/`set` accessors that read or write `self.<key>` — that re-enters the field metamethods and overflows the C stack at construction. Use a plain field and keep helper methods thin wrappers.
+2. Change detection: scalars by value, tables by identity. Assigning a different-but-equal table still stores it — code that aliases db tables relies on reference semantics.
+3. A stored `false` is a value. Never use `x and y or z` idioms on field or db reads.
+4. Field definition objects are stable. Subscribe with `Class:getField(key).events.valueChange:subscribe(subscriber, handler)`; handlers receive `(subscriber, eventName, obj, key, value)`. Sibling classes share inherited field objects.
 
 ## DB pairs and scope
 
@@ -60,11 +60,11 @@ A field's side resolves in order: per-field override (`overrides[key]`), object-
 
 Scope switching (`classes.setFieldScope`, `classes.setObjectScope`):
 
-- Switching **to global** *adopts* the account value (seeding it from the current value only when nothing account-wide exists). A character's value never leaks onto other characters.
-- Switching **to character** *forks* the current value locally.
+- Switching to global adopts the account value (seeding it from the current value only when nothing account-wide exists). A character's value never leaks onto other characters.
+- Switching to character forks the current value locally.
 - Neither direction deletes the other side; switching is always reversible.
 
-Container types cascade: `Dict` (keyed child instances, e.g. module submodules), `InstanceArray`, and `ComponentArray` thread constrained sub-pairs to children. Component arrays read **both** stores (account entries first), bind each instance to its config *table* (so array positions never matter), and move instances between stores via `field:setComponentScope`.
+Container types cascade: `Dict` (keyed child instances, e.g. module submodules), `InstanceArray`, and `ComponentArray` thread constrained sub-pairs to children. Component arrays read both stores (account entries first), bind each instance to its config table (so array positions never matter), and move instances between stores via `field:setComponentScope`.
 
 The stores themselves: `WowVisionDB` (per character) and `WowVisionGlobalDB` (account), each with its own version stamp and migration list in `core/db.lua`. The first character to log in after the global store ships seeds it from their settings.
 

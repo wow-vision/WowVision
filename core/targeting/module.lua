@@ -505,6 +505,9 @@ function module:updateHardTarget()
     self._targetDirty = false
     if changed then
         self.hardTarget = target
+        -- A new target's health is announced on its own, not compared with
+        -- the last target's.
+        self.targetHealthInterval = nil
         module.tooltips.hardTarget:set(nil, { type = "Unit", unit = "target" })
         hardTargetChange:fire({ target = target })
     end

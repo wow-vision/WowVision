@@ -51,8 +51,8 @@ Porting this to `core/graph/scrollBox.lua` would cover the options list and ever
 
 Open questions to settle in game before building:
 
-1. **Mouse-down steppers.** ScrollBox scroll bars (`MinimalScrollBar`, also `WowTrimScrollBar`) have `Back` and `Forward` steppers that scroll in `OnMouseDown` (`MinimalScrollBarStepperScripts`), not `OnClick`. A secure click (`/click`, or a `clickbutton` attribute) fires `OnClick`. Test whether `/click <name> LeftButton 1` (down = true) reaches `OnMouseDown`. If it does not, the stepper route is closed and another secure scroll trigger is needed.
-2. **Names.** The steppers are `parentKey` children without global names, and `/click` needs a name. A WowVision secure button with `type = "click"` and `clickbutton = <stepper>` set out of combat, clicked by name, could bridge that.
-3. **Step size.** A stepper moves by a fixed step, not to an element index. Focus has to follow whichever rows became visible, like hybrid secure mode's page up and down.
-4. **Initial position.** Opening a category or search result can leave the focused row off screen. Only Blizzard's own code or a secure scroll may move the list there.
-5. **Scope.** Most ScrollBox lists have no protected calls in their rows. Secure mode could be opt-in per list (the options list first), as it is for HybridScroll.
+1. Mouse-down steppers. ScrollBox scroll bars (`MinimalScrollBar`, also `WowTrimScrollBar`) have `Back` and `Forward` steppers that scroll in `OnMouseDown` (`MinimalScrollBarStepperScripts`), not `OnClick`. A secure click (`/click`, or a `clickbutton` attribute) fires `OnClick`. Test whether `/click <name> LeftButton 1` (down = true) reaches `OnMouseDown`. If it does not, the stepper route is closed and another secure scroll trigger is needed.
+2. Names. The steppers are `parentKey` children without global names, and `/click` needs a name. A WowVision secure button with `type = "click"` and `clickbutton = <stepper>` set out of combat, clicked by name, could bridge that.
+3. Step size. A stepper moves by a fixed step, not to an element index. Focus has to follow whichever rows became visible, like hybrid secure mode's page up and down.
+4. Initial position. Opening a category or search result can leave the focused row off screen. Only Blizzard's own code or a secure scroll may move the list there.
+5. Scope. Most ScrollBox lists have no protected calls in their rows. Secure mode could be opt-in per list (the options list first), as it is for HybridScroll.

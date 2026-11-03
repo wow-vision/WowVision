@@ -43,6 +43,8 @@ end
 -- Alert for item selection feedback
 local selectAlert = module:addAlert({ key = "itemSelected", label = L["Item Selected"] })
 selectAlert:addOutput({ type = "TTS", key = "tts", label = L["Item Selected"] })
+-- Listed in the module's menu (Windows > Auction House), like every alert.
+module:hasSettings():addRef("itemSelected", selectAlert.parameters)
 
 -- Client-side filter: hide browse results below this stack size
 local minStackSize = 0

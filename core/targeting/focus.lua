@@ -24,15 +24,19 @@ for i = 1, NUM_FOCUS do
         conflictingAddons = { "Sku" },
         func = function(args)
             if InCombatLockdown() then
-                print("Cannot set virtual focus while in combat.")
+                print(L["Cannot set virtual focus while in combat."])
                 return
             end
             local id = args
             if (args == nil or args == "") and UnitExists("target") then
                 id = UnitName("target")
             end
+            if id == nil or id == "" then
+                print(L["No target. Use /focus%d <name> or target a unit."]:format(i))
+                return
+            end
             module:setFocus(i, id)
-            print("focus " .. i .. " set to " .. id .. ".")
+            print(L["Focus %d set to %s."]:format(i, id))
         end,
     })
     module:registerBinding({

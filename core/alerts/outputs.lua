@@ -157,6 +157,7 @@ function Voice:initialize(info)
     self:addParameter({
         key = "voicePack",
         type = "VoicePack",
+        label = L["Voice Pack"],
         default = function()
             return self.defaultVoicePack
         end,

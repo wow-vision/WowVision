@@ -12,7 +12,7 @@ local function professionSpellNode(frame)
             local label = frame.spellString:GetText() or ""
             local substring = frame.subSpellString:GetText()
             if substring ~= nil and substring ~= "" then
-                label = label .. "(" .. substring .. ")"
+                label = label .. " (" .. substring .. ")"
             end
             return label
         end,

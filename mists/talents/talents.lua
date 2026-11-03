@@ -200,7 +200,7 @@ local function render(builder, screen)
 
     if GlyphFrame ~= nil and GlyphFrame:IsShown() then
         builder:beginStop("glyphs")
-        builder:addItem(ControlId.structural("glyphs"), nodes.text({ label = "Glyphs not yet implemented" }))
+        builder:addItem(ControlId.structural("glyphs"), nodes.text({ label = L["Glyphs not yet implemented"] }))
     end
 end
 

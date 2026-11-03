@@ -1,7 +1,8 @@
 local MessageBuffer = WowVision.buffers:createType("Message")
 MessageBuffer:addFields({
-    { key = "source" },
-    { key = "sourceKey" },
+    -- Internal: not for the settings screen.
+    { key = "source", showInUI = false },
+    { key = "sourceKey", showInUI = false },
 })
 
 function MessageBuffer:initialize(obj)
