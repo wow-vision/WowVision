@@ -56,6 +56,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 * Wall detection now also works while autorunning, during walks the game makes for you (the interact key, click to move), and in combat on Retail and WoW Forever, where only a full standstill can be judged because the game hides your speed there. A game walk that ends short of its goal plays the blocked sound once. It stays quiet while you are stunned or rooted, and no longer beeps endlessly after a movement key the game lost track of.
 * Questie's one-time "Welcome to Questie" dialog, which asks you to choose between Questie, pfQuest and Blizzard quest objectives on WoW Forever and the newer classic clients, is now read as a window with its three buttons. It used to sit silently in the middle of the screen, where it also blocked every minimap scan.
 * The minimap scan's "Scan canceled, window" message now names the frame under the cursor, and the scan log records it.
+* Mac: speech no longer says "bookmark" after every line.
 
 #### Forever
 * Fixed the minimap scanner and the walking announcements finding nothing after the October 16 client build. The minimap now names its dots only in its new soft cursor mode, which the scan switches on while it runs.

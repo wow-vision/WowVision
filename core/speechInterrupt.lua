@@ -20,6 +20,12 @@ local interrupt = {}
 
 interrupt.MARK = '<bookmark mark="skuint"/>'
 
+-- The Mac client speaks through the system's speech, which knows no SAPI
+-- markup and reads the bookmark aloud ("bookmark" after every line that
+-- follows a stop). There is no screen reader bridge there to cut, so the
+-- mark is never added. Read once: the client does not change.
+interrupt.enabled = not (IsMacClient ~= nil and IsMacClient() == true)
+
 local pending = false
 
 function interrupt.noteStop()
@@ -29,7 +35,7 @@ end
 -- The text as handed to the engine: with MARK when a stop came before it.
 -- Secret text takes the concatenation like any other.
 function interrupt.handOver(text)
-    if pending then
+    if pending and interrupt.enabled then
         pending = false
         return text .. interrupt.MARK
     end
@@ -38,6 +44,7 @@ end
 
 function interrupt._reset()
     pending = false
+    interrupt.enabled = true
 end
 
 if C_VoiceChat ~= nil and C_VoiceChat.StopSpeakingText ~= nil and hooksecurefunc ~= nil then

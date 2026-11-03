@@ -28,6 +28,12 @@ testRunner:addSuite("Speech interrupt", {
         t:assertEqual(interrupt.handOver("Search"), "Search")
     end),
 
+    ["on the Mac client no line carries the mark"] = isolated(function(t)
+        interrupt.enabled = false
+        interrupt.noteStop()
+        t:assertEqual(interrupt.handOver("Quest log"), "Quest log")
+    end),
+
     ["several stops before a line still mark it once"] = isolated(function(t)
         interrupt.noteStop()
         interrupt.noteStop()
