@@ -112,14 +112,14 @@ Einstellungen:
 | Aktiviert | An | Der Ein/Aus-Schalter des Puffers (siehe [Etwas vorübergehend ausschalten](#etwas-vorübergehend-ausschalten)) |
 | Bezeichnung | „Neu Aura-Puffer“, wenn er über das Menü hinzugefügt wird | Der Name, den du hörst, wenn du zum Puffer wechselst. Wenn du ihn leerst, heißt der Puffer wie seine Quelle (zum Beispiel „Ziel-Debuffs“) oder „Auren“, wenn er mehrere hat |
 | Quellen | Spieler-Debuffs, dann Spieler-Buffs | Die Liste der Quellen, in der Reihenfolge, in der sie im Puffer stehen |
-| Von mir gewirkt, Von mir wirkbar oder bannbar, Abbrechbar, Kontrollverlust, Von meiner Gruppe bannbar, Bannbar, Externe Verteidigung, Große Verteidigung, Im Kampf auf Schlachtzugsrahmen angezeigt, Wichtig | Egal | Je ein Filter, siehe unten |
+| Von mir gewirkt, Von mir wirkbar oder bannbar, Abbrechbar, CC, Von meiner Gruppe bannbar, Bannbar, Externe Verteidigung, Große Verteidigung, Im Kampf auf Schlachtzugsrahmen angezeigt, Wichtig | Egal | Je ein Filter, siehe unten |
 
-Jeder Filter ist eine Auswahl mit bis zu drei Werten. Egal ignoriert den Filter. Nur diese behält genau die Auren, die er beschreibt. Ohne diese lässt diese Auren weg. Zum Beispiel listet Von mir gewirkt auf Nur diese nur Auren, die du gewirkt hast, und Kontrollverlust auf Ohne diese blendet Betäubungen, Furcht und Ähnliches aus. Du kannst mehrere Filter kombinieren; eine Aura muss alle bestehen. Die Filter funktionieren auch auf Retail im Kampf und in Instanzen.
+Jeder Filter ist eine Auswahl mit bis zu drei Werten. Egal ignoriert den Filter. Nur diese behält genau die Auren, die er beschreibt. Ohne diese lässt diese Auren weg. Zum Beispiel listet Von mir gewirkt auf Nur diese nur Auren, die du gewirkt hast, und CC auf Ohne diese blendet Betäubungen, Furcht und Ähnliches aus. Du kannst mehrere Filter kombinieren; eine Aura muss alle bestehen. Die Filter funktionieren auch auf Retail im Kampf und in Instanzen.
 
 - Von mir gewirkt: Auren, die du gewirkt hast.
 - Von mir wirkbar oder bannbar: Auren, die du wirken oder bannen könntest.
 - Abbrechbar: Buffs, die du abbrechen kannst.
-- Kontrollverlust: Betäubungen, Furcht, Verwandlungen und Ähnliches.
+- CC: Betäubungen, Furcht, Verwandlungen und Ähnliches.
 - Von meiner Gruppe bannbar: Auren, die jemand in deiner Gruppe bannen kann.
 - Bannbar: Auren, die gebannt werden können.
 - Externe Verteidigung: Verteidigungseffekte, die andere auf dich wirken.

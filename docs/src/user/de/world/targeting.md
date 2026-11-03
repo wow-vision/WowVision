@@ -64,18 +64,18 @@ Beispiel: Du willst einen ruhigeren Kampf und schaltest die Gesundheitsansagen a
 2. Wähle Lebensüberwachung.
 3. Schalte Aktiviert aus.
 
-Kontrollverlust des Ziels (Target Crowd Control) sagt dir, wenn dein Ziel von irgendjemandem kontrolliert wird: betäubt, in Furcht versetzt, verwandelt und Ähnliches. Das funktioniert auch im Kampf.
+CC auf dem Ziel (Target Crowd Control) sagt dir, wenn auf deinem Ziel CC von irgendjemandem liegt: betäubt, in Furcht versetzt, verwandelt und Ähnliches. Das funktioniert auch im Kampf.
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
 | Aktiviert (Alarm) | An | Schaltet den ganzen Alarm ein oder aus |
-| Klang bei Kontrolle | An | Spielt einen Klang, wenn dein Ziel kontrolliert wird oder wenn du zu einem Ziel wechselst, das es schon ist |
-| Klang bei Ende der Kontrolle | An | Spielt einen Klang, wenn die Kontrolle auf deinem Ziel endet oder wenn du von einem kontrollierten Ziel zu einem freien wechselst |
-| TTS-Alarm | Aus | Spricht "Kontrolliert" oder "Frei" statt der Klänge oder zusätzlich dazu |
+| Klang bei CC | An | Spielt einen Klang, wenn dein Ziel CC bekommt oder wenn du zu einem Ziel wechselst, auf dem schon CC liegt |
+| Klang bei Ende des CC | An | Spielt einen Klang, wenn der CC auf deinem Ziel endet oder wenn du von einem Ziel mit CC zu einem freien wechselst |
+| TTS-Alarm | Aus | Spricht "CC" oder "Frei" statt der Klänge oder zusätzlich dazu |
 
-Der Wechsel von einem freien Ziel zu einem anderen freien Ziel bleibt stumm; den Klang bei Ende der Kontrolle hörst du nur, wenn das Ziel davor kontrolliert war. Beide Klänge haben eine Einstellung Sound, mit der du einen anderen wählen kannst.
+Der Wechsel von einem freien Ziel zu einem anderen freien Ziel bleibt stumm; den Klang bei Ende des CC hörst du nur, wenn auf dem Ziel davor CC lag. Beide Klänge haben eine Einstellung Sound, mit der du einen anderen wählen kannst.
 
-Dieser Alarm ist auf Retail, WoW: Forever und Mists of Pandaria verfügbar. Auf The Burning Crusade Anniversary liefert das Spiel keine Informationen über Kontrolle, deshalb gibt es den Alarm dort nicht.
+Dieser Alarm ist auf Retail, WoW: Forever und Mists of Pandaria verfügbar. Auf The Burning Crusade Anniversary liefert das Spiel keine Informationen über CC, deshalb gibt es den Alarm dort nicht.
 
 ## Weiche Zielerfassung
 

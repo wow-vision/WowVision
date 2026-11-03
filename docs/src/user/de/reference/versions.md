@@ -110,10 +110,10 @@ Siehe [Sammlungen und Vermächtnis](../windows/collections.md), [Gruppensuche](.
 | Funktion | Classic Era | TBC | Mists | Retail | WoW: Forever |
 |---|---|---|---|---|---|
 | Die Neigungssperre gilt auch beim Fliegen | Ja | Ja | Ja | Nein | Nein |
-| Alarm Kontrollverlust des Ziels (Ton, wenn dein Ziel betäubt, verängstigt und so weiter ist) | Nein | Nein | Ja | Ja | Ja |
+| Alarm CC auf dem Ziel (Ton, wenn dein Ziel betäubt, verängstigt und so weiter ist) | Nein | Nein | Ja | Ja | Ja |
 | Das Spiel verbirgt im Kampf und in Instanzen Werte vor Addons (Leben, Ressourcen, Auren und so weiter) | Nein | Nein | Nein | Ja | Ja |
 
-In Retail und WoW: Forever gilt die Neigungssperre nur beim Schwimmen, weil das Drachenreiten über die Neigung gesteuert wird. Der Alarm Kontrollverlust des Ziels braucht einen Kontrollverlust-Filter im Aurensystem des Spiels. Die Clients Classic Era und TBC haben ihn nicht, deshalb fehlt der Alarm dort. Siehe [Zielerfassung](../world/targeting.md), [Bewegung und Orientierung](../world/movement.md) und [Kampf](../world/combat.md).
+In Retail und WoW: Forever gilt die Neigungssperre nur beim Schwimmen, weil das Drachenreiten über die Neigung gesteuert wird. Der Alarm CC auf dem Ziel braucht einen CC-Filter im Aurensystem des Spiels. Die Clients Classic Era und TBC haben ihn nicht, deshalb fehlt der Alarm dort. Siehe [Zielerfassung](../world/targeting.md), [Bewegung und Orientierung](../world/movement.md) und [Kampf](../world/combat.md).
 
 ### Controller
 

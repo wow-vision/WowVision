@@ -238,7 +238,7 @@ Diese Befehle sind für die Leute gedacht, die an WowVision arbeiten. Du brauchs
 | /wv gdrop | Gibt das offene Dropdown-Menü aus |
 | /wv bigmenu [Zahl] | Öffnet ein langes, scrollendes Testmenü mit der angegebenen Zahl an Einträgen (60, wenn weggelassen), mit Kontrollkästchen, Optionsfeldern, einem Stufenbereich, einer Zeile aus mehreren Steuerelementen und einem Schieberegler; eine Auswahl wird im Chat ausgegeben |
 | /wv bigmenu dump | Öffnet dasselbe Testmenü und gibt es eine Sekunde später aus, so wie /wv gdrop es tut |
-| /wv cctest [Einheit] | Prüft, ob eine Einheit (ohne Angabe dein Ziel) unter Kontrollverlust steht, und gibt aus, wie sich das Ergebnis über die nächsten Frames ändert |
+| /wv cctest [Einheit] | Prüft, ob eine Einheit (ohne Angabe dein Ziel) unter CC steht, und gibt aus, wie sich das Ergebnis über die nächsten Frames ändert |
 | /wv cctest watch | Schaltet eine Prüfung ein oder aus, die bei jedem Zielwechsel eine Zeile ausgibt, die das Ergebnis Frame für Frame zeigt |
 | /wv gtooltip | Gibt den Zustand des Tooltip-Lesers aus |
 | /wv profile | Profiler: allein startet er, oder report, reset, stop |
