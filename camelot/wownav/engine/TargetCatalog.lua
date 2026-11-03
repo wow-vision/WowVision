@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/TargetCatalog.lua at
--- 5b8b5f2), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 3684248), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Independent provider snapshots. No provider owns a physical graph node.
 WowVisionNavigationTargetCatalog = { providers = {}, revision = 0 }
@@ -8,7 +8,7 @@ local forbidden = { nodeId=true, node_id=true, endNodeId=true, reachable=true,
     attachment_edge=true, targetDistance=true, node_distance=true,
     route_attachment_point=true, attachment_corridor=true }
 local kinds = {npc=true,mob=true,creature=true,gameobject=true,herb=true,mining=true,
-    mailbox=true,search_area=true,transit_facility=true,zone_transition=true,live=true}
+    mailbox=true,search_area=true,transit_facility=true,zone_transition=true,live=true,fishing_spot=true}
 
 local function denseArray(value)
     if type(value) ~= "table" then return false end
@@ -114,7 +114,8 @@ end
 -- Compact logical catalogue (the only format of the logical layer, TechnicalDocumentation/05). The file carries per-file constants in its header
 -- (coordinateSpace, nativeMapId, default availability) and, per target, only what differs:
 --   classes[i] = { kind, category (string, or list of strings), entry (number or false), nameEn, nameDe (absent = nameEn),
---                  a = availability (absent = header default), s = search aliases (absent = none) }
+--                  a = availability (absent = header default), s = search aliases (absent = none),
+--                  nk/nm/np = spoken name (name key, map ID, English place name; a dungeon entrance: all three or none) }
 --   targets[j] = { id, class index, x, y, z (absent = unknown height), l = levels (z absent), r = radius, p = true (approx) }
 -- ExpandCatalog turns the rows into the tables the rest of the core reads (target rows without the provenance, which stays in the
 -- pipeline report, and without the constants that were lifted into the header). Everything is validated here; the expanded rows
@@ -141,8 +142,16 @@ local function expandClass(raw)
             if type(aliases[index]) ~= "string" then return nil end
         end
     end
+    -- the spoken name of the class (dungeon entrances): key, map and English fallback together or not at all
+    local nameKey, nameMapId, nameParam = raw.nk, raw.nm, raw.np
+    if nameKey ~= nil or nameMapId ~= nil or nameParam ~= nil then
+        if type(nameKey) ~= "string" or nameKey == "" or not C.Finite(nameMapId) or nameMapId < 0 or nameMapId % 1 ~= 0
+            or type(nameParam) ~= "string" or nameParam == "" then
+            return nil
+        end
+    end
     return { kind = kind, category = category, entry = entry, nameEn = nameEn, nameDe = nameDe,
-        availability = availability, aliases = aliases }
+        availability = availability, aliases = aliases, nameKey = nameKey, nameMapId = nameMapId, nameParam = nameParam }
 end
 
 -- Validates a compact catalogue without building a table per row (activation of a continent). Returns the expanded classes (kept on the
@@ -195,6 +204,7 @@ local function buildRow(catalog, class, row)
         category = class.category, searchAliases = class.aliases, nativeMapId = catalog.nativeMapId, x = row[3], y = row[4], z = z,
         zStatus = z == nil and "unknown" or "known", availability = class.availability or catalog.availability or "static",
         levels = row.l, radius = row.r, approx = row.p and true or nil,
+        nameKey = class.nameKey, nameMapId = class.nameMapId, nameParam = class.nameParam,
     }
 end
 

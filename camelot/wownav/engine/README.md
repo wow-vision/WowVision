@@ -1,6 +1,6 @@
 # WowNav engine in WowVision
 
-These six files are Broesel33's WowNav engine, taken from the demo addon of his public data repository
+These seven files are Broesel33's WowNav engine, taken from the demo addon of his public data repository
 (github.com/Broesel33/WoW_NavigationData, `DemoAddon/WowVisionNavigation/`). The commit they come from is named in
 each file's first line. Broesel allowed WowVision to take whatever it needs from WowNav into WowVision; the data stays
 in his repository (the submodule `mapdata/WoW_NavigationData`).
@@ -13,10 +13,13 @@ in his repository (the submodule `mapdata/WoW_NavigationData`).
 - `DockNavigation.lua`: docks of the tram, ships and zeppelins: the waiting circle, the arrival text, the boarding
   orientation point, the noted counterpart dock (passive mode) and the turn key's target there.
 - `TransitActivation.lua`: walk-in targets (portal, tram entrance): the proof, the prepoint, the capture circle.
+- `FishingNavigation.lua`: fishing spots: the water point, the arrival text, the turn key's target and the direction
+  tone.
 
 What uses them: `../route.lua` (his route rules from `WowVisionNavigation.lua` and `ActionNavigation.lua`),
 `../catalog.lua` (the destination list: his `Navigation.SearchTargets` and `WowVisionNavigationResolveListed`) and
-`../module.lua` (with his zone loader's `PreloadNeighbours`), `../dock.lua` (what his core does around `DockNavigation`).
+`../module.lua` (with his zone loader's `PreloadNeighbours`), `../dock.lua` (what his core does around `DockNavigation`),
+`../fishing.lua` (what his core does around `FishingNavigation`).
 
 ## Changes for WowVision
 
@@ -41,7 +44,7 @@ Keep this list current; everything else is his text, line for line (line endings
 - `Guidance.lua`: `G.MinArrivalRadius` reads `G.arrivalMin` (WowVision's arrival distance, set by the module)
   instead of his saved variable `arrivalMin`; the wownav module writes its own setting there (0 to 10, default 0 =
   the data's radius, like his).
-- The six files: a header line naming the source commit.
+- The seven files: a header line naming the source commit.
 
 The same packing and reading are offered to Broesel's own pipeline (WowNav PR #1); if his repository ships packed
 files, `tools/wownav-pack.lua` is no longer needed.
