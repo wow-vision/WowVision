@@ -61,15 +61,99 @@ AuraBuffer:addFields({
             return { "player:HARMFUL", "player:HELPFUL" }
         end,
     },
+    -- Replaced by the Cast by Me filter (PLAYER): kept, hidden, so a buffer
+    -- saved with it on still lists only the player's auras until that
+    -- filter is set (see AuraBuffer:filterFor).
     {
         key = "onlyMine",
         type = "Bool",
         label = L["Only My Auras"],
         persist = true,
-        sortPriority = 2,
+        showInUI = false,
         default = false,
     },
 })
+
+-- Filters: the game's aura filter strings (AuraUtil.AuraFilters), passed
+-- with the source's HELPFUL or HARMFUL to both the index read and the
+-- tooltip fill, so they work under Retail's restriction too. Each is a
+-- choice of Any (not passed), Only (the filter) or Not (negated: "!" on
+-- clients with AuraUtil.AuraFilterNegationPrefix, Retail and WoW: Forever;
+-- on the older clients only Cancelable has a negative, NOT_CANCELABLE).
+-- Only the filters the client knows are offered.
+local FILTERS = {
+    { token = "PLAYER", label = L["Cast by Me"] },
+    { token = "RAID", label = L["Castable or Dispellable by Me"] },
+    { token = "CANCELABLE", label = L["Cancelable"], negative = "NOT_CANCELABLE" },
+    { token = "CROWD_CONTROL", label = L["Crowd Control"] },
+    { token = "RAID_PLAYER_DISPELLABLE", label = L["Dispellable by My Group"] },
+    { token = "DISPELLABLE", label = L["Dispellable"] },
+    { token = "EXTERNAL_DEFENSIVE", label = L["External Defensive"] },
+    { token = "BIG_DEFENSIVE", label = L["Big Defensive"] },
+    { token = "RAID_IN_COMBAT", label = L["Shown on Raid Frames in Combat"] },
+    { token = "IMPORTANT", label = L["Important"] },
+}
+
+-- The filter tokens this client knows, and how it negates one (nil: no way).
+local function clientFilters(auraFilters, negationPrefix)
+    local known = {}
+    for _, token in pairs(auraFilters or {}) do
+        known[token] = true
+    end
+    local offered = {}
+    for _, filter in ipairs(FILTERS) do
+        if known[filter.token] then
+            local notToken = nil
+            if negationPrefix ~= nil then
+                notToken = negationPrefix .. filter.token
+            elseif filter.negative ~= nil and known[filter.negative] then
+                notToken = filter.negative
+            end
+            tinsert(offered, { token = filter.token, label = filter.label, notToken = notToken })
+        end
+    end
+    return offered
+end
+AuraBuffer.clientFilters = clientFilters
+
+local OFFERED_FILTERS = clientFilters(
+    AuraUtil ~= nil and AuraUtil.AuraFilters or nil,
+    AuraUtil ~= nil and AuraUtil.AuraFilterNegationPrefix or nil
+)
+AuraBuffer.OFFERED_FILTERS = OFFERED_FILTERS
+
+local filterFields = {}
+for _, filter in ipairs(OFFERED_FILTERS) do
+    local choices = { { value = "any", label = L["Any"] }, { value = "only", label = L["Only"] } }
+    if filter.notToken ~= nil then
+        tinsert(choices, { value = "not", label = L["Not"] })
+    end
+    tinsert(filterFields, {
+        key = "filter_" .. filter.token,
+        type = "Choice",
+        label = filter.label,
+        persist = true,
+        sortPriority = 3,
+        default = "any",
+        choices = choices,
+    })
+end
+AuraBuffer:addFields(filterFields)
+
+-- The filter string for a source: its HELPFUL or HARMFUL and every filter
+-- set to Only or Not. choices: token -> "any" | "only" | "not".
+function AuraBuffer.buildFilter(base, offered, choices)
+    local parts = { base }
+    for _, filter in ipairs(offered) do
+        local choice = choices[filter.token]
+        if choice == "only" then
+            tinsert(parts, filter.token)
+        elseif choice == "not" and filter.notToken ~= nil then
+            tinsert(parts, filter.notToken)
+        end
+    end
+    return table.concat(parts, "|")
+end
 
 local whenNonZero = secrets.whenNonZero
 local whenText = secrets.whenText
@@ -268,9 +352,17 @@ end
 function AuraBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
     self.dirty = false
-    for _, key in ipairs({ "sources", "onlyMine" }) do
+    local keys = { "sources", "onlyMine" }
+    for _, filter in ipairs(OFFERED_FILTERS) do
+        tinsert(keys, "filter_" .. filter.token)
+    end
+    for _, key in ipairs(keys) do
         self.class:getField(key).events.valueChange:subscribe(self, function(subscriber, event, target)
             if target == subscriber then
+                -- setting Cast by Me retires the old Only My Auras
+                if key == "filter_PLAYER" and subscriber.onlyMine then
+                    subscriber.onlyMine = false
+                end
                 subscriber:rebuild()
             end
         end)
@@ -305,10 +397,15 @@ function AuraBuffer:listensTo(event, unit)
 end
 
 function AuraBuffer:filterFor(source)
-    if self.onlyMine then
-        return source.filter .. "|PLAYER"
+    local choices = {}
+    for _, filter in ipairs(OFFERED_FILTERS) do
+        choices[filter.token] = self["filter_" .. filter.token]
     end
-    return source.filter
+    -- the old Only My Auras, until Cast by Me is set
+    if self.onlyMine and (choices.PLAYER == nil or choices.PLAYER == "any") then
+        choices.PLAYER = "only"
+    end
+    return AuraBuffer.buildFilter(source.filter, OFFERED_FILTERS, choices)
 end
 
 -- The auras of each source in the game's order, with no heading in the
