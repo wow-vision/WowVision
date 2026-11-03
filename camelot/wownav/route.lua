@@ -696,7 +696,7 @@ function Route:update(x, y)
     if activation ~= nil and not self.activationPrepointSaid and self.A:PrepointReached(activation, x, y) then
         self.activationPrepointSaid = true
         return { kind = "prepoint", unresolved = activation.actionSemanticStatus == "unresolved",
-            dive = activation.facilityKind == "dive" }
+            dive = activation.facilityKind == "dive", target = activation }
     end
     if lastActivation then
         local observation
@@ -709,7 +709,7 @@ function Route:update(x, y)
             if not self.activationInside then
                 self.activationInside = true
                 return { kind = "activation", unresolved = activation.actionSemanticStatus == "unresolved",
-                    heightUnconfirmed = mode == "xy_only", dive = activation.facilityKind == "dive" }
+                    heightUnconfirmed = mode == "xy_only", dive = activation.facilityKind == "dive", target = activation }
             end
             return nil
         end
@@ -873,11 +873,14 @@ function Route:observeAction(x, y, map, widen)
         return nil
     end
     local action = current.action
-    local timeout = action.timing and action.timing.timeout_seconds
+    local timing = action.timing
+    local timeout = timing and timing.timeout_seconds
     if type(timeout) ~= "number" or timeout <= 0 then
         timeout = 30
     end
-    if self.env.now() - current.startedAt > timeout * Route.ACTION_PHASES then
+    -- an action that waits for a signal (the Wind Bridge, his no_time_limit) takes as long as it takes
+    local limited = not (type(timing) == "table" and timing.no_time_limit == true)
+    if limited and self.env.now() - current.startedAt > timeout * Route.ACTION_PHASES then
         self.action = nil
         return "timeout"
     end

@@ -167,7 +167,7 @@ end
 
 -- Without a beacon the turn key asks this for a facing to turn to instead (radians, as
 -- GetPlayerFacing; nil: nothing here). WowNav routes set it at a tram, ship or zeppelin dock (the
--- boarding point, or the noted dock near it).
+-- boarding point, or the noted dock near it) and at a fishing spot (its water).
 module.facingWithoutWaypoint = nil
 
 -- Far enough that the lead of a moving player does not bend the bearing to it.

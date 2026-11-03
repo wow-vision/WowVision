@@ -211,7 +211,9 @@ local function listRow(N, item, german)
         x = item.x, y = item.y, z = item.z, levels = item.levels, tid = item.id, kind = item.kind,
         nameEn = item.nameEn, zoneId = item.zoneId, surface = item.surface, resolution = item.layerResolution,
         layer = type(item.providerId) == "string" and item.providerId:find("^package_dyn_") and "dyn" or "logical",
-        interactionMode = item.interactionMode, activationMode = item.activationMode, approx = item.approx,
+        -- approx: a position that is itself an estimate (a compact row's p, a dyn row's approximate: Zephras Isle)
+        interactionMode = item.interactionMode, activationMode = item.activationMode,
+        approx = item.approx or item.approximate == true or nil,
     }
 end
 

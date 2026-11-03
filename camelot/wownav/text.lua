@@ -58,12 +58,29 @@ local REASONS = {
     action_boarding = L["Board only when the vehicle is safely there."],
     prepoint_reached_dive = L["Prepoint reached. Dive here: walk straight ahead to the dive point; the beacon stays on until then."],
     activation_area_dive = L["At the dive point. Dive here; the route stays on until the dive is confirmed."],
+    -- a portal clicked at (activation mode click) and the Wind Bridge of Zephras Isle, which comes at its own time
+    prepoint_reached_click = L["Prepoint reached. Walk on to the portal; the beacon stays on until you are there."],
+    activation_area_click = L["At the portal. Target it with soft targeting and interact with it; the route stays on until the transition is confirmed."],
+    prepoint_reached_wind_bridge = L["Prepoint reached. Walk on to the waiting point of the Wind Bridge; the beacon stays on until then."],
+    activation_area_wind_bridge = L["At the waiting point of the Wind Bridge. Wait until you hear the bridge, then step into the wind current."],
+    approximate_position = L["The position is approximate."],
     -- his Z2 warnings (faction outposts)
     outpost_through = L["Warning: there is no way around the enemy outpost, the route leads through it."],
     outpost_target = L["Warning: the target lies in an enemy outpost."],
     stop_outside_zones = L["Route ended outside the network's zones."],
     no_live_coordinates = L["No position of the group member available"],
     target_source_gone = L["The target is no longer available; no new route"],
+    -- fishing spots (FishingNavigation.lua): where the water lies, seen from the player
+    fishing_arrival = L["%s reached. The water is %s. Cast range about %d to %d yards. Press I to turn to the water."],
+    fishing_arrival_no_facing = L["%s reached. Cast range about %d to %d yards. Press I to turn to the water."],
+    fishing_sector_1 = L["straight ahead"],
+    fishing_sector_2 = L["ahead to the left"],
+    fishing_sector_3 = L["to the left"],
+    fishing_sector_4 = L["behind to the left"],
+    fishing_sector_5 = L["behind you"],
+    fishing_sector_6 = L["behind to the right"],
+    fishing_sector_7 = L["to the right"],
+    fishing_sector_8 = L["ahead to the right"],
 }
 
 function WowVisionNavigationText(key, ...)
@@ -109,6 +126,20 @@ local DYN = {
     boarding_vehicle = L["At the vehicle"],
     dive_entry = L["Dive here"],
     dive_exit = L["Surface here"],
+    fishing_spot_shore = L["Fishing spot on the shore: %s"],
+    fishing_spot_structure = L["Fishing spot on pier or quay: %s"],
+    -- the transitions of Zephras Isle (their places are named in the key)
+    rohashi_portal = L["Portal to Rohashi Spires"],
+    rohashi_arrival = L["Arrival at Rohashi Spires"],
+    valanaar_portal = L["Portal to Valanaar"],
+    valanaar_arrival_horde = L["Horde arrival in Valanaar Sanctuary"],
+    valanaar_arrival_alliance = L["Alliance arrival in Valanaar Sanctuary"],
+    wind_bridge_wait = L["Wind Bridge waiting point"],
+    wind_bridge_landing = L["Wind Bridge landing"],
+}
+-- a dungeon with several entrances: the wing of each (nameWing, nameWingDe in German) after the dungeon
+local DYN_WING = {
+    dungeon_entrance = L["Dungeon entrance: %s, %s"],
 }
 local SUFFIX = {
     lower = L[" (lower)"],
@@ -166,15 +197,21 @@ function text.targetName(target, german)
         return ""
     end
     local key = target.nameKey
+    if german == nil then
+        german = text.german()
+    end
+    local wing = german and type(target.nameWingDe) == "string" and target.nameWingDe ~= "" and target.nameWingDe
+        or target.nameWing
+    local wingTemplate = type(key) == "string" and DYN_WING[key] or nil
+    if wingTemplate ~= nil and type(wing) == "string" and wing ~= "" then
+        return string.format(wingTemplate, placeName(target) or L["unknown destination"], wing) .. nameSuffix(target)
+    end
     local template = type(key) == "string" and DYN[key] or nil
     if template ~= nil then
         if not template:find("%s", 1, true) then
             return template .. nameSuffix(target)
         end
         return string.format(template, placeName(target) or L["unknown destination"]) .. nameSuffix(target)
-    end
-    if german == nil then
-        german = text.german()
     end
     local english, deutsch = target.nameEn, target.nameDe
     if german and type(deutsch) == "string" and deutsch ~= "" then
