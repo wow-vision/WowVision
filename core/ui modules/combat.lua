@@ -193,30 +193,43 @@ local function auraList(unit, filter)
     return auras
 end
 
--- The crowd control auras on a plate, the ones its Crowd Control list
--- shows. Blizzard's rule where it can be read; where it is secret, the
--- game's CROWD_CONTROL filter (looser: on TBC it takes a Frostbolt slow).
--- nil when neither can be read.
-local function controlAuraList(unit)
+-- The crowd control auras on a plate by Blizzard's rule, the ones its Crowd
+-- Control list shows. nil when the rule cannot be read (secret, or the
+-- aura list refused).
+local function ruleList(unit)
     local harmful = auraList(unit, "HARMFUL")
-    if harmful ~= nil then
-        local shown = {}
-        local known = true
-        for _, aura in ipairs(harmful) do
-            local verdict = shownAsControl(aura)
-            if verdict == nil then
-                known = false
-                break
-            elseif verdict then
-                tinsert(shown, aura)
-            end
-        end
-        if known then
-            return shown
+    if harmful == nil then
+        return nil
+    end
+    local shown = {}
+    for _, aura in ipairs(harmful) do
+        local verdict = shownAsControl(aura)
+        if verdict == nil then
+            return nil
+        elseif verdict then
+            tinsert(shown, aura)
         end
     end
-    return auraList(unit, CONTROL_FILTER)
+    return shown
 end
+
+local function firstName(auras)
+    if auras == nil or auras[1] == nil then
+        return nil
+    end
+    local ok, name = pcall(function()
+        return auras[1].name
+    end)
+    return ok and name or nil
+end
+
+-- Where Blizzard's rule cannot be read, the game's CROWD_CONTROL filter
+-- decides (looser: on TBC it takes a Frostbolt slow), first through the
+-- shared tooltip read (core/crowdControl.lua), which Retail allows where
+-- its restriction closes the aura list (measured on the target, not yet on
+-- nameplate units), then through the filtered aura list (TBC, which lacks
+-- the filter token the tooltip read checks for).
+local crowdControl = WowVision.crowdControl
 
 local plates = {}
 local api = {
@@ -256,12 +269,20 @@ local api = {
         return ok and count or nil
     end,
     controlAuras = function(unit)
-        local auras = controlAuraList(unit)
+        local auras = ruleList(unit)
+        if auras ~= nil then
+            return #auras
+        end
+        local controlled = crowdControl.controlled(unit)
+        if controlled ~= nil then
+            return controlled and 1 or 0
+        end
+        auras = auraList(unit, CONTROL_FILTER)
         return auras and #auras or nil
     end,
     -- The loss-of-control text where the game keeps one (players only: it
     -- has none for NPCs), else the name of the crowd control aura, the one
-    -- text an enemy NPC's plate draws.
+    -- text an enemy NPC's plate draws, read the same way as above.
     controlText = function(unit)
         if lossOfControl.GetActiveLossOfControlDataByUnit ~= nil then
             local ok, text = pcall(function()
@@ -272,14 +293,14 @@ local api = {
                 return text
             end
         end
-        local auras = controlAuraList(unit)
-        if auras == nil or auras[1] == nil then
-            return nil
+        local auras = ruleList(unit)
+        if auras ~= nil then
+            return firstName(auras)
         end
-        local ok, name = pcall(function()
-            return auras[1].name
-        end)
-        return ok and name or nil
+        if crowdControl.controlled(unit) ~= nil then
+            return crowdControl.name(unit)
+        end
+        return firstName(auraList(unit, CONTROL_FILTER))
     end,
 }
 

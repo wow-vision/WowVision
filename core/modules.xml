@@ -19,6 +19,7 @@
   <Include file="commands/modules.xml" />
   <Script file="utils.lua" />
   <Script file="secrets.lua" />
+  <Script file="crowdControl.lua" />
   <Script file="secretsTests.lua" />
   <Script file="utilsTests.lua" />
   <Script file="ttsCacheBust.lua" />

@@ -1,44 +1,17 @@
 local module = WowVision.base.targeting
 local alert = module.targetCrowdControl
 
--- Whether the current target is crowd controlled, by anyone: the game's
--- CROWD_CONTROL aura filter (stuns, fears, polymorph and the like). A
--- tooltip of our own filled with the first harmful aura under that filter
--- has lines exactly when there is one. Under Retail's restriction the aura
--- list is closed to the index read, but this fill is allowed and its line
--- count is plain; the count is right in the same frame (measured with
--- /wv cctest, 2026-11-02). Clients without the filter (TBC Anniversary)
--- get no alert.
-local FILTER = "HARMFUL|CROWD_CONTROL"
+-- Whether the current target is crowd controlled, by anyone: the shared
+-- tooltip read (core/crowdControl.lua). Clients without the CROWD_CONTROL
+-- filter (TBC Anniversary) get no alert.
+local crowdControl = WowVision.crowdControl
 
-local function filterKnown()
-    if AuraUtil == nil or type(AuraUtil.AuraFilters) ~= "table" then
-        return false
-    end
-    for _, token in pairs(AuraUtil.AuraFilters) do
-        if token == "CROWD_CONTROL" then
-            return true
-        end
-    end
-    return false
-end
-
-if alert == nil or not filterKnown() or CreateFrame == nil then
+if alert == nil or not crowdControl.filterKnown() or CreateFrame == nil then
     return
 end
 
-local tooltip = CreateFrame("GameTooltip", "WowVisionCrowdControlTooltip", UIParent, "GameTooltipTemplate")
-
 local function controlled(unit)
-    if not UnitExists(unit) then
-        return false
-    end
-    tooltip:ClearLines()
-    tooltip:SetOwner(UIParent, "ANCHOR_NONE")
-    if not pcall(tooltip.SetUnitAura, tooltip, unit, 1, FILTER) then
-        return false
-    end
-    return tooltip:NumLines() > 0
+    return crowdControl.controlled(unit) == true
 end
 
 -- The state of the current target. On a target change the new target is
