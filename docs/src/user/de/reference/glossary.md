@@ -36,8 +36,6 @@ Kartendaten (Map data) — Das Netz aus Wegpunkten, dem Routen folgen. WowVision
 
 Kontextmenü (Context menu) — Eine Liste zusätzlicher Aktionen für das Element, auf dem du stehst, geöffnet mit Umschalt+F10.
 
-Leuchtfeuer (Beacon) — Ein Sound, der in der Spielwelt an einem Wegpunkt oder Ziel platziert ist. Du hörst an Richtung und Tonhöhe, wo er ist, und gehst darauf zu. Siehe [Navigation und Routen](../world/navigation.md).
-
 Modul (Module) — Ein Teil von WowVision mit eigenem Eintrag im WowVision-Menü, zum Beispiel Puffer, Chat oder Zielerfassung. Jedes Modul lässt sich ausschalten.
 
 Monitor (Monitor) — Etwas, das das Spiel für dich beobachtet und Alarme auslöst, wenn sich ein Zustand ändert, zum Beispiel ein Debuff, der von deinem Ziel abfällt. Besteht aus Regeln. Siehe [Monitore](../information/monitors.md).
@@ -51,6 +49,8 @@ Puffer (Buffer) — Eine Liste mit Informationen, die du jederzeit mit Alt und d
 Regel (Rule) — Ein Teil eines Monitors: welchen Zauber oder welche Aura er beobachtet und welche Alarme er in jedem Zustand auslöst. Siehe [Monitore](../information/monitors.md).
 
 Scanner (Scanner) — WowVisions Liste der Dinge um dich herum (Questgeber, Quests, Ziele, deine Leiche und mehr), geöffnet mit F9. Siehe [Scanner](../world/scanner.md).
+
+Signal (Beacon) — Ein Sound, der in der Spielwelt an einem Wegpunkt oder Ziel platziert ist. Du hörst an Richtung und Tonhöhe, wo er ist, und gehst darauf zu. Siehe [Navigation und Routen](../world/navigation.md).
 
 Sku (Sku) — Das ältere Barrierefreiheits-Addon für blinde WoW-Spieler. WowVision kann daneben laufen. Siehe [WowVision zusammen mit Sku verwenden](../getting-started/installation.md#wowvision-zusammen-mit-sku-verwenden).
 

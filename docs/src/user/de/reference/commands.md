@@ -28,7 +28,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /wv bind | Öffnet das Fenster für die Tastenbelegung | alle |
 | /wv close | Schließt jedes WowVision-Fenster | alle |
 | /wv version | Gibt die WowVision-Version aus | alle |
-| /beacon | Setzt ein Leuchtfeuer, routet zu einem benannten Ort oder liest deine Position vor | alle |
+| /beacon | Setzt ein Signal, routet zu einem benannten Ort oder liest deine Position vor | alle |
 | /focus1 bis /focus5 | Setzt ein virtuelles Fokusziel | alle, nicht mit Sku |
 | /pquit | Verlässt deine Gruppe | alle, nicht mit Sku |
 | /dquit | Verlässt die Dungeongruppe oder das Schlachtfeld | alle, nicht mit Sku |
@@ -84,17 +84,17 @@ Gibt die installierte WowVision-Version in dein Chatfenster aus, zum Beispiel V0
 
 ### /beacon
 
-Setzt ein Leuchtfeuer in gerader Linie, routet zu einem benannten Ort oder sagt dir, wo du bist. Das Leuchtfeuer spielt dann beim Laufen seinen Ton ab und spricht. Es ist dasselbe Leuchtfeuer, das das Navigationsfenster benutzt. Siehe [Navigation und Routen](../world/navigation.md).
+Setzt ein Signal in gerader Linie, routet zu einem benannten Ort oder sagt dir, wo du bist. Das Signal spielt dann beim Laufen seinen Ton ab und spricht. Es ist dasselbe Signal, das das Navigationsfenster benutzt. Siehe [Navigation und Routen](../world/navigation.md).
 
 | Getippt | Was es tut |
 |---|---|
-| /beacon | Spricht deine Position auf der Zonenkarte (zum Beispiel "50.5 30.4") und, wenn ein Leuchtfeuer aktiv ist, seine Entfernung und die Grad, um die du dich drehen musst |
-| /beacon x y | Setzt ein Leuchtfeuer auf Kartenkoordinaten der aktuellen Zonenkarte: die Prozentwerte, die Questführer angeben, etwa 50.5 30.4 |
-| /beacon world x y | Setzt ein Leuchtfeuer auf rohe Weltkoordinaten |
+| /beacon | Spricht deine Position auf der Zonenkarte (zum Beispiel "50.5 30.4") und, wenn ein Signal aktiv ist, seine Entfernung und die Grad, um die du dich drehen musst |
+| /beacon x y | Setzt ein Signal auf Kartenkoordinaten der aktuellen Zonenkarte: die Prozentwerte, die Questführer angeben, etwa 50.5 30.4 |
+| /beacon world x y | Setzt ein Signal auf rohe Weltkoordinaten |
 | /beacon to Name | Routet mithilfe der Kartendaten zum nächsten bekannten Ort, dessen Name den Text enthält. Gib einen Teil eines Namens an, etwa "mailbox". |
-| /beacon stop | Beendet das Leuchtfeuer oder die Route, genau wie Umschalt+F12 |
+| /beacon stop | Beendet das Signal oder die Route, genau wie Umschalt+F12 |
 
-Beispiele: /beacon 50.5 30.4 sagt "Leuchtfeuer gesetzt 245 Meter" und startet ein Leuchtfeuer in gerader Linie zu dieser Stelle; es öffnet nicht das Navigationsfenster. /beacon to innkeeper spricht den gefundenen Ort und startet eine Route dorthin, oder sagt "Keine Route gefunden innkeeper". /beacon 12 mit nur einer Zahl sagt "Usage beacon x y".
+Beispiele: /beacon 50.5 30.4 sagt "Signal gesetzt 245 Meter" und startet ein Signal in gerader Linie zu dieser Stelle; es öffnet nicht das Navigationsfenster. /beacon to innkeeper spricht den gefundenen Ort und startet eine Route dorthin, oder sagt "Keine Route gefunden innkeeper". /beacon 12 mit nur einer Zahl sagt "Usage beacon x y".
 
 Versionen: alle. /beacon to braucht Kartendaten für den Kontinent, auf dem du bist; siehe [Navigation und Routen](../world/navigation.md).
 
@@ -123,7 +123,7 @@ Schaltet ein Addon ein oder aus und lädt die Oberfläche sofort neu.
 
 Syntax: /enableaddon Name und /disableaddon Name. Der Name ist der Ordnername des Addons, Groß- und Kleinschreibung spielen keine Rolle. Ohne Namen geben sie "Syntax: /enableaddon <name>" aus. Die Oberfläche lädt auch dann neu, wenn es kein Addon mit diesem Namen gibt.
 
-Beispiel: /disableaddon sku. Der Name sku ist etwas Besonderes: Er schaltet das Addon Sku zusammen mit seinen Audiodaten und Leuchtfeuer-Addons um, damit nichts halb geladen bleibt. /enableaddon sku schaltet alles wieder ein.
+Beispiel: /disableaddon sku. Der Name sku ist etwas Besonderes: Er schaltet das Addon Sku zusammen mit seinen Audiodaten und Signal-Addons um, damit nichts halb geladen bleibt. /enableaddon sku schaltet alles wieder ein.
 
 Benutze nicht /disableaddon wowvision; es würde WowVision selbst ausschalten. Diese Befehle werden nicht registriert, wenn das Addon BlindSlash geladen ist. Versionen: alle.
 

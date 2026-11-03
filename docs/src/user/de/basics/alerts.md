@@ -16,7 +16,7 @@ Es gibt vier Arten von Ausgaben.
 | Sprachausgabe | TTS-Alarm | Spricht Text mit deiner TTS-Stimme, zum Beispiel „Kampf begonnen“. |
 | Sound | Soundalarm (oder ein spezifischerer Name) | Spielt eine Sounddatei ab, zum Beispiel ein Klicken oder einen Glockenton. |
 | Aufgenommene Stimme | Stimmenalarm | Spielt eine Aufnahme aus einem [Stimmenpaket](./speech.md#aufgenommene-stimmenpakete) ab, zum Beispiel „Norden“ oder eine Zahl. |
-| Leuchtfeuer | Leuchtfeuer-Sound | Ein Richtungston, der dir sagt, wo ein Wegpunkt liegt. Wird nur von der Navigation benutzt. |
+| Signal | Signalton | Ein Richtungston, der dir sagt, wo ein Wegpunkt liegt. Wird nur von der Navigation benutzt. |
 
 Ein Alarm spricht nur, wenn der Alarm und die Ausgabe beide aktiviert sind. Schalte einen Alarm aus, um ihn ganz stummzuschalten; schalte eine Ausgabe aus, um die übrigen zu behalten.
 
@@ -45,7 +45,7 @@ Jeder Ausgabe-Bildschirm beginnt mit Aktiviert. Danach, je nach Art der Ausgabe:
 | Nachricht | TTS | Nur bei TTS-Ausgaben, die ihren Text von anderswo beziehen, wie Fehler ansagen und der TTS-Alarm einer Monitorregel. Alarme mit eigener Formulierung (Kampf begonnen, ein Gebietsname, eine Chatnachricht und so weiter) haben sie nicht. Tippst du hier Text ein, wird er jedes Mal statt des üblichen Texts gesprochen. Lass das Feld leer, um den üblichen Text zu hören. |
 | Sound | Sound | Ein Schalter, der den Sound-Browser öffnet. Er liest den Namen der aktuellen Datei. Siehe [Einen Sound auswählen](./menu-and-settings.md#einen-sound-auswählen). Manche Soundalarme haben einen festen Sound und nur das Kontrollkästchen Aktiviert. |
 | Stimmenpaket | Stimme | Wähle zwischen den aufgenommenen Stimmen Matthew und Joanna. |
-| Leuchtfeuer-Sound | Leuchtfeuer | Ein Browser wie der Sound-Browser, für die Leuchtfeuer-Sounds. Beim Daraufgehen wird ein Beispiel abgespielt. |
+| Signalton | Signal | Ein Browser wie der Sound-Browser, für die Signaltöne. Beim Daraufgehen wird ein Beispiel abgespielt. |
 
 Beispiel: Den Namen deines Ziels von einer anderen Stimme sprechen lassen.
 
@@ -86,9 +86,9 @@ Die Menüpfade beginnen bei der ersten Ebene des WowVision-Menüs. Der Zustand i
 | Tauch-Alarm | Navigation, Kompass | Du tauchst unter Wasser. Sagt „tauchen“. | TTS, Soundalarm (aus) |
 | Fallerkennung | Navigation, Fallerkennung | Du fällst. Die Ansage wird einmal gesprochen, wenn die Fallsounds beginnen. | Fallgeräusch (eine aufsteigende Reihe von Sounds; je länger der Fall, desto höher der Sound), Fallansage (TTS „Fallen“) |
 | Wanderkennung | Navigation, Wanderkennung | Du bewegst dich, aber etwas hält dich zurück. | Fünf Sounds für fünf Grade der Behinderung: Blockiert, Größtenteils blockiert, Behindert, Verlangsamt und Leicht verlangsamt. |
-| Leuchtfeuer | Navigation, Karten | Eine Route oder ein Leuchtfeuer ist aktiv. | Leuchtfeuer-Sound (ein Richtungs-Ping, der schneller wird, wenn du dich dem Ziel zuwendest), Leuchtfeuer ausgerichtet (ein Klick, wenn du ihm zugewandt bist), Leuchtfeuer abseits des Kurses (wenn du dich abwendest), Wegpunkt erreicht (wenn du ankommst) |
+| Signal | Navigation, Karten | Eine Route oder ein Signal ist aktiv. | Signalton (ein Richtungs-Ping, der schneller wird, wenn du dich dem Ziel zuwendest), Signal ausgerichtet (ein Klick, wenn du ihm zugewandt bist), Signal abseits des Kurses (wenn du dich abwendest), Wegpunkt erreicht (wenn du ankommst) |
 
-In Instanzen meldet das Spiel nicht, in welche Richtung du blickst, daher bleibt Kompassrichtung ansagen dort stumm, während die übrigen Kompassalarme weiter funktionieren. Die Einstellungen der Fallerkennung (Verzögerung (Millisekunden), Sprünge ignorieren) stehen auf dem Bildschirm des Moduls, siehe [Bewegung und Orientierung](../world/movement.md). Die Ankunftseinstellungen von Leuchtfeuer stehen unter [Navigation und Routen](../world/navigation.md).
+In Instanzen meldet das Spiel nicht, in welche Richtung du blickst, daher bleibt Kompassrichtung ansagen dort stumm, während die übrigen Kompassalarme weiter funktionieren. Die Einstellungen der Fallerkennung (Verzögerung (Millisekunden), Sprünge ignorieren) stehen auf dem Bildschirm des Moduls, siehe [Bewegung und Orientierung](../world/movement.md). Die Ankunftseinstellungen von Signal stehen unter [Navigation und Routen](../world/navigation.md).
 
 ### Zielerfassung
 

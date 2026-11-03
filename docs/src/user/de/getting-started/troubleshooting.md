@@ -80,7 +80,7 @@ Du hast Sku geladen. Ist Sku geladen, überlässt WowVision bewusst eine Liste v
 
 Um die WowVision-Version dieses Fensters oder dieser Taste zu bekommen, schalte Sku aus:
 
-- Tippe /disableaddon sku. Das schaltet Sku und seine Audio- und Leuchtfeuer-Hilfs-Addons aus und lädt die Oberfläche neu. /enableaddon sku schaltet sie wieder ein.
+- Tippe /disableaddon sku. Das schaltet Sku und seine Audio- und Signal-Hilfs-Addons aus und lädt die Oberfläche neu. /enableaddon sku schaltet sie wieder ein.
 - Diese beiden Befehle stehen nicht zur Verfügung, wenn das Addon BlindSlash geladen ist. Deaktiviere Sku in dem Fall stattdessen in der AddOns-Liste des Spiels.
 - Die Änderung braucht ein /reload oder einen neuen Login, um zu wirken; /disableaddon lädt für dich neu.
 

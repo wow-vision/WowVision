@@ -96,12 +96,12 @@ Siehe [Chat](../windows/chat.md).
 | Nächster Wegpunkt (Next Waypoint) | Strg+W | Springt zum nächsten Wegpunkt vor. Du hörst, wie viele Wegpunkte noch übrig sind, zum Beispiel "12 verbleibend" |
 | Vorheriger Wegpunkt (Previous Waypoint) | Strg+S | Geht zum vorherigen Wegpunkt zurück, mit derselben Zählung |
 | Route von hier neu starten (Start the Route Again From Here) | Strg+Umschalt+N | Plant die Route zu deinem letzten Ziel noch einmal, beginnend dort, wo du stehst. Du hörst "Keine Route zum Neustarten", wenn du noch kein Ziel gewählt hast |
-| Navigation abbrechen (Cancel Navigation) | Umschalt+F12 | Beendet die aktive Route oder das aktive Leuchtfeuer |
+| Navigation abbrechen (Cancel Navigation) | Umschalt+F12 | Beendet die aktive Route oder das aktive Signal |
 | Ankunftsdistanz wechseln (Cycle Arrival Distance) | Alt+P | Ändert, wie nah du an einen Wegpunkt herankommen musst, damit er als erreicht gilt |
 | Entfernung ansagen (Announce Distance) | Unbelegt | Spricht die Entfernung zum Wegpunkt. Alt Gr (oder Strg+Alt) tut von Haus aus dasselbe |
 | Route zu deinem Ziel (Route to Your Target) | Unbelegt | Startet eine Route zu deinem aktuellen Ziel |
 | Route zum nächsten unbesuchten gleichnamigen Ziel (Route to the Nearest Unvisited of the Same Name) | Unbelegt | Führt per Route zum nächsten Ort mit demselben Namen, den du noch nicht besucht hast |
-| Direkt zum nächsten unbesuchten gleichnamigen Ziel (Direct to the Nearest Unvisited of the Same Name) | Unbelegt | Dasselbe als gerades Leuchtfeuer statt als Route |
+| Direkt zum nächsten unbesuchten gleichnamigen Ziel (Direct to the Nearest Unvisited of the Same Name) | Unbelegt | Dasselbe als gerades Signal statt als Route |
 | WowNav-Routenstatus (WowNav Route Status) | Unbelegt | (WoW: Forever) Spricht den Zustand der WowNav-Route |
 | Neue WowNav-Route um eine versperrte Stelle (New WowNav Route Around a Blocked Spot) | Unbelegt | (WoW: Forever) Plant eine neue Route, die die Stelle meidet, an der du feststeckst |
 

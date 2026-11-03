@@ -1,6 +1,6 @@
 # Navigation und Routen
 
-WowVision kann dich zu Fuß an einen Ort führen. Im Navigationsfenster (F10) wählst du, wo du startest und wohin du willst. WowVision berechnet eine Route entlang bekannter Wege, und ein akustisches Leuchtfeuer führt dich dann von Wegpunkt zu Wegpunkt, bis du ankommst. Diese Seite behandelt das Navigationsfenster, die Kartendaten dahinter, das Leuchtfeuer und alle Tasten, die du beim Gehen einer Route benutzt.
+WowVision kann dich zu Fuß an einen Ort führen. Im Navigationsfenster (F10) wählst du, wo du startest und wohin du willst. WowVision berechnet eine Route entlang bekannter Wege, und ein akustisches Signal führt dich dann von Wegpunkt zu Wegpunkt, bis du ankommst. Diese Seite behandelt das Navigationsfenster, die Kartendaten dahinter, das Signal und alle Tasten, die du beim Gehen einer Route benutzt.
 
 Spielst du WoW: Forever, gibt es ein zweites, neueres Routensystem namens WowNav. Es benutzt dasselbe Fenster und dieselben Tasten; was anders ist, steht auf der Seite [WowNav (WoW: Forever)](wownav.md).
 
@@ -11,17 +11,17 @@ Hinweis: Die Ansagen dieser Seite kommen aus lokalisierten Texten und werden auf
 1. Drücke F10, um das Navigationsfenster zu öffnen.
 2. Wähle deinen Einstiegspunkt: den Ort im Netz der bekannten Wege, an dem deine Route beginnt. Der nächstgelegene ist schon für dich ausgewählt.
 3. Suche ein Ziel und drücke Eingabe darauf.
-4. WowVision sagt, wie viele Wegpunkte die Route hat und wie lang sie ist, und ein Leuchtfeuer beginnt zu pingen.
-5. Dreh dich zum Leuchtfeuer, geh los und hör zu. Jeder Wegpunkt, den du erreichst, spielt einen kurzen Ton, und das Leuchtfeuer wandert zum nächsten. Am Ende hörst du "Angekommen" und den Namen des Ortes.
+4. WowVision sagt, wie viele Wegpunkte die Route hat und wie lang sie ist, und ein Signal beginnt zu pingen.
+5. Dreh dich zum Signal, geh los und hör zu. Jeder Wegpunkt, den du erreichst, spielt einen kurzen Ton, und das Signal wandert zum nächsten. Am Ende hörst du "Angekommen" und den Namen des Ortes.
 
-Du kannst auch ein Leuchtfeuer in gerader Linie ganz ohne Route setzen: mit dem Kontrollkästchen Direkt im Fenster, im Scanner oder mit dem Befehl /beacon.
+Du kannst auch ein Signal in gerader Linie ganz ohne Route setzen: mit dem Kontrollkästchen Direkt im Fenster, im Scanner oder mit dem Befehl /beacon.
 
 ## Kartendaten
 
 Routen brauchen Kartendaten: ein Netz aus Wegpunkten, die miteinander verbunden sind, plus die Namen der Orte, zu denen du gehen kannst.
 
 - The Burning Crusade (TBC), WoW: Forever und Classic Era. Die Kartendaten liegen in einem eigenen Addon-Ordner namens WowVision_MapData_TBC. Er steckt im WowVision-Download (zip) neben dem Ordner WowVision, ein einziges Entpacken installiert also beide (siehe [Installation](../getting-started/installation.md)). Er wird automatisch eingeschaltet, solange das Addon in der Addon-Liste des Spiels aktiviert ist. Auf Classic Era markiert das Spiel ihn vielleicht als veraltet; schalte dort Veraltete AddOns laden ein.
-- Mists of Pandaria und Retail. Hier sind keine Kartendaten enthalten. Das Navigationsfenster öffnet sich, aber seine Listen sind leer. Leuchtfeuer in gerader Linie, /beacon, die Entfernungsansage und alle anderen Tasten dieser Seite funktionieren trotzdem. Andere Kartendaten-Addons für WowVision funktionieren neben dem mitgelieferten weiter.
+- Mists of Pandaria und Retail. Hier sind keine Kartendaten enthalten. Das Navigationsfenster öffnet sich, aber seine Listen sind leer. Signal in gerader Linie, /beacon, die Entfernungsansage und alle anderen Tasten dieser Seite funktionieren trotzdem. Andere Kartendaten-Addons für WowVision funktionieren neben dem mitgelieferten weiter.
 
 Die mitgelieferten Daten stammen aus den Vermessungsdaten des Addons Sku: seine Wegpunkte, die Verbindungen dazwischen und die Namen von NPCs, Kreaturen und Objekten. Sie decken die Östlichen Königreiche, Kalimdor, die Tiefenbahn, die Scherbenwelt und Nordend ab. Die Dateien für Nordend und das Startgebiet der Todesritter sind enthalten, werden aber nie über das hinaus erweitert, was die Vermessung enthielt. Rechne dort also mit mehr Lücken als in der alten Welt. Auf einem deutschen oder französischen Spielclient werden die Ortsnamen in deiner Sprache angezeigt.
 
@@ -58,7 +58,7 @@ Die Route, die du bekommst, enthält den Weg von deinem Standort bis zum Einstie
 
 ### Direkt
 
-Hake Direkt an (drücke Eingabe auf dem Kontrollkästchen), wenn du keine Route willst. Die Einstiegspunkte verschwinden, und Eingabe auf einem Ziel setzt ein gerades Leuchtfeuer genau auf diesen Punkt. Du hörst zum Beispiel "Direkt: Shailiea;Stormwind City;1;30.38;53.33, 120 Meter" und bei der Ankunft "Angekommen" und den Namen. Nutze das, wenn du schon nah dran bist, wenn du in einem Gebäude bist, das das Netz nicht kennt, oder wenn du in gerader Linie irgendwohin willst.
+Hake Direkt an (drücke Eingabe auf dem Kontrollkästchen), wenn du keine Route willst. Die Einstiegspunkte verschwinden, und Eingabe auf einem Ziel setzt ein gerades Signal genau auf diesen Punkt. Du hörst zum Beispiel "Direkt: Shailiea;Stormwind City;1;30.38;53.33, 120 Meter" und bei der Ankunft "Angekommen" und den Namen. Nutze das, wenn du schon nah dran bist, wenn du in einem Gebäude bist, das das Netz nicht kennt, oder wenn du in gerader Linie irgendwohin willst.
 
 Direkt ist die erste Station. Um dorthin zu kommen, drücke Umschalt+Tab von den Einstiegspunkten aus.
 
@@ -78,7 +78,7 @@ Drücke noch einmal Tab, um zu Ziele zu kommen. Es ist eine einzige lange Liste,
 |-------|-------------|
 | Pfeil hoch / Pfeil runter | Vorheriges / nächstes Ziel. |
 | Pos1 / Ende | Erstes / letztes Ziel. |
-| Eingabe | Das Fenster schließen und die Route starten (oder das gerade Leuchtfeuer, wenn Direkt an ist). |
+| Eingabe | Das Fenster schließen und die Route starten (oder das gerade Signal, wenn Direkt an ist). |
 
 Jedes Ziel liest seinen Namen und seine Entfernung, dann seine Position in der Liste, zum Beispiel "Shailiea;Stormwind City;1;30.38;53.33, 120 Meter, 1 von 342". Ein Ziel, das du in den letzten Minuten erreicht hast, wird mit Besucht davor angesagt; siehe [Besuchte Orte](#besuchte-orte). Eine leere Liste liest "Leer".
 
@@ -86,34 +86,34 @@ Wenn du Eingabe drückst, hörst du die Zusammenfassung der Route, zum Beispiel 
 
 ### Vom Scanner aus
 
-Im Scanner ([Scanner](./scanner.md)) öffnet Eingabe auf einer Quest, einem NPC oder einem anderen Eintrag mit Ort das Navigationsfenster, schon auf diesen Eintrag ausgerichtet. Der nächste Einstiegspunkt und der Eintrag des Scanners als Ziel sind beide ausgewählt, und der Fokus liegt auf dem Ziel. Drücke Eingabe, um dorthin zu routen; willst du einen anderen Einstiegspunkt, drücke vorher zweimal Umschalt+Tab. Ohne Kartendaten für den Kontinent setzt der Scanner direkt ein gerades Leuchtfeuer und öffnet das Fenster nicht.
+Im Scanner ([Scanner](./scanner.md)) öffnet Eingabe auf einer Quest, einem NPC oder einem anderen Eintrag mit Ort das Navigationsfenster, schon auf diesen Eintrag ausgerichtet. Der nächste Einstiegspunkt und der Eintrag des Scanners als Ziel sind beide ausgewählt, und der Fokus liegt auf dem Ziel. Drücke Eingabe, um dorthin zu routen; willst du einen anderen Einstiegspunkt, drücke vorher zweimal Umschalt+Tab. Ohne Kartendaten für den Kontinent setzt der Scanner direkt ein gerades Signal und öffnet das Fenster nicht.
 
 ## Einer Route folgen
 
 ### Was du hörst
 
-Wenn die Route beginnt, spricht WowVision die Zusammenfassung, und das Leuchtfeuer beginnt zu pingen. Die Wegpunkte werden nicht einzeln vorgelesen. Stattdessen hörst du sie:
+Wenn die Route beginnt, spricht WowVision die Zusammenfassung, und das Signal beginnt zu pingen. Die Wegpunkte werden nicht einzeln vorgelesen. Stattdessen hörst du sie:
 
-- Das Leuchtfeuer pingt in Richtung des aktuellen Wegpunkts. Der Ping ändert sich mit der Richtung und der Entfernung zum Wegpunkt. Er pingt schneller, je direkter du auf den Wegpunkt blickst: etwa alle 0,7 Sekunden, wenn du vom Kurs abweichst, und etwa alle 0,3 Sekunden, wenn du darauf ausgerichtet bist. Die Entfernung hörst du in Schritten von etwa 6 Metern, und sie reicht bis ungefähr 180 Meter.
-- Leuchtfeuer ausgerichtet (ein Klack) spielt, wenn du dich bis auf 10 Grad zum Wegpunkt gedreht hast. Leuchtfeuer abseits des Kurses (ein Klick) spielt, wenn du dich wieder abwendest. Diese Töne spielen nur, wenn du diese Linie durch Drehen überschreitest.
+- Das Signal pingt in Richtung des aktuellen Wegpunkts. Der Ping ändert sich mit der Richtung und der Entfernung zum Wegpunkt. Er pingt schneller, je direkter du auf den Wegpunkt blickst: etwa alle 0,7 Sekunden, wenn du vom Kurs abweichst, und etwa alle 0,3 Sekunden, wenn du darauf ausgerichtet bist. Die Entfernung hörst du in Schritten von etwa 6 Metern, und sie reicht bis ungefähr 180 Meter.
+- Signal ausgerichtet (ein Klack) spielt, wenn du dich bis auf 10 Grad zum Wegpunkt gedreht hast. Signal abseits des Kurses (ein Klick) spielt, wenn du dich wieder abwendest. Diese Töne spielen nur, wenn du diese Linie durch Drehen überschreitest.
 - Wegpunkt erreicht (ein Erfolgston) spielt jedes Mal, wenn du nah genug an einen Wegpunkt kommst, auch beim letzten.
 - Angekommen wird am Ende einer Route gesprochen, gefolgt vom Namen des Ziels.
-- Leuchtfeuer gestoppt wird gesprochen, wenn du abbrichst.
+- Signal gestoppt wird gesprochen, wenn du abbrichst.
 
 Ein Wegpunkt gilt als erreicht, wenn du innerhalb der Ankunftsdistanz von ihm bist (siehe [Ankunftsdistanz](#ankunftsdistanz)).
 
-### Leuchtfeuer-Töne
+### Signaltöne
 
-Alle Leuchtfeuer-Töne sind ein einziger Alarm namens Leuchtfeuer im Modul Karten (WowVision-Menü, Navigation, Karten, Leuchtfeuer). Der Alarm und jeder seiner vier Töne haben einen eigenen Schalter Aktiviert und einen eigenen Sound, sodass sich jedes Signal einzeln ausschalten oder ändern lässt. Wie Alarme funktionieren, steht auf der Seite [Alarme](../basics/alerts.md).
+Alle Signaltöne sind ein einziger Alarm namens Signal im Modul Karten (WowVision-Menü, Navigation, Karten, Signal). Der Alarm und jeder seiner vier Töne haben einen eigenen Schalter Aktiviert und einen eigenen Sound, sodass sich jedes Signal einzeln ausschalten oder ändern lässt. Wie Alarme funktionieren, steht auf der Seite [Alarme](../basics/alerts.md).
 
 | Ton | Standard | Wann er spielt |
 |-----|----------|----------------|
-| Leuchtfeuer-Sound (Beacon Sound) | Probe (Mid) | Der gerichtete Ping zum aktuellen Wegpunkt. |
-| Leuchtfeuer ausgerichtet (Beacon Aligned) | Klack | Du hast dich zum Wegpunkt gedreht. |
-| Leuchtfeuer abseits des Kurses (Beacon Off Course) | Klick | Du hast dich vom Wegpunkt abgewendet. |
+| Signalton (Beacon Sound) | Probe (Mid) | Der gerichtete Ping zum aktuellen Wegpunkt. |
+| Signal ausgerichtet (Beacon Aligned) | Klack | Du hast dich zum Wegpunkt gedreht. |
+| Signal abseits des Kurses (Beacon Off Course) | Klick | Du hast dich vom Wegpunkt abgewendet. |
 | Wegpunkt erreicht (Waypoint Reached) | Erfolgston | Du hast einen Wegpunkt erreicht. |
 
-Für Leuchtfeuer-Sound wählst du eines der Leuchtfeuer-Sets: Notification, Probe (Deep), Probe (Mid), Steel Gong und Beacon 6 (Skus Leuchtfeuer 6). Wenn du in der Auswahl auf einen Eintrag gehst, spielt eine Hörprobe. Bei den anderen drei wählst du einen beliebigen Sound aus der Soundliste.
+Für Signalton wählst du eines der Signal-Sets: Notification, Probe (Deep), Probe (Mid), Steel Gong und Beacon 6 (Skus Signal 6). Wenn du in der Auswahl auf einen Eintrag gehst, spielt eine Hörprobe. Bei den anderen drei wählst du einen beliebigen Sound aus der Soundliste.
 
 ### Tasten beim Gehen
 
@@ -126,7 +126,7 @@ Für Leuchtfeuer-Sound wählst du eines der Leuchtfeuer-Sets: Notification, Prob
 | Strg+W | Nächster Wegpunkt | Springt zum nächsten Wegpunkt. |
 | Strg+S | Vorheriger Wegpunkt | Geht zum vorherigen Wegpunkt zurück. |
 | Strg+Umschalt+N | Route von hier neu starten | Startet die letzte Route von deinem Standort aus neu. |
-| Umschalt+F12 | Navigation abbrechen | Beendet die Route oder das Leuchtfeuer. |
+| Umschalt+F12 | Navigation abbrechen | Beendet die Route oder das Signal. |
 | F10 | Navigation | Öffnet das Navigationsfenster. |
 
 All das lässt sich im Fenster für die Tastenbelegung ändern (WowVision-Menü, Benutzeroberfläche, Tastenbelegung); siehe [Tastenbelegung](../basics/keybindings.md). Die vollständige Liste steht in der [Tastenreferenz](../reference/keybindings.md).
@@ -167,7 +167,7 @@ Alt Gr spricht die Entfernung in Metern zu dem Wegpunkt, zu dem du gerade gehst,
 
 ### Nächster und vorheriger Wegpunkt
 
-Bist du vom Weg abgekommen oder willst du einen Wegpunkt überspringen, den du nicht erreichen kannst, drücke Strg+W, um das Leuchtfeuer zum nächsten Wegpunkt zu verschieben, oder Strg+S, um einen zurückzugehen. Der Schritt spielt den Ton für "Wegpunkt erreicht" und spricht, wie viele Wegpunkte noch bleiben, den aktuellen eingeschlossen, zum Beispiel "4 verbleibend". An den Enden hörst du Ende der Route oder Anfang der Route; nur das Gehen zum letzten Wegpunkt beendet die Route. Ohne Route hörst du Kein aktiver Wegpunkt.
+Bist du vom Weg abgekommen oder willst du einen Wegpunkt überspringen, den du nicht erreichen kannst, drücke Strg+W, um das Signal zum nächsten Wegpunkt zu verschieben, oder Strg+S, um einen zurückzugehen. Der Schritt spielt den Ton für "Wegpunkt erreicht" und spricht, wie viele Wegpunkte noch bleiben, den aktuellen eingeschlossen, zum Beispiel "4 verbleibend". An den Enden hörst du Ende der Route oder Anfang der Route; nur das Gehen zum letzten Wegpunkt beendet die Route. Ohne Route hörst du Kein aktiver Wegpunkt.
 
 ### Die Route neu starten
 
@@ -175,7 +175,7 @@ Bist du weit von der Route abgekommen, drücke Strg+Umschalt+N. WowVision plant 
 
 ### Navigation abbrechen
 
-Umschalt+F12 beendet die Route oder das gerade Leuchtfeuer: Du hörst Leuchtfeuer gestoppt, und die Pings hören auf. Läuft nichts, hörst du Kein aktiver Wegpunkt. /beacon stop tut dasselbe.
+Umschalt+F12 beendet die Route oder das gerade Signal: Du hörst Signal gestoppt, und die Pings hören auf. Läuft nichts, hörst du Kein aktiver Wegpunkt. /beacon stop tut dasselbe.
 
 ## Route zu deinem Ziel
 
@@ -206,25 +206,25 @@ Zwei Belegungen, beide standardmäßig nicht belegt, führen dich zum nächsten 
 | Belegung | Was sie tut |
 |----------|-------------|
 | Route zum nächsten unbesuchten gleichnamigen Ziel | Plant eine Route dorthin, mit Einstieg an dem Einstiegspunkt, den das Fenster vorwählen würde. |
-| Direkt zum nächsten unbesuchten gleichnamigen Ziel | Setzt dorthin ein gerades Leuchtfeuer. |
+| Direkt zum nächsten unbesuchten gleichnamigen Ziel | Setzt dorthin ein gerades Signal. |
 
 "Gleicher Name" heißt in den klassischen Daten der Name vor dem ersten Semikolon ("Peacebloom") und bei WowNav der ganze Name, ohne Beachtung der Groß- und Kleinschreibung. Der Ort, an dem du gerade bist, und die als besucht markierten werden übersprungen. Drücke die Taste immer wieder, und du gehst nacheinander jeden Spawn dieses Objekts ab.
 
 Ohne früher gewähltes Ziel hörst du Wähle zuerst ein Ziel im Navigationsfenster. Ist jeder Spawn besucht, hörst du "Kein unbesuchtes Ziel Peacebloom gefunden".
 
-## Gerade Leuchtfeuer und der Befehl /beacon
+## Gerade Signale und der Befehl /beacon
 
-Du kannst ein Leuchtfeuer auch ohne das Fenster setzen. Tippe diese Befehle ins Chatfeld:
+Du kannst ein Signal auch ohne das Fenster setzen. Tippe diese Befehle ins Chatfeld:
 
 | Befehl | Was er tut |
 |--------|------------|
-| /beacon | Spricht deine Position in Kartenprozent, zum Beispiel "50.5 30.4", und, falls ein Leuchtfeuer aktiv ist, dessen Entfernung und Winkel. |
-| /beacon 50.5 30.4 | Gerades Leuchtfeuer zu Kartenkoordinaten auf der Karte deines aktuellen Gebiets: die Zahlen, die Questführer dir geben. Du hörst "Leuchtfeuer gesetzt" und die Entfernung. |
+| /beacon | Spricht deine Position in Kartenprozent, zum Beispiel "50.5 30.4", und, falls ein Signal aktiv ist, dessen Entfernung und Winkel. |
+| /beacon 50.5 30.4 | Gerades Signal zu Kartenkoordinaten auf der Karte deines aktuellen Gebiets: die Zahlen, die Questführer dir geben. Du hörst "Signal gesetzt" und die Entfernung. |
 | /beacon to bank | Routet zum nächsten bekannten Ort, dessen Name "bank" enthält. Du hörst seinen Namen, dann die Zusammenfassung der Route. Du wählst keinen Einstiegspunkt: Mit den klassischen Kartendaten nimmt der Router den besten der fünf nächsten Wegpunkte, mit WowNav wird der Einstiegspunkt benutzt, den F10 vorwählen würde. |
-| /beacon world x y | Gerades Leuchtfeuer zu rohen Weltkoordinaten. |
+| /beacon world x y | Gerades Signal zu rohen Weltkoordinaten. |
 | /beacon stop | Dasselbe wie Umschalt+F12. |
 
-Bei /beacon to ergibt ein unbekannter Name "Keine Route gefunden" und den Namen. Ein Leuchtfeuer von /beacon mit Koordinaten endet mit "Angekommen", wenn du nah genug bist, wie jede Route.
+Bei /beacon to ergibt ein unbekannter Name "Keine Route gefunden" und den Namen. Ein Signal von /beacon mit Koordinaten endet mit "Angekommen", wenn du nah genug bist, wie jede Route.
 
 ## Einstellungen
 
@@ -238,7 +238,7 @@ Bei /beacon to ergibt ein unbekannter Name "Keine Route gefunden" und den Namen.
 | Mittlere Distanz | 3 Meter | Die mittlere Ankunftsdistanz (1 bis 20 Meter). |
 | Weite Distanz | 5 Meter | Die weite Ankunftsdistanz (1 bis 20 Meter). |
 | Entfernung mit Alt Gr ansagen | An | Ob Alt Gr und Strg+Alt die Entfernung sprechen. Die Belegung Entfernung ansagen funktioniert in jedem Fall. |
-| Leuchtfeuer | (siehe oben) | Der Leuchtfeuer-Alarm und seine vier Töne: Leuchtfeuer-Sound, Leuchtfeuer ausgerichtet, Leuchtfeuer abseits des Kurses, Wegpunkt erreicht. Jeder hat Aktiviert und eine Soundauswahl. |
+| Signal | (siehe oben) | Der Signal-Alarm und seine vier Töne: Signalton, Signal ausgerichtet, Signal abseits des Kurses, Wegpunkt erreicht. Jeder hat Aktiviert und eine Soundauswahl. |
 
 Das Modul Besuchte Wegpunkte (unter Navigation) hat eine Einstellung:
 
@@ -262,7 +262,7 @@ Zwei Einstellungen des Moduls Navigation hängen damit zusammen: Automatisch zur
 2. Drücke Tab. Du bist in Suchen und kannst gleich tippen. Tippe "Auktionator" und drücke Eingabe. WowVision wiederholt deinen Text.
 3. Drücke Tab, um zu Ziele zu kommen. Du hörst den nächsten Auktionator mit seiner Entfernung und seiner Position in der Liste. Drücke Pfeil runter, um den nächsten zu hören.
 4. Drücke Eingabe. Das Fenster schließt sich, und du hörst eine Zusammenfassung wie "9 Wegpunkte, 410 Meter".
-5. Drücke I, um dich zum ersten Wegpunkt zu drehen, und geh los. Wenn du das Leuchtfeuer schneller pingen hörst, blickst du in die richtige Richtung. Drücke jederzeit Alt Gr, um zu hören, wie weit der aktuelle Wegpunkt entfernt ist.
+5. Drücke I, um dich zum ersten Wegpunkt zu drehen, und geh los. Wenn du das Signal schneller pingen hörst, blickst du in die richtige Richtung. Drücke jederzeit Alt Gr, um zu hören, wie weit der aktuelle Wegpunkt entfernt ist.
 6. Verirrst du dich, drücke Strg+Umschalt+N, um die Route von deinem Standort aus neu zu planen.
 7. Am Ende hörst du "Angekommen" und den Namen des Ortes.
 
@@ -271,7 +271,7 @@ Zwei Einstellungen des Moduls Navigation hängen damit zusammen: Automatisch zur
 1. Drücke F9, um den Scanner zu öffnen, und finde die Quest, dann ihren NPC (siehe [Scanner](./scanner.md)).
 2. Drücke Eingabe auf dem NPC. Das Navigationsfenster öffnet sich mit dem nächsten Einstiegspunkt und dem NPC, beide ausgewählt, der Fokus auf dem Ziel.
 3. Drücke Eingabe. Willst du vorher einen anderen Startpunkt, drücke zweimal Umschalt+Tab, um zu den Einstiegspunkten zu kommen, wähle einen mit Eingabe und kehre mit zweimal Tab zurück.
-4. Geh die Route wie oben. Liegt der NPC nicht im Wegnetz, endet die Route mit "letzte 25 Meter direkt": Das letzte Stück ist eine gerade Linie, nutze also das Leuchtfeuer und Alt Gr.
+4. Geh die Route wie oben. Liegt der NPC nicht im Wegnetz, endet die Route mit "letzte 25 Meter direkt": Das letzte Stück ist eine gerade Linie, nutze also das Signal und Alt Gr.
 
 ### Das nächste Kraut finden
 
@@ -285,4 +285,4 @@ Zwei Einstellungen des Moduls Navigation hängen damit zusammen: Automatisch zur
 - [Bewegung und Orientierung](./movement.md): Kompass, Blickrichtung, Folgen, Fallen, Wände und der Leichenlauf.
 - [Scanner](./scanner.md): Listen von Dingen um dich herum, wobei Eingabe ans Navigationsfenster übergibt.
 - [Zielerfassung](./targeting.md): das Ziel für die Route zu deinem Ziel auswählen.
-- [Alarme](../basics/alerts.md): wie du die Leuchtfeuer-Töne änderst.
+- [Alarme](../basics/alerts.md): wie du die Signaltöne änderst.

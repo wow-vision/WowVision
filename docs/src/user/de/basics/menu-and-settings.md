@@ -99,7 +99,7 @@ Jedes Spielfenster, das WowVision behandelt, hat hier einen eigenen Eintrag, zum
 | Dauer | „(Name), Zahl, 1 Minute 5 Sekunden“ | Wie eine Zahl. Pfeil links und Pfeil rechts gehen jeweils eine Sekunde; beim Tippen gibst du Sekunden ein. |
 | Stimme | „Stimme, Dropdown, Microsoft Zira Desktop“ | Eine Auswahl unter deinen installierten TTS-Stimmen. |
 | Stimmenpaket | „Stimmenpaket, Dropdown, Matthew“ | Eine Auswahl unter den aufgenommenen Stimmenpaketen. Siehe [Sprache und Ton](./speech.md#aufgenommene-stimmenpakete). |
-| Sound- oder Leuchtfeuer-Auswahl | „Sound, Schalter, chat.mp3“ | Siehe [Einen Sound auswählen](#einen-sound-auswählen). |
+| Sound- oder Signal-Auswahl | „Sound, Schalter, chat.mp3“ | Siehe [Einen Sound auswählen](#einen-sound-auswählen). |
 | Zauber | „Zauber, Schalter, Sternensog (78674)“ | Siehe [Einen Zauber auswählen](#einen-zauber-auswählen). |
 | Vorlage | „Vorlage, Schalter, Standard“ | Siehe [Eine Vorlage bearbeiten](#eine-vorlage-bearbeiten). |
 | Alarm | der Name des Alarms, als Schalter | Öffnet den Bildschirm des Alarms, siehe [Alarme](./alerts.md). |
@@ -109,7 +109,7 @@ Jedes Spielfenster, das WowVision behandelt, hat hier einen eigenen Eintrag, zum
 
 ### Einen Sound auswählen
 
-Die Einstellung Sound der Soundausgabe eines Alarms und die Einstellung Leuchtfeuer-Sound eines Leuchtfeuers öffnen einen Browser für Audiodateien.
+Die Einstellung Sound der Soundausgabe eines Alarms und die Einstellung Signalton eines Signals öffnen einen Browser für Audiodateien.
 
 1. Drücke Eingabe auf Sound. Du landest in einer Liste von Ordnern.
 2. Gehe in Sound, dann in WowVision für die Sounds, die mit WowVision geliefert werden, oder in LibSharedMedia für die Sounds, die andere Addons registriert haben. In WowVision heißen die Ordner alerts, errors, notes und falling.
@@ -118,7 +118,7 @@ Die Einstellung Sound der Soundausgabe eines Alarms und die Einstellung Leuchtfe
 
 Esc geht einen Ordner zurück, ohne etwas auszuwählen. Oben im Browser siehst du außerdem die Ordner Voice und Beacon, die Dateien für andere Arten von Ausgaben enthalten. (Die Namen der Ordner und der Sounds werden auf Englisch angesagt.)
 
-Leuchtfeuer-Auswahlen funktionieren genauso, nur wählst du einen der Leuchtfeuer-Sounds (Notification, Probe (Deep), Probe (Mid), Steel Gong, Beacon 6), und beim Daraufgehen wird ein Beispiel-Leuchtfeuer abgespielt.
+Signal-Auswahlen funktionieren genauso, nur wählst du einen der Signaltöne (Notification, Probe (Deep), Probe (Mid), Steel Gong, Beacon 6), und beim Daraufgehen wird ein Beispiel-Signal abgespielt.
 
 ### Einen Zauber auswählen
 
