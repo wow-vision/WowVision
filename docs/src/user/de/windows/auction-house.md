@@ -2,6 +2,12 @@
 
 Im Auktionshaus-Fenster kannst du nach Gegenständen suchen, auf sie bieten, sie per Sofortkauf erwerben, eigene Waren zum Verkauf einstellen und deine laufenden Auktionen und Gebote prüfen. WowVision liest das ganze Fenster vor, und in The Burning Crusade (TBC) kommt eine Preisdatenbank dazu, die sich merkt, was Dinge kosten.
 
+## Prüfe den Preis, bevor du kaufst
+
+Prüfe immer den Gesamtpreis, bevor du kaufst. Das Fenster kann sich ändern, während du es benutzt, und manche Verkäufer stellen Gegenstände zu sehr hohen Preisen ein und hoffen, dass jemand sie versehentlich kauft.
+
+Das passiert am ehesten, wenn du eine Menge einer Handelsware eingibst. Oft gibt es ein paar zu einem günstigen Preis und dann viele zu einem deutlich höheren, und die werden automatisch mitgekauft. In Mists, Retail und WoW: Forever sagt dir Gesamtpreis, was du bezahlst, und Kaufen fragt nach einer Bestätigung, du kannst also noch abbrechen.
+
 ## Was es in welcher Spielversion gibt
 
 | Version | Auktionshaus-Leser |

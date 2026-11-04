@@ -2,6 +2,12 @@
 
 The auction house window lets you search for items, bid on them, buy them out, put your own goods up for sale, and check your active auctions and bids. WowVision reads the whole window, and on The Burning Crusade (TBC) it adds a price database that remembers what things cost.
 
+## Check the price before you buy
+
+Always check the total price before you buy. The window can change while you use it, and some sellers list items at very high prices, hoping someone buys them by accident.
+
+This is most likely when you enter a quantity of a commodity. There are often a few at a cheap price and then many at a much higher one, and those are included automatically. On Mists, Retail and WoW: Forever, Total Price tells you what you will pay, and Buy asks you to confirm, so you can still back out.
+
 ## What is available on which version
 
 | Version | Auction house reader |
