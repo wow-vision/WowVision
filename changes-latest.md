@@ -1,6 +1,8 @@
 ### Summary
 This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5. The UI has been entirely redone to increase ease of development and efficiency. Many long-standing UI focus issues have been fixed and overall the game should feel much smoother now.
 
+The full manual is now online, in English and German: [WowVision documentation](https://wow-vision.github.io/WowVision/).
+
 ### All Versions
 * Much of the addon has been rewritten. The UI framework has been entirely redone, greatly improving efficiency and preventing significant lag spikes on some screens. This should also allow much faster development, as the older framework was overengineered and introducing unnecessary complexity. LLM models, such as Claude code, also have a much easier time with it, allowing us to iterate significantly faster.
 * Fixed some rare instances of options screen controls having incorrect or missing tooltips.

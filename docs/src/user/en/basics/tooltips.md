@@ -78,6 +78,7 @@ Not every control has a tooltip. Where there is none, Space is left alone for th
 - An item the game has not loaded yet can have an empty tooltip at first. WowVision asks again when you press Space, by which time the information has usually arrived. Press Space once more if you heard nothing.
 - The tooltip keys read what belongs to the control you have focus on. They have nothing to read when no window is open.
 - If you also run the addon Sku, WowVision leaves the four Shift+arrow tooltip keys unbound so that the two addons do not fight over them. Space still works.
+- The vendor price in an item tooltip may not read as expected. This is a known issue.
 
 ## Diagnostic command
 
