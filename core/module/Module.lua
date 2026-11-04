@@ -111,6 +111,7 @@ function Module:getDefaultDBRecursive()
         alerts = self:getDefaultAlerts(),
         settings = self:getDefaultSettings(),
         settingScopes = {},
+        alertScopes = {},
         data = self:getDefaultData(),
     }
     for _, submodule in ipairs(self.submodules) do
@@ -119,13 +120,13 @@ function Module:getDefaultDBRecursive()
     return db
 end
 
--- The account-wide default tree: module skeletons with only the
--- global-scoped settings defaults. Data and alerts stay per-character in
--- this phase.
+-- The account-wide default tree: module skeletons with the global-scoped
+-- settings defaults and the alerts. Data stays per-character.
 function Module:getDefaultGlobalDBRecursive()
     local db = {
         submodules = {},
         settings = self.settingsObj ~= nil and self.settingsObj:getDefaultDB("global") or {},
+        alerts = self:getDefaultAlerts(),
         data = {},
     }
     for _, submodule in ipairs(self.submodules) do
@@ -148,6 +149,20 @@ function Module:seedGlobalDB(db, globalDB)
     end
 end
 
+-- The same for alerts, which joined the account store later: accounts that
+-- are already seeded still need this once. Guarded by the _alertsSeeded
+-- stamp at the caller.
+function Module:seedGlobalAlerts(db, globalDB)
+    if db.alerts ~= nil then
+        globalDB.alerts = WowVision.classes.deepCopy(db.alerts)
+    end
+    for _, submodule in ipairs(self.submodules) do
+        if db.submodules[submodule.key] ~= nil and globalDB.submodules[submodule.key] ~= nil then
+            submodule:seedGlobalAlerts(db.submodules[submodule.key], globalDB.submodules[submodule.key])
+        end
+    end
+end
+
 function Module:setDBObj(db, globalDB)
     self.enabled = db.enabled
     self.db = db
@@ -155,8 +170,11 @@ function Module:setDBObj(db, globalDB)
     if db.alerts == nil then
         error("No alerts db found for module " .. self.key .. ".")
     end
+    if db.alertScopes == nil then
+        db.alertScopes = {}
+    end
     for k, v in pairs(self.alerts) do
-        local alertDB = db.alerts[k]
+        local alertDB = self:getAlertStore(k)[k]
         if not alertDB then
             error("No alert db found for " .. k)
         end
@@ -187,12 +205,15 @@ end
 -- the settings object automatically; modules whose state lives elsewhere
 -- (component containers) implement onSetScope(scope)/getScopeState().
 function Module:hasScope()
-    return self.settingsObj ~= nil or self.onSetScope ~= nil
+    return self.settingsObj ~= nil or self.onSetScope ~= nil or next(self.alerts) ~= nil
 end
 
 function Module:setScope(scope)
     if self.settingsObj ~= nil then
         WowVision.classes.setObjectScope(self.settingsObj, scope)
+    end
+    for key in pairs(self.alerts) do
+        self:setAlertScope(key, scope)
     end
     if self.onSetScope ~= nil then
         self:onSetScope(scope)
@@ -205,6 +226,9 @@ function Module:getScope()
     local scopes = {}
     if self.settingsObj ~= nil then
         tinsert(scopes, WowVision.classes.effectiveObjectScope(self.settingsObj))
+    end
+    for key in pairs(self.alerts) do
+        tinsert(scopes, self:getAlertScope(key))
     end
     if self.getScopeState ~= nil then
         tinsert(scopes, self:getScopeState())
@@ -231,7 +255,49 @@ end
 function Module:addAlert(info)
     local alert = WowVision.alerts.Alert:new(info)
     self.alerts[info.key] = alert
+    -- Lets the settings screens offer Scope on this alert's button.
+    alert.parameters.scopeOwner = { module = self, key = info.key }
     return alert
+end
+
+-- An alert is account-wide unless this character chose otherwise. The choice
+-- is the character's own, like settingScopes.
+function Module:getAlertScope(key)
+    if self.globalDB == nil or self.globalDB.alerts == nil then
+        return "char"
+    end
+    if self.db ~= nil and self.db.alertScopes ~= nil and self.db.alertScopes[key] == "char" then
+        return "char"
+    end
+    return "global"
+end
+
+function Module:getAlertStore(key)
+    if self:getAlertScope(key) == "global" then
+        return self.globalDB.alerts
+    end
+    return self.db.alerts
+end
+
+-- Same directions as classes.setFieldScope: to global JOINS the account
+-- value, to character FORKS the current value. Joining leaves the character's
+-- copy in place, so nothing is ever deleted.
+function Module:setAlertScope(key, scope)
+    local alert = self.alerts[key]
+    if alert == nil or self.db == nil or self.globalDB == nil or self.globalDB.alerts == nil then
+        return false
+    end
+    if scope == self:getAlertScope(key) then
+        return true
+    end
+    if scope == "char" then
+        self.db.alerts[key] = WowVision.classes.deepCopy(alert.db)
+        self.db.alertScopes[key] = "char"
+    else
+        self.db.alertScopes[key] = nil
+    end
+    alert:setDB(self:getAlertStore(key)[key])
+    return true
 end
 
 function Module:fireAlert(alert, message)

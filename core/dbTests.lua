@@ -1,6 +1,86 @@
 local testRunner = WowVision.testing.testRunner
 local dbManager = WowVision.dbManager
 
+local function keys(...)
+    return { next = { inputs = { _type = "array", ... }, padInputs = { _type = "array" } } }
+end
+
+testRunner:addSuite("Binding stores", {
+    ["the first character fills the account from its own keys"] = function(t)
+        local charDB = { bindings = keys("ALT-N") }
+        local globalDB = {}
+        local store = dbManager:resolveBindings(keys("F1"), charDB, globalDB)
+        t:assertEqual(store, globalDB.bindings)
+        t:assertEqual(store.next.inputs[1], "ALT-N")
+        t:assertTrue(globalDB._bindingsSeeded)
+        t:assertTrue(store ~= charDB.bindings)
+    end,
+
+    ["a later character uses the account's keys"] = function(t)
+        local globalDB = {}
+        dbManager:resolveBindings(keys("F1"), { bindings = keys("ALT-N") }, globalDB)
+        local store = dbManager:resolveBindings(keys("F1"), { bindings = keys("CTRL-X") }, globalDB)
+        t:assertEqual(store.next.inputs[1], "ALT-N")
+    end,
+
+    ["a character with no keys yet starts from the defaults"] = function(t)
+        local charDB = {}
+        local store = dbManager:resolveBindings(keys("F1"), charDB, {})
+        t:assertEqual(store.next.inputs[1], "F1")
+    end,
+
+    ["a binding added later reaches a seeded account"] = function(t)
+        local globalDB = {}
+        dbManager:resolveBindings(keys("F1"), {}, globalDB)
+        local defaults = keys("F1")
+        defaults.added = { inputs = { _type = "array", "F2" }, padInputs = { _type = "array" } }
+        local store = dbManager:resolveBindings(defaults, {}, globalDB)
+        t:assertEqual(store.added.inputs[1], "F2")
+        t:assertEqual(store.next.inputs[1], "F1")
+    end,
+
+    ["removing every key stays removed"] = function(t)
+        local globalDB = {}
+        local store = dbManager:resolveBindings(keys("F1"), {}, globalDB)
+        table.remove(store.next.inputs, 1)
+        store = dbManager:resolveBindings(keys("F1"), {}, globalDB)
+        t:assertNil(store.next.inputs[1])
+    end,
+
+    ["switching to the character forks the current keys"] = function(t)
+        local charDB, globalDB = { bindings = keys("OLD") }, { _bindingsSeeded = true, bindings = keys("F1") }
+        local store = dbManager:setBindingScope(charDB, globalDB, "char")
+        t:assertEqual(store, charDB.bindings)
+        t:assertEqual(store.next.inputs[1], "F1")
+        store.next.inputs[1] = "F5"
+        t:assertEqual(globalDB.bindings.next.inputs[1], "F1")
+    end,
+
+    ["the character's choice survives the next login"] = function(t)
+        local charDB, globalDB = { bindings = keys("OLD") }, { _bindingsSeeded = true, bindings = keys("F1") }
+        dbManager:setBindingScope(charDB, globalDB, "char")
+        charDB.bindings.next.inputs[1] = "F5"
+        local store = dbManager:resolveBindings(keys("F9"), charDB, globalDB)
+        t:assertEqual(store.next.inputs[1], "F5")
+    end,
+
+    ["choosing the character twice keeps its changes"] = function(t)
+        local charDB, globalDB = { bindings = keys("OLD") }, { _bindingsSeeded = true, bindings = keys("F1") }
+        dbManager:setBindingScope(charDB, globalDB, "char")
+        charDB.bindings.next.inputs[1] = "F5"
+        local store = dbManager:setBindingScope(charDB, globalDB, "char")
+        t:assertEqual(store.next.inputs[1], "F5")
+    end,
+
+    ["switching back joins the account's keys"] = function(t)
+        local charDB, globalDB = { bindings = keys("OLD") }, { _bindingsSeeded = true, bindings = keys("F1") }
+        dbManager:setBindingScope(charDB, globalDB, "char")
+        local store = dbManager:setBindingScope(charDB, globalDB, "global")
+        t:assertEqual(store, globalDB.bindings)
+        t:assertNil(charDB.bindingScope)
+    end,
+})
+
 testRunner:addSuite("DB migrations", {
     ["an unversioned store without submodules migrates without error"] = function(t)
         local db = { someKey = 1 }

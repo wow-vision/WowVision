@@ -121,6 +121,25 @@ local function scopeSubmenu(isGlobal, setScope)
     }
 end
 
+settings.scopeSubmenu = scopeSubmenu
+
+-- A button that opens an alert's parameters: for a module's alert the context
+-- menu moves that alert between the stores. Anything else passes through.
+local function withAlertScope(vtable, target)
+    local owner = target.scopeOwner
+    if owner == nil or owner.module.globalDB == nil then
+        return vtable
+    end
+    vtable.contextActions = function(add)
+        add(scopeSubmenu(function()
+            return owner.module:getAlertScope(owner.key) == "global"
+        end, function(scope)
+            owner.module:setAlertScope(owner.key, scope)
+        end))
+    end
+    return vtable
+end
+
 -- Persisted fields on scope-aware owners contribute a Scope submenu to the
 -- context menu: radio buttons for Global and this character's name.
 local function attachScopeMenu(vtable, field, owner)
@@ -225,12 +244,15 @@ settings.registerFieldControl("Category", function(field, owner)
                     for _, ref in ipairs(field.refs or {}) do
                         builder:addItem(
                             ControlId.structural("child:" .. tostring(ref.key)),
-                            nodes.button({
-                                label = ref.target.label,
-                                onActivate = function()
-                                    pushChildScreen(ref.target)
-                                end,
-                            })
+                            withAlertScope(
+                                nodes.button({
+                                    label = ref.target.label,
+                                    onActivate = function()
+                                        pushChildScreen(ref.target)
+                                    end,
+                                }),
+                                ref.target
+                            )
                         )
                     end
                     builder:popContext()
@@ -256,12 +278,15 @@ function settings.renderInto(builder, infoFrame)
         local target = child.ref and child.target or child
         builder:addItem(
             ControlId.structural("child:" .. tostring(child.key or target.key or target.label)),
-            nodes.button({
-                label = target.label,
-                onActivate = function()
-                    pushChildScreen(target)
-                end,
-            })
+            withAlertScope(
+                nodes.button({
+                    label = target.label,
+                    onActivate = function()
+                        pushChildScreen(target)
+                    end,
+                }),
+                target
+            )
         )
     end
     if infoFrame.label ~= nil then
@@ -495,12 +520,15 @@ function settings.renderModuleInto(builder, module)
             local target = ref.target
             builder:addItem(
                 ControlId.structural("child:" .. tostring(ref.key)),
-                nodes.button({
-                    label = target.label,
-                    onActivate = function()
-                        pushChildScreen(target)
-                    end,
-                })
+                withAlertScope(
+                    nodes.button({
+                        label = target.label,
+                        onActivate = function()
+                            pushChildScreen(target)
+                        end,
+                    }),
+                    target
+                )
             )
         end
     end

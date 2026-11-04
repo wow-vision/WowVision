@@ -287,6 +287,51 @@ loadAddonFile("core/objects/types/tests.lua")
 -- catches recursion/typo failures the parse check cannot.
 loadAddonFile("core/alerts/alerts.lua")
 loadAddonFile("core/alerts/outputs.lua")
+
+-- The real Module, for what it does with the stores. Its frames, bindings
+-- and profiler are the game's side: stand-ins, in place only while Module.lua
+-- loads and while a module is built, since the tests run long after this.
+do
+    local function libStub()
+        return {
+            NewLocale = function()
+                return {}
+            end,
+            GetLocale = function()
+                return {}
+            end,
+        }
+    end
+    local function frame()
+        return { SetScript = function() end }
+    end
+    local standIn = {
+        new = function()
+            return {
+                getDefaultDB = function()
+                    return {}
+                end,
+            }
+        end,
+    }
+    local function withStandIns(body, ...)
+        local savedLibStub, savedCreateFrame = LibStub, CreateFrame
+        local savedInput, savedProfiler = WowVision.input, WowVision.Profiler
+        LibStub, CreateFrame = libStub, frame
+        WowVision.input, WowVision.Profiler = { BindingSet = standIn }, standIn
+        body(...)
+        LibStub, CreateFrame = savedLibStub, savedCreateFrame
+        WowVision.input, WowVision.Profiler = savedInput, savedProfiler
+    end
+    withStandIns(loadAddonFile, "core/module/Module.lua")
+    local Module = WowVision.Module
+    local initialize = Module.initialize
+    function Module:initialize(key)
+        withStandIns(initialize, self, key)
+    end
+    loadAddonFile("core/module/alertScopeTests.lua")
+end
+
 -- The buffer family on the new class system: construction and db round trip.
 loadAddonFile("core/ViewList.lua")
 loadAddonFile("core/buffers/Buffer.lua")

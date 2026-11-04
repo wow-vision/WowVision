@@ -159,17 +159,23 @@ end
 module.renderGraphBindings = renderBindings
 
 function module:getGraphMenuItems(builder)
-    builder:addItem(
-        ControlId.structural("bindings"),
-        nodes.button({
-            label = L["Bindings"],
-            onActivate = function()
-                local host = WowVision.graphHost
-                local stack = host:focusedStack()
-                if stack ~= nil then
-                    host:push(stack, { key = "bindings", render = renderBindings })
-                end
-            end,
-        })
-    )
+    local vtable = nodes.button({
+        label = L["Bindings"],
+        onActivate = function()
+            local host = WowVision.graphHost
+            local stack = host:focusedStack()
+            if stack ~= nil then
+                host:push(stack, { key = "bindings", render = renderBindings })
+            end
+        end,
+    })
+    -- One scope for the whole set: every key moves together.
+    vtable.contextActions = function(add)
+        add(graph.settings.scopeSubmenu(function()
+            return WowVision:getBindingScope() == "global"
+        end, function(scope)
+            WowVision:setBindingScope(scope)
+        end))
+    end
+    builder:addItem(ControlId.structural("bindings"), vtable)
 end

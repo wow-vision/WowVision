@@ -38,14 +38,6 @@ function WowVision:OnInitialize()
 
     self:bindGlobalStore("init")
 
-    -- Global binding DB (profile-independent)
-    local bindingDefaults = WowVision.input:getDefaultDB()
-    if WowVisionDB.bindings == nil then
-        WowVisionDB.bindings = {}
-    end
-    WowVisionDB.bindings = WowVision.dbManager:reconcile(bindingDefaults, WowVisionDB.bindings)
-    WowVision.input:setDB(WowVisionDB.bindings)
-
     -- Global spell history (profile-independent)
     if WowVisionDB.spellHistory == nil then
         WowVisionDB.spellHistory = {}
@@ -87,7 +79,14 @@ function WowVision:bindGlobalStore(source)
         self.base:seedGlobalDB(self.db, self.globalDb)
         self.globalDb._seeded = true
     end
+    if not self.globalDb._alertsSeeded then
+        self.base:seedGlobalAlerts(self.db, self.globalDb)
+        self.globalDb._alertsSeeded = true
+    end
     self.base:setDBObj(self.db, self.globalDb)
+    self:applyBindingStore(
+        WowVision.dbManager:resolveBindings(WowVision.input:getDefaultDB(), WowVisionDB, self.globalDb)
+    )
     -- Same table, not a copy: the client serializes it into the character
     -- file at logout, so the mirror is always current at no cost.
     WowVisionDB._accountMirror = self.globalDb
@@ -95,6 +94,25 @@ function WowVision:bindGlobalStore(source)
         self.dbDiagnostics.globalBoundBy = source
         self.dbDiagnostics.restoredFromMirror = restoredFromMirror
     end
+end
+
+-- Bind the key bindings to a store. Live activations and the graph's override
+-- handles hold the previous keys until told otherwise; both are empty during
+-- initialization.
+function WowVision:applyBindingStore(store)
+    self.input:setDB(store)
+    self.input.bindings:reactivateAll()
+    if self.graphHost ~= nil then
+        self.graphHost:refreshBindings()
+    end
+end
+
+function WowVision:getBindingScope()
+    return WowVisionDB.bindingScope == "char" and "char" or "global"
+end
+
+function WowVision:setBindingScope(scope)
+    self:applyBindingStore(WowVision.dbManager:setBindingScope(WowVisionDB, self.globalDb, scope))
 end
 
 function WowVision:adoptGlobalStoreIfReplaced(source)

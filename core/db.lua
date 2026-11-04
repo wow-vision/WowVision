@@ -180,4 +180,37 @@ function dbManager:beginReconcileGlobal(default, db)
     return dbManager:reconcile(default, db)
 end
 
+-- Key bindings live at the top of each store, outside the module tree, and
+-- are account-wide unless this character chose otherwise. Bindings joined the
+-- account store later than settings, so they carry their own seeding stamp:
+-- the first character to get here fills the account from its own keys. A
+-- character's own copy stays behind either way. Returns the store to bind.
+function dbManager:resolveBindings(defaults, charDB, globalDB)
+    charDB.bindings = dbManager:reconcile(defaults, charDB.bindings or {})
+    if globalDB._bindingsSeeded then
+        globalDB.bindings = dbManager:reconcile(defaults, globalDB.bindings or {})
+    else
+        globalDB.bindings = WowVision.classes.deepCopy(charDB.bindings)
+        globalDB._bindingsSeeded = true
+    end
+    if charDB.bindingScope == "char" then
+        return charDB.bindings
+    end
+    return globalDB.bindings
+end
+
+-- Same directions as classes.setFieldScope: to global JOINS the account's
+-- keys, to character FORKS the current ones. Returns the store to bind.
+function dbManager:setBindingScope(charDB, globalDB, scope)
+    if scope == "char" then
+        if charDB.bindingScope ~= "char" then
+            charDB.bindings = WowVision.classes.deepCopy(globalDB.bindings)
+            charDB.bindingScope = "char"
+        end
+        return charDB.bindings
+    end
+    charDB.bindingScope = nil
+    return globalDB.bindings
+end
+
 WowVision.dbManager = dbManager
