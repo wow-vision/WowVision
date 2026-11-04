@@ -2,6 +2,8 @@
 WowVision aims to provide blind accessibility to the World of Warcraft UI for all versions of the game. It is in a very early alpha state. Expect there to be bugs and inconsistent behavior.
 The addon also aims to provide a consistent framework for developers to quickly and relatively easily provide accessibility for the Wow UI. It is also highly modular so modules can be swapped out easily.
 
+Documentation, in English and German: [WowVision manual](https://wow-vision.github.io/WowVision/).
+
 ## Notes
 * To left click an element, press enter. To right click, press backspace. Modifier keys in conjunction with enter and backspace should work as expected.
 * You cannot play Wow with this addon alone as of yet. Sku or BlindSlash are still required if you do not have any useable vision and aren't playing with other sighted players.
