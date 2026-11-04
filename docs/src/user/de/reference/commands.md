@@ -104,7 +104,7 @@ WoW unterstützt nur ein Fokusziel. WowVision fügt fünf virtuelle hinzu, die d
 
 Syntax: /focus1 (oder 2 bis 5), optional gefolgt von einer Einheit.
 
-- /focus1 ohne etwas dahinter setzt Fokus 1 auf dein aktuelles Ziel. Ohne Ziel bleibt der alte Fokus, und es erscheint "Kein Ziel. Benutze /focus1 <Name> oder erfasse ein Ziel."
+- /focus1 ohne etwas dahinter setzt Fokus 1 auf dein aktuelles Ziel. Ohne Ziel bleibt der alte Fokus, und es erscheint "Kein Ziel. Benutze `/focus1 <Name>` oder erfasse ein Ziel."
 - /focus1 party1 setzt ihn auf die Einheit oder den Namen, den du angibst, alles, was der /target-Befehl des Spiels versteht.
 
 Bei einem Ziel merkt sich WowVision den Namen des Ziels, zwei Kreaturen mit demselben Namen lassen sich also nicht unterscheiden. Es gibt "Fokus 1 auf Name gesetzt." aus. Im Kampf funktioniert es nicht und sagt "Virtueller Fokus kann im Kampf nicht gesetzt werden." Versionen: alle. Ist Sku geladen, wird der Befehl nicht registriert. Siehe [Zielerfassung](../world/targeting.md).
@@ -121,7 +121,7 @@ Verlässt deine Dungeon- oder Gruppensuche-Gruppe und verlässt in einem Schlach
 
 Schaltet ein Addon ein oder aus und lädt die Oberfläche sofort neu.
 
-Syntax: /enableaddon Name und /disableaddon Name. Der Name ist der Ordnername des Addons, Groß- und Kleinschreibung spielen keine Rolle. Ohne Namen geben sie "Syntax: /enableaddon <name>" aus. Die Oberfläche lädt auch dann neu, wenn es kein Addon mit diesem Namen gibt.
+Syntax: /enableaddon Name und /disableaddon Name. Der Name ist der Ordnername des Addons, Groß- und Kleinschreibung spielen keine Rolle. Ohne Namen geben sie "Syntax: `/enableaddon <name>`" aus. Die Oberfläche lädt auch dann neu, wenn es kein Addon mit diesem Namen gibt.
 
 Beispiel: /disableaddon sku. Der Name sku ist etwas Besonderes: Er schaltet das Addon Sku zusammen mit seinen Audiodaten und Signal-Addons um, damit nichts halb geladen bleibt. /enableaddon sku schaltet alles wieder ein.
 

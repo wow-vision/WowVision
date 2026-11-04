@@ -150,7 +150,7 @@ The module is called Virtual Focus and sits under Targeting in the menu. It has 
 
 Type /focus1 to /focus5 in chat.
 
-- /focus1 with nothing after it stores the name of your current target in slot 1. Without a target, slot 1 keeps its old name and WowVision prints "No target. Use /focus1 <name> or target a unit."
+- /focus1 with nothing after it stores the name of your current target in slot 1. Without a target, slot 1 keeps its old name and WowVision prints "No target. Use `/focus1 <name>` or target a unit."
 - /focus2 Some Name stores that name in slot 2, whether or not you target anything.
 
 WowVision answers in chat, for example "Focus 1 set to Hogger.". Storing is not possible during combat; WowVision then prints "Cannot set virtual focus while in combat." Do it before the pull.

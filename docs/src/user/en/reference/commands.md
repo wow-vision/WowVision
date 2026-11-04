@@ -102,7 +102,7 @@ WoW only supports one focus target. WowVision adds five virtual ones, which you 
 
 Syntax: /focus1 (or 2 to 5), optionally followed by a unit.
 
-- /focus1 with nothing after it sets focus 1 to your current target. Without a target it keeps the old focus and prints "No target. Use /focus1 <name> or target a unit."
+- /focus1 with nothing after it sets focus 1 to your current target. Without a target it keeps the old focus and prints "No target. Use `/focus1 <name>` or target a unit."
 - /focus1 party1 sets it to the unit or name you give, anything that the game's /target command understands.
 
 With a target, WowVision remembers the target's name, so two creatures with the same name cannot be told apart. It prints "Focus 1 set to Name." It does not work in combat and says "Cannot set virtual focus while in combat." Versions: all. When Sku is loaded, the command is not registered. See [Targeting](../world/targeting.md).
@@ -119,7 +119,7 @@ Leaves your dungeon or looking-for-group party, and in a battleground or arena l
 
 Turns an addon on or off and reloads the interface straight away.
 
-Syntax: /enableaddon name and /disableaddon name. The name is the addon's folder name, and it is not case sensitive. Without a name they print "Syntax: /enableaddon <name>". The interface reloads even when no addon with that name exists.
+Syntax: /enableaddon name and /disableaddon name. The name is the addon's folder name, and it is not case sensitive. Without a name they print "Syntax: `/enableaddon <name>`". The interface reloads even when no addon with that name exists.
 
 Example: /disableaddon sku. The name sku is special: it switches the Sku addon together with its audio data and beacon addons, so nothing is left half-loaded. /enableaddon sku turns them all back on.
 

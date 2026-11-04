@@ -152,7 +152,7 @@ Das Modul heißt Virtueller Fokus (Virtual Focus) und steht im Menü unter Ziele
 
 Tippe /focus1 bis /focus5 in den Chat.
 
-- /focus1 ohne weiteren Text speichert den Namen deines aktuellen Ziels in Platz 1. Ohne Ziel behält Platz 1 seinen alten Namen, und WowVision gibt "Kein Ziel. Benutze /focus1 <Name> oder erfasse ein Ziel." aus.
+- /focus1 ohne weiteren Text speichert den Namen deines aktuellen Ziels in Platz 1. Ohne Ziel behält Platz 1 seinen alten Namen, und WowVision gibt "Kein Ziel. Benutze `/focus1 <Name>` oder erfasse ein Ziel." aus.
 - /focus2 Irgendein Name speichert diesen Namen in Platz 2, egal ob du etwas im Ziel hast.
 
 WowVision antwortet im Chat, zum Beispiel "Fokus 1 auf Hogger gesetzt.". Im Kampf ist das Speichern nicht möglich; WowVision gibt dann "Virtueller Fokus kann im Kampf nicht gesetzt werden." aus. Mach es vor dem Pull.
