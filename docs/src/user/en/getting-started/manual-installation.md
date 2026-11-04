@@ -8,8 +8,8 @@ When the files are in place, continue with [Switching the addon on](./installati
 
 WowVision is published on GitHub. There are two kinds of download, and both are a single zip file.
 
-- The latest release. The stable version. Download it from the [WowVision releases page](https://github.com/wow-vision/WowVision/releases/latest). The zip is named after the version, for example WowVision-V0.9.0.zip, and is a large download (around 100 MB).
-- The beta pre-release. Between releases there is one pre-release called beta. It is rebuilt every time the developers change something, so it is for testers and for WoW: Forever, which changes quickly. It always lives at the same address: [the beta pre-release page](https://github.com/wow-vision/WowVision/releases/tag/beta). The zip itself is always at https://github.com/wow-vision/WowVision/releases/download/beta/WowVision-beta.zip. The release notes on that page list every change since the last release.
+- The latest release. The stable version. Download it from the [WowVision releases page](https://github.com/wow-vision/WowVision/releases/latest). The zip is named after the version, for example WowVision-V1.0.0.zip, and is a large download (around 100 MB).
+- The beta pre-release. Between releases there is one pre-release called beta. It is rebuilt every time the developers change something, so it is for testers. It always lives at the same address: [the beta pre-release page](https://github.com/wow-vision/WowVision/releases/tag/beta). The zip itself is always at https://github.com/wow-vision/WowVision/releases/download/beta/WowVision-beta.zip. The release notes on that page list every change since the last release.
 
 Install both kinds the same way. If you install the beta over an older copy, it simply replaces the files.
 

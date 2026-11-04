@@ -40,7 +40,7 @@ Die Überschrift sagt dir, wo du stehst: "WowVision ist noch nicht installiert",
 2. Wo ist welche Version installiert? Die Ordner, in die WowVision geschrieben wird. Ist einer falsch oder fehlt er, nimm die Schaltfläche Durchsuchen daneben.
 3. Was soll installiert werden? Die Vorgaben sind die empfohlene Einrichtung; im Zweifel einfach weiter. Die Seite enthält:
    - Sprache dieses Installers.
-   - Welche WowVision: Beta (derzeit empfohlen) oder Stabile Version. Die Beta wird mit jeder Änderung neu gebaut und ist das, was die meisten Spieler nutzen, solange sich WowVision so schnell ändert; die stabile Version kann Monate zurückliegen. Deine Wahl wird für spätere Aktualisierungen gemerkt.
+   - Welche WowVision: Stabile Version (empfohlen) oder Beta. Die stabile Version ist die letzte nummerierte Version und für die meisten Spieler am besten. Die Beta wird mit jeder Änderung neu gebaut, sie hat also die neuesten Korrekturen und Funktionen und kann neue Fehler enthalten. Deine Wahl wird für spätere Aktualisierungen gemerkt.
    - Zusätzliche empfohlene AddOns: Questie, AtlasLoot Continued, Details, Pawn, Deadly Boss Mods, GTFO sowie BugSack mit BugGrabber. Alle außer Pawn sind angehakt. Jede Spielversion bekommt die Ausgabe, die für sie gebaut ist; ein Addon, das es für eine deiner Spielversionen nicht gibt, sagt das und wird dort übersprungen. Was WowVision mit Questie macht, steht unter [Optionale Addons](./installation.md#optionale-addons).
    - Desktop-Verknüpfung zum WowVision-Updater erstellen (angehakt): eine Verknüpfung auf dem Desktop und im Startmenü, um später zu aktualisieren, ohne den Installer erneut herunterzuladen.
    - NVDA als Stimme in WoW aktivieren (nicht angehakt): installiert die NVDA-Sprachbrücke, sodass NVDA in der Stimmenliste des Spiels erscheint und WowVision darüber sprechen kann. Siehe [Sprache und Ton](../basics/speech.md).
@@ -68,7 +68,7 @@ Starte dann World of Warcraft über Battle.net, oder tippe /reload, wenn das Spi
 
 Starte den WowVision-Updater über seine Verknüpfung auf dem Desktop oder im Startmenü. Es ist dasselbe Programm: Es aktualisiert zuerst sich selbst, wenn nötig, und zeigt dann den Startbildschirm. Wähle Jetzt aktualisieren. Das aktualisiert WowVision in jeder Spielversion, in die es installiert hat, folgt deiner Wahl zwischen Beta und stabiler Version und aktualisiert auch die zusätzlichen Addons.
 
-Um deine Auswahl zu ändern (eine weitere Spielversion, die stabile Version statt der Beta, die Stimmen-Optionen), wähle stattdessen "WowVision neu oder für weitere Spielversionen installieren".
+Um deine Auswahl zu ändern (eine weitere Spielversion, die Beta statt der stabilen Version, die Stimmen-Optionen), wähle stattdessen "WowVision neu oder für weitere Spielversionen installieren".
 
 Eine Beta, die du von Hand entpackt hast, oder ein anderer Testbuild bleibt, wie er ist, bis du Alles neu installieren wählst, weil der Installer nicht erkennen kann, wie alt er ist. Ein nummeriertes Release, das du von Hand entpackt hast, wird normal aktualisiert.
 

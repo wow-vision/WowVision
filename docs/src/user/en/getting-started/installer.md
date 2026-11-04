@@ -40,7 +40,7 @@ The heading tells you where you stand: "WowVision is not installed yet", "An upd
 2. Where is each version installed? The folders WowVision will be written to. If one is wrong or missing, use the Browse button next to it.
 3. What should be installed? The defaults are the recommended setup; if in doubt, just continue. The page holds:
    - Language of this installer.
-   - Which WowVision: Beta (recommended at the moment) or Stable release. The beta is rebuilt with every change and is what most players use while WowVision changes this fast; the stable release can be months behind. Your choice is remembered for later updates.
+   - Which WowVision: Stable release (recommended) or Beta. The stable release is the last numbered version and is best for most players. The beta is rebuilt with every change, so it has the latest fixes and features and can have new bugs. Your choice is remembered for later updates.
    - Additional recommended addons: Questie, AtlasLoot Continued, Details, Pawn, Deadly Boss Mods, GTFO, and BugSack with BugGrabber. All but Pawn are ticked. Each game version gets the build made for it; an addon that does not exist for one of your game versions says so and is skipped there. See [Optional addons](./installation.md#optional-addons) for what WowVision does with Questie.
    - Create a desktop shortcut to the WowVision Updater (ticked): a shortcut on the desktop and in the Start menu, to update later without downloading the installer again.
    - Enable NVDA as a voice in WoW (not ticked): installs the NVDA voice bridge, so NVDA appears in the game's voice list and WowVision can speak through it. See [Speech and Sound](../basics/speech.md).
@@ -68,7 +68,7 @@ Then start World of Warcraft from Battle.net, or type /reload if the game was ru
 
 Start the WowVision Updater from its shortcut on the desktop or in the Start menu. It is the same program: it first updates itself if needed, then shows the opening screen. Choose Update now. It updates WowVision in every game version it installed to, follows the beta or stable choice you made, and updates the additional addons too.
 
-To change your choices (another game version, the stable release instead of the beta, the voice options), choose "Install WowVision fresh, or for further game versions" instead.
+To change your choices (another game version, the beta instead of the stable release, the voice options), choose "Install WowVision fresh, or for further game versions" instead.
 
 A beta you extracted by hand, or another test build, is left as it is until you choose Reinstall everything, because the installer cannot tell how old it is. A numbered release you extracted by hand is updated normally.
 
