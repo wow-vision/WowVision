@@ -212,9 +212,14 @@ local softTargets = {}
 local soft = WowVision.softTargeting
 local getCVar = C_CVar ~= nil and C_CVar.GetCVar or GetCVar
 local setCVar = C_CVar ~= nil and C_CVar.SetCVar or SetCVar
+local getCVarDefault = C_CVar ~= nil and C_CVar.GetCVarDefault or GetCVarDefault
 local writer = soft.Writer:new({
     getCVar = getCVar,
     setCVar = setCVar,
+    getDefault = function(name)
+        local ok, default = pcall(getCVarDefault, name)
+        return ok and default or nil
+    end,
     isSecure = function(name)
         -- Unknown counts as secure: a write held until combat ends is safe,
         -- a blocked one raises ADDON_ACTION_BLOCKED.
@@ -227,10 +232,12 @@ local writer = soft.Writer:new({
     inCombat = InCombatLockdown,
 })
 
--- Every soft targeting setting defaults to the game's own value: a fresh
--- install changes nothing, the way the module behaved before these settings
--- existed. A range of 0 means the same for the number settings.
+-- Arcs and ranges default to the widest and the longest: the game's own values
+-- are made for players who can see what is in front of them. They are written
+-- only for a soft target type that is on, so a player who never uses one keeps
+-- the game's values. Game Default, and a range of 0, go back to the game's own.
 local GAME_DEFAULT = soft.GAME_DEFAULT
+local WIDEST_ARC = 2
 
 local arcChoices = {
     { label = L["Game Default"], value = GAME_DEFAULT },
@@ -244,6 +251,22 @@ local arcChoices = {
 local function onSoftTargetSettingChange()
     if module.softTargetingReady then
         module:applySoftTargeting()
+    end
+end
+
+-- Whether a setting's value means "the game's own": it writes nothing, and
+-- choosing it restores the game's default.
+local function isGameDefault(name, value)
+    return value == nil or value == GAME_DEFAULT or (value == 0 and name:find("Range$") ~= nil)
+end
+
+-- A change event for the setting behind one variable.
+local function onVariableSettingChange(name)
+    return function(event, obj, key, value)
+        if module.softTargetingReady and isGameDefault(name, value) then
+            writer:restore(name)
+        end
+        onSoftTargetSettingChange()
     end
 end
 
@@ -265,6 +288,9 @@ local function addSoftTarget(info)
         if module.softTargetingReady then
             -- 3 = keyboard and gamepad
             writer:write(info.cvar, value == true and 3 or 0)
+            if value == true then
+                module:applySoftTargeting()
+            end
         end
     end)
     settings:addRef(info.key, alert.parameters)
@@ -272,20 +298,20 @@ local function addSoftTarget(info)
         key = info.key .. "Arc",
         type = "Choice",
         label = info.arcLabel,
-        default = GAME_DEFAULT,
+        default = WIDEST_ARC,
         choices = arcChoices,
     })
-    arc.events.valueChange:subscribe(nil, onSoftTargetSettingChange)
+    arc.events.valueChange:subscribe(nil, onVariableSettingChange(info.cvar .. "Arc"))
     -- 0 = the game's own range.
     local range = settings:add({
         key = info.key .. "Range",
         type = "Number",
         label = info.rangeLabel,
-        default = 0,
+        default = info.maxRange,
         min = 0,
         max = info.maxRange,
     })
-    range.events.valueChange:subscribe(nil, onSoftTargetSettingChange)
+    range.events.valueChange:subscribe(nil, onVariableSettingChange(info.cvar .. "Range"))
     module:registerBinding({
         inputs = { info.binding },
         type = "Function",
@@ -389,7 +415,13 @@ local lockMode = settings:add({
         { label = L["Always"], value = "always" },
     },
 })
-lockMode.events.valueChange:subscribe(nil, onSoftTargetSettingChange)
+lockMode.events.valueChange:subscribe(nil, function(event, obj, key, value)
+    if module.softTargetingReady and value == GAME_DEFAULT then
+        writer:restore("SoftTargetWithLocked")
+        writer:restore("SoftTargetMatchLocked")
+    end
+    onSoftTargetSettingChange()
+end)
 
 -- SoftTargetForce: the hard target follows the soft target.
 local force = settings:add({
@@ -404,7 +436,7 @@ local force = settings:add({
         { label = L["Friends"], value = 2 },
     },
 })
-force.events.valueChange:subscribe(nil, onSoftTargetSettingChange)
+force.events.valueChange:subscribe(nil, onVariableSettingChange("SoftTargetForce"))
 
 module:registerEvent("event", "PLAYER_REGEN_ENABLED")
 -- A target that dies stays locked: its death has to switch the lock too.
@@ -413,10 +445,9 @@ module:registerEvent("unit", "UNIT_HEALTH", "target")
 -- Writes a value unless the setting is at its "game default", which leaves
 -- the variable as the game has it.
 local function writeUnlessDefault(name, value)
-    if value == nil or value == GAME_DEFAULT or value == 0 and name:find("Range$") ~= nil then
-        return
+    if not isGameDefault(name, value) then
+        writer:write(name, value)
     end
-    writer:write(name, value)
 end
 
 -- Every soft targeting variable, so a reload brings the game back in line
@@ -426,9 +457,9 @@ function module:applySoftTargeting()
     for _, info in ipairs(softTargets) do
         if info.alert:getEnabled() then
             writer:write(info.cvar, 3)
+            writeUnlessDefault(info.cvar .. "Arc", self.settings[info.key .. "Arc"])
+            writeUnlessDefault(info.cvar .. "Range", self.settings[info.key .. "Range"])
         end
-        writeUnlessDefault(info.cvar .. "Arc", self.settings[info.key .. "Arc"])
-        writeUnlessDefault(info.cvar .. "Range", self.settings[info.key .. "Range"])
     end
     writeUnlessDefault("SoftTargetForce", self.settings.softTargetForce)
     self.lockWanted = nil

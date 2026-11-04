@@ -10,6 +10,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 * Alert settings are now account-wide as well, so an alert you change on one character changes on all of them. Press Shift+F10 on an alert's button and use Scope to keep it on one character. The first character to log in after this update sets the alerts for the account.
 * Key bindings are now account-wide as well, so a key you change on one character changes on all of them. To give one character its own keys, press Shift+F10 on the Bindings button in the UI menu and use Scope. The first character to log in after this update sets the keys for the account.
 * Aura buffers: debuffs now say their dispel type (Magic, Poison and so on) in combat and in instances on Retail and WoW: Forever too.
+* Targeting: soft target arcs default to 180 degrees and ranges to the longest (60 yards for enemies and friends, 20 for interact), written when you switch that type on. Game Default and a range of 0 put the game's own value back, and so does Game Default on the two hard target settings.
 * Aura buffers: your own buffs and debuffs now say their stack count in combat and in instances on Retail and WoW: Forever too, in a buffer with no filters set. Target, focus and pet auras cannot give theirs there.
 * Fixed Shift-Left and Shift-Right throwing an error on tooltips with secret text, such as debuffs in combat.
 * Retail and WoW: Forever: Add no longer offers the Tracked Buffer, because nearly everything it could track is hidden from addons there. Use the Aura Buffer for auras and the Spell Cooldowns monitor for cooldowns. Tracked buffers you already have stay as they are.
@@ -49,7 +50,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 * WowVision's own text fields do the same: a screen that opens on one, like the tracking parameters of a unit object type, starts typing at once instead of after a tab away and back.
 * Fixed key bindings losing Alt when Alt was let go before the key.
 * Books and letters no longer read a page number line or stop silently when there is no author.
-* Targeting: new soft targeting settings (Soft Targeting With a Hard Target, Make Soft Target the Hard Target, and an arc and range per soft target). They all default to Game Default, so nothing changes unless you set them. Shift+I, Shift+P and Shift+O changed in combat now apply when combat ends. /wv soft reads every value.
+* Targeting: new soft targeting settings (Soft Targeting With a Hard Target, Make Soft Target the Hard Target, and an arc and range per soft target). Shift+I, Shift+P and Shift+O changed in combat now apply when combat ends. /wv soft reads every value.
 * The TBC map data now ships inside the WowVision download as its own addon folder (WowVision_MapData_TBC), so there is nothing separate to install. It also loads on WoW Forever, where the old world routes apply. Other map data addons keep working beside it.
 * Bags in list shape read their slots in slot order again (slot 1 first); they had been read from the top left of the grid, which is the last slot.
 * Scanner: an in-progress quest now expands to its objectives, and each objective to the NPCs, objects or item sources it is about, with their spawns under those. A complete quest expands to its turn-in. Enter on the quest or an objective still beacons the first open target.

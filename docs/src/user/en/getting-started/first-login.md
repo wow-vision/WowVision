@@ -39,7 +39,7 @@ A few game settings get in the way of how WowVision works, so WowVision changes 
 Two more things follow WowVision settings rather than happen once:
 
 - The game's Click to Move option follows the Auto-move to Interact Target setting in WowVision's Navigation menu (on by default), which makes interacting with a distant target walk you to it. WowVision only writes to the game when that setting changes: switching it off turns Click to Move off, and WowVision turns it off again at each login while the setting is off. Leaving it on does not by itself switch the game option on, so if you want Click to Move, check that it is on in the game options under Controls, or toggle the WowVision setting off and on.
-- The soft targeting options change nothing until you set them yourself. See [Targeting](../world/targeting.md).
+- When you switch on a soft target type, WowVision sets its arc to the widest and its range to the longest. Types you leave off keep the game's values. See [Targeting](../world/targeting.md).
 
 The General buffer also gains a few new lines (free bag slots, durability, mail, hearthstone, game clock) the first time an existing character logs in after an update that adds them. See [Buffers](../information/buffers.md).
 

@@ -106,6 +106,25 @@ local function addGeneralBufferLines(db)
     end
 end
 
+-- Soft targeting arcs and ranges used to default to the game's own values.
+-- Those saved defaults go, so the reconcile that follows fills in the new
+-- widest and longest ones. The account store holds them too.
+local function dropOldSoftTargetDefaults(db)
+    local targeting = db.submodules and db.submodules.targeting
+    local settings = targeting and targeting.settings
+    if settings == nil then
+        return
+    end
+    for _, key in ipairs({ "softEnemy", "softFriend", "softInteract" }) do
+        if settings[key .. "Arc"] == "game" then
+            settings[key .. "Arc"] = nil
+        end
+        if settings[key .. "Range"] == 0 then
+            settings[key .. "Range"] = nil
+        end
+    end
+end
+
 local migrations = {
     {
         version = 1,
@@ -130,6 +149,10 @@ local migrations = {
     {
         version = 3,
         migrate = addGeneralBufferLines,
+    },
+    {
+        version = 4,
+        migrate = dropOldSoftTargetDefaults,
     },
 }
 
@@ -162,6 +185,10 @@ local globalMigrations = {
     {
         version = 2,
         migrate = addGeneralBufferLines,
+    },
+    {
+        version = 3,
+        migrate = dropOldSoftTargetDefaults,
     },
 }
 

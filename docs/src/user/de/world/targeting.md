@@ -105,16 +105,16 @@ Jede Art ist ein Alarm im Menü Zielerfassung mit dem Namen Weiches Ziel Feind, 
 
 ### Winkel und Reichweite
 
-Jede Art der weichen Zielerfassung hat im Menü Zielerfassung zwei weitere Einstellungen. Alle haben als Standard die eigenen Werte des Spiels, die Installation von WowVision ändert also nichts, bis du sie einstellst.
+Jede Art der weichen Zielerfassung hat im Menü Zielerfassung zwei weitere Einstellungen. Standard sind der breiteste Winkel und die größte Reichweite, weil die eigenen Werte des Spiels für Spieler gemacht sind, die sehen, was vor ihnen ist. WowVision schreibt sie nur für eine Art, die du eingeschaltet hast; für jede Art, die du nicht benutzt, bleiben die Werte des Spiels bestehen. Spielstandard oder eine Reichweite von 0 stellt den eigenen Wert des Spiels wieder her.
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
-| Weiches Ziel Feind: Winkel (Soft Target Enemy Arc) | Spielstandard | Wie breit der Kegel vor dir ist, in dem die weiche Feind-Erfassung sucht. Auswahl: Spielstandard, Direkt vor dir, 15 Grad vor dir, 180 Grad vor dir |
-| Weiches Ziel Feind: Reichweite (Soft Target Enemy Range) | 0 | Maximale Entfernung in Yards, 0 bis 60. 0 bedeutet die eigene Reichweite des Spiels |
-| Weiches Ziel Freund: Winkel | Spielstandard | Dieselbe Auswahl, für Freunde |
-| Weiches Ziel Freund: Reichweite | 0 | 0 bis 60 Yards, 0 bedeutet die eigene Reichweite des Spiels |
-| Weiches Ziel Interaktion: Winkel | Spielstandard | Dieselbe Auswahl, für Interaktionsziele |
-| Weiches Ziel Interaktion: Reichweite | 0 | 0 bis 20 Yards, 0 bedeutet die eigene Reichweite des Spiels. Die Obergrenze ist niedriger, weil eine große Interaktionsreichweite Monster hinter Mauern und Gebäuden erfasst |
+| Weiches Ziel Feind: Winkel (Soft Target Enemy Arc) | 180 Grad vor dir | Wie breit der Kegel vor dir ist, in dem die weiche Feind-Erfassung sucht. Auswahl: Spielstandard, Direkt vor dir, 15 Grad vor dir, 180 Grad vor dir |
+| Weiches Ziel Feind: Reichweite (Soft Target Enemy Range) | 60 | Maximale Entfernung in Yards, 0 bis 60. 0 bedeutet die eigene Reichweite des Spiels |
+| Weiches Ziel Freund: Winkel | 180 Grad vor dir | Dieselbe Auswahl, für Freunde |
+| Weiches Ziel Freund: Reichweite | 60 | 0 bis 60 Yards, 0 bedeutet die eigene Reichweite des Spiels |
+| Weiches Ziel Interaktion: Winkel | 180 Grad vor dir | Dieselbe Auswahl, für Interaktionsziele |
+| Weiches Ziel Interaktion: Reichweite | 20 | 0 bis 20 Yards, 0 bedeutet die eigene Reichweite des Spiels. Die Obergrenze ist niedriger, weil eine große Interaktionsreichweite Monster hinter Mauern und Gebäuden erfasst |
 
 ### Weiche Zielerfassung bei festem Ziel
 
@@ -122,7 +122,7 @@ Das Spiel hat eine zusätzliche Regel dafür, was die weiche Zielerfassung tut, 
 
 | Auswahl | Was passiert |
 |---------|--------------|
-| Spielstandard | WowVision rührt das eigene Verhalten des Spiels nicht an |
+| Spielstandard | Das eigene Verhalten des Spiels. Diese Wahl stellt die Werte des Spiels wieder her |
 | Nur ohne angreifbares festes Ziel | Solange ein lebender Feind im Ziel ist, hält sich die weiche Zielerfassung heraus, sodass die Interaktionstaste auf diesen Feind wirkt statt auf eine Leiche oder einen Stuhl daneben. Ist eine Leiche, ein NPC oder ein Spieler, dem du folgst, im Ziel, arbeitet die weiche Zielerfassung weiter |
 | Nur ohne festes Ziel | Jedes echte Ziel schaltet die weiche Zielerfassung aus |
 | Immer | Die weiche Zielerfassung arbeitet, was auch immer du im Ziel hast |

@@ -86,8 +86,36 @@ testRunner:addSuite("DB migrations", {
         local db = { someKey = 1 }
         local ok, err = pcall(dbManager.beginReconcile, dbManager, {}, db)
         t:assertTrue(ok, err)
-        t:assertEqual(db._version, 3)
+        t:assertEqual(db._version, 4)
         t:assertType(db.bindings, "table")
+    end,
+
+    ["the old soft target defaults give way, chosen values stay"] = function(t)
+        local function saved()
+            return {
+                _version = 3,
+                submodules = {
+                    targeting = {
+                        settings = { softEnemyArc = "game", softEnemyRange = 0, softFriendArc = 0, softFriendRange = 25 },
+                    },
+                },
+            }
+        end
+        local defaults = {
+            submodules = {
+                targeting = { settings = { softEnemyArc = 2, softEnemyRange = 60, softFriendArc = 2, softFriendRange = 60 } },
+            },
+        }
+        for _, begin in ipairs({ dbManager.beginReconcile, dbManager.beginReconcileGlobal }) do
+            local db = saved()
+            db._version = begin == dbManager.beginReconcileGlobal and 2 or 3
+            begin(dbManager, defaults, db)
+            local settings = db.submodules.targeting.settings
+            t:assertEqual(settings.softEnemyArc, 2)
+            t:assertEqual(settings.softEnemyRange, 60)
+            t:assertEqual(settings.softFriendArc, 0)
+            t:assertEqual(settings.softFriendRange, 25)
+        end
     end,
 
     ["migration 1 still drops buffer data"] = function(t)
@@ -158,6 +186,6 @@ testRunner:addSuite("DB migrations", {
         dbManager:beginReconcileGlobal({}, db)
         t:assertEqual(#general.items, 7)
         t:assertEqual(general.items[7].object.type, "GameClock")
-        t:assertEqual(db._version, 2)
+        t:assertEqual(db._version, 3)
     end,
 })

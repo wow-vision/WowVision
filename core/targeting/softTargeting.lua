@@ -14,8 +14,8 @@ local soft = {}
 -- "attackable only" value, so that mode switches WithLocked as the target
 -- changes. Neither variable is secure (C_CVar.GetCVarInfo on Forever 1.60.1),
 -- so the switch also works in combat.
--- "game" leaves both variables as the game has them (the default: WowVision
--- changes nothing a player did not ask for).
+-- "game" is the game's own default for a setting: choosing it restores that
+-- default, and from then on WowVision leaves the variable alone.
 soft.GAME_DEFAULT = "game"
 soft.lockModes = { "game", "always", "noHardTarget", "noAttackableHardTarget" }
 
@@ -49,7 +49,8 @@ end
 local Writer = WowVision.Class("SoftTargetWriter")
 soft.Writer = Writer
 
--- api: getCVar(name), setCVar(name, value), isSecure(name), inCombat()
+-- api: getCVar(name), setCVar(name, value), getDefault(name), isSecure(name),
+-- inCombat()
 function Writer:initialize(api)
     self.api = api
     self.pending = {}
@@ -88,6 +89,17 @@ function Writer:write(name, value)
     end
     self.pending[name] = value
     return "pending"
+end
+
+-- Puts a variable back on the game's own default, with the same read back
+-- and hold as any write. Returns what write returns.
+function Writer:restore(name)
+    local default = self.api.getDefault(name)
+    if default == nil then
+        self.pending[name] = nil
+        return "missing"
+    end
+    return self:write(name, default)
 end
 
 -- Tries every waiting write again, in name order.

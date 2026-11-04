@@ -103,16 +103,16 @@ Each type is an alert in the Targeting menu named Soft Target Enemy, Soft Target
 
 ### Arc and range
 
-Every soft target type has two more settings in the Targeting menu. All of them default to the game's own values, so installing WowVision changes nothing until you set them.
+Every soft target type has two more settings in the Targeting menu. They default to the widest arc and the longest range, because the game's own values are made for players who can see what is in front of them. WowVision only writes them for a soft target type you have switched on, so the game's values stay in place for any type you do not use. Game Default, or a range of 0, puts the game's own value back.
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| Soft Target Enemy Arc | Game Default | How wide a cone in front of you soft enemy targeting looks at. Choices: Game Default, Directly in Front, 15 Degrees in Front, 180 Degrees in Front |
-| Soft Target Enemy Range | 0 | Maximum distance in yards, 0 to 60. 0 means the game's own range |
-| Soft Target Friend Arc | Game Default | The same choices, for friends |
-| Soft Target Friend Range | 0 | 0 to 60 yards, 0 means the game's own range |
-| Soft Target Interact Arc | Game Default | The same choices, for interact targets |
-| Soft Target Interact Range | 0 | 0 to 20 yards, 0 means the game's own range. The upper limit is lower because a long interact reach picks up monsters behind walls and buildings |
+| Soft Target Enemy Arc | 180 Degrees in Front | How wide a cone in front of you soft enemy targeting looks at. Choices: Game Default, Directly in Front, 15 Degrees in Front, 180 Degrees in Front |
+| Soft Target Enemy Range | 60 | Maximum distance in yards, 0 to 60. 0 means the game's own range |
+| Soft Target Friend Arc | 180 Degrees in Front | The same choices, for friends |
+| Soft Target Friend Range | 60 | 0 to 60 yards, 0 means the game's own range |
+| Soft Target Interact Arc | 180 Degrees in Front | The same choices, for interact targets |
+| Soft Target Interact Range | 20 | 0 to 20 yards, 0 means the game's own range. The upper limit is lower because a long interact reach picks up monsters behind walls and buildings |
 
 ### Soft targeting with a hard target
 
@@ -120,7 +120,7 @@ The game has an extra rule for what soft targeting does while you already have a
 
 | Choice | What happens |
 |--------|--------------|
-| Game Default | WowVision does not touch the game's own behavior |
+| Game Default | The game's own behavior. Choosing it puts the game's values back |
 | Only Without an Attackable Hard Target | While a living enemy is targeted, soft targeting stays out of the way, so the interact key acts on that enemy instead of a corpse or a chair next to it. With a corpse, an NPC or a player you follow targeted, soft targeting keeps working |
 | Only Without a Hard Target | Any real target turns soft targeting off |
 | Always | Soft targeting works whatever you have targeted |

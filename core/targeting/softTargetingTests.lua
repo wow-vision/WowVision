@@ -5,6 +5,7 @@ local soft = WowVision.softTargeting
 -- refused in combat; `refuse` names are refused always.
 local function cvars(values, options)
     options = options or {}
+    local defaults = options.defaults or {}
     local state = { combat = false, writes = 0 }
     local api = {
         getCVar = function(name)
@@ -20,6 +21,9 @@ local function cvars(values, options)
             end
             values[name] = value
             return true
+        end,
+        getDefault = function(name)
+            return defaults[name]
         end,
         isSecure = function(name)
             return options.secure ~= nil and options.secure[name] == true
@@ -133,6 +137,31 @@ testRunner:addSuite("SoftTargeting", {
         t:assertEqual(writer:write("SoftTargetForce", 0), "pending")
         t:assertEqual(values.SoftTargetForce, "1")
         t:assertEqual(writer.pending.SoftTargetForce, "0")
+    end,
+
+    ["restoring puts the game's own default back"] = function(t)
+        local values = { SoftTargetEnemyArc = "2" }
+        local writer = cvars(values, { defaults = { SoftTargetEnemyArc = "1" } })
+        t:assertEqual(writer:restore("SoftTargetEnemyArc"), "set")
+        t:assertEqual(values.SoftTargetEnemyArc, "1")
+    end,
+
+    ["restoring a secure variable in combat waits for the end of combat"] = function(t)
+        local values = { SoftTargetForce = "1" }
+        local writer, state = cvars(values, { secure = { SoftTargetForce = true }, defaults = { SoftTargetForce = "0" } })
+        state.combat = true
+        t:assertEqual(writer:restore("SoftTargetForce"), "pending")
+        t:assertEqual(values.SoftTargetForce, "1")
+        state.combat = false
+        writer:flush()
+        t:assertEqual(values.SoftTargetForce, "0")
+    end,
+
+    ["restoring a variable with no known default does nothing"] = function(t)
+        local values = { SoftTargetEnemyArc = "2" }
+        local writer, state = cvars(values)
+        t:assertEqual(writer:restore("SoftTargetEnemyArc"), "missing")
+        t:assertEqual(state.writes, 0)
     end,
 
     ["a variable this game lacks is reported missing"] = function(t)
