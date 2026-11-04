@@ -39,6 +39,9 @@ settings:add({
 function module:onFullEnable()
     local getCVar = C_CVar ~= nil and C_CVar.GetCVar or GetCVar
     local setCVar = C_CVar ~= nil and C_CVar.SetCVar or SetCVar
+    -- A saved value equal to the field's default fires no change event, so
+    -- the event alone would never switch the game's option on.
+    setCVar("autoInteract", self.settings.autoMove and "1" or "0")
     if WowVision.navigationCamera.applyOnce(self.settings, getCVar, setCVar) then
         print(L["WowVision set the camera to always follow behind your character, which turning to waypoints needs. You can change the camera following style in the game options under Controls."])
     end

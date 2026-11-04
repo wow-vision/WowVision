@@ -122,7 +122,7 @@ Im Menü Navigation selbst:
 |-------------|----------|-------------|
 | Automatisch zum Interaktionsziel bewegen | An | Schaltet die eigene Option "Klicken-zum-Bewegen" des Spiels ein (in den Spieloptionen, englisch "Click to Move"). Ist sie an, lässt dein Charakter beim Interagieren mit einem Ziel außer Reichweite, zum Beispiel mit der Interaktionstaste, zuerst zu ihm hinlaufen |
 
-WowVision schaltet das standardmäßig ein, weil neue Spieler es sonst schwer finden, NPCs zu erreichen. Du kannst es auch in den eigenen Optionen des Spiels ändern; schaltest du es in WowVision aus, wird es auch im Spiel ausgeschaltet.
+WowVision schaltet das standardmäßig ein, weil neue Spieler es sonst schwer finden, NPCs zu erreichen. WowVision setzt die Option des Spiels bei jedem Login passend dazu; ändere es also hier und nicht in den Optionen des Spiels.
 
 ## Leichenlauf
 

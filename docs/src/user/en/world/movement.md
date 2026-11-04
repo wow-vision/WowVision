@@ -122,7 +122,7 @@ In the Navigation menu itself:
 |---------|---------|--------------|
 | Auto-move to Interact Target | On | Turns on the game's own "Click to Move" option (in the game options). With it on, interacting with a target that is out of reach, for example with the interact key, makes your character walk up to it first |
 
-WowVision switches this on by default because new players otherwise find it hard to reach NPCs. You can also change it in the game's own options; turning it off in WowVision turns it off in the game.
+WowVision switches this on by default because new players otherwise find it hard to reach NPCs. WowVision sets the game's option to match at each login, so change it here rather than in the game's options.
 
 ## Corpse run
 
