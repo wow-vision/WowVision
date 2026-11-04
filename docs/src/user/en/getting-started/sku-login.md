@@ -1,6 +1,6 @@
 # Logging In with the Sku Login Tool
 
-WowVision does not have its own login screen support yet. It starts working once your character is standing in the world. To get through the login screen, the realm list, the character screen and character creation, you can use the WoW Login Tool (version 4.x) that comes with Sku. This page explains what it is, how to get it, and how to use it, so that you can hand over to WowVision as soon as you enter the world.
+WowVision starts working once your character is standing in the world. The game only loads addons at that point, so no addon, WowVision included, can read the screens before it; only the game itself could make them accessible. WoW: Forever reads its login screens aloud, but they still need the mouse, so the tool helps there too. To get through the login screen, the realm list, the character screen and character creation, you can use the WoW Login Tool (version 4.x) that comes with Sku. This page explains what it is, how to get it, and how to use it, so that you can hand over to WowVision as soon as you enter the world.
 
 ## What it is
 
@@ -47,7 +47,7 @@ A Mac version of the tool exists, but this manual does not cover it.
 
 ## Getting and installing it
 
-TODO: This section will be updated as soon as WowVision has its own installer.
+The easiest way is the [WowVision Installer](./installer.md): its Install the WoW Login Tool option is ticked by default. It installs the tool for WoW: Forever, The Burning Crusade anniversary and Classic Era, brings the AutoHotkey it needs, copies the screen recognition files and the clearer font into Classic Era and The Burning Crusade, and puts a WoW Login Tool shortcut on your desktop and in the Start menu. Start the tool from that shortcut.
 
 ### By hand
 
@@ -256,7 +256,7 @@ On Forever, while the game is closed, the tool writes the narration settings int
 
 ## Tips
 
-- Do the first login with a sighted helper if you can. The game's own Battle.net login screens cannot be used with a screen reader. Tick "keep me logged in" once.
+- Sign in through the Battle.net app, which works with a screen reader on Windows and on Mac, and tick "keep me logged in" once. The game then logs you in by itself, and the tool starts at the realm and character screens.
 - Read these steps on a second device. Every time the game window loses the focus, the tool pauses and restarts from the main menu when you come back.
 - Listen to the character list again after you create or delete a character. The list is rebuilt and the numbers can change.
 - Be patient. Realm lists and character counts take seconds. The tool plays a waiting sound while it works.
@@ -273,7 +273,7 @@ The tool ends at the world. In Play mode it only watches the screen and offers t
 - WowVision lists the Sku addon as an optional addon. It does not use the login tool. If the Sku addon is loaded, WowVision turns some of its keys, windows and commands off so the two do not fight over keys, for example the focus keys, soft targeting, the tooltip line keys (Shift+Up, Shift+Down, Shift+Left, Shift+Right), and windows such as gossip, trade, mail and training. The commands /pquit, /dquit and /focus1 to /focus5 are then left to Sku.
 - If you want WowVision to take over completely, the command /disableaddon sku turns Sku and its audio and sound packs off and reloads the interface. /enableaddon sku turns them back on. These two commands do not exist when BlindSlash is loaded.
 
-The full list of windows, keys and commands that WowVision leaves to Sku is in [Using WowVision together with Sku](installation.md#using-wowvision-together-with-sku).
+The full list of windows, keys and commands that WowVision leaves to Sku is in [Using WowVision together with Sku](sku.md).
 
 ## Troubleshooting
 
@@ -291,14 +291,14 @@ The full list of windows, keys and commands that WowVision leaves to Sku is in [
 | You hear the game's default voice on Forever | Close the game, start the tool, then start the game, so the tool can write the narration settings. |
 | The tool is quiet or says "This voice does not work" | Choose another voice in Select voice. If no voice works, check the Windows speech settings. |
 | Repeated items on Forever are silent | Set repeatecho=1 in forever.ini and restart the tool. |
-| Something is still wrong | Take the log. The tool's own log is the file log.txt in its folder. Join the Sku Discord (see Sources) and report it with the tool version, which the tool says when it starts. |
+| Something is still wrong | Take the log. The tool's own log is the file log.txt in its folder. Report it on the WowVision Discord, with the log and the tool version, which the tool says when it starts. |
 
 ## Known limits
 
 - The appearance options on Classic Era and TBC are not available.
 - On Forever, very quick changes in a long list (for example hair styles) may briefly say the wrong value before the tool corrects itself.
 - The tool needs a Windows PC. A Mac version exists but is not covered here.
-- The game's own Battle.net login and the license text before the first login still need sighted help once. The tool handles the social contract inside the game.
+- The license text before the first login still needs sighted help once. The tool handles the social contract inside the game.
 
 ## Sources
 

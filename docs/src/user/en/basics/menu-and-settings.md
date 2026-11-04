@@ -156,7 +156,7 @@ WowVision keeps two stores of settings:
 
 Most settings start out account-wide, so the speech voice or alert sounds you set on one character apply to all of them. The first character to log in after the account store was introduced filled it from its own settings (that character keeps its copy as well); characters that log in later simply use what is there.
 
-Some things are always per character, whatever you choose: which modules are enabled, the settings of each alert, and your key bindings. The one exception is the Errors module's per-error filter, which is shared by all characters of the account, so an error you muted on one character stays muted on all of them. The two game sound checkboxes of the Speech module are the game's own settings and are not stored by WowVision at all.
+Which modules are enabled is always per character, whatever you choose. The Errors module's per-error filter is the opposite: it is always shared by all characters of the account, so an error you muted on one character stays muted on all of them. The two game sound checkboxes of the Speech module are the game's own settings and are not stored by WowVision at all.
 
 ### Changing the scope
 
@@ -169,7 +169,9 @@ Nothing is ever deleted when you switch, so changing your mind is safe.
 
 The same Scope entry appears in other places:
 
-- On a module's button in the menu, it switches every setting of that module at once. For Buffers and Monitors it also moves all their groups or monitors.
+- On a module's button in the menu, it switches every setting and alert of that module at once. For Buffers and Monitors it also moves all their groups or monitors.
+- On an alert's button, it moves that alert with all its outputs.
+- On the Bindings button in the UI menu, it moves all your key bindings at once.
 - On a single item in a list of buffer groups or monitors, it moves just that item.
 
 If a module's settings are split between the two, neither Global nor the character name is checked.

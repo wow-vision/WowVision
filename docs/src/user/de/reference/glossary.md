@@ -52,7 +52,7 @@ Scanner (Scanner) — WowVisions Liste der Dinge um dich herum (Questgeber, Ques
 
 Signal (Beacon) — Ein Sound, der in der Spielwelt an einem Wegpunkt oder Ziel platziert ist. Du hörst an Richtung und Tonhöhe, wo er ist, und gehst darauf zu. Siehe [Navigation und Routen](../world/navigation.md).
 
-Sku (Sku) — Das ältere Barrierefreiheits-Addon für blinde WoW-Spieler. WowVision kann daneben laufen. Siehe [WowVision zusammen mit Sku verwenden](../getting-started/installation.md#wowvision-zusammen-mit-sku-verwenden).
+Sku (Sku) — Das ältere Barrierefreiheits-Addon für blinde WoW-Spieler. WowVision kann daneben laufen. Siehe [WowVision zusammen mit Sku verwenden](../getting-started/sku.md).
 
 Stimmpaket (Voice pack) — Ein Satz aufgenommener Wörter und Zahlen, den WowVision statt der Text-zu-Sprache-Ausgabe abspielen kann, zum Beispiel für Himmelsrichtungen oder die Gegneranzahl. Siehe [Sprache und Ton](../basics/speech.md).
 
@@ -76,7 +76,7 @@ Nein. WowVision spricht über die eigene Text-zu-Sprache-Funktion des Spiels. Ma
 
 ### Wie komme ich durch die Anmelde- und Charakterauswahl-Bildschirme?
 
-WowVision kann sie noch nicht vorlesen. Benutze das Sku-Login-Tool oder bitte beim ersten Mal um sehende Hilfe. Siehe [Anmelden mit dem Sku-Login-Tool](../getting-started/sku-login.md).
+Kein Addon kann sie vorlesen: Das Spiel lädt Addons erst, wenn ein Charakter die Welt betritt. Benutze das Sku-Login-Tool oder bitte beim ersten Mal um sehende Hilfe. Siehe [Anmelden mit dem Sku-Login-Tool](../getting-started/sku-login.md).
 
 ### Meine Pfeiltasten bewegen mich im Spiel, aber nicht in WowVision-Fenstern, oder umgekehrt.
 
@@ -84,7 +84,7 @@ WowVision übernimmt die Pfeiltasten nur, solange eines seiner Fenster geöffnet
 
 ### Kann ich WowVision und Sku zusammen benutzen?
 
-Ja. WowVision überlässt dann einige Fenster und Tasten Sku. Siehe [WowVision zusammen mit Sku verwenden](../getting-started/installation.md#wowvision-zusammen-mit-sku-verwenden).
+Ja. WowVision überlässt dann einige Fenster und Tasten Sku. Siehe [WowVision zusammen mit Sku verwenden](../getting-started/sku.md).
 
 ### Werden meine Einstellungen pro Charakter gespeichert?
 

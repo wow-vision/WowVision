@@ -12,11 +12,11 @@ Anzeichen: Umschalt+F1 tut nichts, /wv tut nichts (oder das Spiel sagt, den Befe
 
 Geh diese Liste der Reihe nach durch.
 
-1. Ist das Addon eingeschaltet? Öffne auf dem Charakterauswahlbildschirm die Liste AddOns und prüfe, dass WowVision für den Charakter angehakt ist, den du spielst. Siehe [Installation](./installation.md#das-addon-einschalten).
-2. Ist es als veraltet markiert? Nach einem Spielpatch weigert sich das Spiel, Addons zu laden, die für den alten Patch gebaut wurden. Hake in derselben Liste Veraltete AddOns laden an und schau nach einer neueren WowVision-Version.
+1. Ist das Addon eingeschaltet? Tippe /enableaddons ins Chatfeld und drücke Eingabe. Das ist der eigene Befehl des Spiels: Er schaltet alle deine Addons ein und lädt die Oberfläche neu. Siehe [Das Addon einschalten](./installation.md#das-addon-einschalten).
+2. Ist es veraltet? Nach einem Spielpatch warnt dich der Anmeldebildschirm vor veralteten AddOns, und das Spiel lädt sie meist nicht. Starte den WowVision-Updater und wähle Jetzt aktualisieren, oder lade, wenn du von Hand installiert hast, eine neuere WowVision herunter. Siehe [Veraltete AddOns](./installation.md#veraltete-addons).
 3. Hast du das Spiel neu gestartet? Ein neu kopiertes Addon wird nur beim Start des Spiels gefunden. /reload reicht nicht.
-4. Liegt es in einem verschachtelten Ordner? Die TOC-Dateien müssen unter AddOns\WowVision\WowVision_Standard.toc liegen (und die vier Geschwister), nicht unter AddOns\WowVision\WowVision\WowVision_Standard.toc. Das Entpacken "in einen neuen Ordner" verursacht das. Siehe [der Fehler mit dem verschachtelten Ordner](./installation.md#der-häufige-fehler-ein-verschachtelter-ordner).
-5. Liegt es im Ordner der richtigen Spielversion? Classic Era benutzt `_classic_era_`, das Burning-Crusade-Anniversary `_anniversary_`, Mists `_classic_`, Retail `_retail_` und WoW: Forever `_forever_`. Ein Addon im Ordner einer anderen Version wird vom gestarteten Spiel einfach nie gesehen. Siehe [Wo du es ablegst](./installation.md#wo-du-es-ablegst).
+4. Liegt es in einem verschachtelten Ordner? Die TOC-Dateien müssen unter AddOns\WowVision\WowVision_Standard.toc liegen (und die vier Geschwister), nicht unter AddOns\WowVision\WowVision\WowVision_Standard.toc. Das Entpacken "in einen neuen Ordner" verursacht das. Siehe [der Fehler mit dem verschachtelten Ordner](./manual-installation.md#der-häufige-fehler-ein-verschachtelter-ordner).
+5. Liegt es im Ordner der richtigen Spielversion? Classic Era benutzt `_classic_era_`, das Burning-Crusade-Anniversary `_anniversary_`, Mists `_classic_`, Retail `_retail_` und WoW: Forever `_forever_`. Ein Addon im Ordner einer anderen Version wird vom gestarteten Spiel einfach nie gesehen. Siehe [Wo du es ablegst](./manual-installation.md#wo-du-es-ablegst).
 6. Steht eine andere Kopie im Weg? Zwei Kopien des Addons in verschiedenen Ordnern oder eine alte Kopie namens WowVision-beta oder ähnlich können das Spiel verwirren. Behalte genau einen Ordner WowVision pro Spielversion.
 
 Um zu bestätigen, dass WowVision läuft, drücke Umschalt+F1. Öffnet sich das Menü, funktioniert es.
@@ -76,7 +76,7 @@ Wenn sich der Charakter von allein dreht oder läuft, heißt das meist, dass bei
 
 ## Ein Fenster oder eine Taste funktioniert ohne Sku, aber nicht mit Sku
 
-Du hast Sku geladen. Ist Sku geladen, überlässt WowVision bewusst eine Liste von Fenstern, Tasten und Befehlen Sku. Das Fenster öffnet sich dann in WowVision nicht, oder die Taste tut nichts. Die vollständige Liste steht unter [WowVision zusammen mit Sku verwenden](./installation.md#wowvision-zusammen-mit-sku-verwenden).
+Du hast Sku geladen. Ist Sku geladen, überlässt WowVision bewusst eine Liste von Fenstern, Tasten und Befehlen Sku. Das Fenster öffnet sich dann in WowVision nicht, oder die Taste tut nichts. Die vollständige Liste steht unter [WowVision zusammen mit Sku verwenden](./sku.md).
 
 Um die WowVision-Version dieses Fensters oder dieser Taste zu bekommen, schalte Sku aus:
 
@@ -142,4 +142,4 @@ Füge dann die Protokolle bei, die zum Problem passen. Jedes davon ist ein Fenst
 | Minikarten-Scan oder Laufansagen | /wv mscan log |
 | Questdaten | /wv quests probe |
 
-Einige dieser Protokolle werden auch in der gespeicherten Variable WowVisionDump abgelegt, die das Spiel auf die Festplatte schreibt, wenn du dich ausloggst oder /reload tippst. Hänge die Datei WowVisionDump.lua aus dem Ordner SavedVariables in deinem WTF-Verzeichnis an. Wo sie liegt, steht unter [Installation](./installation.md#wo-deine-einstellungen-gespeichert-werden). Sie kann Charakternamen enthalten, sieh sie also durch, bevor du sie weitergibst.
+Einige dieser Protokolle werden auch in der gespeicherten Variable WowVisionDump abgelegt, die das Spiel auf die Festplatte schreibt, wenn du dich ausloggst oder /reload tippst. Hänge die Datei WowVisionDump.lua aus dem Ordner SavedVariables in deinem WTF-Verzeichnis an. Wo sie liegt, steht unter [Installation](./managing.md#wo-deine-einstellungen-gespeichert-werden). Sie kann Charakternamen enthalten, sieh sie also durch, bevor du sie weitergibst.

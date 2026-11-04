@@ -12,11 +12,11 @@ Signs: Shift+F1 does nothing, /wv does nothing (or the game says the command doe
 
 Go through this list in order.
 
-1. Is the addon switched on? On the character selection screen, open the AddOns list and check that WowVision is checked for the character you are playing. See [Installing WowVision](./installation.md#switching-the-addon-on).
-2. Is it flagged out of date? After a game patch the game refuses addons built for the old patch. Check Load out of date AddOns in the same list, and look for a newer WowVision release.
+1. Is the addon switched on? Type /enableaddons in the chat box and press Enter. It is the game's own command: it switches on all your addons and reloads the interface. See [Switching the addon on](./installation.md#switching-the-addon-on).
+2. Is it out of date? After a game patch the login screen warns you about out of date addons, and the game usually does not load them. Run the WowVision Updater and choose Update now, or, if you installed by hand, download a newer WowVision. See ["Out of date" addons](./installation.md#out-of-date-addons).
 3. Did you restart the game? A newly copied addon is only found when the game starts. /reload is not enough.
-4. Is it in a nested folder? The TOC files must sit at AddOns\WowVision\WowVision_Standard.toc (and the four siblings), not at AddOns\WowVision\WowVision\WowVision_Standard.toc. Unzipping "into a new folder" causes this. See [the nested folder mistake](./installation.md#the-common-mistake-a-nested-folder).
-5. Is it in the right game version's folder? Classic Era uses `_classic_era_`, the Burning Crusade anniversary `_anniversary_`, Mists `_classic_`, Retail `_retail_`, and WoW: Forever `_forever_`. An addon in another version's folder is simply never seen by the game you started. See [Where to put it](./installation.md#where-to-put-it).
+4. Is it in a nested folder? The TOC files must sit at AddOns\WowVision\WowVision_Standard.toc (and the four siblings), not at AddOns\WowVision\WowVision\WowVision_Standard.toc. Unzipping "into a new folder" causes this. See [the nested folder mistake](./manual-installation.md#the-common-mistake-a-nested-folder).
+5. Is it in the right game version's folder? Classic Era uses `_classic_era_`, the Burning Crusade anniversary `_anniversary_`, Mists `_classic_`, Retail `_retail_`, and WoW: Forever `_forever_`. An addon in another version's folder is simply never seen by the game you started. See [Where to put it](./manual-installation.md#where-to-put-it).
 6. Is another copy in the way? Two copies of the addon in different folders, or an old copy named WowVision-beta or similar, can confuse the game. Keep exactly one WowVision folder per game version.
 
 To confirm WowVision runs, press Shift+F1. If the menu opens, it works.
@@ -76,7 +76,7 @@ If the character turns or runs by itself, it usually means a movement key was he
 
 ## A window or key works without Sku but not with it
 
-You have Sku loaded. When Sku is loaded, WowVision deliberately leaves a list of windows, keys and commands to Sku, so the window does not open in WowVision or the key does nothing. The full list is in [Using WowVision together with Sku](./installation.md#using-wowvision-together-with-sku).
+You have Sku loaded. When Sku is loaded, WowVision deliberately leaves a list of windows, keys and commands to Sku, so the window does not open in WowVision or the key does nothing. The full list is in [Using WowVision together with Sku](./sku.md).
 
 To get the WowVision version of that window or key, turn Sku off:
 
@@ -142,4 +142,4 @@ Then add whatever logs fit the problem. Each of these is a window with selected 
 | Minimap scan or walking announcements | /wv mscan log |
 | Quest data | /wv quests probe |
 
-Several of these logs are also saved into the WowVisionDump saved variable, which the game writes to disk when you log out or type /reload. Attach the file WowVisionDump.lua from the SavedVariables folder in your WTF directory. Its location is described in [Installing WowVision](./installation.md#where-your-settings-are-saved). It can contain character names, so look through it before you share it.
+Several of these logs are also saved into the WowVisionDump saved variable, which the game writes to disk when you log out or type /reload. Attach the file WowVisionDump.lua from the SavedVariables folder in your WTF directory. Its location is described in [Installing WowVision](./managing.md#where-your-settings-are-saved). It can contain character names, so look through it before you share it.

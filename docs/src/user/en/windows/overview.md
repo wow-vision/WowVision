@@ -46,7 +46,7 @@ Every supported window is a module under Windows in the WowVision menu. If you p
 
 ## When Sku is loaded
 
-If you run Sku, the older accessibility addon, at the same time, WowVision leaves many windows to Sku and does not read them itself. Which ones is listed in [Using WowVision together with Sku](../getting-started/installation.md#using-wowvision-together-with-sku).
+If you run Sku, the older accessibility addon, at the same time, WowVision leaves many windows to Sku and does not read them itself. Which ones is listed in [Using WowVision together with Sku](../getting-started/sku.md).
 
 ## Windows that are not read yet
 

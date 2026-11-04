@@ -190,4 +190,4 @@ Einige WowVision-Belegungen erfüllen dieselbe Aufgabe wie Tasten von Sku, dem �
 - die Umschalter der weichen Zielerfassung (Umschalt+I, Umschalt+P, Umschalt+O)
 - Zielfokus 1 bis Zielfokus 5 (und die Befehle `/focus1` bis `/focus5`)
 
-WowVision überlässt Sku außerdem eine Liste von Fenstern und die Befehle `/pquit` und `/dquit`. Die Entscheidung fällt einmal beim Anmelden, sodass ein Ein- oder Ausschalten von Sku ein Neuladen braucht. Tasten, Fenster und Befehle, die nicht aufgelistet sind, bleiben bei WowVision. Mehr dazu, beide Addons zusammen zu betreiben, steht unter [Installation](../getting-started/installation.md#wowvision-zusammen-mit-sku-verwenden).
+WowVision überlässt Sku außerdem eine Liste von Fenstern und die Befehle `/pquit` und `/dquit`. Die Entscheidung fällt einmal beim Anmelden, sodass ein Ein- oder Ausschalten von Sku ein Neuladen braucht. Tasten, Fenster und Befehle, die nicht aufgelistet sind, bleiben bei WowVision. Mehr dazu, beide Addons zusammen zu betreiben, steht unter [Installation](../getting-started/sku.md).

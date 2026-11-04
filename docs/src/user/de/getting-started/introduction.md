@@ -34,13 +34,13 @@ WowVision befindet sich in der Alpha-Phase. Von Version zu Version ändert sich 
 
 ## WowVision und Sku
 
-Viele blinde Spieler kennen Sku, das ältere Barrierefreiheits-Addon. WowVision wurde mit Blick auf Sku-Spieler geschrieben: Viele Sounds und Verhaltensweisen (fallende Töne, Wandgeräusche, die Alt-Gr-Entfernungstaste, Fokusziele) funktionieren so, wie Sku-Spieler es erwarten. Du kannst beide installieren; WowVision überlässt dann einige Fenster und Tasten Sku. Siehe [WowVision zusammen mit Sku verwenden](installation.md#wowvision-zusammen-mit-sku-verwenden).
+Viele blinde Spieler kennen Sku, das ältere Barrierefreiheits-Addon. WowVision wurde mit Blick auf Sku-Spieler geschrieben: Viele Sounds und Verhaltensweisen (fallende Töne, Wandgeräusche, die Alt-Gr-Entfernungstaste, Fokusziele) funktionieren so, wie Sku-Spieler es erwarten. Du kannst beide installieren; WowVision überlässt dann einige Fenster und Tasten Sku. Siehe [WowVision zusammen mit Sku verwenden](sku.md).
 
-WowVision liest die Anmelde- und die Charakterauswahl-Bildschirme noch nicht vor. Das Sku-Login-Tool bringt dich durch sie hindurch: Siehe [Anmelden mit dem Sku-Login-Tool](sku-login.md).
+WowVision kann die Anmelde- und die Charakterauswahl-Bildschirme nicht vorlesen: Das Spiel lädt Addons erst, wenn ein Charakter die Welt betritt, also kann es kein Addon. Das Sku-Login-Tool bringt dich durch sie hindurch: Siehe [Anmelden mit dem Sku-Login-Tool](sku-login.md).
 
 ## Wie dieses Handbuch aufgebaut ist
 
-- Erste Schritte — [Installation](installation.md), [Anmelden](sku-login.md), der [Schnellstart](quick-start.md) für deine ersten Minuten und [Fehlerbehebung](troubleshooting.md).
+- Erste Schritte — [Installation](installation.md), [dein erster Login](first-login.md) mit dem [Login-Tool](sku-login.md), der [Schnellstart](quick-start.md) für deine ersten Minuten, [WowVision verwalten](managing.md), [zusammen mit Sku verwenden](sku.md) und [Fehlerbehebung](troubleshooting.md).
 - [Grundlagen](../basics/index.md) — die Oberfläche, Tooltips, Sprache, das Einstellungsmenü, Alarme und Tastenbelegung. Lies diese Seiten zuerst.
 - [Informationen auf Abruf](../information/index.md) — Puffer und Monitore.
 - [In der Spielwelt](../world/index.md) — Zielerfassung, Kampf, Bewegung, Navigation, Minimap, Scanner und Quests.

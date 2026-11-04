@@ -107,7 +107,7 @@ Die Navigationstasten oben sind nur aktiv, solange ein WowVision-Fenster offen i
 
 ## Wo deine Änderungen gespeichert werden
 
-Tastenbelegungen werden für den Charakter gespeichert, auf dem du gerade bist, nicht für den ganzen Account. Ein zweiter Charakter beginnt mit den Standardtasten, bis du sie auch dort änderst. Es gibt keinen Schalter „Auf Standard zurücksetzen“; um eine Standardtaste wiederherzustellen, füge sie anhand der [Tastenreferenz](../reference/keybindings.md) wieder hinzu.
+Tastenbelegungen sind accountweit: Änderst du eine Taste bei einem Charakter, ändert sie sich bei allen. Soll ein Charakter eigene Tasten bekommen, geh im Menü Benutzeroberfläche zu Tastenbelegung, drücke Umschalt+F10, wähle Bereich und dann den Namen deines Charakters. Dieser Charakter bekommt eine Kopie der aktuellen Tasten, und zwar aller auf einmal; mit Global kehrst du zu den gemeinsamen Tasten zurück. Es gibt keinen Schalter „Auf Standard zurücksetzen“; um eine Standardtaste wiederherzustellen, füge sie anhand der [Tastenreferenz](../reference/keybindings.md) wieder hinzu.
 
 ## Tasten, die bei geladenem Sku aus bleiben
 

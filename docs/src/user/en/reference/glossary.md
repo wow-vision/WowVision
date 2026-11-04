@@ -50,7 +50,7 @@ Scope — Whether a setting is stored per character or account-wide. Changed thr
 
 Soft target — A unit the game picks for you without a real target: the enemy, friend or interactive object in front of you. Switched on and off with Shift+I, Shift+P and Shift+O. See [Targeting](../world/targeting.md).
 
-Sku — The older accessibility addon for blind WoW players. WowVision can run beside it. See [Using WowVision together with Sku](../getting-started/installation.md#using-wowvision-together-with-sku).
+Sku — The older accessibility addon for blind WoW players. WowVision can run beside it. See [Using WowVision together with Sku](../getting-started/sku.md).
 
 Tab stop — A section of a window that Tab and Shift+Tab jump to, such as a list, a row of buttons or a search box. Inside a tab stop you move with the arrow keys. See [Using the Interface](../basics/interface.md).
 
@@ -74,7 +74,7 @@ No. WowVision speaks through the game's own text to speech. Some players route t
 
 ### How do I get through the login and character selection screens?
 
-WowVision cannot read them yet. Use the Sku login tool, or ask sighted help the first time. See [Logging In with the Sku Login Tool](../getting-started/sku-login.md).
+No addon can read them: the game only loads addons once a character enters the world. Use the Sku login tool, or ask sighted help the first time. See [Logging In with the Sku Login Tool](../getting-started/sku-login.md).
 
 ### My arrow keys move me in the game but not in WowVision windows, or the other way round.
 
@@ -82,7 +82,7 @@ WowVision only takes the arrow keys while one of its windows is open, and gives 
 
 ### Can I use WowVision and Sku together?
 
-Yes. WowVision then leaves a number of windows and keys to Sku. See [Using WowVision together with Sku](../getting-started/installation.md#using-wowvision-together-with-sku).
+Yes. WowVision then leaves a number of windows and keys to Sku. See [Using WowVision together with Sku](../getting-started/sku.md).
 
 ### Are my settings saved per character?
 

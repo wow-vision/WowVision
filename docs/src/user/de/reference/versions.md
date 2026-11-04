@@ -127,7 +127,7 @@ Die Classic-Clients haben keine Gamepad-Oberfläche. Siehe [Controller](../contr
 
 Wird ein Spielfenster aus der Tabelle in deiner Version nicht vorgelesen, obwohl es das sollte, prüfe zuerst zwei Dinge:
 
-- Ist Sku geladen? Solange Sku läuft, überlässt WowVision viele Fenster Sku. Siehe [WowVision zusammen mit Sku verwenden](../getting-started/installation.md#wowvision-zusammen-mit-sku-verwenden).
+- Ist Sku geladen? Solange Sku läuft, überlässt WowVision viele Fenster Sku. Siehe [WowVision zusammen mit Sku verwenden](../getting-started/sku.md).
 - Ist das Fenstermodul aktiviert? Jedes Fenster hat unter Fenster (Windows) im WowVision-Menü eine Einstellung Aktiviert (Enabled). Siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).
 
 Weitere Hilfe steht unter [Fehlerbehebung](../getting-started/troubleshooting.md).

@@ -22,7 +22,7 @@ Ein Alarm spricht nur, wenn der Alarm und die Ausgabe beide aktiviert sind. Scha
 
 Beispiel: Gebietsänderungs-Alarm hat einen TTS-Alarm (an) und einen Soundalarm (aus). Ab Werk hörst du den Namen des Gebiets. Willst du zusätzlich einen Glockenton, schalte den Soundalarm ein. Willst du nur den Glockenton, schalte auch den TTS-Alarm aus.
 
-Die Einstellungen von Alarmen werden pro Charakter gespeichert, siehe [Einstellungen pro Charakter und accountweit](./menu-and-settings.md#einstellungen-pro-charakter-und-accountweit). Die einzige Ausnahme ist der Filter pro Fehler des Moduls Fehler, den alle deine Charaktere gemeinsam nutzen.
+Die Einstellungen von Alarmen sind accountweit: Änderst du einen Alarm bei einem Charakter, ändert er sich bei allen. Soll ein Charakter eine eigene Fassung eines Alarms bekommen, drücke Umschalt+F10 auf dem Schalter des Alarms und benutze Bereich, siehe [Einstellungen pro Charakter und accountweit](./menu-and-settings.md#einstellungen-pro-charakter-und-accountweit). Den Filter pro Fehler des Moduls Fehler nutzen immer alle deine Charaktere gemeinsam, und die Alarme in einem Monitor folgen dem [Bereich dieses Monitors](../information/monitors.md#accountweit-oder-pro-charakter).
 
 ## Einen Alarm finden und ändern
 

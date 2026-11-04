@@ -1,6 +1,6 @@
 # Anmelden mit dem Sku-Login-Tool
 
-WowVision unterstützt noch keine eigenen Anmeldebildschirme. Es beginnt zu arbeiten, sobald dein Charakter in der Spielwelt steht. Um durch den Anmeldebildschirm, die Realmliste, die Charakterauswahl und die Charaktererstellung zu kommen, kannst du das WoW Login Tool (Version 4.x) benutzen, das zu Sku gehört. Diese Seite erklärt, was es ist, wie du es bekommst und wie du es benutzt, damit du an WowVision übergeben kannst, sobald du die Welt betrittst.
+WowVision beginnt zu arbeiten, sobald dein Charakter in der Spielwelt steht. Erst dann lädt das Spiel Addons, also kann kein Addon, auch WowVision nicht, die Bildschirme davor vorlesen; nur das Spiel selbst könnte sie zugänglich machen. WoW: Forever liest seine Anmeldebildschirme zwar vor, sie brauchen aber trotzdem die Maus; das Tool hilft also auch dort. Um durch den Anmeldebildschirm, die Realmliste, die Charakterauswahl und die Charaktererstellung zu kommen, kannst du das WoW Login Tool (Version 4.x) benutzen, das zu Sku gehört. Diese Seite erklärt, was es ist, wie du es bekommst und wie du es benutzt, damit du an WowVision übergeben kannst, sobald du die Welt betrittst.
 
 Eine Vorbemerkung zu den Zitaten auf dieser Seite: Das Login-Tool hat eigene Sprachdateien. Die Ansagen und Menüeinträge, die hier in Anführungszeichen oder fett stehen, sind der deutsche Wortlaut des Tools, so wie du ihn hörst, wenn du das Tool auf Deutsch gestellt hast. Bei der ersten Erwähnung steht manchmal die englische Fassung in Klammern. Das Tool nennt die Tasten teils anders als deine Tastatur: Es sagt "Enter" für die Eingabetaste und "Escape" für Esc. Bei Realms sagt das Tool "Server"; das Spiel selbst sagt im deutschen Client "Realm". Auf dieser Seite steht in Fließtext "Realm", in Tool-Zitaten und Menüeinträgen "Server". Bei den Tastennamen schreibt diese Seite die deutschen Namen der Tasten (Pfeil hoch, Eingabe, Esc).
 
@@ -49,7 +49,7 @@ Es gibt auch eine Mac-Version des Tools, diese Anleitung behandelt sie aber nich
 
 ## Beschaffen und installieren
 
-TODO: Dieser Abschnitt wird aktualisiert, sobald es einen Installer für WowVision gibt.
+Am einfachsten geht es mit dem [WowVision-Installer](./installer.md): Seine Option WoW Login Tool installieren ist standardmäßig angehakt. Er installiert das Tool für WoW: Forever, The Burning Crusade Anniversary und Classic Era, bringt das nötige AutoHotkey mit, kopiert die Dateien für die Bildschirmerkennung und die besser lesbare Schrift in Classic Era und The Burning Crusade und legt eine Verknüpfung WoW Login Tool auf dem Desktop und im Startmenü an. Starte das Tool über diese Verknüpfung.
 
 ### Von Hand
 
@@ -258,7 +258,7 @@ Auf Forever schreibt das Tool, solange das Spiel geschlossen ist, die Vorlese-Ei
 
 ## Tipps
 
-- Mach die erste Anmeldung mit einem sehenden Helfer, wenn du kannst. Die eigenen Battle.net-Anmeldebildschirme des Spiels lassen sich nicht mit einem Screenreader bedienen. Hake einmal "Angemeldet bleiben" (keep me logged in) an.
+- Melde dich über die Battle.net-App an, die sich unter Windows und auf dem Mac mit einem Screenreader bedienen lässt, und hake einmal "Angemeldet bleiben" (keep me logged in) an. Dann meldet dich das Spiel von selbst an, und das Tool beginnt bei den Realm- und Charakterbildschirmen.
 - Lies diese Schritte auf einem zweiten Gerät. Jedes Mal, wenn das Spielfenster den Fokus verliert, pausiert das Tool und beginnt beim Zurückkommen wieder im Hauptmenü.
 - Hör dir die Charakterliste noch einmal an, nachdem du einen Charakter erstellt oder gelöscht hast. Die Liste wird neu aufgebaut, und die Nummern können sich ändern.
 - Hab Geduld. Realmlisten und Charakterzählungen brauchen Sekunden. Das Tool spielt einen Warteton, während es arbeitet.
@@ -275,7 +275,7 @@ Das Tool endet an der Welt. Im Spiel Modus beobachtet es nur den Bildschirm und 
 - WowVision führt das Sku-Addon als optionales Addon auf. Es benutzt das Login-Tool nicht. Ist das Sku-Addon geladen, schaltet WowVision einige seiner Tasten, Fenster und Befehle ab, damit sich die beiden nicht um Tasten streiten, zum Beispiel die Fokustasten, die weiche Zielerfassung, die Tasten für die Tooltip-Zeilen (Umschalt+Pfeil hoch, Umschalt+Pfeil runter, Umschalt+Pfeil links, Umschalt+Pfeil rechts) und Fenster wie Gossip, Handel, Post und Ausbildung. Die Befehle /pquit, /dquit und /focus1 bis /focus5 bleiben dann Sku überlassen.
 - Willst du, dass WowVision komplett übernimmt, schaltet der Befehl /disableaddon sku Sku und seine Audio- und Soundpakete aus und lädt die Oberfläche neu. /enableaddon sku schaltet sie wieder ein. Diese beiden Befehle gibt es nicht, wenn BlindSlash geladen ist.
 
-Die vollständige Liste der Fenster, Tasten und Befehle, die WowVision Sku überlässt, steht unter [WowVision zusammen mit Sku verwenden](installation.md#wowvision-zusammen-mit-sku-verwenden).
+Die vollständige Liste der Fenster, Tasten und Befehle, die WowVision Sku überlässt, steht unter [WowVision zusammen mit Sku verwenden](sku.md).
 
 ## Fehlerbehebung
 
@@ -293,14 +293,14 @@ Die vollständige Liste der Fenster, Tasten und Befehle, die WowVision Sku über
 | Du hörst auf Forever die Standardstimme des Spiels | Schließe das Spiel, starte das Tool, dann das Spiel, damit das Tool die Vorlese-Einstellungen schreiben kann. |
 | Das Tool ist leise oder sagt "Diese Stimme funktioniert nicht" | Wähle bei Stimme auswählen eine andere Stimme. Funktioniert keine, prüfe die Windows-Spracheinstellungen. |
 | Wiederholte Elemente auf Forever sind stumm | Setze repeatecho=1 in forever.ini und starte das Tool neu. |
-| Es stimmt immer noch etwas nicht | Hol dir das Protokoll. Das eigene Protokoll des Tools ist die Datei log.txt in seinem Ordner. Tritt dem Sku-Discord bei (siehe Quellen) und melde es mit der Tool-Version, die das Tool beim Start sagt. |
+| Es stimmt immer noch etwas nicht | Hol dir das Protokoll. Das eigene Protokoll des Tools ist die Datei log.txt in seinem Ordner. Melde es im WowVision-Discord, mit dem Protokoll und der Tool-Version, die das Tool beim Start sagt. |
 
 ## Bekannte Grenzen
 
 - Die Aussehensoptionen auf Classic Era und TBC sind nicht verfügbar.
 - Auf Forever kann bei sehr schnellen Wechseln in einer langen Liste (zum Beispiel bei Frisuren) kurz der falsche Wert gesagt werden, bevor das Tool sich korrigiert.
 - Das Tool braucht einen Windows-PC. Eine Mac-Version gibt es, sie wird hier aber nicht behandelt.
-- Die eigene Battle.net-Anmeldung des Spiels und der Lizenztext vor der ersten Anmeldung brauchen noch einmal sehende Hilfe. Den Sozialvertrag im Spiel erledigt das Tool.
+- Der Lizenztext vor der ersten Anmeldung braucht noch einmal sehende Hilfe. Den Sozialvertrag im Spiel erledigt das Tool.
 
 ## Quellen
 

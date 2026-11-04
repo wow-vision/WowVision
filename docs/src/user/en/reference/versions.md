@@ -128,7 +128,7 @@ The Classic clients have no gamepad interface. See [Controller](../controller.md
 
 If a game window from the table is not read on your version although it should be, check two things first:
 
-- Is Sku loaded? While Sku runs, WowVision leaves many windows to Sku. See [Using WowVision together with Sku](../getting-started/installation.md#using-wowvision-together-with-sku).
+- Is Sku loaded? While Sku runs, WowVision leaves many windows to Sku. See [Using WowVision together with Sku](../getting-started/sku.md).
 - Is the window module enabled? Every window has an Enabled setting under Windows in the WowVision menu. See [The WowVision Menu and Settings](../basics/menu-and-settings.md).
 
 More help is in [Troubleshooting](../getting-started/troubleshooting.md).

@@ -17,7 +17,7 @@ Alle diese Fenster öffnen sich so, wie ein sehender Spieler sie öffnet: mit de
 | Fenster der Gildeneinladung | Popup | Popup | Fenster, wenn der Client es hat, sonst Popup | Ja | Ja |
 | Schlachtzug-Reiter | noch nicht vorgelesen | noch nicht vorgelesen | noch nicht vorgelesen | Ja | Ja |
 
-Ist das Addon Sku geladen, überlässt WowVision die Fenster für Freunde, Gilde, Gemeinschaften und Kontakte Sku und liest sie nicht vor (siehe [WowVision zusammen mit Sku verwenden](../getting-started/installation.md#wowvision-zusammen-mit-sku-verwenden)). Das Chatfenster und das Fenster Chatkanäle sind davon nicht betroffen.
+Ist das Addon Sku geladen, überlässt WowVision die Fenster für Freunde, Gilde, Gemeinschaften und Kontakte Sku und liest sie nicht vor (siehe [WowVision zusammen mit Sku verwenden](../getting-started/sku.md)). Das Chatfenster und das Fenster Chatkanäle sind davon nicht betroffen.
 
 ## Das Freundesfenster (Classic Era, TBC, Mists)
 

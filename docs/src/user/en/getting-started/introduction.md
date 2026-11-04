@@ -34,13 +34,13 @@ WowVision is in alpha. Things change from release to release, and some windows a
 
 ## WowVision and Sku
 
-Many blind players know Sku, the older accessibility addon. WowVision was written with Sku players in mind: many sounds and behaviours (falling tones, wall sounds, the Alt Gr distance key, focus targets) work the way Sku players expect. You can install both; WowVision then leaves a number of windows and keys to Sku. See [Using WowVision together with Sku](installation.md#using-wowvision-together-with-sku).
+Many blind players know Sku, the older accessibility addon. WowVision was written with Sku players in mind: many sounds and behaviours (falling tones, wall sounds, the Alt Gr distance key, focus targets) work the way Sku players expect. You can install both; WowVision then leaves a number of windows and keys to Sku. See [Using WowVision together with Sku](sku.md).
 
-WowVision does not read the login and character selection screens yet. The Sku login tool can get you through them: see [Logging In with the Sku Login Tool](sku-login.md).
+WowVision cannot read the login and character selection screens: the game only loads addons once a character enters the world, so no addon can. The Sku login tool can get you through them: see [Logging In with the Sku Login Tool](sku-login.md).
 
 ## How this manual is organized
 
-- Getting Started — [Installation](installation.md), [logging in](sku-login.md), the [Quick Start](quick-start.md) for your first minutes, and [Troubleshooting](troubleshooting.md).
+- Getting Started — [Installation](installation.md), [your first login](first-login.md) with the [login tool](sku-login.md), the [Quick Start](quick-start.md) for your first minutes, [managing WowVision](managing.md), [using it together with Sku](sku.md), and [Troubleshooting](troubleshooting.md).
 - [Basics](../basics/index.md) — the interface, tooltips, speech, the settings menu, alerts and keybindings. Read these first.
 - [Information on Demand](../information/index.md) — buffers and monitors.
 - [In the World](../world/index.md) — targeting, combat, movement, navigation, minimap, scanner and quests.

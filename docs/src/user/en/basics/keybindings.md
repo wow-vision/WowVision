@@ -105,7 +105,7 @@ The navigation keys above are only active while a WowVision window is open. With
 
 ## Where your changes are kept
 
-Key bindings are saved for the character you are on, not for the whole account. A second character starts with the default keys until you change them there too. There is no "reset to defaults" button; to restore a default key, add it back from the [keybinding reference](../reference/keybindings.md).
+Key bindings are account-wide, so a key you change on one character changes on all of them. To give one character its own keys, go to Bindings in the UI menu, press Shift+F10, choose Scope, then your character's name. That character gets a copy of the current keys, all of them at once; choose Global to go back to the shared keys. There is no "reset to defaults" button; to restore a default key, add it back from the [keybinding reference](../reference/keybindings.md).
 
 ## Keys that stay off when Sku is loaded
 

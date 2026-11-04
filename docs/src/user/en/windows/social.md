@@ -17,7 +17,7 @@ All of these windows open the way a sighted player opens them: with the game's o
 | Guild invitation window | popup | popup | window if the client has it, else popup | Yes | Yes |
 | Raid tab | not read yet | not read yet | not read yet | Yes | Yes |
 
-If the Sku addon is loaded, the friends, guild, communities and social windows are left to Sku and WowVision does not read them (see [Using WowVision together with Sku](../getting-started/installation.md#using-wowvision-together-with-sku)). The chat window and the chat channels window are not affected.
+If the Sku addon is loaded, the friends, guild, communities and social windows are left to Sku and WowVision does not read them (see [Using WowVision together with Sku](../getting-started/sku.md)). The chat window and the chat channels window are not affected.
 
 ## The friends window (Classic Era, TBC, Mists)
 

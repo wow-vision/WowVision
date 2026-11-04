@@ -46,7 +46,7 @@ Jedes unterstützte Fenster ist ein Modul unter Fenster (Windows) im WowVision-M
 
 ## Wenn Sku geladen ist
 
-Läuft gleichzeitig Sku, das ältere Barrierefreiheits-Addon, überlässt WowVision viele Fenster Sku und liest sie nicht selbst vor. Welche das sind, steht unter [WowVision zusammen mit Sku verwenden](../getting-started/installation.md#wowvision-zusammen-mit-sku-verwenden).
+Läuft gleichzeitig Sku, das ältere Barrierefreiheits-Addon, überlässt WowVision viele Fenster Sku und liest sie nicht selbst vor. Welche das sind, steht unter [WowVision zusammen mit Sku verwenden](../getting-started/sku.md).
 
 ## Fenster, die noch nicht vorgelesen werden
 

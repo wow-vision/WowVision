@@ -186,4 +186,4 @@ Some WowVision bindings do the same job as keys of Sku, the older accessibility 
 - the soft targeting switches (Shift+I, Shift+P, Shift+O)
 - Target Focus 1 to Target Focus 5 (and the `/focus1` to `/focus5` commands)
 
-WowVision also leaves a list of windows and the commands `/pquit` and `/dquit` to Sku. The decision is made once at login, so switching Sku on or off needs a reload. Keys, windows and commands that are not listed stay with WowVision. More about running both addons together is in [Installation](../getting-started/installation.md#using-wowvision-together-with-sku).
+WowVision also leaves a list of windows and the commands `/pquit` and `/dquit` to Sku. The decision is made once at login, so switching Sku on or off needs a reload. Keys, windows and commands that are not listed stay with WowVision. More about running both addons together is in [Installation](../getting-started/sku.md).

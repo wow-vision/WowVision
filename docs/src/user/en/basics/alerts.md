@@ -22,7 +22,7 @@ An alert speaks only when the alert and the output are both enabled. Turn an ale
 
 Example: Zone Changed Alert has a TTS Alert (on) and a Sound Alert (off). Out of the box, you hear the zone's name. If you want a chime as well, switch on the Sound Alert. If you only want the chime, switch off the TTS Alert too.
 
-Alert settings are saved per character, see [per-character and account-wide settings](./menu-and-settings.md#per-character-and-account-wide-settings). The only exception is the per-error filter of the Errors module, which is shared by all your characters.
+Alert settings are account-wide, so an alert you change on one character changes on all of them. To give one character its own version of an alert, press Shift+F10 on the alert's button and use Scope, see [per-character and account-wide settings](./menu-and-settings.md#per-character-and-account-wide-settings). The per-error filter of the Errors module is always shared by all your characters, and the alerts inside a monitor follow that [monitor's own scope](../information/monitors.md#account-wide-or-per-character).
 
 ## Finding and changing an alert
 

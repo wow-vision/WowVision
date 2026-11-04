@@ -158,7 +158,7 @@ WowVision führt zwei Speicher für Einstellungen:
 
 Die meisten Einstellungen sind zunächst accountweit, sodass die Sprachstimme oder die Alarmsounds, die du bei einem Charakter einstellst, für alle gelten. Der erste Charakter, der sich nach der Einführung des Account-Speichers einloggte, hat ihn mit seinen eigenen Einstellungen gefüllt (dieser Charakter behält auch seine Kopie); Charaktere, die sich später einloggen, benutzen einfach, was dort steht.
 
-Manches ist immer pro Charakter, egal was du wählst: welche Module aktiviert sind, die Einstellungen jedes Alarms und deine Tastenbelegungen. Die einzige Ausnahme ist der Filter pro Fehler des Moduls Fehler, den alle Charaktere des Accounts gemeinsam nutzen, sodass ein Fehler, den du bei einem Charakter stummgeschaltet hast, bei allen stumm bleibt. Die beiden Kontrollkästchen für Spielsounds des Moduls Sprache sind die eigenen Einstellungen des Spiels und werden von WowVision überhaupt nicht gespeichert.
+Welche Module aktiviert sind, gilt immer pro Charakter, egal was du wählst. Beim Filter pro Fehler des Moduls Fehler ist es umgekehrt: Ihn nutzen immer alle Charaktere des Accounts gemeinsam, sodass ein Fehler, den du bei einem Charakter stummgeschaltet hast, bei allen stumm bleibt. Die beiden Kontrollkästchen für Spielsounds des Moduls Sprache sind die eigenen Einstellungen des Spiels und werden von WowVision überhaupt nicht gespeichert.
 
 ### Den Bereich ändern
 
@@ -171,7 +171,9 @@ Beim Wechseln wird nie etwas gelöscht, du kannst es dir also gefahrlos anders �
 
 Derselbe Eintrag Bereich erscheint auch an anderen Stellen:
 
-- Auf dem Schalter eines Moduls im Menü schaltet er alle Einstellungen dieses Moduls auf einmal um. Bei Puffer und Monitor verschiebt er auch alle ihre Gruppen oder Monitore.
+- Auf dem Schalter eines Moduls im Menü schaltet er alle Einstellungen und Alarme dieses Moduls auf einmal um. Bei Puffer und Monitor verschiebt er auch alle ihre Gruppen oder Monitore.
+- Auf dem Schalter eines Alarms verschiebt er diesen Alarm mit allen seinen Ausgaben.
+- Auf dem Schalter Tastenbelegung im Menü Benutzeroberfläche verschiebt er alle deine Tastenbelegungen auf einmal.
 - Auf einem einzelnen Eintrag in einer Liste von Puffergruppen oder Monitoren verschiebt er nur diesen Eintrag.
 
 Sind die Einstellungen eines Moduls auf beide aufgeteilt, ist weder Global noch der Charaktername angehakt.
