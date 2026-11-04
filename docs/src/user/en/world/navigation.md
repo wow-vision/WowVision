@@ -1,8 +1,6 @@
 # Navigation: Maps, Routes and Beacons
 
-WowVision can guide you to a place on foot. You pick where you start and where you want to go in the navigation window (F10), WowVision works out a route along known paths, and then an audio beacon leads you from waypoint to waypoint until you arrive. This page covers the navigation window, the map data behind it, the beacon and all the keys you use while walking a route.
-
-If you play WoW: Forever, there is a second, newer route system called WowNav. It uses the same window and the same keys; see [WowNav](./wownav.md) for what is different.
+WowVision can guide you to a place on foot. You pick where you start and where you want to go in the navigation window (F10), WowVision works out a route along known paths, and then an audio beacon leads you from waypoint to waypoint until you arrive. This page covers the navigation window, the beacon and all the keys you use while walking a route.
 
 ## How it works in short
 
@@ -14,18 +12,20 @@ If you play WoW: Forever, there is a second, newer route system called WowNav. I
 
 You can also set a straight-line beacon with no route at all, from the Direct checkbox in the window, from the scanner, or with the /beacon command.
 
-## Map data
+## Which routes you have
 
-Routes need map data: a network of waypoints that are linked to each other, plus the names of the places you can go to.
+Routes need map data: a network of waypoints that are linked to each other, plus the names of the places you can go to. WowVision has two route systems, each with its own data. Which one you have depends on your game version:
 
-- The Burning Crusade (TBC), WoW: Forever and Classic Era. The map data comes in its own addon folder named WowVision_MapData_TBC. It is inside the WowVision download zip next to the WowVision folder, so one extraction installs both (see [Installation](../getting-started/installation.md)). It is switched on automatically as long as the addon is enabled in the game's addon list. Its TOC file is made for The Burning Crusade and WoW: Forever, so on Classic Era the game sees it as out of date and may not load it.
-- Mists of Pandaria and Retail. No map data is included. The navigation window opens but its lists are empty. Straight-line beacons, /beacon, the distance announcement and every other key on this page still work. Other map data addons for WowVision keep working beside the bundled one.
+| Game version | Routes |
+|--------------|--------|
+| WoW: Forever | [WowNav](./wownav.md), on by default. You can turn it off and use the classic routes instead. |
+| The Burning Crusade | [Classic routes](#classic-routes). |
+| Classic Era | Classic routes, if the game loads their map data; see [Map data](#map-data). |
+| Mists of Pandaria and Retail | No map data is included. The navigation window opens but its lists are empty. Straight-line beacons, /beacon, the distance announcement and every other key on this page still work. |
 
-The bundled data is derived from the survey data of the addon Sku: its waypoints, the links between them and the names of NPCs, creatures and objects. It covers Eastern Kingdoms, Kalimdor, the Deeprun Tram, Outland and Northrend. The Northrend and Death Knight starting area files are included but are never extended beyond what the survey held, so expect more gaps there than in the old world. On a German or French game client the place names are shown in your language.
+Both systems use the same window, the same keys and the same beacon, so this page applies to both, and says so where they differ. What is special about each one is in [Classic routes](#classic-routes) further down and on the [WowNav](./wownav.md) page.
 
-Names in this data are stored in a fixed form: the name, then its role if it has one, then the zone, a spawn number and the map coordinates, all separated by semicolons. For example: "Shailiea;Stormwind City;1;30.38;53.33" or "Eldraeith;Herbalism Supplies;Stormwind City;1;46.66;78.65". WowVision reads the name exactly like that. Your screen reader may pause at the semicolons or read them aloud. The role words are useful when you search: "Questgiver", "Trainer", "Banker", "Auctioneer", "Repair", "Stable Master" and many more are part of the name.
-
-When a destination is not on the link network (most creatures and objects are not), the route goes through the network to the closest linked waypoint and then ends with a straight leg to the destination. WowVision tells you how long that straight leg is, for example "last 40 yards direct".
+The examples on this page use the plain place names of WowNav. Classic routes read names in a longer form; see [Place names](#place-names).
 
 ## The navigation window (F10)
 
@@ -36,7 +36,7 @@ The window has four stops. Move between them with Tab and Shift+Tab, and move in
 | Stop | What it is |
 |------|------------|
 | Direct | A checkbox. Off every time the window opens. |
-| Entry Points | The 20 closest points of the path network (with WowNav the 50 closest). Not shown while Direct is on. |
+| Entry Points | The closest points of the path network: 20 with classic routes, 50 with WowNav. Not shown while Direct is on. |
 | Search | A text field that filters the destination list. |
 | Destinations | The list of places you can go to. |
 
@@ -44,19 +44,19 @@ When the window opens, you land on the entry point that is already selected, so 
 
 ### Entry points
 
-The entry point is where your route joins the network. WoW is fully three-dimensional, so the closest waypoint is sometimes the road under a bridge or the floor below you. That is why WowVision lists the 20 closest ones (with WowNav the 50 closest, see [WowNav (WoW: Forever)](./wownav.md)) and lets you choose.
+The entry point is where your route joins the network. WoW is fully three-dimensional, so the closest waypoint is sometimes the road under a bridge or the floor below you. That is why WowVision lists the closest ones and lets you choose.
 
-Each entry reads its name, its distance and the direction relative to where you are facing, for example "Shailiea;Stormwind City;1;30.38;53.33, 4 yards, ahead left". The directions are ahead, ahead right, right, behind right, behind, behind left, left and ahead left. The entry that is chosen is announced with selected.
+Each entry reads its name, its distance and the direction relative to where you are facing, for example "Innkeeper Allison (Innkeeper), 4 yards, ahead left". The directions are ahead, ahead right, right, behind right, behind, behind left, left and ahead left. The entry that is chosen is announced with selected.
 
 - The closest entry point is selected when the window opens.
 - Press Enter on another entry to select that one instead. You hear selected at once, and again whenever you move back onto it. Only one entry is selected at a time.
-- While you swim or dive, the nearest entry that lies in water is preselected instead, if the data knows about water points. On the TBC data there are none, so the nearest entry stays selected. With WowNav, if there is no water point nearby, you hear "No water point nearby".
+- While you swim or dive, the nearest entry that lies in water is preselected instead, if the data knows about water points. With WowNav, if there is no water point nearby, you hear "No water point nearby". The classic data has no water points, so there the nearest entry stays selected.
 
 The route you get includes the walk from where you stand to the entry point. So choose an entry that you can really walk to.
 
 ### Direct
 
-Tick Direct (press Enter on the checkbox) if you do not want a route. The entry points disappear, and Enter on a destination sets a straight beacon to exactly that point. You hear, for example, "Direct: Shailiea;Stormwind City;1;30.38;53.33, 120 yards", and on arrival "Arrived" followed by the name. Use this when you are already close, when you are inside a building the network does not know, or when you want to go somewhere in a straight line.
+Tick Direct (press Enter on the checkbox) if you do not want a route. The entry points disappear, and Enter on a destination sets a straight beacon to exactly that point. You hear, for example, "Direct: Innkeeper Allison (Innkeeper), 120 yards", and on arrival "Arrived" followed by the name. Use this when you are already close, when you are inside a building the network does not know, or when you want to go somewhere in a straight line.
 
 Direct is the first stop. To reach it, press Shift+Tab from the entry points.
 
@@ -64,13 +64,14 @@ Direct is the first stop. To reach it, press Shift+Tab from the entry points.
 
 Press Tab from the entry points to reach Search. The edit box takes your typing immediately, and what you have typed is read as you type. Type a fragment of a name, for example "auctioneer", and press Enter to apply it. WowVision reads back what you typed. The list below is filtered at once. Tab applies the text as well and moves on to the next stop; Escape closes the edit box without changing the search.
 
-- The search is not case sensitive and matches any part of the whole name, including the role, the zone and the numbers. It is one text fragment, not several words: "auctioneer stormwind" finds nothing because the space is not in the data, but "auctioneer" or "stormwind" each work.
-- Leave the box empty to list everything on your continent.
+- The search is not case sensitive and matches any part of a place's text. It is one text fragment, not several words: "auctioneer stormwind" finds nothing, but "auctioneer" or "stormwind" each work.
+- With WowNav that text is the name in English and German, the categories of the place and its zone. With classic routes it is the whole long name, including the role, the zone and the numbers.
+- Leave the box empty to list everything on your continent, up to the nearest 1000 places with WowNav.
 - The search covers all of the map data on the continent you are on, so routes can leave the zone you are in.
 
 ### Destinations
 
-Press Tab again to reach Destinations. It is one long list, sorted by distance from where you opened the window, the nearest first. It can hold tens of thousands of entries, so it works like a single control rather than a real list of items:
+Press Tab again to reach Destinations. It is one long list, sorted by distance from where you opened the window, the nearest first. It can be very long (up to 1000 entries with WowNav, tens of thousands with classic routes), so it works like a single control rather than a real list of items:
 
 | Key | What it does |
 |-----|--------------|
@@ -78,9 +79,9 @@ Press Tab again to reach Destinations. It is one long list, sorted by distance f
 | Home / End | First / last destination. |
 | Enter | Close the window and start the route (or the straight beacon, if Direct is on). |
 
-Each destination reads its name and its distance, then its position in the list, for example "Shailiea;Stormwind City;1;30.38;53.33, 120 yards, 1 / 342". A destination you reached in the last few minutes is announced with Visited first; see [Visited places](#visited-places). An empty list reads "Empty".
+Each destination reads its name and its distance, then its position in the list. With WowNav, what the place is and where it is come after the distance, for example "Innkeeper Allison (Innkeeper), 85 yards, quest giver, vendor, innkeeper, Stormwind City, 1 / 342". A destination you reached in the last few minutes is announced with Visited first; see [Visited places](#visited-places). An empty list reads "Empty".
 
-When you press Enter, you hear the route summary, for example "12 waypoints, 340 yards". The yards include the walk to your entry point. If the route ends with a straight leg, it adds "last 40 yards direct". If something is wrong you hear No route found, sometimes followed by a short reason such as "unreachable" (no path leads there from your entry point) or "no entry".
+When you press Enter, you hear the route summary, for example "12 waypoints, 340 yards". The yards include the walk to your entry point. The summary can say more about how the route ends: see [The last stretch](#the-last-stretch) for classic routes and [WowNav](./wownav.md#starting-and-following-a-route). If something is wrong you hear No route found, sometimes followed by a short reason such as "unreachable" (no path leads there from your entry point) or "no entry".
 
 ### From the scanner
 
@@ -98,7 +99,7 @@ When the route starts, WowVision speaks the summary and the beacon begins to pin
 - Arrived is spoken at the end of a route, followed by the name of the destination.
 - Beacon stopped is spoken when you cancel.
 
-A waypoint counts as reached when you are within the arrival distance of it (see [Arrival distance](#arrival-distance)).
+A waypoint counts as reached when you are within the arrival distance of it (see [Arrival distance](#arrival-distance)). With WowNav each waypoint has its own distance.
 
 ### Beacon sounds
 
@@ -145,7 +146,7 @@ Turning needs two camera settings: the camera following style Always (the game o
 
 ### Arrival distance
 
-The arrival distance is how close, in yards, you must get to a waypoint for it to count as reached. A small distance makes you walk precisely onto each point; a large one forgives wandering. WowVision has three values and one of them is active at a time:
+The arrival distance is how close, in yards, you must get to a waypoint for it to count as reached. A small distance makes you walk precisely onto each point; a large one forgives wandering. WowVision has three values and one of them is active at a time. With WowNav, the waypoints of a route use their own distance from the data instead, and you can set a minimum for them; see [WowNav](./wownav.md#starting-and-following-a-route).
 
 | Name | Default distance |
 |------|------------------|
@@ -169,7 +170,7 @@ When you have wandered off, or want to skip a waypoint you cannot reach, press C
 
 ### Restart the route
 
-If you have strayed far from the route, press Ctrl+Shift+N. WowVision plans the last destination you chose again, starting from where you stand now. It works for destinations from the window, from the scanner, from the route to your target, and for the corpse run. With the classic map data you do not choose an entry point: the router picks whichever of the five nearest waypoints gives the best route. You hear the route summary again, or No route to start again if you have not chosen a destination yet.
+If you have strayed far from the route, press Ctrl+Shift+N. WowVision plans the last destination you chose again, starting from where you stand now. It works for destinations from the window, from the scanner, from the route to your target, and for the corpse run. With classic routes the router picks whichever of the five nearest waypoints gives the best route. With WowNav the route starts where you stand, if WowNav knows which floor you are on. You hear the route summary again, or No route to start again if you have not chosen a destination yet.
 
 ### Cancel navigation
 
@@ -182,10 +183,10 @@ The Route to Your Target binding takes the creature or group member you are targ
 What happens depends on who you target:
 
 - A party or raid member. WowVision uses that player's current position.
-- An NPC or creature. With the classic map data, WowVision looks for the closest waypoint with exactly the same name within 120 yards. With WowNav, it uses the creature's position in the WowNav catalogue. Another spawn of the same kind further away than 120 yards does not count.
+- An NPC or creature. With classic routes, WowVision looks for the closest waypoint with exactly the same name within 120 yards. With WowNav, it uses the creature's position in the WowNav catalogue. Another spawn of the same kind further away than 120 yards does not count.
 - Anything else. You hear Your target's position is not known.
 
-Other things you may hear: You have no target, You are targeting yourself, Position unavailable, No route to your target (no map data here, or WowNav cannot start). With the classic map data a route that the router cannot find is reported as No route found with its reason. If it works, you hear the target's name (with the classic map data the name of the matching waypoint, in its long form) and then the route summary, and the route starts at once from the nearest entry point (classic data) or from your position (WowNav).
+Other things you may hear: You have no target, You are targeting yourself, Position unavailable, No route to your target (no map data here, or WowNav cannot start). With classic routes a route that the router cannot find is reported as No route found with its reason. If it works, you hear the target's name (with classic routes the name of the matching waypoint, in its long form) and then the route summary, and the route starts at once from your position (WowNav) or the nearest entry point (classic routes).
 
 With WowNav, if it cannot tell which floor you are on, you hear "Your floor is not clear here. Choose your start." and the navigation window opens with the target already selected, so you choose the start yourself.
 
@@ -206,7 +207,7 @@ Two bindings, both unbound by default, lead you to the nearest unvisited destina
 | Route to the Nearest Unvisited of the Same Name | Plans a route there, entering at the entry point the window would preselect. |
 | Direct to the Nearest Unvisited of the Same Name | Sets a straight beacon there. |
 
-"Same name" means the name before the first semicolon in the classic data ("Peacebloom") and the whole name in WowNav, ignoring capital letters. The spot you are already at, and the ones marked visited, are skipped. Chain the key and you walk through every spawn of that object, one after the other.
+"Same name" means the whole name with WowNav and the name before the first semicolon with classic routes ("Peacebloom"), ignoring capital letters. The spot you are already at, and the ones marked visited, are skipped. Chain the key and you walk through every spawn of that object, one after the other.
 
 Without a destination picked earlier you hear Choose a destination in the navigation window first. If every spawn is visited you hear "No unvisited" and the name, for example "No unvisited Peacebloom found".
 
@@ -218,11 +219,29 @@ You can set a beacon without the window. Type these commands in the chat box:
 |---------|--------------|
 | /beacon | Speaks your position in map percentages, such as "50.5 30.4", and, if a beacon is active, its distance and angle. |
 | /beacon 50.5 30.4 | Straight beacon to map coordinates on your current zone map: the numbers quest guides give you. You hear "Beacon set" and the distance. |
-| /beacon to bank | Routes to the nearest known place whose name contains "bank". You hear its name, then the route summary. You do not choose an entry point: with the classic map data the router picks the best of the five nearest waypoints, with WowNav the entry point F10 would preselect is used. |
+| /beacon to bank | Routes to the nearest known place whose name contains "bank". You hear its name, then the route summary. You do not choose an entry point: WowNav uses the one F10 would preselect, and with classic routes the router picks the best of the five nearest waypoints. |
 | /beacon world x y | Straight beacon to raw world coordinates. |
 | /beacon stop | Same as Shift+F12. |
 
 With /beacon to, an unknown name gives "No route found" and the name. A beacon from /beacon with coordinates ends with "Arrived" when you get close enough, like any route.
+
+## Classic routes
+
+Classic routes are the route system of The Burning Crusade and Classic Era, and of WoW: Forever when you turn WowNav off. Everything on this page applies to them. This section adds what is only true for them.
+
+### Map data
+
+The map data comes in its own addon folder named WowVision_MapData_TBC. It is inside the WowVision download zip next to the WowVision folder, so one extraction installs both (see [Installation](../getting-started/installation.md)). It is switched on automatically as long as the addon is enabled in the game's addon list. Its TOC file is made for The Burning Crusade and WoW: Forever, so on Classic Era the game sees it as out of date and may not load it. WowNav does not use this folder: its data is inside the WowVision folder. Other map data addons for WowVision keep working beside the bundled one.
+
+The bundled data is derived from the survey data of the addon Sku: its waypoints, the links between them and the names of NPCs, creatures and objects. It covers Eastern Kingdoms, Kalimdor, the Deeprun Tram, Outland and Northrend. The Northrend and Death Knight starting area files are included but are never extended beyond what the survey held, so expect more gaps there than in the old world. On a German or French game client the place names are shown in your language.
+
+### Place names
+
+Names in this data are stored in a fixed form: the name, then its role if it has one, then the zone, a spawn number and the map coordinates, all separated by semicolons. For example: "Shailiea;Stormwind City;1;30.38;53.33" or "Eldraeith;Herbalism Supplies;Stormwind City;1;46.66;78.65". WowVision reads the name exactly like that. Your screen reader may pause at the semicolons or read them aloud. The role words are useful when you search: "Questgiver", "Trainer", "Banker", "Auctioneer", "Repair", "Stable Master" and many more are part of the name.
+
+### The last stretch
+
+When a destination is not on the link network (most creatures and objects are not), the route goes through the network to the closest linked waypoint and then ends with a straight leg to the destination. WowVision tells you how long that straight leg is, for example "last 40 yards direct".
 
 ## Settings
 
@@ -254,9 +273,9 @@ Two settings of the Navigation module are related: Automatically Navigate to Cor
 
 ## Examples
 
-### Walk from the bank to the auction house (Stormwind, TBC or WoW: Forever)
+### Walk from the bank to the auction house (Stormwind)
 
-1. Stand outside the bank and press F10. You land on the closest entry point, announced with selected, for example "Name;Stormwind City;1;62.1;70.4, 3 yards, ahead, selected". That is fine, so leave it alone.
+1. Stand outside the bank and press F10. You land on the closest entry point, announced with selected. That is fine, so leave it alone.
 2. Press Tab. You are in Search and can type straight away. Type "auctioneer" and press Enter. WowVision repeats your text.
 3. Press Tab to reach Destinations. You hear the nearest auctioneer with its distance and its position in the list. Press Down to hear the next one.
 4. Press Enter. The window closes and you hear a summary such as "9 waypoints, 410 yards".
@@ -269,7 +288,7 @@ Two settings of the Navigation module are related: Automatically Navigate to Cor
 1. Press F9 to open the scanner and find the quest, then its NPC (see [Scanner](./scanner.md)).
 2. Press Enter on the NPC. The navigation window opens with the closest entry point and the NPC both selected, focus on the destination.
 3. Press Enter. If you want a different starting point first, press Shift+Tab twice to reach the entry points, pick one with Enter, then return with Tab twice.
-4. Walk the route as above. If the NPC is not on the path network, the route ends with "last 25 yards direct": the final stretch is a straight line, so use the beacon and Alt Gr.
+4. Walk the route as above. If the NPC is not on the path network, the final stretch is not a known path, so use the beacon and Alt Gr. With classic routes the summary says so ("last 25 yards direct"), and WowNav tells you at the end of the network how far the NPC still is.
 
 ### Find the next herb
 
@@ -279,7 +298,7 @@ Two settings of the Navigation module are related: Automatically Navigate to Cor
 
 ## Related pages
 
-- [WowNav](./wownav.md): the newer route system on WoW: Forever.
+- [WowNav](./wownav.md): the route system of WoW: Forever.
 - [Movement](./movement.md): compass, facing, following, falling, walls and the corpse run.
 - [Scanner](./scanner.md): lists of things around you, with Enter handing over to the navigation window.
 - [Targeting](./targeting.md): selecting the target for the route to your target.

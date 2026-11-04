@@ -1,8 +1,6 @@
 # Navigation und Routen
 
-WowVision kann dich zu Fuß an einen Ort führen. Im Navigationsfenster (F10) wählst du, wo du startest und wohin du willst. WowVision berechnet eine Route entlang bekannter Wege, und ein akustisches Signal führt dich dann von Wegpunkt zu Wegpunkt, bis du ankommst. Diese Seite behandelt das Navigationsfenster, die Kartendaten dahinter, das Signal und alle Tasten, die du beim Gehen einer Route benutzt.
-
-Spielst du WoW: Forever, gibt es ein zweites, neueres Routensystem namens WowNav. Es benutzt dasselbe Fenster und dieselben Tasten; was anders ist, steht auf der Seite [WowNav (WoW: Forever)](wownav.md).
+WowVision kann dich zu Fuß an einen Ort führen. Im Navigationsfenster (F10) wählst du, wo du startest und wohin du willst. WowVision berechnet eine Route entlang bekannter Wege, und ein akustisches Signal führt dich dann von Wegpunkt zu Wegpunkt, bis du ankommst. Diese Seite behandelt das Navigationsfenster, das Signal und alle Tasten, die du beim Gehen einer Route benutzt.
 
 Hinweis: Die Ansagen dieser Seite kommen aus lokalisierten Texten und werden auf einem deutschen Client auf Deutsch gesprochen. Die Beispiele zeigen, was du hörst. Namen von Orten, NPCs und Objekten stammen aus den Spieldaten und bleiben so, wie sie dort stehen.
 
@@ -16,18 +14,20 @@ Hinweis: Die Ansagen dieser Seite kommen aus lokalisierten Texten und werden auf
 
 Du kannst auch ein Signal in gerader Linie ganz ohne Route setzen: mit dem Kontrollkästchen Direkt im Fenster, im Scanner oder mit dem Befehl /beacon.
 
-## Kartendaten
+## Welche Routen du hast
 
-Routen brauchen Kartendaten: ein Netz aus Wegpunkten, die miteinander verbunden sind, plus die Namen der Orte, zu denen du gehen kannst.
+Routen brauchen Kartendaten: ein Netz aus Wegpunkten, die miteinander verbunden sind, plus die Namen der Orte, zu denen du gehen kannst. WowVision hat zwei Routensysteme, jedes mit eigenen Daten. Welches du hast, hängt von deiner Spielversion ab:
 
-- The Burning Crusade (TBC), WoW: Forever und Classic Era. Die Kartendaten liegen in einem eigenen Addon-Ordner namens WowVision_MapData_TBC. Er steckt im WowVision-Download (zip) neben dem Ordner WowVision, ein einziges Entpacken installiert also beide (siehe [Installation](../getting-started/installation.md)). Er wird automatisch eingeschaltet, solange das Addon in der Addon-Liste des Spiels aktiviert ist. Seine TOC-Datei ist für The Burning Crusade und WoW: Forever gemacht; auf Classic Era hält das Spiel ihn deshalb für veraltet und lädt ihn eventuell nicht.
-- Mists of Pandaria und Retail. Hier sind keine Kartendaten enthalten. Das Navigationsfenster öffnet sich, aber seine Listen sind leer. Signal in gerader Linie, /beacon, die Entfernungsansage und alle anderen Tasten dieser Seite funktionieren trotzdem. Andere Kartendaten-Addons für WowVision funktionieren neben dem mitgelieferten weiter.
+| Spielversion | Routen |
+|--------------|--------|
+| WoW: Forever | [WowNav](./wownav.md), standardmäßig an. Du kannst es ausschalten und stattdessen die klassischen Routen benutzen. |
+| The Burning Crusade | [Klassische Routen](#klassische-routen). |
+| Classic Era | Klassische Routen, wenn das Spiel ihre Kartendaten lädt; siehe [Kartendaten](#kartendaten). |
+| Mists of Pandaria und Retail | Hier sind keine Kartendaten enthalten. Das Navigationsfenster öffnet sich, aber seine Listen sind leer. Signal in gerader Linie, /beacon, die Entfernungsansage und alle anderen Tasten dieser Seite funktionieren trotzdem. |
 
-Die mitgelieferten Daten stammen aus den Vermessungsdaten des Addons Sku: seine Wegpunkte, die Verbindungen dazwischen und die Namen von NPCs, Kreaturen und Objekten. Sie decken die Östlichen Königreiche, Kalimdor, die Tiefenbahn, die Scherbenwelt und Nordend ab. Die Dateien für Nordend und das Startgebiet der Todesritter sind enthalten, werden aber nie über das hinaus erweitert, was die Vermessung enthielt. Rechne dort also mit mehr Lücken als in der alten Welt. Auf einem deutschen oder französischen Spielclient werden die Ortsnamen in deiner Sprache angezeigt.
+Beide Systeme benutzen dasselbe Fenster, dieselben Tasten und dasselbe Signal. Diese Seite gilt also für beide und sagt es, wo sie sich unterscheiden. Was jedes von ihnen ausmacht, steht weiter unten unter [Klassische Routen](#klassische-routen) und auf der Seite [WowNav (WoW: Forever)](./wownav.md).
 
-Namen in diesen Daten haben eine feste Form: der Name, dann seine Rolle, falls er eine hat, dann das Gebiet, eine Spawn-Nummer und die Kartenkoordinaten, alles durch Semikola getrennt. Zum Beispiel: "Shailiea;Stormwind City;1;30.38;53.33" oder "Eldraeith;Herbalism Supplies;Stormwind City;1;46.66;78.65". WowVision liest den Namen genau so vor. Dein Screenreader macht an den Semikola vielleicht eine Pause oder liest sie laut vor. Die Rollenwörter helfen bei der Suche: "Questgeber", "Lehrer", "Bankier", "Auktionator", "Reparatur", "Stallmeister" und viele mehr sind Teil des Namens.
-
-Liegt ein Ziel nicht im Verbindungsnetz (die meisten Kreaturen und Objekte tun das nicht), führt die Route durch das Netz zum nächsten verbundenen Wegpunkt und endet dann mit einem geraden Stück bis zum Ziel. WowVision sagt dir, wie lang dieses gerade Stück ist, zum Beispiel "letzte 40 Meter direkt".
+Die Beispiele auf dieser Seite benutzen die schlichten Ortsnamen von WowNav. Klassische Routen lesen Namen in einer längeren Form; siehe [Ortsnamen](#ortsnamen).
 
 ## Das Navigationsfenster (F10)
 
@@ -38,7 +38,7 @@ Das Fenster hat vier Stationen. Zwischen ihnen wechselst du mit Tab und Umschalt
 | Station | Was es ist |
 |---------|------------|
 | Direkt | Ein Kontrollkästchen. Bei jedem Öffnen des Fensters aus. |
-| Einstiegspunkte | Die 20 nächsten Punkte des Wegnetzes (mit WowNav die 50 nächsten). Nicht sichtbar, solange Direkt an ist. |
+| Einstiegspunkte | Die nächsten Punkte des Wegnetzes: 20 bei klassischen Routen, 50 mit WowNav. Nicht sichtbar, solange Direkt an ist. |
 | Suchen | Ein Textfeld, das die Zielliste filtert. |
 | Ziele | Die Liste der Orte, zu denen du gehen kannst. |
 
@@ -46,19 +46,19 @@ Wenn sich das Fenster öffnet, landest du auf dem Einstiegspunkt, der schon ausg
 
 ### Einstiegspunkte
 
-Der Einstiegspunkt ist die Stelle, an der deine Route ins Netz einmündet. WoW ist völlig dreidimensional, und so ist der nächste Wegpunkt manchmal die Straße unter einer Brücke oder der Boden unter dir. Deshalb listet WowVision die 20 nächsten auf (mit WowNav die 50 nächsten, siehe [WowNav (WoW: Forever)](./wownav.md)) und lässt dich wählen.
+Der Einstiegspunkt ist die Stelle, an der deine Route ins Netz einmündet. WoW ist völlig dreidimensional, und so ist der nächste Wegpunkt manchmal die Straße unter einer Brücke oder der Boden unter dir. Deshalb listet WowVision die nächsten auf und lässt dich wählen.
 
-Jeder Eintrag liest seinen Namen, seine Entfernung und die Richtung relativ zu deiner Blickrichtung, zum Beispiel "Shailiea;Stormwind City;1;30.38;53.33, 4 Meter, voraus links". Die Richtungen sind voraus, voraus rechts, rechts, hinten rechts, hinten, hinten links, links und voraus links. Der gewählte Eintrag wird mit ausgewählt angesagt.
+Jeder Eintrag liest seinen Namen, seine Entfernung und die Richtung relativ zu deiner Blickrichtung, zum Beispiel "Innkeeper Allison (Innkeeper), 4 Meter, voraus links". Die Richtungen sind voraus, voraus rechts, rechts, hinten rechts, hinten, hinten links, links und voraus links. Der gewählte Eintrag wird mit ausgewählt angesagt.
 
 - Der nächste Einstiegspunkt ist beim Öffnen des Fensters ausgewählt.
 - Drücke Eingabe auf einem anderen Eintrag, um stattdessen diesen zu wählen. Du hörst sofort ausgewählt, und wieder jedes Mal, wenn du auf ihn zurückkehrst. Es ist immer nur ein Eintrag ausgewählt.
-- Während du schwimmst oder tauchst, ist stattdessen der nächste Eintrag vorgewählt, der im Wasser liegt, falls die Daten Wasserpunkte kennen. In den TBC-Daten gibt es keine, dort bleibt also der nächste Eintrag gewählt. Mit WowNav hörst du "Kein Wasserpunkt in der Nähe", wenn kein Wasserpunkt in der Nähe ist.
+- Während du schwimmst oder tauchst, ist stattdessen der nächste Eintrag vorgewählt, der im Wasser liegt, falls die Daten Wasserpunkte kennen. Mit WowNav hörst du "Kein Wasserpunkt in der Nähe", wenn kein Wasserpunkt in der Nähe ist. In den klassischen Daten gibt es keine Wasserpunkte, dort bleibt also der nächste Eintrag gewählt.
 
 Die Route, die du bekommst, enthält den Weg von deinem Standort bis zum Einstiegspunkt. Wähle also einen Einstiegspunkt, zu dem du wirklich gehen kannst.
 
 ### Direkt
 
-Hake Direkt an (drücke Eingabe auf dem Kontrollkästchen), wenn du keine Route willst. Die Einstiegspunkte verschwinden, und Eingabe auf einem Ziel setzt ein gerades Signal genau auf diesen Punkt. Du hörst zum Beispiel "Direkt: Shailiea;Stormwind City;1;30.38;53.33, 120 Meter" und bei der Ankunft "Angekommen" und den Namen. Nutze das, wenn du schon nah dran bist, wenn du in einem Gebäude bist, das das Netz nicht kennt, oder wenn du in gerader Linie irgendwohin willst.
+Hake Direkt an (drücke Eingabe auf dem Kontrollkästchen), wenn du keine Route willst. Die Einstiegspunkte verschwinden, und Eingabe auf einem Ziel setzt ein gerades Signal genau auf diesen Punkt. Du hörst zum Beispiel "Direkt: Innkeeper Allison (Innkeeper), 120 Meter" und bei der Ankunft "Angekommen" und den Namen. Nutze das, wenn du schon nah dran bist, wenn du in einem Gebäude bist, das das Netz nicht kennt, oder wenn du in gerader Linie irgendwohin willst.
 
 Direkt ist die erste Station. Um dorthin zu kommen, drücke Umschalt+Tab von den Einstiegspunkten aus.
 
@@ -66,13 +66,14 @@ Direkt ist die erste Station. Um dorthin zu kommen, drücke Umschalt+Tab von den
 
 Drücke Tab von den Einstiegspunkten aus, um zu Suchen zu kommen. Das Eingabefeld nimmt deine Eingabe sofort an, und was du tippst, wird beim Tippen vorgelesen. Tippe ein Namensstück, zum Beispiel "Auktionator", und drücke Eingabe, um es anzuwenden. WowVision liest vor, was du getippt hast. Die Liste darunter wird sofort gefiltert. Tab wendet den Text ebenfalls an und geht zur nächsten Station weiter; Esc schließt das Eingabefeld, ohne die Suche zu ändern.
 
-- Die Suche unterscheidet nicht zwischen Groß- und Kleinschreibung und findet jeden Teil des ganzen Namens, einschließlich der Rolle, des Gebiets und der Zahlen. Es ist ein einziges Textstück, keine mehreren Wörter: "Auktionator Sturmwind" findet nichts, weil das Leerzeichen nicht in den Daten steht, aber "Auktionator" oder "Sturmwind" funktionieren jeweils einzeln.
-- Lass das Feld leer, um alles auf deinem Kontinent aufzulisten.
+- Die Suche unterscheidet nicht zwischen Groß- und Kleinschreibung und findet jeden Teil des Textes eines Ortes. Es ist ein einziges Textstück, keine mehreren Wörter: "Auktionator Sturmwind" findet nichts, aber "Auktionator" oder "Sturmwind" funktionieren jeweils einzeln.
+- Mit WowNav ist dieser Text der Name auf Englisch und Deutsch, die Kategorien des Ortes und sein Gebiet. Bei klassischen Routen ist es der ganze lange Name, einschließlich der Rolle, des Gebiets und der Zahlen.
+- Lass das Feld leer, um alles auf deinem Kontinent aufzulisten, mit WowNav bis zu den nächsten 1000 Orten.
 - Die Suche umfasst alle Kartendaten des Kontinents, auf dem du bist, Routen können also das Gebiet verlassen, in dem du stehst.
 
 ### Ziele
 
-Drücke noch einmal Tab, um zu Ziele zu kommen. Es ist eine einzige lange Liste, sortiert nach der Entfernung von dem Ort, an dem du das Fenster geöffnet hast, das nächste zuerst. Sie kann Zehntausende Einträge enthalten und funktioniert deshalb wie ein einziges Bedienelement und nicht wie eine echte Liste aus Einzelelementen:
+Drücke noch einmal Tab, um zu Ziele zu kommen. Es ist eine einzige lange Liste, sortiert nach der Entfernung von dem Ort, an dem du das Fenster geöffnet hast, das nächste zuerst. Sie kann sehr lang sein (bis zu 1000 Einträge mit WowNav, Zehntausende bei klassischen Routen) und funktioniert deshalb wie ein einziges Bedienelement und nicht wie eine echte Liste aus Einzelelementen:
 
 | Taste | Was sie tut |
 |-------|-------------|
@@ -80,9 +81,9 @@ Drücke noch einmal Tab, um zu Ziele zu kommen. Es ist eine einzige lange Liste,
 | Pos1 / Ende | Erstes / letztes Ziel. |
 | Eingabe | Das Fenster schließen und die Route starten (oder das gerade Signal, wenn Direkt an ist). |
 
-Jedes Ziel liest seinen Namen und seine Entfernung, dann seine Position in der Liste, zum Beispiel "Shailiea;Stormwind City;1;30.38;53.33, 120 Meter, 1 von 342". Ein Ziel, das du in den letzten Minuten erreicht hast, wird mit Besucht davor angesagt; siehe [Besuchte Orte](#besuchte-orte). Eine leere Liste liest "Leer".
+Jedes Ziel liest seinen Namen und seine Entfernung, dann seine Position in der Liste. Mit WowNav kommt nach der Entfernung, was der Ort ist und wo er ist, zum Beispiel "Innkeeper Allison (Innkeeper), 85 Meter, Questgeber, Händler, Gastwirt, Stormwind City, 1 von 342". Ein Ziel, das du in den letzten Minuten erreicht hast, wird mit Besucht davor angesagt; siehe [Besuchte Orte](#besuchte-orte). Eine leere Liste liest "Leer".
 
-Wenn du Eingabe drückst, hörst du die Zusammenfassung der Route, zum Beispiel "12 Wegpunkte, 340 Meter". Die Meter schließen den Weg zu deinem Einstiegspunkt ein. Endet die Route mit einem geraden Stück, kommt "letzte 40 Meter direkt" dazu. Stimmt etwas nicht, hörst du Keine Route gefunden, manchmal gefolgt von einem kurzen Grund wie "nicht erreichbar" (kein Weg führt von deinem Einstiegspunkt dorthin) oder "kein Einstieg".
+Wenn du Eingabe drückst, hörst du die Zusammenfassung der Route, zum Beispiel "12 Wegpunkte, 340 Meter". Die Meter schließen den Weg zu deinem Einstiegspunkt ein. Die Zusammenfassung kann noch mehr darüber sagen, wie die Route endet: siehe [Das letzte Stück](#das-letzte-stück) für klassische Routen und [WowNav (WoW: Forever)](./wownav.md#eine-route-starten-und-ihr-folgen). Stimmt etwas nicht, hörst du Keine Route gefunden, manchmal gefolgt von einem kurzen Grund wie "nicht erreichbar" (kein Weg führt von deinem Einstiegspunkt dorthin) oder "kein Einstieg".
 
 ### Vom Scanner aus
 
@@ -100,7 +101,7 @@ Wenn die Route beginnt, spricht WowVision die Zusammenfassung, und das Signal be
 - Angekommen wird am Ende einer Route gesprochen, gefolgt vom Namen des Ziels.
 - Signal gestoppt wird gesprochen, wenn du abbrichst.
 
-Ein Wegpunkt gilt als erreicht, wenn du innerhalb der Ankunftsdistanz von ihm bist (siehe [Ankunftsdistanz](#ankunftsdistanz)).
+Ein Wegpunkt gilt als erreicht, wenn du innerhalb der Ankunftsdistanz von ihm bist (siehe [Ankunftsdistanz](#ankunftsdistanz)). Mit WowNav hat jeder Wegpunkt seine eigene Distanz.
 
 ### Signaltöne
 
@@ -147,7 +148,7 @@ Das Drehen braucht zwei Kameraeinstellungen: den Kamera-Folgestil Immer (die Spi
 
 ### Ankunftsdistanz
 
-Die Ankunftsdistanz (Arrival Distance) gibt an, wie nah du in Metern an einen Wegpunkt kommen musst, damit er als erreicht gilt. Eine kleine Distanz zwingt dich, jeden Punkt genau zu treffen; eine große verzeiht Umwege. WowVision hat drei Werte, von denen jeweils einer aktiv ist:
+Die Ankunftsdistanz (Arrival Distance) gibt an, wie nah du in Metern an einen Wegpunkt kommen musst, damit er als erreicht gilt. Eine kleine Distanz zwingt dich, jeden Punkt genau zu treffen; eine große verzeiht Umwege. WowVision hat drei Werte, von denen jeweils einer aktiv ist. Mit WowNav benutzen die Wegpunkte einer Route stattdessen ihre eigene Distanz aus den Daten, und du kannst für sie ein Minimum einstellen; siehe [WowNav (WoW: Forever)](./wownav.md#eine-route-starten-und-ihr-folgen).
 
 | Name | Standarddistanz |
 |------|-----------------|
@@ -171,7 +172,7 @@ Bist du vom Weg abgekommen oder willst du einen Wegpunkt überspringen, den du n
 
 ### Die Route neu starten
 
-Bist du weit von der Route abgekommen, drücke Strg+Umschalt+N. WowVision plant das zuletzt gewählte Ziel neu, ausgehend von dem Ort, an dem du jetzt stehst. Das funktioniert für Ziele aus dem Fenster, aus dem Scanner, von der Route zu deinem Ziel und für den Leichenlauf. Mit den klassischen Kartendaten wählst du keinen Einstiegspunkt: Der Router nimmt von den fünf nächsten Wegpunkten denjenigen, der die beste Route ergibt. Du hörst wieder die Zusammenfassung der Route, oder Keine Route zum Neustarten, wenn du noch kein Ziel gewählt hast.
+Bist du weit von der Route abgekommen, drücke Strg+Umschalt+N. WowVision plant das zuletzt gewählte Ziel neu, ausgehend von dem Ort, an dem du jetzt stehst. Das funktioniert für Ziele aus dem Fenster, aus dem Scanner, von der Route zu deinem Ziel und für den Leichenlauf. Bei klassischen Routen nimmt der Router von den fünf nächsten Wegpunkten denjenigen, der die beste Route ergibt. Mit WowNav beginnt die Route dort, wo du stehst, wenn WowNav weiß, auf welcher Ebene du bist. Du hörst wieder die Zusammenfassung der Route, oder Keine Route zum Neustarten, wenn du noch kein Ziel gewählt hast.
 
 ### Navigation abbrechen
 
@@ -184,10 +185,10 @@ Die Belegung Route zu deinem Ziel nimmt die Kreatur oder das Gruppenmitglied, da
 Was passiert, hängt davon ab, wen du im Ziel hast:
 
 - Ein Gruppen- oder Schlachtzugsmitglied. WowVision benutzt die aktuelle Position dieses Spielers.
-- Ein NPC oder eine Kreatur. Mit den klassischen Kartendaten sucht WowVision den nächsten Wegpunkt mit genau demselben Namen im Umkreis von 120 Metern. Mit WowNav benutzt es die Position der Kreatur im WowNav-Katalog. Ein weiterer Spawn derselben Art, der weiter als 120 Meter entfernt ist, zählt nicht.
+- Ein NPC oder eine Kreatur. Bei klassischen Routen sucht WowVision den nächsten Wegpunkt mit genau demselben Namen im Umkreis von 120 Metern. Mit WowNav benutzt es die Position der Kreatur im WowNav-Katalog. Ein weiterer Spawn derselben Art, der weiter als 120 Meter entfernt ist, zählt nicht.
 - Alles andere. Du hörst Die Position deines Ziels ist nicht bekannt.
 
-Weitere Dinge, die du hören kannst: Du hast kein Ziel, Du hast dich selbst im Ziel, Position nicht verfügbar, Keine Route zu deinem Ziel (hier keine Kartendaten oder WowNav kann nicht starten). Mit den klassischen Kartendaten wird eine Route, die der Router nicht findet, als Keine Route gefunden mit ihrem Grund gemeldet. Klappt es, hörst du den Namen des Ziels (mit den klassischen Kartendaten den Namen des passenden Wegpunkts in seiner langen Form) und dann die Zusammenfassung der Route, und die Route beginnt sofort am nächsten Einstiegspunkt (klassische Daten) oder an deiner Position (WowNav).
+Weitere Dinge, die du hören kannst: Du hast kein Ziel, Du hast dich selbst im Ziel, Position nicht verfügbar, Keine Route zu deinem Ziel (hier keine Kartendaten oder WowNav kann nicht starten). Bei klassischen Routen wird eine Route, die der Router nicht findet, als Keine Route gefunden mit ihrem Grund gemeldet. Klappt es, hörst du den Namen des Ziels (bei klassischen Routen den Namen des passenden Wegpunkts in seiner langen Form) und dann die Zusammenfassung der Route, und die Route beginnt sofort an deiner Position (WowNav) oder am nächsten Einstiegspunkt (klassische Routen).
 
 Kann WowNav nicht erkennen, auf welcher Ebene du bist, hörst du "Deine Ebene ist hier nicht eindeutig. Wähle deinen Start." und das Navigationsfenster öffnet sich mit dem Ziel schon ausgewählt, sodass du den Start selbst wählst.
 
@@ -208,7 +209,7 @@ Zwei Belegungen, beide standardmäßig nicht belegt, führen dich zum nächsten 
 | Route zum nächsten unbesuchten gleichnamigen Ziel | Plant eine Route dorthin, mit Einstieg an dem Einstiegspunkt, den das Fenster vorwählen würde. |
 | Direkt zum nächsten unbesuchten gleichnamigen Ziel | Setzt dorthin ein gerades Signal. |
 
-"Gleicher Name" heißt in den klassischen Daten der Name vor dem ersten Semikolon ("Peacebloom") und bei WowNav der ganze Name, ohne Beachtung der Groß- und Kleinschreibung. Der Ort, an dem du gerade bist, und die als besucht markierten werden übersprungen. Drücke die Taste immer wieder, und du gehst nacheinander jeden Spawn dieses Objekts ab.
+"Gleicher Name" heißt bei WowNav der ganze Name und bei klassischen Routen der Name vor dem ersten Semikolon ("Peacebloom"), ohne Beachtung der Groß- und Kleinschreibung. Der Ort, an dem du gerade bist, und die als besucht markierten werden übersprungen. Drücke die Taste immer wieder, und du gehst nacheinander jeden Spawn dieses Objekts ab.
 
 Ohne früher gewähltes Ziel hörst du Wähle zuerst ein Ziel im Navigationsfenster. Ist jeder Spawn besucht, hörst du "Kein unbesuchtes Ziel Peacebloom gefunden".
 
@@ -220,11 +221,29 @@ Du kannst ein Signal auch ohne das Fenster setzen. Tippe diese Befehle ins Chatf
 |--------|------------|
 | /beacon | Spricht deine Position in Kartenprozent, zum Beispiel "50.5 30.4", und, falls ein Signal aktiv ist, dessen Entfernung und Winkel. |
 | /beacon 50.5 30.4 | Gerades Signal zu Kartenkoordinaten auf der Karte deines aktuellen Gebiets: die Zahlen, die Questführer dir geben. Du hörst "Signal gesetzt" und die Entfernung. |
-| /beacon to bank | Routet zum nächsten bekannten Ort, dessen Name "bank" enthält. Du hörst seinen Namen, dann die Zusammenfassung der Route. Du wählst keinen Einstiegspunkt: Mit den klassischen Kartendaten nimmt der Router den besten der fünf nächsten Wegpunkte, mit WowNav wird der Einstiegspunkt benutzt, den F10 vorwählen würde. |
+| /beacon to bank | Routet zum nächsten bekannten Ort, dessen Name "bank" enthält. Du hörst seinen Namen, dann die Zusammenfassung der Route. Du wählst keinen Einstiegspunkt: WowNav benutzt den, den F10 vorwählen würde, und bei klassischen Routen nimmt der Router den besten der fünf nächsten Wegpunkte. |
 | /beacon world x y | Gerades Signal zu rohen Weltkoordinaten. |
 | /beacon stop | Dasselbe wie Umschalt+F12. |
 
 Bei /beacon to ergibt ein unbekannter Name "Keine Route gefunden" und den Namen. Ein Signal von /beacon mit Koordinaten endet mit "Angekommen", wenn du nah genug bist, wie jede Route.
+
+## Klassische Routen
+
+Klassische Routen sind das Routensystem von The Burning Crusade und Classic Era, und von WoW: Forever, wenn du WowNav ausschaltest. Alles auf dieser Seite gilt für sie. Dieser Abschnitt ergänzt, was nur für sie gilt.
+
+### Kartendaten
+
+Die Kartendaten liegen in einem eigenen Addon-Ordner namens WowVision_MapData_TBC. Er steckt im WowVision-Download (zip) neben dem Ordner WowVision, ein einziges Entpacken installiert also beide (siehe [Installation](../getting-started/installation.md)). Er wird automatisch eingeschaltet, solange das Addon in der Addon-Liste des Spiels aktiviert ist. Seine TOC-Datei ist für The Burning Crusade und WoW: Forever gemacht; auf Classic Era hält das Spiel ihn deshalb für veraltet und lädt ihn eventuell nicht. WowNav benutzt diesen Ordner nicht: Seine Daten liegen im Ordner WowVision. Andere Kartendaten-Addons für WowVision funktionieren neben dem mitgelieferten weiter.
+
+Die mitgelieferten Daten stammen aus den Vermessungsdaten des Addons Sku: seine Wegpunkte, die Verbindungen dazwischen und die Namen von NPCs, Kreaturen und Objekten. Sie decken die Östlichen Königreiche, Kalimdor, die Tiefenbahn, die Scherbenwelt und Nordend ab. Die Dateien für Nordend und das Startgebiet der Todesritter sind enthalten, werden aber nie über das hinaus erweitert, was die Vermessung enthielt. Rechne dort also mit mehr Lücken als in der alten Welt. Auf einem deutschen oder französischen Spielclient werden die Ortsnamen in deiner Sprache angezeigt.
+
+### Ortsnamen
+
+Namen in diesen Daten haben eine feste Form: der Name, dann seine Rolle, falls er eine hat, dann das Gebiet, eine Spawn-Nummer und die Kartenkoordinaten, alles durch Semikola getrennt. Zum Beispiel: "Shailiea;Stormwind City;1;30.38;53.33" oder "Eldraeith;Herbalism Supplies;Stormwind City;1;46.66;78.65". WowVision liest den Namen genau so vor. Dein Screenreader macht an den Semikola vielleicht eine Pause oder liest sie laut vor. Die Rollenwörter helfen bei der Suche: "Questgeber", "Lehrer", "Bankier", "Auktionator", "Reparatur", "Stallmeister" und viele mehr sind Teil des Namens.
+
+### Das letzte Stück
+
+Liegt ein Ziel nicht im Verbindungsnetz (die meisten Kreaturen und Objekte tun das nicht), führt die Route durch das Netz zum nächsten verbundenen Wegpunkt und endet dann mit einem geraden Stück bis zum Ziel. WowVision sagt dir, wie lang dieses gerade Stück ist, zum Beispiel "letzte 40 Meter direkt".
 
 ## Einstellungen
 
@@ -256,9 +275,9 @@ Zwei Einstellungen des Moduls Navigation hängen damit zusammen: Automatisch zur
 
 ## Beispiele
 
-### Von der Bank zum Auktionshaus gehen (Sturmwind, TBC oder WoW: Forever)
+### Von der Bank zum Auktionshaus gehen (Sturmwind)
 
-1. Stell dich vor die Bank und drücke F10. Du landest auf dem nächsten Einstiegspunkt, angesagt mit ausgewählt, zum Beispiel "Name;Stormwind City;1;62.1;70.4, 3 Meter, voraus, ausgewählt". Das passt, lass ihn also.
+1. Stell dich vor die Bank und drücke F10. Du landest auf dem nächsten Einstiegspunkt, angesagt mit ausgewählt. Das passt, lass ihn also.
 2. Drücke Tab. Du bist in Suchen und kannst gleich tippen. Tippe "Auktionator" und drücke Eingabe. WowVision wiederholt deinen Text.
 3. Drücke Tab, um zu Ziele zu kommen. Du hörst den nächsten Auktionator mit seiner Entfernung und seiner Position in der Liste. Drücke Pfeil runter, um den nächsten zu hören.
 4. Drücke Eingabe. Das Fenster schließt sich, und du hörst eine Zusammenfassung wie "9 Wegpunkte, 410 Meter".
@@ -271,7 +290,7 @@ Zwei Einstellungen des Moduls Navigation hängen damit zusammen: Automatisch zur
 1. Drücke F9, um den Scanner zu öffnen, und finde die Quest, dann ihren NPC (siehe [Scanner](./scanner.md)).
 2. Drücke Eingabe auf dem NPC. Das Navigationsfenster öffnet sich mit dem nächsten Einstiegspunkt und dem NPC, beide ausgewählt, der Fokus auf dem Ziel.
 3. Drücke Eingabe. Willst du vorher einen anderen Startpunkt, drücke zweimal Umschalt+Tab, um zu den Einstiegspunkten zu kommen, wähle einen mit Eingabe und kehre mit zweimal Tab zurück.
-4. Geh die Route wie oben. Liegt der NPC nicht im Wegnetz, endet die Route mit "letzte 25 Meter direkt": Das letzte Stück ist eine gerade Linie, nutze also das Signal und Alt Gr.
+4. Geh die Route wie oben. Liegt der NPC nicht im Wegnetz, ist das letzte Stück kein bekannter Weg, nutze also das Signal und Alt Gr. Bei klassischen Routen sagt das die Zusammenfassung ("letzte 25 Meter direkt"), und WowNav sagt dir am Ende des Netzes, wie weit der NPC noch entfernt ist.
 
 ### Das nächste Kraut finden
 
@@ -281,7 +300,7 @@ Zwei Einstellungen des Moduls Navigation hängen damit zusammen: Automatisch zur
 
 ## Verwandte Seiten
 
-- [WowNav (WoW: Forever)](./wownav.md): das neuere Routensystem von WoW: Forever.
+- [WowNav (WoW: Forever)](./wownav.md): das Routensystem von WoW: Forever.
 - [Bewegung und Orientierung](./movement.md): Kompass, Blickrichtung, Folgen, Fallen, Wände und der Leichenlauf.
 - [Scanner](./scanner.md): Listen von Dingen um dich herum, wobei Eingabe ans Navigationsfenster übergibt.
 - [Zielerfassung](./targeting.md): das Ziel für die Route zu deinem Ziel auswählen.

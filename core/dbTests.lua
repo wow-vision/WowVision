@@ -86,8 +86,36 @@ testRunner:addSuite("DB migrations", {
         local db = { someKey = 1 }
         local ok, err = pcall(dbManager.beginReconcile, dbManager, {}, db)
         t:assertTrue(ok, err)
-        t:assertEqual(db._version, 6)
+        t:assertEqual(db._version, 7)
         t:assertType(db.bindings, "table")
+    end,
+
+    ["WowNav routes saved off take the new default in both stores"] = function(t)
+        local function saved()
+            return { submodules = { navigation = { submodules = { wownav = { settings = { enabled = false, comfort = 40 } } } } } }
+        end
+        local default = { submodules = { navigation = { submodules = { wownav = { settings = { enabled = true, comfort = 60 } } } } } }
+        local char = saved()
+        char._version = 6
+        dbManager:beginReconcile(default, char)
+        local global = saved()
+        global._version = 4
+        dbManager:beginReconcileGlobal(default, global)
+        for _, db in ipairs({ char, global }) do
+            local settings = db.submodules.navigation.submodules.wownav.settings
+            t:assertEqual(settings.enabled, true)
+            t:assertEqual(settings.comfort, 40)
+        end
+    end,
+
+    ["WowNav routes turned off after the migration stay off"] = function(t)
+        local db = {
+            _version = 7,
+            submodules = { navigation = { submodules = { wownav = { settings = { enabled = false } } } } },
+        }
+        local default = { submodules = { navigation = { submodules = { wownav = { settings = { enabled = true } } } } } }
+        dbManager:beginReconcile(default, db)
+        t:assertEqual(db.submodules.navigation.submodules.wownav.settings.enabled, false)
     end,
 
     ["a Range module switched off stays off through its alert"] = function(t)
@@ -241,6 +269,6 @@ testRunner:addSuite("DB migrations", {
         dbManager:beginReconcileGlobal({}, db)
         t:assertEqual(#general.items, 7)
         t:assertEqual(general.items[7].object.type, "GameClock")
-        t:assertEqual(db._version, 4)
+        t:assertEqual(db._version, 5)
     end,
 })

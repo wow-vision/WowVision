@@ -176,6 +176,18 @@ local function moveRangeSwitchToAlert(db)
     range.alertScopes.rangeChange = "char"
 end
 
+-- WowNav routes went from off to on by default. The old default is saved like
+-- any other value, so it goes, and the reconcile that follows fills in the new
+-- one. The account store holds it too.
+local function dropOldWowNavDefault(db)
+    local navigation = db.submodules and db.submodules.navigation
+    local wownav = navigation and navigation.submodules and navigation.submodules.wownav
+    local settings = wownav and wownav.settings
+    if settings ~= nil and settings.enabled == false then
+        settings.enabled = nil
+    end
+end
+
 local migrations = {
     {
         version = 1,
@@ -212,6 +224,10 @@ local migrations = {
     {
         version = 6,
         migrate = moveRangeSwitchToAlert,
+    },
+    {
+        version = 7,
+        migrate = dropOldWowNavDefault,
     },
 }
 
@@ -252,6 +268,10 @@ local globalMigrations = {
     {
         version = 4,
         migrate = moveSoftTargetSettings,
+    },
+    {
+        version = 5,
+        migrate = dropOldWowNavDefault,
     },
 }
 

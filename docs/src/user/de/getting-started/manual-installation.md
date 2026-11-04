@@ -18,7 +18,7 @@ Beide Arten installierst du auf dieselbe Weise. Wenn du die Beta über eine ält
 Das Zip enthält auf oberster Ebene zwei Addon-Ordner:
 
 - WowVision: das Addon selbst. Es enthält alles für alle Spielversionen, auch die Übersetzungen sowie die Sounds und Sprachaufnahmen, die WowVision abspielt. Übersetzungen und Audio musst du nicht getrennt herunterladen.
-- WowVision_MapData_TBC: die Kartendaten, mit denen die Navigation (das F10-Fenster und die Routen) auf den Anniversary-Realms von The Burning Crusade und in WoW: Forever funktioniert. Siehe [Navigation und Routen](../world/navigation.md). Für die anderen Spielversionen ist er nicht gedacht; dort kannst du ihn weglassen. WoW: Forever kann außerdem mit WowNav routen. Dessen Navigationsdaten liegen schon im Ordner WowVision (siehe [WowNav (WoW: Forever)](../world/wownav.md)).
+- WowVision_MapData_TBC: die Kartendaten der klassischen Routen, mit denen die Navigation (das F10-Fenster und die Routen) auf den Anniversary-Realms von The Burning Crusade funktioniert. Siehe [Navigation und Routen](../world/navigation.md). WoW: Forever routet standardmäßig mit WowNav, dessen Daten schon im Ordner WowVision liegen (siehe [WowNav (WoW: Forever)](../world/wownav.md)), und benutzt diesen Ordner nur, wenn du WowNav ausschaltest. Für die anderen Spielversionen ist er nicht gedacht; dort kannst du ihn weglassen.
 
 Beide Ordner werden durch dasselbe Entpacken angelegt. Kartendaten-Addons, die andere Leute veröffentlichen, kannst du daneben installieren.
 

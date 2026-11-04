@@ -34,7 +34,7 @@ local L = module.L
 module:setLabel(L["WowNav Routes"])
 
 local settings = module:hasSettings()
-settings:add({ key = "enabled", type = "Bool", label = L["Routes from WowNav"], default = false })
+settings:add({ key = "enabled", type = "Bool", label = L["Routes from WowNav"], default = true })
 -- WowNav's comfort level: a road route may be up to this many percent longer than the shortest way (his default 60
 -- since 2026-10-25).
 settings:add({ key = "comfort", type = "Number", label = L["Road Preference (Percent Longer)"], default = 60, min = 0, max = 300 })

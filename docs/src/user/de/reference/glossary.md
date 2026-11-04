@@ -34,6 +34,8 @@ Gruppen-Gesundheitsmonitor (Group Health Monitor) — Ein Monitor für Retail un
 
 Kartendaten (Map data) — Das Netz aus Wegpunkten, dem Routen folgen. WowVision liefert Kartendaten für The Burning Crusade und WoW: Forever mit. Siehe [Navigation und Routen](../world/navigation.md).
 
+Klassische Routen (Classic routes) — Das Routensystem von The Burning Crusade und Classic Era, das WoW: Forever anstelle von WowNav benutzen kann. Siehe [Navigation und Routen](../world/navigation.md#klassische-routen).
+
 Kontextmenü (Context menu) — Eine Liste zusätzlicher Aktionen für das Element, auf dem du stehst, geöffnet mit Umschalt+F10.
 
 Modul (Module) — Ein Teil von WowVision mit eigenem Eintrag im WowVision-Menü, zum Beispiel Puffer, Chat oder Zielerfassung. Jedes Modul lässt sich ausschalten.

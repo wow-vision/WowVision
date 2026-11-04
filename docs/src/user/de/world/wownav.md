@@ -1,6 +1,6 @@
 # WowNav (WoW: Forever)
 
-WowNav ist ein zweites Routensystem für WoW: Forever. Es wurde von Broesel33 für blinde Spieler gemacht, aus einer Vermessung des tatsächlich begehbaren Bodens der Spielwelt, und WowVision enthält es mit seiner Erlaubnis. Es weiß, wo du wirklich gehen kannst, einschließlich Treppen, Brücken und der Stockwerke von Gebäuden, und es kann dich zu Portalen, Aufzügen, Schiffen, Zeppelinen und der Tiefenbahn bringen. Diese Seite erklärt, was es tut, wie es sich von den klassischen Routen unterscheidet und wie du es benutzt.
+WowNav ist das Routensystem von WoW: Forever. Es wurde von Broesel33 für blinde Spieler gemacht, aus einer Vermessung des tatsächlich begehbaren Bodens der Spielwelt, und WowVision enthält es mit seiner Erlaubnis. Es weiß, wo du wirklich gehen kannst, einschließlich Treppen, Brücken und der Stockwerke von Gebäuden, und es kann dich zu Portalen, Aufzügen, Schiffen, Zeppelinen und der Tiefenbahn bringen. Diese Seite erklärt, was es tut, wie es sich von den klassischen Routen unterscheidet und wie du es benutzt.
 
 Du benutzt WowNav über dasselbe Navigationsfenster und dieselben Tasten wie die klassischen Routen. Lies zuerst [Navigation und Routen](./navigation.md); diese Seite beschreibt nur, was sich ändert.
 
@@ -8,16 +8,16 @@ Hinweis: Die Ansagen dieser Seite kommen aus lokalisierten Texten und werden auf
 
 (Nur WoW: Forever. Die anderen Spielversionen benutzen die klassischen Routen.)
 
-## WowNav einschalten
+## WowNav ausschalten
 
-WowNav ist standardmäßig aus. So schaltest du es ein:
+WowNav ist standardmäßig an. Jede Routenanfrage geht daran: das Navigationsfenster (F10), Eingabe im Scanner, /beacon to, die Route zu deinem Ziel, der Leichenlauf und die Tasten für besuchte Orte. Die klassischen Routen werden nicht benutzt, solange es an ist.
+
+So benutzt du stattdessen die [klassischen Routen](./navigation.md#klassische-routen):
 
 1. Öffne das WowVision-Menü (/wv), dann Navigation, dann WowNav-Routen.
-2. Schalte Routen von WowNav ein.
+2. Schalte Routen von WowNav aus.
 
-Von da an geht jede Routenanfrage an WowNav: das Navigationsfenster (F10), Eingabe im Scanner, /beacon to, die Route zu deinem Ziel, der Leichenlauf und die Tasten für besuchte Orte. Die klassischen Routen werden nicht benutzt, solange es an ist. Schalte die Einstellung wieder aus, um zurückzukehren.
-
-Es gibt auch einen Schalter Aktiviert für das Modul WowNav-Routen selbst, der an bleiben muss.
+Es gibt auch einen Schalter Aktiviert für das Modul WowNav-Routen selbst, der an bleiben muss, damit WowNav funktioniert.
 
 ## Was es abdeckt
 
@@ -189,7 +189,7 @@ Der Punkt im Wasser ist nur zum Ausrichten da. WowNav schickt dich nie ins Wasse
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
 | Aktiviert | An | Schaltet das ganze Modul ein oder aus. |
-| Routen von WowNav | Aus | Schickt jede Routenanfrage an WowNav statt an die klassischen Routen. |
+| Routen von WowNav | An | Schickt jede Routenanfrage an WowNav statt an die klassischen Routen. |
 | Straßen bevorzugen (Prozent länger) | 60 | Eine Route auf Straßen und Wegen darf um so viel Prozent länger sein als der kürzeste Weg. 0 heißt immer der kürzeste. Bis zu 300. Auch Schwimmen zählt um so viel länger. Änderst du es während einer Route, hörst du eine Sekunde nach dem letzten Verstellen "Route wird mit der neuen Straßenvorliebe neu gesucht". |
 | Feindliche Posten meiden | An | Routen führen um die Posten und Hauptstädte der gegnerischen Fraktion herum. Wo es keinen Weg drumherum gibt, führt die Route hindurch und warnt dich. Ändern plant eine laufende Route neu. |
 | Automatische Wegpunkte zeigen | Aus | Fügt der Zielliste die eigenen Wegpunkte des Netzes im Umkreis von 60 Metern hinzu und mischt die Wegpunkte bis 300 Meter unter die Einstiegspunkte. Ohne die Einstellung zeigen die Einstiegspunkte trotzdem die Wegpunkte im Umkreis von 10 Metern. Sie lesen sich "Auto, Höhe N". |

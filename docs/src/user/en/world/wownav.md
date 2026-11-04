@@ -1,21 +1,21 @@
 # WowNav (WoW: Forever)
 
-WowNav is a second route system for WoW: Forever. It was made by Broesel33 for blind players, from a survey of the real walkable ground of the game world, and WowVision includes it with his permission. It knows where you can really walk, including stairs, bridges and the floors of buildings, and it can take you to portals, elevators, boats, zeppelins and the Deeprun Tram. This page explains what it does, how it differs from the classic routes and how to use it.
+WowNav is the route system of WoW: Forever. It was made by Broesel33 for blind players, from a survey of the real walkable ground of the game world, and WowVision includes it with his permission. It knows where you can really walk, including stairs, bridges and the floors of buildings, and it can take you to portals, elevators, boats, zeppelins and the Deeprun Tram. This page explains what it does, how it differs from the classic routes and how to use it.
 
 You use WowNav through the same navigation window and the same keys as the classic routes. Read [Navigation](./navigation.md) first; this page only describes what changes.
 
 (WoW: Forever only. The other game versions use the classic routes.)
 
-## Turning WowNav on
+## Turning WowNav off
 
-WowNav is off by default. To switch it on:
+WowNav is on by default. Every route request goes to it: the navigation window (F10), the scanner's Enter, /beacon to, the route to your target, the corpse run and the visited-places keys. The classic routes are not used while it is on.
+
+To use the [classic routes](./navigation.md#classic-routes) instead:
 
 1. Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
-2. Turn on Routes from WowNav.
+2. Turn off Routes from WowNav.
 
-From then on, every route request goes to WowNav: the navigation window (F10), the scanner's Enter, /beacon to, the route to your target, the corpse run and the visited-places keys. The classic routes are not used while it is on. Turn the setting off again to go back.
-
-There is also an Enabled switch for the WowNav Routes module itself, which must stay on.
+There is also an Enabled switch for the WowNav Routes module itself, which must stay on for WowNav to work.
 
 ## What it covers
 
@@ -187,7 +187,7 @@ Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
 | Setting | Default | What it does |
 |---------|---------|--------------|
 | Enabled | On | Switches the whole module on or off. |
-| Routes from WowNav | Off | Sends every route request to WowNav instead of the classic routes. |
+| Routes from WowNav | On | Sends every route request to WowNav instead of the classic routes. |
 | Road Preference (Percent Longer) | 60 | A route on roads and paths may be this many percent longer than the shortest way. 0 means always the shortest. Up to 300. Swimming also counts as this much longer. When you change it during a route, one second after you stop adjusting you hear "Searching the route again with the new road preference". |
 | Avoid Enemy Outposts | On | Routes go around the outposts and capitals of the opposing faction. Where there is no way around, the route leads through and warns you. Changing it re-plans a running route. |
 | Show Automatic Waypoints | Off | Adds the network's own waypoints within 60 yards of you to the destination list, and mixes the waypoints up to 300 yards away into the entry points. Without it, the entry points still list the waypoints within 10 yards of you. They read "Auto, height N". |

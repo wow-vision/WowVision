@@ -16,6 +16,8 @@ Binding — An action that can be put on a key, such as Next Buffer Item. A bind
 
 Buffer — A list of information you can read at any time with Alt and the arrow keys, for example your health, gold or the auras on your target. Buffers are organized into buffer groups. See [Buffers](../information/buffers.md).
 
+Classic routes — The route system of The Burning Crusade and Classic Era, which WoW: Forever can use in place of WowNav. See [Navigation and Routes](../world/navigation.md#classic-routes).
+
 Context menu — A list of extra actions for the element you are on, opened with Shift+F10.
 
 Cooldown manager — A Blizzard window on Retail and WoW: Forever (`/cdm`) that tracks chosen spells and auras. WowVision's Cooldown Manager Auras monitor reads it. See [Monitors](../information/monitors.md).
