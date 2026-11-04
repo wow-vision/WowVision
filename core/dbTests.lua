@@ -86,8 +86,62 @@ testRunner:addSuite("DB migrations", {
         local db = { someKey = 1 }
         local ok, err = pcall(dbManager.beginReconcile, dbManager, {}, db)
         t:assertTrue(ok, err)
-        t:assertEqual(db._version, 4)
+        t:assertEqual(db._version, 6)
         t:assertType(db.bindings, "table")
+    end,
+
+    ["a Range module switched off stays off through its alert"] = function(t)
+        local db = { _version = 5, submodules = { range = { enabled = false, alerts = { rangeChange = { enabled = true } } } } }
+        dbManager:beginReconcile({}, db)
+        local range = db.submodules.range
+        t:assertEqual(range.enabled, true)
+        t:assertEqual(range.alerts.rangeChange.enabled, false)
+        t:assertEqual(range.alertScopes.rangeChange, "char")
+    end,
+
+    ["a Range module left on is not touched"] = function(t)
+        local db = { _version = 5, submodules = { range = { enabled = true, alerts = { rangeChange = { enabled = true } } } } }
+        dbManager:beginReconcile({}, db)
+        local range = db.submodules.range
+        t:assertEqual(range.alerts.rangeChange.enabled, true)
+        t:assertNil(range.alertScopes)
+    end,
+
+    ["soft target arcs and ranges move onto their alerts"] = function(t)
+        local function saved()
+            return {
+                submodules = {
+                    targeting = {
+                        settings = { softEnemyArc = "game", softEnemyRange = 0, softFriendArc = 0, softFriendRange = 25, kept = 1 },
+                    },
+                },
+            }
+        end
+        local function alertDefaults()
+            return { enabled = false, arc = 2, range = 60 }
+        end
+        local defaults = {
+            submodules = {
+                targeting = {
+                    settings = {},
+                    alerts = { softEnemy = alertDefaults(), softFriend = alertDefaults(), softInteract = alertDefaults() },
+                },
+            },
+        }
+        for _, begin in ipairs({ dbManager.beginReconcile, dbManager.beginReconcileGlobal }) do
+            local db = saved()
+            db._version = begin == dbManager.beginReconcileGlobal and 2 or 3
+            begin(dbManager, defaults, db)
+            local targeting = db.submodules.targeting
+            t:assertEqual(targeting.alerts.softEnemy.arc, 2)
+            t:assertEqual(targeting.alerts.softEnemy.range, 60)
+            t:assertEqual(targeting.alerts.softFriend.arc, 0)
+            t:assertEqual(targeting.alerts.softFriend.range, 25)
+            t:assertEqual(targeting.alerts.softInteract.enabled, false)
+            t:assertNil(targeting.settings.softFriendArc)
+            t:assertNil(targeting.settings.softFriendRange)
+            t:assertEqual(targeting.settings.kept, 1)
+        end
     end,
 
     ["the old soft target defaults give way, chosen values stay"] = function(t)
@@ -109,12 +163,13 @@ testRunner:addSuite("DB migrations", {
         for _, begin in ipairs({ dbManager.beginReconcile, dbManager.beginReconcileGlobal }) do
             local db = saved()
             db._version = begin == dbManager.beginReconcileGlobal and 2 or 3
-            begin(dbManager, defaults, db)
-            local settings = db.submodules.targeting.settings
-            t:assertEqual(settings.softEnemyArc, 2)
-            t:assertEqual(settings.softEnemyRange, 60)
-            t:assertEqual(settings.softFriendArc, 0)
-            t:assertEqual(settings.softFriendRange, 25)
+            begin(dbManager, {}, db)
+            -- Both migrations ran: what stayed is on the alert now
+            local alerts = db.submodules.targeting.alerts
+            t:assertNil(alerts.softEnemy.arc)
+            t:assertNil(alerts.softEnemy.range)
+            t:assertEqual(alerts.softFriend.arc, 0)
+            t:assertEqual(alerts.softFriend.range, 25)
         end
     end,
 
@@ -186,6 +241,6 @@ testRunner:addSuite("DB migrations", {
         dbManager:beginReconcileGlobal({}, db)
         t:assertEqual(#general.items, 7)
         t:assertEqual(general.items[7].object.type, "GameClock")
-        t:assertEqual(db._version, 3)
+        t:assertEqual(db._version, 4)
     end,
 })

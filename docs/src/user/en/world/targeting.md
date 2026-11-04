@@ -44,7 +44,7 @@ Target Change is the announcement above.
 | Announce Raid Target Marker on Hard Target | On | Puts the raid marker in front of the target's description |
 | Target in Combat Sound | On | Plays the sound when the new target is in combat with you or your group; you can choose a different sound with its Sound setting |
 
-Health Monitor reads your target's health aloud as it drops (or rises) in steps of five percent.
+(Classic Era, The Burning Crusade and Mists of Pandaria) Health Monitor reads your target's health aloud as it drops (or rises) in steps of five percent.
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
@@ -54,7 +54,7 @@ Health Monitor reads your target's health aloud as it drops (or rises) in steps 
 
 The health is rounded up to the next multiple of five, so you hear "95%" as soon as the target is at or below 95 percent, then "90%", "85%" and so on. Nothing is said at full health or at zero. When you change targets, you hear the new target's health right after its name, unless it is at full health.
 
-(Retail and WoW: Forever only) The game keeps the health of some targets secret from addons. For those targets the health monitor stays silent; there is nothing WowVision can do about it.
+(Retail and WoW: Forever) There is no Health Monitor here, because the game hides a target's health from addons in combat, just when you need it. Use the game's own Combat Audio Alerts instead, in its Accessibility options: they can say your target's health, in combat too.
 
 Example: you want a quieter fight, so you turn off health readouts.
 
@@ -103,7 +103,7 @@ Each type is an alert in the Targeting menu named Soft Target Enemy, Soft Target
 
 ### Arc and range
 
-Every soft target type has two more settings in the Targeting menu. They default to the widest arc and the longest range, because the game's own values are made for players who can see what is in front of them. WowVision only writes them for a soft target type you have switched on, so the game's values stay in place for any type you do not use. Game Default, or a range of 0, puts the game's own value back.
+Every soft target type has two more settings, inside its alert in the Targeting menu: open Soft Target Enemy, Soft Target Friend or Soft Target Interact to find them. They default to the widest arc and the longest range, because the game's own values are made for players who can see what is in front of them. WowVision only writes them for a soft target type you have switched on, so the game's values stay in place for any type you do not use. Game Default, or a range of 0, puts the game's own value back.
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
@@ -176,7 +176,7 @@ Move through the menu with the arrow keys and press Enter on an entry; see [Usin
 
 ## Range to your target
 
-While you have a target, a separate feature, the Range module (its own entry in the WowVision menu), plays your target's distance in yards from a voice pack whenever the distance changes. It is not part of Targeting; it is described in [The range readout](../windows/system.md#the-range-readout).
+While you have a target, the Range Changed alert, under Hard Target in the Targeting menu, plays your target's distance in yards from a voice pack whenever the distance changes. It is described in [The range readout](../windows/system.md#the-range-readout).
 
 ## Related pages
 

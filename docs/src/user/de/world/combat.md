@@ -28,7 +28,7 @@ Sollte nach einem Kampf einmal ein WowVision-Fenster hängen bleiben, tippe /wv 
 
 (Nur Retail und WoW: Forever) Blizzard verbirgt eine Reihe von Spielwerten vor Addons, besonders im Kampf und in Instanzen. Diese Einschränkungen merkst du in WowVision:
 
-- Die Gesundheit mancher Ziele kann nicht gelesen werden, deshalb bleibt die Lebensüberwachung des Ziels für sie stumm ([Zielerfassung](targeting.md)).
+- Die Gesundheit deines Ziels ist nicht lesbar, deshalb gibt es keine Lebensüberwachung. Nimm stattdessen die Kampf-Audiohinweise des Spiels (Combat Audio Alerts) in seinen Barrierefreiheit-Optionen: Sie können die Gesundheit deines Ziels ansagen, auch im Kampf. Siehe [Zielerfassung](targeting.md).
 - Deine Bewegungsgeschwindigkeit ist im Kampf verborgen, deshalb kann die Wanderkennung nur bemerken, dass du stehst, nicht aber, dass du verlangsamt bist ([Bewegung und Orientierung](movement.md)).
 - Schlachtzugmarkierungen werden als Zahlen gesprochen.
 - Buffs und Debuffs werden im Kampf aus ihren Tooltips gelesen ([Puffer](../information/buffers.md)).

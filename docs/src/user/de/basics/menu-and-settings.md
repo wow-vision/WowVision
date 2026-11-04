@@ -64,7 +64,6 @@ Die Einträge stehen in der alphabetischen Reihenfolge, in der du sie auf einem 
 | Navigation | Alle | Atlas, Kompass, Fallerkennung, Folgen, Karten, Neigungssperre, Besuchte Wegpunkte, Wanderkennung und mehr. | [Bewegung und Orientierung](../world/movement.md), [Navigation und Routen](../world/navigation.md) |
 | Puffer (Buffers) | Alle | Deine Puffergruppen und Puffer und die Einstellung Elementrichtung umkehren. | [Puffer](../information/buffers.md) |
 | Quests | Alle | Werkzeuge für das Questlog, Alarme für Questgebiete. | [Quests](../world/quests.md) |
-| Reichweite (Range) | Alle | Angesagte Entfernung zu deinem Ziel. | [Zielerfassung](../world/targeting.md) |
 | Scanner | Alle | Der Scanner (F9). | [Scanner](../world/scanner.md) |
 | Sprache (Speech) | Alle | Stimme, Geschwindigkeit, Lautstärke und Sprachverhalten. | [Sprache und Ton](./speech.md) |
 | Zielerfassung (Targeting) | Alle | Zielansagen, weiche Zielerfassung, Fokusziele. | [Zielerfassung](../world/targeting.md) |

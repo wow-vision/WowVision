@@ -46,7 +46,7 @@ Zielwechsel (Target Change) ist die oben beschriebene Ansage.
 | Schlachtzugmarkierung bei festem Ziel ansagen | An | Stellt die Schlachtzugmarkierung vor die Beschreibung des Ziels |
 | Ziel-im-Kampf-Sound | An | Spielt den Ton, wenn das neue Ziel im Kampf mit dir oder deiner Gruppe ist; mit seiner Einstellung Sound kannst du einen anderen Ton wählen |
 
-Die Lebensüberwachung (Health Monitor) liest die Gesundheit deines Ziels in Fünf-Prozent-Schritten vor, wenn sie sinkt (oder steigt).
+(Classic Era, The Burning Crusade und Mists of Pandaria) Die Lebensüberwachung (Health Monitor) liest die Gesundheit deines Ziels in Fünf-Prozent-Schritten vor, wenn sie sinkt (oder steigt).
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
@@ -56,7 +56,7 @@ Die Lebensüberwachung (Health Monitor) liest die Gesundheit deines Ziels in Fü
 
 Die Gesundheit wird auf das nächste Vielfache von fünf aufgerundet. Du hörst also "95%", sobald das Ziel bei 95 Prozent oder darunter ist, dann "90%", "85%" und so weiter. Bei voller Gesundheit und bei null wird nichts gesagt. Wechselst du das Ziel, hörst du die Gesundheit des neuen Ziels direkt nach seinem Namen, außer es hat volle Gesundheit.
 
-(Nur Retail und WoW: Forever) Das Spiel hält die Gesundheit mancher Ziele vor Addons geheim. Für diese Ziele bleibt die Lebensüberwachung stumm; WowVision kann daran nichts ändern.
+(Retail und WoW: Forever) Hier gibt es keine Lebensüberwachung, weil das Spiel die Gesundheit eines Ziels im Kampf vor Addons verbirgt, gerade dann, wenn du sie brauchst. Nimm stattdessen die Kampf-Audiohinweise des Spiels (Combat Audio Alerts) in seinen Barrierefreiheit-Optionen: Sie können die Gesundheit deines Ziels ansagen, auch im Kampf.
 
 Beispiel: Du willst einen ruhigeren Kampf und schaltest die Gesundheitsansagen aus.
 
@@ -105,7 +105,7 @@ Jede Art ist ein Alarm im Menü Zielerfassung mit dem Namen Weiches Ziel Feind, 
 
 ### Winkel und Reichweite
 
-Jede Art der weichen Zielerfassung hat im Menü Zielerfassung zwei weitere Einstellungen. Standard sind der breiteste Winkel und die größte Reichweite, weil die eigenen Werte des Spiels für Spieler gemacht sind, die sehen, was vor ihnen ist. WowVision schreibt sie nur für eine Art, die du eingeschaltet hast; für jede Art, die du nicht benutzt, bleiben die Werte des Spiels bestehen. Spielstandard oder eine Reichweite von 0 stellt den eigenen Wert des Spiels wieder her.
+Jede Art der weichen Zielerfassung hat zwei weitere Einstellungen, in ihrem Alarm im Menü Zielerfassung: Öffne Weiches Ziel Feind, Weiches Ziel Freund oder Weiches Ziel Interaktion, um sie zu finden. Standard sind der breiteste Winkel und die größte Reichweite, weil die eigenen Werte des Spiels für Spieler gemacht sind, die sehen, was vor ihnen ist. WowVision schreibt sie nur für eine Art, die du eingeschaltet hast; für jede Art, die du nicht benutzt, bleiben die Werte des Spiels bestehen. Spielstandard oder eine Reichweite von 0 stellt den eigenen Wert des Spiels wieder her.
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
@@ -178,7 +178,7 @@ Bewege dich mit den Pfeiltasten durch das Menü und drücke Eingabe auf einem Ei
 
 ## Entfernung zu deinem Ziel
 
-Solange du ein Ziel hast, spielt eine eigene Funktion, das Modul Reichweite (Range; ein eigener Eintrag im WowVision-Menü), die Entfernung deines Ziels in Yards aus einem Stimmenpaket ab, sobald sich die Entfernung ändert. Es gehört nicht zur Zielerfassung; es wird in [Die Entfernungsansage](../windows/system.md#die-entfernungsansage) beschrieben.
+Solange du ein Ziel hast, spielt der Alarm Reichweite geändert (Range Changed), unter Festes Ziel im Menü Zielerfassung, die Entfernung deines Ziels in Yards aus einem Stimmenpaket ab, sobald sich die Entfernung ändert. Er wird in [Die Entfernungsansage](../windows/system.md#die-entfernungsansage) beschrieben.
 
 ## Verwandte Seiten
 

@@ -4,6 +4,7 @@
   <Script file="softTargeting.lua" />
   <Script file="softTargetingTests.lua" />
   <Script file="module.lua" />
+  <Script file="range.lua" />
   <Script file="focus.lua" />
   <Script file="crowdControl.lua" />
   <Script file="unitMenus.lua" />

@@ -1497,6 +1497,7 @@ local parseOnly = {
     "core/WowVision.lua",
     "core/module/Module.lua",
     "core/alerts/alerts.lua",
+    "retail/targeting.lua",
 }
 for _, path in ipairs(parseOnly) do
     local chunk, err = loadfile(path)

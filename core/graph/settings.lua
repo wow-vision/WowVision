@@ -483,7 +483,9 @@ function settings.renderModuleInto(builder, module)
 
     local submodules = {}
     for _, submodule in ipairs(module.submodules) do
-        tinsert(submodules, submodule)
+        if not submodule.hiddenFromMenu then
+            tinsert(submodules, submodule)
+        end
     end
     table.sort(submodules, moduleSortComp)
     for _, submodule in ipairs(submodules) do

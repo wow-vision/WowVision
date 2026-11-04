@@ -16,7 +16,6 @@
   <Script file="RolePoll.lua" />
   <Script file="guildInvite.lua" />
   <Script file="questWindow.lua" />
-  <Script file="range.lua" />
   <Script file="ready.lua" />
   <Script file="questieSetup.lua" />
   <Script file="taxi.lua" />

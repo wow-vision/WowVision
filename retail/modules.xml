@@ -3,6 +3,7 @@
 
   <Script file="speech.lua" />
   <Script file="buffers.lua" />
+  <Script file="targeting.lua" />
   <Script file="QuestLog.lua" />
   <Script file="cooldownManager.lua" />
   <Include file="monitors/modules.xml" />

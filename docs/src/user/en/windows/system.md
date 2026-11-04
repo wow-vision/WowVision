@@ -154,7 +154,7 @@ The distances come from the same range checks the game's own spells and items us
 
 When the target is farther away than the longest check the game offers, nothing is said, and the readout speaks again when you come back into range.
 
-Open the Range entry in the WowVision menu to change it. The entry has an Enabled switch for the whole module and a Range Changed button that opens the alert's settings:
+To change it, open Targeting, then Hard Target, in the WowVision menu, and choose Range Changed:
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
@@ -173,9 +173,9 @@ The range alert has no text-to-speech and no sound output, only the voice. For h
 | Popups | None | None |
 | Macros | None | None |
 | Color picker | None | None |
-| Range | Range Changed, Voice Alert (above) | Range Changed |
+| Range | Range Changed, in Targeting, Hard Target (above) | Range Changed |
 
-Each of these windows is a module under Windows in the WowVision menu, and each has an Enabled switch that stops WowVision from reading it. Range is a module of its own at the top level of the menu and has the same switch. See [Menu and settings](../basics/menu-and-settings.md).
+Each of these windows is a module under Windows in the WowVision menu, and each has an Enabled switch that stops WowVision from reading it. Range has no entry of its own: its Enabled switch is on the Range Changed alert. See [Menu and settings](../basics/menu-and-settings.md).
 
 ## Troubleshooting
 

@@ -1,8 +1,11 @@
+-- The distance to the target, as a recorded number. A module of its own for
+-- its update, but in the menu only its alert shows, under Hard Target: that
+-- alert's Enabled is the one switch. See the migration in core/db.lua.
 local module = WowVision.base:createModule("range")
 local L = module.L
 module:setLabel(L["Range"])
+module.hiddenFromMenu = true
 local rangeCheck = LibStub("LibRangeCheck-3.0")
-local settings = module:hasSettings()
 
 local rangeChange = module:addAlert({
     key = "rangeChange",
@@ -18,7 +21,7 @@ rangeChange:addOutput({
     end,
 })
 
-settings:addRef("announce", rangeChange.parameters)
+WowVision.base.targeting.hardTargetSettings:addRef("range", rangeChange.parameters)
 
 -- The target's GUID can be secret (hidden identities on Forever and Retail)
 -- and then cannot be compared tick to tick: the target change event stands

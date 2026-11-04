@@ -154,7 +154,7 @@ Die Entfernungen stammen aus denselben Reichweitenprüfungen, die die Zauber und
 
 Ist das Ziel weiter weg als die längste Prüfung, die das Spiel bietet, wird nichts gesagt, und die Ansage spricht wieder, wenn du in Reichweite zurückkommst.
 
-Öffne den Eintrag Reichweite (Range) im WowVision-Menü, um sie zu ändern. Der Eintrag hat einen Schalter Aktiviert für das ganze Modul und eine Schaltfläche Reichweite geändert (Range Changed), die die Einstellungen des Alarms öffnet:
+Um sie zu ändern, öffne im WowVision-Menü Zielerfassung, dann Festes Ziel, und wähle Reichweite geändert (Range Changed):
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
@@ -173,9 +173,9 @@ Der Reichweitenalarm hat weder Text-zu-Sprache noch eine Sound-Ausgabe, nur die 
 | Popups | Keine | Keine |
 | Makros | Keine | Keine |
 | Farbauswahl | Keine | Keine |
-| Reichweite | Reichweite geändert, Stimmenalarm (oben) | Reichweite geändert |
+| Reichweite | Reichweite geändert, unter Zielerfassung, Festes Ziel (oben) | Reichweite geändert |
 
-Jedes dieser Fenster ist ein Modul unter Fenster im WowVision-Menü, und jedes hat einen Schalter Aktiviert, der verhindert, dass WowVision es liest. Reichweite ist ein eigenes Modul auf der obersten Ebene des Menüs und hat denselben Schalter. Siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).
+Jedes dieser Fenster ist ein Modul unter Fenster im WowVision-Menü, und jedes hat einen Schalter Aktiviert, der verhindert, dass WowVision es liest. Reichweite hat keinen eigenen Eintrag: Sein Schalter Aktiviert liegt auf dem Alarm Reichweite geändert. Siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).
 
 ## Fehlerbehebung
 

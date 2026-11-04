@@ -28,7 +28,7 @@ If you ever find a WowVision window stuck after a fight, type /wv close. It clos
 
 (Retail and WoW: Forever only) Blizzard hides a number of game values from addons, especially in combat and in instances. These are the ones that you notice in WowVision:
 
-- The health of some targets cannot be read, so the target health monitor stays silent for them ([Targeting](targeting.md)).
+- Your target's health cannot be read, so there is no target health monitor. Use the game's own Combat Audio Alerts instead, in its Accessibility options: they can say your target's health, in combat too. See [Targeting](targeting.md).
 - Your movement speed is hidden in combat, so wall detection can only notice that you are standing still, not that you are slowed ([Movement](movement.md)).
 - Raid markers are spoken as numbers.
 - Buffs and debuffs are read from their tooltips in combat ([Buffers](../information/buffers.md)).

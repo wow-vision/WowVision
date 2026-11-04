@@ -203,6 +203,20 @@ local hardTarget = settings:add({
 hardTarget:addRef("targetChange", hardTargetChange.parameters)
 hardTarget:addRef("healthMonitor", hardTargetHealth.parameters)
 hardTarget:addRef("crowdControl", targetCrowdControl.parameters)
+-- Other files add to it too (range.lua).
+module.hardTargetSettings = hardTarget
+
+-- For a client that keeps target health secret in combat (see
+-- retail/targeting.lua): the monitor leaves the menu and stops reading. Its
+-- alert stays registered, so saved settings keep their place.
+function module:removeTargetHealth()
+    for i = #hardTarget.refs, 1, -1 do
+        if hardTarget.refs[i].key == "healthMonitor" then
+            table.remove(hardTarget.refs, i)
+        end
+    end
+    self.targetHealthRemoved = true
+end
 
 local softTargets = {}
 
@@ -294,8 +308,8 @@ local function addSoftTarget(info)
         end
     end)
     settings:addRef(info.key, alert.parameters)
-    local arc = settings:add({
-        key = info.key .. "Arc",
+    local arc = alert.parameters:add({
+        key = "arc",
         type = "Choice",
         label = info.arcLabel,
         default = WIDEST_ARC,
@@ -303,8 +317,8 @@ local function addSoftTarget(info)
     })
     arc.events.valueChange:subscribe(nil, onVariableSettingChange(info.cvar .. "Arc"))
     -- 0 = the game's own range.
-    local range = settings:add({
-        key = info.key .. "Range",
+    local range = alert.parameters:add({
+        key = "range",
         type = "Number",
         label = info.rangeLabel,
         default = info.maxRange,
@@ -457,8 +471,8 @@ function module:applySoftTargeting()
     for _, info in ipairs(softTargets) do
         if info.alert:getEnabled() then
             writer:write(info.cvar, 3)
-            writeUnlessDefault(info.cvar .. "Arc", self.settings[info.key .. "Arc"])
-            writeUnlessDefault(info.cvar .. "Range", self.settings[info.key .. "Range"])
+            writeUnlessDefault(info.cvar .. "Arc", info.alert.parameters:getFieldValue("arc"))
+            writeUnlessDefault(info.cvar .. "Range", info.alert.parameters:getFieldValue("range"))
         end
     end
     writeUnlessDefault("SoftTargetForce", self.settings.softTargetForce)
@@ -541,6 +555,9 @@ function module:updateHardTarget()
         self.targetHealthInterval = nil
         module.tooltips.hardTarget:set(nil, { type = "Unit", unit = "target" })
         hardTargetChange:fire({ target = target })
+    end
+    if self.targetHealthRemoved then
+        return
     end
     local targetHealth = UnitHealth("target")
     local targetHealthMax = UnitHealthMax("target")

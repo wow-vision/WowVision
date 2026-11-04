@@ -125,6 +125,57 @@ local function dropOldSoftTargetDefaults(db)
     end
 end
 
+-- The arcs and ranges moved from the module's settings onto its soft target
+-- alerts. Anything left of them goes along; the reconcile that follows fills
+-- in the rest.
+local function moveSoftTargetSettings(db)
+    local targeting = db.submodules and db.submodules.targeting
+    local settings = targeting and targeting.settings
+    if settings == nil then
+        return
+    end
+    if targeting.alerts == nil then
+        targeting.alerts = {}
+    end
+    for _, key in ipairs({ "softEnemy", "softFriend", "softInteract" }) do
+        local alert = targeting.alerts[key]
+        if alert == nil then
+            alert = {}
+            targeting.alerts[key] = alert
+        end
+        if settings[key .. "Arc"] ~= nil then
+            alert.arc = settings[key .. "Arc"]
+            settings[key .. "Arc"] = nil
+        end
+        if settings[key .. "Range"] ~= nil then
+            alert.range = settings[key .. "Range"]
+            settings[key .. "Range"] = nil
+        end
+    end
+end
+
+-- The Range module lost its menu entry, and with it the Enabled switch: only
+-- its alert is left to switch. A character who had turned the module off keeps
+-- it off that way, on this character alone, as the module's switch was.
+local function moveRangeSwitchToAlert(db)
+    local range = db.submodules and db.submodules.range
+    if range == nil or range.enabled ~= false then
+        return
+    end
+    range.enabled = true
+    if range.alerts == nil then
+        range.alerts = {}
+    end
+    if range.alerts.rangeChange == nil then
+        range.alerts.rangeChange = {}
+    end
+    range.alerts.rangeChange.enabled = false
+    if range.alertScopes == nil then
+        range.alertScopes = {}
+    end
+    range.alertScopes.rangeChange = "char"
+end
+
 local migrations = {
     {
         version = 1,
@@ -153,6 +204,14 @@ local migrations = {
     {
         version = 4,
         migrate = dropOldSoftTargetDefaults,
+    },
+    {
+        version = 5,
+        migrate = moveSoftTargetSettings,
+    },
+    {
+        version = 6,
+        migrate = moveRangeSwitchToAlert,
     },
 }
 
@@ -189,6 +248,10 @@ local globalMigrations = {
     {
         version = 3,
         migrate = dropOldSoftTargetDefaults,
+    },
+    {
+        version = 4,
+        migrate = moveSoftTargetSettings,
     },
 }
 
