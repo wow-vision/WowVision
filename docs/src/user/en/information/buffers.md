@@ -94,6 +94,8 @@ A tracked buffer fills and empties itself. You describe what to watch (a type of
 
 Typical uses: every aura on your target, or every spell of yours that is currently on cooldown.
 
+Tracked buffers are not offered on Retail and WoW: Forever, because the game hides nearly everything they could track from addons there. Use an aura buffer for auras, the Spell Cooldowns monitor for cooldowns (see [Monitors](monitors.md)) and a static buffer for everything else. A tracked buffer you made earlier stays in your list.
+
 Settings of a tracked buffer: Enabled, Label, and Source. The source has a Type (what to track) and, for most types, Parameters such as the unit. A newly added tracked buffer has no type yet ("None") and stays empty until you choose one.
 
 Notes:
@@ -189,7 +191,7 @@ The wording of an aura item is fixed: its name, the word "stacks" and the stack 
 - Cooldown items work through the game's normal cooldown functions. On Retail the game hides cooldown numbers from addons in combat and in instances, so use the Spell Cooldowns monitor and its Speak Tracked Cooldowns key there, see [Monitors](monitors.md).
 - Health and Power of other units can be unreadable on Retail in combat; WowVision speaks what the game allows.
 - Hearthstone shares one cooldown for all hearthstones, so it reports the right time whichever hearthstone you carry. When the game hides the cooldown, you only hear the bind location.
-- With no target, a Health item for `target` has nothing real to read. A tracked buffer is the cleaner choice for the target, since it is simply empty when you have no target.
+- With no target, a Health item for `target` has nothing real to read. Where you have tracked buffers, one is the cleaner choice for the target, since it is simply empty when you have no target.
 
 ### Custom formats
 
@@ -257,7 +259,7 @@ Pressing Escape goes back one screen.
 ### Add a buffer to a group
 
 1. Open the group, press Enter on Buffers, then on Add.
-2. Choose the type: Static Buffer, Tracked Buffer, Aura Buffer or Chat Tab Buffer.
+2. Choose the type: Static Buffer, Tracked Buffer (not on Retail and WoW: Forever), Aura Buffer or Chat Tab Buffer.
 3. The new buffer opens, named "New Static Buffer" (and so on). Set Label to a name that tells you what it is. This is the name you hear when you switch to it.
 4. Fill in the type-specific settings (the Objects list, the Source, the Sources, or the Chat Tab).
 
@@ -303,7 +305,7 @@ Nothing is deleted when you switch a scope: choosing your character copies the c
 
 ### Hear your target's health
 
-The simplest way is a tracked buffer, because it is empty when you have no target and refills on every new target.
+The simplest way is a tracked buffer, because it is empty when you have no target and refills on every new target. On Retail and WoW: Forever, use the static buffer at the end of this example.
 
 1. Open the WowVision menu with Shift+F1 and go to Buffers, then Buffers (1), then General, then Buffers.
 2. Press Add, choose Tracked Buffer.
@@ -331,6 +333,8 @@ If you prefer a static buffer: add a Static Buffer, open Objects, Add, Health, t
 
 ### See every spell currently on cooldown
 
+On Retail and WoW: Forever, use the Spell Cooldowns monitor and its Speak Tracked Cooldowns key instead, see [Monitors](monitors.md).
+
 1. Add a Tracked Buffer named "Cooldowns".
 2. Open Source, set Type to Cooldown, open Parameters, switch On Cooldown on, and Save.
 3. Cast some spells. Whenever one is on cooldown it shows up in the buffer. Walk through them with Alt+Down: "Barkskin: 12.3s".
@@ -357,13 +361,14 @@ Settings of the things you add (group, buffer, item) are described in the sectio
 
 | Feature | Classic Era | The Burning Crusade | Mists of Pandaria | Retail | WoW: Forever |
 |---|---|---|---|---|---|
-| Groups, Static, Tracked and Chat Tab buffers | Yes | Yes | Yes | Yes | Yes |
+| Groups, Static and Chat Tab buffers | Yes | Yes | Yes | Yes | Yes |
+| Tracked buffer | Yes | Yes | Yes | No | No |
 | Aura buffer | Yes | Yes | Yes | Yes | Yes |
 | Aura buffer filters with Any and Only | Yes | Yes | Yes | Yes | Yes |
 | Aura buffer filters with Not | Cancelable only | Cancelable only | Cancelable only | All filters | All filters |
 | Reading an aura's tooltip with the tooltip keys | Yes | Yes | Yes | Yes | Yes |
 | Every object type listed above | Yes | Yes | Yes | Yes | Yes |
-| Choosing a Power Type (and tracked Power buffers) | Yes | Yes | Yes | Yes | Yes |
+| Choosing a Power Type | Yes | Yes | Yes | Yes | Yes |
 
 See [Versions](../reference/versions.md) for the full feature matrix.
 
@@ -371,7 +376,7 @@ See [Versions](../reference/versions.md) for the full feature matrix.
 
 - Keep the General buffer short and put your own things in buffers of their own. Switching buffers with Alt+Left and Alt+Right is quicker than walking a long list.
 - Name buffers by what you will say to yourself: "Target Debuffs", "Cooldowns", "Whispers". The name is the first thing you hear.
-- Use an aura buffer for buffs and debuffs, a static buffer for fixed facts, a tracked buffer for "whatever matches right now".
+- Use an aura buffer for buffs and debuffs, a static buffer for fixed facts, and, where you have one, a tracked buffer for "whatever matches right now".
 - If Alt+Up and Alt+Down feel backwards, you are probably used to the older behaviour: turn on Invert Item Direction.
 - Buffers show information on demand. To be told when something happens, set up a [monitor](monitors.md).
 - If the keys do nothing, see [Troubleshooting](../getting-started/troubleshooting.md).

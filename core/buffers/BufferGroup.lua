@@ -2,6 +2,15 @@ local L = WowVision:getLocale()
 
 local BufferGroup, parent = WowVision.buffers:createType("Group")
 
+-- What a group's Add offers. A version can take a type out of the list (see
+-- retail/buffers.lua); the type stays registered, so saved buffers still load.
+WowVision.buffers.groupTypes = {
+    { key = "Static", label = L["Static Buffer"] },
+    { key = "Tracked", label = L["Tracked Buffer"] },
+    { key = "ChatTab", label = L["Chat Tab Buffer"] },
+    { key = "Aura", label = L["Aura Buffer"] },
+}
+
 BufferGroup:addFields({
     {
         key = "items",
@@ -19,12 +28,7 @@ BufferGroup:addFields({
             end
             return className
         end,
-        availableTypes = {
-            { key = "Static", label = L["Static Buffer"] },
-            { key = "Tracked", label = L["Tracked Buffer"] },
-            { key = "ChatTab", label = L["Chat Tab Buffer"] },
-            { key = "Aura", label = L["Aura Buffer"] },
-        },
+        availableTypes = WowVision.buffers.groupTypes,
     },
 })
 

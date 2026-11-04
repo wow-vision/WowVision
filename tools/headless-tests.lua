@@ -438,6 +438,34 @@ WowVision.testing.testRunner:addSuite("AuraBufferFilters", {
 })
 
 WowVision.testing.testRunner:addSuite("BufferConstruction", {
+    ["Retail and Forever offer no tracked buffer, and saved ones still load"] = function(t)
+        local groupTypes = WowVision.buffers.groupTypes
+        local saved = {}
+        for i, entry in ipairs(groupTypes) do
+            saved[i] = entry
+        end
+        local function offered(key)
+            for _, entry in ipairs(WowVision.buffers.BufferGroup:getField("items").availableTypes) do
+                if entry.key == key then
+                    return true
+                end
+            end
+            return false
+        end
+        t:assertTrue(offered("Tracked"))
+        loadAddonFile("retail/buffers.lua")
+        local tracked, static = offered("Tracked"), offered("Static")
+        for i = #groupTypes, 1, -1 do
+            groupTypes[i] = nil
+        end
+        for i, entry in ipairs(saved) do
+            groupTypes[i] = entry
+        end
+        t:assertEqual(tracked, false)
+        t:assertTrue(static)
+        t:assertNotNil(WowVision.buffers:create("Tracked", { label = "Saved" }))
+    end,
+
     ["a static buffer constructs and persists through the root group"] = function(t)
         local db = { items = { _type = "array" } }
         local root = WowVision.buffers.RootBufferGroup:new(db)

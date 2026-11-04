@@ -9,6 +9,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 * The addon now tracks per character and global settings separately. By default most things are global; this can be changed per module via its context menu in the WowVision settings.
 * Alert settings are now account-wide as well, so an alert you change on one character changes on all of them. Press Shift+F10 on an alert's button and use Scope to keep it on one character. The first character to log in after this update sets the alerts for the account.
 * Key bindings are now account-wide as well, so a key you change on one character changes on all of them. To give one character its own keys, press Shift+F10 on the Bindings button in the UI menu and use Scope. The first character to log in after this update sets the keys for the account.
+* Retail and WoW: Forever: Add no longer offers the Tracked Buffer, because nearly everything it could track is hidden from addons there. Use the Aura Buffer for auras and the Spell Cooldowns monitor for cooldowns. Tracked buffers you already have stay as they are.
 * Fixed a bug where you could not tab out of certain edit fields.
 * Added support for wall/collision detection. If the addon detects you are moving slower than you should be, it will play sounds indicating a collision (this  replicates Sku's behavior.)
 * Added support for fall detection. It can be configured to speak when you  begin to fall. It will also play an ascending series of tones as you fall (this works identically to how Sku's did and uses the same sounds.)

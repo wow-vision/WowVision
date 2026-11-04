@@ -94,6 +94,8 @@ Ein verfolgter Puffer füllt und leert sich selbst. Du beschreibst, was beobacht
 
 Typische Verwendungen: jede Aura auf deinem Ziel oder jeder deiner Zauber, der gerade in Abklingzeit ist.
 
+Auf Retail und WoW: Forever werden verfolgte Puffer nicht angeboten, weil das Spiel dort fast alles, was sie verfolgen könnten, vor Addons verbirgt. Nimm einen Aura-Puffer für Auren, den Monitor Zauber-Abklingzeiten für Abklingzeiten (siehe [Monitore](monitors.md)) und einen statischen Puffer für alles andere. Ein verfolgter Puffer, den du früher angelegt hast, bleibt in deiner Liste.
+
 Einstellungen eines verfolgten Puffers: Aktiviert, Bezeichnung und Quelle. Die Quelle hat einen Typ (was verfolgt werden soll) und bei den meisten Typen Parameter wie die Einheit. Ein frisch hinzugefügter verfolgter Puffer hat noch keinen Typ („Keine“) und bleibt leer, bis du einen auswählst.
 
 Hinweise:
@@ -189,7 +191,7 @@ Die Formulierung eines Aura-Elements ist fest: ihr Name, das Wort „Stapel“ u
 - Abklingzeit-Elemente arbeiten über die normalen Abklingzeit-Funktionen des Spiels. Auf Retail verbirgt das Spiel im Kampf und in Instanzen die Abklingzeitzahlen vor Addons, nimm dort also den Monitor Zauber-Abklingzeiten und seine Taste Verfolgte Abklingzeiten ansagen, siehe [Monitore](monitors.md).
 - Leben und Kraft anderer Einheiten können auf Retail im Kampf unlesbar sein; WowVision spricht, was das Spiel erlaubt.
 - Ruhestein teilt sich eine Abklingzeit für alle Ruhesteine, meldet also die richtige Zeit, egal welchen Ruhestein du dabeihast. Wenn das Spiel die Abklingzeit verbirgt, hörst du nur den Heimatort.
-- Ohne Ziel hat ein Leben-Element für `target` nichts Echtes zu lesen. Ein verfolgter Puffer ist die sauberere Wahl für das Ziel, weil er einfach leer ist, wenn du kein Ziel hast.
+- Ohne Ziel hat ein Leben-Element für `target` nichts Echtes zu lesen. Wo du verfolgte Puffer hast, ist einer die sauberere Wahl für das Ziel, weil er einfach leer ist, wenn du kein Ziel hast.
 
 ### Eigene Formate
 
@@ -257,7 +259,7 @@ Mit Esc gehst du einen Bildschirm zurück.
 ### Einen Puffer zu einer Gruppe hinzufügen
 
 1. Öffne die Gruppe, drücke Eingabe auf Puffer, dann auf Hinzufügen.
-2. Wähle den Typ: Statischer Puffer, Verfolgter Puffer, Aura-Puffer oder Chat-Reiter-Puffer.
+2. Wähle den Typ: Statischer Puffer, Verfolgter Puffer (nicht auf Retail und WoW: Forever), Aura-Puffer oder Chat-Reiter-Puffer.
 3. Der neue Puffer öffnet sich, er heißt „Neu Statischer Puffer“ (und so weiter). Setze die Bezeichnung auf einen Namen, der sagt, was es ist. Das ist der Name, den du hörst, wenn du zu ihm wechselst.
 4. Fülle die typspezifischen Einstellungen aus (die Liste Objekte, die Quelle, die Quellen oder den Chat-Reiter).
 
@@ -303,7 +305,7 @@ Beim Wechseln eines Bereichs wird nichts gelöscht: Wenn du deinen Charakter wä
 
 ### Das Leben deines Ziels hören
 
-Am einfachsten geht das mit einem verfolgten Puffer, weil er leer ist, wenn du kein Ziel hast, und sich bei jedem neuen Ziel neu füllt.
+Am einfachsten geht das mit einem verfolgten Puffer, weil er leer ist, wenn du kein Ziel hast, und sich bei jedem neuen Ziel neu füllt. Auf Retail und WoW: Forever nimmst du den statischen Puffer am Ende dieses Beispiels.
 
 1. Öffne das WowVision-Menü mit Umschalt+F1 und gehe zu Puffer, dann Puffer (1), dann Allgemein, dann Puffer.
 2. Drücke Hinzufügen, wähle Verfolgter Puffer.
@@ -331,6 +333,8 @@ Wenn du lieber einen statischen Puffer nimmst: Füge einen Puffer vom Typ Statis
 
 ### Jeden Zauber sehen, der gerade in Abklingzeit ist
 
+Auf Retail und WoW: Forever nimmst du stattdessen den Monitor Zauber-Abklingzeiten und seine Taste Verfolgte Abklingzeiten ansagen, siehe [Monitore](monitors.md).
+
 1. Füge einen Puffer vom Typ Verfolgter Puffer namens „Abklingzeiten“ hinzu.
 2. Öffne Quelle, setze den Typ auf Abklingzeit, öffne Parameter, schalte Klingt ab ein und wähle Speichern.
 3. Wirke ein paar Zauber. Immer wenn einer in Abklingzeit ist, taucht er im Puffer auf. Gehe sie mit Alt+Pfeil runter durch: „Baumrinde: 12.3s“.
@@ -357,13 +361,14 @@ Die Einstellungen der Dinge, die du hinzufügst (Gruppe, Puffer, Element), sind 
 
 | Funktion | Classic Era | The Burning Crusade | Mists of Pandaria | Retail | WoW: Forever |
 |---|---|---|---|---|---|
-| Gruppen, statische, verfolgte und Chat-Reiter-Puffer | Ja | Ja | Ja | Ja | Ja |
+| Gruppen, statische und Chat-Reiter-Puffer | Ja | Ja | Ja | Ja | Ja |
+| Verfolgter Puffer | Ja | Ja | Ja | Nein | Nein |
 | Aura-Puffer | Ja | Ja | Ja | Ja | Ja |
 | Aura-Puffer-Filter mit Egal und Nur diese | Ja | Ja | Ja | Ja | Ja |
 | Aura-Puffer-Filter mit Ohne diese | Nur Abbrechbar | Nur Abbrechbar | Nur Abbrechbar | Alle Filter | Alle Filter |
 | Tooltip einer Aura mit den Tooltip-Tasten lesen | Ja | Ja | Ja | Ja | Ja |
 | Alle oben aufgeführten Objekttypen | Ja | Ja | Ja | Ja | Ja |
-| Auswahl eines Krafttyps (und verfolgte Kraft-Puffer) | Ja | Ja | Ja | Ja | Ja |
+| Auswahl eines Krafttyps | Ja | Ja | Ja | Ja | Ja |
 
 Die vollständige Funktionsübersicht findest du unter [Funktionen nach Spielversion](../reference/versions.md).
 
@@ -371,7 +376,7 @@ Die vollständige Funktionsübersicht findest du unter [Funktionen nach Spielver
 
 - Halte den Puffer „Allgemein“ kurz und lege deine eigenen Dinge in eigene Puffer. Mit Alt+Pfeil links und Alt+Pfeil rechts zwischen Puffern zu wechseln geht schneller, als eine lange Liste durchzugehen.
 - Benenne Puffer danach, was du dir selbst sagen würdest: „Ziel-Debuffs“, „Abklingzeiten“, „Flüstern“. Der Name ist das Erste, was du hörst.
-- Nimm einen Aura-Puffer für Buffs und Debuffs, einen statischen Puffer für feste Fakten und einen verfolgten Puffer für „alles, was gerade passt“.
+- Nimm einen Aura-Puffer für Buffs und Debuffs, einen statischen Puffer für feste Fakten und, wo es ihn gibt, einen verfolgten Puffer für „alles, was gerade passt“.
 - Wenn sich Alt+Pfeil hoch und Alt+Pfeil runter verkehrt anfühlen, bist du wahrscheinlich das ältere Verhalten gewohnt: Schalte Elementrichtung umkehren ein.
 - Puffer zeigen Informationen auf Abruf. Wenn dir etwas gesagt werden soll, sobald es passiert, richte einen [Monitor](monitors.md) ein.
 - Wenn die Tasten nichts tun, siehe [Fehlerbehebung](../getting-started/troubleshooting.md).
