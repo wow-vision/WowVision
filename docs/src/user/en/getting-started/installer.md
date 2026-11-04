@@ -66,7 +66,7 @@ Then start World of Warcraft from Battle.net, or type /reload if the game was ru
 
 ## Updating later
 
-Start the WowVision Updater from its shortcut on the desktop or in the Start menu. It is the same program: it first updates itself if needed, then shows the opening screen. Choose Update now. It updates WowVision in every game version it installed to, follows the beta or stable choice you made, and updates the additional addons too.
+Start the WowVision Updater from its shortcut on the desktop or in the Start menu, or run the installer you downloaded again. They are the same program: it first offers to update itself if a newer version exists, replacing its own file, then shows the opening screen. Choose Update now. It updates WowVision in every game version it installed to, follows the beta or stable choice you made, and updates the additional addons too.
 
 To change your choices (another game version, the beta instead of the stable release, the voice options), choose "Install WowVision fresh, or for further game versions" instead.
 

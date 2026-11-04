@@ -66,7 +66,7 @@ Starte dann World of Warcraft über Battle.net, oder tippe /reload, wenn das Spi
 
 ## Aktualisieren mit dem Updater
 
-Starte den WowVision-Updater über seine Verknüpfung auf dem Desktop oder im Startmenü. Es ist dasselbe Programm: Es aktualisiert zuerst sich selbst, wenn nötig, und zeigt dann den Startbildschirm. Wähle Jetzt aktualisieren. Das aktualisiert WowVision in jeder Spielversion, in die es installiert hat, folgt deiner Wahl zwischen Beta und stabiler Version und aktualisiert auch die zusätzlichen Addons.
+Starte den WowVision-Updater über seine Verknüpfung auf dem Desktop oder im Startmenü, oder starte den heruntergeladenen Installer noch einmal. Es ist dasselbe Programm: Gibt es eine neuere Version, bietet es zuerst an, sich selbst zu aktualisieren, und ersetzt dabei seine eigene Datei. Dann zeigt es den Startbildschirm. Wähle Jetzt aktualisieren. Das aktualisiert WowVision in jeder Spielversion, in die es installiert hat, folgt deiner Wahl zwischen Beta und stabiler Version und aktualisiert auch die zusätzlichen Addons.
 
 Um deine Auswahl zu ändern (eine weitere Spielversion, die Beta statt der stabilen Version, die Stimmen-Optionen), wähle stattdessen "WowVision neu oder für weitere Spielversionen installieren".
 
