@@ -19,8 +19,9 @@ local secrets = WowVision.secrets
 -- - A tooltip of our own filled by index (GameTooltip:SetUnitAura), which
 --   the game allows under restriction (measured 2026-10-24): the line count
 --   is plain, the text secret. An aura exists while the tooltip has lines;
---   its first line is the name and its last the time left (or, for an aura
---   without a duration, its description).
+--   its first line is the name, with the dispel type on its right side,
+--   and its last the time left (or, for an aura without a duration, its
+--   description).
 --
 -- Items stand for positions, not auras: a secret name cannot key a table.
 -- The list rebuilds (once per frame at most) when the game says a source
@@ -200,6 +201,19 @@ local function getScanner()
             local fontString = _G[SCAN_NAME .. "TextLeft" .. index]
             return fontString ~= nil and fontString:GetText() or nil
         end,
+        -- The right text of a line of the last fill. A right side the fill
+        -- left unused is hidden and may still hold an earlier aura's text.
+        right = function(index)
+            local fontString = _G[SCAN_NAME .. "TextRight" .. index]
+            if fontString == nil then
+                return nil
+            end
+            local shown = fontString:IsShown()
+            if not secrets.isSecret(shown) and not shown then
+                return nil
+            end
+            return fontString:GetText()
+        end,
     }
     return scanner
 end
@@ -227,8 +241,8 @@ end
 
 -- The aura as its tooltip tells it, where the index read is refused: the
 -- name, then the last line (the time left, or the description of an aura
--- without a duration).
-local function tooltipText(unit, index, filter)
+-- without a duration), then for a debuff the dispel type.
+local function tooltipText(unit, index, filter, harmful)
     local scan = getScanner()
     if scan == nil then
         return L["unavailable"]
@@ -243,6 +257,9 @@ local function tooltipText(unit, index, filter)
     end
     if lines >= 2 then
         text = text .. whenText(scan.line(lines), ", ", "")
+    end
+    if harmful then
+        text = text .. whenText(scan.right(1), ", ", "")
     end
     return text
 end
@@ -259,7 +276,7 @@ AuraItem:addFields({
 function AuraItem:getFocusString()
     local aura, allowed = auraAt(self.unit, self.index, self.filter)
     if not allowed then
-        return tooltipText(self.unit, self.index, self.filter)
+        return tooltipText(self.unit, self.index, self.filter, self.harmful)
     end
     if aura == nil then
         return L["Gone"]

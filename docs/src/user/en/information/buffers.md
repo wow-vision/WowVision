@@ -141,7 +141,7 @@ While you are on an aura, the tooltip keys read it line by line: Shift+Down and 
 
 The list updates by itself when auras come and go or when the unit changes (you target something else), and it keeps your position.
 
-On Retail, in combat and in instances, the game closes its aura list to addons. The aura buffer then reads each aura from the game's own tooltip: you still hear the name and the time remaining (or the description for an aura without a duration), but not the stack count or the dispel type.
+On Retail, in combat and in instances, the game closes its aura list to addons. The aura buffer then reads each aura from the game's own tooltip: you still hear the name, the time remaining (or the description for an aura without a duration) and, for debuffs, the dispel type, but not the stack count.
 
 ### Chat tab buffer
 

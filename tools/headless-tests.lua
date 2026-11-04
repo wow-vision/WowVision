@@ -381,14 +381,20 @@ C_UnitAuras.GetAuraDataByIndex = function(unit, index, filter)
 end
 loadAddonFile("core/buffers/types/AuraBuffer.lua")
 local scanLines = {}
+local scanName = nil
+local fakeDispelTypes = {}
 WowVision.buffers.AuraBuffer.scanner = {
     fill = function(unit, index, filter)
         local aura = fakeIndexRead(unit, index, filter)
         scanLines = aura and fakeTooltips[aura.name] or {}
+        scanName = aura and aura.name or nil
         return #scanLines
     end,
     line = function(index)
         return scanLines[index]
+    end,
+    right = function(index)
+        return index == 1 and fakeDispelTypes[scanName] or nil
     end,
 }
 WowVision.testing.testRunner:addSuite("AuraBufferFilters", {
@@ -575,6 +581,17 @@ WowVision.testing.testRunner:addSuite("BufferConstruction", {
         t:assertEqual(#buffer.items, 3)
         t:assertEqual(buffer.items[1]:getFocusString(), "Sunfire, Burns.")
         t:assertEqual(buffer.items[2]:getFocusString(), "Mark of the Wild, 59 minutes remaining, of 3600 seconds")
+
+        -- A debuff's dispel type comes from the first line's right side; a
+        -- buff's is left out, as in the index read
+        fakeDispelTypes.Sunfire = "Magic"
+        fakeDispelTypes["Mark of the Wild"] = "Magic"
+        t:assertEqual(buffer.items[1]:getFocusString(), "Sunfire, Burns., Magic")
+        t:assertEqual(buffer.items[2]:getFocusString(), "Mark of the Wild, 59 minutes remaining, of 3600 seconds")
+        fakeDispelTypes.Sunfire = ""
+        t:assertEqual(buffer.items[1]:getFocusString(), "Sunfire, Burns.")
+        fakeDispelTypes.Sunfire = nil
+        fakeDispelTypes["Mark of the Wild"] = nil
         restrictedUnits.target = nil
         buffer:rebuild()
 

@@ -205,7 +205,7 @@ function Tooltip:speakCurrentSide(side)
     end
     local line = lines[self.currentLine]
     local text = line ~= nil and line[side] or nil
-    if text and text ~= "" then
+    if WowVision.secrets.hasText(text) then
         WowVision:speak(text)
     end
 end
