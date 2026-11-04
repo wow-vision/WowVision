@@ -18,11 +18,14 @@ WowVision ist ein Addon für World of Warcraft, das blinden und sehbehinderten M
 | [Troubleshooting](./user/en/getting-started/troubleshooting.md) | [Fehlerbehebung](./user/de/getting-started/troubleshooting.md) |
 | [Keybinding Reference](./user/en/reference/keybindings.md) | [Tastenreferenz](./user/de/reference/keybindings.md) |
 | [Slash Commands](./user/en/reference/commands.md) | [Slash-Befehle](./user/de/reference/commands.md) |
+| [Latest Addon Release](https://github.com/wow-vision/wowvision/releases/latest) | [Neuestes Addon-Release](https://github.com/wow-vision/wowvision/releases/latest) |
+| [Latest Installer Release](https://github.com/wow-vision/wowvision-installer/releases/latest) | [Neuestes Installer-Release](https://github.com/wow-vision/wowvision-installer/releases/latest) |
+| [WowVision Discord](https://discord.gg/akFF3AK5aV) | [WowVision-Discord](https://discord.gg/akFF3AK5aV) |
 
 Developers will find the technical documentation in the Developer Guide at the end of the book.
 
 ## Getting help / Hilfe
 
-Questions and bug reports: [WowVision on GitHub](https://github.com/wow-vision/WowVision).
+Questions and bug reports: [WowVision on GitHub](https://github.com/wow-vision/WowVision) or the [WowVision Discord](https://discord.gg/akFF3AK5aV).
 
-Fragen und Fehlermeldungen: [WowVision auf GitHub](https://github.com/wow-vision/WowVision).
+Fragen und Fehlermeldungen: [WowVision auf GitHub](https://github.com/wow-vision/WowVision) oder der [WowVision-Discord](https://discord.gg/akFF3AK5aV).
