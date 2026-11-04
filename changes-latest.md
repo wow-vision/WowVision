@@ -10,6 +10,7 @@ This is a massive refactor of the codebase thanks to Claude Fable 5 and Opus 5.5
 * Alert settings are now account-wide as well, so an alert you change on one character changes on all of them. Press Shift+F10 on an alert's button and use Scope to keep it on one character. The first character to log in after this update sets the alerts for the account.
 * Key bindings are now account-wide as well, so a key you change on one character changes on all of them. To give one character its own keys, press Shift+F10 on the Bindings button in the UI menu and use Scope. The first character to log in after this update sets the keys for the account.
 * Aura buffers: debuffs now say their dispel type (Magic, Poison and so on) in combat and in instances on Retail and WoW: Forever too.
+* Aura buffers: your own buffs and debuffs now say their stack count in combat and in instances on Retail and WoW: Forever too, in a buffer with no filters set. Target, focus and pet auras cannot give theirs there.
 * Fixed Shift-Left and Shift-Right throwing an error on tooltips with secret text, such as debuffs in combat.
 * Retail and WoW: Forever: Add no longer offers the Tracked Buffer, because nearly everything it could track is hidden from addons there. Use the Aura Buffer for auras and the Spell Cooldowns monitor for cooldowns. Tracked buffers you already have stay as they are.
 * Fixed a bug where you could not tab out of certain edit fields.

@@ -397,6 +397,67 @@ WowVision.buffers.AuraBuffer.scanner = {
         return index == 1 and fakeDispelTypes[scanName] or nil
     end,
 }
+WowVision.testing.testRunner:addSuite("AuraBufferStacks", {
+    ["under restriction the player's stacks come from Blizzard's buttons"] = function(t)
+        local AuraBuffer = WowVision.buffers.AuraBuffer
+        local countShown = true
+        local count = {
+            IsShown = function()
+                return countShown
+            end,
+            GetText = function()
+                return "3"
+            end,
+        }
+        local button = {
+            hasValidInfo = true,
+            unit = "player",
+            Count = count,
+            buttonInfo = { auraType = "Buff", index = 1 },
+        }
+        local savedBuff = BuffFrame
+        local function read(unit, filter)
+            local item = AuraBuffer.AuraItem:new({ unit = unit, filter = filter, index = 1, harmful = false })
+            return item:getFocusString()
+        end
+        BuffFrame = { auraFrames = { { hasValidInfo = false }, button } }
+        restrictedUnits.player = true
+        local body = function()
+            t:assertEqual(read("player", "HELPFUL"), "Mark of the Wild, 3 stacks, 59 minutes remaining")
+
+            -- A filter renumbers the positions: another aura's count must not be said
+            t:assertEqual(read("player", "HELPFUL|PLAYER"), "Mark of the Wild, 59 minutes remaining")
+
+            countShown = false
+            t:assertEqual(read("player", "HELPFUL"), "Mark of the Wild, 59 minutes remaining")
+            countShown = true
+
+            -- Another aura's button, a weapon enchant, another unit: none of them count
+            button.buttonInfo = { auraType = "Buff", index = 2 }
+            t:assertEqual(read("player", "HELPFUL"), "Mark of the Wild, 59 minutes remaining")
+            button.buttonInfo = { auraType = "TempEnchant", index = 1 }
+            t:assertEqual(read("player", "HELPFUL"), "Mark of the Wild, 59 minutes remaining")
+            button.buttonInfo = { auraType = "Buff", index = 1 }
+            button.unit = "vehicle"
+            t:assertEqual(read("player", "HELPFUL"), "Mark of the Wild, 59 minutes remaining")
+            button.unit = "player"
+
+            -- A button that throws costs the stacks, not the line
+            button.Count = {}
+            t:assertEqual(read("player", "HELPFUL"), "Mark of the Wild, 59 minutes remaining")
+
+            BuffFrame = nil
+            t:assertEqual(read("player", "HELPFUL"), "Mark of the Wild, 59 minutes remaining")
+        end
+        local ok, err = pcall(body)
+        restrictedUnits.player = nil
+        BuffFrame = savedBuff
+        if not ok then
+            error(err, 0)
+        end
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("AuraBufferFilters", {
     ["each client is offered the filters it knows, negated its own way"] = function(t)
         local AuraBuffer = WowVision.buffers.AuraBuffer

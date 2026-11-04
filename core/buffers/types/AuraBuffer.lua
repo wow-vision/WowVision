@@ -21,7 +21,9 @@ local secrets = WowVision.secrets
 --   is plain, the text secret. An aura exists while the tooltip has lines;
 --   its first line is the name, with the dispel type on its right side,
 --   and its last the time left (or, for an aura without a duration, its
---   description).
+--   description). The stacks of the player's own auras come from Blizzard's
+--   BuffFrame and DebuffFrame buttons, which are plain frames (see
+--   stackText); a unit's other auras have no readable stack count.
 --
 -- Items stand for positions, not auras: a secret name cannot key a table.
 -- The list rebuilds (once per frame at most) when the game says a source
@@ -239,9 +241,54 @@ local function remainingText(unit, index, filter, duration)
     return whenNonZero(duration, ", " .. last .. ", " .. L["of"] .. " ", " " .. L["seconds"])
 end
 
+-- Blizzard's button for one of the player's auras. Buttons hold the position
+-- in the unit's whole list, so only an unfiltered read can match them: a
+-- filter renumbers the positions, and another aura's count would be said. A
+-- button that is hidden, for example a buff collapsed away, has none to give.
+local PLAYER_FRAMES = {
+    HELPFUL = { frame = "BuffFrame", auraType = "Buff" },
+    HARMFUL = { frame = "DebuffFrame", auraType = "Debuff" },
+}
+
+local function playerButton(unit, index, filter)
+    local source = PLAYER_FRAMES[filter]
+    local container = source ~= nil and unit == "player" and _G[source.frame] or nil
+    if not container or container.auraFrames == nil then
+        return nil
+    end
+    for _, button in ipairs(container.auraFrames) do
+        local info = button.buttonInfo
+        if button.hasValidInfo and button.unit == unit and info ~= nil and info.auraType == source.auraType then
+            if not secrets.isSecret(info.index) and info.index == index then
+                return button
+            end
+        end
+    end
+    return nil
+end
+
+-- ", 3 stacks" from the button's count, which Blizzard only shows for two or
+-- more. Not yet seen in the game with a stacking aura under restriction, so
+-- it stays quiet if a button is not what it should be.
+local function stackText(unit, index, filter)
+    local ok, text = pcall(function()
+        local button = playerButton(unit, index, filter)
+        if button == nil or button.Count == nil then
+            return ""
+        end
+        local shown = button.Count:IsShown()
+        if not secrets.isSecret(shown) and not shown then
+            return ""
+        end
+        return whenText(button.Count:GetText(), ", ", " " .. L["stacks"])
+    end)
+    return ok and text or ""
+end
+
 -- The aura as its tooltip tells it, where the index read is refused: the
--- name, then the last line (the time left, or the description of an aura
--- without a duration), then for a debuff the dispel type.
+-- name, the stacks if they can be read, then the last line (the time left,
+-- or the description of an aura without a duration), then for a debuff the
+-- dispel type.
 local function tooltipText(unit, index, filter, harmful)
     local scan = getScanner()
     if scan == nil then
@@ -255,6 +302,7 @@ local function tooltipText(unit, index, filter, harmful)
     if not secrets.hasText(text) then
         text = L["unavailable"]
     end
+    text = text .. stackText(unit, index, filter)
     if lines >= 2 then
         text = text .. whenText(scan.line(lines), ", ", "")
     end

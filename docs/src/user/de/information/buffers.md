@@ -141,7 +141,7 @@ Solange du auf einer Aura bist, lesen die Tooltip-Tasten sie Zeile für Zeile: U
 
 Die Liste aktualisiert sich von selbst, wenn Auren kommen und gehen oder wenn sich die Einheit ändert (du wählst ein anderes Ziel), und sie behält deine Position.
 
-Auf Retail schließt das Spiel im Kampf und in Instanzen seine Aura-Liste für Addons. Der Aura-Puffer liest dann jede Aura aus dem Tooltip des Spiels: Du hörst weiterhin den Namen, die verbleibende Zeit (oder bei einer Aura ohne Dauer die Beschreibung) und bei Debuffs die Bannart, aber nicht die Stapelzahl.
+Auf Retail schließt das Spiel im Kampf und in Instanzen seine Aura-Liste für Addons. Der Aura-Puffer liest dann jede Aura aus dem Tooltip des Spiels: Du hörst weiterhin den Namen, die verbleibende Zeit (oder bei einer Aura ohne Dauer die Beschreibung) und bei Debuffs die Bannart. Die Stapelzahl wird nur für deine eigenen Auren gelesen, in einem Puffer ohne gesetzte Filter, und nur für Auren, die das Spiel auf seinen eigenen Buff- und Debuff-Leisten zeigt.
 
 ### Chat-Reiter-Puffer
 
