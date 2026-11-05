@@ -299,6 +299,36 @@ if haveNetwork then
         t:assertTrue(slices > 1, "the search yielded at least once")
     end
 
+    suite["a start beside the network binds to the nearest cell within 30 yd (his 3 yd said no network)"] = function(t)
+        setup()
+        local game = newGame()
+        local route = Route.new(game.env)
+        local zone = N.LoadZone(STORMWIND)
+        -- a point 10 or 20 yd from a waypoint that his radius does not bind
+        local x, y
+        for i = 0, zone.n - 1, 7 do
+            local nx, ny, nz = N.Position(zone.base + i)
+            for _, d in ipairs({ 10, 20 }) do
+                for a = 0, 7 do
+                    local cx, cy = nx + d * math.cos(a * math.pi / 4), ny + d * math.sin(a * math.pi / 4)
+                    route.anchor.last = nz
+                    local opts = route:startOptions()
+                    opts.radius = nil
+                    if x == nil and N.Bind(cx, cy, nil, opts) == nil then
+                        x, y = cx, cy
+                    end
+                end
+            end
+            if x ~= nil then
+                break
+            end
+        end
+        t:assertNotNil(x, "a Stormwind point beside the network")
+        local id, binding = route:startBinding(x, y)
+        t:assertNotNil(id, "the start binds")
+        t:assertTrue(binding.cellDistance <= Route.START_RADIUS, "to a cell within the start radius")
+    end
+
     suite["his outposts (Z2): a route into the enemy capital warns, the own capital does not"] = function(t)
         setup()
         local game = newGame()

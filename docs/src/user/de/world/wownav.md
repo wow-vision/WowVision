@@ -106,7 +106,7 @@ Das Signal, seine Töne, Strg+W, Strg+S, Umschalt+F12, Alt Gr und I funktioniere
 
 - Ein Wegpunkt gilt als erreicht innerhalb der Ankunftsdistanz von Alt+P, oder innerhalb seiner eigenen Distanz aus den Daten, wenn diese größer ist. Auch die Bereiche von Portalen, Tiefenbahn und Aufzügen werden mit Alt+P weiter.
 - Strg+W und Strg+S gehen die eigenen Wegpunkte der Route entlang.
-- Strg+Umschalt+N plant das letzte Ziel von deinem Standort aus neu, aber nur, wenn WowNav weiß, auf welcher Ebene du bist. Sonst hörst du "Deine Ebene ist hier nicht eindeutig" oder "Hier kein WowNav-Netz".
+- Strg+Umschalt+N plant das letzte Ziel von deinem Standort aus neu, aber nur, wenn WowNav weiß, auf welcher Ebene du bist. Stehst du neben dem Netz, beginnt die Route an seinem nächsten Punkt im Umkreis von 30 Metern. Sonst hörst du "Deine Ebene ist hier nicht eindeutig", oder "Hier kein WowNav-Netz", wenn innerhalb von 30 Metern nichts vom Netz ist.
 - Umschalt+F12 beendet alles, was WowNav tut: die Suche, die Route, ein Verkehrsmittel, das auf sein anderes Ende wartet, die Anleger-Führung und das Signal an einem Angelplatz.
 - /beacon to name nimmt den nächsten Ort mit diesem Namen aus der Liste von WowNav, mit dem Einstiegspunkt, den F10 vorwählen würde.
 
