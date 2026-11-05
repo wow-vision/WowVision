@@ -656,6 +656,28 @@ WowVision.testing.testRunner:addSuite("BufferConstruction", {
         restrictedUnits.target = nil
         buffer:rebuild()
 
+        -- The two settings: what follows the name, stacks and dispel type
+        buffer.speakDescription = false
+        t:assertEqual(buffer.items[1]:getFocusString(), "Sunfire, 3 stacks")
+        t:assertEqual(buffer.items[2]:getFocusString(), "Mark of the Wild, 59 minutes remaining")
+        buffer.speakRemaining = false
+        t:assertEqual(buffer.items[2]:getFocusString(), "Mark of the Wild")
+        buffer.speakDescription = true
+        t:assertEqual(buffer.items[1]:getFocusString(), "Sunfire, 3 stacks, Burns.")
+        buffer.speakRemaining = true
+        -- Under restriction the last line cannot be told apart: all of them
+        -- with the description, else only the last, none with both off
+        restrictedUnits.target = true
+        buffer:rebuild()
+        t:assertEqual(buffer.items[1]:getFocusString(), "Sunfire, Burns.")
+        buffer.speakDescription = false
+        t:assertEqual(buffer.items[1]:getFocusString(), "Sunfire, Burns.")
+        buffer.speakRemaining = false
+        t:assertEqual(buffer.items[1]:getFocusString(), "Sunfire")
+        buffer.speakRemaining, buffer.speakDescription = true, true
+        restrictedUnits.target = nil
+        buffer:rebuild()
+
         -- Only my auras narrows the filter; a source change rebuilds
         buffer.onlyMine = true
         t:assertEqual(buffer.items[1]:getFocusString(), "Sunfire, 3 stacks, Burns.")

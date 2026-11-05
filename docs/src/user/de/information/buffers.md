@@ -114,6 +114,8 @@ Einstellungen:
 | Aktiviert | An | Der Ein/Aus-Schalter des Puffers (siehe [Etwas vorübergehend ausschalten](#etwas-vorübergehend-ausschalten)) |
 | Bezeichnung | „Neu Aura-Puffer“, wenn er über das Menü hinzugefügt wird | Der Name, den du hörst, wenn du zum Puffer wechselst. Wenn du ihn leerst, heißt der Puffer wie seine Quelle (zum Beispiel „Ziel-Debuffs“) oder „Auren“, wenn er mehrere hat |
 | Quellen | Spieler-Debuffs, dann Spieler-Buffs | Die Liste der Quellen, in der Reihenfolge, in der sie im Puffer stehen |
+| Verbleibende Zeit ansagen (Speak Time Remaining) | An | Ob eine Aura sagt, wie lange sie noch dauert |
+| Beschreibung ansagen (Speak Description) | An | Ob eine Aura sagt, was sie bewirkt |
 | Von mir gewirkt, Von mir wirkbar oder bannbar, Abbrechbar, CC, Von meiner Gruppe bannbar, Bannbar, Externe Verteidigung, Große Verteidigung, Im Kampf auf Schlachtzugsrahmen angezeigt, Wichtig | Egal | Je ein Filter, siehe unten |
 
 Jeder Filter ist eine Auswahl mit bis zu drei Werten. Egal ignoriert den Filter. Nur diese behält genau die Auren, die er beschreibt. Ohne diese lässt diese Auren weg. Zum Beispiel listet Von mir gewirkt auf Nur diese nur Auren, die du gewirkt hast, und CC auf Ohne diese blendet Betäubungen, Furcht und Ähnliches aus. Du kannst mehrere Filter kombinieren; eine Aura muss alle bestehen. Die Filter funktionieren auch auf Retail im Kampf und in Instanzen.
@@ -133,7 +135,7 @@ Auf Retail und WoW: Forever bietet jeder Filter Egal, Nur diese und Ohne diese. 
 
 Die verfügbaren Quellen sind Spieler-Debuffs, Spieler-Buffs, Ziel-Debuffs, Ziel-Buffs, Fokus-Debuffs, Fokus-Buffs, Begleiter-Debuffs und Begleiter-Buffs. Du kannst sie beliebig mischen, und die Reihenfolge der Liste Quellen ist die Reihenfolge, in der du sie hörst.
 
-Was du zu einer Aura hörst: ihren Namen; ihre Stapelzahl, wenn sie Stapel hat; die verbleibende Zeit, wenn sie eine Dauer hat; bei Debuffs ihre Bannart (Magie, Fluch, Gift, Krankheit); und zuletzt ihre Beschreibung, also was die Aura tut. Zum Beispiel: „Mondfeuer, noch 12 Sek., Magie, Verbrennt den Feind alle 3 Sek. für 4 Arkanschaden“, oder mit Stapeln „Verjüngung, 2 Stapel, noch 9 Sek., Heilt 50 Schaden über 15 Sek.“. Die Beschreibung kommt zuletzt, so kannst du die Sprache mit Strg anhalten, sobald du genug gehört hast.
+Was du zu einer Aura hörst: ihren Namen; ihre Stapelzahl, wenn sie Stapel hat; die verbleibende Zeit, wenn sie eine Dauer hat; bei Debuffs ihre Bannart (Magie, Fluch, Gift, Krankheit); und zuletzt ihre Beschreibung, also was die Aura tut. Zum Beispiel: „Mondfeuer, noch 12 Sek., Magie, Verbrennt den Feind alle 3 Sek. für 4 Arkanschaden“, oder mit Stapeln „Verjüngung, 2 Stapel, noch 9 Sek., Heilt 50 Schaden über 15 Sek.“. Die Beschreibung kommt zuletzt, so kannst du die Sprache mit Strg anhalten, sobald du genug gehört hast. Verbleibende Zeit ansagen und Beschreibung ansagen lassen diese Teile weg. Die Tooltip-Tasten lesen sie trotzdem.
 
 Wenn eine Quelle nichts aufzulisten hat, sagt der Puffer es, statt stumm zu bleiben: „Ziel-Debuffs, keine“, „Ziel-Debuffs, kein Ziel“, „Fokus-Buffs, kein Fokus“, „Begleiter-Buffs, kein Begleiter“ oder „nicht verfügbar“, wenn das Spiel es nicht verrät. Eine Aura, die verschwindet, während du auf ihr bist, wird als „Verschwunden“ gelesen.
 
@@ -141,7 +143,7 @@ Solange du auf einer Aura bist, lesen die Tooltip-Tasten sie Zeile für Zeile: U
 
 Die Liste aktualisiert sich von selbst, wenn Auren kommen und gehen oder wenn sich die Einheit ändert (du wählst ein anderes Ziel), und sie behält deine Position.
 
-Auf Retail schließt das Spiel im Kampf und in Instanzen seine Aura-Liste für Addons. Der Aura-Puffer liest dann jede Aura aus dem Tooltip des Spiels: Du hörst weiterhin den Namen, bei Debuffs die Bannart und danach den Rest des Tooltips in der Reihenfolge des Spiels: die Beschreibung, dann die verbleibende Zeit. Die Stapelzahl wird nur für deine eigenen Auren gelesen, in einem Puffer ohne gesetzte Filter, und nur für Auren, die das Spiel auf seinen eigenen Buff- und Debuff-Leisten zeigt.
+Auf Retail schließt das Spiel im Kampf und in Instanzen seine Aura-Liste für Addons. Der Aura-Puffer liest dann jede Aura aus dem Tooltip des Spiels: Du hörst weiterhin den Namen, bei Debuffs die Bannart und danach den Rest des Tooltips in der Reihenfolge des Spiels: die Beschreibung, dann die verbleibende Zeit. Die beiden lassen sich dort nicht trennen: Ist Beschreibung ansagen aus, hörst du die letzte Zeile des Tooltips, solange Verbleibende Zeit ansagen an ist, und ist Beschreibung ansagen an, kannst du die verbleibende Zeit trotzdem hören. Die Stapelzahl wird nur für deine eigenen Auren gelesen, in einem Puffer ohne gesetzte Filter, und nur für Auren, die das Spiel auf seinen eigenen Buff- und Debuff-Leisten zeigt.
 
 ### Chat-Reiter-Puffer
 

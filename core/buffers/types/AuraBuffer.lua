@@ -75,6 +75,21 @@ AuraBuffer:addFields({
         showInUI = false,
         default = false,
     },
+    -- What an aura says after its name, stacks and dispel type.
+    {
+        key = "speakRemaining",
+        type = "Bool",
+        label = L["Speak Time Remaining"],
+        persist = true,
+        default = true,
+    },
+    {
+        key = "speakDescription",
+        type = "Bool",
+        label = L["Speak Description"],
+        persist = true,
+        default = true,
+    },
 })
 
 -- Filters: the game's aura filter strings (AuraUtil.AuraFilters), passed
@@ -229,13 +244,29 @@ local function joinedLines(scan, first, last)
     return text
 end
 
+-- The lines after the name when the last one cannot be told apart (it is
+-- the time left or, for an aura without a duration, the description). The
+-- description setting keeps them all, in the game's order; with only the
+-- time left wanted, the last line is the best guess.
+local function unsplitText(scan, lines, wantRemaining, wantDescription)
+    if lines < 2 then
+        return ""
+    end
+    if wantDescription then
+        return joinedLines(scan, 2, lines)
+    end
+    return wantRemaining and joinedLines(scan, lines, lines) or ""
+end
+
 -- The rest of the aura's tooltip, for the index read. The game writes the
 -- name, then the description, then the time left as the last line
 -- ("12 seconds remaining") when the aura has a duration, and no such line
 -- when it has none. Returns the time left and the description, each led by
--- ", ". A secret duration cannot tell which case it is; the lines then
--- stay in the game's order, all of them in the description.
-local function detailTexts(unit, index, filter, duration)
+-- ", ". A secret duration cannot tell which case it is (unsplitText).
+local function detailTexts(unit, index, filter, duration, wantRemaining, wantDescription)
+    if not wantRemaining and not wantDescription then
+        return "", ""
+    end
     local scan = getScanner()
     if scan == nil then
         return "", ""
@@ -244,10 +275,14 @@ local function detailTexts(unit, index, filter, duration)
     if lines < 2 then
         return "", ""
     end
-    if secrets.isSecret(duration) or duration == nil or duration <= 0 then
-        return "", joinedLines(scan, 2, lines)
+    if secrets.isSecret(duration) then
+        return "", unsplitText(scan, lines, wantRemaining, wantDescription)
     end
-    return whenText(scan.line(lines), ", ", ""), joinedLines(scan, 2, lines - 1)
+    if duration == nil or duration <= 0 then
+        return "", wantDescription and joinedLines(scan, 2, lines) or ""
+    end
+    return wantRemaining and whenText(scan.line(lines), ", ", "") or "",
+        wantDescription and joinedLines(scan, 2, lines - 1) or ""
 end
 
 -- Blizzard's button for one of the player's auras. Buttons hold the position
@@ -298,8 +333,8 @@ end
 -- name, the stacks if they can be read, for a debuff the dispel type, then
 -- the other lines in the game's order (the description, then the time left
 -- when the aura has a duration; which of the two the last line is cannot
--- be told under restriction).
-local function tooltipText(unit, index, filter, harmful)
+-- be told under restriction, see unsplitText).
+local function tooltipText(unit, index, filter, harmful, wantRemaining, wantDescription)
     local scan = getScanner()
     if scan == nil then
         return L["unavailable"]
@@ -316,7 +351,7 @@ local function tooltipText(unit, index, filter, harmful)
     if harmful then
         text = text .. whenText(scan.right(1), ", ", "")
     end
-    return text .. joinedLines(scan, 2, lines)
+    return text .. unsplitText(scan, lines, wantRemaining, wantDescription)
 end
 
 -- One aura, by its position in a unit's list: read afresh when spoken.
@@ -326,19 +361,22 @@ AuraItem:addFields({
     { key = "filter" },
     { key = "index" },
     { key = "harmful" },
+    { key = "speakRemaining", type = "Bool", default = true },
+    { key = "speakDescription", type = "Bool", default = true },
 })
 
 function AuraItem:getFocusString()
     local aura, allowed = auraAt(self.unit, self.index, self.filter)
     if not allowed then
-        return tooltipText(self.unit, self.index, self.filter, self.harmful)
+        return tooltipText(self.unit, self.index, self.filter, self.harmful, self.speakRemaining, self.speakDescription)
     end
     if aura == nil then
         return L["Gone"]
     end
     -- name, stacks, time left, dispel type, then the description: the
     -- short facts first, the long text last
-    local remaining, description = detailTexts(self.unit, self.index, self.filter, aura.duration)
+    local remaining, description =
+        detailTexts(self.unit, self.index, self.filter, aura.duration, self.speakRemaining, self.speakDescription)
     local text = aura.name
     text = text .. whenNonZero(aura.applications, ", ", " " .. L["stacks"])
     text = text .. remaining
@@ -427,7 +465,7 @@ end
 function AuraBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
     self.dirty = false
-    local keys = { "sources", "onlyMine" }
+    local keys = { "sources", "onlyMine", "speakRemaining", "speakDescription" }
     for _, filter in ipairs(OFFERED_FILTERS) do
         tinsert(keys, "filter_" .. filter.token)
     end
@@ -508,7 +546,14 @@ function AuraBuffer:rebuild()
                     message = L["none"]
                 else
                     for i = 1, count do
-                        tinsert(self.items, AuraItem:new({ unit = source.unit, filter = filter, index = i, harmful = source.filter == "HARMFUL" }))
+                        tinsert(self.items, AuraItem:new({
+                            unit = source.unit,
+                            filter = filter,
+                            index = i,
+                            harmful = source.filter == "HARMFUL",
+                            speakRemaining = self.speakRemaining,
+                            speakDescription = self.speakDescription,
+                        }))
                     end
                 end
             end
