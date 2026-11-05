@@ -1,6 +1,6 @@
 # Zielerfassung
 
-WowVision sagt dir an, was du im Ziel hast, lässt dich bis zu fünf "virtuelle Fokusziele" auf Tasten legen, kann die weiche Zielerfassung des Spiels ein- und ausschalten und öffnet mit einer einzigen Taste das Menü deines Ziels. Diese Seite behandelt alles davon: die Ansagen, die Tasten und die Einstellungen.
+WowVision sagt dir an, was du im Ziel hast, lässt dich bis zu fünf "virtuelle Fokusziele" auf Tasten legen, kann die weiche Zielerfassung des Spiels ein- und ausschalten, erfasst mit einer Taste das Ziel deines Ziels und öffnet mit einer anderen das Menü deines Ziels. Diese Seite behandelt alles davon: die Ansagen, die Tasten und die Einstellungen.
 
 Alle Einstellungen zur Zielerfassung findest du im WowVision-Menü (tippe /wv) unter Zielerfassung. Die Zielerfassung funktioniert in jeder unterstützten Spielversion gleich, abgesehen von den Hinweisen für Retail und WoW: Forever. Die weiche Zielerfassung braucht Unterstützung vom Spiel selbst; fehlt in deiner Version eine ihrer Einstellungen, listet /wv soft sie als "nicht verfügbar" auf.
 
@@ -13,12 +13,13 @@ Hinweis: Die Beispiele unten zeigen, was du auf einem deutschen Client hörst. W
 | Umschalt+I | Weiches Ziel Feind (Soft Target Enemy) | Schaltet die weiche Zielerfassung für Feinde ein oder aus |
 | Umschalt+P | Weiches Ziel Freund (Soft Target Friend) | Schaltet die weiche Zielerfassung für Freunde ein oder aus |
 | Umschalt+O | Weiches Ziel Interaktion (Soft Target Interact) | Schaltet die weiche Zielerfassung für Interaktion ein oder aus |
+| R | Ziel des Ziels (Target of Target) | Macht das Ziel deines Ziels zu deinem Ziel |
 | Alt+T | Zielmenü öffnen (Open Target Menu) | Öffnet das Menü deines aktuellen Ziels |
 | standardmäßig unbelegt | Zielfokus 1 bis Zielfokus 5 (Target Focus 1 bis 5) | Erfasst die Einheit, die du in diesem virtuellen Fokusplatz gespeichert hast |
 
 Du kannst Tasten ändern oder hinzufügen im Fenster für die Tastenbelegung (WowVision-Menü, Benutzeroberfläche, Tastenbelegung); siehe [Tastenbelegung](../basics/keybindings.md). Die vollständige Liste aller Tasten steht in der [Tastenreferenz](../reference/keybindings.md).
 
-Ist gleichzeitig das Addon Sku geladen, überlässt WowVision die Tasten der weichen Zielerfassung, die Zielfokus-Tasten und die Befehle /focus1 bis /focus5 Sku und registriert sie nicht. Alt+T ist davon nicht betroffen.
+Ist gleichzeitig das Addon Sku geladen, überlässt WowVision die Tasten der weichen Zielerfassung, die Zielfokus-Tasten und die Befehle /focus1 bis /focus5 Sku und registriert sie nicht. R und Alt+T sind davon nicht betroffen.
 
 ## Dein Ziel hören (festes Ziel)
 
@@ -169,6 +170,14 @@ Weil der Fokus ein Name ist, erfasst das Spiel die nächste Einheit mit diesem N
 2. Erfasse den zweiten Boss und tippe /focus2, dann den dritten und /focus3.
 3. Weise im Fenster für die Tastenbelegung Alt+1, Alt+2 und Alt+3 den Belegungen Zielfokus 1, 2 und 3 zu.
 4. Im Kampf erfasst Alt+1 den ersten Boss, und WowVision liest ihn wie jeden Zielwechsel vor.
+
+## Das Ziel deines Ziels: R
+
+Drücke R, um zu erfassen, was dein Ziel im Ziel hat: den Gegner, gegen den ein Gruppenmitglied kämpft, oder das Gruppenmitglied, das ein Gegner angreift. WowVision liest das neue Ziel vor wie jeden Zielwechsel. Greift der Gegner dich an, erfasst du dich selbst. Das geht auch im Kampf, und es beginnt keinen Angriff.
+
+Hast du kein Ziel, hörst du "Kein Ziel". Hat dein Ziel kein Ziel, hörst du "Dein Ziel hat kein Ziel", und dein Ziel bleibt, wie es war.
+
+R ist auch die eigene Taste des Spiels, um auf ein Flüstern zu antworten. Solange WowVision R benutzt, tippe /r und deine Nachricht, um zu antworten, oder gib Ziel des Ziels im Fenster für die Tastenbelegung eine andere Taste.
 
 ## Das Menü des Ziels: Alt+T
 

@@ -1,6 +1,6 @@
 # Targeting
 
-WowVision tells you what you target, lets you keep up to five "virtual focus" targets on keys, can switch the game's soft targeting on and off, and opens the target's menu with a single key. This page covers all of it: the announcements, the keys, and the settings.
+WowVision tells you what you target, lets you keep up to five "virtual focus" targets on keys, can switch the game's soft targeting on and off, takes your target's target with one key, and opens the target's menu with another. This page covers all of it: the announcements, the keys, and the settings.
 
 All targeting settings live in the WowVision menu (type /wv) under Targeting. Targeting works the same on every supported game version, apart from the notes marked for Retail and WoW: Forever. Soft targeting needs support from the game itself; if your version lacks one of its settings, /wv soft lists it as "not available".
 
@@ -11,12 +11,13 @@ All targeting settings live in the WowVision menu (type /wv) under Targeting. Ta
 | Shift+I | Soft Target Enemy | Switches soft enemy targeting on or off |
 | Shift+P | Soft Target Friend | Switches soft friend targeting on or off |
 | Shift+O | Soft Target Interact | Switches soft interact targeting on or off |
+| R | Target of Target | Makes your target's target your target |
 | Alt+T | Open Target Menu | Opens the menu of your current target |
 | unbound by default | Target Focus 1 to Target Focus 5 | Targets the unit you stored in that virtual focus slot |
 
 You can change or add keys in the keybinding window (WowVision menu, UI, Bindings); see [Keybindings](../basics/keybindings.md). The complete list of all keys is in the [keybinding reference](../reference/keybindings.md).
 
-If the addon Sku is loaded at the same time, WowVision leaves the soft targeting keys, the Target Focus keys and the /focus1 to /focus5 commands to Sku and does not register them. Alt+T is not affected.
+If the addon Sku is loaded at the same time, WowVision leaves the soft targeting keys, the Target Focus keys and the /focus1 to /focus5 commands to Sku and does not register them. R and Alt+T are not affected.
 
 ## Hearing your target (hard target)
 
@@ -167,6 +168,14 @@ Because the focus is a name, the game targets the nearest unit with that name. T
 2. Target the second boss and type /focus2, then the third and /focus3.
 3. In the keybinding window assign Alt+1, Alt+2 and Alt+3 to Target Focus 1, 2 and 3.
 4. In the fight, Alt+1 targets the first boss and WowVision reads it as it would any target change.
+
+## Your target's target: R
+
+Press R to target whatever your target is targeting: the enemy a group member is fighting, or the group member an enemy is attacking. WowVision reads the new target as it reads any target change. If the enemy is attacking you, you target yourself. It works in combat too, and it does not start an attack.
+
+If you have no target, you hear "No target". If your target has no target, you hear "Your target has no target", and your target stays as it was.
+
+R is also the game's own key for replying to a whisper. While WowVision uses R, type /r and your message to reply, or give Target of Target another key in the keybinding window.
 
 ## The target's menu: Alt+T
 

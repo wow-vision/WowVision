@@ -122,6 +122,7 @@ Siehe [Minimap](../world/minimap.md).
 | Weiches Ziel Feind (Soft Target Enemy) | Umschalt+I | Schaltet die weiche Zielerfassung für Feinde ein oder aus und sagt "Weiches Ziel Feind Aktiviert" oder "Deaktiviert" (mit "nach dem Kampf", wenn du die Taste im Kampf drückst) |
 | Weiches Ziel Freund (Soft Target Friend) | Umschalt+P | Dasselbe für die weiche Zielerfassung von Freunden |
 | Weiches Ziel Interaktion (Soft Target Interact) | Umschalt+O | Dasselbe für die weiche Zielerfassung zur Interaktion |
+| Ziel des Ziels (Target of Target) | R | Macht das Ziel deines Ziels zu deinem Ziel, ohne einen Angriff zu beginnen |
 | Zielmenü öffnen (Open Target Menu) | Alt+T | Öffnet das Menü deines Ziels, wie ein Rechtsklick auf sein Porträt |
 | Zielfokus 1 bis Zielfokus 5 (Target Focus 1 bis 5) | Unbelegt | Erfasst eines der fünf WowVision-Fokusziele |
 
