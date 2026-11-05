@@ -88,6 +88,15 @@ local function coinText(copper)
     return C_CurrencyInfo.GetCoinText(copper)
 end
 
+-- A money frame's prefix or suffix. A secret one cannot be compared with an
+-- empty text, but it can still be joined to the spoken line.
+local function hasText(text)
+    if WowVision.isSecret(text) then
+        return true
+    end
+    return text ~= nil and text ~= ""
+end
+
 -- Money lines spoken with their coins (gold, silver, copper) instead of
 -- bare numbers. Two shapes:
 -- - coins written into the line text, coin textures that speech drops, or
@@ -109,7 +118,8 @@ function Tooltip:speakMoney(frame, lines)
     local name = frame:GetName()
     for i = 1, frame.shownMoneyFrames or 0 do
         local moneyFrame = _G[name .. "MoneyFrame" .. i]
-        if moneyFrame ~= nil and moneyFrame:IsShown() and moneyFrame.staticMoney ~= nil then
+        if moneyFrame ~= nil and moneyFrame:IsShown() and moneyFrame.staticMoney ~= nil
+            and not isSecret(moneyFrame.staticMoney) then
             local _, anchor = moneyFrame:GetPoint(1)
             for index = 1, #lines do
                 if anchor ~= nil and anchor == _G[name .. "TextLeft" .. index] then
@@ -117,11 +127,11 @@ function Tooltip:speakMoney(frame, lines)
                     local suffix = _G[moneyFrame:GetName() .. "SuffixText"]
                     local spoken = coinText(moneyFrame.staticMoney)
                     local prefixText = prefix ~= nil and prefix:GetText() or nil
-                    if prefixText ~= nil and prefixText ~= "" then
+                    if hasText(prefixText) then
                         spoken = prefixText .. " " .. spoken
                     end
                     local suffixText = suffix ~= nil and suffix:GetText() or nil
-                    if suffixText ~= nil and suffixText ~= "" then
+                    if hasText(suffixText) then
                         spoken = spoken .. " " .. suffixText
                     end
                     lines[index] = { spoken, nil }

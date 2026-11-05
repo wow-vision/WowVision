@@ -82,7 +82,6 @@ Nicht jedes Steuerelement hat einen Tooltip. Wo keiner existiert, bleibt die Lee
 - Ein Gegenstand, den das Spiel noch nicht geladen hat, kann zunächst einen leeren Tooltip haben. WowVision fragt erneut an, wenn du die Leertaste drückst; bis dahin sind die Informationen meist angekommen. Drücke die Leertaste noch einmal, falls du nichts gehört hast.
 - Die Tooltip-Tasten lesen, was zum fokussierten Steuerelement gehört. Ist kein Fenster offen, gibt es nichts zu lesen.
 - Wenn du auch das Addon Sku benutzt, lässt WowVision die vier Umschalt+Pfeiltasten für den Tooltip unbelegt, damit sich die beiden Addons nicht um sie streiten. Die Leertaste funktioniert weiterhin.
-- Der Händlerpreis in einem Gegenstands-Tooltip wird eventuell nicht wie erwartet vorgelesen. Das ist ein bekanntes Problem.
 
 ## Diagnosebefehl
 
