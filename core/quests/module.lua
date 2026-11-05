@@ -57,11 +57,10 @@ areaAlert:addOutput({
 })
 settings:addRef("questAreaAlert", areaAlert.parameters)
 
--- Quest progress: the game's quest log, looked at on every QUEST_LOG_UPDATE
--- and compared with the look before (progress.lua). A count that moves, an
--- objective done and a quest ready to turn in each have their own alert.
--- They take over the game's progress messages ("Kobold Vermin slain: 3/8",
--- "Objective Complete."), which the errors module would speak as well.
+-- Quest progress: the game's own progress messages ("Kobold Vermin slain:
+-- 3/8", "Objective Complete."), spoken as the game words them. The errors
+-- module catches every game message; it hands these to the alerts here
+-- instead of its per-error filter, so they have their own settings.
 local function addProgressAlert(key, label, sound)
     local progressAlert = module:addAlert({ key = key, label = label })
     progressAlert:addOutput({
@@ -82,107 +81,24 @@ local function addProgressAlert(key, label, sound)
     return progressAlert
 end
 
-local progressAlerts = {
-    objective = addProgressAlert("questProgress", L["Quest Progress Alert"], "Sound/WowVision/alerts/glass1.mp3"),
-    objectiveComplete = addProgressAlert(
-        "objectiveComplete",
-        L["Objective Complete Alert"],
-        "Sound/WowVision/alerts/success1.mp3"
-    ),
-    questComplete = addProgressAlert(
-        "questComplete",
-        L["Quest Complete Alert"],
-        "Sound/WowVision/alerts/Tutorial_Success_01.mp3"
-    ),
-}
+local progressAlert = addProgressAlert("questProgress", L["Quest Progress Alert"], "Sound/WowVision/alerts/glass1.mp3")
+local completeAlert =
+    addProgressAlert("questComplete", L["Quest Complete Alert"], "Sound/WowVision/alerts/Tutorial_Success_01.mp3")
 
 local claimedMessages = {
-    "ERR_QUEST_ADD_KILL_SII",
-    "ERR_QUEST_ADD_ITEM_SII",
-    "ERR_QUEST_ADD_FOUND_SII",
-    "ERR_QUEST_ADD_PLAYER_KILL_SII",
-    "ERR_QUEST_OBJECTIVE_COMPLETE_S",
-    "ERR_QUEST_UNKNOWN_COMPLETE",
+    ERR_QUEST_ADD_KILL_SII = progressAlert,
+    ERR_QUEST_ADD_ITEM_SII = progressAlert,
+    ERR_QUEST_ADD_FOUND_SII = progressAlert,
+    ERR_QUEST_ADD_PLAYER_KILL_SII = progressAlert,
+    ERR_QUEST_OBJECTIVE_COMPLETE_S = completeAlert,
+    ERR_QUEST_UNKNOWN_COMPLETE = completeAlert,
 }
 
 local function claimMessages(claimed)
-    for _, name in ipairs(claimedMessages) do
-        WowVision.errors.claimed[name] = claimed or nil
-    end
-end
-
--- A secret text cannot be compared; it reads as unknown.
-local function plain(text)
-    if text == nil or WowVision.isSecret(text) then
-        return nil
-    end
-    return text
-end
-
--- One quest read by its id, for quests the log walk leaves out.
-local function rereadQuest(questId, old)
-    if C_QuestLog == nil or C_QuestLog.GetQuestObjectives == nil then
-        return nil
-    end
-    local list = C_QuestLog.GetQuestObjectives(questId)
-    if list == nil then
-        return nil
-    end
-    local objectives, allFinished = {}, #list > 0
-    for i, objective in ipairs(list) do
-        objectives[i] = { text = plain(objective.text), finished = objective.finished == true }
-        allFinished = allFinished and objective.finished == true
-    end
-    local complete = old.complete
-    if C_QuestLog.IsComplete ~= nil then
-        complete = C_QuestLog.IsComplete(questId) == true
-    elseif allFinished then
-        complete = true
-    end
-    return { title = old.title, complete = complete, failed = old.failed, objectives = objectives }
-end
-
-local function stillOnQuest(questId)
-    return C_QuestLog ~= nil and C_QuestLog.IsOnQuest ~= nil and C_QuestLog.IsOnQuest(questId) == true
-end
-
-local function readLog()
-    local entries = WowVision.quests.gameQuestLog()
-    for _, entry in ipairs(entries) do
-        entry.title = plain(entry.title)
-        for _, objective in ipairs(entry.objectives) do
-            objective.text = plain(objective.text)
-        end
-    end
-    return WowVision.quests.progress.snapshot(entries)
-end
-
-local lastLog = nil
-
-function module:checkProgress()
-    local progress = WowVision.quests.progress
-    local ok, log = pcall(function()
-        return progress.carryOver(lastLog, readLog(), stillOnQuest, rereadQuest)
-    end)
-    if not ok then
-        return
-    end
-    local changes = progress.changes(lastLog, log)
-    lastLog = log
-    for _, change in ipairs(changes) do
-        local text
-        if change.kind == "objective" then
-            text = change.text
-        elseif change.kind == "objectiveComplete" then
-            text = change.text .. ", " .. L["Complete"]
-        else
-            text = (change.title or L["Unknown"]) .. ", " .. L["Complete"]
-        end
-        progressAlerts[change.kind]:fire({
-            text = text,
-            questId = change.questId,
-            objectiveIndex = change.objectiveIndex,
-        })
+    for name, messageAlert in pairs(claimedMessages) do
+        WowVision.errors.claimed[name] = claimed and function(message)
+            messageAlert:fire({ text = message })
+        end or nil
     end
 end
 
@@ -537,9 +453,6 @@ module:registerEvent("event", "QUEST_REMOVED")
 module:registerEvent("event", "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED")
 
 function module:onEvent(event, arg1, arg2)
-    if event == "QUEST_LOG_UPDATE" then
-        self:checkProgress()
-    end
     if event == "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED" then
         self:onQuestArea(arg1, arg2)
         return
@@ -584,7 +497,6 @@ end
 
 function module:onDisable()
     claimMessages(false)
-    lastLog = nil
 end
 
 -- ---- /wv quests: a plain-spoken dump for checking the data in game ----

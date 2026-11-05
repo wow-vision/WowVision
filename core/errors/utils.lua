@@ -1,9 +1,9 @@
 -- Pure helpers for the errors module: no WoW API, so the headless runner
 -- covers them.
 local utils = {}
--- claimed: game message names (ERR_QUEST_ADD_KILL_SII) another module
--- speaks in its own words; the errors module stays silent on them and
--- lists no filter entry for them.
+-- claimed: game message name (ERR_QUEST_ADD_KILL_SII) -> function(message)
+-- of another module that speaks it with alerts of its own; the errors
+-- module hands such messages over and lists no filter entry for them.
 WowVision.errors = { utils = utils, claimed = {} }
 
 local PLACEHOLDER = "%%[%-%+%d%.%$]*[sdfioxXcug]"

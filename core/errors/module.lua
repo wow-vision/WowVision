@@ -118,13 +118,15 @@ local dedupe = utils.newFrameDedupe()
 -- Every source funnels here: the UI_ERROR/UI_INFO/SYSMSG events and the
 -- UIErrorsFrame display hooks.
 function module.handleMessage(messageType, message)
-    if not alert.enabled or message == nil then
+    if message == nil then
         return
     end
     -- Retail may hand a secret string to the display hook: no table key or
     -- comparison is allowed on it, but speech accepts it as is.
     if WowVision.isSecret(message) then
-        alert:fire({ text = message })
+        if alert.enabled then
+            alert:fire({ text = message })
+        end
         return
     end
     if message == "" then
@@ -135,7 +137,14 @@ function module.handleMessage(messageType, message)
         return
     end
     local errorName, template = lookupMessageInfo(messageType)
-    if errorName ~= nil and WowVision.errors.claimed[errorName] then
+    -- A claimed message goes to its owner's alert, past the master switch
+    -- and the repeat delay (each kill of a count is news).
+    local claim = errorName ~= nil and WowVision.errors.claimed[errorName] or nil
+    if claim ~= nil then
+        claim(message)
+        return
+    end
+    if not alert.enabled then
         return
     end
     local key, label = utils.identify(errorName, template, message)
