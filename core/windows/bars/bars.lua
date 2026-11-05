@@ -150,6 +150,15 @@ function module.actionButtonNode(button, label, populate)
     local function drag()
         WowVision.cursor = WowVision.cursor or {}
         WowVision.cursor.pickupIsActionBar = true
+        -- The game's own rule (OnDragStart): locked bars need the pickup
+        -- modifier. Only the pickup itself runs here: the rest of OnDragStart
+        -- writes the button's state, which run as the addon would be tainted.
+        if populate == nil and button.action ~= nil then
+            if not Settings.GetValue("lockActionBars") or IsModifiedClick("PICKUPACTION") then
+                PickupAction(button.action, IsAnyIconSelectorPopupFrameShown())
+            end
+            return
+        end
         local script = button:GetScript("OnDragStart")
         if script ~= nil then
             script(button)
