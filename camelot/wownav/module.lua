@@ -54,12 +54,8 @@ settings:add({ key = "targetTolerance", type = "Number", label = L["Height Toler
 settings:add({ key = "chokeFallback", type = "Bool", label = L["Step Back at Gates"], default = true })
 -- his preload: the player's zone and its neighbours are decoded ahead
 settings:add({ key = "preload", type = "Bool", label = L["Prepare Neighbouring Zones"], default = true })
--- his /vn ankunft: a waypoint counts as reached within at least this many yards; 0 = the data's own radius of each
--- waypoint (his default). WowVision's arrival distance (Alt-P) is not used by WowNav routes.
-settings:add({
-    key = "arrivalMin", type = "Number", label = L["Minimum Arrival Distance for WowNav Waypoints (0 = Their Own)"],
-    default = 0, min = 0, max = 10,
-})
+-- his /vn ankunft (a waypoint counts as reached within at least this many yards) is WowVision's arrival distance:
+-- the radius Alt-P picks (navigation/maps) is the minimum over the data's own radius of each waypoint
 
 local BUDGET_MS = 8          -- search time per frame (his chapter 7 point 4 allows 30)
 local SLOW_NOTICE = 1.0      -- seconds before "calculating route" is said
@@ -144,8 +140,8 @@ local function ready(self)
     WowVisionNavigationDB.targetRadius = self.settings.targetRadius
     WowVisionNavigationDB.targetTolerance = self.settings.targetTolerance
     WowVisionNavigationDB.chokeFallback = self.settings.chokeFallback ~= false
-    -- his /vn ankunft: the module's own setting (default 0: the data's radius of each waypoint)
-    G.arrivalMin = self.settings.arrivalMin or 0
+    -- his /vn ankunft: WowVision's arrival distance (Alt-P), kept current by the subscriptions at the end
+    G.arrivalMin = maps:arrivalDistance()
     return N
 end
 
@@ -887,7 +883,7 @@ local function checkAction(self)
     end
     local x, y, map = route.env.position()
     local current = route.action
-    local state = route:observeAction(x, y, map, maps:arrivalDistance())
+    local state = route:observeAction(x, y, map, route.G.MinArrivalRadius())
     traceAction(current, x, y, map)
     if state ~= nil then
         logLine(string.format("transit: %s at %.1f %.1f", state, x or 0, y or 0))
@@ -1213,6 +1209,16 @@ module.settings.class:getField("avoidOutposts").events.valueChange:subscribe(mod
         recalcAt = GetTime() + RECALC_DELAY
     end
 end)
+
+-- Alt-P or the settings changed the arrival distance: the running route uses it at once
+for _, key in ipairs(maps.arrivalDistanceKeys) do
+    maps.settings.class:getField(key).events.valueChange:subscribe(module, function()
+        local _, G = module:network()
+        if G ~= nil then
+            G.arrivalMin = maps:arrivalDistance()
+        end
+    end)
+end
 
 -- With the setting turned on while the standalone addon runs, say why nothing changes.
 module.settings.class:getField("enabled").events.valueChange:subscribe(module, function(_, _, _, _, value)

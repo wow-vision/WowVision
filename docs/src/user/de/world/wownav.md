@@ -52,7 +52,7 @@ Auf einer Karte, die die Daten nicht kennen, listet F10 nichts auf, und /beacon 
 | Ebenen | Nicht bekannt | Kennt Ebenen und fragt, welche du meinst, wenn es das nicht erkennt |
 | Portale, Tiefenbahn, Aufzüge, Anleger | Ein Wegpunkt wie jeder andere | Sonderbehandlung mit gesprochener Führung |
 | Wenn du vom Weg abkommst | Du drückst Strg+Umschalt+N | Findet selbst zurück und hat eine Taste für eine neue Route um eine versperrte Stelle |
-| Ankunftsdistanz | Alt+P kurz, mittel, weit | Jeder Wegpunkt hat seine eigene Distanz aus den Daten, plus ein Minimum, das du einstellst |
+| Ankunftsdistanz | Alt+P kurz, mittel, weit | Dasselbe; ein Wegpunkt mit einer eigenen, größeren Distanz in den Daten nimmt diese |
 
 ## Das Navigationsfenster mit WowNav
 
@@ -104,7 +104,7 @@ Die Zusammenfassung kann weitergehen:
 
 Das Signal, seine Töne, Strg+W, Strg+S, Umschalt+F12, Alt Gr und I funktionieren alle wie in [Navigation und Routen](./navigation.md). Die Unterschiede:
 
-- Ein Wegpunkt gilt als erreicht durch seine eigene Distanz aus den Daten, nicht durch die Ankunftsdistanz von Alt+P. Du kannst sie für jeden Wegpunkt mit Mindest-Ankunftsabstand für WowNav-Wegpunkte (0 = ihr eigener) erhöhen. Nur die Verkehrsbereiche unten werden mit Alt+P weiter.
+- Ein Wegpunkt gilt als erreicht innerhalb der Ankunftsdistanz von Alt+P, oder innerhalb seiner eigenen Distanz aus den Daten, wenn diese größer ist. Auch die Bereiche von Portalen, Tiefenbahn und Aufzügen werden mit Alt+P weiter.
 - Strg+W und Strg+S gehen die eigenen Wegpunkte der Route entlang.
 - Strg+Umschalt+N plant das letzte Ziel von deinem Standort aus neu, aber nur, wenn WowNav weiß, auf welcher Ebene du bist. Sonst hörst du "Deine Ebene ist hier nicht eindeutig" oder "Hier kein WowNav-Netz".
 - Umschalt+F12 beendet alles, was WowNav tut: die Suche, die Route, ein Verkehrsmittel, das auf sein anderes Ende wartet, die Anleger-Führung und das Signal an einem Angelplatz.
@@ -197,7 +197,6 @@ Der Punkt im Wasser ist nur zum Ausrichten da. WowNav schickt dich nie ins Wasse
 | Höhentoleranz einer Ebene (Meter) | 3 | Das Höhenband, das als eine Ebene zählt (0 bis 20). |
 | An Engstellen einen Schritt zurück | An | Driftest du an einer Engstelle seitlich ab, geht das Signal einen Wegpunkt zurück ("Einen Wegpunkt zurück"). |
 | Nachbargebiete vorbereiten | An | Bereitet dein Gebiet und die Nachbargebiete im Hintergrund vor, damit die erste Route dorthin nicht wartet. |
-| Mindest-Ankunftsabstand für WowNav-Wegpunkte (0 = ihr eigener) | 0 | Die kleinste Distanz in Metern, bei der ein Wegpunkt als erreicht gilt (0 bis 10). 0 nimmt die mit jedem Wegpunkt gespeicherte Distanz. |
 
 ## Beispiele
 
