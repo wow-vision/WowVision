@@ -124,8 +124,8 @@ The alert is the Quest Area Alert in the Quests module. See [Alerts](../basics/a
 
 The game shows quest progress as a message in the middle of the screen. WowVision speaks those messages as the game words them, with three alerts of their own:
 
-- Quest Progress Alert: a count moves, for example "Kobold Vermin slain: 3/8" or "Linen Cloth: 2/6". Its sound is glass1.
-- Objective Complete Alert: an objective is done. That is the count message once the count is full ("Kobold Vermin slain: 8/8"), or a message like "Explore the Mine (Complete)". Its sound is success1.
+- Quest Progress Alert: a count moves, for example "Kobold Vermin slain: 3/8" or "Linen Cloth: 2/6", the last one ("8/8") too. Its sound is glass1.
+- Objective Complete Alert: the game's message naming an objective done, for example "Explore the Mine (Complete)". Its sound is success1.
 - Quest Complete Alert: the game's "Objective Complete." message, which names no objective. Its sound is Tutorial_Success_01.
 
 Each alert has TTS (on) and Sound (on) and can be switched off on its own. They work without Announce Errors, and these messages no longer appear in the Per-Error Filter of the Errors module. See [Alerts](../basics/alerts.md).

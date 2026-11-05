@@ -87,33 +87,20 @@ local objectiveAlert =
 local completeAlert =
     addProgressAlert("questComplete", L["Quest Complete Alert"], "Sound/WowVision/alerts/Tutorial_Success_01.mp3")
 
--- A count message whose count is full ("Kobold Vermin slain: 8/8") is the
--- only word the game gives that a kill or item objective is done.
-local function countAlert(message)
-    local have, need = message:match("(%d+)%s*/%s*(%d+)%s*$")
-    if have ~= nil and have == need then
-        return objectiveAlert
-    end
-    return progressAlert
-end
-
+-- One alert per kind of game message, nothing read into the text.
 local claimedMessages = {
-    ERR_QUEST_ADD_KILL_SII = countAlert,
-    ERR_QUEST_ADD_ITEM_SII = countAlert,
-    ERR_QUEST_ADD_FOUND_SII = countAlert,
-    ERR_QUEST_ADD_PLAYER_KILL_SII = countAlert,
-    ERR_QUEST_OBJECTIVE_COMPLETE_S = function()
-        return objectiveAlert
-    end,
-    ERR_QUEST_UNKNOWN_COMPLETE = function()
-        return completeAlert
-    end,
+    ERR_QUEST_ADD_KILL_SII = progressAlert,
+    ERR_QUEST_ADD_ITEM_SII = progressAlert,
+    ERR_QUEST_ADD_FOUND_SII = progressAlert,
+    ERR_QUEST_ADD_PLAYER_KILL_SII = progressAlert,
+    ERR_QUEST_OBJECTIVE_COMPLETE_S = objectiveAlert,
+    ERR_QUEST_UNKNOWN_COMPLETE = completeAlert,
 }
 
 local function claimMessages(claimed)
-    for name, alertFor in pairs(claimedMessages) do
+    for name, messageAlert in pairs(claimedMessages) do
         WowVision.errors.claimed[name] = claimed and function(message)
-            alertFor(message):fire({ text = message })
+            messageAlert:fire({ text = message })
         end or nil
     end
 end
