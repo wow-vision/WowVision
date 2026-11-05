@@ -98,7 +98,7 @@ local function navigateNearest(node)
         WowVision:speak(L["Nothing to navigate to"])
         return
     end
-    local text = nearest.label
+    local text = labelText(nearest) or ""
     local where = whereText(nearest)
     if where ~= nil then
         text = text .. ", " .. where
