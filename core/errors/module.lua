@@ -135,6 +135,9 @@ function module.handleMessage(messageType, message)
         return
     end
     local errorName, template = lookupMessageInfo(messageType)
+    if errorName ~= nil and WowVision.errors.claimed[errorName] then
+        return
+    end
     local key, label = utils.identify(errorName, template, message)
     if not throttle:allow(key, now, module.settings.repeatDelay) then
         return

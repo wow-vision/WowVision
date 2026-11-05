@@ -98,6 +98,21 @@ local function questDifficultyWord(questID)
     return nil
 end
 
+-- The log marks a finished quest with a check and its "Ready for turn-in"
+-- line, a failed one with a red Failed tag.
+local function questStateWord(questID)
+    if questID == nil then
+        return nil
+    end
+    if C_QuestLog.IsFailed ~= nil and C_QuestLog.IsFailed(questID) then
+        return L["Failed"]
+    end
+    if C_QuestLog.IsComplete ~= nil and C_QuestLog.IsComplete(questID) then
+        return L["Complete"]
+    end
+    return nil
+end
+
 local function emitHeader(builder, kid)
     builder:addItem(ControlId.structural("header:" .. tostring(rowText(kid))), {
         controlType = graph.controlTypes.button,
@@ -123,9 +138,16 @@ local function emitQuest(builder, kid)
             {
                 text = function()
                     local text = rowText(kid)
+                    if text == nil then
+                        return nil
+                    end
+                    local state = questStateWord(questID)
+                    if state ~= nil then
+                        text = text .. ", " .. state
+                    end
                     local color = questDifficultyWord(questID)
-                    if text ~= nil and color ~= nil then
-                        return text .. ", " .. color
+                    if color ~= nil then
+                        text = text .. ", " .. color
                     end
                     return text
                 end,

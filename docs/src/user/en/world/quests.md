@@ -58,7 +58,7 @@ In the quest list, Up and Down move between headers and quests. Press Enter on a
 
 (Retail and WoW: Forever.) On these versions the quest log is part of the world map. The key opens a panel beside the map, and WowVision reads that panel.
 
-- The list shows zone headers and quests. A quest reads like "[12] Wolves Across the Border, Green, selected, tracked". The color word (Grey, Green, Yellow, Orange, Red) is the game's difficulty color for your level, as a sighted player sees it. "selected" and "tracked" are added when they apply. Objective lines in the list are skipped, because the details read the same text.
+- The list shows zone headers and quests. A quest reads like "[12] Wolves Across the Border, Green, selected, tracked". A finished quest adds "Complete" after its title ("[12] Wolves Across the Border, Complete, Green"), a failed one "Failed", where the game shows its check mark and "Ready for turn-in" line or its Failed tag. The color word (Grey, Green, Yellow, Orange, Red) is the game's difficulty color for your level, as a sighted player sees it. "selected" and "tracked" are added when they apply. Objective lines in the list are skipped, because the details read the same text.
 - The Details group holds the title, the description, the objectives text, each live objective, and a one-line summary of the rewards.
 - Buttons: abandon, track (it reads Untrack when the quest is tracked), share and the map button. Their captions are the game's own, and the caption is spoken again after you press the button.
 - Choosing a reward does not happen here. That happens when you turn the quest in.
@@ -120,6 +120,18 @@ The alert is the Quest Area Alert in the Quests module. See [Alerts](../basics/a
 | Sound Alert, Enabled | Off | Plays a sound instead of or besides the speech. |
 | Sound Alert, Sound | none | Which sound to play. |
 
+## Quest progress alerts
+
+While you quest, WowVision tells you what the game shows in the middle of the screen and in the quest log:
+
+- Quest Progress Alert: an objective's count moves. Says the objective as the log shows it, for example "Kobold Vermin slain: 3/8". Its sound is glass1.
+- Objective Complete Alert: an objective is done. Says "Kobold Vermin slain: 8/8, Complete". Its sound is success1.
+- Quest Complete Alert: every objective of a quest is done and it is ready to turn in. Says "Wolves Across the Border, Complete". Its sound is Tutorial_Success_01.
+
+These three replace the game's own progress messages ("Kobold Vermin slain: 3/8", "Objective Complete."), which the Errors module spoke before. Those messages no longer go through the Errors module or its Per-Error Filter, so they are never spoken twice. A quest you accept that is already done, and quests at login, stay quiet. Quests under a collapsed header in the quest log are still followed.
+
+Each alert has TTS (on) and Sound (on) and can be switched off on its own. See [Alerts](../basics/alerts.md).
+
 ## Finding quests and objectives
 
 The [Scanner](scanner.md) turns quest data into places you can walk to. It is the main way to find quests with WowVision.
@@ -141,6 +153,7 @@ Open the WowVision menu, then Quests. See [Menu and Settings](../basics/menu-and
 | Nearby Level Range | 5 | The Nearby list hides quests that are more than this many levels below your level. From 0 to 60. Set 60 to see every quest, or 0 to see only quests at or above your level. |
 | Include Repeatable Quests | On | Whether repeatable and daily quests appear in the Nearby list. |
 | Quest Area Alert | see above | Announcements when entering or leaving an objective area. |
+| Quest Progress Alert, Objective Complete Alert, Quest Complete Alert | see above | Announcements of quest progress. |
 
 The Nearby list also leaves out quests you cannot take yet, because of your level or a missing prerequisite.
 

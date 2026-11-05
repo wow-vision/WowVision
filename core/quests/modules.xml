@@ -2,6 +2,7 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="Adapter.lua" />
+  <Script file="progress.lua" />
   <Script file="places.lua" />
   <Script file="native.lua" />
   <Script file="seen.lua" />
