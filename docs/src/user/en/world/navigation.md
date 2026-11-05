@@ -100,7 +100,7 @@ When the route starts, WowVision speaks the summary and the beacon begins to pin
 - Arrived is spoken at the end of a route, followed by the name of the destination.
 - Beacon stopped is spoken when you cancel.
 
-A waypoint counts as reached when you are within the arrival distance of it (see [Arrival distance](#arrival-distance)). With WowNav each waypoint has its own distance.
+A waypoint counts as reached when you are within the arrival distance of it (see [Arrival distance](#arrival-distance)). With WowNav, a waypoint can also have a larger distance of its own.
 
 ### Beacon sounds
 
@@ -148,15 +148,15 @@ Turning needs two camera settings: the camera following style Always (the game o
 
 ### Arrival distance
 
-The arrival distance is how close, in yards, you must get to a waypoint for it to count as reached. A small distance makes you walk precisely onto each point; a large one forgives wandering. WowVision has three values and one of them is active at a time. With WowNav, the waypoints of a route use their own distance from the data instead, and you can set a minimum for them; see [WowNav](./wownav.md#starting-and-following-a-route).
+The arrival distance is how close, in yards, you must get to a waypoint for it to count as reached. A small distance makes you walk precisely onto each point; a large one forgives wandering. WowVision has three values and one of them is active at a time. It counts for the classic routes and for WowNav. With WowNav, a waypoint that has a larger distance of its own in the data uses that one; see [WowNav](./wownav.md#starting-and-following-a-route).
 
 | Name | Default distance |
 |------|------------------|
-| Short Range | 1 yard |
-| Medium Range | 3 yards (active by default) |
-| Long Range | 5 yards |
+| Short Range | 0.3 yards |
+| Medium Range | 1 yard (active by default) |
+| Long Range | 3 yards |
 
-Press Alt+P while following a route to cycle short, medium, long and back to short. WowVision speaks the name and the distance, for example "Long Range, 5 yards". Use the short range in tight places such as a doorway and the long range in open country. The settings are under [Settings](#settings).
+Press Alt+P while following a route to cycle short, medium, long and back to short. WowVision speaks the name and the distance, for example "Long Range, 3 yards". Use the short range in tight places such as a doorway and the long range in open country. The settings are under [Settings](#settings). There, Left and Right change each distance by 0.1 yards, and Enter lets you type one, such as 0.5.
 
 ### Announce distance
 
@@ -259,9 +259,9 @@ Open the WowVision menu (/wv), then Navigation, then Maps. Settings are shared b
 |---------|---------|--------------|
 | Enabled | On | Turns the whole Maps module off, including the keys and /beacon. |
 | Arrival Radius | Medium Range | Which arrival distance is active. Alt+P changes it too. |
-| Short Range | 1 yard | The short arrival distance (1 to 20 yards). |
-| Medium Range | 3 yards | The medium arrival distance (1 to 20 yards). |
-| Long Range | 5 yards | The long arrival distance (1 to 20 yards). |
+| Short Range | 0.3 yards | The short arrival distance (0.1 to 20 yards). |
+| Medium Range | 1 yard | The medium arrival distance (0.1 to 20 yards). |
+| Long Range | 3 yards | The long arrival distance (0.1 to 20 yards). |
 | Announce Distance with Alt Gr | On | Whether Alt Gr and Ctrl+Alt speak the distance. The Announce Distance binding works either way. |
 | Beacon | (see above) | The beacon alert and its four sounds: Beacon Sound, Beacon Aligned, Beacon Off Course, Waypoint Reached. Each has Enabled and a sound choice. |
 

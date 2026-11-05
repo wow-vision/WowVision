@@ -1,6 +1,6 @@
 # Group Finder, Ready Check and Role Poll
 
-This page covers everything about finding and forming groups: the Looking for Group tool where you list yourself or browse other players' groups, the ready check and role poll popups that appear once a group exists, the dungeon-ready popup, and two commands to leave a group quickly.
+This page covers everything about finding and forming groups: the Looking for Group tool where you list yourself or browse other players' groups, the ready check and role poll popups that appear once a group exists, the dungeon-ready popup, accepting a group invitation in combat, and two commands to leave a group quickly.
 
 ## What is available on which version
 
@@ -12,6 +12,7 @@ This page covers everything about finding and forming groups: the Looking for Gr
 | Ready check popup | yes | yes | yes | yes | yes |
 | Dungeon-ready popup and role check popups | where the game shows them | where the game shows them | yes | yes | where the game shows them |
 | /pquit and /dquit | yes | yes | yes | yes | yes |
+| /wv accept and the Accept Group Invitation key | yes | yes | yes | yes | yes |
 
 On Mists the dungeon finder, raid finder and premade groups windows themselves are not read yet. On Retail the Dungeon Finder is read, but the Raid Finder, Premade Groups and the other tabs of the window are not. The popups that come out of them (dungeon ready, role check) are read, and /dquit leaves the group afterwards.
 
@@ -174,6 +175,17 @@ The two role popups, the leader's party Role Poll and the dungeon queue's role c
 2. Accept, Decline and a Close button, each its own stop (a button the game hides is not listed).
 
 Example: a leader starts a role poll. You hear the popup's title. Down to Healer, press Enter (it reads "Checked"), then Tab to Accept and press Enter.
+
+## Accepting a group invitation in combat
+
+When someone invites you to a group, the game shows an invitation popup, which you answer like any other popup. In combat WowVision cannot open the popup for you, so it stays out of reach until the fight ends. These two ways accept the invitation at any time, also in combat:
+
+| Way | What it does |
+|---|---|
+| /wv accept | Accepts the invitation that is shown |
+| Accept Group Invitation key | The same as a key. It is unbound: give it a key in the keybinding window (/wv bind) |
+
+You hear "Group invitation accepted". Without an invitation you hear "No group invitation". To decline, answer the popup after the fight or let the invitation run out.
 
 ## Leaving a group quickly: /pquit and /dquit
 

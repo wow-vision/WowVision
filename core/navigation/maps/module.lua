@@ -42,11 +42,12 @@ beaconAlert:addOutput({
 -- How close (yards) counts as reaching a waypoint. Waypoints are treated
 -- as points; the player tunes THREE arrival radii -- short, medium, long
 -- -- and Alt-P cycles between them mid-route for precise or forgiving
--- movement on demand.
+-- movement on demand. The same radius is the minimum for WowNav's
+-- waypoints, which also carry their own (camelot/wownav/module.lua).
 local arrivalRanges = {
-    { key = "arrivalShort", label = L["Short Range"], default = 1 },
-    { key = "arrivalMedium", label = L["Medium Range"], default = 3 },
-    { key = "arrivalLong", label = L["Long Range"], default = 5 },
+    { key = "arrivalShort", label = L["Short Range"], default = 0.3 },
+    { key = "arrivalMedium", label = L["Medium Range"], default = 1 },
+    { key = "arrivalLong", label = L["Long Range"], default = 3 },
 }
 -- Which of the three is active: a dropdown above the sliders, also cycled
 -- in the field by the Alt-P binding.
@@ -69,14 +70,22 @@ for _, range in ipairs(arrivalRanges) do
         type = "Number",
         label = range.label,
         default = range.default,
-        min = 1,
+        min = 0.1,
         max = 20,
+        step = 0.1,
     })
 end
 
 function module:arrivalDistance()
     local range = arrivalRanges[self.settings.arrivalRange] or arrivalRanges[2]
     return self.settings[range.key] or range.default
+end
+
+-- The settings keys of the active radius and its three values, for code
+-- that follows a change of the arrival distance.
+module.arrivalDistanceKeys = { "arrivalRange" }
+for _, range in ipairs(arrivalRanges) do
+    tinsert(module.arrivalDistanceKeys, range.key)
 end
 
 settings:addRef("beacon", beaconAlert.parameters)
@@ -86,7 +95,9 @@ function module:cycleArrivalDistance()
     local index = (self.settings.arrivalRange or 2) % #arrivalRanges + 1
     self.settings.arrivalRange = index
     local range = arrivalRanges[index]
-    WowVision:speak(string.format("%s, %d %s", range.label, self.settings[range.key] or range.default, L["yards"]))
+    -- one decimal at most: "0.3 yards", "3 yards"
+    local yards = string.format("%.1f", self.settings[range.key] or range.default):gsub("%.0$", "")
+    WowVision:speak(string.format("%s, %s %s", range.label, yards, L["yards"]))
 end
 
 module:registerBinding({

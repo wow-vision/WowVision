@@ -11,7 +11,9 @@ local L = quests.L
 --                 giver; a giver with several spawns expands to them
 --   In Progress   the log; Enter beacons the first unfinished objective's
 --                 nearest target (the turn-in when complete), likewise
---                 expanding to that target's spawns
+--                 expanding to that target's spawns; with no target to walk
+--                 to, the game's own marker for the quest, then Questie's
+--                 map marker for the next open objective
 -- NPCs
 --   Quest Givers  givers of nearby quests, with their quests beneath
 --   Vendors ... Spirit Healers, Class Trainers, Mailboxes, Rares
@@ -35,14 +37,21 @@ local function spawnNodes(target)
     end
     table.sort(spawns, Adapter.spawnBefore)
     local out = {}
+    local listed = {}
     for _, spawn in ipairs(spawns) do
-        tinsert(out, {
-            key = "spawn:" .. tostring(spawn.mapId) .. ":" .. tostring(spawn.x) .. ":" .. tostring(spawn.y),
-            label = quests:placeName(spawn) or unknown(),
-            detail = spawn.phased and L["phased out"] or nil,
-            x = spawn.wx,
-            y = spawn.wy,
-        })
+        local key = "spawn:" .. tostring(spawn.mapId) .. ":" .. tostring(spawn.x) .. ":" .. tostring(spawn.y)
+        -- one entry per place: a point listed twice (a subzone and its zone
+        -- map to the same spot) would repeat it, and its id must be unique
+        if not listed[key] then
+            listed[key] = true
+            tinsert(out, {
+                key = key,
+                label = quests:placeName(spawn) or unknown(),
+                detail = spawn.phased and L["phased out"] or nil,
+                x = spawn.wx,
+                y = spawn.wy,
+            })
+        end
     end
     return out
 end
@@ -221,6 +230,38 @@ local function pointAtFirst(node, targets)
     return first
 end
 
+-- The safety nets when an objective names nothing to walk to (an
+-- exploration spot, a kill credit without known spawns, a target on another
+-- continent): the game's own marker for the quest, which knows the quest's
+-- current step, then Questie's own map marker for the objective. Each is
+-- said as such, so the player knows the point is an area rather than a
+-- creature.
+local function addDetail(node, text)
+    node.detail = node.detail ~= nil and (node.detail .. ", " .. text) or text
+end
+
+local function pointAtMarker(node, entry, index)
+    local marker = quests:markerTarget(entry.questId, index)
+    if marker == nil then
+        return nil
+    end
+    node.x, node.y = marker.nearest.wx, marker.nearest.wy
+    node.onArrive = nil
+    addDetail(node, L["Questie marker"])
+    return marker
+end
+
+local function pointAtGameMarker(node, entry)
+    local marker = quests:gameMarkerTarget(entry.questId)
+    if marker == nil then
+        return nil
+    end
+    node.x, node.y = marker.nearest.wx, marker.nearest.wy
+    node.onArrive = nil
+    addDetail(node, L["game quest marker"])
+    return marker
+end
+
 local function objectiveNodes(entry, allDone)
     return function()
         local out = {}
@@ -242,10 +283,19 @@ local function objectiveNodes(entry, allDone)
                 node.detail = L["Complete"]
             end
             local targets = quests:objectiveTargets(entry.questId, index)
-            pointAtFirst(node, targets)
+            local marker = nil
+            if pointAtFirst(node, targets) == nil and not objective.finished
+                and pointAtGameMarker(node, entry) == nil then
+                marker = pointAtMarker(node, entry, index)
+            end
             if targets ~= nil and #targets > 0 then
                 node.children = function()
                     return targetNodes(targets)
+                end
+            elseif marker ~= nil and #marker.spawns > 1 then
+                -- several markers (a kill credit's spawns, two areas): pick one
+                node.children = function()
+                    return spawnNodes(marker)
                 end
             end
             tinsert(out, node)
@@ -276,15 +326,37 @@ local function inProgressNode(entry)
     if entry.known then
         local allDone = entry.complete or unfinished == 0
         if allDone then
-            pointAtFirst(node, quests:targets(entry.questId, Adapter.phases.finish))
+            -- no known turn-in: the game marks where to hand the quest in
+            if pointAtFirst(node, quests:targets(entry.questId, Adapter.phases.finish)) == nil then
+                pointAtGameMarker(node, entry)
+            end
         else
+            local pointed = false
             for index, objective in ipairs(entry.objectives) do
                 if not objective.finished and pointAtFirst(node, quests:objectiveTargets(entry.questId, index)) ~= nil then
+                    pointed = true
                     break
+                end
+            end
+            -- nothing to walk to for any open objective: the game's own
+            -- marker for the quest
+            if not pointed and pointAtGameMarker(node, entry) ~= nil then
+                pointed = true
+            end
+            -- not even the game marks it: Questie's marker for the next open
+            -- objective that has one
+            if not pointed then
+                for index, objective in ipairs(entry.objectives) do
+                    if not objective.finished and pointAtMarker(node, entry, index) ~= nil then
+                        break
+                    end
                 end
             end
         end
         node.children = objectiveNodes(entry, allDone)
+    elseif not entry.failed then
+        -- a quest Questie does not know still has the game's marker
+        pointAtGameMarker(node, entry)
     end
     return node
 end

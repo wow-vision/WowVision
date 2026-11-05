@@ -63,6 +63,8 @@ So you hear what to look for before you hear where. Example: you have the quest 
 
 The quest line and the objective each also carry a position of their own, the first unfinished target, so Enter on the quest itself guides you to the nearest place where you can make progress. A complete quest guides you to its turn-in.
 
+Some objectives name nothing to walk to: an area to explore, a creature the quest data has no spawns for, or a place on another continent. Then WowVision falls back on the game's own quest marker, the area the game shows on your map for the quest's current step, and the entry says "game quest marker". If the game marks nothing, WowVision takes Questie's own map marker for the next open objective, the point Questie shows on your map, and the entry says "Questie marker". If an objective has several Questie markers, it expands to them, nearest first. The game's marker also guides you to the turn-in of a complete quest whose turn-in is not known, and to a quest that Questie does not know. Enter guides you to any of these like to any other place. Only when neither the game nor Questie marks anything does the entry have no place.
+
 ### NPCs
 
 - Quest Givers: the NPCs who offer the quests listed under Nearby, each with the number of quests beneath it ("3 quests"). Open one to see its quests. A giver found only by the minimap scan is a single entry marked "seen".

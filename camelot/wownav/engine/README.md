@@ -38,12 +38,16 @@ Keep this list current; everything else is his text, line for line (line endings
   `N.wholeMisses` and `N.knownMissAnswers` count both for the module's trail.
 - `NavNetwork.lua`, memory: `N.UnloadZone`, `N.KeepZones` and the hook `N.onZoneUnloaded` drop decoded zones again
   (his core keeps every decoded zone for the session).
+- `NavNetwork.lua`, same link: `SameLinkRoute` answers `N.Route` when start and target are link points of one link. The
+  search only goes from waypoint to waypoint, so it walked to an end of the link and back, even from a point to itself
+  (Northshire, Deputy Willem to himself: 4 waypoints, 40.7 yd). A link walked only the other way, or with a penalty,
+  still goes through the search.
 - `NavNetwork.lua`, time slices: `N.Job(fn, ...)` runs any work that searches routes in a coroutine; the A* loop of
   `Pass` yields every 64 expansions once the frame's budget is used. `N.RouteJob` is `N.Job(N.Route, ...)`. No
   `pcall` may stand between a job and the search (Lua 5.1 cannot yield across it).
 - `Guidance.lua`: `G.MinArrivalRadius` reads `G.arrivalMin` (WowVision's arrival distance, set by the module)
-  instead of his saved variable `arrivalMin`; the wownav module writes its own setting there (0 to 10, default 0 =
-  the data's radius, like his).
+  instead of his saved variable `arrivalMin`; the wownav module writes the radius Alt-P picks there (0.1 to 20 yd,
+  default 1; his default 0 = the data's radius alone).
 - The seven files: a header line naming the source commit.
 
 The same packing and reading are offered to Broesel's own pipeline (WowNav PR #1); if his repository ships packed

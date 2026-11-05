@@ -50,7 +50,7 @@ On a map the data does not know, F10 lists nothing and /beacon to answers "No ro
 | Floors | Not known | Knows floors and asks which floor you mean when it cannot tell |
 | Portals, tram, elevators, docks | A waypoint like any other | Special handling with spoken guidance |
 | When you wander off | You press Ctrl+Shift+N | Finds its way back by itself and has a key for a new route around a blocked spot |
-| Arrival distance | Alt+P short, medium, long | Each waypoint has its own distance from the data, plus a minimum you set |
+| Arrival distance | Alt+P short, medium, long | The same; a waypoint with a larger distance of its own in the data uses that one |
 
 ## The navigation window with WowNav
 
@@ -102,9 +102,9 @@ The summary may continue:
 
 The beacon, its sounds, Ctrl+W, Ctrl+S, Shift+F12, Alt Gr and I all work as in [Navigation](./navigation.md). The differences:
 
-- A waypoint counts as reached by its own distance from the data, not by the Alt+P arrival distance. You can raise it for every waypoint with Minimum Arrival Distance for WowNav Waypoints (0 = Their Own). Only the transit areas below widen with Alt+P.
+- A waypoint counts as reached within the Alt+P arrival distance, or within its own distance from the data when that is larger. The areas of portals, the tram and elevators widen with Alt+P too.
 - Ctrl+W and Ctrl+S step along the route's own waypoints.
-- Ctrl+Shift+N plans the last destination again from where you stand, but only if WowNav knows which floor you are on. Otherwise you hear "Your floor is not clear here" or "No WowNav network here".
+- Ctrl+Shift+N plans the last destination again from where you stand, but only if WowNav knows which floor you are on. If you stand beside the network, the route starts at its nearest point within 30 yards. Otherwise you hear "Your floor is not clear here", or "No WowNav network here" when nothing of the network is within 30 yards.
 - Shift+F12 ends everything WowNav does: the search, the route, a transit that waits for its far end, the dock guidance and the beacon at a fishing spot.
 - /beacon to name takes the nearest place with that name, from WowNav's list, with the entry point F10 would preselect.
 
@@ -124,8 +124,8 @@ If you get stuck, WowNav tries to re-enter the route and step back at gates, but
 
 ### What you hear at the end
 
-- Exactly on the network: "Arrived" and the name of the place.
-- Close to the network but not on it: "The network ends 4.2 yards from the target; search the surroundings yourself. The last stretch is unchecked." If the data does not know the height, "horizontally" is added.
+- On the network, or within 1.5 yards of its end: "Arrived" and the name of the place.
+- Close to the network but farther from its end: "The network ends 4.2 yards from the target; search the surroundings yourself. The last stretch is unchecked." If the data does not know the height, "horizontally" is added.
 - A water target: "The network ends 6.1 yards from the water surface position; diving depth 12.0 yards. The rest of the way and the diving are yours, the last stretch is unchecked."
 
 ### Route status and new route
@@ -195,7 +195,6 @@ Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
 | Height Tolerance of a Floor (Yards) | 3 | The height band that counts as one floor (0 to 20). |
 | Step Back at Gates | On | When you drift sideways at a gate, the beacon goes back one waypoint ("One waypoint back"). |
 | Prepare Neighbouring Zones | On | Prepares your zone and the zones next to it in the background, so the first route there does not wait. |
-| Minimum Arrival Distance for WowNav Waypoints (0 = Their Own) | 0 | The smallest distance, in yards, at which a waypoint counts as reached (0 to 10). 0 uses the distance stored with each waypoint. |
 
 ## Examples
 

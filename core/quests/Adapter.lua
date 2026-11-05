@@ -25,6 +25,10 @@
 --   spawnVisible(phase)       -> false when a spawn's phase is hidden for this character (optional)
 --   worldPosition(mapId, x, y)-> continent, wx, wy for map-percent x, y
 --   player()                  -> { x, y, continent, mapId, areaId, level }
+--   questMarkers(id, index)   -> { name?, spawns = { [areaId] = { {x, y}, ... } } } (optional):
+--                                the map markers of one objective of a quest in the log
+--   questPoint(id)            -> mapId, x, y (optional): the game's own marker for a
+--                                quest in the log, in map percent
 --   questLog()                -> { { questId, title, level, complete, failed,
 --                                    objectives = { { text, type, finished, collected, needed }, ... } }, ... }
 --
@@ -389,6 +393,59 @@ function Adapter:objectiveTargets(questId, objectiveIndex, ctx)
     ctx = ctx or self:_playerContext()
     self:_objectiveTargets(objective, objectiveIndex, ctx, out)
     return sortByDistance(out)
+end
+
+-- The last resort for an objective with nothing to walk to, after the game's
+-- own marker: the markers Questie draws for it (the optional
+-- backend.questMarkers), as one target
+-- named after what the markers show. Nil when no marker lies on the
+-- player's continent.
+function Adapter:markerTarget(questId, objectiveIndex, ctx)
+    if not self:isReady() or self.backend.questMarkers == nil then
+        return nil
+    end
+    local markers = self.backend.questMarkers(questId, objectiveIndex)
+    if markers == nil then
+        return nil
+    end
+    local target = rank({
+        kind = "marker",
+        id = questId,
+        name = markers.name,
+        objectiveIndex = objectiveIndex,
+        spawns = self:_resolveSpawns(markers.spawns),
+    }, ctx or self:_playerContext())
+    if target.nearest == nil then
+        return nil
+    end
+    return target
+end
+
+-- The first safety net for a quest with nothing to walk to, before Questie's
+-- markers: the game's own marker for the quest (the optional
+-- backend.questPoint), one point for the quest as a whole. Nil without one
+-- on the player's continent.
+function Adapter:gameMarkerTarget(questId, ctx)
+    if not self:isReady() or self.backend.questPoint == nil then
+        return nil
+    end
+    local mapId, x, y = self.backend.questPoint(questId)
+    if mapId == nil or x == nil or y == nil then
+        return nil
+    end
+    local continent, wx, wy = self:_toWorld(mapId, x, y)
+    if wx == nil then
+        return nil
+    end
+    local target = rank({
+        kind = "gameMarker",
+        id = questId,
+        spawns = { { mapId = mapId, x = x, y = y, wx = wx, wy = wy, continent = continent } },
+    }, ctx or self:_playerContext())
+    if target.nearest == nil then
+        return nil
+    end
+    return target
 end
 
 -- ---- quests ----

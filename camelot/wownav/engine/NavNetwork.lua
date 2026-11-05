@@ -1812,9 +1812,30 @@ local function Pass(startBinding, targetBinding, road, penalties, footOnly, avoi
     return { path = path, edges = edges, length = length, cost = bestSum, expansions = expansions }
 end
 
+-- WowVision: start and target on one link are joined by that link. The search below only goes from waypoint to waypoint,
+-- so it walked to an end of the link and back, even from a point to itself. Nil where the search has to decide: another
+-- link, a link walked only the other way, a link with a penalty (the manual new route).
+local function SameLinkRoute(startBinding, targetBinding, penalties)
+    if startBinding.type ~= "link" or targetBinding.type ~= "link" then return nil end
+    if startBinding.zone ~= targetBinding.zone or startBinding.link ~= targetBinding.link then return nil end
+    local zone, k = startBinding.zone, startBinding.link
+    local u, v = zone.base + zone.lu[k], zone.base + zone.lv[k]
+    local row = penalties and penalties[u]
+    if row and row[v] then return nil end
+    local forward, direction = targetBinding.t >= startBinding.t, zone.ldir[k]
+    if not (direction == 0 or (forward and direction == 1) or (not forward and direction == 2)) then return nil end
+    local length = zone.llen[k] * math.abs(targetBinding.t - startBinding.t) / 256
+    local path = { startBinding.id }
+    if targetBinding.id ~= startBinding.id then path[2] = targetBinding.id end
+    return { path = path, edges = {}, length = length, cost = length * LinkFactor(zone.lflag[k], false), pass = "a",
+        lengthA = length, expansions = 0 }
+end
+
 -- Two passes: (a) comfort costs, (b) with the road factor 1/r; (b) wins when its geometric length is at most r x that
 -- of (a) (r = 1 + comfort/100, default 1.5; comfort 0 has no pass (b)). Start and target are bindings from N.Bind.
 function N.Route(startBinding, targetBinding, penalties, footOnly)
+    local sameLink = SameLinkRoute(startBinding, targetBinding, penalties)
+    if sameLink then return sameLink end
     -- WowVision: inside a job, a plain search that ran out without its target knows every waypoint it reaches; a later
     -- target outside that set, from a start inside it, has no route: the same answer without the whole search again
     -- (the floor check routes every candidate of a band, each a search of the whole continent)

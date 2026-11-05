@@ -108,6 +108,66 @@ function quests.questieBackend()
         }
     end
 
+    -- The markers Questie draws for one objective of a quest in the log
+    -- (index = quest log order): the fixed coordinates of an exploration or
+    -- event objective (ObjectiveData[i].Coordinates), and the spawn list
+    -- Questie built for the live objective (Objectives[i].spawnList, its
+    -- creatures, objects and item sources). The adapter's last resort when
+    -- the database names nothing to walk to and the game marks nothing
+    -- either; nil when Questie has no marker.
+    function backend.questMarkers(id, objectiveIndex)
+        local ok, q = pcall(QuestieDB.GetQuest, id)
+        if not ok or q == nil or objectiveIndex == nil then
+            return nil
+        end
+        -- the same point often stands in several lists (an objective's
+        -- coordinates and its spawn list, two creatures of one kill credit)
+        local spawns, name, found, seen = {}, nil, false, {}
+        local function add(byArea)
+            if type(byArea) ~= "table" then
+                return
+            end
+            for areaId, list in pairs(byArea) do
+                if type(list) == "table" then
+                    local into = spawns[areaId] or {}
+                    spawns[areaId] = into
+                    for _, pair in pairs(list) do
+                        local key = type(pair) == "table"
+                            and (tostring(areaId) .. ":" .. tostring(pair[1]) .. ":" .. tostring(pair[2]))
+                        if key and not seen[key] then
+                            seen[key] = true
+                            tinsert(into, pair)
+                            found = true
+                        end
+                    end
+                end
+            end
+        end
+        local data = type(q.ObjectiveData) == "table" and q.ObjectiveData[objectiveIndex] or nil
+        if type(data) == "table" then
+            add(data.Coordinates)
+        end
+        local live = type(q.Objectives) == "table" and q.Objectives[objectiveIndex] or nil
+        if type(live) == "table" and type(live.spawnList) == "table" then
+            for _, spawn in pairs(live.spawnList) do
+                if type(spawn) == "table" then
+                    add(spawn.Spawns)
+                    name = name or spawn.Name
+                end
+            end
+        end
+        if not found then
+            return nil
+        end
+        return { name = name, spawns = spawns }
+    end
+    -- Before Questie's markers, the game's own quest marker (native.lua).
+    function backend.questPoint(id)
+        if quests.gameQuestPoint == nil then
+            return nil
+        end
+        return quests.gameQuestPoint(id)
+    end
     function backend.npc(id)
         local ok, npc = pcall(QuestieDB.GetNPC, QuestieDB, id)
         if not ok or npc == nil then

@@ -855,7 +855,12 @@ function WowVision:registerCommands()
         scope = "Global",
         conflictingAddons = { "Sku" },
         func = function(args)
-            LeaveParty()
+            -- Modern clients (Retail, WoW: Forever) moved the global into
+            -- C_PartyInfo; the classic clients still have LeaveParty.
+            local leave = C_PartyInfo ~= nil and C_PartyInfo.LeaveParty or LeaveParty
+            if leave ~= nil then
+                leave()
+            end
         end,
     })
 
