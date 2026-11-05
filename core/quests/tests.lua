@@ -358,6 +358,59 @@ testRunner:addSuite("QuestAdapter", {
         t:assertEqual(#adapter:objectiveTargets(2, 5), 0)
     end,
 
+    ["a Questie marker resolves to its nearest marker"] = function(t)
+        local adapter = Adapter:new(fakeBackend({
+            questMarkers = function(id, index)
+                if id == 6 and index == 1 then
+                    -- one marker on another continent, one in an instance, two here
+                    return {
+                        name = "Ridge Lookout",
+                        spawns = { [1] = { { 80, 80 }, { 20, 20 } }, [2] = { { 10, 10 } }, [3] = { { 5, 5 } } },
+                    }
+                end
+                return nil
+            end,
+        }))
+        local marker = adapter:markerTarget(6, 1)
+        t:assertEqual(marker.kind, "marker")
+        t:assertEqual(marker.name, "Ridge Lookout")
+        t:assertEqual(marker.objectiveIndex, 1)
+        t:assertEqual(#marker.spawns, 3, "the instance marker has no map")
+        t:assertEqual(marker.nearest.x, 20)
+        t:assertNil(adapter:markerTarget(6, 2), "no marker for that objective")
+    end,
+
+    ["no Questie marker on this continent, or no marker source, gives nothing"] = function(t)
+        local overseas = Adapter:new(fakeBackend({
+            questMarkers = function()
+                return { spawns = { [2] = { { 10, 10 } } } }
+            end,
+        }))
+        t:assertNil(overseas:markerTarget(3, 1))
+        t:assertNil(Adapter:new(fakeBackend()):markerTarget(1, 1))
+        t:assertNil(Adapter:new(fakeBackend({ ready = false, questMarkers = function() return {} end })):markerTarget(1, 1))
+    end,
+
+    ["the game's quest marker resolves to one point"] = function(t)
+        local adapter = Adapter:new(fakeBackend({
+            questPoint = function(id)
+                if id == 1 then
+                    return 10, 40, 40
+                elseif id == 3 then
+                    return 20, 10, 10
+                end
+                return nil
+            end,
+        }))
+        local marker = adapter:gameMarkerTarget(1)
+        t:assertEqual(marker.kind, "gameMarker")
+        t:assertEqual(marker.nearest.wx, 400)
+        t:assertTrue(math.abs(marker.distance - math.sqrt(2) * 300) < 0.001)
+        t:assertNil(adapter:gameMarkerTarget(3), "on another continent")
+        t:assertNil(adapter:gameMarkerTarget(2), "the game marks nothing")
+        t:assertNil(Adapter:new(fakeBackend()):gameMarkerTarget(1), "no such source")
+    end,
+
     ["npcs by role bucket the zone index within the radius"] = function(t)
         local backend = fakeBackend()
         backend.flags = { VENDOR = 4, REPAIR = 16384, TRAINER = 16 }

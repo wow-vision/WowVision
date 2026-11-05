@@ -210,6 +210,54 @@ local function call(fn, ...)
     return nil
 end
 
+-- Where the game itself marks a quest in the log, for any quest source:
+-- its point on the player's map or a map above it (C_QuestLog.GetQuestsOnMap,
+-- the zone first, then the continent), else the routed next step (the
+-- portal or flight toward it), else the older QuestPOIGetIconInfo on the
+-- player's map. Returns mapId, x, y in map percent (0 to 100), or nil.
+function quests.gameQuestPoint(questId)
+    if C_Map == nil or C_Map.GetBestMapForUnit == nil then
+        return nil
+    end
+    local playerMap = call(C_Map.GetBestMapForUnit, "player")
+    local mapId, visited = playerMap, {}
+    for _ = 1, 8 do
+        if mapId == nil or mapId <= 0 or visited[mapId] then
+            break
+        end
+        visited[mapId] = true
+        if C_QuestLog ~= nil and C_QuestLog.GetQuestsOnMap ~= nil then
+            for _, info in ipairs(call(C_QuestLog.GetQuestsOnMap, mapId) or {}) do
+                local x, y = info.x, info.y
+                if info.questID == questId and x ~= nil and y ~= nil and x >= 0 and x <= 1 and y >= 0 and y <= 1 then
+                    return mapId, x * 100, y * 100
+                end
+            end
+        end
+        local info = C_Map.GetMapInfo ~= nil and call(C_Map.GetMapInfo, mapId) or nil
+        mapId = info ~= nil and info.parentMapID or nil
+    end
+    if C_QuestLog ~= nil and C_QuestLog.GetNextWaypointForMap ~= nil and playerMap ~= nil then
+        local ok, x, y = pcall(C_QuestLog.GetNextWaypointForMap, questId, playerMap)
+        if ok and x ~= nil and y ~= nil then
+            return playerMap, x * 100, y * 100
+        end
+    end
+    if C_QuestLog ~= nil and C_QuestLog.GetNextWaypoint ~= nil then
+        local ok, wayMap, x, y = pcall(C_QuestLog.GetNextWaypoint, questId)
+        if ok and wayMap ~= nil and x ~= nil and y ~= nil then
+            return wayMap, x * 100, y * 100
+        end
+    end
+    if QuestPOIGetIconInfo ~= nil and playerMap ~= nil then
+        local ok, _, x, y = pcall(QuestPOIGetIconInfo, questId)
+        if ok and x ~= nil and y ~= nil and x >= 0 and x <= 1 and y >= 0 and y <= 1 then
+            return playerMap, x * 100, y * 100
+        end
+    end
+    return nil
+end
+
 -- opts: levelRange, includeRepeatable, maxCount (see Adapter:nearbyQuests).
 function Native:nearbyQuests(opts)
     opts = opts or {}
