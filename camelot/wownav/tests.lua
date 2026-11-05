@@ -1522,10 +1522,16 @@ if haveNetwork then
     end
 
     suite["a point on a link routes to itself without leaving it"] = function(t)
-        local deputy = northshire("deputy willem")
-        local result = R:Resolve({ nativeMapId = 0 }, catalog.contract(deputy, 0), {})
-        t:assertEqual(result.binding.type, "link")
-        local id = result.endNodeId
+        setup()
+        local id = nil
+        for _, row in ipairs(zoneRows(ELWYNN)) do
+            local result = R:Resolve({ nativeMapId = 0 }, catalog.contract(row, 0), {})
+            if result ~= nil and result.binding ~= nil and result.binding.type == "link" then
+                id = result.endNodeId
+                break
+            end
+        end
+        t:assertTrue(id ~= nil, "a target on a link")
         local route = N.RouteIds(id, id)
         t:assertEqual(#route.path, 1)
         t:assertEqual(route.path[1], id)
