@@ -227,6 +227,11 @@ function engine:cancel()
     return running
 end
 
+-- Ctrl-Shift-R (maps:reverseRoute): the running route turned around. Nil when no WowNav route runs.
+function engine:reverseRoute()
+    return module:reverseRoute()
+end
+
 function engine:search(text, px, py, map, opts)
     return module:search(text, px, py, map, opts)
 end
@@ -457,6 +462,12 @@ local function startRoute(self, request, outcome)
     if fromStart and start.nodeId == nil then
         route:prependStart(start.x, start.y, start.z)
     end
+    -- Ctrl-Shift-R: the way back was found; Ctrl-Shift-N goes there again. Once: a transit's continuation starts anew.
+    local reversed = request.reversed
+    request.reversed = nil
+    if reversed ~= nil then
+        maps.lastDestination = reversed.destination
+    end
     -- start and target on the same spot: nothing to walk on the network
     local sameSpot = fromStart and Route.sameSpot(start, request.contract) and route:dropToEnd()
     if request.dockTarget ~= nil and not trimmed then
@@ -500,6 +511,9 @@ local function startRoute(self, request, outcome)
     local outpost = outcome.plan and outcome.plan.result and outcome.plan.result.outpost
     if outpost == "through" or outpost == "target" then
         text = text .. ". " .. WowVisionNavigationText("outpost_" .. outpost)
+    end
+    if reversed ~= nil then
+        text = reversed.text .. ". " .. text
     end
     say(text)
 end
@@ -570,7 +584,8 @@ function module:routeTo(target)
             say(L["No WowNav network here"])
             return true
         end
-        local request = { nodeId = target.data.nodeId, label = target.label, onArrive = target.onArrive, start = start }
+        local request = { nodeId = target.data.nodeId, label = target.label, onArrive = target.onArrive, start = start,
+            reversed = target.reversed }
         if bindStart(self, request) then
             self:stopRoute()
             search(self, request)
@@ -643,12 +658,59 @@ function module:routeTo(target)
     end
     local request = { contract = contract, label = target.label, onArrive = target.onArrive, dockTarget = dockTarget,
         activationTarget = activationTarget, approx = type(target.data) == "table" and target.data.approx == true,
-        lowestFloor = type(target.data) == "table" and target.data.lowestFloor == true, start = start }
+        lowestFloor = type(target.data) == "table" and target.data.lowestFloor == true, start = start,
+        reversed = target.reversed }
     if bindStart(self, request) then
         self:stopRoute()
         search(self, request)
     end
     return true
+end
+
+-- Ctrl-Shift-R: the running route turned around. The new route starts at the waypoint the beacon leads to now (the
+-- next real network point when that one is virtual: a picked target before its network point) and leads back to
+-- where the previous route started: the target or waypoint picked as its entry point in F10, else its start node.
+-- Nil when no WowNav route runs; true when the request was made.
+function module:reverseRoute()
+    local request, path = self.request, self.path
+    local N = self:network()
+    if request == nil or path == nil or route == nil or not route.active or route.path == nil
+        or request.startOverride == nil or N == nil then
+        return nil
+    end
+    local from
+    for i = route.pathIndex or 1, #route.path do
+        local id = route.path[i]
+        if N.virt[id] == nil then
+            from = id
+            break
+        end
+    end
+    if from == nil then
+        return nil
+    end
+    local _, _, fromZ = N.Position(from)
+    local start = request.start
+    local data, x, y, z
+    if type(start) == "table" and (start.tid ~= nil or start.nodeId ~= nil) and start.x ~= nil then
+        data, x, y, z = start, start.x, start.y, start.z
+    else
+        data = { nodeId = request.startOverride }
+        x, y, z = N.Position(request.startOverride)
+        data.x, data.y, data.z = x, y, z
+    end
+    local label = (type(start) == "table" and start.n) or L["the start of the previous route"]
+    if data.n == nil then
+        data.n = label
+    end
+    -- the search answers later: said and remembered when the route starts (startRoute), a failed one says why
+    local reversed = { text = string.format(L["Route reversed, back to %s"], label), destination = data }
+    if self:routeTo({ x = x, y = y, z = z, label = label, data = data, start = { nodeId = from, z = fromZ },
+        reversed = reversed }) then
+        return true
+    end
+    say(L["No route found"])
+    return false
 end
 
 -- His TargetProviders:GroupMember: the unit's position now as a live target, valid for 30 s; nil without one.

@@ -98,6 +98,7 @@ Wenn die Route beginnt, spricht WowVision die Zusammenfassung, und das Signal be
 - Das Signal pingt in Richtung des aktuellen Wegpunkts. Der Ping ändert sich mit der Richtung und der Entfernung zum Wegpunkt. Er pingt schneller, je direkter du auf den Wegpunkt blickst: etwa alle 0,7 Sekunden, wenn du vom Kurs abweichst, und etwa alle 0,3 Sekunden, wenn du darauf ausgerichtet bist. Die Entfernung hörst du in Schritten von etwa 6 Metern, und sie reicht bis ungefähr 180 Meter.
 - Signal ausgerichtet (ein Klack) spielt, wenn du dich bis auf 10 Grad zum Wegpunkt gedreht hast. Signal abseits des Kurses (ein Klick) spielt, wenn du dich wieder abwendest. Diese Töne spielen nur, wenn du diese Linie durch Drehen überschreitest.
 - Wegpunkt erreicht (ein Erfolgston) spielt jedes Mal, wenn du nah genug an einen Wegpunkt kommst, auch beim letzten.
+- Gleich nach dem Ton sagt WowVision, wie viele Wegpunkte noch übrig sind, zum Beispiel "noch 3". Der Wegpunkt, zu dem das Signal jetzt führt, zählt mit. Am letzten Wegpunkt hörst du stattdessen Angekommen, und an einem Portal, der Tiefenbahn oder einem Aufzug auf einer WowNav-Route die eigenen Ansagen von WowNav. Das gilt für klassische Routen und WowNav-Routen gleichermaßen. Die Einstellung Verbleibende Wegpunkte ansagen (Announce Remaining Waypoints) im Modul Navigation (standardmäßig an) schaltet es aus.
 - Angekommen wird am Ende einer Route gesprochen, gefolgt vom Namen des Ziels.
 - Signal gestoppt wird gesprochen, wenn du abbrichst.
 
@@ -127,6 +128,7 @@ Für Signalton wählst du eines der Signal-Sets: Notification, Probe (Deep), Pro
 | Strg+W | Nächster Wegpunkt | Springt zum nächsten Wegpunkt. |
 | Strg+S | Vorheriger Wegpunkt | Geht zum vorherigen Wegpunkt zurück. |
 | Strg+Umschalt+N | Route von hier neu starten | Startet die letzte Route von deinem Standort aus neu. |
+| Strg+Umschalt+R | Route umkehren (Reverse Route) | Kehrt die laufende Route um, zurück zu ihrem Start. |
 | Umschalt+F12 | Navigation abbrechen | Beendet die Route oder das Signal. |
 | F10 | Navigation | Öffnet das Navigationsfenster. |
 
@@ -173,6 +175,12 @@ Bist du vom Weg abgekommen oder willst du einen Wegpunkt überspringen, den du n
 ### Die Route neu starten
 
 Bist du weit von der Route abgekommen, drücke Strg+Umschalt+N. WowVision plant das zuletzt gewählte Ziel neu, ausgehend von dem Ort, an dem du jetzt stehst. Das funktioniert für Ziele aus dem Fenster, aus dem Scanner, von der Route zu deinem Ziel und für den Leichenlauf. Bei klassischen Routen nimmt der Router von den fünf nächsten Wegpunkten denjenigen, der die beste Route ergibt. Mit WowNav beginnt die Route dort, wo du stehst, wenn WowNav weiß, auf welcher Ebene du bist. Du hörst wieder die Zusammenfassung der Route, oder Keine Route zum Neustarten, wenn du noch kein Ziel gewählt hast.
+
+### Die Route umkehren
+
+Auf halber Strecke fällt dir ein, dass du noch einmal zurückmusst. Drücke Strg+Umschalt+R. Die Route kehrt sich um: Der Wegpunkt, zu dem das Signal gerade führt, wird zum Start einer neuen Route, und ihr Ziel ist der Ort, an dem die vorherige Route begann, also der Einstiegspunkt, den du im Navigationsfenster gewählt hast. Du hörst "Route umgekehrt, zurück zu" und den Namen dieses Ortes, danach die Zusammenfassung der neuen Route. Ein Beispiel: Auf dem Weg von Priesterin Anetta zu Marschall Dughan drückst du Strg+Umschalt+R und hörst "Route umgekehrt, zurück zu Priesterin Anetta". Hat der Start keinen Namen, hörst du "zurück zu dem Start der vorherigen Route".
+
+Das gilt für klassische Routen und WowNav-Routen gleichermaßen. Danach führt Strg+Umschalt+N wieder zu diesem Start. Ohne laufende Route hörst du "Keine Route zum Umkehren".
 
 ### Navigation abbrechen
 
@@ -265,7 +273,7 @@ Das Modul Besuchte Wegpunkte (unter Navigation) hat eine Einstellung:
 |-------------|----------|-------------|
 | Gilt als besucht für (Minuten) | 15 | Wie lange ein erreichtes Ziel als besucht gilt (1 bis 1440 Minuten). |
 
-Zwei Einstellungen des Moduls Navigation hängen damit zusammen: Automatisch zur Leiche navigieren (standardmäßig an) startet eine Route zu deinem Körper, sobald du ein Geist bist, und Automatisch zum Interaktionsziel bewegen wird bei den Bewegungsfunktionen erklärt. Dazu, zum Kompass und zum Folgen eines Spielers siehe [Bewegung und Orientierung](./movement.md).
+Drei Einstellungen des Moduls Navigation hängen damit zusammen: Verbleibende Wegpunkte ansagen (standardmäßig an) sagt nach jedem erreichten Wegpunkt, wie viele noch übrig sind, Automatisch zur Leiche navigieren (standardmäßig an) startet eine Route zu deinem Körper, sobald du ein Geist bist, und Automatisch zum Interaktionsziel bewegen wird bei den Bewegungsfunktionen erklärt. Dazu, zum Kompass und zum Folgen eines Spielers siehe [Bewegung und Orientierung](./movement.md).
 
 ## Diagnosebefehle
 

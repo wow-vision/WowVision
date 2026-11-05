@@ -501,6 +501,45 @@ module:registerBinding({
     script = "/run WowVision.base.navigation.maps:restartRoute()",
 })
 
+-- Ctrl-Shift-R: the running route turned around ("I have to go back"). The
+-- waypoint the beacon leads to now starts the new route, and its
+-- destination is where the previous route started (the entry point picked
+-- in F10). A route engine turns its own route (engine:reverseRoute, nil when
+-- none of its routes runs); the route data's route enters the network at
+-- that waypoint. The start becomes the last destination for Ctrl-Shift-N.
+function module:reverseRoute()
+    local engine = self:activeRouteEngine()
+    if engine ~= nil and engine.reverseRoute ~= nil then
+        local handled = engine:reverseRoute()
+        if handled ~= nil then
+            return handled
+        end
+    end
+    local route, path = self.lastRoute, self.path
+    local current = path ~= nil and path.currentWaypoint or nil
+    if route == nil or path ~= route.path or path.complete or current == nil or current.id == nil
+        or route.start == nil or route.start.id == nil then
+        WowVision:speak(L["No route to reverse"])
+        return false
+    end
+    local start = route.start
+    local intro = string.format(L["Route reversed, back to %s"], start.n or L["the start of the previous route"])
+    -- said and remembered only when the way back was found
+    if not self:navigateTo(start.id, route.waypoints, { entryId = current.id, intro = intro }) then
+        return false
+    end
+    self.lastDestination = start
+    return true
+end
+
+module:registerBinding({
+    type = "Script",
+    key = "maps/reverseRoute",
+    label = L["Reverse Route"],
+    inputs = { "CTRL-SHIFT-R" },
+    script = "/run WowVision.base.navigation.maps:reverseRoute()",
+})
+
 -- Exactly one point, no route (F10's "Direct", WowNav's /vn direct): a
 -- straight beacon to the destination, whatever guidance ran before (a route
 -- engine's too) ends first. Arrival says the point's name; onArrive runs
@@ -632,6 +671,8 @@ function module:navigateTo(waypointId, waypoints, opts)
     for _, wp in ipairs(route.waypoints) do
         path:add(wp)
     end
+    -- what Ctrl-Shift-R turns around: the route's first waypoint, in its network
+    self.lastRoute = { path = path, start = route.waypoints[1], waypoints = waypoints }
     path.events.complete:subscribe(self, function()
         self.path = nil
         local last = route.waypoints[#route.waypoints]
@@ -649,17 +690,51 @@ function module:navigateTo(waypointId, waypoints, opts)
     if lastLeg > self:arrivalDistance() then
         text = text .. ", " .. string.format(L["last %d yards direct"], lastLeg)
     end
+    if opts ~= nil and opts.intro ~= nil then
+        text = opts.intro .. ". " .. text
+    end
     WowVision:speak(text)
     return true
 end
+
+-- How long after the waypoint-reached cue the count of the waypoints left
+-- is spoken, so the cue is heard first and the path has moved on.
+local REMAINING_DELAY = 0.3
 
 function module:pathfind(path)
     self.beacon = nil
     self.path = path
     path.events.arriveAtWaypoint:subscribe(self, function()
         module:fireAlert("beacon", { action = "arrived" })
+        if not self.stepping and WowVision.base.navigation.settings.announceRemaining then
+            C_Timer.After(REMAINING_DELAY, function()
+                self:announceRemaining(path)
+            end)
+        end
     end)
     self.path:start()
+end
+
+-- The waypoints still ahead on the route, the one the beacon now leads to
+-- included (the Ctrl-W count). Nil once the route ended or another began.
+function module:remainingWaypoints(path)
+    if path == nil or path ~= self.path or not path.active or path.complete or path.currentIndex == nil then
+        return nil
+    end
+    local remaining = #path.waypoints - path.currentIndex + 1
+    if remaining < 1 then
+        return nil
+    end
+    return remaining
+end
+
+-- After a waypoint reached: "3 remaining". The last waypoint says Arrived
+-- instead, so nothing is said once none is left.
+function module:announceRemaining(path)
+    local remaining = self:remainingWaypoints(path)
+    if remaining ~= nil then
+        WowVision:speak(string.format(L["%d remaining"], remaining))
+    end
 end
 
 -- Sku's next/previous waypoint keys: manually step along the active route
@@ -671,7 +746,10 @@ function module:stepWaypoint(offset)
         WowVision:speak(L["No active waypoint"])
         return false
     end
+    -- the step speaks its own count; the arrival cue's count would repeat it
+    self.stepping = true
     local waypoint = self.path:moveBy(offset)
+    self.stepping = false
     if waypoint == nil then
         WowVision:speak(offset > 0 and L["End of route"] or L["Start of route"])
         return false
