@@ -462,6 +462,12 @@ local function startRoute(self, request, outcome)
     if fromStart and start.nodeId == nil then
         route:prependStart(start.x, start.y, start.z)
     end
+    -- Ctrl-Shift-R: the way back was found; Ctrl-Shift-N goes there again. Once: a transit's continuation starts anew.
+    local reversed = request.reversed
+    request.reversed = nil
+    if reversed ~= nil then
+        maps.lastDestination = reversed.destination
+    end
     -- start and target on the same spot: nothing to walk on the network
     local sameSpot = fromStart and Route.sameSpot(start, request.contract) and route:dropToEnd()
     if request.dockTarget ~= nil and not trimmed then
@@ -505,6 +511,9 @@ local function startRoute(self, request, outcome)
     local outpost = outcome.plan and outcome.plan.result and outcome.plan.result.outpost
     if outpost == "through" or outpost == "target" then
         text = text .. ". " .. WowVisionNavigationText("outpost_" .. outpost)
+    end
+    if reversed ~= nil then
+        text = reversed.text .. ". " .. text
     end
     say(text)
 end
@@ -575,7 +584,8 @@ function module:routeTo(target)
             say(L["No WowNav network here"])
             return true
         end
-        local request = { nodeId = target.data.nodeId, label = target.label, onArrive = target.onArrive, start = start }
+        local request = { nodeId = target.data.nodeId, label = target.label, onArrive = target.onArrive, start = start,
+            reversed = target.reversed }
         if bindStart(self, request) then
             self:stopRoute()
             search(self, request)
@@ -648,7 +658,8 @@ function module:routeTo(target)
     end
     local request = { contract = contract, label = target.label, onArrive = target.onArrive, dockTarget = dockTarget,
         activationTarget = activationTarget, approx = type(target.data) == "table" and target.data.approx == true,
-        lowestFloor = type(target.data) == "table" and target.data.lowestFloor == true, start = start }
+        lowestFloor = type(target.data) == "table" and target.data.lowestFloor == true, start = start,
+        reversed = target.reversed }
     if bindStart(self, request) then
         self:stopRoute()
         search(self, request)
@@ -692,10 +703,10 @@ function module:reverseRoute()
     if data.n == nil then
         data.n = label
     end
-    say(string.format(L["Route reversed, back to %s"], label))
-    -- Ctrl-Shift-N goes there again
-    maps.lastDestination = data
-    if maps:routeTo(x, y, label, nil, z, data, { nodeId = from, z = fromZ }) then
+    -- the search answers later: said and remembered when the route starts (startRoute), a failed one says why
+    local reversed = { text = string.format(L["Route reversed, back to %s"], label), destination = data }
+    if self:routeTo({ x = x, y = y, z = z, label = label, data = data, start = { nodeId = from, z = fromZ },
+        reversed = reversed }) then
         return true
     end
     say(L["No route found"])

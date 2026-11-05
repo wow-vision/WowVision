@@ -523,9 +523,13 @@ function module:reverseRoute()
         return false
     end
     local start = route.start
-    WowVision:speak(string.format(L["Route reversed, back to %s"], start.n or L["the start of the previous route"]))
+    local intro = string.format(L["Route reversed, back to %s"], start.n or L["the start of the previous route"])
+    -- said and remembered only when the way back was found
+    if not self:navigateTo(start.id, route.waypoints, { entryId = current.id, intro = intro }) then
+        return false
+    end
     self.lastDestination = start
-    return self:navigateTo(start.id, route.waypoints, { entryId = current.id })
+    return true
 end
 
 module:registerBinding({
@@ -685,6 +689,9 @@ function module:navigateTo(waypointId, waypoints, opts)
     local lastLeg = route.lastLeg ~= nil and math.floor(route.lastLeg + 0.5) or 0
     if lastLeg > self:arrivalDistance() then
         text = text .. ", " .. string.format(L["last %d yards direct"], lastLeg)
+    end
+    if opts ~= nil and opts.intro ~= nil then
+        text = opts.intro .. ". " .. text
     end
     WowVision:speak(text)
     return true
