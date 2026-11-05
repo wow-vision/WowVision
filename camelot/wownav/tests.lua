@@ -1473,4 +1473,86 @@ if haveNetwork then
     end
 end
 
+if haveNetwork then
+    local function northshire(name)
+        setup()
+        N.LoadZone(ELWYNN)
+        return zoneRows(ELWYNN, name)[1]
+    end
+
+    -- a route from a row to itself as the module starts it: bound like F10's entry point
+    local function startAt(row, game)
+        local route = Route.new(game.env)
+        local id, z = catalog.startNode(N, R, { nativeMapId = 0 }, row, 0)
+        route.anchor.last = z
+        local contract = catalog.contract(row, 0)
+        local outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = 0 }, id))
+        route:begin(outcome.plan, contract, outcome.result, row.n)
+        return route, outcome, contract
+    end
+
+    suite["a point on a link routes to itself without leaving it"] = function(t)
+        local deputy = northshire("deputy willem")
+        local result = R:Resolve({ nativeMapId = 0 }, catalog.contract(deputy, 0), {})
+        t:assertEqual(result.binding.type, "link")
+        local id = result.endNodeId
+        local route = N.RouteIds(id, id)
+        t:assertEqual(#route.path, 1)
+        t:assertEqual(route.path[1], id)
+        t:assertEqual(route.length, 0)
+    end
+
+    suite["two points on a link are joined by it, a one way link only forwards"] = function(t)
+        setup()
+        local zone = N.LoadZone(ELWYNN)
+        local both, forward
+        for k = 1, #zone.lu do
+            both = both or (zone.ldir[k] == 0 and k or nil)
+            forward = forward or (zone.ldir[k] == 1 and k or nil)
+        end
+        local a, b = N.LinkpointNode(zone, both, 50), N.LinkpointNode(zone, both, 200)
+        local across = N.RouteIds(b, a)
+        t:assertEqual(#across.path, 2)
+        t:assertEqual(across.path[1], b)
+        t:assertEqual(across.path[2], a)
+        t:assertTrue(math.abs(across.length - zone.llen[both] * 150 / 256) < 0.001)
+        -- a penalty on the link leaves it to the search
+        local u, v = zone.base + zone.lu[both], zone.base + zone.lv[both]
+        local avoided = N.RouteIds(b, a, { [u] = { [v] = 1000 }, [v] = { [u] = 1000 } })
+        t:assertTrue(avoided == nil or #avoided.path > 2, "the search decides")
+        local c, d = N.LinkpointNode(zone, forward, 50), N.LinkpointNode(zone, forward, 200)
+        t:assertEqual(#N.RouteIds(c, d).path, 2, "along its direction")
+        local back = N.RouteIds(d, c)
+        t:assertTrue(back == nil or #back.path > 2, "against it, only over other links")
+    end
+
+    suite["the same spot: floors apart is not, a missing height does not count"] = function(t)
+        t:assertTrue(Route.sameSpot({ x = 1, y = 1, z = 5 }, { x = 1, y = 2, z = 6 }))
+        t:assertEqual(Route.sameSpot({ x = 1, y = 1 }, { x = 1, y = 4 }), false, "too far in the plane")
+        t:assertEqual(Route.sameSpot({ x = 1, y = 1, z = 5 }, { x = 1, y = 1, z = 15 }), false, "another floor")
+        t:assertTrue(Route.sameSpot({ x = 1, y = 1, z = 5 }, { x = 1, y = 1 }))
+        t:assertEqual(Route.sameSpot({ x = 1, y = 1 }, nil), false)
+    end
+
+    suite["start and target on one spot: arrived at once, from afar straight to it"] = function(t)
+        local deputy = northshire("deputy willem")
+        local game = newGame()
+        game.x, game.y = deputy.x, deputy.y
+        local route, outcome, contract = startAt(deputy, game)
+        t:assertEqual(outcome.kind, "start", tostring(outcome.reason))
+        t:assertEqual(#route.path, 2, "his network point and the logical end")
+        t:assertTrue(Route.sameSpot(deputy, contract))
+        t:assertTrue(route:dropToEnd())
+        t:assertEqual(#route.path, 1)
+        t:assertEqual(route:update(game.x, game.y).kind, "arrived")
+
+        game.x = deputy.x + 20
+        route = startAt(deputy, game)
+        route:dropToEnd()
+        t:assertNil(route:update(game.x, game.y), "not there yet")
+        game.x, game.t = deputy.x, game.t + 1
+        t:assertEqual(route:update(game.x, game.y).kind, "arrived")
+    end
+end
+
 testRunner:addSuite("WowNav routes", suite)

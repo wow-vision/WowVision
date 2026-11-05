@@ -459,6 +459,35 @@ function Route:prependStart(x, y, z)
     N.KeepVirtual(self.path, self.targetBindingId)
 end
 
+-- WowVision's own: a start and a target on the same spot (the same row picked twice, or two within the target's arrival
+-- radius on one floor) have nothing between them. Heights only count when both are known.
+Route.SAME_SPOT_HEIGHT = 3.0          -- yd: his height tolerance of a floor
+
+function Route.sameSpot(a, b)
+    if type(a) ~= "table" or type(b) ~= "table" or type(a.x) ~= "number" or type(a.y) ~= "number"
+        or type(b.x) ~= "number" or type(b.y) ~= "number" then
+        return false
+    end
+    if distance(a.x, a.y, b.x, b.y) > Route.ARRIVAL_TARGET_RADIUS then
+        return false
+    end
+    return type(a.z) ~= "number" or type(b.z) ~= "number" or abs(a.z - b.z) <= Route.SAME_SPOT_HEIGHT
+end
+
+-- Leaves only the logical end point (Route:appendLogicalTarget): nothing of the network is walked. A player standing
+-- there arrives at the first update, with the arrival of any other route. A certified interaction or a transit has no
+-- logical end point or a pending action, and keeps its route. Main thread, after Route:begin. True when it was cut.
+function Route:dropToEnd()
+    if not self.active or self.logicalTarget == nil or self.pendingAction ~= nil then
+        return false
+    end
+    self.path = { self.logicalTarget }
+    self.pathIndex = 1
+    self.logicalPrepoint = nil
+    self.N.KeepVirtual(self.path, self.targetBindingId)
+    return true
+end
+
 -- Makes a plan the running route (main thread). source/result: the target and its resolution.
 function Route:begin(plan, source, result, name)
     local N = self.N

@@ -453,9 +453,12 @@ local function startRoute(self, request, outcome)
     -- a target picked as the start (not a waypoint) is the first waypoint itself; not after a transit, whose route
     -- goes on from the far end
     local start = request.start
-    if start ~= nil and start.nodeId == nil and route.path[1] == request.startOverride then
+    local fromStart = start ~= nil and route.path[1] == request.startOverride
+    if fromStart and start.nodeId == nil then
         route:prependStart(start.x, start.y, start.z)
     end
+    -- start and target on the same spot: nothing to walk on the network
+    local sameSpot = fromStart and Route.sameSpot(start, request.contract) and route:dropToEnd()
     if request.dockTarget ~= nil and not trimmed then
         route.waitCheck = dock.waitAreaCheck(N, request.dockTarget)
     end
@@ -477,6 +480,10 @@ local function startRoute(self, request, outcome)
 
     local count = #route.path
     local yards = px ~= nil and routeLength(N, route.path, route.pathIndex, px, py) or 0
+    -- standing on it: the arrival of the first update says all there is
+    if sameSpot and yards <= route.G.EffectiveRadius(Route.ARRIVAL_TARGET_RADIUS) then
+        return
+    end
     local text = string.format("%d %s, %d %s", count, L["waypoints"], yards, L["yards"])
     local approx = approximateText(outcome.result)
     if approx ~= nil then
