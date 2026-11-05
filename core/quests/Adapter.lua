@@ -395,8 +395,9 @@ function Adapter:objectiveTargets(questId, objectiveIndex, ctx)
     return sortByDistance(out)
 end
 
--- The last resort for an objective with nothing to walk to: the markers
--- Questie draws for it (the optional backend.questMarkers), as one target
+-- The last resort for an objective with nothing to walk to, after the game's
+-- own marker: the markers Questie draws for it (the optional
+-- backend.questMarkers), as one target
 -- named after what the markers show. Nil when no marker lies on the
 -- player's continent.
 function Adapter:markerTarget(questId, objectiveIndex, ctx)
@@ -420,9 +421,10 @@ function Adapter:markerTarget(questId, objectiveIndex, ctx)
     return target
 end
 
--- After Questie's markers, the very last resort: the game's own marker for
--- the quest (the optional backend.questPoint), one point for the quest as a
--- whole. Nil without one on the player's continent.
+-- The first safety net for a quest with nothing to walk to, before Questie's
+-- markers: the game's own marker for the quest (the optional
+-- backend.questPoint), one point for the quest as a whole. Nil without one
+-- on the player's continent.
 function Adapter:gameMarkerTarget(questId, ctx)
     if not self:isReady() or self.backend.questPoint == nil then
         return nil

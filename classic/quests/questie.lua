@@ -113,7 +113,8 @@ function quests.questieBackend()
     -- event objective (ObjectiveData[i].Coordinates), and the spawn list
     -- Questie built for the live objective (Objectives[i].spawnList, its
     -- creatures, objects and item sources). The adapter's last resort when
-    -- the database names nothing to walk to; nil when Questie has no marker.
+    -- the database names nothing to walk to and the game marks nothing
+    -- either; nil when Questie has no marker.
     function backend.questMarkers(id, objectiveIndex)
         local ok, q = pcall(QuestieDB.GetQuest, id)
         if not ok or q == nil or objectiveIndex == nil then
@@ -160,7 +161,7 @@ function quests.questieBackend()
         end
         return { name = name, spawns = spawns }
     end
-    -- After Questie's markers, the game's own quest marker (native.lua).
+    -- Before Questie's markers, the game's own quest marker (native.lua).
     function backend.questPoint(id)
         if quests.gameQuestPoint == nil then
             return nil

@@ -160,8 +160,9 @@ function module:objectiveTargets(questId, objectiveIndex)
     return self.adapter:objectiveTargets(questId, objectiveIndex)
 end
 
--- Questie's markers for an objective, when the database names no place
--- (nil with the native source, which has no such markers).
+-- Questie's markers for an objective, when the database names no place and
+-- the game marks none (nil with the native source, which has no such
+-- markers).
 function module:markerTarget(questId, objectiveIndex)
     if not requireReady(self) or self.adapter.markerTarget == nil then
         return nil
@@ -169,7 +170,7 @@ function module:markerTarget(questId, objectiveIndex)
     return self.adapter:markerTarget(questId, objectiveIndex)
 end
 
--- The game's own marker for a quest, after Questie's (nil with the native
+-- The game's own marker for a quest, before Questie's (nil with the native
 -- source, which routes to that marker already).
 function module:gameMarkerTarget(questId)
     if not requireReady(self) or self.adapter.gameMarkerTarget == nil then

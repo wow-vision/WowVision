@@ -358,7 +358,7 @@ testRunner:addSuite("QuestAdapter", {
         t:assertEqual(#adapter:objectiveTargets(2, 5), 0)
     end,
 
-    ["a Questie marker is the last resort, nearest marker first"] = function(t)
+    ["a Questie marker resolves to its nearest marker"] = function(t)
         local adapter = Adapter:new(fakeBackend({
             questMarkers = function(id, index)
                 if id == 6 and index == 1 then
@@ -391,7 +391,7 @@ testRunner:addSuite("QuestAdapter", {
         t:assertNil(Adapter:new(fakeBackend({ ready = false, questMarkers = function() return {} end })):markerTarget(1, 1))
     end,
 
-    ["the game's quest marker is the very last resort"] = function(t)
+    ["the game's quest marker resolves to one point"] = function(t)
         local adapter = Adapter:new(fakeBackend({
             questPoint = function(id)
                 if id == 1 then

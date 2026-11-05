@@ -12,8 +12,8 @@ local L = quests.L
 --   In Progress   the log; Enter beacons the first unfinished objective's
 --                 nearest target (the turn-in when complete), likewise
 --                 expanding to that target's spawns; with no target to walk
---                 to, Questie's map marker for the next open objective, then
---                 the game's own marker for the quest
+--                 to, the game's own marker for the quest, then Questie's
+--                 map marker for the next open objective
 -- NPCs
 --   Quest Givers  givers of nearby quests, with their quests beneath
 --   Vendors ... Spirit Healers, Class Trainers, Mailboxes, Rares
@@ -232,9 +232,10 @@ end
 
 -- The safety nets when an objective names nothing to walk to (an
 -- exploration spot, a kill credit without known spawns, a target on another
--- continent): Questie's own map marker for it, then the game's own marker
--- for the quest. Each is said as such, so the player knows the point is an
--- area rather than a creature.
+-- continent): the game's own marker for the quest, which knows the quest's
+-- current step, then Questie's own map marker for the objective. Each is
+-- said as such, so the player knows the point is an area rather than a
+-- creature.
 local function addDetail(node, text)
     node.detail = node.detail ~= nil and (node.detail .. ", " .. text) or text
 end
@@ -283,11 +284,9 @@ local function objectiveNodes(entry, allDone)
             end
             local targets = quests:objectiveTargets(entry.questId, index)
             local marker = nil
-            if pointAtFirst(node, targets) == nil and not objective.finished then
+            if pointAtFirst(node, targets) == nil and not objective.finished
+                and pointAtGameMarker(node, entry) == nil then
                 marker = pointAtMarker(node, entry, index)
-                if marker == nil then
-                    pointAtGameMarker(node, entry)
-                end
             end
             if targets ~= nil and #targets > 0 then
                 node.children = function()
@@ -339,19 +338,19 @@ local function inProgressNode(entry)
                     break
                 end
             end
-            -- nothing to walk to for any open objective: Questie's marker for
-            -- the next one that has one
+            -- nothing to walk to for any open objective: the game's own
+            -- marker for the quest
+            if not pointed and pointAtGameMarker(node, entry) ~= nil then
+                pointed = true
+            end
+            -- not even the game marks it: Questie's marker for the next open
+            -- objective that has one
             if not pointed then
                 for index, objective in ipairs(entry.objectives) do
                     if not objective.finished and pointAtMarker(node, entry, index) ~= nil then
-                        pointed = true
                         break
                     end
                 end
-            end
-            -- not even Questie has one: the game's own marker for the quest
-            if not pointed then
-                pointAtGameMarker(node, entry)
             end
         end
         node.children = objectiveNodes(entry, allDone)
