@@ -122,10 +122,11 @@ The alert is the Quest Area Alert in the Quests module. See [Alerts](../basics/a
 
 ## Quest progress alerts
 
-The game shows quest progress as a message in the middle of the screen. WowVision speaks those messages as the game words them, with two alerts of their own:
+The game shows quest progress as a message in the middle of the screen. WowVision speaks those messages as the game words them, with three alerts of their own:
 
 - Quest Progress Alert: a count moves, for example "Kobold Vermin slain: 3/8" or "Linen Cloth: 2/6". Its sound is glass1.
-- Quest Complete Alert: the game reports an objective or quest done, for example "Explore the Mine (Complete)" or "Objective Complete.". Its sound is Tutorial_Success_01.
+- Objective Complete Alert: an objective is done. That is the count message once the count is full ("Kobold Vermin slain: 8/8"), or a message like "Explore the Mine (Complete)". Its sound is success1.
+- Quest Complete Alert: the game's "Objective Complete." message, which names no objective. Its sound is Tutorial_Success_01.
 
 Each alert has TTS (on) and Sound (on) and can be switched off on its own. They work without Announce Errors, and these messages no longer appear in the Per-Error Filter of the Errors module. See [Alerts](../basics/alerts.md).
 
@@ -150,7 +151,7 @@ Open the WowVision menu, then Quests. See [Menu and Settings](../basics/menu-and
 | Nearby Level Range | 5 | The Nearby list hides quests that are more than this many levels below your level. From 0 to 60. Set 60 to see every quest, or 0 to see only quests at or above your level. |
 | Include Repeatable Quests | On | Whether repeatable and daily quests appear in the Nearby list. |
 | Quest Area Alert | see above | Announcements when entering or leaving an objective area. |
-| Quest Progress Alert, Quest Complete Alert | see above | Announcements of quest progress. |
+| Quest Progress Alert, Objective Complete Alert, Quest Complete Alert | see above | Announcements of quest progress. |
 
 The Nearby list also leaves out quests you cannot take yet, because of your level or a missing prerequisite.
 

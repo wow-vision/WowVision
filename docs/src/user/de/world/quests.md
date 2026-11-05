@@ -124,10 +124,11 @@ Der Alarm heißt Questgebiet (Quest Area Alert) und gehört zum Modul Quests. Wi
 
 ## Alarme für den Questfortschritt
 
-Das Spiel zeigt den Questfortschritt als Meldung in der Bildschirmmitte. WowVision spricht diese Meldungen so, wie das Spiel sie formuliert, mit zwei eigenen Alarmen:
+Das Spiel zeigt den Questfortschritt als Meldung in der Bildschirmmitte. WowVision spricht diese Meldungen so, wie das Spiel sie formuliert, mit drei eigenen Alarmen:
 
 - Questfortschritt (Quest Progress Alert): ein Zähler ändert sich, etwa "Kobold Vermin getötet: 3/8" oder "Leinenstoff: 2/6". Sein Ton ist glass1.
-- Quest abgeschlossen (Quest Complete Alert): das Spiel meldet ein Ziel oder eine Quest als erledigt, etwa "Erkundet die Mine (Abgeschlossen)" oder "Aufgabe abgeschlossen.". Sein Ton ist Tutorial_Success_01.
+- Ziel erreicht (Objective Complete Alert): ein Ziel ist erledigt. Das ist die Zählermeldung, sobald der Zähler voll ist ("Kobold Vermin getötet: 8/8"), oder eine Meldung wie "Erkundet die Mine (Abgeschlossen)". Sein Ton ist success1.
+- Quest abgeschlossen (Quest Complete Alert): die Meldung "Aufgabe abgeschlossen." des Spiels, die kein Ziel nennt. Sein Ton ist Tutorial_Success_01.
 
 Jeder Alarm hat TTS (an) und Sound (an) und lässt sich einzeln ausschalten. Sie arbeiten auch ohne Fehler ansagen, und diese Meldungen erscheinen nicht mehr im Filter pro Fehler des Moduls Fehler. Siehe [Alarme](../basics/alerts.md).
 
@@ -152,7 +153,7 @@ So werden Orte in den Listen beschrieben: Ein Fundort liest sich mit seinem Gebi
 | Stufenbereich für Quests in der Nähe | 5 | Die Liste In der Nähe blendet Quests aus, die um mehr als so viele Stufen unter deiner Stufe liegen. Von 0 bis 60. Stelle 60 ein, um jede Quest zu sehen, oder 0, um nur Quests auf deiner Stufe oder darüber zu sehen. |
 | Wiederholbare Quests einbeziehen | An | Ob wiederholbare und tägliche Quests in der Liste In der Nähe erscheinen. |
 | Questgebiet | siehe oben | Ansagen beim Betreten oder Verlassen eines Zielgebiets. |
-| Questfortschritt, Quest abgeschlossen | siehe oben | Ansagen zum Questfortschritt. |
+| Questfortschritt, Ziel erreicht, Quest abgeschlossen | siehe oben | Ansagen zum Questfortschritt. |
 
 Die Liste In der Nähe lässt außerdem Quests weg, die du noch nicht annehmen kannst, wegen deiner Stufe oder einer fehlenden Vorquest.
 

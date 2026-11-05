@@ -129,7 +129,8 @@ Der Filter pro Fehler listet jede Meldung mit ihrem Zustand hinter dem Namen: �
 | Neuer Minikarten-Punkt | Minikarten-Scanner | Beim Laufen kommt ein benannter Punkt auf die Minikarte. Spricht seinen Namen, seine Stufe, ob er drinnen liegt, und seine Art. Braucht Verfolgte Punkte beim Laufen ansagen (an). | TTS (gesprochen von der Spielstimme 0, außer du wählst eine andere Stimme), Soundalarm (aus) |
 | Questgebiet (Quest Area Alert) | Quests | Du betrittst das Gebiet einer Quest oder verlässt es. Sagt „Betrete Gebiet: “ oder „Verlasse Gebiet: “, gefolgt vom Questtitel. | TTS, Soundalarm (aus) |
 | Questfortschritt (Quest Progress Alert) | Quests | Das Spiel zeigt, dass ein Questzähler sich ändert. Sagt die Meldung des Spiels, etwa „Kobold Vermin getötet: 3/8“. | TTS, Soundalarm (an) |
-| Quest abgeschlossen (Quest Complete Alert) | Quests | Das Spiel meldet ein Ziel oder eine Quest als erledigt. Sagt die Meldung des Spiels, etwa „Aufgabe abgeschlossen.“. | TTS, Soundalarm (an) |
+| Ziel erreicht (Objective Complete Alert) | Quests | Das Spiel zeigt ein erledigtes Ziel: einen vollen Zähler („Kobold Vermin getötet: 8/8“) oder „… (Abgeschlossen)“. Sagt die Meldung des Spiels. | TTS, Soundalarm (an) |
+| Quest abgeschlossen (Quest Complete Alert) | Quests | Das Spiel zeigt „Aufgabe abgeschlossen.“, ohne ein Ziel zu nennen. Sagt die Meldung des Spiels. | TTS, Soundalarm (an) |
 | Gegenstand ausgewählt (Item Selected) | Fenster, Auktionshaus | Du wählst in der Durchsuchen-Liste eine Auktion aus. Sagt „Ausgewählt: “ und den Namen des Gegenstands. (Nur The Burning Crusade.) | TTS |
 
 Siehe [Minikarte](../world/minimap.md) und [Quests](../world/quests.md).
