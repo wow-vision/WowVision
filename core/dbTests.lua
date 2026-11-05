@@ -86,7 +86,7 @@ testRunner:addSuite("DB migrations", {
         local db = { someKey = 1 }
         local ok, err = pcall(dbManager.beginReconcile, dbManager, {}, db)
         t:assertTrue(ok, err)
-        t:assertEqual(db._version, 7)
+        t:assertEqual(db._version, 8)
         t:assertType(db.bindings, "table")
     end,
 
@@ -116,6 +116,51 @@ testRunner:addSuite("DB migrations", {
         local default = { submodules = { navigation = { submodules = { wownav = { settings = { enabled = true } } } } } }
         dbManager:beginReconcile(default, db)
         t:assertEqual(db.submodules.navigation.submodules.wownav.settings.enabled, false)
+    end,
+
+    ["the old arrival distances take the new defaults in both stores"] = function(t)
+        local function saved()
+            return { submodules = { navigation = { submodules = {
+                maps = { settings = { arrivalShort = 1, arrivalMedium = 3, arrivalLong = 5, arrivalRange = 3 } },
+                wownav = { settings = { arrivalMin = 2, comfort = 40 } },
+            } } } }
+        end
+        local default = { submodules = { navigation = { submodules = {
+            maps = { settings = { arrivalShort = 0.3, arrivalMedium = 1, arrivalLong = 3, arrivalRange = 2 } },
+            wownav = { settings = { comfort = 60 } },
+        } } } }
+        local char = saved()
+        char._version = 7
+        dbManager:beginReconcile(default, char)
+        local global = saved()
+        global._version = 5
+        dbManager:beginReconcileGlobal(default, global)
+        for _, db in ipairs({ char, global }) do
+            local navigation = db.submodules.navigation.submodules
+            t:assertEqual(navigation.maps.settings.arrivalShort, 0.3)
+            t:assertEqual(navigation.maps.settings.arrivalMedium, 1)
+            t:assertEqual(navigation.maps.settings.arrivalLong, 3)
+            t:assertEqual(navigation.maps.settings.arrivalRange, 3, "the active one stays")
+            t:assertNil(navigation.wownav.settings.arrivalMin)
+            t:assertEqual(navigation.wownav.settings.comfort, 40)
+        end
+    end,
+
+    ["tuned arrival distances are kept"] = function(t)
+        local db = {
+            _version = 7,
+            submodules = { navigation = { submodules = {
+                maps = { settings = { arrivalShort = 1, arrivalMedium = 3, arrivalLong = 8 } },
+            } } },
+        }
+        local default = { submodules = { navigation = { submodules = {
+            maps = { settings = { arrivalShort = 0.3, arrivalMedium = 1, arrivalLong = 3 } },
+        } } } }
+        dbManager:beginReconcile(default, db)
+        local settings = db.submodules.navigation.submodules.maps.settings
+        t:assertEqual(settings.arrivalShort, 1)
+        t:assertEqual(settings.arrivalMedium, 3)
+        t:assertEqual(settings.arrivalLong, 8)
     end,
 
     ["a Range module switched off stays off through its alert"] = function(t)
@@ -269,6 +314,6 @@ testRunner:addSuite("DB migrations", {
         dbManager:beginReconcileGlobal({}, db)
         t:assertEqual(#general.items, 7)
         t:assertEqual(general.items[7].object.type, "GameClock")
-        t:assertEqual(db._version, 5)
+        t:assertEqual(db._version, 6)
     end,
 })

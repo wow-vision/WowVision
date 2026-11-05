@@ -865,8 +865,10 @@ end
 
 -- His Actions:Observe without a height: the arrival volume in the plane, after the source volume was left (lift,
 -- portal on the same map) or after the map changed (tram entrance, portal to another map); the nearer of the two
--- volumes counts, so a widened circle never proves an arrival at the source. widen: the minimum radius (WowVision's
--- arrival distance, like Guidance.EffectiveRadius). Returns "arrived", "timeout" or nil.
+-- volumes counts, so a widened circle never proves an arrival at the source. widen: the minimum radius of both
+-- volumes, WowVision's arrival distance (Alt-P, G.arrivalMin, the same minimum as Guidance.EffectiveRadius): the
+-- radius that counted the transit's waypoint as reached also counts its source as entered. Returns "arrived",
+-- "timeout" or nil.
 function Route:observeAction(x, y, map, widen)
     local current = self.action
     if not current then

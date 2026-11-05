@@ -101,7 +101,7 @@ Wenn die Route beginnt, spricht WowVision die Zusammenfassung, und das Signal be
 - Angekommen wird am Ende einer Route gesprochen, gefolgt vom Namen des Ziels.
 - Signal gestoppt wird gesprochen, wenn du abbrichst.
 
-Ein Wegpunkt gilt als erreicht, wenn du innerhalb der Ankunftsdistanz von ihm bist (siehe [Ankunftsdistanz](#ankunftsdistanz)). Mit WowNav hat jeder Wegpunkt seine eigene Distanz.
+Ein Wegpunkt gilt als erreicht, wenn du innerhalb der Ankunftsdistanz von ihm bist (siehe [Ankunftsdistanz](#ankunftsdistanz)). Mit WowNav kann ein Wegpunkt auch eine eigene, größere Distanz haben.
 
 ### Signaltöne
 
@@ -148,15 +148,15 @@ Das Drehen braucht zwei Kameraeinstellungen: den Kamera-Folgestil Immer (die Spi
 
 ### Ankunftsdistanz
 
-Die Ankunftsdistanz (Arrival Distance) gibt an, wie nah du in Metern an einen Wegpunkt kommen musst, damit er als erreicht gilt. Eine kleine Distanz zwingt dich, jeden Punkt genau zu treffen; eine große verzeiht Umwege. WowVision hat drei Werte, von denen jeweils einer aktiv ist. Mit WowNav benutzen die Wegpunkte einer Route stattdessen ihre eigene Distanz aus den Daten, und du kannst für sie ein Minimum einstellen; siehe [WowNav (WoW: Forever)](./wownav.md#eine-route-starten-und-ihr-folgen).
+Die Ankunftsdistanz (Arrival Distance) gibt an, wie nah du in Metern an einen Wegpunkt kommen musst, damit er als erreicht gilt. Eine kleine Distanz zwingt dich, jeden Punkt genau zu treffen; eine große verzeiht Umwege. WowVision hat drei Werte, von denen jeweils einer aktiv ist. Er gilt für die klassischen Routen und für WowNav. Mit WowNav nimmt ein Wegpunkt, der in den Daten eine eigene, größere Distanz hat, diese; siehe [WowNav (WoW: Forever)](./wownav.md#eine-route-starten-und-ihr-folgen).
 
 | Name | Standarddistanz |
 |------|-----------------|
-| Kurze Distanz (Short Range) | 1 Meter |
-| Mittlere Distanz (Medium Range) | 3 Meter (standardmäßig aktiv) |
-| Weite Distanz (Long Range) | 5 Meter |
+| Kurze Distanz (Short Range) | 0,3 Meter |
+| Mittlere Distanz (Medium Range) | 1 Meter (standardmäßig aktiv) |
+| Weite Distanz (Long Range) | 3 Meter |
 
-Drücke Alt+P, während du einer Route folgst, um der Reihe nach durch kurz, mittel, weit und wieder zurück zu kurz zu schalten. WowVision spricht den Namen und die Distanz, zum Beispiel "Weite Distanz, 5 Meter". Nimm die kurze Distanz an engen Stellen wie einer Tür und die weite Distanz im offenen Gelände. Die Einstellungen stehen unter [Einstellungen](#einstellungen).
+Drücke Alt+P, während du einer Route folgst, um der Reihe nach durch kurz, mittel, weit und wieder zurück zu kurz zu schalten. WowVision spricht den Namen und die Distanz, zum Beispiel "Weite Distanz, 3 Meter". Nimm die kurze Distanz an engen Stellen wie einer Tür und die weite Distanz im offenen Gelände. Die Einstellungen stehen unter [Einstellungen](#einstellungen). Dort ändern Pfeil links und Pfeil rechts jede Distanz um 0,1 Meter, und mit Eingabe tippst du eine ein, zum Beispiel 0,5.
 
 ### Entfernung ansagen
 
@@ -253,9 +253,9 @@ Liegt ein Ziel nicht im Verbindungsnetz (die meisten Kreaturen und Objekte tun d
 |-------------|----------|-------------|
 | Aktiviert | An | Schaltet das ganze Modul Karten aus, einschließlich der Tasten und /beacon. |
 | Ankunftsradius (Arrival Radius) | Mittlere Distanz | Welche Ankunftsdistanz aktiv ist. Alt+P ändert sie auch. |
-| Kurze Distanz | 1 Meter | Die kurze Ankunftsdistanz (1 bis 20 Meter). |
-| Mittlere Distanz | 3 Meter | Die mittlere Ankunftsdistanz (1 bis 20 Meter). |
-| Weite Distanz | 5 Meter | Die weite Ankunftsdistanz (1 bis 20 Meter). |
+| Kurze Distanz | 0,3 Meter | Die kurze Ankunftsdistanz (0,1 bis 20 Meter). |
+| Mittlere Distanz | 1 Meter | Die mittlere Ankunftsdistanz (0,1 bis 20 Meter). |
+| Weite Distanz | 3 Meter | Die weite Ankunftsdistanz (0,1 bis 20 Meter). |
 | Entfernung mit Alt Gr ansagen | An | Ob Alt Gr und Strg+Alt die Entfernung sprechen. Die Belegung Entfernung ansagen funktioniert in jedem Fall. |
 | Signal | (siehe oben) | Der Signal-Alarm und seine vier Töne: Signalton, Signal ausgerichtet, Signal abseits des Kurses, Wegpunkt erreicht. Jeder hat Aktiviert und eine Soundauswahl. |
 
