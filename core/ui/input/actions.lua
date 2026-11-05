@@ -95,6 +95,28 @@ actions:register("Command", {
     end,
 })
 
+-- The game's secure raid target action, for when the menu row that sets a
+-- marker cannot (see dropdownMenu.lua). Marker 0 clears; any other toggles,
+-- as the row does.
+-- spec: { marker = 0 to 8, unit = token, after = function? }
+actions:register("RaidTarget", {
+    configure = function(frame, spec, emulatedKey)
+        frame:SetAttribute("type", "raidtarget")
+        frame:SetAttribute("marker", spec.marker)
+        frame:SetAttribute("action", spec.marker == 0 and "clear" or "toggle")
+        frame:SetAttribute("unit", spec.unit)
+        frame:SetAttribute("button", emulatedKey)
+        frame:SetScript("PostClick", spec.after)
+    end,
+    clear = function(frame, spec)
+        frame:SetAttribute("marker", nil)
+        frame:SetAttribute("action", nil)
+        frame:SetAttribute("unit", nil)
+        frame:SetAttribute("button", nil)
+        frame:SetScript("PostClick", nil)
+    end,
+})
+
 -- Raw macro text.
 -- spec: { script = macrotext }
 actions:register("Script", {

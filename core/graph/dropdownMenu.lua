@@ -330,6 +330,23 @@ local function emitRowControls(builder, item, controls, label, hasText, focus)
     end
 end
 
+-- The marker a row of the Raid Target Icon submenu sets: 1 to 8, 0 for None,
+-- nil for any other row. opener: the text of the row that opened its menu.
+function dropdown.raidMarkerOf(text, opener)
+    if text == nil or RAID_TARGET_ICON == nil or opener ~= RAID_TARGET_ICON then
+        return nil
+    end
+    if text == RAID_TARGET_NONE then
+        return 0
+    end
+    for marker = 1, 8 do
+        if text == _G["RAID_TARGET_" .. marker] then
+            return marker
+        end
+    end
+    return nil
+end
+
 local function emitItem(builder, item, focus)
     local fontStrings, legacyCheck = itemRegions(item)
     local label = rowLabel(fontStrings)
@@ -437,6 +454,30 @@ local function emitItem(builder, item, focus)
             end,
             kind = kinds.value,
         })
+    end
+    -- ForceOpenSubmenu above runs in WowVision's stack, so a submenu's rows are
+    -- built tainted and even a secure click on one cannot reach the protected
+    -- SetRaidTarget. No secure way opens a submenu, so these rows take the
+    -- game's secure raid target action instead. Only the target's menu has
+    -- them (unitMenus.lua), so the unit is the target.
+    local marker = dropdown.raidMarkerOf(label(), dropdown.openerText(item))
+    if marker ~= nil then
+        vtable.bindings = {
+            {
+                binding = "leftClick",
+                type = "RaidTarget",
+                emulatedKey = "LeftButton",
+                marker = marker,
+                unit = "target",
+                after = function()
+                    C_Timer.After(0, function()
+                        if dropdown.frame ~= nil and dropdown.frame.Close ~= nil then
+                            pcall(dropdown.frame.Close, dropdown.frame)
+                        end
+                    end)
+                end,
+            },
+        }
     end
     builder:addItem(ControlId.forObject(item), withFocus(attachMenuTooltip(vtable, item), focus))
 end
@@ -576,6 +617,26 @@ local function anchorMenu(frame)
         end
         if trackedMenus[parent] or parent == dropdown.frame then
             return parent
+        end
+        current = parent
+    end
+    return nil
+end
+
+-- The text of the row that opened the menu a row lies in, nil in a root menu.
+function dropdown.openerText(item)
+    local current = item
+    for _ = 1, 4 do
+        local ok, parent = pcall(current.GetParent, current)
+        if not ok or parent == nil then
+            return nil
+        end
+        if trackedMenus[parent] then
+            local okPoint, _, row = pcall(parent.GetPoint, parent, 1)
+            if not okPoint or type(row) ~= "table" or row.GetElementDescription == nil then
+                return nil
+            end
+            return rowLabel((itemRegions(row)))()
         end
         current = parent
     end

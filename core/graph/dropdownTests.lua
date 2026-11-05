@@ -22,6 +22,20 @@ local function names(menus)
     return table.concat(out, ",")
 end
 
+testRunner:addSuite("DropdownRaidMarkers", {
+    ["a row of the raid target submenu names its marker, None clears"] = function(t)
+        local saved = { RAID_TARGET_ICON, RAID_TARGET_NONE, RAID_TARGET_1, RAID_TARGET_8 }
+        RAID_TARGET_ICON, RAID_TARGET_NONE, RAID_TARGET_1, RAID_TARGET_8 = "Raid Target Icon", "None", "Star", "Skull"
+        t:assertEqual(dropdown.raidMarkerOf("Star", "Raid Target Icon"), 1)
+        t:assertEqual(dropdown.raidMarkerOf("Skull", "Raid Target Icon"), 8)
+        t:assertEqual(dropdown.raidMarkerOf("None", "Raid Target Icon"), 0)
+        t:assertNil(dropdown.raidMarkerOf("None", "Loot Threshold"), "another menu's None")
+        t:assertNil(dropdown.raidMarkerOf("Star", nil), "a root menu")
+        t:assertNil(dropdown.raidMarkerOf("Whisper", "Raid Target Icon"))
+        RAID_TARGET_ICON, RAID_TARGET_NONE, RAID_TARGET_1, RAID_TARGET_8 = saved[1], saved[2], saved[3], saved[4]
+    end,
+})
+
 testRunner:addSuite("DropdownChain", {
     ["submenus to the right: root, then each level"] = function(t)
         local root = menu("root", nil, 100)
