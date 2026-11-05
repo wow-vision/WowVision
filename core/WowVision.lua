@@ -60,6 +60,9 @@ end
 -- every settings object from the real values.
 function WowVision:bindGlobalStore(source)
     local restoredFromMirror = false
+    -- A table made here may yet be replaced by the client's, so what moves
+    -- into the account has to wait for the client's (or for logout).
+    self.globalStoreProvisional = WowVisionGlobalDB == nil
     if WowVisionGlobalDB == nil then
         -- No account file yet. The per-character file carries a mirror of
         -- the account store as this character last saw it (bound below),
@@ -83,7 +86,14 @@ function WowVision:bindGlobalStore(source)
         self.base:seedGlobalAlerts(self.db, self.globalDb)
         self.globalDb._alertsSeeded = true
     end
+    if not self.globalStoreProvisional then
+        WowVision.dbManager:moveBuffersToAccount(WowVisionDB, self.globalDb)
+    end
     self.base:setDBObj(self.db, self.globalDb)
+    -- A store adopted after login: the buffers read their groups again.
+    if self.fullEnable and self.base.buffers ~= nil and self.base.buffers.root ~= nil then
+        self.base.buffers:onFullEnable()
+    end
     self:applyBindingStore(
         WowVision.dbManager:resolveBindings(WowVision.input:getDefaultDB(), WowVisionDB, self.globalDb)
     )
@@ -128,6 +138,11 @@ function WowVision:OnEnable()
     self.updateFrame = CreateFrame("Frame")
     self.updateFrame:SetScript("OnUpdate", function()
         WowVision:OnUpdate()
+    end)
+    -- An account store the client never replaced is the real one after all.
+    self.updateFrame:RegisterEvent("PLAYER_LOGOUT")
+    self.updateFrame:SetScript("OnEvent", function()
+        WowVision.dbManager:moveBuffersToAccount(WowVisionDB, WowVision.globalDb)
     end)
     self.fullEnable = true
     self.base:fullEnable()

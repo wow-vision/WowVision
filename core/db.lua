@@ -329,6 +329,77 @@ function dbManager:beginReconcileGlobal(default, db)
     return dbManager:reconcile(default, db)
 end
 
+local function sameConfig(a, b)
+    if type(a) ~= "table" or type(b) ~= "table" then
+        return a == b
+    end
+    for key, value in pairs(a) do
+        if not sameConfig(value, b[key]) then
+            return false
+        end
+    end
+    for key in pairs(b) do
+        if a[key] == nil then
+            return false
+        end
+    end
+    return true
+end
+
+-- Buffer groups are account-wide unless a character chooses otherwise. Each
+-- character does this once, so a group moved back with Scope stays there. A
+-- group joins the account's group of the same name, which takes only the
+-- buffers it lacks: a default General adds nothing, and nothing is lost. Any
+-- other group moves as it is. True when this character was moved.
+function dbManager:moveBuffersToAccount(charDB, globalDB)
+    if charDB._buffersOnAccount then
+        return false
+    end
+    local charNode = charDB.submodules and charDB.submodules.buffers
+    local globalNode = globalDB.submodules and globalDB.submodules.buffers
+    if charNode == nil or globalNode == nil then
+        return false
+    end
+    local charData = charNode.data or {}
+    globalNode.data = globalNode.data or {}
+    if globalNode.data.items == nil then
+        globalNode.data.items = { _type = "array" }
+    end
+    local accountGroups = globalNode.data.items
+    for _, group in ipairs(charData.items or {}) do
+        local joined = nil
+        for _, accountGroup in ipairs(accountGroups) do
+            if group.label ~= nil and accountGroup.label == group.label then
+                joined = accountGroup
+                break
+            end
+        end
+        if joined == nil then
+            tinsert(accountGroups, group)
+        else
+            if joined.items == nil then
+                joined.items = { _type = "array" }
+            end
+            for _, buffer in ipairs(group.items or {}) do
+                local present = false
+                for _, accountBuffer in ipairs(joined.items) do
+                    if sameConfig(buffer, accountBuffer) then
+                        present = true
+                        break
+                    end
+                end
+                if not present then
+                    tinsert(joined.items, buffer)
+                end
+            end
+        end
+    end
+    charData.items = { _type = "array" }
+    charNode.data = charData
+    charDB._buffersOnAccount = true
+    return true
+end
+
 -- Key bindings live at the top of each store, outside the module tree, and
 -- are account-wide unless this character chose otherwise. Bindings joined the
 -- account store later than settings, so they carry their own seeding stamp:

@@ -5,6 +5,19 @@ local function keys(...)
     return { next = { inputs = { _type = "array", ... }, padInputs = { _type = "array" } } }
 end
 
+local function bufferStore(groups)
+    groups._type = "array"
+    return { submodules = { buffers = { data = { items = groups } } } }
+end
+
+local function generalBuffer()
+    return {
+        type = "Static",
+        label = "General",
+        items = { { type = "Health", object = { type = "Health" } }, { type = "PVP", object = { type = "PVP" } } },
+    }
+end
+
 testRunner:addSuite("Binding stores", {
     ["the first character fills the account from its own keys"] = function(t)
         local charDB = { bindings = keys("ALT-N") }
@@ -27,6 +40,66 @@ testRunner:addSuite("Binding stores", {
         local charDB = {}
         local store = dbManager:resolveBindings(keys("F1"), charDB, {})
         t:assertEqual(store.next.inputs[1], "F1")
+    end,
+
+    ["the first character's buffer groups move to the empty account"] = function(t)
+        local charDB = bufferStore({ { type = "Group", label = "General", items = { generalBuffer() } } })
+        local globalDB = bufferStore({})
+        t:assertTrue(dbManager:moveBuffersToAccount(charDB, globalDB))
+        local account = globalDB.submodules.buffers.data.items
+        t:assertEqual(#account, 1)
+        t:assertEqual(account[1].label, "General")
+        t:assertEqual(#charDB.submodules.buffers.data.items, 0)
+    end,
+
+    ["a default group adds nothing to the account's group of that name"] = function(t)
+        local charDB = bufferStore({ { type = "Group", label = "General", items = { generalBuffer() } } })
+        local globalDB = bufferStore({ { type = "Group", label = "General", items = { generalBuffer() } } })
+        dbManager:moveBuffersToAccount(charDB, globalDB)
+        local account = globalDB.submodules.buffers.data.items
+        t:assertEqual(#account, 1)
+        t:assertEqual(#account[1].items, 1)
+        t:assertEqual(#charDB.submodules.buffers.data.items, 0)
+    end,
+
+    ["a group's own buffers join the account's group, the shared one stays single"] = function(t)
+        local charDB = bufferStore({
+            { type = "Group", label = "General", items = { generalBuffer(), { type = "Aura", label = "Target Buffs" } } },
+            { type = "Group", label = "Combat", items = { { type = "Aura", label = "Target Debuffs" } } },
+        })
+        local globalDB = bufferStore({ { type = "Group", label = "General", items = { generalBuffer() } } })
+        dbManager:moveBuffersToAccount(charDB, globalDB)
+        local account = globalDB.submodules.buffers.data.items
+        t:assertEqual(#account, 2)
+        t:assertEqual(#account[1].items, 2)
+        t:assertEqual(account[1].items[2].label, "Target Buffs")
+        t:assertEqual(account[2].label, "Combat")
+    end,
+
+    ["a changed buffer of the same name is kept beside the account's"] = function(t)
+        local changed = generalBuffer()
+        changed.items[2] = { type = "PlayerXP", object = { type = "PlayerXP" } }
+        local charDB = bufferStore({ { type = "Group", label = "General", items = { changed } } })
+        local globalDB = bufferStore({ { type = "Group", label = "General", items = { generalBuffer() } } })
+        dbManager:moveBuffersToAccount(charDB, globalDB)
+        t:assertEqual(#globalDB.submodules.buffers.data.items[1].items, 2)
+    end,
+
+    ["buffer groups move once, a group scoped back stays on its character"] = function(t)
+        local charDB = bufferStore({ { type = "Group", label = "General", items = { generalBuffer() } } })
+        local globalDB = bufferStore({})
+        dbManager:moveBuffersToAccount(charDB, globalDB)
+        local items = charDB.submodules.buffers.data.items
+        tinsert(items, { type = "Group", label = "Mine", items = { _type = "array" } })
+        t:assertEqual(dbManager:moveBuffersToAccount(charDB, globalDB), false)
+        t:assertEqual(#items, 1)
+        t:assertEqual(#globalDB.submodules.buffers.data.items, 1)
+    end,
+
+    ["buffer groups wait for a store with the buffers module"] = function(t)
+        local charDB = {}
+        t:assertEqual(dbManager:moveBuffersToAccount(charDB, {}), false)
+        t:assertNil(charDB._buffersOnAccount)
     end,
 
     ["a binding added later reaches a seeded account"] = function(t)

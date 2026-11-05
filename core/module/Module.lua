@@ -121,7 +121,8 @@ function Module:getDefaultDBRecursive()
 end
 
 -- The account-wide default tree: module skeletons with the global-scoped
--- settings defaults and the alerts. Data stays per-character.
+-- settings defaults and the alerts. A module's data starts on the character;
+-- buffer groups then move to the account (dbManager:moveBuffersToAccount).
 function Module:getDefaultGlobalDBRecursive()
     local db = {
         submodules = {},

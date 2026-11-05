@@ -55,7 +55,7 @@ With a gamepad on Retail and WoW: Forever, hold the right stick press and use th
 
 ## The default setup: the General group
 
-A new character starts with one group called General. It holds one buffer, also called General, which is a static buffer with these lines in this order:
+Your account starts with one group called General. It holds one buffer, also called General, which is a static buffer with these lines in this order:
 
 | Line | What it tells you | Example |
 |---|---|---|
@@ -296,7 +296,8 @@ Groups and buffers have an Enabled toggle. A group or buffer that is switched of
 
 WowVision stores settings in two places: once for your whole account ("Global") and once for each character.
 
-- New groups you add are stored account-wide by default, so every character sees them. The default General group is created separately for each character.
+- Groups are stored account-wide by default, so every character sees them and a change on one character is there on all of them. That includes the default General group.
+- When a character first logs in after buffers became account-wide, its groups join the account's. A group joins the account's group of the same name, which takes only the buffers it does not have yet, so a changed buffer sits beside the account's. Any other group moves as it is.
 - To change where a group lives, go to the groups list, move to the group, and press Shift+F10 (the context menu). Choose Scope, then Global (all characters) or your character's name (this character only). The buffers and items inside a group travel with it and have no scope choice of their own.
 - To change everything at once, open the WowVision menu, move to Buffers, press Shift+F10, choose Scope, and pick Global or your character.
 - The Invert Item Direction setting can also be given a scope with Shift+F10 on it. It is account-wide by default.

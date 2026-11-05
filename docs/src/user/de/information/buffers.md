@@ -55,7 +55,7 @@ Mit Gamepad in Retail und WoW: Forever hältst du den Rechten Stickklick gedrüc
 
 ## Die Standardeinrichtung: die Gruppe Allgemein
 
-Ein neuer Charakter beginnt mit einer Gruppe namens Allgemein. Sie enthält einen Puffer, der ebenfalls Allgemein heißt. Das ist ein statischer Puffer mit diesen Zeilen in dieser Reihenfolge:
+Dein Account beginnt mit einer Gruppe namens Allgemein. Sie enthält einen Puffer, der ebenfalls Allgemein heißt. Das ist ein statischer Puffer mit diesen Zeilen in dieser Reihenfolge:
 
 | Zeile | Was sie dir sagt | Beispiel |
 |---|---|---|
@@ -296,7 +296,8 @@ Gruppen und Puffer haben einen Schalter Aktiviert. Eine ausgeschaltete Gruppe od
 
 WowVision speichert Einstellungen an zwei Orten: einmal für deinen ganzen Account („Global“) und einmal für jeden Charakter.
 
-- Neue Gruppen, die du hinzufügst, werden standardmäßig accountweit gespeichert, jeder Charakter sieht sie also. Die Standardgruppe „Allgemein“ wird für jeden Charakter einzeln angelegt.
+- Gruppen werden standardmäßig accountweit gespeichert, jeder Charakter sieht sie also, und eine Änderung auf einem Charakter gilt für alle. Das gilt auch für die Standardgruppe „Allgemein“.
+- Wenn sich ein Charakter zum ersten Mal einloggt, seit Puffer accountweit sind, kommen seine Gruppen zu denen des Accounts. Eine Gruppe geht in die Account-Gruppe mit demselben Namen auf, die nur die Puffer übernimmt, die ihr noch fehlen; ein geänderter Puffer steht also neben dem des Accounts. Jede andere Gruppe zieht unverändert um.
 - Um zu ändern, wo eine Gruppe liegt, gehe zur Gruppenliste, wechsle zur Gruppe und drücke Umschalt+F10 (das Kontextmenü). Wähle Bereich, dann Global (alle Charaktere) oder den Namen deines Charakters (nur dieser Charakter). Die Puffer und Elemente in einer Gruppe wandern mit ihr und haben keine eigene Bereichsauswahl.
 - Um alles auf einmal zu ändern, öffne das WowVision-Menü, gehe zu Puffer, drücke Umschalt+F10, wähle Bereich und dann Global oder deinen Charakter.
 - Auch für die Einstellung Elementrichtung umkehren kannst du mit Umschalt+F10 einen Bereich wählen. Sie gilt standardmäßig accountweit.
