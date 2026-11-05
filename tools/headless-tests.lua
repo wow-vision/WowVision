@@ -1410,6 +1410,20 @@ do
     function questModule:placeName()
         return nil
     end
+    -- the scanner's last resorts; like the real module, nil when the source
+    -- has no such lookup (the native source has neither)
+    function questModule:markerTarget(questId, index)
+        if harness.source.markerTarget == nil then
+            return nil
+        end
+        return harness.source:markerTarget(questId, index)
+    end
+    function questModule:gameMarkerTarget(questId)
+        if harness.source.gameMarkerTarget == nil then
+            return nil
+        end
+        return harness.source:gameMarkerTarget(questId)
+    end
     WowVision.base = {
         quests = questModule,
         scanner = {
