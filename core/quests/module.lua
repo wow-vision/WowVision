@@ -333,61 +333,94 @@ end
 -- with or without a data source), in the adapter's shape. Modern clients
 -- read it through C_QuestLog.GetInfo; classic ones through
 -- GetQuestLogTitle; C_QuestLog.GetQuestObjectives exists on every client.
+local function objectivesFor(questId, index)
+    local objectives = {}
+    local list = C_QuestLog ~= nil and C_QuestLog.GetQuestObjectives ~= nil and C_QuestLog.GetQuestObjectives(questId)
+        or nil
+    if list ~= nil then
+        for i, objective in ipairs(list) do
+            objectives[i] = {
+                text = objective.text,
+                type = objective.type,
+                finished = objective.finished == true,
+                collected = objective.numFulfilled,
+                needed = objective.numRequired,
+            }
+        end
+    elseif GetNumQuestLeaderBoards ~= nil and index ~= nil then
+        for i = 1, GetNumQuestLeaderBoards(index) do
+            local text, objectiveType, finished = GetQuestLogLeaderBoard(i, index)
+            objectives[i] = { text = text, type = objectiveType, finished = finished == true }
+        end
+    end
+    return objectives
+end
+
+-- The log entry at one index, nil for headers and empty rows.
+local function questLogEntry(index)
+    if C_QuestLog ~= nil and C_QuestLog.GetInfo ~= nil then
+        local info = C_QuestLog.GetInfo(index)
+        if info ~= nil and not info.isHeader and info.questID ~= nil and info.questID > 0 then
+            return {
+                questId = info.questID,
+                title = info.title,
+                level = info.level,
+                complete = C_QuestLog.IsComplete ~= nil and C_QuestLog.IsComplete(info.questID) == true,
+                failed = C_QuestLog.IsFailed ~= nil and C_QuestLog.IsFailed(info.questID) == true,
+                objectives = objectivesFor(info.questID, index),
+            }
+        end
+        return nil
+    end
+    local title, level, _, isHeader, _, isComplete, _, questId = GetQuestLogTitle(index)
+    if not isHeader and questId ~= nil and questId > 0 then
+        return {
+            questId = questId,
+            title = title,
+            level = level,
+            complete = isComplete == 1 or isComplete == true,
+            failed = isComplete == -1,
+            objectives = objectivesFor(questId, index),
+        }
+    end
+    return nil
+end
+
 function WowVision.quests.gameQuestLog()
     local entries = {}
-    local function objectivesFor(questId, index)
-        local objectives = {}
-        local list = C_QuestLog ~= nil and C_QuestLog.GetQuestObjectives ~= nil and C_QuestLog.GetQuestObjectives(questId)
-            or nil
-        if list ~= nil then
-            for i, objective in ipairs(list) do
-                objectives[i] = {
-                    text = objective.text,
-                    type = objective.type,
-                    finished = objective.finished == true,
-                    collected = objective.numFulfilled,
-                    needed = objective.numRequired,
-                }
-            end
-        elseif GetNumQuestLeaderBoards ~= nil and index ~= nil then
-            for i = 1, GetNumQuestLeaderBoards(index) do
-                local text, objectiveType, finished = GetQuestLogLeaderBoard(i, index)
-                objectives[i] = { text = text, type = objectiveType, finished = finished == true }
-            end
-        end
-        return objectives
-    end
     local count = C_QuestLog ~= nil and C_QuestLog.GetNumQuestLogEntries ~= nil and C_QuestLog.GetNumQuestLogEntries()
         or (GetNumQuestLogEntries ~= nil and GetNumQuestLogEntries())
         or 0
     for index = 1, count do
-        if C_QuestLog ~= nil and C_QuestLog.GetInfo ~= nil then
-            local info = C_QuestLog.GetInfo(index)
-            if info ~= nil and not info.isHeader and info.questID ~= nil and info.questID > 0 then
-                tinsert(entries, {
-                    questId = info.questID,
-                    title = info.title,
-                    level = info.level,
-                    complete = C_QuestLog.IsComplete ~= nil and C_QuestLog.IsComplete(info.questID) == true,
-                    failed = C_QuestLog.IsFailed ~= nil and C_QuestLog.IsFailed(info.questID) == true,
-                    objectives = objectivesFor(info.questID, index),
-                })
-            end
-        else
-            local title, level, _, isHeader, _, isComplete, _, questId = GetQuestLogTitle(index)
-            if not isHeader and questId ~= nil and questId > 0 then
-                tinsert(entries, {
-                    questId = questId,
-                    title = title,
-                    level = level,
-                    complete = isComplete == 1 or isComplete == true,
-                    failed = isComplete == -1,
-                    objectives = objectivesFor(questId, index),
-                })
-            end
+        local entry = questLogEntry(index)
+        if entry ~= nil then
+            tinsert(entries, entry)
         end
     end
     return entries
+end
+
+-- One quest's entry as the log holds it right now, nil once it left the
+-- log (turned in, abandoned). Cheap enough to read per spoken line, which
+-- is how the scanner keeps its progress live.
+function WowVision.quests.gameQuestEntry(questId)
+    if questId == nil then
+        return nil
+    end
+    local index = nil
+    if C_QuestLog ~= nil and C_QuestLog.GetLogIndexForQuestID ~= nil then
+        index = C_QuestLog.GetLogIndexForQuestID(questId)
+    elseif GetQuestLogIndexByID ~= nil then
+        index = GetQuestLogIndexByID(questId)
+    end
+    if index == nil or index <= 0 then
+        return nil
+    end
+    local entry = questLogEntry(index)
+    if entry == nil or entry.questId ~= questId then
+        return nil
+    end
+    return entry
 end
 
 -- ---- source lifecycle ----

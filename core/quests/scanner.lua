@@ -270,6 +270,59 @@ local function pointAtGameMarker(node, entry)
     return marker
 end
 
+-- The tree is a snapshot (see core/scanner/module.lua), but quest progress
+-- moves while it is open (a group's kills credit everyone), so what a quest
+-- line says about progress reads the log each time it is spoken: the
+-- quest's state and each objective's text and state. The structure (which
+-- objective a quest points at, the marker notes) stays as built; Refresh
+-- rebuilds that.
+
+-- The quest as the log holds it now; the snapshot once it left the log.
+local function liveEntry(entry)
+    return WowVision.quests.gameQuestEntry(entry.questId) or entry
+end
+
+local function questStatus(entry)
+    if entry.complete then
+        return L["Complete"]
+    elseif entry.failed then
+        return L["Failed"]
+    end
+    local objectives = entry.objectives or {}
+    if #objectives == 0 then
+        return nil
+    end
+    local done = 0
+    for _, objective in ipairs(objectives) do
+        if objective.finished then
+            done = done + 1
+        end
+    end
+    return string.format("%d %s %d", done, L["of"], #objectives)
+end
+
+-- Puts a live status ahead of the parts the node was built with.
+local function withLiveStatus(node, status)
+    local built = node.detail
+    node.detail = function()
+        local text = status()
+        if text == nil then
+            return built
+        elseif built == nil then
+            return text
+        end
+        return text .. ", " .. built
+    end
+end
+
+local function objectiveLabel(objective)
+    local label = objective.text
+    if label == nil or label == "" then
+        label = objective.target ~= nil and objective.target.name or unknown()
+    end
+    return label
+end
+
 local function objectiveNodes(entry, allDone)
     return function()
         local out = {}
@@ -282,14 +335,19 @@ local function objectiveNodes(entry, allDone)
             return out
         end
         for index, objective in ipairs(entry.objectives) do
-            local label = objective.text
-            if label == nil or label == "" then
-                label = objective.target ~= nil and objective.target.name or unknown()
+            local function live()
+                return liveEntry(entry).objectives[index] or objective
             end
-            local node = { key = "objective:" .. index, label = label }
-            if objective.finished then
-                node.detail = L["Complete"]
-            end
+            local node = {
+                key = "objective:" .. index,
+                label = function()
+                    local current = live()
+                    if current.text == nil or current.text == "" then
+                        return objectiveLabel(objective)
+                    end
+                    return current.text
+                end,
+            }
             local targets = quests:objectiveTargets(entry.questId, index)
             local marker = nil
             if pointAtFirst(node, targets) == nil and not objective.finished
@@ -306,6 +364,9 @@ local function objectiveNodes(entry, allDone)
                     return spawnNodes(marker)
                 end
             end
+            withLiveStatus(node, function()
+                return live().finished and L["Complete"] or nil
+            end)
             tinsert(out, node)
         end
         return out
@@ -323,13 +384,6 @@ local function inProgressNode(entry)
         if not objective.finished then
             unfinished = unfinished + 1
         end
-    end
-    if entry.complete then
-        node.detail = L["Complete"]
-    elseif entry.failed then
-        node.detail = L["Failed"]
-    elseif #entry.objectives > 0 then
-        node.detail = string.format("%d %s %d", #entry.objectives - unfinished, L["of"], #entry.objectives)
     end
     if entry.known then
         local allDone = entry.complete or unfinished == 0
@@ -366,6 +420,9 @@ local function inProgressNode(entry)
         -- a quest Questie does not know still has the game's marker
         pointAtGameMarker(node, entry)
     end
+    withLiveStatus(node, function()
+        return questStatus(liveEntry(entry))
+    end)
     return node
 end
 

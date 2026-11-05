@@ -219,6 +219,54 @@ loadAddonFile("core/navigation/maps/turnMath.lua")
 loadAddonFile("core/navigation/maps/turnTests.lua")
 loadAddonFile("core/quests/Adapter.lua")
 loadAddonFile("core/quests/tests.lua")
+-- The quest scanner over a stand-in quest module: the snapshot it builds
+-- from and the live log it reads while open (core/quests/scannerLiveTests.lua).
+do
+    local harness = { providers = {}, snapshot = {}, log = {} }
+    local savedBase = WowVision.base
+    local questModule = { L = setmetatable({}, {
+        __index = function(_, key)
+            return key
+        end,
+    }) }
+    function questModule:inProgress()
+        return harness.snapshot
+    end
+    function questModule:targets()
+        return {}
+    end
+    function questModule:objectiveTargets()
+        return {}
+    end
+    function questModule:markerTarget()
+        return nil
+    end
+    function questModule:gameMarkerTarget()
+        return nil
+    end
+    function questModule:hasSource()
+        return true
+    end
+    function questModule:isReady()
+        return true
+    end
+    WowVision.base = {
+        quests = questModule,
+        scanner = {
+            registerProvider = function(_, provider)
+                harness.providers[provider.key] = provider
+            end,
+        },
+    }
+    -- module.lua only parses headless; the stand-in log answers instead
+    WowVision.quests.gameQuestEntry = function(questId)
+        return harness.log[questId]
+    end
+    loadAddonFile("core/quests/scanner.lua")
+    WowVision.quests._scannerLiveHarness = harness
+    loadAddonFile("core/quests/scannerLiveTests.lua")
+    WowVision.base = savedBase
+end
 loadAddonFile("core/minimap/logic.lua")
 loadAddonFile("core/minimap/gatheringNames.lua")
 loadAddonFile("core/minimap/tests.lua")

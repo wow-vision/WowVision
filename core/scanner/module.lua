@@ -8,7 +8,9 @@ local settings = module:hasSettings()
 -- its subtree from live data when the scanner OPENS (never per tick -- a
 -- flying player cannot afford a hitch, so the tree is a snapshot and the
 -- Refresh stop rebuilds it on demand). Only distance and direction are
--- live, computed per focused node from the player's current position.
+-- live, computed per focused node from the player's current position,
+-- plus labels and details a provider gives as functions: a cheap read of
+-- one thing's current state when it is spoken (quest progress).
 --
 -- A provider: { key, label, order?, optional?, build = function(ctx) -> nodes }
 -- An optional provider's category is left out while it has no nodes.
@@ -18,7 +20,7 @@ local settings = module:hasSettings()
 -- A node (plain data, built once per open):
 --   key        string, unique among siblings, stable across refreshes
 --              (an id, never a position in the list)
---   label      string
+--   label      string | function -> string (read each time it is spoken)
 --   detail     string | function -> extra spoken part after the label
 --   x, y       world position (Enter sets a beacon there and closes)
 --   children   list of nodes, or function() -> list (built when expanded)

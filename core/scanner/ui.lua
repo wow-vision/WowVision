@@ -49,6 +49,16 @@ local function resolveChildren(node)
     return node.children
 end
 
+-- A label may be a function, read each time it is spoken (live state on a
+-- snapshot node); the beacon and the details title take its current text.
+local function labelText(node)
+    if type(node.label) == "function" then
+        local ok, text = pcall(node.label)
+        return ok and text or nil
+    end
+    return node.label
+end
+
 local function whereText(node)
     local m = maps()
     if m == nil or node.x == nil then
@@ -68,9 +78,9 @@ local function beaconTo(node)
     end
     WowVision.UIHost:closeWindow(WINDOW)
     if m.openNavigationTo ~= nil then
-        m:openNavigationTo(node.x, node.y, node.label, node.onArrive, node.routeData)
+        m:openNavigationTo(node.x, node.y, labelText(node), node.onArrive, node.routeData)
     else
-        m:beaconTo(node.x, node.y, node.label, node.onArrive)
+        m:beaconTo(node.x, node.y, labelText(node), node.onArrive)
     end
 end
 
@@ -110,7 +120,7 @@ local function pushDetails(node)
             if type(lines) == "function" then
                 lines = lines()
             end
-            builder:pushContext("details", node.label)
+            builder:pushContext("details", labelText(node))
             if lines == nil or #lines == 0 then
                 builder:addItem(ControlId.structural("empty"), nodes.text({ label = L["Empty"] }))
             end
