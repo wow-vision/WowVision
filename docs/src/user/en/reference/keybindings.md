@@ -138,6 +138,14 @@ The roll keys act on the first roll window on screen. With none open you hear "N
 
 See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
 
+## Group invitations
+
+| Action | Default key | Notes |
+|---|---|---|
+| Accept Group Invitation | Unbound | Accepts the group invitation that is shown, also in combat, the same as /wv accept. Without one you hear "No group invitation" |
+
+See [Group Finder](../windows/group-finder.md).
+
 ## Monitors
 
 | Action | Default key | Notes |

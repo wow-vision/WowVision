@@ -68,6 +68,10 @@ function Tooltip:collectLines()
         local left, right = self.reader:getLine(frame, index)
         tinsert(lines, { left, right })
     end
+    local spokeMoney, err = pcall(self.speakMoney, self, frame, lines)
+    if not spokeMoney then
+        geterrorhandler()(err)
+    end
     if frame.GetItem ~= nil and WowVision.items ~= nil then
         local ok, _, link = pcall(frame.GetItem, frame)
         if ok and link ~= nil and not WowVision.isSecret(link) then
@@ -78,6 +82,63 @@ function Tooltip:collectLines()
         end
     end
     return lines
+end
+
+local function coinText(copper)
+    return C_CurrencyInfo.GetCoinText(copper)
+end
+
+-- A money frame's prefix or suffix. A secret one cannot be compared with an
+-- empty text, but it can still be joined to the spoken line.
+local function hasText(text)
+    if WowVision.isSecret(text) then
+        return true
+    end
+    return text ~= nil and text ~= ""
+end
+
+-- Money lines spoken with their coins (gold, silver, copper) instead of
+-- bare numbers. Two shapes:
+-- - coins written into the line text, coin textures that speech drops, or
+--   a bare copper number after the sell price label;
+-- - a money frame (SetTooltipMoney) laid over an empty line: the line has
+--   no text, the frame holds the prefix ("Sell Price:") and the amount.
+function Tooltip:speakMoney(frame, lines)
+    local isSecret = WowVision.isSecret
+    for index, line in ipairs(lines) do
+        local left, right = line[1], line[2]
+        if not isSecret(left) and not isSecret(right) then
+            local text = self.reader:formatLine(left, right)
+            local spoken = WowVision.utils.moneyLineText(text, SELL_PRICE, coinText)
+            if spoken ~= nil then
+                lines[index] = { spoken, nil }
+            end
+        end
+    end
+    local name = frame:GetName()
+    for i = 1, frame.shownMoneyFrames or 0 do
+        local moneyFrame = _G[name .. "MoneyFrame" .. i]
+        if moneyFrame ~= nil and moneyFrame:IsShown() and moneyFrame.staticMoney ~= nil
+            and not isSecret(moneyFrame.staticMoney) then
+            local _, anchor = moneyFrame:GetPoint(1)
+            for index = 1, #lines do
+                if anchor ~= nil and anchor == _G[name .. "TextLeft" .. index] then
+                    local prefix = _G[moneyFrame:GetName() .. "PrefixText"]
+                    local suffix = _G[moneyFrame:GetName() .. "SuffixText"]
+                    local spoken = coinText(moneyFrame.staticMoney)
+                    local prefixText = prefix ~= nil and prefix:GetText() or nil
+                    if hasText(prefixText) then
+                        spoken = prefixText .. " " .. spoken
+                    end
+                    local suffixText = suffix ~= nil and suffix:GetText() or nil
+                    if hasText(suffixText) then
+                        spoken = spoken .. " " .. suffixText
+                    end
+                    lines[index] = { spoken, nil }
+                end
+            end
+        end
+    end
 end
 
 function Tooltip:getText(lineNumber)

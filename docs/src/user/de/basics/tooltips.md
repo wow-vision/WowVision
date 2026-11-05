@@ -39,6 +39,8 @@ Gehört der Tooltip zu einem Gegenstand, ergänzt WowVision zwei Zeilen, die das
 - Den Qualitätsnamen (Schlecht, Verbreitet, Ungewöhnlich, Selten, Episch, Legendär, Artefakt, Erbstück), direkt unter der Platzzeile des Gegenstands (oder unter dem Namen des Gegenstands, wenn er keine Platzzeile hat).
 - Die Gegenstandsstufe, direkt nach der Qualität. Zeigt das Spiel eine eigene Zeile für die Gegenstandsstufe (die Aufwertungen berücksichtigt), wird diese Zeile dorthin verschoben, statt eine zweite hinzuzufügen. Nur anlegbare Gegenstände bekommen eine Gegenstandsstufe.
 
+Geld im Tooltip wird mit seinen Münzen vorgelesen. Das Spiel zeigt Gold, Silber und Kupfer als kleine Münzbilder, die die Sprachausgabe weglassen würde. WowVision liest den Verkaufspreis und andere Beträge als „Verkaufspreis: 1 Gold, 23 Silber, 45 Kupfer“. Ein Gegenstand, der nur ein paar Münzen wert ist, klingt zum Beispiel so: „Verkaufspreis: 7 Kupfer“.
+
 ## Gegenstandsqualität in Namen
 
 In Listen und auf Plätzen tragen Gegenstandsnamen die Qualität als die Farbe, in der ein sehender Spieler den Namen sieht, sodass du „Pelzstiefel, Weiß“ oder „Donnerzorn, Orange“ hörst. Das betrifft nur Namen. Der Tooltip liest immer den Qualitätsnamen („Verbreitet“, „Legendär“), egal was du unten einstellst.
@@ -80,7 +82,6 @@ Nicht jedes Steuerelement hat einen Tooltip. Wo keiner existiert, bleibt die Lee
 - Ein Gegenstand, den das Spiel noch nicht geladen hat, kann zunächst einen leeren Tooltip haben. WowVision fragt erneut an, wenn du die Leertaste drückst; bis dahin sind die Informationen meist angekommen. Drücke die Leertaste noch einmal, falls du nichts gehört hast.
 - Die Tooltip-Tasten lesen, was zum fokussierten Steuerelement gehört. Ist kein Fenster offen, gibt es nichts zu lesen.
 - Wenn du auch das Addon Sku benutzt, lässt WowVision die vier Umschalt+Pfeiltasten für den Tooltip unbelegt, damit sich die beiden Addons nicht um sie streiten. Die Leertaste funktioniert weiterhin.
-- Der Händlerpreis in einem Gegenstands-Tooltip wird eventuell nicht wie erwartet vorgelesen. Das ist ein bekanntes Problem.
 
 ## Diagnosebefehl
 

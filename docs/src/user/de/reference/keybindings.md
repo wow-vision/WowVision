@@ -142,6 +142,14 @@ Die Würfeltasten wirken auf das erste Würfelfenster auf dem Bildschirm. Ist ke
 
 Siehe [Beute, Handel und Post](../windows/loot-trade-mail.md).
 
+## Gruppeneinladungen
+
+| Aktion | Standardtaste | Hinweise |
+|---|---|---|
+| Gruppeneinladung annehmen (Accept Group Invitation) | Unbelegt | Nimmt die angezeigte Gruppeneinladung an, auch im Kampf, wie /wv accept. Ist keine da, hörst du "Keine Gruppeneinladung" |
+
+Siehe [Gruppensuche](../windows/group-finder.md).
+
 ## Monitore
 
 | Aktion | Standardtaste | Hinweise |
