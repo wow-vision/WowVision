@@ -126,8 +126,8 @@ Bleibst du hängen, versucht WowNav, wieder in die Route einzusteigen und an Eng
 
 ### Was du am Ende hörst
 
-- Genau im Netz: "Angekommen" und der Name des Ortes.
-- Nah am Netz, aber nicht darauf: "Das Netz endet 4.2 Meter vom Ziel; Umgebung selbst absuchen. Die letzte Strecke ist ungeprüft." Kennen die Daten die Höhe nicht, kommt "horizontal" dazu.
+- Im Netz oder höchstens 1,5 Meter vom Ende des Netzes: "Angekommen" und der Name des Ortes.
+- Nah am Netz, aber weiter von seinem Ende entfernt: "Das Netz endet 4.2 Meter vom Ziel; Umgebung selbst absuchen. Die letzte Strecke ist ungeprüft." Kennen die Daten die Höhe nicht, kommt "horizontal" dazu.
 - Ein Wasserziel: "Das Netz endet 6.1 Meter von der Position an der Wasseroberfläche; Tauchtiefe 12.0 Meter. Den restlichen Weg und das Tauchen selbst übernehmen, die letzte Strecke ist ungeprüft."
 
 ### Routenstatus und neue Route

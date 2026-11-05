@@ -39,6 +39,8 @@ When the tooltip belongs to an item, WowVision adds two lines the game does not 
 - The quality name (Poor, Common, Uncommon, Rare, Epic, Legendary, Artifact, Heirloom), placed directly under the item's slot line (or under the item's name when it has no slot line).
 - The item level, directly after the quality. If the game shows its own item level line (which accounts for upgrades), that line is moved there instead of adding a second one. Only equippable items get an item level.
 
+Money in a tooltip is read with its coins. The game shows gold, silver and copper as small coin pictures, which speech would leave out. WowVision reads the sell price and other amounts as "Sell Price: 1 Gold, 23 Silver, 45 Copper". An item worth only a few coins reads, for example, "Sell Price: 7 Copper".
+
 ## Item quality in names
 
 In lists and slots, item names carry the quality as the colour a sighted player sees the name in, so you hear "Fur Boots, White" or "Thunderfury, Orange". This only affects names. The tooltip always reads the quality name ("Common", "Legendary") whatever you choose below.

@@ -26,6 +26,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv bind | Open the keybinding window | all |
 | /wv close | Closes every WowVision window | all |
 | /wv version | Prints the WowVision version | all |
+| /wv accept | Accepts a group invitation, also in combat | all |
 | /beacon | Sets a beacon, routes to a named place, or reads your position | all |
 | /focus1 to /focus5 | Sets a virtual focus target | all, not with Sku |
 | /pquit | Leaves your party | all, not with Sku |
@@ -79,6 +80,10 @@ Closes every open WowVision window at once. Use it when a window seems stuck. Th
 ### /wv version
 
 Prints the installed WowVision version to your chat window, for example V0.9.0, or "beta" for the beta pre-release. Versions: all.
+
+### /wv accept
+
+Accepts the group invitation that is shown and says "Group invitation accepted". It also works in combat, where WowVision cannot open the invitation popup. Without an invitation it says "No group invitation". The Accept Group Invitation key does the same; it is unbound. Versions: all. See [Group Finder](../windows/group-finder.md).
 
 ### /beacon
 

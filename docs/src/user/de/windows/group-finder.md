@@ -1,6 +1,6 @@
 # Gruppensuche, Bereitschaftscheck und Rollenabfrage
 
-Diese Seite behandelt alles rund ums Finden und Bilden von Gruppen: das Gruppensuche-Werkzeug (Looking for Group), in dem du dich selbst einträgst oder die Gruppen anderer Spieler durchsuchst, die Popups für Bereitschaftscheck und Rollenabfrage, die erscheinen, sobald eine Gruppe besteht, das Popup „Dungeon bereit“ und zwei Befehle, mit denen du eine Gruppe schnell verlässt.
+Diese Seite behandelt alles rund ums Finden und Bilden von Gruppen: das Gruppensuche-Werkzeug (Looking for Group), in dem du dich selbst einträgst oder die Gruppen anderer Spieler durchsuchst, die Popups für Bereitschaftscheck und Rollenabfrage, die erscheinen, sobald eine Gruppe besteht, das Popup „Dungeon bereit“, das Annehmen einer Gruppeneinladung im Kampf und zwei Befehle, mit denen du eine Gruppe schnell verlässt.
 
 ## Was es in welcher Spielversion gibt
 
@@ -12,6 +12,7 @@ Diese Seite behandelt alles rund ums Finden und Bilden von Gruppen: das Gruppens
 | Popup für den Bereitschaftscheck | ja | ja | ja | ja | ja |
 | Popup „Dungeon bereit“ und Popups für die Rollenüberprüfung | wo das Spiel sie zeigt | wo das Spiel sie zeigt | ja | ja | wo das Spiel sie zeigt |
 | /pquit und /dquit | ja | ja | ja | ja | ja |
+| /wv accept und die Taste Gruppeneinladung annehmen | ja | ja | ja | ja | ja |
 
 In Mists werden die Fenster für Dungeonbrowser, Schlachtzugsbrowser und vorgefertigte Gruppen selbst noch nicht vorgelesen. In Retail wird der Dungeonbrowser vorgelesen, der Schlachtzugsbrowser, die vorgefertigten Gruppen und die anderen Reiter des Fensters dagegen nicht. Die Popups, die daraus entstehen (Dungeon bereit, Rollenüberprüfung), werden vorgelesen, und /dquit verlässt die Gruppe danach.
 
@@ -175,6 +176,17 @@ Die beiden Rollen-Popups, die Rollenabfrage (Role Poll) des Gruppenleiters und d
 2. Annehmen (Accept), Ablehnen (Decline) und eine Schließen-Schaltfläche, jeweils eine eigene Station (eine Schaltfläche, die das Spiel ausblendet, steht nicht in der Liste).
 
 Beispiel: Ein Leiter startet eine Rollenabfrage. Du hörst den Titel des Popups. Mit Pfeil runter zu Heiler, Eingabe drücken (es sagt „Aktiviert“), dann mit Tab zu Annehmen und Eingabe drücken.
+
+## Eine Gruppeneinladung im Kampf annehmen
+
+Lädt dich jemand in eine Gruppe ein, zeigt das Spiel ein Einladungs-Popup, das du wie jedes andere Popup beantwortest. Im Kampf kann WowVision das Popup nicht für dich öffnen, du erreichst es also erst nach dem Kampf. Diese zwei Wege nehmen die Einladung jederzeit an, auch im Kampf:
+
+| Weg | Was er tut |
+|---|---|
+| /wv accept | Nimmt die Einladung an, die gerade angezeigt wird |
+| Taste Gruppeneinladung annehmen (Accept Group Invitation) | Dasselbe als Taste. Sie ist unbelegt: Leg sie im Tastenbelegungs-Bildschirm (/wv bind) auf eine Taste |
+
+Du hörst „Gruppeneinladung angenommen“. Ist keine Einladung da, hörst du „Keine Gruppeneinladung“. Zum Ablehnen beantwortest du das Popup nach dem Kampf oder lässt die Einladung verfallen.
 
 ## Eine Gruppe schnell verlassen: /pquit und /dquit
 

@@ -133,7 +133,7 @@ Auf Retail und WoW: Forever bietet jeder Filter Egal, Nur diese und Ohne diese. 
 
 Die verfügbaren Quellen sind Spieler-Debuffs, Spieler-Buffs, Ziel-Debuffs, Ziel-Buffs, Fokus-Debuffs, Fokus-Buffs, Begleiter-Debuffs und Begleiter-Buffs. Du kannst sie beliebig mischen, und die Reihenfolge der Liste Quellen ist die Reihenfolge, in der du sie hörst.
 
-Was du zu einer Aura hörst: ihren Namen; ihre Stapelzahl, wenn sie Stapel hat; die verbleibende Zeit und die Gesamtdauer, wenn sie eine Dauer hat; und bei Debuffs ihre Bannart (Magie, Fluch, Gift, Krankheit). Zum Beispiel: „Mondfeuer, noch 12 Sek., von 18 Sekunden, Magie“, oder mit Stapeln „Verjüngung, 2 Stapel, noch 9 Sek., von 15 Sekunden“.
+Was du zu einer Aura hörst: ihren Namen; ihre Stapelzahl, wenn sie Stapel hat; die verbleibende Zeit, wenn sie eine Dauer hat; bei Debuffs ihre Bannart (Magie, Fluch, Gift, Krankheit); und zuletzt ihre Beschreibung, also was die Aura tut. Zum Beispiel: „Mondfeuer, noch 12 Sek., Magie, Verbrennt den Feind alle 3 Sek. für 4 Arkanschaden“, oder mit Stapeln „Verjüngung, 2 Stapel, noch 9 Sek., Heilt 50 Schaden über 15 Sek.“. Die Beschreibung kommt zuletzt, so kannst du die Sprache mit Strg anhalten, sobald du genug gehört hast.
 
 Wenn eine Quelle nichts aufzulisten hat, sagt der Puffer es, statt stumm zu bleiben: „Ziel-Debuffs, keine“, „Ziel-Debuffs, kein Ziel“, „Fokus-Buffs, kein Fokus“, „Begleiter-Buffs, kein Begleiter“ oder „nicht verfügbar“, wenn das Spiel es nicht verrät. Eine Aura, die verschwindet, während du auf ihr bist, wird als „Verschwunden“ gelesen.
 
@@ -141,7 +141,7 @@ Solange du auf einer Aura bist, lesen die Tooltip-Tasten sie Zeile für Zeile: U
 
 Die Liste aktualisiert sich von selbst, wenn Auren kommen und gehen oder wenn sich die Einheit ändert (du wählst ein anderes Ziel), und sie behält deine Position.
 
-Auf Retail schließt das Spiel im Kampf und in Instanzen seine Aura-Liste für Addons. Der Aura-Puffer liest dann jede Aura aus dem Tooltip des Spiels: Du hörst weiterhin den Namen, die verbleibende Zeit (oder bei einer Aura ohne Dauer die Beschreibung) und bei Debuffs die Bannart. Die Stapelzahl wird nur für deine eigenen Auren gelesen, in einem Puffer ohne gesetzte Filter, und nur für Auren, die das Spiel auf seinen eigenen Buff- und Debuff-Leisten zeigt.
+Auf Retail schließt das Spiel im Kampf und in Instanzen seine Aura-Liste für Addons. Der Aura-Puffer liest dann jede Aura aus dem Tooltip des Spiels: Du hörst weiterhin den Namen, bei Debuffs die Bannart und danach den Rest des Tooltips in der Reihenfolge des Spiels: die Beschreibung, dann die verbleibende Zeit. Die Stapelzahl wird nur für deine eigenen Auren gelesen, in einem Puffer ohne gesetzte Filter, und nur für Auren, die das Spiel auf seinen eigenen Buff- und Debuff-Leisten zeigt.
 
 ### Chat-Reiter-Puffer
 
@@ -322,7 +322,7 @@ Wenn du lieber einen statischen Puffer nimmst: Füge einen Puffer vom Typ Statis
 2. Setze die Bezeichnung auf „Ziel-Debuffs“.
 3. Drücke Eingabe auf Quellen (2). Du siehst zwei Zeilen, „Spieler-Debuffs“ und „Spieler-Buffs“, jede mit einer Auswahl und einer Schaltfläche Entfernen, und am Ende eine Schaltfläche Hinzufügen. Ändere die erste Zeile auf Ziel-Debuffs und drücke Entfernen auf der zweiten Zeile, sodass nur eine Quelle übrig bleibt. (Hinzufügen hängt eine neue Zeile an, die als „Spieler-Debuffs“ beginnt; ändere sie auf eine beliebige Quelle.)
 4. Stelle Von mir gewirkt auf Nur diese, wenn dich nur deine eigenen Debuffs interessieren.
-5. Wähle im Spiel einen Gegner als Ziel und drücke Alt+Pfeil rechts, bis du „Ziel-Debuffs“ hörst. Drücke dann Alt+Pfeil runter, um die Debuffs durchzugehen: „Mondfeuer, noch 12 Sek., von 18 Sekunden“.
+5. Wähle im Spiel einen Gegner als Ziel und drücke Alt+Pfeil rechts, bis du „Ziel-Debuffs“ hörst. Drücke dann Alt+Pfeil runter, um die Debuffs durchzugehen: „Mondfeuer, noch 12 Sek., Magie, Verbrennt den Feind alle 3 Sek. für 4 Arkanschaden“.
 
 ### Eine andere Kraft als deine Hauptkraft beobachten
 

@@ -142,18 +142,6 @@ for i = 1, 40 do
     PLATES[i] = "nameplate" .. i
 end
 
-local SOLO = { "player", "pet" }
-local PARTY = { "player", "pet" }
-for i = 1, 4 do
-    tinsert(PARTY, "party" .. i)
-    tinsert(PARTY, "partypet" .. i)
-end
-local RAID = { "player", "pet" }
-for i = 1, 40 do
-    tinsert(RAID, "raid" .. i)
-    tinsert(RAID, "raidpet" .. i)
-end
-
 local spells = C_Spell or {}
 
 local function readable(value)
@@ -243,12 +231,7 @@ local api = {
         return plates
     end,
     group = function()
-        if IsInRaid() then
-            return RAID
-        elseif IsInGroup() then
-            return PARTY
-        end
-        return SOLO
+        return WowVision.utils.groupUnits(IsInRaid(), IsInGroup())
     end,
     exists = UnitExists,
     reaction = function(unit)

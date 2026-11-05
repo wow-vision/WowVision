@@ -124,8 +124,8 @@ If you get stuck, WowNav tries to re-enter the route and step back at gates, but
 
 ### What you hear at the end
 
-- Exactly on the network: "Arrived" and the name of the place.
-- Close to the network but not on it: "The network ends 4.2 yards from the target; search the surroundings yourself. The last stretch is unchecked." If the data does not know the height, "horizontally" is added.
+- On the network, or within 1.5 yards of its end: "Arrived" and the name of the place.
+- Close to the network but farther from its end: "The network ends 4.2 yards from the target; search the surroundings yourself. The last stretch is unchecked." If the data does not know the height, "horizontally" is added.
 - A water target: "The network ends 6.1 yards from the water surface position; diving depth 12.0 yards. The rest of the way and the diving are yours, the last stretch is unchecked."
 
 ### Route status and new route

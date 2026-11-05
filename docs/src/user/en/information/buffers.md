@@ -133,7 +133,7 @@ On Retail and WoW: Forever every filter offers Any, Only and Not. On Classic Era
 
 The available sources are Player Debuffs, Player Buffs, Target Debuffs, Target Buffs, Focus Debuffs, Focus Buffs, Pet Debuffs and Pet Buffs. You can mix them freely, and the order of the Sources list is the order you hear them in.
 
-What you hear for one aura: its name; its stack count when it has stacks; the time remaining and the total duration when it has a duration; and, for debuffs, its dispel type (Magic, Curse, Poison, Disease). For example: "Moonfire, 12 seconds remaining, of 18 seconds, Magic", or with stacks "Rejuvenation, 2 stacks, 9 seconds remaining, of 15 seconds".
+What you hear for one aura: its name; its stack count when it has stacks; the time remaining when it has a duration; for debuffs, its dispel type (Magic, Curse, Poison, Disease); and last its description, what the aura does. For example: "Moonfire, 12 seconds remaining, Magic, Burns the enemy for 4 Arcane damage every 3 seconds", or with stacks "Rejuvenation, 2 stacks, 9 seconds remaining, Heals 50 damage over 15 seconds". The description comes last, so you can stop the speech with Ctrl once you have heard enough.
 
 When a source has nothing to list, the buffer says so instead of staying silent: "Target Debuffs, none", "Target Debuffs, no target", "Focus Buffs, no focus", "Pet Buffs, no pet", or "unavailable" when the game will not tell. An aura that vanishes while you are on it reads "Gone".
 
@@ -141,7 +141,7 @@ While you are on an aura, the tooltip keys read it line by line: Shift+Down and 
 
 The list updates by itself when auras come and go or when the unit changes (you target something else), and it keeps your position.
 
-On Retail, in combat and in instances, the game closes its aura list to addons. The aura buffer then reads each aura from the game's own tooltip: you still hear the name, the time remaining (or the description for an aura without a duration) and, for debuffs, the dispel type. The stack count is only read for your own auras, in a buffer with no filters set, and only for auras the game shows on its own buff and debuff bars.
+On Retail, in combat and in instances, the game closes its aura list to addons. The aura buffer then reads each aura from the game's own tooltip: you still hear the name, for debuffs the dispel type, and then the rest of the tooltip in the game's order: the description, then the time remaining. The stack count is only read for your own auras, in a buffer with no filters set, and only for auras the game shows on its own buff and debuff bars.
 
 ### Chat tab buffer
 
@@ -322,7 +322,7 @@ If you prefer a static buffer: add a Static Buffer, open Objects, Add, Health, t
 2. Set Label to "Target Debuffs".
 3. Press Enter on Sources (2). You see two rows, "Player Debuffs" and "Player Buffs", each with a choice and a Remove button, and an Add button at the end. Change the first row to Target Debuffs and press Remove on the second row, so that only one source is left. (Add appends a new row that starts as "Player Debuffs"; change it to any source you like.)
 4. Set Cast by Me to Only if you only care about your own debuffs.
-5. In the game, target an enemy and press Alt+Right until you hear "Target Debuffs". Then press Alt+Down to walk through the debuffs: "Moonfire, 12 seconds remaining, of 18 seconds".
+5. In the game, target an enemy and press Alt+Right until you hear "Target Debuffs". Then press Alt+Down to walk through the debuffs: "Moonfire, 12 seconds remaining, Magic, Burns the enemy for 4 Arcane damage every 3 seconds".
 
 ### Watch a power other than your main one
 

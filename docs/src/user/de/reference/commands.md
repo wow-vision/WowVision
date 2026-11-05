@@ -28,6 +28,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /wv bind | Öffnet das Fenster für die Tastenbelegung | alle |
 | /wv close | Schließt jedes WowVision-Fenster | alle |
 | /wv version | Gibt die WowVision-Version aus | alle |
+| /wv accept | Nimmt eine Gruppeneinladung an, auch im Kampf | alle |
 | /beacon | Setzt ein Signal, routet zu einem benannten Ort oder liest deine Position vor | alle |
 | /focus1 bis /focus5 | Setzt ein virtuelles Fokusziel | alle, nicht mit Sku |
 | /pquit | Verlässt deine Gruppe | alle, nicht mit Sku |
@@ -81,6 +82,10 @@ Schließt jedes offene WowVision-Fenster auf einmal. Benutze ihn, wenn ein Fenst
 ### /wv version
 
 Gibt die installierte WowVision-Version in dein Chatfenster aus, zum Beispiel V0.9.0, oder "beta" bei der Beta-Vorabversion. Versionen: alle.
+
+### /wv accept
+
+Nimmt die Gruppeneinladung an, die gerade angezeigt wird, und sagt "Gruppeneinladung angenommen". Das geht auch im Kampf, wo WowVision das Einladungs-Popup nicht öffnen kann. Ist keine Einladung da, sagt es "Keine Gruppeneinladung". Die Taste Gruppeneinladung annehmen (Accept Group Invitation) tut dasselbe; sie ist unbelegt. Versionen: alle. Siehe [Gruppensuche](../windows/group-finder.md).
 
 ### /beacon
 

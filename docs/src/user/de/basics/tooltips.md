@@ -39,6 +39,8 @@ Gehört der Tooltip zu einem Gegenstand, ergänzt WowVision zwei Zeilen, die das
 - Den Qualitätsnamen (Schlecht, Verbreitet, Ungewöhnlich, Selten, Episch, Legendär, Artefakt, Erbstück), direkt unter der Platzzeile des Gegenstands (oder unter dem Namen des Gegenstands, wenn er keine Platzzeile hat).
 - Die Gegenstandsstufe, direkt nach der Qualität. Zeigt das Spiel eine eigene Zeile für die Gegenstandsstufe (die Aufwertungen berücksichtigt), wird diese Zeile dorthin verschoben, statt eine zweite hinzuzufügen. Nur anlegbare Gegenstände bekommen eine Gegenstandsstufe.
 
+Geld im Tooltip wird mit seinen Münzen vorgelesen. Das Spiel zeigt Gold, Silber und Kupfer als kleine Münzbilder, die die Sprachausgabe weglassen würde. WowVision liest den Verkaufspreis und andere Beträge als „Verkaufspreis: 1 Gold, 23 Silber, 45 Kupfer“. Ein Gegenstand, der nur ein paar Münzen wert ist, klingt zum Beispiel so: „Verkaufspreis: 7 Kupfer“.
+
 ## Gegenstandsqualität in Namen
 
 In Listen und auf Plätzen tragen Gegenstandsnamen die Qualität als die Farbe, in der ein sehender Spieler den Namen sieht, sodass du „Pelzstiefel, Weiß“ oder „Donnerzorn, Orange“ hörst. Das betrifft nur Namen. Der Tooltip liest immer den Qualitätsnamen („Verbreitet“, „Legendär“), egal was du unten einstellst.
