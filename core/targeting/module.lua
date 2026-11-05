@@ -72,31 +72,12 @@ hardTargetSpeak:addParameter({
     default = true,
 })
 
+-- Whether you, your pet or a group member is on the unit's threat list:
+-- in a group too, where "party1" is never you (utils.groupUnits). A secret
+-- threat status is not nil, so it still means "on the list".
 local function inCombatWith(unit)
-    if IsInRaid() then
-        for i = 1, 40 do
-            local unitId = "raid" .. i
-            if UnitExists(unitId) and UnitThreatSituation(unitId, unit) then
-                return true
-            end
-            local petId = unitId .. "pet"
-            if UnitExists(petId) and UnitThreatSituation(petId, unit) then
-                return true
-            end
-        end
-    elseif IsInGroup() then
-        for i = 1, 5 do
-            local unitId = "party" .. i
-            if UnitExists(unitId) and UnitThreatSituation(unitId, unit) then
-                return true
-            end
-            local petId = unitId .. "pet"
-            if UnitExists(petId) and UnitThreatSituation(petId, unit) then
-                return true
-            end
-        end
-    else
-        if UnitThreatSituation("player", unit) or UnitThreatSituation("playerpet", unit) then
+    for _, member in ipairs(WowVision.utils.groupUnits(IsInRaid(), IsInGroup())) do
+        if UnitExists(member) and UnitThreatSituation(member, unit) ~= nil then
             return true
         end
     end

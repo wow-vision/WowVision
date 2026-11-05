@@ -8,6 +8,7 @@
   <Script file="focus.lua" />
   <Script file="crowdControl.lua" />
   <Script file="unitMenus.lua" />
+  <Script file="targetOfTarget.lua" />
   <Script file="ccTest.lua" />
 
 </Ui>

@@ -188,6 +188,37 @@ local function dropOldWowNavDefault(db)
     end
 end
 
+-- The three arrival distances went from 1, 3 and 5 yards to 0.3, 1 and 3,
+-- and WowNav's own minimum arrival distance went (the active one of the
+-- three is WowNav's minimum now). Saved defaults go when all three are still
+-- the old ones, so the reconcile that follows fills in the new; a player who
+-- tuned any of them keeps theirs. The account store holds them too.
+local oldArrivalDefaults = { arrivalShort = 1, arrivalMedium = 3, arrivalLong = 5 }
+
+local function dropOldArrivalDefaults(db)
+    local navigation = db.submodules and db.submodules.navigation
+    local submodules = navigation and navigation.submodules
+    local maps = submodules and submodules.maps
+    local settings = maps and maps.settings
+    if settings ~= nil then
+        local untouched = true
+        for key, value in pairs(oldArrivalDefaults) do
+            if settings[key] ~= nil and settings[key] ~= value then
+                untouched = false
+            end
+        end
+        if untouched then
+            for key in pairs(oldArrivalDefaults) do
+                settings[key] = nil
+            end
+        end
+    end
+    local wownav = submodules and submodules.wownav
+    if wownav ~= nil and wownav.settings ~= nil then
+        wownav.settings.arrivalMin = nil
+    end
+end
+
 local migrations = {
     {
         version = 1,
@@ -228,6 +259,10 @@ local migrations = {
     {
         version = 7,
         migrate = dropOldWowNavDefault,
+    },
+    {
+        version = 8,
+        migrate = dropOldArrivalDefaults,
     },
 }
 
@@ -272,6 +307,10 @@ local globalMigrations = {
     {
         version = 5,
         migrate = dropOldWowNavDefault,
+    },
+    {
+        version = 6,
+        migrate = dropOldArrivalDefaults,
     },
 }
 

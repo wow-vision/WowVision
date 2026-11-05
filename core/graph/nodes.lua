@@ -376,7 +376,8 @@ function nodes.number(config)
                 label = config.label,
                 text = tostring(get() or ""),
                 onCommit = function(text)
-                    if trySet(tonumber(text) or text) then
+                    -- a decimal comma ("0,3") reads as a point
+                    if trySet(tonumber((text:gsub(",", "."))) or text) then
                         WowVision:speak(valueText() or "")
                     end
                 end,

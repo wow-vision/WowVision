@@ -13,15 +13,15 @@ local secrets = WowVision.secrets
 -- aura, and it has two ways to read one:
 --
 -- - The index read (C_UnitAuras.GetAuraDataByIndex), where allowed: name,
---   dispel type, stacks, and the time left from the aura's tooltip, gated
---   on the duration through the game's string utilities, which take secret
---   numbers (C_StringUtil.TruncateWhenZero, WrapString).
+--   dispel type, stacks, and the time left and description from the aura's
+--   tooltip; the stacks are gated through the game's string utilities,
+--   which take secret numbers (C_StringUtil.TruncateWhenZero, WrapString).
 -- - A tooltip of our own filled by index (GameTooltip:SetUnitAura), which
 --   the game allows under restriction (measured 2026-10-24): the line count
 --   is plain, the text secret. An aura exists while the tooltip has lines;
 --   its first line is the name, with the dispel type on its right side,
---   and its last the time left (or, for an aura without a duration, its
---   description). The stacks of the player's own auras come from Blizzard's
+--   then the description, and last the time left when the aura has a
+--   duration. The stacks of the player's own auras come from Blizzard's
 --   BuffFrame and DebuffFrame buttons, which are plain frames (see
 --   stackText); a unit's other auras have no readable stack count.
 --
@@ -74,6 +74,21 @@ AuraBuffer:addFields({
         persist = true,
         showInUI = false,
         default = false,
+    },
+    -- What an aura says after its name, stacks and dispel type.
+    {
+        key = "speakRemaining",
+        type = "Bool",
+        label = L["Speak Time Remaining"],
+        persist = true,
+        default = true,
+    },
+    {
+        key = "speakDescription",
+        type = "Bool",
+        label = L["Speak Description"],
+        persist = true,
+        default = true,
     },
 })
 
@@ -220,25 +235,54 @@ local function getScanner()
     return scanner
 end
 
--- The time left, from the aura's tooltip, for the index read: the game
--- writes it as the last line ("12 seconds remaining") when the aura has a
--- duration, and no such line when it has none. The line cannot be
--- inspected, so it is kept only while the duration is non-zero, with the
--- total after it: "12 seconds remaining, of 18 seconds".
-local function remainingText(unit, index, filter, duration)
-    local scan = getScanner()
-    if scan == nil then
-        return ""
+-- The tooltip lines first to last of the last fill, each after ", ".
+local function joinedLines(scan, first, last)
+    local text = ""
+    for i = first, last do
+        text = text .. whenText(scan.line(i), ", ", "")
     end
-    local lines = scan.fill(unit, index, filter)
+    return text
+end
+
+-- The lines after the name when the last one cannot be told apart (it is
+-- the time left or, for an aura without a duration, the description). The
+-- description setting keeps them all, in the game's order; with only the
+-- time left wanted, the last line is the best guess.
+local function unsplitText(scan, lines, wantRemaining, wantDescription)
     if lines < 2 then
         return ""
     end
-    local last = scan.line(lines)
-    if not secrets.hasText(last) then
-        return ""
+    if wantDescription then
+        return joinedLines(scan, 2, lines)
     end
-    return whenNonZero(duration, ", " .. last .. ", " .. L["of"] .. " ", " " .. L["seconds"])
+    return wantRemaining and joinedLines(scan, lines, lines) or ""
+end
+
+-- The rest of the aura's tooltip, for the index read. The game writes the
+-- name, then the description, then the time left as the last line
+-- ("12 seconds remaining") when the aura has a duration, and no such line
+-- when it has none. Returns the time left and the description, each led by
+-- ", ". A secret duration cannot tell which case it is (unsplitText).
+local function detailTexts(unit, index, filter, duration, wantRemaining, wantDescription)
+    if not wantRemaining and not wantDescription then
+        return "", ""
+    end
+    local scan = getScanner()
+    if scan == nil then
+        return "", ""
+    end
+    local lines = scan.fill(unit, index, filter)
+    if lines < 2 then
+        return "", ""
+    end
+    if secrets.isSecret(duration) then
+        return "", unsplitText(scan, lines, wantRemaining, wantDescription)
+    end
+    if duration == nil or duration <= 0 then
+        return "", wantDescription and joinedLines(scan, 2, lines) or ""
+    end
+    return wantRemaining and whenText(scan.line(lines), ", ", "") or "",
+        wantDescription and joinedLines(scan, 2, lines - 1) or ""
 end
 
 -- Blizzard's button for one of the player's auras. Buttons hold the position
@@ -286,10 +330,11 @@ local function stackText(unit, index, filter)
 end
 
 -- The aura as its tooltip tells it, where the index read is refused: the
--- name, the stacks if they can be read, then the last line (the time left,
--- or the description of an aura without a duration), then for a debuff the
--- dispel type.
-local function tooltipText(unit, index, filter, harmful)
+-- name, the stacks if they can be read, for a debuff the dispel type, then
+-- the other lines in the game's order (the description, then the time left
+-- when the aura has a duration; which of the two the last line is cannot
+-- be told under restriction, see unsplitText).
+local function tooltipText(unit, index, filter, harmful, wantRemaining, wantDescription)
     local scan = getScanner()
     if scan == nil then
         return L["unavailable"]
@@ -303,13 +348,10 @@ local function tooltipText(unit, index, filter, harmful)
         text = L["unavailable"]
     end
     text = text .. stackText(unit, index, filter)
-    if lines >= 2 then
-        text = text .. whenText(scan.line(lines), ", ", "")
-    end
     if harmful then
         text = text .. whenText(scan.right(1), ", ", "")
     end
-    return text
+    return text .. unsplitText(scan, lines, wantRemaining, wantDescription)
 end
 
 -- One aura, by its position in a unit's list: read afresh when spoken.
@@ -319,23 +361,29 @@ AuraItem:addFields({
     { key = "filter" },
     { key = "index" },
     { key = "harmful" },
+    { key = "speakRemaining", type = "Bool", default = true },
+    { key = "speakDescription", type = "Bool", default = true },
 })
 
 function AuraItem:getFocusString()
     local aura, allowed = auraAt(self.unit, self.index, self.filter)
     if not allowed then
-        return tooltipText(self.unit, self.index, self.filter, self.harmful)
+        return tooltipText(self.unit, self.index, self.filter, self.harmful, self.speakRemaining, self.speakDescription)
     end
     if aura == nil then
         return L["Gone"]
     end
+    -- name, stacks, time left, dispel type, then the description: the
+    -- short facts first, the long text last
+    local remaining, description =
+        detailTexts(self.unit, self.index, self.filter, aura.duration, self.speakRemaining, self.speakDescription)
     local text = aura.name
     text = text .. whenNonZero(aura.applications, ", ", " " .. L["stacks"])
-    text = text .. remainingText(self.unit, self.index, self.filter, aura.duration)
+    text = text .. remaining
     if self.harmful then
         text = text .. whenText(aura.dispelName, ", ", "")
     end
-    return text
+    return text .. description
 end
 
 -- The aura's whole tooltip, for the tooltip keys (Shift-Up and Shift-Down
@@ -417,7 +465,7 @@ end
 function AuraBuffer:initialize(obj)
     WowVision.buffers.Buffer.initialize(self, obj)
     self.dirty = false
-    local keys = { "sources", "onlyMine" }
+    local keys = { "sources", "onlyMine", "speakRemaining", "speakDescription" }
     for _, filter in ipairs(OFFERED_FILTERS) do
         tinsert(keys, "filter_" .. filter.token)
     end
@@ -498,7 +546,14 @@ function AuraBuffer:rebuild()
                     message = L["none"]
                 else
                     for i = 1, count do
-                        tinsert(self.items, AuraItem:new({ unit = source.unit, filter = filter, index = i, harmful = source.filter == "HARMFUL" }))
+                        tinsert(self.items, AuraItem:new({
+                            unit = source.unit,
+                            filter = filter,
+                            index = i,
+                            harmful = source.filter == "HARMFUL",
+                            speakRemaining = self.speakRemaining,
+                            speakDescription = self.speakDescription,
+                        }))
                     end
                 end
             end

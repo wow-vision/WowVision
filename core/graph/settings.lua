@@ -53,6 +53,7 @@ settings.registerFieldControl("Number", function(field, infoFrame)
         label = field:getLabel(),
         get = getterOf(infoFrame, field),
         set = setterOf(infoFrame, field),
+        step = field.step,
         valueText = valueTextOf(infoFrame, field),
     })
 end)

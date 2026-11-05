@@ -148,6 +148,48 @@ local function render(builder, screen)
     end)
 end
 
+-- Accepting a group invitation without the popups window. In combat the
+-- window cannot take over the keyboard, so the invitation could not be
+-- answered until the fight ended. The popup's own buttons are not
+-- protected: clicking Accept runs the dialog's OnAccept (AcceptGroup, and
+-- the flag that keeps its OnHide from declining), in or out of combat.
+local INVITE_POPUPS = { PARTY_INVITE = true, PARTY_INVITE_XREALM = true }
+
+function module.acceptInvite()
+    local accept = nil
+    forEachShownDialog(function(frame)
+        if accept == nil and INVITE_POPUPS[frame.which] then
+            accept = firstShownButton(frame)
+        end
+    end)
+    if accept == nil then
+        WowVision:speak(L["No group invitation"])
+        return false
+    end
+    accept:Click()
+    WowVision:speak(L["Group invitation accepted"])
+    return true
+end
+
+module:registerCommand({
+    name = "accept",
+    description = "Accept the pending group invitation, also in combat",
+    func = function()
+        module.acceptInvite()
+    end,
+})
+
+module:registerBinding({
+    type = "Function",
+    key = "popups/acceptInvite",
+    inputs = {},
+    label = L["Accept Group Invitation"],
+    interruptSpeech = true,
+    func = function()
+        module.acceptInvite()
+    end,
+})
+
 module:registerWindow({
     type = "CustomWindow",
     name = "popups",

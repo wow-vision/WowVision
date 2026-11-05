@@ -118,6 +118,7 @@ See [Minimap](../world/minimap.md).
 | Soft Target Enemy | Shift+I | Switches soft enemy targeting on or off and says "Soft Target Enemy Enabled" or "Disabled" (with "after combat" when pressed in combat) |
 | Soft Target Friend | Shift+P | The same for soft friend targeting |
 | Soft Target Interact | Shift+O | The same for soft interact targeting |
+| Target of Target | Unbound | Makes your target's target your target, without starting an attack |
 | Open Target Menu | Alt+T | Opens the menu of your target, like a right click on its portrait |
 | Target Focus 1 to Target Focus 5 | Unbound | Targets one of the five WowVision focus targets |
 
@@ -136,6 +137,14 @@ See [Targeting](../world/targeting.md).
 The roll keys act on the first roll window on screen. With none open you hear "No loot.".
 
 See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
+
+## Group invitations
+
+| Action | Default key | Notes |
+|---|---|---|
+| Accept Group Invitation | Unbound | Accepts the group invitation that is shown, also in combat, the same as /wv accept. Without one you hear "No group invitation" |
+
+See [Group Finder](../windows/group-finder.md).
 
 ## Monitors
 

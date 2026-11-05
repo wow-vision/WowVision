@@ -41,4 +41,100 @@ function utils.foldCase(text)
     return lowered
 end
 
+-- The units of the player's side of a fight: you and your pet, then the
+-- group's members and their pets. In a party "player" is you and party1 to
+-- party4 are the others; in a raid raid1 to raid40 include you. Pets are
+-- partypetN and raidpetN. inRaid, inGroup: IsInRaid() and IsInGroup().
+local SOLO_UNITS = { "player", "pet" }
+local PARTY_UNITS = { "player", "pet" }
+for i = 1, 4 do
+    tinsert(PARTY_UNITS, "party" .. i)
+    tinsert(PARTY_UNITS, "partypet" .. i)
+end
+local RAID_UNITS = { "player", "pet" }
+for i = 1, 40 do
+    tinsert(RAID_UNITS, "raid" .. i)
+    tinsert(RAID_UNITS, "raidpet" .. i)
+end
+
+function utils.groupUnits(inRaid, inGroup)
+    if inRaid then
+        return RAID_UNITS
+    elseif inGroup then
+        return PARTY_UNITS
+    end
+    return SOLO_UNITS
+end
+
+-- Money in tooltip text. The game writes coins as an amount followed by a
+-- coin texture ("12 |T...UI-GoldIcon...|t 5 |T...UI-SilverIcon...|t"), and
+-- speech drops the textures, leaving bare numbers. Some lines carry only a
+-- bare number after the sell price label; that number is copper, the
+-- game's money unit.
+local COIN_FACTORS = { gold = 10000, silver = 100, copper = 1 }
+local COIN_AMOUNT = "([%d%.,']+)%s*(|[TA].-|[ta])"
+
+local function coinKind(escape)
+    local lower = escape:lower()
+    for kind in pairs(COIN_FACTORS) do
+        if lower:find(kind, 1, true) then
+            return kind
+        end
+    end
+    return nil
+end
+
+-- Digits only: thousands separators (1.234 or 1,234) are dropped.
+local function amountNumber(amount)
+    return tonumber((amount:gsub("[^%d]", "")))
+end
+
+local function patternEscape(text)
+    return (text:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0"))
+end
+
+-- The line rewritten with its money spoken by coinText (copper -> text,
+-- C_CurrencyInfo.GetCoinText in the game), or nil when it has none.
+-- sellLabel is the game's sell price label (SELL_PRICE); after it a bare
+-- number counts as copper.
+function utils.moneyLineText(text, sellLabel, coinText)
+    if type(text) ~= "string" then
+        return nil
+    end
+    local first, last, total = nil, nil, 0
+    local position = 1
+    while true do
+        local s, e, amount, escape = text:find(COIN_AMOUNT, position)
+        if s == nil then
+            break
+        end
+        local kind = coinKind(escape)
+        local number = amountNumber(amount)
+        if kind ~= nil and number ~= nil then
+            first = first or s
+            last = e
+            total = total + number * COIN_FACTORS[kind]
+        end
+        position = e + 1
+    end
+    if first ~= nil then
+        local before = text:sub(1, first - 1):gsub("%s+$", "")
+        local after = text:sub(last + 1)
+        local spoken = coinText(total)
+        if before ~= "" then
+            spoken = before .. " " .. spoken
+        end
+        return spoken .. after
+    end
+    if type(sellLabel) == "string" and sellLabel ~= "" then
+        local plain = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        local label, amount = plain:match("^%s*(" .. patternEscape(sellLabel) .. ":?)%s*([%d%.,']+)%s*$")
+        local number = amount ~= nil and amountNumber(amount) or nil
+        if number ~= nil then
+            return label .. " " .. coinText(number)
+        end
+    end
+    return nil
+end
+
 WowVision.utils = utils
