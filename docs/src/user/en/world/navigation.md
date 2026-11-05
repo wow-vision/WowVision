@@ -96,6 +96,7 @@ When the route starts, WowVision speaks the summary and the beacon begins to pin
 - The beacon pings towards the current waypoint. The ping changes with the direction and the distance to the waypoint. It pings faster the more directly you face the waypoint, about every 0.7 seconds when off course and about every 0.3 seconds when you are aimed at it. Distance is heard in steps of about 6 yards and works out to roughly 180 yards.
 - Aligned (a clack) plays when you turn to within 10 degrees of the waypoint. Off course (a click) plays when you turn away again. These only play when you cross that line by turning.
 - Waypoint reached (a success sound) plays every time you get close enough to a waypoint, including the last one.
+- Right after the sound, WowVision says how many waypoints are left, for example "3 remaining". The waypoint the beacon now leads to counts too. At the last waypoint you hear Arrived instead, and at a portal, the tram or an elevator on a WowNav route you hear WowNav's own guidance. This works on classic routes and WowNav routes alike. The setting Announce Remaining Waypoints in the Navigation module (on by default) turns it off.
 - Arrived is spoken at the end of a route, followed by the name of the destination.
 - Beacon stopped is spoken when you cancel.
 
@@ -125,6 +126,7 @@ For Beacon Sound you choose one of the beacon sets: Notification, Probe (Deep), 
 | Ctrl+W | Next Waypoint | Skip to the next waypoint. |
 | Ctrl+S | Previous Waypoint | Go back to the previous waypoint. |
 | Ctrl+Shift+N | Start the Route Again From Here | Starts the last route again from where you stand. |
+| Ctrl+Shift+R | Reverse Route | Turns the running route around, back to where it started. |
 | Shift+F12 | Cancel Navigation | Stops the route or beacon. |
 | F10 | Navigation | Opens the navigation window. |
 
@@ -171,6 +173,12 @@ When you have wandered off, or want to skip a waypoint you cannot reach, press C
 ### Restart the route
 
 If you have strayed far from the route, press Ctrl+Shift+N. WowVision plans the last destination you chose again, starting from where you stand now. It works for destinations from the window, from the scanner, from the route to your target, and for the corpse run. With classic routes the router picks whichever of the five nearest waypoints gives the best route. With WowNav the route starts where you stand, if WowNav knows which floor you are on. You hear the route summary again, or No route to start again if you have not chosen a destination yet.
+
+### Reverse the route
+
+Halfway along a route you may remember that you have to go back. Press Ctrl+Shift+R. The route turns around: the waypoint the beacon leads to now becomes the start of a new route, and its destination is where the previous route started, the entry point you chose in the navigation window. You hear "Route reversed, back to" and the name of that place, then the summary of the new route. For example, on the way from Priestess Anetta to Marshal Dughan you press Ctrl+Shift+R and hear "Route reversed, back to Priestess Anetta". If the start has no name, you hear "back to the start of the previous route".
+
+This works on classic routes and WowNav routes alike. Afterwards, Ctrl+Shift+N goes to that start again. Without a running route you hear "No route to reverse".
 
 ### Cancel navigation
 
@@ -263,7 +271,7 @@ The Visited Waypoints module (under Navigation) has one setting:
 |---------|---------|--------------|
 | Visited For (Minutes) | 15 | How long a reached destination counts as visited (1 to 1440 minutes). |
 
-Two settings of the Navigation module are related: Automatically Navigate to Corpse (on by default) starts a route to your body as soon as you are a ghost, and Auto-move to Interact Target is explained with the movement features. See [Movement](./movement.md) for those, for the compass and for following a player.
+Three settings of the Navigation module are related: Announce Remaining Waypoints (on by default) says how many waypoints are left after each one you reach, Automatically Navigate to Corpse (on by default) starts a route to your body as soon as you are a ghost, and Auto-move to Interact Target is explained with the movement features. See [Movement](./movement.md) for those, for the compass and for following a player.
 
 ## Diagnostic commands
 

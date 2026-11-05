@@ -26,6 +26,15 @@ settings:add({
     default = true,
 })
 
+-- After each waypoint reached, the waypoints left on the route: the cue,
+-- then "3 remaining" (maps/module.lua), classic and WowNav routes alike.
+settings:add({
+    key = "announceRemaining",
+    type = "Bool",
+    label = L["Announce Remaining Waypoints"],
+    default = true,
+})
+
 -- The camera settings turn to waypoint and the pitch lock need, set once
 -- per character (see camera.lua).
 settings:add({

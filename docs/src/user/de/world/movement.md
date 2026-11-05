@@ -6,7 +6,7 @@ Alles hier steht im WowVision-Menü (tippe /wv) unter Navigation. Die Routen- un
 
 | Menüeintrag | Was er enthält |
 |-------------|----------------|
-| Navigation | Zwei Einstellungen: Automatisch zum Interaktionsziel bewegen (Auto-move to Interact Target) und Automatisch zur Leiche navigieren (Automatically Navigate to Corpse). Die anderen Einträge unter Navigation (Karten, besuchte Orte, Signal und so weiter) werden auf der Seite [Navigation und Routen](navigation.md) beschrieben |
+| Navigation | Drei Einstellungen: Automatisch zum Interaktionsziel bewegen (Auto-move to Interact Target), Automatisch zur Leiche navigieren (Automatically Navigate to Corpse) und Verbleibende Wegpunkte ansagen (Announce Remaining Waypoints, beschrieben auf der Seite [Navigation und Routen](navigation.md#was-du-hörst)). Die anderen Einträge unter Navigation (Karten, besuchte Orte, Signal und so weiter) werden auf der Seite [Navigation und Routen](navigation.md) beschrieben |
 | Navigation, Kompass | Alarme für Blickrichtung, Gebiet, drinnen/draußen, Fliegen, Schwimmen und Tauchen |
 | Navigation, Fallerkennung | Fallgeräusche und Ansage |
 | Navigation, Wanderkennung | Kollisionsgeräusche |

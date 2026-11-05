@@ -6,7 +6,7 @@ Everything here is in the WowVision menu (type /wv) under Navigation. The route 
 
 | Menu entry | What it holds |
 |------------|---------------|
-| Navigation | Two settings: Auto-move to Interact Target and Automatically Navigate to Corpse. The other entries under Navigation (maps, visited places, beacon and so on) are described on the [Navigation](navigation.md) page |
+| Navigation | Three settings: Auto-move to Interact Target, Automatically Navigate to Corpse and Announce Remaining Waypoints (described on the [Navigation](navigation.md#what-you-hear) page). The other entries under Navigation (maps, visited places, beacon and so on) are described on the [Navigation](navigation.md) page |
 | Navigation, Compass | Facing, zone, indoors/outdoors, flying, swimming and diving alerts |
 | Navigation, Fall Detection | Falling sounds and announcement |
 | Navigation, Wall Detection | Collision sounds |

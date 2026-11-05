@@ -231,6 +231,11 @@ function engine:cancel()
     return running
 end
 
+-- Ctrl-Shift-R (maps:reverseRoute): the running route turned around. Nil when no WowNav route runs.
+function engine:reverseRoute()
+    return module:reverseRoute()
+end
+
 function engine:search(text, px, py, map, opts)
     return module:search(text, px, py, map, opts)
 end
@@ -646,6 +651,52 @@ function module:routeTo(target)
         search(self, request)
     end
     return true
+end
+
+-- Ctrl-Shift-R: the running route turned around. The new route starts at the waypoint the beacon leads to now (the
+-- next real network point when that one is virtual: a picked target before its network point) and leads back to
+-- where the previous route started: the target or waypoint picked as its entry point in F10, else its start node.
+-- Nil when no WowNav route runs; true when the request was made.
+function module:reverseRoute()
+    local request, path = self.request, self.path
+    local N = self:network()
+    if request == nil or path == nil or route == nil or not route.active or route.path == nil
+        or request.startOverride == nil or N == nil then
+        return nil
+    end
+    local from
+    for i = route.pathIndex or 1, #route.path do
+        local id = route.path[i]
+        if N.virt[id] == nil then
+            from = id
+            break
+        end
+    end
+    if from == nil then
+        return nil
+    end
+    local _, _, fromZ = N.Position(from)
+    local start = request.start
+    local data, x, y, z
+    if type(start) == "table" and (start.tid ~= nil or start.nodeId ~= nil) and start.x ~= nil then
+        data, x, y, z = start, start.x, start.y, start.z
+    else
+        data = { nodeId = request.startOverride }
+        x, y, z = N.Position(request.startOverride)
+        data.x, data.y, data.z = x, y, z
+    end
+    local label = (type(start) == "table" and start.n) or L["the start of the previous route"]
+    if data.n == nil then
+        data.n = label
+    end
+    say(string.format(L["Route reversed, back to %s"], label))
+    -- Ctrl-Shift-N goes there again
+    maps.lastDestination = data
+    if maps:routeTo(x, y, label, nil, z, data, { nodeId = from, z = fromZ }) then
+        return true
+    end
+    say(L["No route found"])
+    return false
 end
 
 -- His TargetProviders:GroupMember: the unit's position now as a live target, valid for 30 s; nil without one.
