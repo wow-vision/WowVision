@@ -1378,6 +1378,8 @@ loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
 loadAddonFile("core/graph/controlTests.lua")
+loadAddonFile("core/targeting/targetNames.lua")
+loadAddonFile("core/targeting/targetNamesTests.lua")
 
 -- Files that need the game client to run but should at least parse cleanly.
 local parseOnly = {
