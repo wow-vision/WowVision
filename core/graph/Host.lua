@@ -68,6 +68,7 @@ function GraphHost:initialize()
     self._navHandles = {}
     self._letterHandles = {}
     self._typeAheadState = graph.typeAhead.newState()
+    self._doublePressState = graph.doublePress.newState()
     self._nodeHandles = {}
     self._focusNodeId = nil
     self._focusNode = nil
@@ -558,6 +559,7 @@ end
 
 -- A letter in a list that takes letters: stop speech first, as for the navigation keys.
 function GraphHost:onLetter(letter)
+    graph.doublePress.reset(self._doublePressState)
     local stopped = WowVision.base.speech:uiStop()
     if stopped and (WowVision.consts.UI_DELAY or 0) > 0 then
         C_Timer.After(WowVision.consts.UI_DELAY, function()
@@ -599,25 +601,30 @@ end
 -- Entry point for navigation keypresses. Mirrors UIHost's TTS sequencing: stop
 -- current speech first; on clients whose TTS needs it, delay the operation so
 -- the stop is processed before the next announcement.
+-- The press time is taken here, before the delay, so the delay never stretches a double press.
 function GraphHost:onKey(key)
+    local at = GetTime()
     local stopped = WowVision.base.speech:uiStop()
     if stopped and (WowVision.consts.UI_DELAY or 0) > 0 then
         C_Timer.After(WowVision.consts.UI_DELAY, function()
-            self:_dispatchKey(key)
+            self:_dispatchKey(key, at)
         end)
     else
-        self:_dispatchKey(key)
+        self:_dispatchKey(key, at)
     end
 end
 
-function GraphHost:_dispatchKey(key)
+function GraphHost:_dispatchKey(key, at)
     local screen = self:focusedScreen()
     if screen == nil then
         return
     end
     if key == "up" or key == "down" or key == "left" or key == "right" then
-        self:_arrow(screen, key)
-    elseif key == "next" or key == "previous" then
+        self:_arrow(screen, key, at)
+        return
+    end
+    graph.doublePress.reset(self._doublePressState)
+    if key == "next" or key == "previous" then
         self:_tab(screen, key)
     elseif key == "nextWindow" then
         self:_cycleStack(1)
@@ -636,13 +643,15 @@ end
 
 -- Arrows: a focused slider adjusts on left/right before any navigation;
 -- edge-wired movement next; at an edge, left/right get tree semantics; a bump
--- with nothing to do re-reads the current node for orientation.
-function GraphHost:_arrow(screen, dir)
+-- with nothing to do re-reads the current node for orientation. The same
+-- arrow pressed twice quickly skips empty slots (doublePress.lua).
+function GraphHost:_arrow(screen, dir, at)
     local kg = screen.keyGraph
     local node = kg:currentNode()
     if node == nil then
         return
     end
+    local double = graph.doublePress.press(self._doublePressState, dir, at or GetTime(), screen, node.id.key)
 
     if dir == "left" or dir == "right" then
         if self:_adjustFocused(screen, dir == "right" and 1 or -1) then
@@ -650,7 +659,14 @@ function GraphHost:_arrow(screen, dir)
         end
     end
 
-    local move = kg:move(dir)
+    local move
+    if double and self:_skipsEmptySlots() then
+        move = kg:moveSkippingEmpty(dir)
+    else
+        move = kg:move(dir)
+    end
+    local landed = kg:currentNode()
+    graph.doublePress.settle(self._doublePressState, landed ~= nil and landed.id.key or nil)
     if move.moved then
         self:_announceMove(screen, move)
         return
@@ -674,6 +690,12 @@ function GraphHost:_arrow(screen, dir)
 
     -- Focus did not move: stay silent. Re-reading the same node on a
     -- boundary bump is noise when arrowing quickly.
+end
+
+-- The UI module's setting; on unless switched off.
+function GraphHost:_skipsEmptySlots()
+    local ui = WowVision.base ~= nil and WowVision.base.ui or nil
+    return ui == nil or ui.settings == nil or ui.settings.skipEmptySlots ~= false
 end
 
 function GraphHost:_tab(screen, key)
@@ -768,6 +790,7 @@ end
 -- synchronous feedback path, spoken immediately, with the live watch
 -- rebaselined so the same change isn't spoken twice.
 function GraphHost:_activateFocused()
+    graph.doublePress.reset(self._doublePressState)
     local screen = self:focusedScreen()
     if screen == nil then
         return
@@ -777,6 +800,7 @@ function GraphHost:_activateFocused()
 end
 
 function GraphHost:_secondaryFocused()
+    graph.doublePress.reset(self._doublePressState)
     local screen = self:focusedScreen()
     if screen == nil then
         return

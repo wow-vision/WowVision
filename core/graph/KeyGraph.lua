@@ -293,6 +293,58 @@ function KeyGraph:moveToEdge(dir)
     return result
 end
 
+-- Whether a node reads as an empty slot (vtable.isEmpty: a bag or action bar slot holding nothing).
+function KeyGraph.isEmpty(node)
+    local isEmpty = node.vtable ~= nil and node.vtable.isEmpty or nil
+    if isEmpty == nil then
+        return false
+    end
+    local ok, empty = pcall(isEmpty)
+    return ok and empty == true
+end
+
+-- A double press (doublePress.lua): one step in a direction, then on past every empty slot to the first filled one.
+-- With none left the walk ends on the last node that way, which reads "Empty" there.
+function KeyGraph:moveSkippingEmpty(dir)
+    local result = { moved = false }
+    if not self:rerender() then
+        return result
+    end
+    local node = self:currentNode()
+    result.from = node
+    result.to = node
+    if node == nil then
+        return result
+    end
+
+    local cur, label = node, nil
+    local seen = { [node] = true }
+    while true do
+        local transition = cur.transitions[dir]
+        if transition == nil then
+            break
+        end
+        local dest = self.current:nodeAt(transition.destination)
+        if dest == nil or seen[dest] then
+            break
+        end
+        seen[dest] = true
+        cur = dest
+        label = transition.label
+        if not KeyGraph.isEmpty(cur) then
+            break
+        end
+    end
+
+    if cur ~= node then
+        self:_setCurrent(cur)
+        result.to = cur
+        result.moved = true
+        result.transitionLabel = label
+    end
+    return result
+end
+
 function KeyGraph:_stopOrder()
     local stops = {}
     local seen = {}

@@ -21,6 +21,14 @@ settings:add({
     default = true,
 })
 
+-- The same arrow pressed twice quickly skips the empty slots of a bag or action bar (graph/doublePress.lua).
+settings:add({
+    type = "Bool",
+    key = "skipEmptySlots",
+    label = L["Skip Empty Slots on Double Arrow"],
+    default = true,
+})
+
 -- Chasing stuck movement keys with testers: prints when windows take, wait
 -- for and release the navigation keys, and what the held check saw.
 module:registerCommand({
