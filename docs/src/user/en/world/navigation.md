@@ -60,6 +60,8 @@ Tick Direct (press Enter on the checkbox) if you do not want a route. The entry 
 
 Direct is the first stop. To reach it, press Shift+Tab from the entry points.
 
+You do not need the checkbox for a single straight beacon: Backspace on a destination sets one at once, while Enter still routes. The checkbox is still useful with WowNav, because only with Direct on does the list also show places no route leads to.
+
 ### Searching for a destination
 
 Press Tab from the entry points to reach Search. The edit box takes your typing immediately, and what you have typed is read as you type. Type a fragment of a name, for example "auctioneer", and press Enter to apply it. WowVision reads back what you typed. The list below is filtered at once. Tab applies the text as well and moves on to the next stop; Escape closes the edit box without changing the search.
@@ -78,6 +80,7 @@ Press Tab again to reach Destinations. It is one long list, sorted by distance f
 | Up / Down | Previous / next destination. |
 | Home / End | First / last destination. |
 | Enter | Close the window and start the route (or the straight beacon, if Direct is on). |
+| Backspace | Close the window and set a straight beacon to the destination, without a route, whether Direct is on or not. |
 
 Each destination reads its name and its distance, then its position in the list. With WowNav, what the place is and where it is come after the distance, for example "Innkeeper Allison (Innkeeper), 85 yards, quest giver, vendor, innkeeper, Stormwind City, 1 / 342". A destination you reached in the last few minutes is announced with Visited first; see [Visited places](#visited-places). An empty list reads "Empty".
 

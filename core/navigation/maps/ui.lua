@@ -30,6 +30,9 @@ local kinds = graph.kinds
 -- destinations, and Enter on a destination sets exactly that point -- a
 -- straight beacon, no route (WowNav's /vn direct). The destinations are the
 -- same, a route engine's without its reachability check.
+--
+-- Backspace on a destination always sets the direct point, checkbox or not
+-- (Enter routes, Backspace goes straight; user's wish 2026-11-06).
 
 local function entryLabel(entry)
     local wp = entry.waypoint
@@ -210,6 +213,47 @@ local function destinationCursor(screen)
         speak()
     end
 
+    -- Enter routes there (or a direct point while the Direct checkbox is on), Backspace always sets a direct point.
+    local function go(direct)
+        local list, index = clampedIndex()
+        local entry = list[index]
+        if entry == nil then
+            return
+        end
+        WowVision.UIHost:closeWindow("atlas")
+        local wp = entry.waypoint
+        -- the picked destination (not a waypoint on the way) is remembered as visited once reached
+        module.lastDestination = wp
+        local onArrive = module:arrivalFor(wp)
+        if direct then
+            module:directTo(wp.x, wp.y, wp.n, onArrive)
+            return
+        end
+        if screen._engine ~= nil then
+            -- the engine's own row is its target data; the window's target brings its source's (scanner)
+            local data = wp
+            if wp.virtual then
+                data = wp.routeData
+            end
+            local start = selectedEntry(screen)
+            if module:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, data, start and start.waypoint) then
+                return
+            end
+            if wp.virtual then
+                module:beaconTo(wp.x, wp.y, wp.n, onArrive)
+            else
+                WowVision:speak(L["No route found"])
+            end
+            return
+        end
+        local routed = module:navigateTo(wp.id, screen._waypoints, { entryId = screen._entryId, onArrive = onArrive })
+        -- A target too far from the network for a last leg still gets a
+        -- straight beacon, as the scanner gave before.
+        if not routed and wp.virtual then
+            module:beaconTo(wp.x, wp.y, wp.n, onArrive)
+        end
+    end
+
     return {
         controlType = graph.controlTypes.button,
         announcements = {
@@ -235,43 +279,11 @@ local function destinationCursor(screen)
             },
         },
         onActivate = function()
-            local list, index = clampedIndex()
-            local entry = list[index]
-            if entry == nil then
-                return
-            end
-            WowVision.UIHost:closeWindow("atlas")
-            local wp = entry.waypoint
-            -- the picked destination (not a waypoint on the way) is remembered as visited once reached
-            module.lastDestination = wp
-            local onArrive = module:arrivalFor(wp)
-            if screen._direct then
-                module:directTo(wp.x, wp.y, wp.n, onArrive)
-                return
-            end
-            if screen._engine ~= nil then
-                -- the engine's own row is its target data; the window's target brings its source's (scanner)
-                local data = wp
-                if wp.virtual then
-                    data = wp.routeData
-                end
-                local start = selectedEntry(screen)
-                if module:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, data, start and start.waypoint) then
-                    return
-                end
-                if wp.virtual then
-                    module:beaconTo(wp.x, wp.y, wp.n, onArrive)
-                else
-                    WowVision:speak(L["No route found"])
-                end
-                return
-            end
-            local routed = module:navigateTo(wp.id, screen._waypoints, { entryId = screen._entryId, onArrive = onArrive })
-            -- A target too far from the network for a last leg still gets a
-            -- straight beacon, as the scanner gave before.
-            if not routed and wp.virtual then
-                module:beaconTo(wp.x, wp.y, wp.n, onArrive)
-            end
+            go(screen._direct)
+        end,
+        -- Backspace: a direct point to the destination, whatever the checkbox says
+        onSecondary = function()
+            go(true)
         end,
         bindings = {
             {
