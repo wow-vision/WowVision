@@ -899,3 +899,41 @@ module:registerWindow({
     conflictingAddons = { "Sku" },
     graphScreen = { render = renderAddFriend },
 })
+
+-- ---------------------------------------------------------------------------
+-- Friend request confirmation (BattleNetInviteFrame, Blizzard_AddFriend): a
+-- unit menu's Add Friend row on a Battle.net account is a submenu (Send
+-- BattleTag Request, Add WoW Friend; Forever has no character friend row).
+-- Picking one closes the menu and asks the server, which answers with this
+-- dialog: the kind of request, the player's name, what the other side sees,
+-- then Send Request and Cancel. Nothing is sent until Send Request. It is
+-- shown with StaticPopupSpecial_Show, so the popups window never sees it;
+-- Escape cancels, as in the game.
+-- ---------------------------------------------------------------------------
+
+local function renderBattleNetInvite(builder, screen)
+    local frame = BattleNetInviteFrame
+    if frame == nil or not frame:IsShown() then
+        return
+    end
+    local title = frame.InviteText ~= nil and plainText(frame.InviteText:GetText()) or nil
+    builder:pushContext("battleNetInvite", title or ADD_FRIEND)
+    builder:beginStop("text")
+    for _, key in ipairs({ "InviteeName", "InfoText" }) do
+        local text = frame[key]
+        if text ~= nil and text:IsShown() and plainText(text:GetText()) ~= nil then
+            builder:addItem(ControlId.structural("battleNetInvite:" .. key), nodes.text({ label = fontText(text) }))
+        end
+    end
+    addProxy(builder, frame.SendButton, "send")
+    addProxy(builder, frame.CancelButton, "cancel")
+    builder:popContext()
+end
+
+module:registerWindow({
+    type = "FrameWindow",
+    name = "battleNetInvite",
+    frameName = "BattleNetInviteFrame",
+    conflictingAddons = { "Sku" },
+    graphScreen = { render = renderBattleNetInvite },
+})
