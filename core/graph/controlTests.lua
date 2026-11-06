@@ -26,8 +26,9 @@ local function makeFakeScrollBox(rows)
         GetDataProvider = function(self)
             return provider
         end,
-        ScrollToElementDataIndex = function(self, index)
+        ScrollToElementDataIndex = function(self, index, alignment)
             self.scrolledTo = index
+            self.scrolledAlignment = alignment
             visibleFrames[rows[index]] = { name = "frame" .. index }
         end,
         FindFrame = function(self, data)
@@ -55,6 +56,37 @@ testRunner:addSuite("GraphScrollBox", {
         t:assertEqual(graph.resolveText(render.order[2].vtable.announcements[1]), "Shield")
         t:assertEqual(render.order[3].positionIndex, 3)
         t:assertEqual(render.order[1].parent.vtable.announcements[1].text, "Items")
+    end,
+
+    ["placement aligns focus scrolling, and false leaves the list alone"] = function(t)
+        local rows = { { name = "Above" }, { name = "Hazard" } }
+        local scrollBox = makeFakeScrollBox(rows)
+        local builder = Builder:new()
+        graph.nodes.scrollBoxList(builder, {
+            scrollBox = scrollBox,
+            placement = function(data, index)
+                if index == 1 then
+                    return 1
+                end
+                return false
+            end,
+            emit = function(b, data, index, helpers)
+                b:addItem(helpers.id, {
+                    announcements = { { text = data.name } },
+                    onFocus = helpers.onFocus,
+                    onFocusTick = helpers.onFocusTick,
+                })
+            end,
+        })
+        local render = builder:build()
+
+        render.order[2].vtable.onFocus()
+        render.order[2].vtable.onFocusTick()
+        t:assertEqual(scrollBox.scrolledTo, nil)
+
+        render.order[1].vtable.onFocus()
+        t:assertEqual(scrollBox.scrolledTo, 1)
+        t:assertEqual(scrollBox.scrolledAlignment, 1)
     end,
 
     ["focus scrolls and the click target resolves the materialized frame"] = function(t)

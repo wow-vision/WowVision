@@ -84,6 +84,61 @@ testRunner:addSuite("TypeAhead", {
         t:assertFalse(move.moved, "the focused entry still matches a growing text")
     end,
 
+    ["a list of rows (key bindings): letters find a row by its name, home and end go to the first and last row"] = function(t)
+        local graph = WowVision.graph
+        local sid = graph.ControlId.structural
+        local state = graph.newState()
+        -- one row per binding: its keys, then Add; a binding without keys has Add alone
+        local bindings = {
+            { key = "next", label = "Next Item", inputs = { "TAB" } },
+            { key = "scanner", label = "Scanner", inputs = { "F9", "CTRL-F9" } },
+            { key = "soft", label = "Soft Target Enemy", inputs = {} },
+            { key = "nav", label = "Navigation", inputs = { "F10" } },
+        }
+        local kg = graph.KeyGraph:new(function()
+            local b = graph.Builder:new(state.expanded)
+            b:pushContext("bindings", "Bindings")
+            for _, binding in ipairs(bindings) do
+                b:pushContext("binding:" .. binding.key, binding.label)
+                b:startRow()
+                for _, input in ipairs(binding.inputs) do
+                    b:addLabel(sid(binding.key .. ":" .. input), input)
+                end
+                b:addLabel(sid(binding.key .. ":add"), "Add")
+                b:endRow()
+                b:popContext()
+            end
+            b:popContext()
+            return b:build()
+        end, state)
+
+        kg:focus(sid("scanner:CTRL-F9"))
+        local move = kg:moveToText("n", true, true)
+        t:assertTrue(move.moved)
+        t:assertEqual(move.to.id.key, "nav:F10", "the next binding named N, on its first key")
+        move = kg:moveToText("n", true, true)
+        t:assertEqual(move.to.id.key, "next:TAB", "wrapped around to Next Item")
+        move = kg:moveToText("so", false, true)
+        t:assertEqual(move.to.id.key, "soft:add", "a binding without keys lands on Add")
+        move = kg:moveToText("a", true, true)
+        t:assertFalse(move.found, "the button labels (Add) are not what a row is found by")
+        -- without the list of rows, the letters stay in the row, as before
+        kg:focus(sid("scanner:F9"))
+        move = kg:moveToText("a", true, false)
+        t:assertEqual(move.to.id.key, "scanner:add")
+
+        kg:focus(sid("scanner:CTRL-F9"))
+        move = kg:moveToRowEdge(false)
+        t:assertTrue(move.moved)
+        t:assertEqual(move.to.id.key, "nav:F10", "End: the last binding")
+        move = kg:moveToRowEdge(true)
+        t:assertEqual(move.to.id.key, "next:TAB", "Home: the first binding")
+        move = kg:moveToRowEdge(true)
+        t:assertFalse(move.moved, "already there")
+        kg:focus(sid("soft:add"))
+        t:assertEqual(kg:moveToRowEdge(false).to.id.key, "nav:F10")
+    end,
+
     ["the same letter typed quickly keeps cycling"] = function(t)
         local state = typeAhead.newState()
         typeAhead.feed(state, "b", 1)

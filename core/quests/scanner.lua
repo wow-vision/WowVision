@@ -25,12 +25,31 @@ local function unknown()
     return L["Unknown"]
 end
 
+-- What a node points at, for a route engine that knows the same target
+-- with its height (WowNav: the navigation window looks it up in its own
+-- catalogue): the creature or object ID where the source has one, and the
+-- name.
+local function matchOf(target)
+    if target == nil then
+        return nil
+    end
+    local id = nil
+    if (target.kind == "npc" or target.kind == "object") and type(target.id) == "number" then
+        id = target.id
+    end
+    if id == nil and target.name == nil then
+        return nil
+    end
+    return { kind = target.kind, id = id, name = target.name }
+end
+
 -- One node per spawn of a target: "Valley of the Four Winds, Halfhill
 -- Market, 80 yards, ahead". Spawns Questie believes are in the player's
 -- phase come first, nearest first; the rest follow marked "phased out",
 -- still there to pick when Questie's guess is wrong; other continents
 -- last.
 local function spawnNodes(target)
+    local match = matchOf(target)
     local spawns = {}
     for _, spawn in ipairs(target.spawns) do
         tinsert(spawns, spawn)
@@ -50,6 +69,7 @@ local function spawnNodes(target)
                 detail = spawn.phased and L["phased out"] or nil,
                 x = spawn.wx,
                 y = spawn.wy,
+                match = match,
             })
         end
     end
@@ -75,6 +95,7 @@ local function targetNode(target, seen)
     local node = { key = key, label = label, onArrive = target.onArrive }
     if target.nearest ~= nil then
         node.x, node.y = target.nearest.wx, target.nearest.wy
+        node.match = matchOf(target)
     end
     local detail = {}
     if target.subName ~= nil and target.subName ~= "" then
@@ -129,6 +150,7 @@ local function pointAt(node, target)
     end
     node.x, node.y = target.nearest.wx, target.nearest.wy
     node.onArrive = target.onArrive
+    node.match = matchOf(target)
     if #target.spawns > 1 then
         node.detail = (node.detail ~= nil and (node.detail .. ", ") or "")
             .. tostring(#target.spawns) .. " " .. L["spawns"]
@@ -226,6 +248,8 @@ local function pointAtFirst(node, targets)
     if first ~= nil then
         node.x, node.y = first.nearest.wx, first.nearest.wy
         node.onArrive = first.onArrive
+        node.match = matchOf(first)
+        node.targetName = first.name
     end
     return first
 end
@@ -247,6 +271,8 @@ local function pointAtMarker(node, entry, index)
     end
     node.x, node.y = marker.nearest.wx, marker.nearest.wy
     node.onArrive = nil
+    node.match = nil
+    node.targetName = nil
     addDetail(node, L["Questie marker"])
     return marker
 end
@@ -258,6 +284,8 @@ local function pointAtGameMarker(node, entry)
     end
     node.x, node.y = marker.nearest.wx, marker.nearest.wy
     node.onArrive = nil
+    node.match = nil
+    node.targetName = nil
     addDetail(node, L["game quest marker"])
     return marker
 end
@@ -359,6 +387,39 @@ local function inProgressNode(entry)
         pointAtGameMarker(node, entry)
     end
     return node
+end
+
+-- Where the navigation window points for a quest in the log (F10 from the
+-- quest log): the place its scanner node beacons -- the nearest target of
+-- the first open objective, the turn-in once complete, else the game's or
+-- Questie's marker -- named after that target. Nil when the quest is not in
+-- the log or has nowhere to go.
+function quests:questNavigationTarget(questId)
+    if questId == nil or not self:hasSource() or not self:isReady() then
+        return nil
+    end
+    for _, entry in ipairs(self:inProgress()) do
+        if entry.questId == questId then
+            local node = inProgressNode(entry)
+            if node.x == nil then
+                return nil
+            end
+            return {
+                x = node.x,
+                y = node.y,
+                label = node.targetName or node.label,
+                onArrive = node.onArrive,
+                match = node.match,
+            }
+        end
+    end
+    return nil
+end
+
+-- The scanner path of a quest in the log, for landing on it when the
+-- scanner opens from the quest log.
+function quests:scannerQuestPath(questId)
+    return { "quests", "inProgress", "quest:" .. tostring(questId) }
 end
 
 local function loadingNode()

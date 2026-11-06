@@ -5,19 +5,35 @@ local graph = WowVision.graph
 local nodes = graph.nodes
 local ControlId = graph.ControlId
 
--- Shared by TBC and Mists, which use the same Classic SendMail UI. Bail out on
--- any client whose mail frames differ so we neither error at load nor when the
--- mail window opens; that client keeps core's basic mail handling.
+-- Shared by Vanilla, TBC, Mists and WoW: Forever (camelot/modules.xml loads it
+-- too), which use the same Classic SendMail UI. Bail out on any client whose
+-- mail frames differ so we neither error at load nor when the mail window
+-- opens; that client keeps core's basic mail handling.
 if not SendMailFrame then
     return
 end
 
--- Safe accessor: MailEditBox may be a ScrollingEditBox wrapper or a plain EditBox
+-- Safe accessor for the body: MailEditBox may be a ScrollingEditBox wrapper
+-- or a plain EditBox; WoW: Forever has no MailEditBox and keeps the Classic
+-- Era SendMailBodyEditBox instead.
 local function getBodyEditBox()
-    if MailEditBox.GetEditBox then
-        return MailEditBox:GetEditBox()
+    if MailEditBox ~= nil then
+        if MailEditBox.GetEditBox then
+            return MailEditBox:GetEditBox()
+        end
+        return MailEditBox
     end
-    return MailEditBox
+    return SendMailBodyEditBox
+end
+
+-- An attachment slot: the SendMailAttachments array where the client keeps
+-- one, else the numbered globals.
+local function getAttachmentSlot(i)
+    local slots = SendMailFrame.SendMailAttachments
+    if slots ~= nil then
+        return slots[i]
+    end
+    return _G["SendMailAttachment" .. i]
 end
 
 -- Route Tab presses on a Blizzard EditBox to the graph host instead of
@@ -33,6 +49,34 @@ local function routeTabToWV(editBox)
         else
             WowVision.graphHost:onKey("next")
         end
+    end)
+end
+
+-- Enter in the recipient and subject boxes: Blizzard moves focus to the next
+-- box, but WV hands a box the keyboard ON Enter, and that same press then
+-- reaches the box and jumps on, so typing landed in the next box. The press
+-- that arrives right with the focus is swallowed; a later Enter accepts an
+-- open autocomplete pick (recipient) or leaves typing and stays on the box.
+-- Tab moves on.
+local FOCUS_ENTER_WINDOW = 0.1
+local function keepEnterInBox(editBox)
+    if not editBox or not editBox.SetScript then
+        return
+    end
+    local focusedAt = 0
+    editBox:HookScript("OnEditFocusGained", function()
+        focusedAt = GetTime()
+    end)
+    editBox:SetScript("OnEnterPressed", function(self)
+        if GetTime() - focusedAt < FOCUS_ENTER_WINDOW then
+            return
+        end
+        if self.autoCompleteContext ~= nil and AutoCompleteEditBox_OnEnterPressed ~= nil then
+            if AutoCompleteEditBox_OnEnterPressed(self) then
+                return
+            end
+        end
+        self:ClearFocus()
     end)
 end
 
@@ -55,9 +99,13 @@ SendMailFrame:HookScript("OnShow", function()
                 routeTabToWV(editBox)
             end
         end
+        keepEnterInBox(SendMailNameEditBox)
+        keepEnterInBox(SendMailSubjectEditBox)
         -- Break Blizzard's Lua-level focus chain links on the money frame
-        SendMailMoney.previousFocus = nil
-        SendMailMoney.nextFocus = nil
+        if SendMailMoney ~= nil then
+            SendMailMoney.previousFocus = nil
+            SendMailMoney.nextFocus = nil
+        end
         -- Unregister the ScrollingEditBox wrapper's OnTabPressed callback.
         -- MailEditBox is a ScrollingEditBoxTemplate (Frame, not EditBox).
         -- Blizzard registers: MailEditBox:RegisterCallback("OnTabPressed", SendMailEditBox_OnTabPressed, MailEditBox)
@@ -65,15 +113,17 @@ SendMailFrame:HookScript("OnShow", function()
         -- inner EditBox's OnTabPressed (which WV overrides via routeTabToWV).  Both fire on
         -- every Tab press, causing Blizzard's tab list to simultaneously set focus on
         -- Gold (forward) or Subject (backward) while WV navigates elsewhere.
-        if MailEditBox.UnregisterCallback then
+        if MailEditBox ~= nil and MailEditBox.UnregisterCallback then
             MailEditBox:UnregisterCallback("OnTabPressed", MailEditBox)
         end
         -- Remove body/money entries from the tab list as a safety net.
         -- WV overrides OnTabPressed on all mail EditBoxes, so this list should
         -- never be consulted, but nil the dangerous entries just in case.
-        SEND_MAIL_TAB_LIST[3] = nil -- MailEditBox
-        SEND_MAIL_TAB_LIST[4] = nil -- SendMailMoneyGold
-        SEND_MAIL_TAB_LIST[5] = nil -- SendMailMoneyCopper
+        if SEND_MAIL_TAB_LIST ~= nil then
+            SEND_MAIL_TAB_LIST[3] = nil -- MailEditBox
+            SEND_MAIL_TAB_LIST[4] = nil -- SendMailMoneyGold
+            SEND_MAIL_TAB_LIST[5] = nil -- SendMailMoneyCopper
+        end
     end
     -- Runs every show: Blizzard's OnShow calls SetFocus(), steal it back
     SendMailNameEditBox:ClearFocus()
@@ -94,7 +144,7 @@ end
 local function getFirstEmptySlot()
     for i = 1, ATTACHMENTS_MAX_SEND do
         if not HasSendMailItem(i) then
-            local slot = SendMailFrame.SendMailAttachments[i]
+            local slot = getAttachmentSlot(i)
             -- Slot may not exist yet if Blizzard creates them lazily
             if slot then
                 return slot
@@ -139,7 +189,7 @@ function module.renderSend(builder, screen)
     local emitted = 0
     for i = 1, ATTACHMENTS_MAX_SEND do
         if HasSendMailItem(i) then
-            local slot = SendMailFrame.SendMailAttachments[i]
+            local slot = getAttachmentSlot(i)
             if slot then
                 local index = i
                 builder:addItem(

@@ -31,6 +31,8 @@ The examples on this page use the plain place names of WowNav. Classic routes re
 
 Press F10 to open the navigation window. Press Escape to close it. On a controller, hold both shoulder buttons and press D-pad up (see [Controller](../controller.md)). If the game cannot tell WowVision where you are (for example inside an instance on Retail), the window stays empty.
 
+Pressing F10 while you are in the quest log opens the window aimed at that quest's next target, the same place the Scanner's Enter on the quest leads to: the nearest target of its first unfinished objective, or its turn-in once it is complete. That target heads the destination list and is selected, so Enter starts the route. The quest is the one your cursor is on in the log, or else the one whose details are open. A quest with nowhere to go, or a place without route data, opens the window as usual.
+
 The window has four stops. Move between them with Tab and Shift+Tab, and move inside a list with Up and Down. See [Interface](../basics/interface.md) for the general keys.
 
 | Stop | What it is |

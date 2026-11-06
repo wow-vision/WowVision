@@ -34,7 +34,28 @@ local function ensureTree(screen)
     end
     module._expanded = screen.state.expanded
     screen._tree = module:buildTree()
+    -- opened from the quest log: the path to that quest unfolds and the
+    -- scanner lands on it
+    local questId = module.focusQuest
+    module.focusQuest = nil
+    local quests = WowVision.base.quests
+    if questId ~= nil and quests ~= nil and quests.scannerQuestPath ~= nil then
+        local key = "scanner"
+        for _, part in ipairs(quests:scannerQuestPath(questId)) do
+            key = key .. "/" .. part
+            screen.state.expanded[key] = true
+        end
+        screen.state.expanded[key] = nil
+        screen.state.nextSuggestedMove = ControlId.structural(key)
+    end
     return screen._tree
+end
+
+-- F9. From the quest log the scanner lands on the quest the log is on.
+function module:openFromKey()
+    local quests = WowVision.base.quests
+    self.focusQuest = quests ~= nil and quests.safeLogQuest ~= nil and quests:safeLogQuest() or nil
+    WowVision.UIHost:openWindow(WINDOW)
 end
 
 local function resolveChildren(node)
@@ -68,7 +89,7 @@ local function beaconTo(node)
     end
     WowVision.UIHost:closeWindow(WINDOW)
     if m.openNavigationTo ~= nil then
-        m:openNavigationTo(node.x, node.y, node.label, node.onArrive, node.routeData)
+        m:openNavigationTo(node.x, node.y, node.label, node.onArrive, node.routeData, node.match)
     else
         m:beaconTo(node.x, node.y, node.label, node.onArrive)
     end
@@ -217,5 +238,5 @@ module:registerBinding({
     key = "scanner/open",
     label = L["Scanner"],
     inputs = { "F9" },
-    script = "/run WowVision.UIHost:openWindow('scanner')",
+    script = "/run WowVision.base.scanner:openFromKey()",
 })

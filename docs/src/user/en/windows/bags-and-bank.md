@@ -156,7 +156,7 @@ The modern bank is one window that shows the character bank, and the Warband (ac
 
 1. Bank Tabs: a row with the tabs. These are the bank type tabs (character and Warband bank, named by the game), the page tabs on WoW: Forever, the side tabs for each bank tab on Retail (Enter selects, Backspace opens its settings on Retail), and the purchase tab. The current one says "selected".
 2. One stop per bank tab: its slots, named by the tab's name. On WoW: Forever all purchased tabs of the current bank type are shown at once, on pages.
-3. Bank Bag Slots (WoW: Forever): a row with the bank bag slot buttons, which can be picked up with the Drag key.
+3. Bank Bag Slots (WoW: Forever): a row with the bank bag slot buttons, which can be picked up with the Drag key. A slot you have not bought reads Purchasable Bag Slot and the price. Press Enter on it to buy, and the game asks you to confirm. The game sells the next slot in line, whichever unbought slot you press Enter on.
 4. Search: a text box.
 5. Bank Controls: Sort Bank, Money (in the Warband bank this is the deposited gold, with the game's deposit and withdraw buttons), and the price and purchase button for the next tab or bag.
 

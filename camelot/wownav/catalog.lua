@@ -209,6 +209,7 @@ local function listRow(N, item, german)
     return {
         id = "wownav:" .. tostring(item.catalogKey), n = text.targetName(item, german), detail = detail,
         x = item.x, y = item.y, z = item.z, levels = item.levels, tid = item.id, kind = item.kind,
+        creatureEntry = item.entry,
         nameEn = item.nameEn, zoneId = item.zoneId, surface = item.surface, resolution = item.layerResolution,
         layer = type(item.providerId) == "string" and item.providerId:find("^package_dyn_") and "dyn" or "logical",
         -- approx: a position that is itself an estimate (a compact row's p, a dyn row's approximate: Zephras Isle)
@@ -322,6 +323,40 @@ function catalog.creatureRow(N, C, map, creatureId, x, y, radius)
         return nil
     end
     return row
+end
+
+-- How far the catalogue's target may lie from the position another source gives for it (a quest database's spawn,
+-- the game's own map pin) and still be the same one.
+catalog.MATCH_RADIUS = 60
+
+-- The catalogue's row for a target another source names (the scanner's quest NPCs and objects): match is
+-- { kind, id, name }. First the same creature (an NPC's ID), else a target of the same name (either language), the
+-- nearest to x, y within radius (catalog.MATCH_RADIUS) that a route can reach. Its row brings the height and the
+-- resolution the bare position lacks. Nil without one.
+function catalog.matchRow(N, C, map, match, x, y, radius)
+    if type(match) ~= "table" or x == nil or y == nil then
+        return nil
+    end
+    radius = radius or catalog.MATCH_RADIUS
+    if match.kind == "npc" and match.id ~= nil then
+        local row = catalog.creatureRow(N, C, map, match.id, x, y, radius)
+        if row ~= nil then
+            return row
+        end
+    end
+    local name = type(match.name) == "string" and match.name:match("^%s*(.-)%s*$") or ""
+    if name == "" then
+        return nil
+    end
+    local wanted = lower(name)
+    local rows = catalog.search(N, C, map, name, x, y, { limit = 10, showAuto = false })
+    for _, row in ipairs(rows) do
+        if row.distance ~= nil and row.distance <= radius
+            and ((row.n ~= nil and lower(row.n) == wanted) or (row.nameEn ~= nil and lower(row.nameEn) == wanted)) then
+            return row
+        end
+    end
+    return nil
 end
 
 -- The automatic waypoints near a position (his NODE_SELECTION_RADIUS list): the network's own waypoints of the zones
