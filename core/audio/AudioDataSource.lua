@@ -8,12 +8,18 @@ function AudioDataSource:getValue()
     return WowVision.DataSource.getValue(self)
 end
 
+-- The game sound channel WowVision's sounds play on: the UI module's setting.
+function WowVision.audio.channel()
+    local ui = WowVision.base.ui
+    return ui and ui.settings and ui.settings.soundChannel or "SFX"
+end
+
 function AudioDataSource:play(channel)
     local path = self:getValue()
     if not path then
         return nil
     end
-    local channel = channel or "SFX"
+    local channel = channel or WowVision.audio.channel()
     return PlaySoundFile(path, channel)
 end
 

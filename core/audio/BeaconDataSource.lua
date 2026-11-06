@@ -31,7 +31,7 @@ end
 
 function BeaconDataSource:play(angle, distance, channel)
     local path = self:getFile(angle, distance)
-    return PlaySoundFile(path, channel or "SFX")
+    return PlaySoundFile(path, channel or WowVision.audio.channel())
 end
 
 -- Preview plays a sample so users can hear the beacon (angle 0 = facing it)

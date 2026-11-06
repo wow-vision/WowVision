@@ -200,6 +200,19 @@ function Beacon:initialize(info)
             return self.beacon
         end,
     })
+    -- Base volume of the beacon, independent of every other WowVision sound.
+    -- The beacon files come in 30 loudness levels; less than 100 moves the
+    -- ping that many tenths toward the quiet end (as Sku's beacon volume
+    -- does), 0 mutes it.
+    self:addParameter({
+        key = "volume",
+        type = "Number",
+        label = L["Beacon Volume"],
+        default = 100,
+        min = 0,
+        max = 100,
+        step = 10,
+    })
 end
 
 function Beacon:onFire(message)
@@ -216,7 +229,11 @@ function Beacon:onFire(message)
     end
     -- The file's distance index is a compressed proximity bucket (~6 yards per
     -- step), not raw yards, so the beacon stays audible out to a long range.
-    local fileDistance = floor((message.distance + 5) / 6)
+    local volume = self.parameters:getFieldValue("volume") or 100
+    if volume <= 0 then
+        return
+    end
+    local fileDistance = floor((message.distance + 5) / 6) + floor((100 - volume) / 10)
     if fileDistance < 1 then
         fileDistance = 1
     end
