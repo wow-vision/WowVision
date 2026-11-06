@@ -12,7 +12,9 @@
 -- line; Auto Route routes to the one the shortest walk reaches, of the AUTO_CANDIDATES nearest. It needs the visited
 -- waypoints switched on: they are what the chain skips. The chain belongs to the destinations it picked: another
 -- destination picked, or Shift-F12, and the arrival that would continue it never comes (a replaced route never
--- arrives); Ctrl-Shift-N restarts a leg and keeps the chain.
+-- arrives); Ctrl-Shift-N restarts a leg and keeps the chain. Ctrl-W and Ctrl-S step through the chain like through a
+-- route: past the end of a leg (a direct point is a leg of one point) the next spot -- one led to before, or the
+-- nearest one the chain has not led to yet -- and before its start the spot before.
 local store = WowVision.visitedStore
 local maps = WowVision.base.navigation.maps
 
@@ -116,8 +118,21 @@ end
 -- How many of the nearest unvisited ones Auto Route measures by the walk (a route engine plans one route each).
 local AUTO_CANDIDATES = 8
 
--- The running chain: { mode = "direct" | "route", targets = { [wp] = true } }, the destinations it led to last.
+-- The running chain: { mode = "direct" | "route", targets = { [wp] = true } (the destinations the leg it leads may
+-- end at), history = { wp, ... } (the spots it led to, in order), index (the current one), seen = { [key] = true }
+-- (every spot it led to: a skipped one is not visited and would come back) }.
 module.auto = nil
+
+-- wp becomes the chain's current spot, after the one it is at (what came after that is dropped).
+local function setCurrent(auto, wp)
+    for i = #auto.history, auto.index + 1, -1 do
+        auto.history[i] = nil
+    end
+    tinsert(auto.history, wp)
+    auto.index = #auto.history
+    auto.seen[keyOf(wp)] = true
+    auto.targets = { [wp] = true }
+end
 
 local function autoAllowed(self)
     if self:getEnabled() then
@@ -132,7 +147,9 @@ function module:startAuto(wp, mode)
     if not autoAllowed(self) then
         return false
     end
-    self.auto = { mode = mode, targets = { [wp] = true } }
+    local auto = { mode = mode, history = {}, index = 0, seen = {} }
+    setCurrent(auto, wp)
+    self.auto = auto
     WowVision:speak(mode == "route" and L["Auto Route"] or L["Auto Direct"])
     return maps:goToDestination(wp, mode == "direct")
 end
@@ -144,21 +161,27 @@ function module:continueAuto(wp)
     if auto == nil or not auto.targets[wp] then
         return
     end
-    self.auto = nil
+    auto.targets = {}
     if not autoAllowed(self) then
+        self.auto = nil
         return
     end
     C_Timer.After(0, function()
-        self:autoNext(auto.mode, wp)
+        if self.auto == auto then
+            self:autoStep(auto, wp, 1)
+        end
     end)
 end
 
--- The next leg of a chain after `last`: the nearest unvisited one of its name, or the end of the chain.
-function module:autoNext(mode, last)
+-- The next leg of a chain after `last`: the nearest unvisited one of its name it has not led to, or the end of the
+-- chain (said; the leg it leads stays).
+function module:autoNext(auto, last)
+    local mode = auto.mode
     local direct = mode == "direct"
     local lastKey = keyOf(last)
     local function skip(wp)
-        return keyOf(wp) == lastKey or self:isVisited(wp)
+        local key = keyOf(wp)
+        return key == lastKey or auto.seen[key] or self:isVisited(wp)
     end
     local found = maps:destinationsNamed(last.n, direct)
     local candidates
@@ -176,21 +199,48 @@ function module:autoNext(mode, last)
         return false
     end
     if direct then
-        local wp = candidates[1].waypoint
-        self.auto = { mode = mode, targets = { [wp] = true } }
-        return maps:goToDestination(wp, true)
+        setCurrent(auto, candidates[1].waypoint)
+        return maps:goToDestination(candidates[1].waypoint, true)
     end
     -- the walk decides which one, perhaps later (a route engine plans in the background): every candidate may be it
-    local auto = { mode = mode, targets = {} }
+    auto.targets = {}
     for _, candidate in ipairs(candidates) do
         auto.targets[candidate.waypoint] = true
     end
-    self.auto = auto
     return maps:routeToNearestWalk(candidates, function(wp)
         if self.auto == auto then
-            auto.targets = { [wp] = true }
+            setCurrent(auto, wp)
         end
     end)
+end
+
+-- Ctrl-W / Ctrl-S past the ends of the leg a chain leads (maps:stepWaypoint): the spot after (one led to before, or
+-- the next of the chain) or before. False when no chain leads the way: the step says the route's end as before.
+function module:stepAuto(offset)
+    local auto = self.auto
+    local current = maps.lastDestination
+    if auto == nil or current == nil or not auto.targets[current] then
+        return false
+    end
+    self:autoStep(auto, current, offset)
+    return true
+end
+
+-- One spot on in the chain from `current` (offset 1, an arrival or Ctrl-W) or back (-1): the one led to before
+-- (after a step back), else the next of the chain.
+function module:autoStep(auto, current, offset)
+    local step = offset > 0 and 1 or -1
+    local wp = auto.history[auto.index + step]
+    if wp == nil and step < 0 then
+        WowVision:speak(L["Start of route"])
+        return false
+    end
+    if wp == nil then
+        return self:autoNext(auto, current)
+    end
+    auto.index = auto.index + step
+    auto.targets = { [wp] = true }
+    return maps:goToDestination(wp, auto.mode == "direct")
 end
 
 module:registerBinding({

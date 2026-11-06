@@ -813,6 +813,11 @@ function module:stepWaypoint(offset)
     local waypoint = self.path:moveBy(offset)
     self.stepping = false
     if waypoint == nil then
+        -- past the ends of an auto chain's leg: its next or previous spot (navigation/visited.lua)
+        local visited = WowVision.base.navigation.visited
+        if visited ~= nil and visited:stepAuto(offset) then
+            return true
+        end
         WowVision:speak(offset > 0 and L["End of route"] or L["Start of route"])
         return false
     end

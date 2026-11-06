@@ -228,6 +228,8 @@ Auto mode does that chaining for you. In the navigation window, press Shift+F10 
 
 You hear "Auto Direct" or "Auto Route" when it starts, then the usual words of each beacon or route. The chain ends when every spawn is visited (you hear "No unvisited" and the name), when you pick another destination, or when you stop the guidance with Shift+F12. Ctrl+Shift+N starts the current leg again and keeps the chain.
 
+Ctrl+W and Ctrl+S step through the chain the way they step through a route. Past the end of the current leg, Ctrl+W goes to the next spawn: with Auto Direct at once, since a straight beacon has only one point, with Auto Route after the route's last waypoint. It skips a spawn you cannot reach or that is empty, and the chain does not offer it again. Ctrl+S before the start of a leg goes back to the spawn before. After stepping back, the chain goes on through the spawns it already led to, then to new ones. Before the first one you hear Start of route.
+
 Auto mode needs visited places switched on, because they are what it skips. With the Visited Waypoints module off, both entries only say "Auto mode needs Visited Waypoints switched on".
 
 ## Straight beacons and the /beacon command

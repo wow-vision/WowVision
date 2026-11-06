@@ -230,6 +230,8 @@ Der Automatikmodus übernimmt diese Kette für dich. Drücke im Navigationsfenst
 
 Beim Start hörst du "Automatisch direkt" oder "Automatisch routen", danach die üblichen Ansagen jedes Signals und jeder Route. Die Kette endet, wenn jeder Spawn besucht ist (du hörst "Kein unbesuchtes Ziel" und den Namen), wenn du ein anderes Ziel wählst oder wenn du die Führung mit Umschalt+F12 beendest. Strg+Umschalt+N startet das aktuelle Stück neu und behält die Kette.
 
+Strg+W und Strg+S gehen durch die Kette, so wie sie durch eine Route gehen. Hinter dem Ende des aktuellen Stücks geht Strg+W zum nächsten Spawn: bei Automatisch direkt sofort, weil ein gerades Signal nur einen Punkt hat, bei Automatisch routen nach dem letzten Wegpunkt der Route. So überspringst du einen Spawn, den du nicht erreichst oder der leer ist, und die Kette bietet ihn nicht wieder an. Strg+S vor dem Anfang eines Stücks geht zum Spawn davor zurück. Nach einem Schritt zurück geht die Kette erst durch die Spawns, zu denen sie schon geführt hat, dann zu neuen. Vor dem ersten hörst du Anfang der Route.
+
 Der Automatikmodus braucht die besuchten Orte, denn die überspringt er. Ist das Modul Besuchte Wegpunkte aus, sagen beide Einträge nur "Der Automatikmodus braucht die besuchten Wegpunkte, schalte sie ein".
 
 ## Gerade Signale und der Befehl /beacon
