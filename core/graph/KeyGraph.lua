@@ -583,6 +583,82 @@ function KeyGraph:listNodes(node)
     return list
 end
 
+-- The first node of the row a node sits in.
+function KeyGraph:rowHead(node)
+    local head, seen = node, { [node] = true }
+    while head.transitions.left ~= nil do
+        local dest = self.current:nodeAt(head.transitions.left.destination)
+        if dest == nil or seen[dest] then
+            break
+        end
+        seen[dest] = true
+        head = dest
+    end
+    return head
+end
+
+-- A list of rows (a screen with config.rowList: the key bindings, one row per binding): the first node of every
+-- row, top to bottom, and the index of the focused node's row. Rows are joined by their up and down edges.
+function KeyGraph:rowHeads(node)
+    local head = self:rowHead(node)
+    local top, seen = head, { [head] = true }
+    while top.transitions.up ~= nil do
+        local dest = self.current:nodeAt(top.transitions.up.destination)
+        if dest == nil or seen[dest] then
+            break
+        end
+        dest = self:rowHead(dest)
+        if seen[dest] then
+            break
+        end
+        seen[dest] = true
+        top = dest
+    end
+    local heads, current, cur = { top }, nil, top
+    seen = { [top] = true }
+    while cur.transitions.down ~= nil do
+        local dest = self.current:nodeAt(cur.transitions.down.destination)
+        if dest == nil then
+            break
+        end
+        dest = self:rowHead(dest)
+        if seen[dest] then
+            break
+        end
+        seen[dest] = true
+        tinsert(heads, dest)
+        cur = dest
+    end
+    for i, h in ipairs(heads) do
+        if h == head then
+            current = i
+        end
+    end
+    return heads, current
+end
+
+-- Home/end in a list of rows: the first node of the first or last row.
+function KeyGraph:moveToRowEdge(first)
+    local result = { moved = false }
+    if not self:rerender() then
+        return result
+    end
+    local node = self:currentNode()
+    result.from = node
+    result.to = node
+    if node == nil then
+        return result
+    end
+    local heads = self:rowHeads(node)
+    local target = heads[first and 1 or #heads]
+    if target ~= nil and target ~= node then
+        self:_setCurrent(target)
+        result.to = target
+        result.moved = true
+    end
+    return result
+end
+
 -- The text a node is found by: its label announcement (the first one without another kind).
 local function labelOf(node)
     for _, announcement in ipairs(node.vtable ~= nil and node.vtable.announcements or {}) do
@@ -600,9 +676,22 @@ local function labelOf(node)
     return nil
 end
 
+-- What a row is found by in a list of rows: the context it sits in (the binding's name), else its first node's label.
+local function rowLabelOf(head)
+    local parent = head.parent
+    if parent ~= nil and parent.focusable == false then
+        local label = labelOf(parent)
+        if label ~= nil then
+            return label
+        end
+    end
+    return labelOf(head)
+end
+
 -- Focus the entry of the current list that starts with text (cycle: the next one after the focused entry; else the
--- focused entry counts). A move result like move(); found is false when no entry starts with text.
-function KeyGraph:moveToText(text, cycle)
+-- focused entry counts). A move result like move(); found is false when no entry starts with text. rowList: the
+-- screen is a list of rows (config.rowList), searched by row (rowLabelOf), landing on a row's first node.
+function KeyGraph:moveToText(text, cycle, rowList)
     local result = { moved = false, found = false }
     if not self:rerender() then
         return result
@@ -613,12 +702,19 @@ function KeyGraph:moveToText(text, cycle)
     if node == nil then
         return result
     end
-    local list = self:listNodes(node)
-    local labels, current = {}, nil
-    for i, n in ipairs(list) do
-        labels[i] = graph.typeAhead.matchText(labelOf(n))
-        if n == node then
-            current = i
+    local list, labels, current = nil, {}, nil
+    if rowList and not KeyGraph.inTree(node) then
+        list, current = self:rowHeads(node)
+        for i, n in ipairs(list) do
+            labels[i] = graph.typeAhead.matchText(rowLabelOf(n))
+        end
+    else
+        list = self:listNodes(node)
+        for i, n in ipairs(list) do
+            labels[i] = graph.typeAhead.matchText(labelOf(n))
+            if n == node then
+                current = i
+            end
         end
     end
     local index = graph.typeAhead.find(labels, current, text, cycle)

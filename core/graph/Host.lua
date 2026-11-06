@@ -576,7 +576,7 @@ function GraphHost:_typeLetter(letter)
         return
     end
     local text, cycle = graph.typeAhead.feed(self._typeAheadState, letter, GetTime())
-    local move = screen.keyGraph:moveToText(text, cycle)
+    local move = screen.keyGraph:moveToText(text, cycle, screen.config ~= nil and screen.config.rowList == true)
     if move.moved then
         self:_announceMove(screen, move)
     elseif move.found then
@@ -705,6 +705,9 @@ function GraphHost:_jumpEdge(screen, first)
     local move
     if graph.KeyGraph.inTree(node) then
         move = kg:moveToSiblingEdge(first)
+    elseif screen.config ~= nil and screen.config.rowList == true then
+        -- a list of rows (the key bindings): the first or last row, not the ends of this one
+        move = kg:moveToRowEdge(first)
     elseif node.transitions.left ~= nil or node.transitions.right ~= nil then
         move = kg:moveToEdge(first and "left" or "right")
     else
