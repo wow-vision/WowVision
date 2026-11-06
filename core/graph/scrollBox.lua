@@ -65,9 +65,8 @@ end
 --               spoken not-implemented row; emitter errors report and skip
 --               the row instead of killing the render.
 --   placement   function(data, index) -> how focus scrolls this row: a
---               ScrollBoxConstants alignment, false to leave the list where
---               it is (helpers.scrollIntoView still scrolls on demand), or nil
---               for the widget's default.
+--               ScrollBoxConstants alignment, false to never scroll it, or
+--               nil for the widget's default.
 function nodes.scrollBoxList(builder, config)
     local scrollBox = config.scrollBox
     if scrollBox == nil then
@@ -173,9 +172,6 @@ function nodes.scrollBoxList(builder, config)
             onUnfocus = onUnfocus,
             target = target,
             id = id,
-            scrollIntoView = function()
-                scrollBox:ScrollToElementDataIndex(capturedIndex)
-            end,
         }
         if config.templates ~= nil then
             local emitter = config.templates[isTable and data.frameTemplate or nil] or config.defaultTemplate

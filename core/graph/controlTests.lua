@@ -61,7 +61,6 @@ testRunner:addSuite("GraphScrollBox", {
     ["placement aligns focus scrolling, and false leaves the list alone"] = function(t)
         local rows = { { name = "Above" }, { name = "Hazard" } }
         local scrollBox = makeFakeScrollBox(rows)
-        local scrollIntoView = nil
         local builder = Builder:new()
         graph.nodes.scrollBoxList(builder, {
             scrollBox = scrollBox,
@@ -72,9 +71,6 @@ testRunner:addSuite("GraphScrollBox", {
                 return false
             end,
             emit = function(b, data, index, helpers)
-                if index == 2 then
-                    scrollIntoView = helpers.scrollIntoView
-                end
                 b:addItem(helpers.id, {
                     announcements = { { text = data.name } },
                     onFocus = helpers.onFocus,
@@ -91,9 +87,6 @@ testRunner:addSuite("GraphScrollBox", {
         render.order[1].vtable.onFocus()
         t:assertEqual(scrollBox.scrolledTo, 1)
         t:assertEqual(scrollBox.scrolledAlignment, 1)
-
-        scrollIntoView()
-        t:assertEqual(scrollBox.scrolledTo, 2)
     end,
 
     ["focus scrolls and the click target resolves the materialized frame"] = function(t)

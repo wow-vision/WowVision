@@ -300,9 +300,17 @@ end
 -- newer scroll bar cannot be scrolled securely (its arrows act on mouse down,
 -- which a secure click does not fire), so the list steers around these rows:
 -- rows above them scroll to the bottom of the view and rows below to the top,
--- so a Discord row never comes into view beside them. Focus on a Discord row
--- does not scroll at all; the first Enter does, on request, and the second
--- acts on the row. Lists without Discord rows are untouched.
+-- so a Discord row never comes into view beside them, and nothing ever
+-- scrolls to one. A row built that way could not be used anyway: its setup
+-- also assigns the button's click script, which then runs tainted and is
+-- refused. Typing in the real search box is clean only until we first scroll
+-- this list: our scroll taints the list's own scroll state, which every later
+-- rebuild reads, until a reload. So searching for Discord right after a
+-- reload builds these rows securely, on screen with no scrolling, and they
+-- work there. After a scroll even that search logs the error, and a blocked
+-- check leaves the caption reading Sign In whatever the real state is. Enter
+-- on a row with no frame says what to do. Lists without Discord rows are
+-- untouched.
 local function isDiscordRow(elementData)
     return isDiscordAuth(elementData) or isDiscordAuth(elementData.parentInitializer)
 end
@@ -320,24 +328,20 @@ local function discordRange(scrollBox)
     return first, last
 end
 
-local function revealRow(helpers)
-    helpers.scrollIntoView()
-    WowVision:speak(L["Press Enter again"])
+local function speakDiscordHint()
+    WowVision:speak(L["Reload, then search settings for Discord, to use this"])
 end
 
--- What Enter clicks on a Discord row with no frame yet: the secure click
--- needs a frame, and the host re-engages it on the real one once it exists.
-local revealButton = nil
-local function revealTarget(helpers)
-    if revealButton == nil then
-        revealButton = CreateFrame("Button", "WowVisionSettingsRowReveal", UIParent)
-        revealButton:Hide()
-        revealButton:SetScript("OnClick", function(self)
-            revealRow(self.helpers)
-        end)
+-- What Enter clicks on a Discord row with no frame: the secure click needs a
+-- frame.
+local hintButton = nil
+local function discordHintTarget()
+    if hintButton == nil then
+        hintButton = CreateFrame("Button", "WowVisionSettingsDiscordHint", UIParent)
+        hintButton:Hide()
+        hintButton:SetScript("OnClick", speakDiscordHint)
     end
-    revealButton.helpers = helpers
-    return revealButton
+    return hintButton
 end
 
 -- Whether a row is enabled, per Blizzard's own rule (SettingsControlMixin:
@@ -474,7 +478,7 @@ local function rowButtonNode(elementData, helpers, label, childKey, tooltip)
     if isDiscordRow(elementData) then
         local resolve = target
         target = function()
-            return resolve() or revealTarget(helpers)
+            return resolve() or discordHintTarget()
         end
     end
     return {
@@ -572,7 +576,7 @@ local function dropdownNode(elementData, helpers, label, setting, options, extra
         local activate = vtable.onActivate
         vtable.onActivate = function(...)
             if helpers.target() == nil then
-                revealRow(helpers)
+                speakDiscordHint()
                 return
             end
             return activate(...)
