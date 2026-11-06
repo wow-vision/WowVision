@@ -4,7 +4,8 @@ local L = module.L
 -- Scanner categories that need nothing but the game: the Player category
 -- holds your corpse while you are a ghost (the map API reports it on the
 -- current map) and the graveyards of the current map, so a corpse run has
--- somewhere to point.
+-- somewhere to point. While you are alive it has nothing to point at, so the
+-- category is left out, like Group without group members.
 
 local function mapPositionNode(key, label, mapId, position)
     if position == nil then
@@ -48,22 +49,19 @@ module:registerProvider({
     key = "player",
     label = L["Player"],
     order = 5,
+    optional = true,
     build = function()
         local out = {}
         local mapId = C_Map.GetBestMapForUnit("player")
-        if mapId == nil then
+        if mapId == nil or not UnitIsDeadOrGhost("player") then
             return out
         end
-        if UnitIsGhost("player") or UnitIsDeadOrGhost("player") then
-            local corpse = C_DeathInfo ~= nil and C_DeathInfo.GetCorpseMapPosition ~= nil
-                    and C_DeathInfo.GetCorpseMapPosition(mapId)
-                or nil
-            local node = mapPositionNode("corpse", L["Corpse"], mapId, corpse)
-            if node ~= nil then
-                tinsert(out, node)
-            end
-        else
-            tinsert(out, { key = "alive", label = L["Not dead"] })
+        local corpse = C_DeathInfo ~= nil and C_DeathInfo.GetCorpseMapPosition ~= nil
+                and C_DeathInfo.GetCorpseMapPosition(mapId)
+            or nil
+        local node = mapPositionNode("corpse", L["Corpse"], mapId, corpse)
+        if node ~= nil then
+            tinsert(out, node)
         end
         local graveyards = C_DeathInfo ~= nil and C_DeathInfo.GetGraveyardsForMap ~= nil
                 and C_DeathInfo.GetGraveyardsForMap(mapId)
