@@ -218,6 +218,17 @@ local suite = {
             :find("diving depth 3.0", 1, true))
     end,
 
+    ["a target without a height on its network point is reached, no unchecked last stretch"] = function(t)
+        t:assertTrue(Route.reachesTarget(nil, 1.5))
+        t:assertTrue(Route.reachesTarget({ quality = "exact" }, 1.5))
+        t:assertTrue(Route.reachesTarget({ quality = "approximate", deltaXY = 0, zUnknown = true }, 1.5),
+            "a quest marker or the current target on Forever: no height, on the network")
+        t:assertFalse(Route.reachesTarget({ quality = "approximate", deltaXY = 4.2, zUnknown = true }, 1.5),
+            "the network ends before the target")
+        t:assertFalse(Route.reachesTarget({ quality = "approximate", deltaXY = 0, normalizedWater = true }, 1.5),
+            "under water the diving stays unchecked")
+    end,
+
     ["his choke fallback switch is read from WowVisionNavigationDB"] = function(t)
         local saved = _G.WowVisionNavigationDB
         _G.WowVisionNavigationDB = nil
