@@ -140,17 +140,36 @@ local function logLine(line)
     end
 end
 
+-- The game events of each frame (at most EVENTS_KEPT) with the ms since the frame before ended: a long frame's line
+-- names them, so a gap between two of them shows what the time went to (no event: an OnUpdate took it).
+local EVENTS_KEPT = 30
 local hitchFrame
+local frameEvents, eventCount, frameStart = {}, 0, nil
 local function watchHitches()
     if hitchFrame ~= nil then
         return
     end
     hitchFrame = CreateFrame("Frame")
+    hitchFrame:RegisterAllEvents()
+    hitchFrame:SetScript("OnEvent", function(_, event)
+        if module.auto == nil or frameStart == nil then
+            return
+        end
+        eventCount = eventCount + 1
+        if eventCount <= EVENTS_KEPT then
+            frameEvents[eventCount] = string.format("%s +%.0f", event, debugprofilestop() - frameStart)
+        end
+    end)
     hitchFrame:SetScript("OnUpdate", function(_, elapsed)
         if module.auto ~= nil and elapsed > HITCH_SECONDS then
             local px, py = UnitPosition("player")
-            logLine(string.format("frame of %.2f s at %.1f %.1f", elapsed, px or 0, py or 0))
+            local shown = math.min(eventCount, EVENTS_KEPT)
+            logLine(string.format("frame of %.2f s at %.1f %.1f, now +%.0f, %d events: %s", elapsed, px or 0, py or 0,
+                frameStart and (debugprofilestop() - frameStart) or 0, eventCount,
+                table.concat(frameEvents, ", ", 1, shown)))
         end
+        frameStart = debugprofilestop()
+        eventCount = 0
     end)
 end
 
