@@ -50,8 +50,6 @@ end
 
 local function renderToyBox(builder)
     local box = ToyBox
-    module.renderSearchAndFilter(builder, "toy", box.searchBox, box.FilterDropdown)
-
     local tracker = box.ProgressTracker
     if tracker ~= nil and tracker:IsShown() then
         builder:beginStop("toyProgress")
@@ -64,6 +62,8 @@ local function renderToyBox(builder)
             })
         )
     end
+
+    module.renderSearchAndFilter(builder, "toy", box.searchBox, box.FilterDropdown)
 
     builder:beginStop("toys")
     builder:pushContext("toys", TOY_BOX)
