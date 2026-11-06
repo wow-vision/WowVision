@@ -537,6 +537,7 @@ testRunner:addSuite("TargetNames", {
         t:assertTrue(store.names.outOfCombat.player.guild)
 
         -- A checkbox write lands in the saved table (by reference).
+        first.names.enabled = true
         first.names.inCombat.mob.level = false
         t:assertFalse(store.names.inCombat.mob.level)
 
