@@ -232,7 +232,9 @@ local function render(builder, screen)
         builder:addItem(ControlId.forObject(dropdown), nodes.proxyDropdown({ target = dropdown }))
     end
 
+    -- A fresh open lands on the crafts (the selected one when the game has one).
     builder:beginStop("crafts")
+    builder:setStartStop("crafts")
     nodes.hybridScrollList(builder, {
         scrollFrame = CraftListScrollFrame,
         key = "crafts",

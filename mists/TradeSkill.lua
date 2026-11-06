@@ -196,7 +196,9 @@ local function render(builder, screen)
         )
     end
 
+    -- A fresh open lands on the recipes (the selected one when the game has one).
     builder:beginStop("recipes")
+    builder:setStartStop("recipes")
     nodes.hybridScrollList(builder, {
         scrollFrame = TradeSkillListScrollFrame,
         key = "recipes",
