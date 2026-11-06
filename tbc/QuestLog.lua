@@ -63,42 +63,6 @@ local function questEntryId(index)
     return ControlId.structural("entry:" .. index)
 end
 
-local function questIdAt(index)
-    local _, _, _, isHeader, _, _, _, questID = GetQuestLogTitle(index)
-    if isHeader or questID == nil or questID == 0 then
-        return nil
-    end
-    return questID
-end
-
--- The details pane shows the selected quest.
-local function selectedQuestId()
-    local index = GetQuestLogSelection()
-    if index == nil or index == 0 then
-        return nil
-    end
-    return questIdAt(index)
-end
-
--- Backspace on a quest, or on the details of the quest shown: the scanner
--- (F9) opens on that quest, to pick a navigation target from it.
-local function showInScanner(questID)
-    if questID ~= nil then
-        WowVision.base.quests:showInScanner(questID)
-    end
-end
-
-local function scannerActions(getQuestId)
-    return {
-        {
-            label = L["Show in Scanner"],
-            onActivate = function()
-                showInScanner(getQuestId())
-            end,
-        },
-    }
-end
-
 local function emitQuestEntry(builder, index, helpers)
     local _, _, _, isHeader, _, _, _, _, _, _, _, _, _, _, _, isHidden = GetQuestLogTitle(index)
     if isHidden then
@@ -133,7 +97,7 @@ local function emitQuestEntry(builder, index, helpers)
         })
     end
 
-    local vtable = {
+    builder:addItem(helpers.id, {
         controlType = graph.controlTypes.button,
         announcements = announcements,
         bindings = {
@@ -143,17 +107,7 @@ local function emitQuestEntry(builder, index, helpers)
         onFocusTick = helpers.onFocusTick,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
-    }
-    if not isHeader then
-        local function questId()
-            return questIdAt(index)
-        end
-        vtable.onSecondary = function()
-            showInScanner(questId())
-        end
-        vtable.contextActions = scannerActions(questId)
-    end
-    builder:addItem(helpers.id, vtable)
+    })
 end
 
 local function contentText(builder, id, region, scrollFrame)
@@ -170,10 +124,6 @@ local function contentText(builder, id, region, scrollFrame)
         end,
     })
     nodes.attachScrollFrame(vtable, scrollFrame, region)
-    vtable.onSecondary = function()
-        showInScanner(selectedQuestId())
-    end
-    vtable.contextActions = scannerActions(selectedQuestId)
     builder:addItem(id, vtable)
 end
 
