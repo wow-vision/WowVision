@@ -228,7 +228,65 @@ local function emit(builder, screen, node, path)
     builder:endGroup()
 end
 
+-- Walks a path of node keys down the tree: the deepest node found, its
+-- structural key, and whether the whole path was found. Every node on the
+-- way below the top is expanded, and the last one too, so its children
+-- read right below it.
+local function expandPath(screen, tree, path)
+    local list, key, found = tree, "scanner", nil
+    for index, step in ipairs(path) do
+        local node = nil
+        for _, candidate in ipairs(list or {}) do
+            if candidate.key == step then
+                node = candidate
+                break
+            end
+        end
+        if node == nil then
+            return found, false
+        end
+        key = key .. "/" .. tostring(step)
+        found = key
+        if node.children == nil then
+            return found, index == #path
+        end
+        screen.state.expanded[key] = true
+        list = resolveChildren(node)
+    end
+    return found, found ~= nil
+end
+
+-- A pending openAt: land on its node. A tree built before the node existed
+-- (the scanner already open) is rebuilt once.
+local function landOnPending(screen)
+    local path = module._pendingPath
+    module._pendingPath = nil
+    local built = screen._tree ~= nil
+    local key, complete = expandPath(screen, ensureTree(screen), path)
+    if not complete and built then
+        screen._tree = nil
+        key, complete = expandPath(screen, ensureTree(screen), path)
+    end
+    if key ~= nil then
+        screen.state.nextSuggestedMove = ControlId.structural(key)
+    end
+    if not complete then
+        WowVision:speak(L["Not in the scanner"])
+    end
+end
+
+-- Opens the scanner on one node, given as the keys from its category down
+-- ({ "quests", "inProgress", "quest:123" }); with the scanner open already,
+-- focus moves there.
+function module:openAt(path)
+    module._pendingPath = path
+    WowVision.UIHost:openWindow(WINDOW)
+end
+
 local function render(builder, screen)
+    if module._pendingPath ~= nil then
+        landOnPending(screen)
+    end
     local tree = ensureTree(screen)
 
     builder:beginStop("tree")

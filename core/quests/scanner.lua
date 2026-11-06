@@ -471,6 +471,15 @@ scanner:registerProvider({
     end,
 })
 
+-- The scanner opened on one log quest under In Progress (the quest log's
+-- Backspace), so its objectives and targets are one step away.
+function quests:showInScanner(questId)
+    if questId == nil or questId == 0 then
+        return
+    end
+    scanner:openAt({ "quests", "inProgress", "quest:" .. questId })
+end
+
 local roleLabels = {
     vendor = L["Vendors"],
     repair = L["Repair"],

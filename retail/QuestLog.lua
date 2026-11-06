@@ -126,6 +126,23 @@ local function emitHeader(builder, kid)
     })
 end
 
+-- Backspace on a quest, or on the details of the quest shown: the scanner
+-- (F9) opens on that quest, to pick a navigation target from it.
+local function showInScanner(questID)
+    WowVision.base.quests:showInScanner(questID)
+end
+
+local function scannerActions(questID)
+    return {
+        {
+            label = L["Show in Scanner"],
+            onActivate = function()
+                showInScanner(questID)
+            end,
+        },
+    }
+end
+
 local function isTracked(questID)
     return questID ~= nil and C_QuestLog.GetQuestWatchType(questID) ~= nil
 end
@@ -175,8 +192,26 @@ local function emitQuest(builder, kid)
         bindings = {
             { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = kid },
         },
+        onSecondary = function()
+            showInScanner(questID)
+        end,
+        contextActions = scannerActions(questID),
         tooltipFrame = kid,
     })
+end
+
+-- The game's own line when the list has no rows: no quests at all, or none
+-- matching the search.
+local function emptyText(scrollFrame)
+    for _, region in ipairs({ scrollFrame.EmptyText, scrollFrame.NoSearchResultsText }) do
+        if region ~= nil and region:IsShown() then
+            local text = region:GetText()
+            if text ~= nil and text ~= "" then
+                return text
+            end
+        end
+    end
+    return nil
 end
 
 local function renderQuestList(builder, questsFrame)
@@ -187,6 +222,10 @@ local function renderQuestList(builder, questsFrame)
     end
 
     builder:pushContext("quests", L["Quests"])
+    local empty = emptyText(scrollFrame)
+    if empty ~= nil then
+        builder:addItem(ControlId.structural("empty"), nodes.text({ label = empty }))
+    end
     for _, kid in ipairs(visibleRowsByLayout(scrollChild)) do
         if kid.CollapseButton ~= nil then
             emitHeader(builder, kid)
@@ -200,7 +239,7 @@ local function renderQuestList(builder, questsFrame)
     builder:popContext()
 end
 
-local function contentText(builder, id, region, scrollFrame, live)
+local function contentText(builder, id, region, scrollFrame, live, questID)
     if region == nil or not region:IsShown() then
         return
     end
@@ -215,6 +254,12 @@ local function contentText(builder, id, region, scrollFrame, live)
         live = live,
     })
     nodes.attachScrollFrame(vtable, scrollFrame, region)
+    if questID ~= nil then
+        vtable.onSecondary = function()
+            showInScanner(questID)
+        end
+        vtable.contextActions = scannerActions(questID)
+    end
     builder:addItem(id, vtable)
 end
 
@@ -231,19 +276,20 @@ local function renderDetails(builder, detailsFrame)
         return
     end
     local scrollFrame = detailsFrame.ScrollFrame
+    local questID = detailsFrame.questID
 
     builder:beginStop()
     builder:pushContext("details", L["Details"])
-    contentText(builder, ControlId.structural("title"), QuestInfoTitleHeader, scrollFrame)
-    contentText(builder, ControlId.structural("description"), QuestInfoDescriptionText, scrollFrame)
-    contentText(builder, ControlId.structural("objectivesText"), QuestInfoObjectivesText, scrollFrame)
+    contentText(builder, ControlId.structural("title"), QuestInfoTitleHeader, scrollFrame, nil, questID)
+    contentText(builder, ControlId.structural("description"), QuestInfoDescriptionText, scrollFrame, nil, questID)
+    contentText(builder, ControlId.structural("objectivesText"), QuestInfoObjectivesText, scrollFrame, nil, questID)
 
     local objectives = QuestInfoObjectivesFrame
     if objectives ~= nil and objectives.Objectives ~= nil then
         for i, objective in ipairs(objectives.Objectives) do
             if objective:IsShown() then
                 -- Live: objectives rewrite in place as progress happens.
-                contentText(builder, ControlId.structural("objective:" .. i), objective, scrollFrame, "focus")
+                contentText(builder, ControlId.structural("objective:" .. i), objective, scrollFrame, "focus", questID)
             end
         end
     end
@@ -254,7 +300,7 @@ local function renderDetails(builder, detailsFrame)
     -- buttons here; picking a reward only happens at actual turn-in.
     local rewardsFrame = detailsFrame.RewardsFrameContainer ~= nil and detailsFrame.RewardsFrameContainer.RewardsFrame or nil
     if rewardsFrame ~= nil then
-        contentText(builder, ControlId.structural("rewards"), rewardsFrame.Label, scrollFrame)
+        contentText(builder, ControlId.structural("rewards"), rewardsFrame.Label, scrollFrame, nil, questID)
     end
     builder:popContext()
 

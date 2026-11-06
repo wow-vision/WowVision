@@ -45,6 +45,42 @@ local function questEntryId(index)
     return ControlId.structural("entry:" .. index)
 end
 
+local function questIdAt(index)
+    local _, _, _, isHeader, _, _, _, questID = GetQuestLogTitle(index)
+    if isHeader or questID == nil or questID == 0 then
+        return nil
+    end
+    return questID
+end
+
+-- The details pane shows the selected quest.
+local function selectedQuestId()
+    local index = GetQuestLogSelection()
+    if index == nil or index == 0 then
+        return nil
+    end
+    return questIdAt(index)
+end
+
+-- Backspace on a quest, or on the details of the quest shown: the scanner
+-- (F9) opens on that quest, to pick a navigation target from it.
+local function showInScanner(questID)
+    if questID ~= nil then
+        WowVision.base.quests:showInScanner(questID)
+    end
+end
+
+local function scannerActions(getQuestId)
+    return {
+        {
+            label = L["Show in Scanner"],
+            onActivate = function()
+                showInScanner(getQuestId())
+            end,
+        },
+    }
+end
+
 local function emitQuestEntry(builder, index, helpers)
     local _, _, _, isHeader, isCollapsed, _, _, _, _, _, _, _, _, _, _, isHidden = GetQuestLogTitle(index)
     if isHidden then
@@ -81,7 +117,7 @@ local function emitQuestEntry(builder, index, helpers)
         })
     end
 
-    builder:addItem(helpers.id, {
+    local vtable = {
         controlType = graph.controlTypes.button,
         announcements = announcements,
         bindings = {
@@ -91,7 +127,17 @@ local function emitQuestEntry(builder, index, helpers)
         onFocusTick = helpers.onFocusTick,
         onUnfocus = helpers.onUnfocus,
         tooltipFrame = helpers.target,
-    })
+    }
+    if not isHeader then
+        local function questId()
+            return questIdAt(index)
+        end
+        vtable.onSecondary = function()
+            showInScanner(questId())
+        end
+        vtable.contextActions = scannerActions(questId)
+    end
+    builder:addItem(helpers.id, vtable)
 end
 
 local function contentText(builder, id, region, scrollFrame, live)
@@ -109,6 +155,10 @@ local function contentText(builder, id, region, scrollFrame, live)
         live = live,
     })
     nodes.attachScrollFrame(vtable, scrollFrame, region)
+    vtable.onSecondary = function()
+        showInScanner(selectedQuestId())
+    end
+    vtable.contextActions = scannerActions(selectedQuestId)
     builder:addItem(id, vtable)
 end
 
@@ -153,16 +203,27 @@ local function render(builder, screen)
     builder:pushContext("questLog", L["Quest Log"])
 
     builder:beginStop("quests")
-    nodes.hybridScrollList(builder, {
-        scrollFrame = QuestLogListScrollFrame,
-        key = "quests",
-        label = L["Quests"],
-        count = function()
-            return (GetNumQuestLogEntries())
-        end,
-        id = questEntryId,
-        emit = emitQuestEntry,
-    })
+    -- An empty log reads the game's own line for it instead of a bare Empty.
+    if QuestLogNoQuestsText ~= nil and QuestLogNoQuestsText:IsVisible() then
+        builder:pushContext("quests", L["Quests"])
+        builder:addItem(ControlId.structural("quests:empty"), nodes.text({
+            label = function()
+                return QuestLogNoQuestsText:GetText()
+            end,
+        }))
+        builder:popContext()
+    else
+        nodes.hybridScrollList(builder, {
+            scrollFrame = QuestLogListScrollFrame,
+            key = "quests",
+            label = L["Quests"],
+            count = function()
+                return (GetNumQuestLogEntries())
+            end,
+            id = questEntryId,
+            emit = emitQuestEntry,
+        })
+    end
 
     renderDetails(builder)
 
