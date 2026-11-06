@@ -1,11 +1,8 @@
--- Forever's sound options have three volume sliders more than the classic
--- clients: gameplay sound effects, pings and combat warnings. WowVision's
--- sounds may play on any of them. The default is the ping channel: a blind
--- player gains little from the ping sounds, so its slider is free to be
--- WowVision's own volume.
+-- Forever's sound options have a gameplay sound effects slider the classic
+-- clients lack (Blizzard's cooldown alerts play on "Gameplay SFX"), and
+-- WowVision's sounds play there by default: its own volume, apart from the
+-- general sound effects. The ping and combat warning sliders have no channel
+-- name an addon can play on (tested 2026-11-06: every name played).
 local L = WowVision:getLocale()
-local channels = WowVision.audio.channels
-tinsert(channels, { label = L["Gameplay Sound Effects"], value = "Gameplay SFX" })
-tinsert(channels, { label = L["Ping Sounds"], value = "Ping" })
-tinsert(channels, { label = L["Combat Warnings"], value = "Encounter Warnings" })
-WowVision.audio.defaultChannel = "Ping"
+tinsert(WowVision.audio.channels, { label = L["Gameplay Sound Effects"], value = "Gameplay SFX" })
+WowVision.audio.defaultChannel = "Gameplay SFX"
