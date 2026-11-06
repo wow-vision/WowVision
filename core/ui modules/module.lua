@@ -24,20 +24,18 @@ settings:add({
 -- The game sound channel every WowVision sound and beacon plays on
 -- (core/audio/AudioDataSource.lua): its volume is that channel's game slider,
 -- so a channel the player keeps for WowVision alone gives WowVision a volume of
--- its own. "Talking Head" has no slider in the game's sound options.
+-- its own. The list and the default live in WowVision.audio (a version adds
+-- the channels its sound options have a slider for).
 settings:add({
     type = "Choice",
     key = "soundChannel",
     label = L["WowVision Sound Channel"],
-    default = "SFX",
-    choices = {
-        { label = L["Master"], value = "Master" },
-        { label = L["Sound Effects"], value = "SFX" },
-        { label = L["Music"], value = "Music" },
-        { label = L["Ambience"], value = "Ambience" },
-        { label = L["Dialog"], value = "Dialog" },
-        { label = L["Talking Head"], value = "Talking Head" },
-    },
+    default = function()
+        return WowVision.audio.defaultChannel
+    end,
+    choices = function()
+        return WowVision.audio.channels
+    end,
 })
 
 -- Chasing stuck movement keys with testers: prints when windows take, wait
