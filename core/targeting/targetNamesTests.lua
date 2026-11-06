@@ -531,7 +531,7 @@ testRunner:addSuite("TargetNames", {
         local first = Settings:new()
         local store = first:getDefaultDB("global")
         first:setDB({ global = store })
-        t:assertTrue(store.names.enabled)
+        t:assertFalse(store.names.enabled)
         t:assertTrue(store.names.inCombat.mob.level)
         t:assertFalse(store.names.inCombat.player.guild)
         t:assertTrue(store.names.outOfCombat.player.guild)
@@ -557,7 +557,7 @@ testRunner:addSuite("TargetNames", {
         local old = { softTargetLock = "always" }
         local reconciled = WowVision.dbManager:reconcile(defaults, old)
         t:assertEqual(reconciled.softTargetLock, "always")
-        t:assertTrue(reconciled.names.enabled)
+        t:assertFalse(reconciled.names.enabled)
         t:assertTrue(reconciled.names.outOfCombat.npc.title)
 
         -- A partly saved Names table keeps every choice and gains the rest.

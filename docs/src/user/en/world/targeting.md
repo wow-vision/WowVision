@@ -38,7 +38,7 @@ Open Targeting, then Names. Here you decide which facts the target announcement 
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| Configured Target Announcement | On | Speaks the facts you picked below. Off, you hear the unit's full tooltip text instead |
+| Configured Target Announcement | Off | Speaks the facts you picked below. Off, you hear the unit's full tooltip text instead |
 | In Combat | | Opens the choices used while you are in combat |
 | Out of Combat | | Opens the choices used while you are not in combat |
 

@@ -587,7 +587,8 @@ local function questFromFocus()
     if type(key) ~= "string" then
         return nil
     end
-    local questId = key:match("^quest:(%d+)$")
+    -- Any cell of a quest's row: the quest, its checkbox, its objectives.
+    local questId = key:match("^quest:(%d+)$") or key:match("^track:(%d+)$") or key:match("^objective:(%d+):")
     return questId ~= nil and tonumber(questId) or nil
 end
 

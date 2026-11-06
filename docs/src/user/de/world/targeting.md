@@ -40,7 +40,7 @@ Einige Details:
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
-| Konfigurierte Zielansage (Configured Target Announcement) | An | Spricht die Angaben, die du unten auswählst. Ist sie aus, hörst du stattdessen den ganzen Tooltip-Text der Einheit |
+| Konfigurierte Zielansage (Configured Target Announcement) | Aus | Spricht die Angaben, die du unten auswählst. Ist sie aus, hörst du stattdessen den ganzen Tooltip-Text der Einheit |
 | Im Kampf (In Combat) | | Öffnet die Auswahl, die gilt, während du im Kampf bist |
 | Außerhalb des Kampfes (Out of Combat) | | Öffnet die Auswahl, die gilt, während du nicht im Kampf bist |
 

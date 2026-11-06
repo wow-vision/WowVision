@@ -1003,7 +1003,7 @@ function targetNames.settingsDef(api)
             key = "enabled",
             type = "Bool",
             label = L["Configured Target Announcement"],
-            default = true,
+            default = false,
         },
     }
     for _, def in ipairs(stateDefs) do
