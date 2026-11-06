@@ -281,7 +281,36 @@ local function renderSlots(builder, panel)
     end
 end
 
+local function nextTabCostLabel()
+    local bankType = activeBankType()
+    local data = bankType ~= nil and C_Bank ~= nil and C_Bank.FetchNextPurchasableBankTabData ~= nil
+            and C_Bank.FetchNextPurchasableBankTabData(bankType)
+        or nil
+    local cost = data ~= nil and module.coinText(data.tabCost) or nil
+    if cost == nil then
+        return COSTS_LABEL or L["Money"]
+    end
+    return (COSTS_LABEL or "") .. " " .. cost
+end
+
 -- ---- bank bag slots (Forever) ----
+
+-- An unbought slot has no purchase of its own: the game's click on one does
+-- nothing, and the price and the purchase button sit on the frame. So the
+-- slot reads that price and Enter presses that button, which asks the game's
+-- own confirmation. The game only sells the next bag in line, whichever
+-- unbought slot this is.
+local function isUnbought(button)
+    return button.DisabledOverlay ~= nil and button.DisabledOverlay:IsShown()
+end
+
+local function shownPurchaseButton()
+    local button = bankPanel().PurchaseButton
+    if button ~= nil and button:IsShown() then
+        return button
+    end
+    return nil
+end
 
 local function findBagButton(slot)
     local pool = BankFrame.itemButtonBagPool
@@ -296,17 +325,28 @@ local function findBagButton(slot)
     return nil
 end
 
+local function bagClickTarget(slot)
+    local button = findBagButton(slot)
+    if button ~= nil and isUnbought(button) then
+        return shownPurchaseButton() or button
+    end
+    return button
+end
+
 local function bagButtonLabel(button)
+    if isUnbought(button) then
+        local text = button.tooltipText or L["Bag Slot"]
+        if shownPurchaseButton() ~= nil then
+            return text .. ", " .. nextTabCostLabel()
+        end
+        return text
+    end
     local name = nil
-    if button.DisabledOverlay ~= nil and button.DisabledOverlay:IsShown() then
+    if button.GetExactBankTabSlot ~= nil then
+        name = C_Container.GetBagName(button:GetExactBankTabSlot())
+    end
+    if name == nil or name == "" then
         name = button.tooltipText
-    else
-        if button.GetExactBankTabSlot ~= nil then
-            name = C_Container.GetBagName(button:GetExactBankTabSlot())
-        end
-        if name == nil or name == "" then
-            name = button.tooltipText
-        end
     end
     return L["Bag Slot"] .. " " .. (name or L["Empty"])
 end
@@ -327,9 +367,12 @@ local function renderBagSlots(builder)
             ControlId.structural("bank:bagSlot:" .. slot),
             nodes.proxyFoundButton({
                 find = function()
-                    return findBagButton(slot)
+                    return bagClickTarget(slot)
                 end,
-                label = bagButtonLabel,
+                label = function()
+                    local current = findBagButton(slot)
+                    return current ~= nil and bagButtonLabel(current) or nil
+                end,
                 drag = true,
             })
         )
@@ -346,18 +389,6 @@ local function moneyLabel()
         return module.moneyLabel(C_Bank.FetchDepositedMoney(bankType))
     end
     return module.moneyLabel(GetMoney())
-end
-
-local function nextTabCostLabel()
-    local bankType = activeBankType()
-    local data = bankType ~= nil and C_Bank ~= nil and C_Bank.FetchNextPurchasableBankTabData ~= nil
-            and C_Bank.FetchNextPurchasableBankTabData(bankType)
-        or nil
-    local cost = data ~= nil and module.coinText(data.tabCost) or nil
-    if cost == nil then
-        return COSTS_LABEL or L["Money"]
-    end
-    return (COSTS_LABEL or "") .. " " .. cost
 end
 
 local function renderControls(builder, panel)

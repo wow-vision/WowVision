@@ -218,6 +218,17 @@ local suite = {
             :find("diving depth 3.0", 1, true))
     end,
 
+    ["a target without a height on its network point is reached, no unchecked last stretch"] = function(t)
+        t:assertTrue(Route.reachesTarget(nil, 1.5))
+        t:assertTrue(Route.reachesTarget({ quality = "exact" }, 1.5))
+        t:assertTrue(Route.reachesTarget({ quality = "approximate", deltaXY = 0, zUnknown = true }, 1.5),
+            "a quest marker or the current target on Forever: no height, on the network")
+        t:assertFalse(Route.reachesTarget({ quality = "approximate", deltaXY = 4.2, zUnknown = true }, 1.5),
+            "the network ends before the target")
+        t:assertFalse(Route.reachesTarget({ quality = "approximate", deltaXY = 0, normalizedWater = true }, 1.5),
+            "under water the diving stays unchecked")
+    end,
+
     ["his choke fallback switch is read from WowVisionNavigationDB"] = function(t)
         local saved = _G.WowVisionNavigationDB
         _G.WowVisionNavigationDB = nil
@@ -510,6 +521,30 @@ if haveNetwork then
         end
         -- every routed hit is a direct hit too, the direct list reaches no farther
         t:assertTrue(direct[#direct].distance <= routed[#routed].distance)
+    end
+
+    suite["a scanner target is found in the catalogue: by creature, else by name, near its position"] = function(t)
+        setup()
+        local rows = zoneRows(STORMWIND)
+        local innkeeper = rowsWith(rows, "innkeeper")
+        t:assertNotNil(innkeeper, "Stormwind has an innkeeper")
+        t:assertNotNil(innkeeper.creatureEntry, "a creature's row carries its creature ID")
+        -- the quest database's spawn lies a few yards off the catalogue's point
+        local x, y = innkeeper.x + 12, innkeeper.y - 9
+        local byId = catalog.matchRow(N, C, 0, { kind = "npc", id = innkeeper.creatureEntry, name = "someone else" }, x, y)
+        t:assertNotNil(byId, "the same creature near the position")
+        t:assertEqual(byId.id, innkeeper.id)
+        t:assertNotNil(byId.z, "the catalogue's row brings the height")
+        local byName = catalog.matchRow(N, C, 0, { kind = "object", name = "  " .. innkeeper.n:upper() .. " " }, x, y)
+        t:assertNotNil(byName, "the same name near the position, case and spaces aside")
+        t:assertEqual(byName.id, innkeeper.id)
+        local english = catalog.matchRow(N, C, 0, { name = innkeeper.nameEn }, x, y)
+        t:assertEqual(english and english.id, innkeeper.id, "the English name finds it too")
+        t:assertNil(catalog.matchRow(N, C, 0, { name = "No Such Target Anywhere" }, x, y), "an unknown name")
+        t:assertNil(catalog.matchRow(N, C, 0, { name = innkeeper.n }, innkeeper.x + 500, innkeeper.y),
+            "too far from the position: another place")
+        t:assertNil(catalog.matchRow(N, C, 0, nil, x, y))
+        t:assertNil(catalog.matchRow(N, C, 0, { name = "" }, x, y))
     end
 
     suite["F10's entry points: the nearest 50, waypoints beside the player always, farther ones with the setting"] = function(t)

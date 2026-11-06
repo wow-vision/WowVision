@@ -1428,6 +1428,8 @@ loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
 loadAddonFile("core/graph/controlTests.lua")
+loadAddonFile("core/targeting/targetNames.lua")
+loadAddonFile("core/targeting/targetNamesTests.lua")
 
 -- Native quest source and the scanner's quest categories: the adapter and
 -- the provider load against stand-ins for the quest module and the scanner;

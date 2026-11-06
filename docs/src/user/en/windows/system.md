@@ -20,6 +20,8 @@ When another WowVision window is open, Escape closes that window first. The game
 
 Options in the game menu opens the game's settings window. The WowVision reader covers almost all of it: its tabs, the category list, the search box and nearly every kind of setting row. Open it from the game menu.
 
+The Discord rows in the Social category only work from a search made right after a reload. WowVision cannot scroll to them safely, and once it has scrolled the settings list in any category, these rows are unreliable until you reload: they may read Sign In even when you are signed in, and the game refuses them. To use them, type /reload, open the options, Tab to the search box before moving into the settings list, type Discord, and Tab to the list. Enter on one of these rows without searching says "Reload, then search settings for Discord, to use this". Once you are signed in, the game disables the sign-in button, which then reads Disconnect. The game has no way to sign out.
+
 ### The parts of the window
 
 The stops, in order:

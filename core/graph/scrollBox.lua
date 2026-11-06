@@ -64,6 +64,9 @@ end
 --               Missing templates fall to config.defaultTemplate, else to a
 --               spoken not-implemented row; emitter errors report and skip
 --               the row instead of killing the render.
+--   placement   function(data, index) -> how focus scrolls this row: a
+--               ScrollBoxConstants alignment, false to never scroll it, or
+--               nil for the widget's default.
 function nodes.scrollBoxList(builder, config)
     local scrollBox = config.scrollBox
     if scrollBox == nil then
@@ -128,13 +131,19 @@ function nodes.scrollBoxList(builder, config)
             end
             return rowFrame
         end
+        local placement = nil
+        if config.placement ~= nil then
+            placement = config.placement(data, capturedIndex)
+        end
+        local function focusScroll()
+            if placement ~= false then
+                scrollBox:ScrollToElementDataIndex(capturedIndex, placement)
+            end
+        end
+
         -- Scroll first so the row materializes, then hover it: the game shows
         -- its tooltip and highlight for the reader.
-        local onFocus = nodes.attachHover({
-            onFocus = function()
-                scrollBox:ScrollToElementDataIndex(capturedIndex)
-            end,
-        }, target)
+        local onFocus = nodes.attachHover({ onFocus = focusScroll }, target)
         local onUnfocus = onFocus.onUnfocus
         onFocus = onFocus.onFocus
 
@@ -143,7 +152,7 @@ function nodes.scrollBoxList(builder, config)
         -- re-engaging bindings when the frame mapping shifts.
         local onFocusTick = function()
             if target() == nil then
-                scrollBox:ScrollToElementDataIndex(capturedIndex)
+                focusScroll()
             end
         end
 

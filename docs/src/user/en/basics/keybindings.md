@@ -26,11 +26,13 @@ The row is announced by the action's name, then "Bar", then the button you land 
 |---|---|
 | Down / Up | Move to the next or previous action. |
 | Right / Left | Move along the row of keys, Add and so on. |
+| Home / End | Jump to the first or last action. |
+| A letter | Jump to the next action whose name starts with it. |
 | Enter on a key | Removes that key from the action. |
 | Enter on Add | Starts capturing a new key. |
 | Escape | Leaves the screen. |
 
-The actions are listed in the order the addon loaded them: the window navigation keys first, then the other modules. There are many of them and no search, so press Down repeatedly to run through the list. Letter keys only jump along the row you are on, not between actions.
+The actions are listed in the order the addon loaded them: the window navigation keys first, then the other modules. To find one, type the start of its name: S jumps to the next action starting with S, S again to the one after, and S then C quickly finds "Scanner". You land on the action's first key, or on Add when it has none. See [Letter navigation in menus](./interface.md#letter-navigation-in-menus).
 
 An action that has no key shows only Add. These are the actions that are "unbound by default": they exist but are waiting for you to give them a key, for example Toggle All Monitors, Route to Your Target or Announce Distance.
 

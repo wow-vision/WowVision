@@ -683,14 +683,53 @@ end
 -- An active route engine gets the same window: the player picks the entry
 -- point from its network.
 -- data: what the target's source knows for a route engine (the scanner's group members: { unit }).
-function module:openNavigationTo(wx, wy, label, onArrive, data)
+-- match: what the target is, for a route engine that knows it with its height ({ kind, id, name }: the scanner's
+-- NPCs and objects, see module:engineMatch).
+function module:openNavigationTo(wx, wy, label, onArrive, data, match)
     if self:activeRouteEngine() == nil and next(self:currentWaypoints()) == nil then
         self:beaconTo(wx, wy, label, onArrive)
         return false
     end
-    self.pendingTarget = { x = wx, y = wy, label = label, onArrive = onArrive, data = data }
+    self.pendingTarget = { x = wx, y = wy, label = label, onArrive = onArrive, data = data, match = match }
     WowVision.UIHost:openWindow("atlas")
     return true
+end
+
+-- The route engine's own row for a target another source names (pendingTarget with .match): WowNav looks for the
+-- same creature, else a target of that name, near the position, and its row brings the height. Nil without an
+-- engine, a match, or a hit; a group member (data.unit) is followed live and never matched.
+function module:engineMatch(engine, target, map)
+    if engine == nil or engine.matchTarget == nil or target == nil or target.match == nil then
+        return nil
+    end
+    if type(target.data) == "table" and target.data.unit ~= nil then
+        return nil
+    end
+    local ok, row = pcall(engine.matchTarget, engine, target.match, target.x, target.y, map)
+    if not ok then
+        geterrorhandler()(row)
+        return nil
+    end
+    return row
+end
+
+-- F10. From the quest log the window opens aimed at the quest's next target (as the scanner's Enter on that
+-- quest), where there is a network to route through; otherwise as usual.
+function module:openNavigationFromKey()
+    local quests = WowVision.base.quests
+    local questId = quests ~= nil and quests.safeLogQuest ~= nil and quests:safeLogQuest() or nil
+    if questId ~= nil and (self:activeRouteEngine() ~= nil or next(self:currentWaypoints()) ~= nil) then
+        local ok, target = pcall(quests.questNavigationTarget, quests, questId)
+        if not ok then
+            geterrorhandler()(target)
+            target = nil
+        end
+        if target ~= nil then
+            self:openNavigationTo(target.x, target.y, target.label, target.onArrive, nil, target.match)
+            return
+        end
+    end
+    WowVision.UIHost:openWindow("atlas")
 end
 
 -- Map-percentage coordinates ("50.5 30.4") on the current zone map, the

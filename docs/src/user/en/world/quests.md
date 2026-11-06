@@ -58,10 +58,23 @@ In the quest list, Up and Down move between headers and quests. Press Enter on a
 
 (Retail and WoW: Forever.) On these versions the quest log is part of the world map. The key opens a panel beside the map, and WowVision reads that panel.
 
-- The list shows zone headers and quests. A quest reads like "[12] Wolves Across the Border, Green, selected, tracked". A finished quest adds "Complete" after its title ("[12] Wolves Across the Border, Complete, Green"), a failed one "Failed", where the game shows its check mark and "Ready for turn-in" line or its Failed tag. The color word (Grey, Green, Yellow, Orange, Red) is the game's difficulty color for your level, as a sighted player sees it. "selected" and "tracked" are added when they apply. Objective lines in the list are skipped, because the details read the same text.
-- The Details group holds the title, the description, the objectives text, each live objective, and a one-line summary of the rewards.
-- Buttons: abandon, track (it reads Untrack when the quest is tracked), share and the map button. Their captions are the game's own, and the caption is spoken again after you press the button.
-- Choosing a reward does not happen here. That happens when you turn the quest in.
+The panel shows one of two views, as it does on screen: the list, or the details of one quest. The details replace the list.
+
+The list view opens first. Press Tab to move from the quest list to the search box, then the settings, and back to the list.
+
+- The list shows zone headers and quests, under a name that gives your quest count. Press Enter on a header to collapse or expand it. Backspace on a header opens the game's menu with Track All and Untrack All.
+- A quest reads like "[12] Wolves Across the Border, Green, selected, tracked". The color word (Grey, Green, Yellow, Orange, Red) is the game's difficulty color for your level, as a sighted player sees it. "selected" and "tracked" are added when they apply, and a tag such as Elite or Dungeon follows the title. A finished quest adds "Complete" after its title, a failed one "Failed", where the game shows its check mark or its red Failed icon.
+- Press Enter on a quest to open its details. Backspace opens the game's menu for that quest, with Track, Focus, Share and Abandon.
+- Press Right on a quest to reach its Track Quest checkbox. Enter checks or unchecks it. If the game's Show Objectives setting is on, the quest's objectives follow to the right of the checkbox.
+- The search box filters the list as you type. Tab into it to start typing.
+- Settings opens the game's menu, which holds the Show Objectives setting.
+
+The details view opens on the quest's title. Press Tab to move from the text to the rewards, then to the buttons.
+
+- The Details group reads in the game's order: the title, the objectives text, any timer, each live objective, any required money, the group size, and the description.
+- The Rewards group lists everything the quest gives, including items, money and experience. Press Space on an item to read its tooltip. Choosing a reward does not happen here. That happens when you turn the quest in.
+- The buttons are one row, so move along it with Left and Right: Back, abandon, track (it reads Untrack when the quest is tracked), share, and the map button when the quest has one. Their captions are the game's own, and the caption is spoken again after you press the button.
+- Press Enter on Back to return to the list, on the quest you opened. Shift+Tab from the text reaches Back straight away.
 
 ### Classic Era
 
@@ -120,16 +133,6 @@ The alert is the Quest Area Alert in the Quests module. See [Alerts](../basics/a
 | Sound Alert, Enabled | Off | Plays a sound instead of or besides the speech. |
 | Sound Alert, Sound | none | Which sound to play. |
 
-## Quest progress alerts
-
-The game shows quest progress as a message in the middle of the screen. WowVision speaks those messages as the game words them, with three alerts of their own:
-
-- Quest Progress Alert: a count moves, for example "Kobold Vermin slain: 3/8" or "Linen Cloth: 2/6", the last one ("8/8") too. Its sound is glass1.
-- Objective Complete Alert: the game's message naming an objective done, for example "Explore the Mine (Complete)". Its sound is success1.
-- Quest Complete Alert: the game's "Objective Complete." message, which names no objective. Its sound is Tutorial_Success_01.
-
-Each alert has TTS (on) and Sound (on) and can be switched off on its own. They work without Announce Errors, and these messages no longer appear in the Per-Error Filter of the Errors module. See [Alerts](../basics/alerts.md).
-
 ## Finding quests and objectives
 
 The [Scanner](scanner.md) turns quest data into places you can walk to. It is the main way to find quests with WowVision.
@@ -151,7 +154,6 @@ Open the WowVision menu, then Quests. See [Menu and Settings](../basics/menu-and
 | Nearby Level Range | 5 | The Nearby list hides quests that are more than this many levels below your level. From 0 to 60. Set 60 to see every quest, or 0 to see only quests at or above your level. |
 | Include Repeatable Quests | On | Whether repeatable and daily quests appear in the Nearby list. |
 | Quest Area Alert | see above | Announcements when entering or leaving an objective area. |
-| Quest Progress Alert, Objective Complete Alert, Quest Complete Alert | see above | Announcements of quest progress. |
 
 The Nearby list also leaves out quests you cannot take yet, because of your level or a missing prerequisite.
 

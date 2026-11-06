@@ -2,6 +2,8 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="character.lua" />
+  <!-- Forever's mailbox is the Classic one: the send tab comes from classic/. -->
+  <Script file="..\classic\mail.lua" />
   <!-- Questie ships a Forever build over its Classic Era database, and
        the quests module prefers it over the native quest lines (which
        the beta serves empty), so the Questie backend loads here too. -->
