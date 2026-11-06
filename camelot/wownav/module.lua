@@ -875,10 +875,8 @@ function module:onRouteEvent(path, event)
                 self.dockPath = water
                 maps:pathfind(water)
             end
-        elseif result == nil or result.quality == "exact" or (not result.normalizedWater
-            and (result.delta3D or result.deltaXY or 0) <= radius) then
-            -- an approximate result whose network ends at the target is an arrival too: on Forever the game gives no
-            -- height, so a target on its network point resolves "approximate" only for want of one ("0.0 yards")
+        elseif Route.reachesTarget(result, radius) then
+            -- an approximate result whose network ends at the target is an arrival too (Route.reachesTarget)
             say(L["Arrived"] .. (label ~= nil and (" " .. label) or ""))
         elseif result.normalizedWater then
             -- his stop_water_net_ends / stop_net_ends: how far the network ends from the target

@@ -50,6 +50,17 @@ Route.TRANSIT_HEIGHT = 5.0
 -- (his N.START_RADIUS is 3; a step beside the network was "no network here")
 Route.START_RADIUS = 30.0
 
+-- Whether the network reaches the target of a resolution: exact, or approximate with its network ending within the
+-- radius on land. On Forever the game gives no height for a live target (a quest marker, the current target, the
+-- scanner), so a target on its network point resolves "approximate" only for want of one ("0.0 yards"): that end is
+-- checked like an exact one. The last-stretch warning and the arrival text both ask this.
+function Route.reachesTarget(result, radius)
+    if result == nil or result.quality == "exact" then
+        return true
+    end
+    return not result.normalizedWater and (result.delta3D or result.deltaXY or 0) <= radius
+end
+
 -- His chokeFallback setting (WowVisionNavigationDB, written from WowVision's settings by the module): on unless false.
 function Route.chokeFallback()
     return not (type(WowVisionNavigationDB) == "table" and WowVisionNavigationDB.chokeFallback == false)
@@ -752,7 +763,8 @@ function Route:update(x, y)
     -- before an unchecked last stretch the last network point counts only within the target radius
     if not lastActivation and (not beforeLogical or dist <= G.EffectiveRadius(Route.ARRIVAL_TARGET_RADIUS))
         and self:waypointIsReached(x, y, waypointId, previousId, not beforeLogical and afterId or nil) then
-        local careful = beforeLogical and not self.logicalWarned and self.result and self.result.quality ~= "exact"
+        local careful = beforeLogical and not self.logicalWarned and self.result ~= nil
+            and not Route.reachesTarget(self.result, G.EffectiveRadius(Route.ARRIVAL_TARGET_RADIUS))
         if careful then
             self.logicalWarned = true
         end

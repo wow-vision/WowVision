@@ -89,7 +89,14 @@ local function usableSlot(itemButton)
     return not (itemButton.IsExtended ~= nil and itemButton:IsExtended())
 end
 
--- Slots ascending: the list shape reads them in this order.
+local function bagIdOf(itemButton)
+    return itemButton.GetBagID ~= nil and itemButton:GetBagID() or 0
+end
+
+-- Bag by bag, slots ascending within each: the list shape reads them in
+-- this order. A button's GetID is its slot within ITS bag, so the combined
+-- frame (buttons of every bag) sorts by bag first; by slot alone the bags
+-- interleaved (slot 1 of each bag, then slot 2 of each).
 local function usableSlots(buttons)
     local list = {}
     for _, itemButton in ipairs(buttons or {}) do
@@ -98,6 +105,10 @@ local function usableSlots(buttons)
         end
     end
     table.sort(list, function(a, b)
+        local aBag, bBag = bagIdOf(a), bagIdOf(b)
+        if aBag ~= bBag then
+            return aBag < bBag
+        end
         return a:GetID() < b:GetID()
     end)
     return list
