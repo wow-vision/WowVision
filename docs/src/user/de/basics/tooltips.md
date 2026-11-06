@@ -9,10 +9,12 @@ Fast alles in WoW hat einen Tooltip: Gegenstandswerte, Zauberbeschreibungen, Erk
 | Leertaste | Tooltip vorlesen | Liest den ganzen Tooltip des fokussierten Steuerelements vor, von der ersten bis zur letzten Zeile. |
 | Umschalt+Pfeil runter | Nächste Tooltipzeile | Geht zur nächsten Zeile des Tooltips und liest sie vor. |
 | Umschalt+Pfeil hoch | Vorherige Tooltipzeile | Geht zur vorherigen Zeile und liest sie vor. |
+| Strg+Umschalt+Pfeil runter | Nächster Tooltipblock | Springt an den Anfang des nächsten Blocks (ein Gegenstand, den du trägst, siehe [Vergleich mit dem, was du trägst](#vergleich-mit-dem-was-du-trägst)) und liest seine erste Zeile. |
+| Strg+Umschalt+Pfeil hoch | Vorheriger Tooltipblock | Springt an den Anfang des vorherigen Blocks und liest seine erste Zeile. |
 | Umschalt+Pfeil rechts | Tooltip rechts vorlesen | Liest nur die rechte Spalte der aktuellen Zeile vor. |
 | Umschalt+Pfeil links | Tooltip links vorlesen | Liest nur die linke Spalte der aktuellen Zeile vor. |
 
-Alle fünf kannst du im [Tastenbelegungs-Bildschirm](./keybindings.md) ändern. Drücke jederzeit Strg, um die Sprachausgabe zu stoppen, wenn dir ein langer Tooltip zu viel wird.
+Alle sieben kannst du im [Tastenbelegungs-Bildschirm](./keybindings.md) ändern. Drücke jederzeit Strg, um die Sprachausgabe zu stoppen, wenn dir ein langer Tooltip zu viel wird.
 
 ## So funktioniert das Lesen
 
@@ -49,7 +51,7 @@ Zeigt der Tooltip einen Gegenstand, den du anlegen könntest, und trägst du auf
 - Jeder Block beginnt mit der Überschrift des Spiels („Derzeit angelegt“ oder „Angelegt“), dann folgen die Zeilen des Gegenstands, den du trägst.
 - In WoW: Forever und Retail endet der erste Block mit den Werteänderungen: „Wenn Ihr diesen Gegenstand ersetzt, ergeben sich folgende Werteänderungen:“, dann eine Zeile je Wert, zum Beispiel „+12 Ausdauer“. In den Classic-Versionen hörst du, was das Spiel in sein Vergleichsfenster schreibt.
 
-Die Leertaste liest nur den Gegenstand selbst. Drücke Umschalt+Pfeil runter über die letzte Zeile des Gegenstands hinaus, um in den Vergleich zu gehen.
+Die Leertaste liest nur den Gegenstand selbst. Drücke Umschalt+Pfeil runter über die letzte Zeile des Gegenstands hinaus, um in den Vergleich zu gehen, oder Strg+Umschalt+Pfeil runter, um direkt zur Überschrift des nächsten Blocks zu springen; Strg+Umschalt+Pfeil hoch springt einen Block zurück, bis zur ersten Zeile des Gegenstands.
 
 Beispiel: Du stehst in deinen Taschen auf einem Paar Stiefel. Die Leertaste liest die Stiefel. Umschalt+Pfeil runter geht Zeile für Zeile durch die Stiefel, dann „Angelegt“, die Stiefel, die du trägst, und die Werteänderungen.
 
@@ -97,7 +99,7 @@ Nicht jedes Steuerelement hat einen Tooltip. Wo keiner existiert, bleibt die Lee
 
 - Ein Gegenstand, den das Spiel noch nicht geladen hat, kann zunächst einen leeren Tooltip haben. WowVision fragt erneut an, wenn du die Leertaste drückst; bis dahin sind die Informationen meist angekommen. Drücke die Leertaste noch einmal, falls du nichts gehört hast.
 - Die Tooltip-Tasten lesen, was zum fokussierten Steuerelement gehört. Ist kein Fenster offen, gibt es nichts zu lesen.
-- Wenn du auch das Addon Sku benutzt, lässt WowVision die vier Umschalt+Pfeiltasten für den Tooltip unbelegt, damit sich die beiden Addons nicht um sie streiten. Die Leertaste funktioniert weiterhin.
+- Wenn du auch das Addon Sku benutzt, lässt WowVision die Umschalt+Pfeiltasten und Strg+Umschalt+Pfeiltasten für den Tooltip unbelegt, damit sich die beiden Addons nicht um sie streiten. Die Leertaste funktioniert weiterhin.
 
 ## Diagnosebefehl
 

@@ -69,4 +69,29 @@ testRunner:addSuite("TooltipComparison", {
         WowVision.speak = speak
         t:assertEqual(table.concat(spoken, "|"), "Fur Boots|Equipped|Old Boots")
     end,
+
+    ["block keys jump between the item and each equipped item"] = function(t)
+        local lines = { { "" }, { "Leather Belt" }, { "Waist", "Leather" } }
+        comparison.append(lines, "Equipped", { { "Old Belt" }, { "Waist", "Leather" } })
+        comparison.append(lines, "Equipped", { { "Older Belt" } })
+        local tooltip = fakeTooltip(lines)
+        local spoken = {}
+        local speak = WowVision.speak
+        WowVision.speak = function(_, text)
+            tinsert(spoken, text)
+        end
+        tooltip:nextBlock() -- the item, past its blank first line
+        tooltip:nextBlock()
+        tooltip:nextLine() -- into the first equipped item
+        tooltip:nextBlock()
+        tooltip:nextBlock() -- the end: read again
+        tooltip:previousBlock()
+        tooltip:previousBlock()
+        tooltip:previousBlock() -- the start: read again
+        WowVision.speak = speak
+        t:assertEqual(
+            table.concat(spoken, "|"),
+            "Leather Belt|Equipped|Old Belt|Equipped|Equipped|Equipped|Leather Belt|Leather Belt"
+        )
+    end,
 })

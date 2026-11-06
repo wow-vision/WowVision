@@ -301,6 +301,50 @@ function Tooltip:previousLine()
     self:moveLine(-1)
 end
 
+-- Move to the start of the next or previous block (the item, then each
+-- equipped item it is compared with) and speak that line. The item's block
+-- starts at its first non-blank line. At either end the current block's
+-- start is read again.
+function Tooltip:moveBlock(direction)
+    if not self.activeFrame then
+        return
+    end
+    local lines = self:readLines()
+    local starts = {}
+    for index, line in ipairs(lines) do
+        if line.blockStart or (#starts == 0 and not self:isBlank(line)) then
+            tinsert(starts, index)
+        end
+    end
+    if #starts == 0 then
+        return
+    end
+
+    -- The block the current line is in; before any line, none.
+    local current = 0
+    for i, start in ipairs(starts) do
+        if self.currentLine ~= nil and start <= self.currentLine then
+            current = i
+        end
+    end
+    local target = math.max(1, math.min(#starts, current + direction))
+    self.currentLine = starts[target]
+
+    local line = lines[self.currentLine]
+    local text = self.reader:formatLine(line[1], line[2])
+    if WowVision.secrets.hasText(text) then
+        WowVision:speak(text)
+    end
+end
+
+function Tooltip:nextBlock()
+    self:moveBlock(1)
+end
+
+function Tooltip:previousBlock()
+    self:moveBlock(-1)
+end
+
 -- Speak one side (1 left, 2 right) of the current line.
 function Tooltip:speakCurrentSide(side)
     if not self.activeFrame then
@@ -340,13 +384,18 @@ local comparison = {
 
 -- One block after the tooltip lines: the header unless the game's own
 -- first line already says it, then the block lines, all marked compare.
+-- The block's first line is marked blockStart for nextBlock/previousBlock.
 function comparison.append(lines, header, blockLines)
+    local first = #lines + 1
     if header ~= nil and (blockLines[1] == nil or blockLines[1][1] ~= header) then
         tinsert(lines, { header, nil, compare = true })
     end
     for _, line in ipairs(blockLines) do
         line.compare = true
         tinsert(lines, line)
+    end
+    if lines[first] ~= nil then
+        lines[first].blockStart = true
     end
 end
 
