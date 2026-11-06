@@ -123,6 +123,37 @@ local AUTO_CANDIDATES = 8
 -- (every spot it led to: a skipped one is not visited and would come back) }.
 module.auto = nil
 
+-- The saved trail of the chains (WowVisionDump.autoMode, on disk after /reload; the newest last): each leg's search
+-- with its time, and every frame of more than HITCH_SECONDS while a chain runs, so a freeze can be placed.
+local LOG_SIZE = 60
+local HITCH_SECONDS = 0.5
+local function logLine(line)
+    WowVisionDump = WowVisionDump or {}
+    local trail = WowVisionDump.autoMode
+    if type(trail) ~= "table" then
+        trail = {}
+        WowVisionDump.autoMode = trail
+    end
+    trail[#trail + 1] = date("%H:%M:%S") .. " " .. line
+    while #trail > LOG_SIZE do
+        table.remove(trail, 1)
+    end
+end
+
+local hitchFrame
+local function watchHitches()
+    if hitchFrame ~= nil then
+        return
+    end
+    hitchFrame = CreateFrame("Frame")
+    hitchFrame:SetScript("OnUpdate", function(_, elapsed)
+        if module.auto ~= nil and elapsed > HITCH_SECONDS then
+            local px, py = UnitPosition("player")
+            logLine(string.format("frame of %.2f s at %.1f %.1f", elapsed, px or 0, py or 0))
+        end
+    end)
+end
+
 -- wp becomes the chain's current spot, after the one it is at (what came after that is dropped).
 local function setCurrent(auto, wp)
     for i = #auto.history, auto.index + 1, -1 do
@@ -150,6 +181,8 @@ function module:startAuto(wp, mode)
     local auto = { mode = mode, history = {}, index = 0, seen = {} }
     setCurrent(auto, wp)
     self.auto = auto
+    watchHitches()
+    logLine(string.format("start %s %s", mode, tostring(wp.n)))
     WowVision:speak(mode == "route" and L["Auto Route"] or L["Auto Direct"])
     return maps:goToDestination(wp, mode == "direct")
 end
@@ -162,6 +195,7 @@ function module:continueAuto(wp)
         return
     end
     auto.targets = {}
+    logLine(string.format("arrived %s", tostring(wp.n)))
     if not autoAllowed(self) then
         self.auto = nil
         return
@@ -183,7 +217,9 @@ function module:autoNext(auto, last)
         local key = keyOf(wp)
         return key == lastKey or auto.seen[key] or self:isVisited(wp)
     end
+    local started = debugprofilestop()
     local found = maps:destinationsNamed(last.n, direct)
+    local searched = debugprofilestop()
     local candidates
     if direct then
         local best = store.nearest(found, skip)
@@ -191,6 +227,8 @@ function module:autoNext(auto, last)
     else
         candidates = store.nearestN(found, skip, AUTO_CANDIDATES)
     end
+    logLine(string.format("next %s after %s: %d found, search %.1f ms, pick %.1f ms", mode, tostring(last.n), #found,
+        searched - started, debugprofilestop() - searched))
     if #candidates == 0 then
         local name = store.baseName(last.n, function(s)
             return s
