@@ -229,9 +229,9 @@ local function emit(builder, screen, node, path)
 end
 
 -- Walks a path of node keys down the tree: the deepest node found, its
--- structural key, and whether the whole path was found. Every node on the
--- way below the top is expanded, and the last one too, so its children
--- read right below it.
+-- structural key, and whether the whole path was found. The groups above
+-- the last node are expanded so it can be focused; the last node keeps its
+-- own expansion (expansion is remembered across opens).
 local function expandPath(screen, tree, path)
     local list, key, found = tree, "scanner", nil
     for index, step in ipairs(path) do
@@ -247,7 +247,7 @@ local function expandPath(screen, tree, path)
         end
         key = key .. "/" .. tostring(step)
         found = key
-        if node.children == nil then
+        if index == #path or node.children == nil then
             return found, index == #path
         end
         screen.state.expanded[key] = true
