@@ -574,3 +574,63 @@ module:registerCommand({
         module:handleCommand(args or "")
     end,
 })
+
+-- The quest the quest log is on, for the scanner (F9) and the navigation
+-- window (F10) opened from it: the quest row the cursor is on, else the
+-- quest whose details are shown (the log's selection). Nil when no quest
+-- log is open.
+local function questFromFocus()
+    local host = WowVision.graphHost
+    local screen = host ~= nil and host:focusedScreen() or nil
+    local id = screen ~= nil and screen.state ~= nil and screen.state.curKey or nil
+    local key = type(id) == "table" and id.key or id
+    if type(key) ~= "string" then
+        return nil
+    end
+    local questId = key:match("^quest:(%d+)$")
+    return questId ~= nil and tonumber(questId) or nil
+end
+
+function module:logQuest()
+    -- the log beside the world map (Retail, WoW: Forever) or the standalone one (Classic)
+    local mapLog = QuestMapFrame ~= nil and QuestMapFrame:IsVisible()
+    local classicLog = QuestLogFrame ~= nil and QuestLogFrame:IsVisible()
+    if not mapLog and not classicLog then
+        return nil
+    end
+    local questId = questFromFocus()
+    if questId ~= nil then
+        return questId
+    end
+    if mapLog then
+        local details = QuestMapFrame.DetailsFrame
+        if details ~= nil and details:IsVisible() and C_QuestLog.GetSelectedQuest ~= nil then
+            local selected = C_QuestLog.GetSelectedQuest()
+            if selected ~= nil and selected ~= 0 then
+                return selected
+            end
+        end
+        return nil
+    end
+    if GetQuestLogSelection ~= nil then
+        local index = GetQuestLogSelection()
+        if index ~= nil and index > 0 then
+            local _, _, _, isHeader, _, _, _, selected = GetQuestLogTitle(index)
+            if not isHeader and selected ~= nil and selected ~= 0 then
+                return selected
+            end
+        end
+    end
+    return nil
+end
+
+-- logQuest that never breaks a key: an error is reported and reads as no
+-- quest.
+function module:safeLogQuest()
+    local ok, questId = pcall(self.logQuest, self)
+    if not ok then
+        geterrorhandler()(questId)
+        return nil
+    end
+    return questId
+end
