@@ -121,6 +121,19 @@ testRunner:addSuite("GraphBuilder", {
         t:assertEqual(b2:build().startKey.key, "b")
     end,
 
+    ["setStartStop starts on the stop's first node; setStart wins, a missing stop falls back"] = function(t)
+        local function build(configure)
+            local b = Builder:new()
+            b:beginStop("search"):addLabel(sid("search"), "Search")
+            b:beginStop("list"):addLabel(sid("l1"), "One"):addLabel(sid("l2"), "Two")
+            configure(b)
+            return b:build().startKey.key
+        end
+        t:assertEqual(build(function(b) b:setStartStop("list") end), "l1")
+        t:assertEqual(build(function(b) b:setStartStop("list"):setStart(sid("l2")) end), "l2")
+        t:assertEqual(build(function(b) b:setStartStop("missing") end), "search")
+    end,
+
     ["single-item rows stamp positions by parent and stop"] = function(t)
         local b = Builder:new()
         b:addLabel(sid("a"), "A"):addLabel(sid("b"), "B"):addLabel(sid("c"), "C")

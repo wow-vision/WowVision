@@ -32,6 +32,7 @@ function Builder:initialize(expansion)
     self.rowOf = {} -- node -> its menu row (absent for raw nodes)
     self.ids = {} -- structural key -> true, for duplicate detection
     self.start = nil
+    self.startStop = nil
     self.stopKey = "stop#0"
     self.stopAuto = 1
     -- The parent stack: structural levels (pushContext) and group headers
@@ -228,6 +229,15 @@ function Builder:setStart(id)
     return self
 end
 
+-- Focus starts in this tab stop (its first node) when the graph has no prior
+-- position: a window landing on its content, whatever ids the content's list
+-- helper gives its rows. An explicit setStart wins; a stop that declares
+-- nothing falls back to the first node.
+function Builder:setStartStop(stopKey)
+    self.startStop = stopKey
+    return self
+end
+
 -- ---- menu mode ----
 
 -- Open a horizontal row. Rows sharing a non-nil rowKey with the row
@@ -372,6 +382,14 @@ function Builder:build()
         render.startKey = self.start
     else
         render.startKey = render.order[1].id
+        if self.startStop ~= nil then
+            for _, node in ipairs(render.order) do
+                if node.stopKey == self.startStop then
+                    render.startKey = node.id
+                    break
+                end
+            end
+        end
     end
     self:_stampPositions()
     return render
