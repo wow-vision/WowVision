@@ -156,16 +156,16 @@ end
 local function renderSpellBook(builder, book)
     renderCategoryTabs(builder, book)
 
-    builder:beginStop("search")
-    -- No clear button stop, like the other search boxes: emptying the box and
-    -- pressing Enter leaves search results the same way.
-    builder:addItem(ControlId.structural("search"), spellSearch.node(book.SearchBox))
-
     builder:beginStop("options")
     builder:addItem(
         ControlId.forObject(book.SettingsDropdown),
         nodes.proxyDropdown({ target = book.SettingsDropdown, label = L["Options"] })
     )
+
+    builder:beginStop("search")
+    -- No clear button stop, like the other search boxes: emptying the box and
+    -- pressing Enter leaves search results the same way.
+    builder:addItem(ControlId.structural("search"), spellSearch.node(book.SearchBox))
 
     renderSpells(builder, book)
     nodes.pagingRow(builder, "spells", book.PagedSpellsFrame.PagingControls)
