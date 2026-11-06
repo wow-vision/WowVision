@@ -364,6 +364,20 @@ testRunner:addSuite("GraphKeyGraph", {
         t:assertEqual(state.curKey.key, "b")
     end,
 
+    ["a named start is exact: no jump to the selected member"] = function(t)
+        local kg, state = makeGraph(function(b)
+            b:beginStop("search"):addLabel(sid("search"), "Search")
+            b:beginStop("list"):addLabel(sid("header"), "Header")
+            b:addItem(sid("b"), {
+                announcements = { { text = "B" }, { text = "selected", kind = "selected" } },
+            })
+            b:setStartStop("list")
+            return b:build()
+        end)
+        kg:rerender()
+        t:assertEqual(state.curKey.key, "header")
+    end,
+
     ["move at an edge stays put"] = function(t)
         local kg = makeGraph(function(b)
             b:addLabel(sid("a"), "A"):addLabel(sid("b"), "B")

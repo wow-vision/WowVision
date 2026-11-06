@@ -223,7 +223,8 @@ function Builder:isExpanded(id)
 end
 
 -- Focus starts here when the graph has no prior position (defaults to the
--- first node).
+-- first node). A named start is exact: only the default start yields to its
+-- stop's selected member.
 function Builder:setStart(id)
     self.start = id
     return self
@@ -380,12 +381,14 @@ function Builder:build()
 
     if self.start ~= nil and render.nodes[self.start.key] ~= nil then
         render.startKey = self.start
+        render.startNamed = true
     else
         render.startKey = render.order[1].id
         if self.startStop ~= nil then
             for _, node in ipairs(render.order) do
                 if node.stopKey == self.startStop then
                     render.startKey = node.id
+                    render.startNamed = true
                     break
                 end
             end

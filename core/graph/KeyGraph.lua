@@ -162,10 +162,13 @@ function KeyGraph.reconcile(render, state)
     end
 
     -- Nothing matched (or first render): the start node, preferring the
-    -- SELECTED member of its stop.
+    -- SELECTED member of its stop -- unless the screen named its start.
     if resolved == nil then
         local startNode = render:nodeAt(render.startKey)
-        local selected = startNode ~= nil and KeyGraph.selectedNodeInStop(render, startNode.stopKey) or nil
+        local selected = nil
+        if startNode ~= nil and not render.startNamed then
+            selected = KeyGraph.selectedNodeInStop(render, startNode.stopKey)
+        end
         resolved = (selected ~= nil and selected.id) or (startNode ~= nil and startNode.id) or render.startKey
     end
 

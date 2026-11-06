@@ -324,7 +324,7 @@ local function renderRecipeList(builder, list)
     builder:beginStop("filter")
     builder:addItem(ControlId.forObject(list.FilterDropdown), nodes.proxyDropdown({ target = list.FilterDropdown }))
 
-    -- A fresh open lands on the recipes (the selected one when the game has one).
+    -- A fresh open lands on the top of the recipes (a category heading).
     builder:beginStop("recipes")
     builder:setStartStop("recipes")
     nodes.scrollBoxList(builder, {
