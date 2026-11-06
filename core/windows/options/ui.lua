@@ -294,6 +294,52 @@ local function discordAuthTooltip(helpers)
     return { type = "Text", text = text or "" }
 end
 
+-- Scrolling from addon code builds every row that comes into view on our
+-- tainted stack, and the Discord rows' own setup makes those same protected
+-- calls: any Discord row entering view is ADDON_ACTION_FORBIDDEN. The list's
+-- newer scroll bar cannot be scrolled securely (its arrows act on mouse down,
+-- which a secure click does not fire), so the list steers around these rows:
+-- rows above them scroll to the bottom of the view and rows below to the top,
+-- so a Discord row never comes into view beside them. Focus on a Discord row
+-- does not scroll at all; the first Enter does, on request, and the second
+-- acts on the row. Lists without Discord rows are untouched.
+local function isDiscordRow(elementData)
+    return isDiscordAuth(elementData) or isDiscordAuth(elementData.parentInitializer)
+end
+
+-- The first and last Discord rows of a list, or nil when it has none.
+local function discordRange(scrollBox)
+    local first, last = nil, nil
+    for index = 1, scrollBox:GetDataProviderSize() do
+        local elementData = scrollBox:FindElementData(index)
+        if type(elementData) == "table" and isDiscordRow(elementData) then
+            first = first or index
+            last = index
+        end
+    end
+    return first, last
+end
+
+local function revealRow(helpers)
+    helpers.scrollIntoView()
+    WowVision:speak(L["Press Enter again"])
+end
+
+-- What Enter clicks on a Discord row with no frame yet: the secure click
+-- needs a frame, and the host re-engages it on the real one once it exists.
+local revealButton = nil
+local function revealTarget(helpers)
+    if revealButton == nil then
+        revealButton = CreateFrame("Button", "WowVisionSettingsRowReveal", UIParent)
+        revealButton:Hide()
+        revealButton:SetScript("OnClick", function(self)
+            revealRow(self.helpers)
+        end)
+    end
+    revealButton.helpers = helpers
+    return revealButton
+end
+
 -- Whether a row is enabled, per Blizzard's own rule (SettingsControlMixin:
 -- IsEnabled): the initializer's modify predicates all hold -- a child
 -- setting greys out while its parent checkbox is off. Rows without
@@ -424,6 +470,13 @@ end
 -- these are secondary nodes reached by moving within an already-scrolled row.
 -- `tooltip` overrides the row's own tooltip (see the Discord row).
 local function rowButtonNode(elementData, helpers, label, childKey, tooltip)
+    local target = childResolver(helpers, childKey)
+    if isDiscordRow(elementData) then
+        local resolve = target
+        target = function()
+            return resolve() or revealTarget(helpers)
+        end
+    end
     return {
         controlType = graph.controlTypes.button,
         announcements = { { text = label, kind = kinds.label }, disabledPart(elementData) },
@@ -432,7 +485,7 @@ local function rowButtonNode(elementData, helpers, label, childKey, tooltip)
                 binding = "leftClick",
                 type = "Click",
                 emulatedKey = "LeftButton",
-                target = childResolver(helpers, childKey),
+                target = target,
             },
         },
         onFocus = helpers.onFocus,
@@ -515,6 +568,16 @@ local function dropdownNode(elementData, helpers, label, setting, options, extra
     end
     tinsert(vtable.announcements, disabledPart(elementData, extraEnabled))
     guardDisabled(vtable, elementData, extraEnabled)
+    if isDiscordRow(elementData) then
+        local activate = vtable.onActivate
+        vtable.onActivate = function(...)
+            if helpers.target() == nil then
+                revealRow(helpers)
+                return
+            end
+            return activate(...)
+        end
+    end
     vtable.onFocus = helpers.onFocus
     vtable.onUnfocus = helpers.onUnfocus
     vtable.tooltipFrame = helpers.target
@@ -1336,11 +1399,24 @@ local function render(builder, screen)
             end
             screen._settingsCategory = categoryKey
         end
+        local firstDiscord, lastDiscord = discordRange(list.ScrollBox)
         nodes.scrollBoxList(builder, {
             scrollBox = list.ScrollBox,
             key = "settings",
             label = title or L["Options"],
             templates = settingEmitters,
+            placement = function(data, index)
+                if firstDiscord == nil then
+                    return nil
+                end
+                if index < firstDiscord then
+                    return ScrollBoxConstants.AlignEnd
+                end
+                if index > lastDiscord then
+                    return ScrollBoxConstants.AlignBegin
+                end
+                return false
+            end,
         })
         if list.Header ~= nil and list.Header.DefaultsButton ~= nil then
             builder:beginStop("defaults")
