@@ -135,6 +135,124 @@ function Router.preselectEntry(entries, swimming)
 end
 
 -- ---------------------------------------------------------------------------
+-- The nearest of several destinations by the walk
+-- ---------------------------------------------------------------------------
+
+-- Of the waypoints in `targets`, the one the shortest walk from (startX,
+-- startY) reaches (Auto Route, navigation/visited.lua). One search outward
+-- over the links (Dijkstra) that stops at the first target it settles, so
+-- it costs about one route however many targets there are. Targets without
+-- links are reached over a straight last leg, weighted as in Router.route,
+-- so the pick and the route then searched to it agree. opts: entryId,
+-- entryCount, exitCount, maxExitDistance as for Router.route.
+-- Returns the target waypoint, or nil and a reason: "no entry", "unreachable".
+function Router.nearestByWalk(waypoints, startX, startY, targets, opts)
+    opts = opts or {}
+    local exitCount = opts.exitCount or EXIT_COUNT
+    local maxExit = opts.maxExitDistance or MAX_EXIT_DISTANCE
+
+    -- A target is reached when the search settles it: over the links (its
+    -- own, or another waypoint's link into it), or over a straight last leg.
+    -- Targets without links of their own get their nearest linked waypoints
+    -- as exits, found in one pass over the network for all of them (a box
+    -- around the targets skips the rest).
+    local targetById = {}
+    local open = {}
+    local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
+    for _, target in ipairs(targets) do
+        if waypoints[target.id] == target then
+            targetById[target.id] = target
+        end
+        if not hasLinks(target) then
+            tinsert(open, { waypoint = target, exits = {} })
+            minX, maxX = math.min(minX, target.x), math.max(maxX, target.x)
+            minY, maxY = math.min(minY, target.y), math.max(maxY, target.y)
+        end
+    end
+    local exits = {} -- id -> { { target, leg }, ... }
+    if #open > 0 then
+        minX, minY, maxX, maxY = minX - maxExit, minY - maxExit, maxX + maxExit, maxY + maxExit
+        for id, wp in pairs(waypoints) do
+            if wp.x >= minX and wp.x <= maxX and wp.y >= minY and wp.y <= maxY and hasLinks(wp) then
+                for _, entry in ipairs(open) do
+                    local leg = distanceBetween(wp.x, wp.y, entry.waypoint.x, entry.waypoint.y)
+                    if leg <= maxExit then
+                        tinsert(entry.exits, { id = id, leg = leg })
+                    end
+                end
+            end
+        end
+        for _, entry in ipairs(open) do
+            table.sort(entry.exits, function(a, b)
+                return a.leg < b.leg
+            end)
+            for i = 1, math.min(#entry.exits, exitCount) do
+                local exit = entry.exits[i]
+                exits[exit.id] = exits[exit.id] or {}
+                tinsert(exits[exit.id], { target = entry.waypoint, leg = exit.leg })
+            end
+        end
+    end
+
+    local entries
+    if opts.entryId ~= nil then
+        local entry = waypoints[opts.entryId]
+        if entry == nil then
+            return nil, "no entry"
+        end
+        entries = { { waypoint = entry, distance = distanceBetween(startX, startY, entry.x, entry.y) } }
+    else
+        entries = Router.nearest(waypoints, startX, startY, opts.entryCount or 5)
+    end
+    if #entries == 0 then
+        return nil, "no entry"
+    end
+
+    -- Dijkstra with lazy deletion; a target reached over its last leg is a
+    -- heap entry of its own (.target), settled like any waypoint.
+    local best = {}
+    local closed = {}
+    local heap = {}
+    for _, entry in ipairs(entries) do
+        local wp = entry.waypoint
+        if entry.distance < (best[wp.id] or math.huge) then
+            best[wp.id] = entry.distance
+            heapPush(heap, { id = wp.id, g = entry.distance, f = entry.distance })
+        end
+    end
+    while true do
+        local current = heapPop(heap)
+        if current == nil then
+            return nil, "unreachable"
+        end
+        if current.target ~= nil then
+            return current.target
+        end
+        if not closed[current.id] and current.g <= (best[current.id] or math.huge) then
+            if targetById[current.id] ~= nil then
+                return targetById[current.id]
+            end
+            closed[current.id] = true
+            for _, exit in ipairs(exits[current.id] or {}) do
+                local g = current.g + exit.leg * LAST_LEG_WEIGHT
+                heapPush(heap, { target = exit.target, g = g, f = g })
+            end
+            local wp = waypoints[current.id]
+            for linkId in pairs(wp.links or {}) do
+                local neighbor = waypoints[linkId]
+                if neighbor ~= nil and not closed[linkId] then
+                    local tentative = current.g + distanceBetween(wp.x, wp.y, neighbor.x, neighbor.y)
+                    if tentative < (best[linkId] or math.huge) then
+                        best[linkId] = tentative
+                        heapPush(heap, { id = linkId, g = tentative, f = tentative })
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- ---------------------------------------------------------------------------
 -- A*
 -- ---------------------------------------------------------------------------
 

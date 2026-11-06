@@ -361,8 +361,9 @@ end
 module.lastDestination = nil
 
 -- What runs when a picked destination is reached: it is remembered as
--- visited (navigation/visited.lua), then its own onArrive runs. The route's
--- waypoints on the way are never remembered, only the destination.
+-- visited (navigation/visited.lua), then its own onArrive runs, then an
+-- auto chain that led there goes on to the next one. The route's waypoints
+-- on the way are never remembered, only the destination.
 function module:arrivalFor(wp)
     local onArrive = wp.onArrive
     return function()
@@ -372,6 +373,9 @@ function module:arrivalFor(wp)
         end
         if onArrive ~= nil then
             onArrive()
+        end
+        if visited ~= nil then
+            visited:continueAuto(wp)
         end
     end
 end
@@ -447,6 +451,64 @@ function module:goToDestination(wp, direct)
         return true
     end
     return routed
+end
+
+-- Auto Route (navigation/visited.lua): of several destinations ({ waypoint,
+-- distance }), the one the shortest walk from here reaches, routed to from
+-- the entry point F10 would preselect. The route data: one search for all
+-- (Router.nearestByWalk); a route engine: its own pick (engine:routeToNearest,
+-- which plans them in the background). onChosen(wp) runs for the one picked
+-- before its route starts; it becomes the last picked destination.
+function module:routeToNearestWalk(candidates, onChosen)
+    local px, py, _, map = UnitPosition("player")
+    if px == nil then
+        WowVision:speak(L["Position unavailable"])
+        return false
+    end
+    local function chosen(wp)
+        self.lastDestination = wp
+        if onChosen ~= nil then
+            onChosen(wp)
+        end
+    end
+    local waypoints, engine = self:destinationWaypoints()
+    if engine ~= nil and engine.routeToNearest ~= nil then
+        local start = self:preselectedEntry(self:entryPoints(waypoints, px, py, map, engine))
+        local targets = {}
+        for _, candidate in ipairs(candidates) do
+            local wp = candidate.waypoint
+            tinsert(targets, {
+                x = wp.x,
+                y = wp.y,
+                z = wp.z,
+                label = wp.n,
+                data = wp.virtual and wp.routeData or wp,
+                start = start and start.waypoint,
+                onArrive = self:arrivalFor(wp),
+                onChosen = function()
+                    chosen(wp)
+                end,
+            })
+        end
+        if engine:routeToNearest(targets) then
+            return true
+        end
+    end
+    local list = {}
+    for _, candidate in ipairs(candidates) do
+        tinsert(list, candidate.waypoint)
+    end
+    local entry = engine == nil and self:preselectedEntry(self:entryPoints(waypoints, px, py, map, nil)) or nil
+    local opts = { entryId = entry and entry.waypoint.id }
+    local wp, reason = WowVision.Router.nearestByWalk(waypoints, px, py, list, opts)
+    if wp == nil then
+        WowVision:speak(L["No route found"] .. " " .. (reason ~= nil and L[reason] or ""))
+        return false
+    end
+    chosen(wp)
+    WowVision:speak(wp.n)
+    opts.onArrive = self:arrivalFor(wp)
+    return self:navigateTo(wp.id, waypoints, opts)
 end
 
 -- Ctrl-Shift-N: the last destination's route again, from where the player

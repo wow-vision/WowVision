@@ -59,3 +59,20 @@ function store.nearest(candidates, skip)
     end
     return best
 end
+
+-- The `count` nearest of candidates that skip(waypoint) does not rule out, nearest first.
+function store.nearestN(candidates, skip, count)
+    local kept = {}
+    for _, candidate in ipairs(candidates) do
+        if not skip(candidate.waypoint) then
+            tinsert(kept, candidate)
+        end
+    end
+    table.sort(kept, function(a, b)
+        return a.distance < b.distance
+    end)
+    for i = #kept, count + 1, -1 do
+        kept[i] = nil
+    end
+    return kept
+end

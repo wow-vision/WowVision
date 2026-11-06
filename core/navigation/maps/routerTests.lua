@@ -294,4 +294,54 @@ testRunner:addSuite("MapRouter", {
         t:assertTrue(noWater)
         t:assertNil(Router.preselectEntry({}, true))
     end,
+
+    ["nearest by walk: the shorter walk wins over the nearer straight line"] = function(t)
+        -- A river between: "near" is 10 yd across it but 60 yd round by the bridge; "far" is 25 yd on this side.
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b", "bridge" } },
+            { id = "b", x = 25, y = 0, links = { "a" } },
+            { id = "bridge", x = 0, y = 30, links = { "a", "c" } },
+            { id = "c", x = 0, y = 10, links = { "bridge" } },
+        })
+        local near = { id = "near", x = -1, y = 10 }
+        local far = { id = "far", x = 26, y = 0 }
+        waypoints.near, waypoints.far = near, far
+        local wp = Router.nearestByWalk(waypoints, 0, 0, { near, far }, { entryId = "a", maxExitDistance = 2 })
+        t:assertEqual(wp and wp.id, "far")
+    end,
+
+    ["nearest by walk: a linked target is reached on the network"] = function(t)
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b" } },
+            { id = "b", x = 10, y = 0, links = { "a", "c" } },
+            { id = "c", x = 20, y = 0, links = { "b" } },
+        })
+        t:assertEqual(Router.nearestByWalk(waypoints, 0, 0, { waypoints.c, waypoints.b }, { entryId = "a" }).id, "b")
+    end,
+
+    ["nearest by walk: a target without links of its own, linked into"] = function(t)
+        -- "spawn" is reached over b's one-way link (10 yd); "other" only over a last leg of 3 yd, weighted
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b", "c" } },
+            { id = "b", x = 10, y = 0, links = { "a", "spawn" } },
+            { id = "c", x = 0, y = 5, links = { "a" } },
+            { id = "spawn", x = 20, y = 0 },
+        })
+        local other = { id = "other", x = 0, y = 8 }
+        waypoints.other = other
+        t:assertEqual(Router.nearestByWalk(waypoints, 0, 0, { other, waypoints.spawn }, { entryId = "a" }).id, "spawn")
+    end,
+
+    ["nearest by walk: nothing reachable"] = function(t)
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b" } },
+            { id = "b", x = 10, y = 0, links = { "a" } },
+        })
+        local lost = { id = "lost", x = 5000, y = 0 }
+        waypoints.lost = lost
+        local wp, reason = Router.nearestByWalk(waypoints, 0, 0, { lost }, { entryId = "a" })
+        t:assertNil(wp)
+        t:assertEqual(reason, "unreachable")
+        t:assertEqual(select(2, Router.nearestByWalk(waypoints, 0, 0, { lost }, { entryId = "x" })), "no entry")
+    end,
 })

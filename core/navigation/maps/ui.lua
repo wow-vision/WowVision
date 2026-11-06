@@ -30,6 +30,10 @@ local kinds = graph.kinds
 -- destinations, and Enter on a destination sets exactly that point -- a
 -- straight beacon, no route (WowNav's /vn direct). The destinations are the
 -- same, a route engine's without its reachability check.
+--
+-- Shift-F10 on a destination offers its auto chains: Auto Direct and Auto
+-- Route lead on, one after the other, to every unvisited destination of
+-- its name (navigation/visited.lua).
 
 local function entryLabel(entry)
     local wp = entry.waypoint
@@ -272,6 +276,22 @@ local function destinationCursor(screen)
             if not routed and wp.virtual then
                 module:beaconTo(wp.x, wp.y, wp.n, onArrive)
             end
+        end,
+        -- Shift-F10: the auto chains of the destination's name (navigation/visited.lua)
+        contextActions = function(add)
+            local list, index = clampedIndex()
+            local entry = list[index]
+            if entry == nil or visited == nil then
+                return
+            end
+            local function auto(mode)
+                return function()
+                    WowVision.UIHost:closeWindow("atlas")
+                    visited:startAuto(entry.waypoint, mode)
+                end
+            end
+            add({ label = L["Auto Direct"], onActivate = auto("direct") })
+            add({ label = L["Auto Route"], onActivate = auto("route") })
         end,
         bindings = {
             {

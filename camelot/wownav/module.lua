@@ -236,6 +236,11 @@ function engine:search(text, px, py, map, opts)
     return module:search(text, px, py, map, opts)
 end
 
+-- Auto Route (maps:routeToNearestWalk): of several targets, the one the shortest walk reaches.
+function engine:routeToNearest(targets)
+    return module:routeToNearest(targets)
+end
+
 maps:setRouteEngine(engine)
 
 -- ---- speech
@@ -555,6 +560,15 @@ local function search(self, request)
         answers = N.knownMissAnswers or 0 }
 end
 
+-- The contract of a target maps hands over as a position (scanner, places list, /beacon to, the route data's points).
+local function positionContract(target, map)
+    return {
+        id = "wowvision:" .. tostring(target.label or "target"), kind = "live", nameEn = target.label or "?",
+        nativeMapId = map, coordinateSpace = "world", x = target.x, y = target.y, z = target.z,
+        zStatus = target.z == nil and "unknown" or "known",
+    }
+end
+
 -- A route request from maps: { x, y, z, label, onArrive, data, start } (data: a row of the WowNav list; start: the
 -- entry point picked in F10, a row of catalog.entryPoints). True when WowNav took it.
 function module:routeTo(target)
@@ -646,11 +660,7 @@ function module:routeTo(target)
     elseif type(target.data) == "table" and target.data.tid ~= nil then
         contract = catalog.contract(target.data, map)
     else
-        contract = {
-            id = "wowvision:" .. tostring(target.label or "target"), kind = "live", nameEn = target.label or "?",
-            nativeMapId = map, coordinateSpace = "world", x = target.x, y = target.y, z = target.z,
-            zStatus = target.z == nil and "unknown" or "known",
-        }
+        contract = positionContract(target, map)
     end
     if start == nil then
         say(L["No WowNav network here"])
@@ -664,6 +674,80 @@ function module:routeTo(target)
         self:stopRoute()
         search(self, request)
     end
+    return true
+end
+
+-- Auto Route (navigation/visited.lua): of several targets of the same name, requests as for routeTo with the same
+-- start, the one the shortest walk reaches. One job plans a route to each, in time slices like every search, and the
+-- shortest becomes the request (its onChosen runs first); a target whose floor is not clear is left out unless no
+-- other has a route. True when WowNav took it. The search line of the log says how long the planning took.
+function module:routeToNearest(targets)
+    local N = ready(self)
+    local first = targets[1]
+    if N == nil or first == nil then
+        return false
+    end
+    local px, py, map = route.env.position()
+    if px == nil or not catalog.covers(N, map) then
+        return false
+    end
+    N.activeMapId = map
+    if #N.ZonesForPoint(px, py) == 0 then
+        return false
+    end
+    local start = type(first.start) == "table" and first.start or nil
+    if start == nil then
+        say(L["No WowNav network here"])
+        return true
+    end
+    local candidates = {}
+    for _, target in ipairs(targets) do
+        local data = type(target.data) == "table" and target.data or nil
+        tinsert(candidates, {
+            contract = (data ~= nil and data.tid ~= nil) and catalog.contract(data, map) or positionContract(target, map),
+            label = target.label,
+            onArrive = target.onArrive,
+            onChosen = target.onChosen,
+        })
+    end
+    logLine(string.format("nearest by walk of %d %s from %.1f %.1f map %s", #candidates, tostring(first.label), px, py,
+        tostring(map)))
+    local request = { contract = candidates[1].contract, label = candidates[1].label, start = start }
+    if not bindStart(self, request) then
+        return true
+    end
+    self:stopRoute()
+    route.anchor.last = request.startZ
+    local function plan()
+        local best, bestLength, firstChoice, lastFail
+        for _, candidate in ipairs(candidates) do
+            local outcome = route:prepare(candidate.contract, { nativeMapId = map }, request.startOverride)
+            if outcome.kind == "start" then
+                local length = N.PathLength(outcome.plan.path)
+                if bestLength == nil or length < bestLength then
+                    best, bestLength = { candidate = candidate, outcome = outcome }, length
+                end
+            elseif outcome.kind == "choose" then
+                firstChoice = firstChoice or { candidate = candidate, outcome = outcome }
+            else
+                lastFail = outcome
+            end
+        end
+        local pick = best or firstChoice
+        if pick == nil then
+            return lastFail or { kind = "fail", reason = "no_route_found" }
+        end
+        -- the request becomes the picked one's: the route, its arrival and a floor question are about it
+        request.contract, request.label, request.onArrive = pick.candidate.contract, pick.candidate.label,
+            pick.candidate.onArrive
+        if pick.candidate.onChosen ~= nil then
+            pick.candidate.onChosen()
+        end
+        say(pick.candidate.label)
+        return pick.outcome
+    end
+    job = { request = request, startedAt = GetTime(), job = N.Job(plan), frames = 0, misses = N.wholeMisses or 0,
+        answers = N.knownMissAnswers or 0 }
     return true
 end
 

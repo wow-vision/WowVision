@@ -6,6 +6,13 @@
 -- Two key bindings (none set by default) lead to the nearest unvisited destination of the same name as the last one
 -- picked (the next Peacebloom, the next Sack of Hay): one routes there, one sets it as a direct point. Chained, they
 -- walk all spawns of an object.
+--
+-- Auto mode chains that by itself (Shift-F10 on a destination in F10): each one reached leads on to the next
+-- unvisited one of the same name, until none is left. Auto Direct sets a direct point to the nearest in a straight
+-- line; Auto Route routes to the one the shortest walk reaches, of the AUTO_CANDIDATES nearest. It needs the visited
+-- waypoints switched on: they are what the chain skips. The chain belongs to the destinations it picked: another
+-- destination picked, or Shift-F12, and the arrival that would continue it never comes (a replaced route never
+-- arrives); Ctrl-Shift-N restarts a leg and keeps the chain.
 local store = WowVision.visitedStore
 local maps = WowVision.base.navigation.maps
 
@@ -104,6 +111,86 @@ function module:goToNext(direct)
         return false
     end
     return maps:goToDestination(best.waypoint, direct)
+end
+
+-- How many of the nearest unvisited ones Auto Route measures by the walk (a route engine plans one route each).
+local AUTO_CANDIDATES = 8
+
+-- The running chain: { mode = "direct" | "route", targets = { [wp] = true } }, the destinations it led to last.
+module.auto = nil
+
+local function autoAllowed(self)
+    if self:getEnabled() then
+        return true
+    end
+    WowVision:speak(L["Auto mode needs Visited Waypoints switched on"])
+    return false
+end
+
+-- Shift-F10 on a destination in F10: the chain starts there.
+function module:startAuto(wp, mode)
+    if not autoAllowed(self) then
+        return false
+    end
+    self.auto = { mode = mode, targets = { [wp] = true } }
+    WowVision:speak(mode == "route" and L["Auto Route"] or L["Auto Direct"])
+    return maps:goToDestination(wp, mode == "direct")
+end
+
+-- A picked destination was reached (maps:arrivalFor, after markVisited): the chain that led there goes on, a frame
+-- later -- the arrival's own words come first, and a route engine finishes its arrival before the next route starts.
+function module:continueAuto(wp)
+    local auto = self.auto
+    if auto == nil or not auto.targets[wp] then
+        return
+    end
+    self.auto = nil
+    if not autoAllowed(self) then
+        return
+    end
+    C_Timer.After(0, function()
+        self:autoNext(auto.mode, wp)
+    end)
+end
+
+-- The next leg of a chain after `last`: the nearest unvisited one of its name, or the end of the chain.
+function module:autoNext(mode, last)
+    local direct = mode == "direct"
+    local lastKey = keyOf(last)
+    local function skip(wp)
+        return keyOf(wp) == lastKey or self:isVisited(wp)
+    end
+    local found = maps:destinationsNamed(last.n, direct)
+    local candidates
+    if direct then
+        local best = store.nearest(found, skip)
+        candidates = best ~= nil and { best } or {}
+    else
+        candidates = store.nearestN(found, skip, AUTO_CANDIDATES)
+    end
+    if #candidates == 0 then
+        local name = store.baseName(last.n, function(s)
+            return s
+        end)
+        WowVision:speak(string.format(L["No unvisited %s found"], name or ""))
+        return false
+    end
+    if direct then
+        local wp = candidates[1].waypoint
+        self.auto = { mode = mode, targets = { [wp] = true } }
+        return maps:goToDestination(wp, true)
+    end
+    -- the walk decides which one, perhaps later (a route engine plans in the background): every candidate may be it
+    local auto = { mode = mode, targets = {} }
+    for _, candidate in ipairs(candidates) do
+        auto.targets[candidate.waypoint] = true
+    end
+    self.auto = auto
+    return maps:routeToNearestWalk(candidates, function(wp)
+        if self.auto == auto then
+            auto.targets = { [wp] = true }
+        end
+    end)
 end
 
 module:registerBinding({
