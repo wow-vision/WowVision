@@ -148,21 +148,21 @@ end
 
 -- Top bar --------------------------------------------------------------
 
--- The search box (an edit box cannot share a stop with anything after it)
--- and the gear dropdown.
+-- The gear dropdown and the search box (an edit box cannot share a stop with
+-- anything after it), the search box right before the content it searches.
 local function renderTopBar(builder, frame)
-    if frame.SearchBox ~= nil then
-        builder:beginStop("search")
-        builder:addItem(
-            ControlId.structural("search"),
-            nodes.proxyEditBox({ editBox = frame.SearchBox, label = L["Search"] })
-        )
-    end
     if frame.SettingsDropdown ~= nil then
         builder:beginStop("settingsMenu")
         builder:addItem(
             ControlId.forObject(frame.SettingsDropdown),
             nodes.proxyDropdown({ target = frame.SettingsDropdown, label = L["Settings"] })
+        )
+    end
+    if frame.SearchBox ~= nil then
+        builder:beginStop("search")
+        builder:addItem(
+            ControlId.structural("search"),
+            nodes.proxyEditBox({ editBox = frame.SearchBox, label = L["Search"] })
         )
     end
 end
