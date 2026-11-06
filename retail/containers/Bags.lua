@@ -28,10 +28,12 @@ local ControlId = graph.ControlId
 -- puts on that frame: search, sort, money and Add Slots all live on the
 -- backpack, so the other bags add no stops of their own.
 --
--- After the bags each frame contributes its own stops when it has any: the
--- search box (an edit box, alone in its stop), then the frame's controls --
--- the combined frame's bag menu (one submenu per bag: a modern dropdown),
--- the sort button, money, and the extra-slots purchase button when offered.
+-- Before its bags each frame contributes its own stops when it has any: the
+-- frame's controls -- the combined frame's bag menu (one submenu per bag: a
+-- modern dropdown), the sort button, money, and the extra-slots purchase
+-- button when offered -- then the search box (an edit box, alone in its
+-- stop), right before the bags it searches. A fresh open still lands on the
+-- first bag.
 --
 -- WoW: Forever adds the keyring as a held bag (bag id Enum.BagIndex.Keyring,
 -- its own frame in both modes) with KeyRingButton as its slot button.
@@ -283,7 +285,7 @@ local function renderFrameControls(builder, frame, frameKey)
 
     -- The search box is one shared edit box parented to the frame that
     -- owns it; it gets a stop of its own so tabbing in starts typing. Last,
-    -- so tab wraps from it straight into the bags it searches.
+    -- right before the bags it searches.
     local searchBox = BagItemSearchBox
     if searchBox ~= nil and searchBox:GetParent() == frame and searchBox:IsShown() then
         builder:beginStop(frameKey .. ":search")
@@ -303,16 +305,26 @@ function Bags:renderGraph(builder)
             separateBags[frame:GetID()] = true
         end
     end
+    local landed = false
     for _, frame in ipairs(frames) do
         local frameKey = "frame:" .. (frame:GetName() or tostring(frame:GetID()))
+        renderFrameControls(builder, frame, frameKey)
         if frame.IsCombinedBagContainer ~= nil and frame:IsCombinedBagContainer() then
+            -- A fresh open lands on the bags, not on the controls before them.
+            if not landed then
+                builder:setStartStop(frameKey .. ":grid")
+                landed = true
+            end
             renderGrid(builder, frame, frameKey, separateBags)
         else
             local order, groups = slotsByBag(frame)
             for _, bagID in ipairs(order) do
+                if not landed then
+                    builder:setStartStop("bag:" .. bagID)
+                    landed = true
+                end
                 renderBag(builder, frame, bagID, groups[bagID])
             end
         end
-        renderFrameControls(builder, frame, frameKey)
     end
 end
