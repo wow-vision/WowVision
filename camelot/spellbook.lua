@@ -118,7 +118,9 @@ end
 -- them (both page halves, in display order). Pooled frames carry stale
 -- data while released, so only frames holding valid data are read.
 local function renderSpells(builder, book)
+    -- A fresh open lands on the spells.
     builder:beginStop("spells")
+    builder:setStartStop("spells")
     builder:pushContext("spells", L["Spells"])
     local inHeader = false
     local emitted = 0

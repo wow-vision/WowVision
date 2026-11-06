@@ -103,7 +103,9 @@ local function render(builder, screen)
         builder:popContext()
     end
 
+    -- A fresh open lands on the spells.
     builder:beginStop("spells")
+    builder:setStartStop("spells")
     builder:pushContext("spells", L["Spells"])
     local emitted = 0
     for _, button in ipairs(getSpellButtons()) do
