@@ -55,15 +55,62 @@ function Tooltip:onUnfocus()
     end
 end
 
+-- The link of the item a tooltip frame shows, nil for none or a secret one.
+-- Classic tooltips answer GetItem; Retail and WoW: Forever dropped it for
+-- TooltipUtil.GetDisplayedItem (their GameTooltip data mixin).
+local function shownItemLink(frame)
+    local ok, _, link
+    if frame.GetItem ~= nil then
+        ok, _, link = pcall(frame.GetItem, frame)
+    elseif TooltipUtil ~= nil and TooltipUtil.GetDisplayedItem ~= nil and frame.IsTooltipType ~= nil then
+        ok, _, link = pcall(TooltipUtil.GetDisplayedItem, frame)
+    end
+    if not ok or link == nil or WowVision.isSecret(link) then
+        return nil
+    end
+    return link
+end
+
 -- The lines as read: { left, right } pairs from the frame, plus the item
 -- quality and item level when the tooltip shows an item (see
--- WowVision.items.augmentTooltipLines).
+-- WowVision.items.augmentTooltipLines), then the equipped items it compares
+-- with (see addComparison).
 function Tooltip:collectLines()
     local frame = self.activeFrame
-    local lines = {}
     if not frame then
-        return lines
+        return {}
     end
+    local lines = self:frameLines(frame)
+    local compared, err = pcall(self.addComparison, self, frame, lines)
+    if not compared then
+        geterrorhandler()(err)
+    end
+    return lines
+end
+
+-- The equipped items the game compares the shown item with (the shopping
+-- tooltips sighted players get on Shift), each as a block after the item's
+-- own lines: the header, the equipped item, the stat changes. The version
+-- folders fill comparison.fill; every block line is marked compare, so
+-- reading the whole tooltip at once stays with the item itself.
+function Tooltip:addComparison(frame, lines)
+    local comparison = WowVision.tooltips.comparison
+    if comparison.fill == nil or not comparison.isEnabled() then
+        return
+    end
+    local link = shownItemLink(frame)
+    if link == nil then
+        return
+    end
+    local blocks = comparison.fill(frame, link)
+    for _, block in ipairs(blocks or {}) do
+        comparison.append(lines, block.header, self:frameLines(block.frame))
+        block.frame:Hide()
+    end
+end
+
+function Tooltip:frameLines(frame)
+    local lines = {}
     for index = 1, frame:NumLines() do
         local left, right = self.reader:getLine(frame, index)
         tinsert(lines, { left, right })
@@ -72,9 +119,9 @@ function Tooltip:collectLines()
     if not spokeMoney then
         geterrorhandler()(err)
     end
-    if frame.GetItem ~= nil and WowVision.items ~= nil then
-        local ok, _, link = pcall(frame.GetItem, frame)
-        if ok and link ~= nil and not WowVision.isSecret(link) then
+    if WowVision.items ~= nil then
+        local link = shownItemLink(frame)
+        if link ~= nil then
             local augmented, err = pcall(WowVision.items.augmentTooltipLines, lines, link)
             if not augmented then
                 geterrorhandler()(err)
@@ -149,7 +196,9 @@ function Tooltip:getText(lineNumber)
     local result = {}
     if lineNumber == nil then
         for _, line in ipairs(lines) do
-            tinsert(result, self.reader:formatLine(line[1], line[2]))
+            if not line.compare then
+                tinsert(result, self.reader:formatLine(line[1], line[2]))
+            end
         end
     elseif lines[lineNumber] ~= nil then
         tinsert(result, self.reader:formatLine(lines[lineNumber][1], lines[lineNumber][2]))
@@ -279,9 +328,32 @@ function Tooltip:speakCurrentRight()
     self:speakCurrentSide(2)
 end
 
+-- Comparison with equipped items. fill(frame, link) returns a list of
+-- { frame, header } blocks, filled by the game; nil where a game version
+-- has none. isEnabled is the tooltip/compare module's switch.
+local comparison = {
+    fill = nil,
+    isEnabled = function()
+        return true
+    end,
+}
+
+-- One block after the tooltip lines: the header unless the game's own
+-- first line already says it, then the block lines, all marked compare.
+function comparison.append(lines, header, blockLines)
+    if header ~= nil and (blockLines[1] == nil or blockLines[1][1] ~= header) then
+        tinsert(lines, { header, nil, compare = true })
+    end
+    for _, line in ipairs(blockLines) do
+        line.compare = true
+        tinsert(lines, line)
+    end
+end
+
 local tooltips = {
     Tooltip = Tooltip,
     types = WowVision.Registry:new(),
+    comparison = comparison,
 }
 
 function tooltips:createType(key)

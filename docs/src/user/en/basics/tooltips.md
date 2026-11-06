@@ -41,6 +41,20 @@ When the tooltip belongs to an item, WowVision adds two lines the game does not 
 
 Money in a tooltip is read with its coins. The game shows gold, silver and copper as small coin pictures, which speech would leave out. WowVision reads the sell price and other amounts as "Sell Price: 1 Gold, 23 Silver, 45 Copper". An item worth only a few coins reads, for example, "Sell Price: 7 Copper".
 
+## Comparing with what you wear
+
+When the tooltip shows an item you could wear, and you already wear something in that slot, the tooltip goes on after the item with what you have on. This is the comparison a sighted player gets by holding Shift over an item (or always, with the game's "Always compare items" option), and the game decides what it compares:
+
+- One block for each item you wear there: two for rings, trinkets and one-handed weapons, both hands when you hold a two-handed weapon.
+- Each block starts with the game's own header ("Currently Equipped" or "Equipped"), then the lines of the item you wear.
+- On WoW: Forever and Retail the first block ends with the stat changes: "If you replace this item, the following stat changes will occur:", then one line per stat, for example "+12 Stamina". On the classic versions you hear whatever the game puts into its comparison box.
+
+Space reads only the item itself. Press Shift+Down past the item's last line to walk into the comparison.
+
+Example: you are on a pair of boots in your bags. Space reads the boots. Shift+Down line by line goes through the boots, then "Equipped", the boots you wear, and the stat changes.
+
+To switch it off, open the [WowVision menu](./menu-and-settings.md) with Shift+F1, then UI, Tooltip, Compare with Equipped, and uncheck Enabled. It is on by default.
+
 ## Item quality in names
 
 In lists and slots, item names carry the quality as the colour a sighted player sees the name in, so you hear "Fur Boots, White" or "Thunderfury, Orange". This only affects names. The tooltip always reads the quality name ("Common", "Legendary") whatever you choose below.

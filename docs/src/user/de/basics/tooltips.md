@@ -41,6 +41,22 @@ Gehört der Tooltip zu einem Gegenstand, ergänzt WowVision zwei Zeilen, die das
 
 Geld im Tooltip wird mit seinen Münzen vorgelesen. Das Spiel zeigt Gold, Silber und Kupfer als kleine Münzbilder, die die Sprachausgabe weglassen würde. WowVision liest den Verkaufspreis und andere Beträge als „Verkaufspreis: 1 Gold, 23 Silber, 45 Kupfer“. Ein Gegenstand, der nur ein paar Münzen wert ist, klingt zum Beispiel so: „Verkaufspreis: 7 Kupfer“.
 
+## Vergleich mit dem, was du trägst
+
+Zeigt der Tooltip einen Gegenstand, den du anlegen könntest, und trägst du auf diesem Platz schon etwas, geht der Tooltip nach dem Gegenstand mit dem weiter, was du trägst. Das ist der Vergleich, den ein sehender Spieler bekommt, wenn er Umschalt über einem Gegenstand hält (oder immer, mit der Spieloption „Gegenstände immer vergleichen“), und das Spiel entscheidet, womit verglichen wird:
+
+- Ein Block für jeden Gegenstand, den du dort trägst: zwei bei Ringen, Schmuckstücken und Einhandwaffen, beide Hände, wenn du eine Zweihandwaffe hältst.
+- Jeder Block beginnt mit der Überschrift des Spiels („Derzeit angelegt“ oder „Angelegt“), dann folgen die Zeilen des Gegenstands, den du trägst.
+- In WoW: Forever und Retail endet der erste Block mit den Werteänderungen: „Wenn Ihr diesen Gegenstand ersetzt, ergeben sich folgende Werteänderungen:“, dann eine Zeile je Wert, zum Beispiel „+12 Ausdauer“. In den Classic-Versionen hörst du, was das Spiel in sein Vergleichsfenster schreibt.
+
+Die Leertaste liest nur den Gegenstand selbst. Drücke Umschalt+Pfeil runter über die letzte Zeile des Gegenstands hinaus, um in den Vergleich zu gehen.
+
+Beispiel: Du stehst in deinen Taschen auf einem Paar Stiefel. Die Leertaste liest die Stiefel. Umschalt+Pfeil runter geht Zeile für Zeile durch die Stiefel, dann „Angelegt“, die Stiefel, die du trägst, und die Werteänderungen.
+
+Zum Ausschalten öffnest du das [WowVision-Menü](./menu-and-settings.md) mit Umschalt+F1, dann Benutzeroberfläche, Tooltip, Mit Angelegtem vergleichen, und entfernst den Haken bei Aktiviert. Standardmäßig ist es an.
+
+(Die Überschriften und Werteänderungen kommen wörtlich aus dem Spielclient; die deutschen Texte hier sind sinngemäß.)
+
 ## Gegenstandsqualität in Namen
 
 In Listen und auf Plätzen tragen Gegenstandsnamen die Qualität als die Farbe, in der ein sehender Spieler den Namen sieht, sodass du „Pelzstiefel, Weiß“ oder „Donnerzorn, Orange“ hörst. Das betrifft nur Namen. Der Tooltip liest immer den Qualitätsnamen („Verbreitet“, „Legendär“), egal was du unten einstellst.
