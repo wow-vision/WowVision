@@ -51,7 +51,7 @@ Zeigt der Tooltip einen Gegenstand, den du anlegen könntest, und trägst du auf
 - Jeder Block beginnt mit der Überschrift des Spiels („Derzeit angelegt“ oder „Angelegt“), dann folgen die Zeilen des Gegenstands, den du trägst.
 - In WoW: Forever und Retail endet der erste Block mit den Werteänderungen: „Wenn Ihr diesen Gegenstand ersetzt, ergeben sich folgende Werteänderungen:“, dann eine Zeile je Wert, zum Beispiel „+12 Ausdauer“. In den Classic-Versionen hörst du, was das Spiel in sein Vergleichsfenster schreibt.
 
-Die Leertaste liest nur den Gegenstand selbst. Drücke Umschalt+Pfeil runter über die letzte Zeile des Gegenstands hinaus, um in den Vergleich zu gehen, oder Strg+Umschalt+Pfeil runter, um direkt zur Überschrift des nächsten Blocks zu springen; Strg+Umschalt+Pfeil hoch springt einen Block zurück, bis zur ersten Zeile des Gegenstands.
+Die Leertaste liest nur den Gegenstand selbst. Drücke Umschalt+Pfeil runter über die letzte Zeile des Gegenstands hinaus, um in den Vergleich zu gehen, oder Strg+Umschalt+Pfeil runter, um direkt zum nächsten Block zu springen: Jeder Gegenstand, den du trägst, beginnt einen, und ebenso die Überschrift des Spiels über den Werteänderungen; Strg+Umschalt+Pfeil hoch springt einen Block zurück, bis zur ersten Zeile des Gegenstands.
 
 Beispiel: Du stehst in deinen Taschen auf einem Paar Stiefel. Die Leertaste liest die Stiefel. Umschalt+Pfeil runter geht Zeile für Zeile durch die Stiefel, dann „Angelegt“, die Stiefel, die du trägst, und die Werteänderungen.
 

@@ -302,7 +302,8 @@ function Tooltip:previousLine()
 end
 
 -- Move to the start of the next or previous block (the item, then each
--- equipped item it is compared with) and speak that line. The item's block
+-- equipped item it is compared with and its stat changes) and speak that
+-- line. The item's block
 -- starts at its first non-blank line. At either end the current block's
 -- start is read again.
 function Tooltip:moveBlock(direction)
@@ -382,9 +383,19 @@ local comparison = {
     end,
 }
 
+-- The game's heading over the stat changes in a comparison box ("If you
+-- replace this item, the following stat changes will occur:"): a block of
+-- its own for nextBlock/previousBlock.
+local function isStatChangeHeading(text)
+    return text ~= nil
+        and not WowVision.secrets.isSecret(text)
+        and (text == ITEM_DELTA_DESCRIPTION or text == ITEM_DELTA_MULTIPLE_COMPARISON_DESCRIPTION)
+end
+
 -- One block after the tooltip lines: the header unless the game's own
 -- first line already says it, then the block lines, all marked compare.
--- The block's first line is marked blockStart for nextBlock/previousBlock.
+-- The block's first line, and the stat change heading, are marked
+-- blockStart for nextBlock/previousBlock.
 function comparison.append(lines, header, blockLines)
     local first = #lines + 1
     if header ~= nil and (blockLines[1] == nil or blockLines[1][1] ~= header) then
@@ -392,6 +403,9 @@ function comparison.append(lines, header, blockLines)
     end
     for _, line in ipairs(blockLines) do
         line.compare = true
+        if isStatChangeHeading(line[1]) then
+            line.blockStart = true
+        end
         tinsert(lines, line)
     end
     if lines[first] ~= nil then

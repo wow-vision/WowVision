@@ -94,4 +94,26 @@ testRunner:addSuite("TooltipComparison", {
             "Leather Belt|Equipped|Old Belt|Equipped|Equipped|Equipped|Leather Belt|Leather Belt"
         )
     end,
+
+    ["the stat changes are a block of their own"] = function(t)
+        local heading = "If you replace this item, the following stat changes will occur:"
+        local saved = ITEM_DELTA_DESCRIPTION
+        ITEM_DELTA_DESCRIPTION = heading
+        local lines = { { "Leather Belt" } }
+        comparison.append(lines, "Equipped", { { "Old Belt" }, { " " }, { heading }, { "+2 Stamina" } })
+        ITEM_DELTA_DESCRIPTION = saved
+        local tooltip = fakeTooltip(lines)
+        local spoken = {}
+        local speak = WowVision.speak
+        WowVision.speak = function(_, text)
+            tinsert(spoken, text)
+        end
+        tooltip:nextBlock()
+        tooltip:nextBlock()
+        tooltip:nextBlock()
+        tooltip:nextLine()
+        tooltip:previousBlock()
+        WowVision.speak = speak
+        t:assertEqual(table.concat(spoken, "|"), "Leather Belt|Equipped|" .. heading .. "|+2 Stamina|Equipped")
+    end,
 })

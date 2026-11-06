@@ -51,7 +51,7 @@ When the tooltip shows an item you could wear, and you already wear something in
 - Each block starts with the game's own header ("Currently Equipped" or "Equipped"), then the lines of the item you wear.
 - On WoW: Forever and Retail the first block ends with the stat changes: "If you replace this item, the following stat changes will occur:", then one line per stat, for example "+12 Stamina". On the classic versions you hear whatever the game puts into its comparison box.
 
-Space reads only the item itself. Press Shift+Down past the item's last line to walk into the comparison, or Ctrl+Shift+Down to jump straight to the next block's header; Ctrl+Shift+Up jumps back a block, up to the item's first line.
+Space reads only the item itself. Press Shift+Down past the item's last line to walk into the comparison, or Ctrl+Shift+Down to jump straight to the next block: each item you wear starts one, and so does the game's heading over the stat changes; Ctrl+Shift+Up jumps back a block, up to the item's first line.
 
 Example: you are on a pair of boots in your bags. Space reads the boots. Shift+Down line by line goes through the boots, then "Equipped", the boots you wear, and the stat changes.
 
