@@ -223,7 +223,7 @@ Ohne früher gewähltes Ziel hörst du Wähle zuerst ein Ziel im Navigationsfens
 
 ### Automatikmodus
 
-Der Automatikmodus übernimmt diese Kette für dich. Drücke im Navigationsfenster Umschalt+F10 auf einem Ziel und wähle einen von zwei Einträgen:
+Der Automatikmodus übernimmt diese Kette für dich. Drücke im Navigationsfenster Umschalt+F10 auf einem Ziel oder einem Einstiegspunkt und wähle einen von zwei Einträgen:
 
 - Automatisch direkt: ein gerades Signal zum Ziel. Bei jeder Ankunft geht das nächste gerade Signal zum nächsten unbesuchten Ziel mit demselben Namen.
 - Automatisch routen: eine Route zum Ziel. Bei jeder Ankunft geht die nächste Route zu dem unbesuchten Ziel dieses Namens, das den kürzesten Fußweg entfernt ist. WowVision prüft die 8 nächsten in Luftlinie und nimmt das mit dem kürzesten Weg, damit ein Kraut auf der anderen Seite eines Flusses nicht gegen eines gewinnt, das etwas weiter weg auf deiner Seite liegt. Mit WowNav wird das im Hintergrund geplant, und du hörst vielleicht zuerst Route wird berechnet.

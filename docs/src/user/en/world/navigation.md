@@ -221,7 +221,7 @@ Without a destination picked earlier you hear Choose a destination in the naviga
 
 ### Auto mode
 
-Auto mode does that chaining for you. In the navigation window, press Shift+F10 on a destination and choose one of two entries:
+Auto mode does that chaining for you. In the navigation window, press Shift+F10 on a destination or an entry point and choose one of two entries:
 
 - Auto Direct: a straight beacon to the destination. Each time you arrive, the next straight beacon goes to the nearest unvisited destination with the same name.
 - Auto Route: a route to the destination. Each time you arrive, the next route goes to the unvisited destination of that name that is the shortest walk away. WowVision checks the nearest 8 by straight line and picks the one with the shortest walk, so a herb across a river does not win over one a little further away on your side. With WowNav this is planned in the background, and you may hear Calculating route first.

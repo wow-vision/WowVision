@@ -31,9 +31,9 @@ local kinds = graph.kinds
 -- straight beacon, no route (WowNav's /vn direct). The destinations are the
 -- same, a route engine's without its reachability check.
 --
--- Shift-F10 on a destination offers its auto chains: Auto Direct and Auto
--- Route lead on, one after the other, to every unvisited destination of
--- its name (navigation/visited.lua).
+-- Shift-F10 on a destination or an entry point offers its auto chains: Auto
+-- Direct and Auto Route lead on, one after the other, to every unvisited
+-- destination of its name (navigation/visited.lua).
 
 local function entryLabel(entry)
     local wp = entry.waypoint
@@ -150,6 +150,26 @@ local function selectedEntry(screen)
         end
     end
     return nil
+end
+
+-- Shift-F10 on a destination or an entry point: the auto chains of its name (navigation/visited.lua).
+-- waypointOf returns the focused row's waypoint, nil on an empty list.
+local function autoActions(waypointOf)
+    return function(add)
+        local visited = WowVision.base.navigation.visited
+        local wp = waypointOf()
+        if wp == nil or wp.n == nil or visited == nil then
+            return
+        end
+        local function auto(mode)
+            return function()
+                WowVision.UIHost:closeWindow("atlas")
+                visited:startAuto(wp, mode)
+            end
+        end
+        add({ label = L["Auto Direct"], onActivate = auto("direct") })
+        add({ label = L["Auto Route"], onActivate = auto("route") })
+    end
 end
 
 local function destinationCursor(screen)
@@ -277,22 +297,11 @@ local function destinationCursor(screen)
                 module:beaconTo(wp.x, wp.y, wp.n, onArrive)
             end
         end,
-        -- Shift-F10: the auto chains of the destination's name (navigation/visited.lua)
-        contextActions = function(add)
+        contextActions = autoActions(function()
             local list, index = clampedIndex()
             local entry = list[index]
-            if entry == nil or visited == nil then
-                return
-            end
-            local function auto(mode)
-                return function()
-                    WowVision.UIHost:closeWindow("atlas")
-                    visited:startAuto(entry.waypoint, mode)
-                end
-            end
-            add({ label = L["Auto Direct"], onActivate = auto("direct") })
-            add({ label = L["Auto Route"], onActivate = auto("route") })
-        end,
+            return entry ~= nil and entry.waypoint or nil
+        end),
         bindings = {
             {
                 binding = "up",
@@ -359,6 +368,9 @@ local function renderEntries(builder, screen)
                     kind = kinds.selected,
                 },
             },
+            contextActions = autoActions(function()
+                return captured.waypoint
+            end),
             onActivate = function()
                 screen._entryId = captured.waypoint.id
             end,
