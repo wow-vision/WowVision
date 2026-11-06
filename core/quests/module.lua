@@ -97,10 +97,41 @@ local claimedMessages = {
     ERR_QUEST_UNKNOWN_COMPLETE = completeAlert,
 }
 
+-- The last kill of a count brings two or three messages at once (8/8, then
+-- the objective and the quest complete). They are gathered for a moment
+-- and fired as ONE alert, the most important one, speaking every text.
+local alertRank = { [progressAlert] = 1, [objectiveAlert] = 2, [completeAlert] = 3 }
+local GATHER_DELAY = 0.2
+local pending = nil
+
+local function flushMessages()
+    local batch = pending
+    pending = nil
+    local texts = {}
+    for i, message in ipairs(batch.messages) do
+        -- Joined texts need a stop between them to be spoken as sentences.
+        if i < #batch.messages and not message:find("[%.!?]$") then
+            message = message .. "."
+        end
+        texts[i] = message
+    end
+    batch.alert:fire({ text = table.concat(texts, " ") })
+end
+
+local function gatherMessage(messageAlert, message)
+    if pending == nil then
+        pending = { alert = messageAlert, messages = {} }
+        C_Timer.After(GATHER_DELAY, flushMessages)
+    elseif alertRank[messageAlert] > alertRank[pending.alert] then
+        pending.alert = messageAlert
+    end
+    table.insert(pending.messages, message)
+end
+
 local function claimMessages(claimed)
     for name, messageAlert in pairs(claimedMessages) do
         WowVision.errors.claimed[name] = claimed and function(message)
-            messageAlert:fire({ text = message })
+            gatherMessage(messageAlert, message)
         end or nil
     end
 end
