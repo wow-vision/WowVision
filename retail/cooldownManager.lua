@@ -109,6 +109,8 @@ end
 local function renderTabs(builder, frame)
     builder:beginStop("tabs")
     builder:pushContext("tabs", L["Tabs"])
+    -- A row like every tab bar, though the game stacks these on the side.
+    builder:startRow()
     for _, tab in ipairs(frame.TabButtons or {}) do
         if tab:IsShown() then
             local captured = tab
@@ -143,6 +145,7 @@ local function renderTabs(builder, frame)
             })
         end
     end
+    builder:endRow()
     builder:popContext()
 end
 
