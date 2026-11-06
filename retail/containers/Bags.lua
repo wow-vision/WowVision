@@ -236,17 +236,6 @@ local function renderGrid(builder, frame, frameKey, separateBags)
 end
 
 local function renderFrameControls(builder, frame, frameKey)
-    -- The search box is one shared edit box parented to the frame that
-    -- owns it; it gets a stop of its own so tabbing in starts typing.
-    local searchBox = BagItemSearchBox
-    if searchBox ~= nil and searchBox:GetParent() == frame and searchBox:IsShown() then
-        builder:beginStop(frameKey .. ":search")
-        builder:addItem(
-            ControlId.forObject(searchBox),
-            nodes.proxyEditBox({ editBox = searchBox, label = L["Search"] })
-        )
-    end
-
     -- Collected first: a frame with nothing to offer (an individual bag
     -- other than the backpack) contributes no stop at all.
     local items = {}
@@ -283,15 +272,26 @@ local function renderFrameControls(builder, frame, frameKey)
             nodes.proxyButton({ target = frame.AddSlotsButton, label = L["Add Slots"] })
         )
     end
-    if #items == 0 then
-        return
+    if #items > 0 then
+        builder:beginStop(frameKey .. ":controls")
+        builder:pushContext(frameKey .. ":controls", L["Bag Controls"])
+        for _, entry in ipairs(items) do
+            builder:addItem(entry.id, entry.node)
+        end
+        builder:popContext()
     end
-    builder:beginStop(frameKey .. ":controls")
-    builder:pushContext(frameKey .. ":controls", L["Bag Controls"])
-    for _, entry in ipairs(items) do
-        builder:addItem(entry.id, entry.node)
+
+    -- The search box is one shared edit box parented to the frame that
+    -- owns it; it gets a stop of its own so tabbing in starts typing. Last,
+    -- so tab wraps from it straight into the bags it searches.
+    local searchBox = BagItemSearchBox
+    if searchBox ~= nil and searchBox:GetParent() == frame and searchBox:IsShown() then
+        builder:beginStop(frameKey .. ":search")
+        builder:addItem(
+            ControlId.forObject(searchBox),
+            nodes.proxyEditBox({ editBox = searchBox, label = L["Search"] })
+        )
     end
-    builder:popContext()
 end
 
 function Bags:renderGraph(builder)
