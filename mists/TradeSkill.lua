@@ -182,12 +182,6 @@ local function render(builder, screen)
     end
     builder:pushContext("tradeskill", TradeSkillFrameTitleText:GetText())
 
-    builder:beginStop("search")
-    builder:addItem(
-        ControlId.structural("search"),
-        nodes.proxyEditBox({ editBox = TradeSkillFrameSearchBox, label = L["Search"] })
-    )
-
     if TradeSkillFrame.FilterDropdown ~= nil then
         builder:beginStop("filter")
         builder:addItem(
@@ -195,6 +189,12 @@ local function render(builder, screen)
             nodes.proxyDropdown({ target = TradeSkillFrame.FilterDropdown })
         )
     end
+
+    builder:beginStop("search")
+    builder:addItem(
+        ControlId.structural("search"),
+        nodes.proxyEditBox({ editBox = TradeSkillFrameSearchBox, label = L["Search"] })
+    )
 
     -- A fresh open lands on the top of the recipes (a category heading).
     builder:beginStop("recipes")

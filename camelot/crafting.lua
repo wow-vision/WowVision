@@ -315,14 +315,14 @@ local function emitRecipeRow(list)
 end
 
 local function renderRecipeList(builder, list)
+    builder:beginStop("filter")
+    builder:addItem(ControlId.forObject(list.FilterDropdown), nodes.proxyDropdown({ target = list.FilterDropdown }))
+
     builder:beginStop("search")
     builder:addItem(
         ControlId.structural("search"),
         nodes.proxyEditBox({ editBox = list.SearchBox, label = L["Search"] })
     )
-
-    builder:beginStop("filter")
-    builder:addItem(ControlId.forObject(list.FilterDropdown), nodes.proxyDropdown({ target = list.FilterDropdown }))
 
     -- A fresh open lands on the top of the recipes (a category heading).
     builder:beginStop("recipes")
