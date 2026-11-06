@@ -28,11 +28,13 @@ Die Zeile wird mit dem Namen der Aktion angesagt, dann „Leiste“, dann der Sc
 |---|---|
 | Pfeil runter / Pfeil hoch | Zur nächsten oder vorherigen Aktion gehen. |
 | Pfeil rechts / Pfeil links | An der Zeile der Tasten, Hinzufügen und so weiter entlanggehen. |
+| Pos1 / Ende | Zur ersten oder letzten Aktion springen. |
+| Ein Buchstabe | Zur nächsten Aktion springen, deren Name mit ihm beginnt. |
 | Eingabe auf einer Taste | Entfernt diese Taste von der Aktion. |
 | Eingabe auf Hinzufügen | Beginnt, eine neue Taste aufzunehmen. |
 | Esc | Verlässt den Bildschirm. |
 
-Die Aktionen stehen in der Reihenfolge, in der das Addon sie geladen hat: zuerst die Navigationstasten der Fenster, dann die anderen Module. Es sind viele, und es gibt keine Suche, drücke also wiederholt Pfeil runter, um die Liste durchzugehen. Buchstabentasten springen nur an der Zeile entlang, auf der du bist, nicht zwischen Aktionen.
+Die Aktionen stehen in der Reihenfolge, in der das Addon sie geladen hat: zuerst die Navigationstasten der Fenster, dann die anderen Module. Um eine zu finden, tippe den Anfang ihres Namens: S springt zur nächsten Aktion, die mit S beginnt, noch einmal S zur übernächsten, und S und dann schnell C findet "Scanner". Du landest auf der ersten Taste der Aktion, oder auf Hinzufügen, wenn sie keine hat. Siehe [Buchstabennavigation in Menüs](./interface.md#buchstabennavigation-in-menüs).
 
 Eine Aktion ohne Taste zeigt nur Hinzufügen. Das sind die Aktionen, die „standardmäßig unbelegt“ sind: Es gibt sie, aber sie warten darauf, dass du ihnen eine Taste gibst, zum Beispiel Alle Monitore ein- oder ausschalten, Route zu deinem Ziel oder Entfernung ansagen.
 

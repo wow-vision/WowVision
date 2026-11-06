@@ -165,7 +165,8 @@ function module:getGraphMenuItems(builder)
             local host = WowVision.graphHost
             local stack = host:focusedStack()
             if stack ~= nil then
-                host:push(stack, { key = "bindings", render = renderBindings })
+                -- a list of rows: Home, End and the letters move between bindings, found by their names
+                host:push(stack, { key = "bindings", render = renderBindings, rowList = true })
             end
         end,
     })
