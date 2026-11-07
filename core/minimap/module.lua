@@ -1441,6 +1441,77 @@ function module:rawRead()
         Engine.wait(2)
         local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
         tinsert(task.reads, { label = "Cursor's own read, not asked (the scan does not use it)", data = ok and data or nil })
+
+        -- Which minimap setup the game still names dots for. Forever's
+        -- build 70862 (2026-11-07) sent the shrunk, hidden minimap's
+        -- mouseover with no lines at all, nothing over it; the UI source
+        -- changed nothing there, so the client did.
+        task.probes = {}
+        local function soft(on)
+            if Minimap.SetUsingSoftCursor ~= nil then
+                pcall(Minimap.SetUsingSoftCursor, Minimap, on)
+            end
+        end
+        -- Four frames asked at the centre; the fullest read counts.
+        local function centreProbe(label)
+            local most, names = 0, ""
+            for _ = 1, 4 do
+                Engine.wait()
+                Engine.askCentre()
+                local okRead, read = pcall(C_TooltipInfo.GetMinimapMouseover)
+                read = okRead and read or nil
+                local count = read ~= nil and type(read.lines) == "table" and #read.lines or 0
+                if count > most then
+                    most = count
+                    names = Scan.signature(Scan.parseMouseover(read, WowVision.isSecret)):gsub("\n", ", ")
+                end
+            end
+            tinsert(task.probes, string.format("%s: %d tooltip lines, names: %s", label, most, most > 0 and names or "none"))
+        end
+        -- Every 10 units of the minimap asked; the names any point gave.
+        local function gridProbe(label)
+            Engine.wait(2)
+            local ask = Engine.pointReader()
+            local radius = math.min(Minimap:GetWidth(), Minimap:GetHeight()) / 2
+            local found, names, asked = {}, {}, 0
+            for ox = -radius, radius, 10 do
+                for oy = -radius, radius, 10 do
+                    if ox * ox + oy * oy <= radius * radius then
+                        for _, dot in ipairs(ask(ox, oy)) do
+                            if not found[dot.name] then
+                                found[dot.name] = true
+                                tinsert(names, dot.name)
+                            end
+                        end
+                        asked = asked + 1
+                        if asked % 50 == 0 then
+                            Engine.wait()
+                        end
+                    end
+                end
+            end
+            tinsert(task.probes, string.format("%s, %d points: names: %s", label, asked, #names > 0 and table.concat(names, ", ") or "none"))
+        end
+        soft(true)
+        Minimap:SetAlpha(0)
+        centreProbe("Shrunk, hidden, soft cursor on (the scan's way)")
+        Minimap:SetAlpha(1)
+        centreProbe("Shrunk, shown, soft cursor on")
+        soft(false)
+        Minimap:SetAlpha(0)
+        centreProbe("Shrunk, hidden, soft cursor off")
+        Minimap:SetAlpha(1)
+        centreProbe("Shrunk, shown, soft cursor off")
+        Engine.fullSize(state, x, y)
+        soft(true)
+        gridProbe("Full size under the cursor, shown, soft cursor on")
+        soft(false)
+        gridProbe("Full size under the cursor, shown, soft cursor off")
+        Engine.restoreFrame(state)
+        soft(true)
+        gridProbe("In its own place, soft cursor on")
+        soft(false)
+        gridProbe("In its own place, soft cursor off")
     end
     task.check = function()
         return InCombatLockdown() and "combat" or nil
@@ -1465,6 +1536,10 @@ function module:rawRead()
                 tinsert(lines, line)
             end
             tinsert(lines, "Parsed: " .. Scan.signature(Scan.parseMouseover(read.data, WowVision.isSecret)):gsub("\n", ", "))
+        end
+        tinsert(lines, "Minimap setups tried")
+        for _, probe in ipairs(task.probes or {}) do
+            tinsert(lines, probe)
         end
         tinsert(lines, arrowAtlasText())
         tinsert(lines, "Tracking types")
