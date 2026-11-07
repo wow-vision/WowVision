@@ -200,19 +200,37 @@ function Beacon:initialize(info)
             return self.beacon
         end,
     })
-    -- Base volume of the beacon, independent of every other WowVision sound.
-    -- The beacon files come in 30 loudness levels; less than 100 moves the
-    -- ping that many tenths toward the quiet end (as Sku's beacon volume
-    -- does), 0 mutes it.
+    -- Base volume of the beacon, independent of every other WowVision sound
+    -- (Beacon.fileLevel). 10 is the quietest; the output's Enabled switch
+    -- turns the beacon off.
     self:addParameter({
         key = "volume",
         type = "Number",
         label = L["Beacon Volume"],
         default = 100,
-        min = 0,
+        min = 10,
         max = 100,
         step = 10,
     })
+end
+
+-- The beacon file level for a distance: the files come in loudness levels,
+-- 1 (loudest, nearest) to levels (quietest). The distance level is a
+-- compressed proximity bucket (~6 yards per step), not raw yards, so the
+-- beacon stays audible out to a long range. Beacon Volume turns the whole
+-- beacon down one level per 10 below 100, rounded to the nearest level (95
+-- is one level down, 10 is nine), as Sku's beacon volume does. The distance
+-- level is then scaled into the quieter levels that are left, so near and
+-- far still sound different at a low volume, in fewer steps.
+function Beacon.fileLevel(distance, volume, levels)
+    local level = floor((distance + 5) / 6)
+    if level < 1 then
+        level = 1
+    elseif level > levels then
+        level = levels
+    end
+    local offset = floor((100 - volume) / 10 + 0.5)
+    return offset + math.ceil(level * (levels - offset) / levels)
 end
 
 function Beacon:onFire(message)
@@ -227,15 +245,6 @@ function Beacon:onFire(message)
     if not source or not source.playAt then
         return
     end
-    -- The file's distance index is a compressed proximity bucket (~6 yards per
-    -- step), not raw yards, so the beacon stays audible out to a long range.
     local volume = self.parameters:getFieldValue("volume") or 100
-    if volume <= 0 then
-        return
-    end
-    local fileDistance = floor((message.distance + 5) / 6) + floor((100 - volume) / 10)
-    if fileDistance < 1 then
-        fileDistance = 1
-    end
-    source:playAt(message.angle, fileDistance)
+    source:playAt(message.angle, Beacon.fileLevel(message.distance, volume, source.maxDistance))
 end
