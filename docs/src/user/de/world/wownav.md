@@ -74,6 +74,7 @@ Jedes Ziel liest seinen Namen, seine Entfernung, was es ist und wo es ist, zum B
 - Ein Ziel ohne Netzpunkt in der Nähe (siehe Zielradius um das Netz (Meter)) wird weggelassen. Ein Ort, dessen Gebiet noch nicht vorbereitet ist, wird ungeprüft angeboten und beim Wählen geprüft.
 - Zusätzliche Informationen können vor den Kategorien kommen: "ungenau +3.2 Meter" (der Ort liegt nicht genau im Netz), "Ebene wählen" (der Ort liegt über mehreren Ebenen), "Ebene unbekannt", "kein Netzpunkt im Radius" oder "Wasseroberfläche, Tauchtiefe 12 Meter".
 - Orte, um woandershin zu kommen, haben beschreibende Namen: "Dungeoneingang: The Deadmines", "Portal nach Orgrimmar", "Schiffsanleger nach Auberdine", "Zeppelinturm nach Grom'gol", "Tiefenbahn-Haltestelle Richtung Ironforge", "Eingang der Tiefenbahn", "Aufzug: Thunder Bluff", "Übergang nach Westfall", "Hier tauchen" und "Hier auftauchen". Wo zwei Orte eines Gebiets gleich klingen würden, bekommen sie "(unten)", "(oben)", eine Höhe oder eine Nummer angehängt. Die Ortswörter in diesen Namen stammen vom Spielclient. Auf einem deutschen Client sind die Namen deutsch.
+- Kreaturen und Objekte (NPCs, Monster, Kräuter, Erze, Briefkästen) werden auf Clients, die weder englisch noch deutsch sind, in deiner Spielsprache benannt, wenn Questie sie kennt. Die Navigationsdaten selbst haben nur englische und deutsche Namen; deshalb kommt der Name auf anderen Clients aus Questies Datenbank anhand der ID der Kreatur oder des Objekts, und kennt Questie sie nicht, bleibt der englische Name. In Klammern geschriebene Titel wie "(Innkeeper)" werden mit übersetzt. Die eigene Sprache von Questie muss auf Auto oder auf der Sprache des Spiels stehen. Auf englischen und deutschen Clients ändert sich nichts. Die Einstellung Namen in deiner Sprache schaltet das ab.
 - Angelplätze heißen nach dem Gewässer, in das du wirfst: "Angelplatz am Ufer: Crystal Lake" oder "Angelplatz auf Steg oder Kai: The Temple Gardens", mit einer Nummer, wenn mehrere Plätze eines Gebiets gleich heißen. Suche nach "Angelplatz" oder "Angeln". Siehe [Angelplätze](#angelplätze).
 - Ein Dungeon mit mehreren Eingängen nennt den Flügel: "Dungeoneingang: Scarlet Monastery, Friedhof".
 - Die Einsteigpunkte von Anlegern sind ebenfalls aufgelistet: "Am Schiff", "Am Zeppelin" und "Am Fahrzeug", mit dem Namen des Anlegers als zusätzlichen Wörtern.
@@ -197,6 +198,7 @@ Der Punkt im Wasser ist nur zum Ausrichten da. WowNav schickt dich nie ins Wasse
 | Höhentoleranz einer Ebene (Meter) | 3 | Das Höhenband, das als eine Ebene zählt (0 bis 20). |
 | An Engstellen einen Schritt zurück | An | Driftest du an einer Engstelle seitlich ab, geht das Signal einen Wegpunkt zurück ("Einen Wegpunkt zurück"). |
 | Nachbargebiete vorbereiten | An | Bereitet dein Gebiet und die Nachbargebiete im Hintergrund vor, damit die erste Route dorthin nicht wartet. |
+| Namen in deiner Sprache | An | Benennt Kreaturen und Objekte in deiner Spielsprache aus Questies Datenbank, wo sie sie kennt; siehe [Ziele](#ziele). Auf englischen und deutschen Clients ohne Wirkung. |
 
 ## Beispiele
 

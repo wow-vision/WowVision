@@ -84,6 +84,7 @@ do
     end
 end
 loadAddonFile("camelot/wownav/text.lua")
+loadAddonFile("camelot/wownav/textTests.lua")
 loadAddonFile("camelot/wownav/catalog.lua")
 loadAddonFile("camelot/wownav/route.lua")
 loadAddonFile("camelot/wownav/dock.lua")

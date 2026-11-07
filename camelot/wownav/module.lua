@@ -50,6 +50,12 @@ settings:add({
 })
 settings:add({ key = "targetTolerance", type = "Number", label = L["Height Tolerance of a Floor (Yards)"], default = 3,
     min = 0, max = 20 })
+-- creatures and objects named in the game language from Questie's database where it knows them (text.lua); the
+-- catalogues themselves only have English and German
+settings:add({ key = "localNames", type = "Bool", label = L["Names in Your Language"], default = true })
+function WowVision.wownavText.localNamesEnabled()
+    return module.settings.localNames ~= false
+end
 -- his /vn rueckfall: one step back at a gate when the player drifted sideways
 settings:add({ key = "chokeFallback", type = "Bool", label = L["Step Back at Gates"], default = true })
 -- his preload: the player's zone and its neighbours are decoded ahead
