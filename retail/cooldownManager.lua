@@ -106,7 +106,20 @@ end
 -- so a secure click cannot reach them; the handler's one call is made
 -- directly. A greyed-out tab (Group Buffs with too few buffs) reads
 -- Disabled and does nothing.
+local function anyTabShown(frame)
+    for _, tab in ipairs(frame.TabButtons or {}) do
+        if tab:IsShown() then
+            return true
+        end
+    end
+    return false
+end
+
 local function renderTabs(builder, frame)
+    -- A row cannot be empty.
+    if not anyTabShown(frame) then
+        return
+    end
     builder:beginStop("tabs")
     builder:pushContext("tabs", L["Tabs"])
     -- A row like every tab bar, though the game stacks these on the side.
