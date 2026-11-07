@@ -182,11 +182,14 @@ end
 
 -- The down-right total order: go right until stuck (recording each node),
 -- queue every down for a later pass, repeat -- then append any node the walk
--- never reached in declaration order, so the order is total.
+-- never reached in declaration order, so the order is total. It walks from
+-- the first declared node, not from where a fresh open lands (setStart,
+-- setStartStop), so the stops before the landing keep their place.
 function KeyGraph.computeOrder(render)
     local order = {}
     local seen = {}
-    local fringe = { render.startKey }
+    local first = render.order[1]
+    local fringe = { first ~= nil and first.id or render.startKey }
 
     local i = 1
     while i <= #fringe do

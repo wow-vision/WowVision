@@ -267,6 +267,18 @@ testRunner:addSuite("GraphKeyGraph", {
         t:assertEqual(order[4].key, "d")
     end,
 
+    ["computeOrder keeps declaration order when the start is named"] = function(t)
+        local b = Builder:new()
+        b:beginStop("tabs"):addLabel(sid("tab"), "Tab")
+        b:beginStop("search"):addLabel(sid("search"), "Search")
+        b:beginStop("list"):addLabel(sid("l1"), "One")
+        b:setStartStop("search")
+        local order = KeyGraph.computeOrder(b:build())
+        t:assertEqual(order[1].key, "tab")
+        t:assertEqual(order[2].key, "search")
+        t:assertEqual(order[3].key, "l1")
+    end,
+
     ["focus survives rebuild by structural key"] = function(t)
         local kg, state = makeGraph(function(b)
             b:addLabel(sid("a"), "A"):addLabel(sid("b"), "B"):addLabel(sid("c"), "C")
