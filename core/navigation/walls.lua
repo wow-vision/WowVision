@@ -39,7 +39,7 @@ settings:addRef("stuck", alert.parameters)
 local cadence = stuckMath.newCadence(3)
 
 -- The last graded severity (1 = blocked; nil while moving freely or not judged) and when, for
--- other modules: the surroundings name what the player is blocked by.
+-- other modules: bumps.lua names what the player is blocked by.
 module.severity, module.severityAt = nil, 0
 local lastCheck = 0
 local lastX, lastY = nil, nil

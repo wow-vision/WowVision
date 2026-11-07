@@ -118,7 +118,7 @@ Es kennt die Orte, für die WowVision Kartendaten hat, gelesen aus den Kartendat
 - Classic Era: Wald von Elwynn mit Sturmwind und Dun Morogh mit Eisenschmiede.
 - Mists of Pandaria Classic und Retail: noch keine Orte.
 
-Anderswo hörst du nur die Töne der Wanderkennung. Drinnen, wo Etagen übereinanderliegen, zählen die Gegenstände des Raums, den du durch eine Tür betreten hast. Nichts wird gesagt, solange die Wanderkennung aus ist, beim Schwimmen oder auf einem Flug. Die Namen gibt es auf Englisch, Deutsch und Französisch.
+Anderswo hörst du nur die Töne der Wanderkennung. Das Spiel nennt keine Höhe, deshalb folgt WowVision dort, wo Etagen übereinanderliegen, dem Raum, den du durch eine Tür betreten hast, und behält ihn über ein Neuladen. Wo es den Raum nicht kennt (nach einem Ruhestein oder Portal in ein Gebäude), zählen die Gegenstände aller Räume an dieser Stelle; dann kann ab und zu ein Gegenstand der Etage darüber oder darunter genannt werden, bis du durch eine Tür gehst. In den großen Hallen, die das Spiel draußen nennt (Eisenschmiede, Unterstadt), sagen die Karte und das Gebiet des Spiels, wann du drin bist. Nichts wird gesagt, solange die Wanderkennung aus ist, beim Schwimmen oder auf einem Flug. Die Namen gibt es auf Englisch, Deutsch und Französisch.
 
 Einstellungen: Öffne Navigation, Benennen, wogegen ich laufe, dann Benennen, wogegen ich laufe (der Alarm). Er hat einen Schalter Aktiviert und einen TTS-Alarm. Der TTS-Alarm spricht mit einer eigenen Spielstimme (der ersten), nicht mit deiner Sprachausgabe, damit ein Screenreader ihn beim nächsten Bewegungstastendruck nicht abschneidet.
 

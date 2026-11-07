@@ -6,7 +6,8 @@
 -- Objects are footprints (a box around its centre, turned by an angle) with a name and the room they stand in
 -- (0 outdoors). Room floors and outlines are boxes in their building's own frame, so they stay exact for turned
 -- buildings; a doorway joins two rooms (0 outside). Positions carry no height, so where floors stack the room is
--- the one the player walked into through a doorway.
+-- the one the player walked into through a doorway (bumpLogic.newTracker). The rules are the surroundings
+-- module's (its rooms.lua and objects.lua), without its floor layers.
 
 local bumpLogic = {}
 WowVision.bumpLogic = bumpLogic
@@ -18,9 +19,19 @@ bumpLogic.ANGLE = 0.34 -- cosine: the object lies at most 70 degrees off the way
 bumpLogic.TOUCHING = 0.3 -- yd; this close an object counts whichever way the player pushes
 bumpLogic.WALL_REACH = 2.5 -- yd ahead looked at for the building or structure whose wall it is
 bumpLogic.WALL_STEP = 0.5 -- yd between the points looked at ahead
-bumpLogic.ROOM_SLACK = 0.5 -- yd around a room's floor boxes that still count as in it
+bumpLogic.ROOM_MARGIN = 0.5 -- yd around a room's floor boxes that count as on them
+bumpLogic.ROOM_SLACK = 2.0 -- yd; where no floor lies right under the player, a floor this close counts
 bumpLogic.DOOR_REACH = 3.0 -- yd from a doorway's plane (or centre, without its width) within which a crossing counts
 bumpLogic.DOOR_SIDE = 1.0 -- yd past the edges of the opening that still count as through it
+bumpLogic.DOOR_HOLD = 4.0 -- yd from a doorway of the room entered through a doorway within which that room holds
+bumpLogic.HALL_GAP = 15 -- yd walked in a hall with no hall floor near (a bridge, over lava) before it ends
+bumpLogic.HERE_SAME = 1.5 -- yd from the spot kept over a reload that still count as the same
+bumpLogic.JUMP = 100 -- yd between two looks from which the player was moved (a hearthstone, a portal)
+-- Objects go into buckets per block of BLOCK by BLOCK cells, not per cell (the surroundings module's measure: a
+-- table per cell held Elwynn's objects in 62730 buckets, 8.8 MB), and an object is a number in flat lists, not a
+-- table of its own. Elwynn's whole index: 9.7 MB per cell with a table per object, 1.8 MB so (LuaJIT); a lookup
+-- takes some microseconds.
+bumpLogic.BLOCK = 8
 
 function bumpLogic.addZone(zone)
     bumpLogic.zones[#bumpLogic.zones + 1] = zone
@@ -34,6 +45,11 @@ local function numbers(text)
     end
     return out
 end
+
+local function dist(ax, ay, bx, by)
+    return math.sqrt((ax - bx) ^ 2 + (ay - by) ^ 2)
+end
+bumpLogic.dist = dist
 
 function bumpLogic.cellOf(zone, x, y)
     return math.floor((zone.top - x) / zone.cell), math.floor((zone.left - y) / zone.cell)
@@ -54,12 +70,12 @@ function bumpLogic.findZone(x, y, map)
     return nil
 end
 
--- A name list in the player's locale, English where the locale has none.
+-- A name in the player's locale, English where the locale has none; nil for none at all.
 local function localized(lists, locale, i)
-    local own = lists[locale]
+    local own = lists and lists[locale]
     local name = own and own[i]
     if name == nil or name == "" then
-        name = lists.enUS and lists.enUS[i]
+        name = lists and lists.enUS and lists.enUS[i]
     end
     if name == "" then
         return nil
@@ -67,32 +83,57 @@ local function localized(lists, locale, i)
     return name
 end
 
--- Reads the zone's data into its index (zone._index): objects in buckets per grid cell their footprint touches,
--- the buildings' frames, rooms and doorways, the structures' cells. `locale`: the game's (GetLocale()).
+-- The block bucket of cell (r, c).
+local function blockOf(zone, r, c)
+    local b = bumpLogic.BLOCK
+    return math.floor(r / b) * (math.floor(zone.cols / b) + 1) + math.floor(c / b)
+end
+
+-- Reads the zone's data into its index (zone._index): objects in the buckets of the blocks their footprint's circle
+-- touches, each with that box of cells; the buildings' frames, rooms and doorways; the structures' cells.
+-- `locale`: the game's (GetLocale()).
 function bumpLogic.unpack(zone, locale)
     if zone._index then
         return zone._index
     end
-    local ix = { objects = {}, interiors = {}, rooms = {}, doorsOf = {}, neighbours = {}, struct = {}, waterStructs = {} }
+    local ix = {
+        objects = {}, interiors = {}, rooms = {}, doorsOf = {}, neighbours = {}, struct = {}, waterStructs = {},
+    }
 
+    -- objects: per object i its centre, half length and width, the cosine and sine of its angle, name, room, and
+    -- the box of cells its footprint's circle touches (rows r0..r1, columns c0..c1)
+    local ox, oy, ohl, ohw, ocos, osin, oname, oroom = {}, {}, {}, {}, {}, {}, {}, {}
+    local or0, or1, oc0, oc1 = {}, {}, {}, {}
+    ix.ox, ix.oy, ix.ohl, ix.ohw, ix.ocos, ix.osin, ix.oname, ix.oroom = ox, oy, ohl, ohw, ocos, osin, oname, oroom
+    ix.or0, ix.or1, ix.oc0, ix.oc1 = or0, or1, oc0, oc1
     local list = numbers(zone.objects)
+    local n = 0
     for i = 1, #list - 6, 7 do
-        local o = {
-            x = list[i] / 10, y = list[i + 1] / 10, halfLength = list[i + 2] / 10, halfWidth = list[i + 3] / 10,
-            angle = math.rad(list[i + 4]), name = localized(zone.objectNames, locale, list[i + 5]), room = list[i + 6],
-        }
-        local radius = math.sqrt(o.halfLength ^ 2 + o.halfWidth ^ 2)
-        local r0, c0 = bumpLogic.cellOf(zone, o.x + radius, o.y + radius)
-        local r1, c1 = bumpLogic.cellOf(zone, o.x - radius, o.y - radius)
-        for r = r0, r1 do
-            for c = math.max(0, c0), math.min(zone.cols - 1, c1) do
-                local key = r * zone.cols + c
-                local bucket = ix.objects[key]
-                if bucket == nil then
-                    bucket = {}
-                    ix.objects[key] = bucket
+        local name = localized(zone.objectNames, locale, list[i + 5])
+        if name then
+            n = n + 1
+            local x, y, hl, hw = list[i] / 10, list[i + 1] / 10, list[i + 2] / 10, list[i + 3] / 10
+            local angle = math.rad(list[i + 4])
+            ox[n], oy[n], ohl[n], ohw[n], ocos[n], osin[n] = x, y, hl, hw, math.cos(angle), math.sin(angle)
+            oname[n], oroom[n] = name, list[i + 6]
+            local radius = math.sqrt(hl * hl + hw * hw)
+            local r0, c0 = bumpLogic.cellOf(zone, x + radius, y + radius)
+            local r1, c1 = bumpLogic.cellOf(zone, x - radius, y - radius)
+            or0[n], or1[n], oc0[n], oc1[n] = r0, r1, c0, c1
+            local added = {}
+            for r = r0, r1 do
+                for c = c0, c1 do
+                    local block = blockOf(zone, r, c)
+                    if not added[block] then
+                        added[block] = true
+                        local bucket = ix.objects[block]
+                        if bucket == nil then
+                            bucket = {}
+                            ix.objects[block] = bucket
+                        end
+                        bucket[#bucket + 1] = n
+                    end
                 end
-                bucket[#bucket + 1] = o
             end
         end
     end
@@ -101,16 +142,22 @@ function bumpLogic.unpack(zone, locale)
     for i = 1, #list - 6, 7 do
         local n = #ix.interiors + 1
         ix.interiors[n] = {
-            ox = list[i], oy = list[i + 1], scale = list[i + 2], m00 = list[i + 3], m01 = list[i + 4], m10 = list[i + 5],
-            m11 = list[i + 6], name = localized(zone.interiorNames, locale, n),
+            ox = list[i], oy = list[i + 1], scale = list[i + 2], m00 = list[i + 3], m01 = list[i + 4],
+            m10 = list[i + 5], m11 = list[i + 6], name = localized(zone.interiorNames, locale, n),
             wall = localized(zone.interiorWalls, locale, n),
         }
     end
 
+    -- rooms: interior, hall map (the UI map of a hall the game calls outdoors, 0 none), the box values, the outline
     list = numbers(zone.rooms)
     local i = 1
     while i <= #list do
-        local room = { interior = list[i], hall = list[i + 1] == 1, boxes = {} }
+        local id = #ix.rooms + 1
+        local room = { interior = list[i], boxes = {} }
+        if list[i + 1] ~= 0 then
+            room.hallMap = list[i + 1]
+            room.area = localized(zone.roomAreas, locale, id)
+        end
         local nBoxes = list[i + 2]
         for k = 1, nBoxes do
             room.boxes[k] = list[i + 2 + k]
@@ -121,14 +168,14 @@ function bumpLogic.unpack(zone, locale)
             room.outline = { list[i + 1], list[i + 2], list[i + 3], list[i + 4] }
         end
         i = i + 1 + nOutline
-        ix.rooms[#ix.rooms + 1] = room
+        ix.rooms[id] = room
     end
 
     list = numbers(zone.doors)
     for k = 1, #list - 8, 9 do
         local door = {
-            a = list[k], b = list[k + 1], interior = list[k + 2], x = list[k + 3], y = list[k + 4], nx = list[k + 5],
-            ny = list[k + 6], side = list[k + 7], half = list[k + 8],
+            a = list[k], b = list[k + 1], interior = list[k + 2], x = list[k + 3], y = list[k + 4],
+            nx = list[k + 5], ny = list[k + 6], side = list[k + 7], half = list[k + 8],
         }
         for _, pair in ipairs({ { door.a, door.b }, { door.b, door.a } }) do
             local room, other = pair[1], pair[2]
@@ -152,7 +199,7 @@ function bumpLogic.unpack(zone, locale)
         ix.waterStructs[struct] = true
     end
     ix.structNames = {}
-    for k in pairs(zone.structNames.enUS or {}) do
+    for k in pairs(zone.structNames and zone.structNames.enUS or {}) do
         ix.structNames[k] = localized(zone.structNames, locale, k)
     end
     ix.ofTemplate = zone.ofTemplate and (zone.ofTemplate[locale] or zone.ofTemplate.enUS) or nil
@@ -166,41 +213,54 @@ function bumpLogic.pack(zone)
     zone._index = nil
 end
 
--- The nearest point of an object's footprint to a position, and the distance.
-function bumpLogic.objectPoint(o, x, y)
-    local ux, uy = math.cos(o.angle), math.sin(o.angle)
-    local dx, dy = x - o.x, y - o.y
-    local pu = math.max(-o.halfLength, math.min(o.halfLength, dx * ux + dy * uy))
-    local pv = math.max(-o.halfWidth, math.min(o.halfWidth, -dx * uy + dy * ux))
-    local qx, qy = o.x + pu * ux - pv * uy, o.y + pu * uy + pv * ux
-    local ex, ey = x - qx, y - qy
-    return qx, qy, math.sqrt(ex * ex + ey * ey)
+-- The nearest point of object i's footprint to a position, and the distance.
+local function objectPoint(ix, i, x, y)
+    local ux, uy, hl, hw = ix.ocos[i], ix.osin[i], ix.ohl[i], ix.ohw[i]
+    local dx, dy = x - ix.ox[i], y - ix.oy[i]
+    local pu = math.max(-hl, math.min(hl, dx * ux + dy * uy))
+    local pv = math.max(-hw, math.min(hw, -dx * uy + dy * ux))
+    local qx, qy = ix.ox[i] + pu * ux - pv * uy, ix.oy[i] + pu * uy + pv * ux
+    return qx, qy, dist(x, y, qx, qy)
+end
+bumpLogic.objectPoint = objectPoint
+
+-- Object i as a table (for tests and tools): x, y, halfLength, halfWidth, angle (radians), name, room.
+function bumpLogic.object(zone, i)
+    local ix = zone._index
+    return {
+        x = ix.ox[i], y = ix.oy[i], halfLength = ix.ohl[i], halfWidth = ix.ohw[i],
+        angle = math.atan2(ix.osin[i], ix.ocos[i]), name = ix.oname[i], room = ix.oroom[i],
+    }
 end
 
--- The object the player pushes against: moving (or trying to) along the unit vector (vx, vy), the nearest named
--- object within `reach` yards that lies that way. `rooms`: 0 for the outdoor objects, a set of room ids for the
--- objects of those rooms, nil for any indoor object. Returns the object and its distance, or nil.
+-- The object the player pushes against: moving (or trying to) along the unit vector (vx, vy), the nearest object
+-- within `reach` yards that lies that way. `rooms`: 0 for the outdoor objects, a set of room ids for the objects of
+-- those rooms, nil for any indoor object. Returns the object's number and its distance, or nil.
 function bumpLogic.objectAhead(zone, x, y, vx, vy, reach, rooms)
     local ix = zone._index
+    local or0, or1, oc0, oc1, oroom = ix.or0, ix.or1, ix.oc0, ix.oc1, ix.oroom
     local r0, c0 = bumpLogic.cellOf(zone, x, y)
     local n = math.ceil(reach / zone.cell)
     local best, bestD, seen = nil, reach, {}
     for r = r0 - n, r0 + n do
-        for c = math.max(0, c0 - n), math.min(zone.cols - 1, c0 + n) do
-            for _, o in ipairs(ix.objects[r * zone.cols + c] or {}) do
-                local fits
-                if rooms == 0 then
-                    fits = o.room == 0
-                elseif rooms == nil then
-                    fits = o.room ~= 0
-                else
-                    fits = rooms[o.room] == true
-                end
-                if fits and o.name and not seen[o] then
-                    seen[o] = true
-                    local qx, qy, d = bumpLogic.objectPoint(o, x, y)
-                    if d <= bestD and (d < bumpLogic.TOUCHING or ((qx - x) * vx + (qy - y) * vy) / d >= bumpLogic.ANGLE) then
-                        best, bestD = o, d
+        for c = c0 - n, c0 + n do
+            for _, i in ipairs(ix.objects[blockOf(zone, r, c)] or {}) do
+                if not seen[i] and r >= or0[i] and r <= or1[i] and c >= oc0[i] and c <= oc1[i] then
+                    seen[i] = true
+                    local fits
+                    if rooms == 0 then
+                        fits = oroom[i] == 0
+                    elseif rooms == nil then
+                        fits = oroom[i] ~= 0
+                    else
+                        fits = rooms[oroom[i]] == true
+                    end
+                    if fits then
+                        local qx, qy, d = objectPoint(ix, i, x, y)
+                        local toward = ((qx - x) * vx + (qy - y) * vy) / d
+                        if d <= bestD and (d < bumpLogic.TOUCHING or toward >= bumpLogic.ANGLE) then
+                            best, bestD = i, d
+                        end
                     end
                 end
             end
@@ -216,6 +276,12 @@ function bumpLogic.toBuilding(frame, x, y)
     local r0, r1 = (frame.ox - x) / frame.scale, (frame.oy - y) / frame.scale
     local det = a * d - b * c
     return (d * r0 - b * r1) / det, (-c * r0 + a * r1) / det
+end
+
+-- A building-frame position in world yards (the inverse of toBuilding).
+function bumpLogic.toWorld(frame, vx, vy)
+    return frame.ox - frame.scale * (frame.m00 * vx + frame.m01 * vy),
+        frame.oy - frame.scale * (frame.m10 * vx + frame.m11 * vy)
 end
 
 local function inBox(b, i, vx, vy, margin)
@@ -238,7 +304,9 @@ end
 
 -- The rooms whose floor boxes hold the position (within `margin` yards). `indoors` (the game's IsIndoors(), or
 -- nil): a hall the game calls outdoors fits only while it says outdoors, any other room only while it says
--- indoors; where none fits, all of them (the game's word only decides between floors on top of each other).
+-- indoors; where none fits, all of them (the game's word only decides between floors on top of each other: in
+-- Ironforge the Great Forge's floor lies over the throne room's stairs and the cavern below, and the game calls the
+-- forge outdoors and the rest indoors).
 function bumpLogic.roomsAt(zone, x, y, margin, indoors)
     local found = {}
     for id in ipairs(zone._index.rooms) do
@@ -251,28 +319,15 @@ function bumpLogic.roomsAt(zone, x, y, margin, indoors)
     end
     local fitting = {}
     for _, id in ipairs(found) do
-        if zone._index.rooms[id].hall ~= indoors then
+        if (zone._index.rooms[id].hallMap ~= nil) ~= indoors then
             fitting[#fitting + 1] = id
         end
     end
     return #fitting > 0 and fitting or found
 end
 
--- The one hall (a room the game calls outdoors) whose floor holds the position, or nil (none, or several).
-function bumpLogic.hallAt(zone, x, y)
-    local found = nil
-    for _, id in ipairs(bumpLogic.roomsAt(zone, x, y, 0)) do
-        if zone._index.rooms[id].hall then
-            if found then
-                return nil
-            end
-            found = id
-        end
-    end
-    return found
-end
-
--- The first room whose outline (the box of its walls) holds the position, or nil.
+-- The first room whose outline (the box of its walls) holds the position, or nil: where the floor boxes leave gaps
+-- (under counters, a raised platform).
 function bumpLogic.roomOutlineAt(zone, x, y)
     local ix = zone._index
     for id, room in ipairs(ix.rooms) do
@@ -287,8 +342,10 @@ function bumpLogic.roomOutlineAt(zone, x, y)
     return nil
 end
 
--- Did the player walk through a doorway of room `current` between (px, py) and (x, y)? Returns the room behind it
--- (0 outside) or nil.
+-- Did the player walk through a doorway of room `current` (0 outside) between (px, py) and (x, y)? Returns the
+-- room behind it (0 outside) or nil. A doorway into a room whose floor is not here (within ROOM_SLACK) is passed
+-- over: a doorway has no height (the Trade Quarter's doorway into its shop lies 0.8 yd from the canal tunnel's 17
+-- yd below it, and one step crossed both).
 function bumpLogic.crossedDoor(zone, current, px, py, x, y)
     if current == nil or px == nil then
         return nil
@@ -299,21 +356,24 @@ function bumpLogic.crossedDoor(zone, current, px, py, x, y)
             local interior = ix.interiors[door.interior]
             local ax, ay = bumpLogic.toBuilding(interior, px, py)
             local bx, by = bumpLogic.toBuilding(interior, x, y)
+            -- across the whole opening (its width known), else within DOOR_REACH of its centre: the Ruins of
+            -- Lordaeron's sewer openings are 12 to 15 yd wide
             local function near(u, v)
                 if door.half > 0 then
                     local along = math.abs((u - door.x) * -door.ny + (v - door.y) * door.nx)
                     local off = math.abs((u - door.x) * door.nx + (v - door.y) * door.ny)
                     return along <= door.half + bumpLogic.DOOR_SIDE and off <= bumpLogic.DOOR_REACH
                 end
-                local dx, dy = u - door.x, v - door.y
-                return dx * dx + dy * dy <= bumpLogic.DOOR_REACH * bumpLogic.DOOR_REACH
+                return dist(u, v, door.x, door.y) <= bumpLogic.DOOR_REACH
             end
             if near(ax, ay) or near(bx, by) then
                 local mine = current == door.a and door.side or -door.side
                 local before = ((ax - door.x) * door.nx + (ay - door.y) * door.ny) * mine
                 local after = ((bx - door.x) * door.nx + (by - door.y) * door.ny) * mine
-                if before > 0 and after < 0 then
-                    return current == door.a and door.b or door.a
+                local behind = current == door.a and door.b or door.a
+                if before > 0 and after < 0
+                    and (behind == 0 or bumpLogic.onFloor(zone, behind, x, y, bumpLogic.ROOM_SLACK)) then
+                    return behind
                 end
             end
         end
@@ -321,24 +381,46 @@ function bumpLogic.crossedDoor(zone, current, px, py, x, y)
     return nil
 end
 
--- The room the player is in, as far as known, after a step from (px, py) to (x, y) while in room `current` (0
--- outside, nil unknown): through a doorway the room behind it (0 outside); else the room the floor boxes give where
--- they give one, the current room where it is among them, or the one room among them joined to it by a doorway (from
--- outside: the one entrance room). nil: unknown. The candidate rooms come as the second value.
-function bumpLogic.resolveRoom(zone, x, y, current, px, py, indoors)
-    local crossed = bumpLogic.crossedDoor(zone, current, px, py, x, y)
-    if crossed then
-        return crossed, {}
+-- The room the player is in after a step from (px, py) to (x, y) while in room `current` (0 outside, nil unknown),
+-- the surroundings module's resolveRoom without its floor layers. `byDoor`: the current room was entered through a
+-- doorway. Returns the room (nil: nothing decides, keep what is known) and the candidate rooms here.
+function bumpLogic.resolveRoom(zone, x, y, current, byDoor, indoors)
+    local ix = zone._index
+    local cands = bumpLogic.roomsAt(zone, x, y, bumpLogic.ROOM_MARGIN, indoors)
+    local real = current ~= nil and current ~= 0
+    -- a room the game's word does not fit while a candidate does is left (no longer held)
+    if real and (ix.rooms[current].hallMap ~= nil) == indoors and #cands > 0
+        and (ix.rooms[cands[1]].hallMap ~= nil) ~= indoors then
+        real, byDoor = false, false
     end
-    local cands = bumpLogic.roomsAt(zone, x, y, bumpLogic.ROOM_SLACK, indoors)
+    if byDoor and real then
+        -- entered through a doorway: it holds while its floor is near, or near one of its doorways
+        if bumpLogic.onFloor(zone, current, x, y, bumpLogic.ROOM_SLACK) then
+            return current, cands
+        end
+        for _, door in ipairs(ix.doorsOf[current] or {}) do
+            local dx, dy = bumpLogic.toWorld(ix.interiors[door.interior], door.x, door.y)
+            if dist(dx, dy, x, y) <= bumpLogic.DOOR_HOLD then
+                return current, cands
+            end
+        end
+    end
+    if #cands == 0 then
+        cands = bumpLogic.roomsAt(zone, x, y, bumpLogic.ROOM_SLACK, indoors)
+    end
+    if #cands == 0 then
+        return nil, cands
+    end
     if #cands == 1 then
         return cands[1], cands
     end
     if current == nil then
         return nil, cands
     end
+    -- several: the current room where it is among them, else the one joined to it by a doorway (from outside: the
+    -- one entrance room)
     local joined = nil
-    local neighbours = zone._index.neighbours[current] or {}
+    local neighbours = ix.neighbours[current] or {}
     for _, id in ipairs(cands) do
         if id == current then
             return current, cands
@@ -351,6 +433,118 @@ function bumpLogic.resolveRoom(zone, x, y, current, px, py, indoors)
         end
     end
     return joined, cands
+end
+
+-- The hall rooms of the game's UI map `uiMap` whose floor is here (within ROOM_SLACK) and whose area, where known,
+-- is the game's `subzone`. Halls the game calls outdoors (Ironforge's, almost all of the Undercity) carry the UI map
+-- one stands on in them; the map does not tell floors apart everywhere (on the Ruins of Lordaeron's rose walk it is
+-- the Undercity's, as in the city 110 yd below), so a hall also needs the game's area not to name another place
+-- (the Magic Quarter under the Ruins' courtyard, where the game says "Ruins of Lordaeron").
+function bumpLogic.hallsAt(zone, x, y, uiMap, subzone)
+    local out = {}
+    if uiMap == nil then
+        return out
+    end
+    for id, room in ipairs(zone._index.rooms) do
+        if room.hallMap == uiMap and (room.area == nil or subzone == nil or subzone == "" or room.area == subzone)
+            and bumpLogic.onFloor(zone, id, x, y, bumpLogic.ROOM_SLACK) then
+            out[#out + 1] = id
+        end
+    end
+    return out
+end
+
+-- The room tracker: where the player is (room: an id, 0 outside, nil unknown inside), from look to look. `game` at
+-- each look: { indoors = IsIndoors(), uiMap = the player's best UI map, subzone = GetSubZoneText() }.
+local Tracker = {}
+Tracker.__index = Tracker
+
+function bumpLogic.newTracker()
+    return setmetatable({ room = nil, byDoor = false, inHall = false, hallGap = 0, cands = nil }, Tracker)
+end
+
+-- Starts afresh (a new zone, a jump, a flight).
+function Tracker:reset()
+    self.room, self.byDoor, self.inHall, self.hallGap, self.cands = nil, false, false, 0, nil
+end
+
+-- Sets the room known from elsewhere (a spot kept over a reload, another module's tracker).
+function Tracker:set(room, inHall)
+    self.room, self.byDoor, self.inHall, self.hallGap = room, room ~= nil and room ~= 0, inHall and true or false, 0
+end
+
+-- One look at (x, y), the last at (px, py) (nil: none).
+function Tracker:update(zone, x, y, px, py, game)
+    local ix = zone._index
+    self.cands = nil
+    local moved = px and dist(x, y, px, py) or 0
+    -- through a doorway of the room the player is in (or from outside into an entrance room)
+    local from = self.room
+    if from == nil and not game.indoors and not self.inHall then
+        from = 0
+    end
+    local crossed = bumpLogic.crossedDoor(zone, from, px, py, x, y)
+    if crossed ~= nil then
+        self.room, self.byDoor = crossed, crossed ~= 0
+        if crossed == 0 then
+            self.inHall = false
+        elseif ix.rooms[crossed].hallMap then
+            self.inHall, self.hallGap = true, 0
+        end
+        return
+    end
+    -- the halls: in them while a hall's floor of the game's map is near, until HALL_GAP yd without one
+    local halls = bumpLogic.hallsAt(zone, x, y, game.uiMap, game.subzone)
+    if self.inHall then
+        if #halls > 0 then
+            self.hallGap = 0
+        else
+            self.hallGap = self.hallGap + moved
+            if self.hallGap > bumpLogic.HALL_GAP or game.uiMap == nil then
+                self.inHall, self.room, self.byDoor = false, nil, false
+            end
+        end
+    elseif not game.indoors and #halls > 0 and (self.room == nil or self.room == 0) then
+        -- into the halls without a doorway (Ironforge's gate: the game's map becomes the halls')
+        self.inHall, self.hallGap, self.byDoor = true, 0, false
+        self.room = #halls == 1 and halls[1] or nil
+        self.cands = halls
+        return
+    end
+    if not game.indoors and not self.inHall then
+        -- just through a doorway the game's word may follow a look later: the room holds while its floor is here
+        local r = self.room
+        if not (self.byDoor and r ~= nil and r ~= 0 and bumpLogic.onFloor(zone, r, x, y, bumpLogic.ROOM_MARGIN)) then
+            self.room, self.byDoor = 0, false
+        end
+        return
+    end
+    local found, cands = bumpLogic.resolveRoom(zone, x, y, self.room, self.byDoor, game.indoors)
+    self.cands = cands
+    if found ~= nil and found ~= self.room then
+        self.room, self.byDoor = found, false
+    end
+end
+
+-- Whether the player counts as inside: the game says indoors, in a hall it calls outdoors, or in a room just
+-- entered through a doorway.
+function Tracker:inside(game)
+    return game.indoors or self.inHall or (self.room ~= nil and self.room ~= 0)
+end
+
+-- The rooms whose objects count: the room known, else the candidate rooms here, else nil (any room's).
+function Tracker:objectRooms()
+    if self.room ~= nil and self.room ~= 0 then
+        return { [self.room] = true }
+    end
+    if self.cands and #self.cands > 0 then
+        local set = {}
+        for _, id in ipairs(self.cands) do
+            set[id] = true
+        end
+        return set
+    end
+    return nil
 end
 
 -- Whose wall the player pushes against from outside: the building whose room floor or outline lies just ahead
@@ -378,16 +572,20 @@ function bumpLogic.wallOwner(zone, x, y, vx, vy, reach)
     return nil
 end
 
--- What to say for a bump along the unit vector (vx, vy): the object in the way, else indoors "wall", outdoors
--- the wall of the building or structure ahead. `rooms` as for objectAhead (indoors: the room known, else the
--- candidate rooms, else nil). `words`: the locale's "wall" and "wall of %s". Returns the text and a key that is
--- the same for the same thing, or nil.
-function bumpLogic.bumpText(zone, x, y, vx, vy, indoors, rooms, words)
-    local o = bumpLogic.objectAhead(zone, x, y, vx, vy, bumpLogic.REACH, indoors and rooms or 0)
-    if o then
-        return o.name, o
+-- What to say for a bump along the unit vector (vx, vy): the object in the way, else inside "wall", outside the wall
+-- of the building or structure ahead. `rooms` as for objectAhead (inside: Tracker:objectRooms; not `inside and rooms
+-- or 0`, which with the room unknown gave the outdoor objects). `words`: the locale's "wall" and "wall of %s".
+-- Returns the text and a key that is the same for the same thing, or nil.
+function bumpLogic.bumpText(zone, x, y, vx, vy, inside, rooms, words)
+    local search = 0
+    if inside then
+        search = rooms
     end
-    if indoors then
+    local o = bumpLogic.objectAhead(zone, x, y, vx, vy, bumpLogic.REACH, search)
+    if o then
+        return zone._index.oname[o], o
+    end
+    if inside then
         return words.wall, "wall"
     end
     local owner, what = bumpLogic.wallOwner(zone, x, y, vx, vy, bumpLogic.WALL_REACH)

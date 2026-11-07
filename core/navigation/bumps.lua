@@ -8,6 +8,9 @@ module:setLabel(L["Name What I Bump Into"])
 -- the same thing again only after moving freely. The data (mapdata/bumps/<client>/, tools/bumps-pack.lua)
 -- covers the zones the surroundings data has been exported for; elsewhere nothing is said. Nothing while
 -- the wall detection is off. Toggle it via the alert's enable.
+--
+-- Which room the player is in comes from bumpLogic's tracker (doorways walked through, room floors, the
+-- game's map in the halls). A module that knows better can hand its room over: module:setRoomSource.
 
 local bumpLogic = WowVision.bumpLogic
 
@@ -28,14 +31,23 @@ local settings = module:hasSettings()
 settings:addRef("bump", alert.parameters)
 
 local CHECK_INTERVAL = 0.2
-local FRESH = 0.5 -- seconds the wall detection's grading counts (it stops while disabled)
-local JUMP = 100 -- yd between two looks from which the player was moved (a hearthstone, a portal)
+local FRESH = 0.5 -- seconds the wall detection's grading counts
 
 local zone = nil
-local room = nil -- the room the player is in as far as known
+local tracker = bumpLogic.newTracker()
 local lastCheck, lastTime = 0, nil
 local lastX, lastY = nil, nil
 local state = bumpLogic.newBumpState()
+local restored = false
+local roomSource = nil
+
+-- Another module's room for this zone, used instead of the tracker's: `source(zone)` returns the room (an id of
+-- the bump data's rooms, 0 outside, nil unknown) and whether the player is in a hall the game calls outdoors, or
+-- false when it knows nothing here (the tracker's then). It must number the rooms as the bump data does
+-- (zone.roomsId, the packed rooms' fingerprint, tells which). nil removes it.
+function module:setRoomSource(source)
+    roomSource = source
+end
 
 local function locale()
     local l = GetLocale()
@@ -49,9 +61,33 @@ local function setZone(found)
     if zone then
         bumpLogic.pack(zone)
     end
-    zone, room = found, nil
+    zone = found
+    tracker:reset()
     if found then
         bumpLogic.unpack(found, locale())
+    end
+end
+
+-- The spot and room of the last look, kept over a reload or a logout (per character): a login upstairs in a
+-- tavern starts in that room, not "unknown".
+local function keepHere(x, y)
+    if WowVisionDB == nil or zone == nil then
+        return
+    end
+    local h = WowVisionDB.bumpsHere
+    if type(h) ~= "table" then
+        h = {}
+        WowVisionDB.bumpsHere = h
+    end
+    h.zone, h.roomsId, h.x, h.y, h.room, h.hall = zone.key, zone.roomsId, x, y, tracker.room, tracker.inHall
+end
+
+local function restoreHere(x, y)
+    restored = true
+    local h = WowVisionDB and WowVisionDB.bumpsHere
+    if type(h) == "table" and h.zone == zone.key and h.roomsId == zone.roomsId and type(h.x) == "number"
+        and bumpLogic.dist(h.x, h.y, x, y) <= bumpLogic.HERE_SAME then
+        tracker:set(h.room, h.hall)
     end
 end
 
@@ -73,13 +109,16 @@ local function pushDirection()
     return vx / len, vy / len
 end
 
+-- The wall detection's fresh "blocked", while it is switched on (it grades on while its alert is off).
 local function blocked(now)
     local walls = WowVision.base.navigation.walls
-    return walls ~= nil and walls.severity == 1 and now - (walls.severityAt or 0) <= FRESH
+    local stuck = walls and walls.alerts.stuck
+    return stuck ~= nil and stuck.enabled and walls.severity == 1 and now - (walls.severityAt or 0) <= FRESH
 end
 
 local function forget()
-    lastX, lastY, lastTime, room = nil, nil, nil, nil
+    lastX, lastY, lastTime = nil, nil, nil
+    tracker:reset()
     state = bumpLogic.newBumpState()
 end
 
@@ -105,48 +144,45 @@ module:hasUpdate(function(self)
     setZone(found)
     local px, py, dt = lastX, lastY, lastTime and now - lastTime
     lastX, lastY, lastTime = x, y, now
-    if zone == nil or px == nil then
+    if zone == nil then
         return
     end
-    local moved = math.sqrt((x - px) ^ 2 + (y - py) ^ 2)
-    if moved > JUMP then
-        room = nil
-        return
+    if not restored then
+        restoreHere(x, y)
     end
-    -- the room: outdoors 0 unless a doorway was just walked through (the game's word may follow a look later);
-    -- indoors by doorways and floors (0 or nil there: unknown, the rooms whose floor is here count)
-    local indoors = IsIndoors()
-    local cands = nil
-    if indoors then
-        room, cands = bumpLogic.resolveRoom(zone, x, y, room, px, py, indoors)
+    if px ~= nil and bumpLogic.dist(x, y, px, py) > bumpLogic.JUMP then
+        -- moved by the game (a hearthstone, a portal, a graveyard): starts afresh
+        tracker:reset()
+        px, py = nil, nil
+    end
+    local game = { indoors = IsIndoors(), uiMap = C_Map.GetBestMapForUnit("player"), subzone = GetSubZoneText() }
+    local given, givenHall = false, nil
+    if roomSource then
+        given, givenHall = roomSource(zone)
+    end
+    if given ~= false then
+        tracker:set(given, givenHall)
     else
-        local crossed = bumpLogic.crossedDoor(zone, room or 0, px, py, x, y)
-        if crossed then
-            room = crossed
-        elseif room == nil or room == 0 or not bumpLogic.onFloor(zone, room, x, y, bumpLogic.ROOM_SLACK) then
-            room = bumpLogic.hallAt(zone, x, y) or 0
-        end
+        tracker:update(zone, x, y, px, py, game)
     end
-    -- in a hall the game calls outdoors (Ironforge's, the Undercity's) as in a room
-    local inside = indoors or (room ~= nil and room ~= 0 and zone._index.rooms[room].hall)
-    if IsSwimming() or not bumpLogic.step(state, blocked(now), moved, dt) then
+    keepHere(x, y)
+    if px == nil then
+        return
+    end
+    local moved = bumpLogic.dist(x, y, px, py)
+    if IsSwimming() then
+        state.ticks = 0
+        return
+    end
+    if not bumpLogic.step(state, blocked(now), moved, dt) then
         return
     end
     local vx, vy = pushDirection()
     if vx == nil then
         return
     end
-    -- indoors the objects of the room the player is in, else of the rooms whose floor is here, else of any room
-    local rooms = nil
-    if room and room ~= 0 then
-        rooms = { [room] = true }
-    elseif cands and #cands > 0 then
-        rooms = {}
-        for _, id in ipairs(cands) do
-            rooms[id] = true
-        end
-    end
-    local text, key = bumpLogic.bumpText(zone, x, y, vx, vy, inside, rooms, { wall = L["wall"], wallOf = L["wall of %s"] })
+    local text, key = bumpLogic.bumpText(zone, x, y, vx, vy, tracker:inside(game), tracker:objectRooms(),
+        { wall = L["wall"], wallOf = L["wall of %s"] })
     if bumpLogic.take(state, key) then
         self:fireAlert("bump", { text = text })
     end

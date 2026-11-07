@@ -118,7 +118,7 @@ It knows the places WowVision has map data for, read from each game version's ow
 - Classic Era: Elwynn Forest with Stormwind, and Dun Morogh with Ironforge.
 - Mists of Pandaria Classic and Retail: no places yet.
 
-Elsewhere you hear only the wall detection's sounds. Indoors where floors lie on top of each other, the objects of the room you walked into through a doorway count. Nothing is said while wall detection is off, while swimming or on a flight path. Names are in English, German and French.
+Elsewhere you hear only the wall detection's sounds. The game gives no height, so where floors lie on top of each other WowVision follows the room you walked into through a doorway, and keeps it over a reload. Where it does not know the room (after a hearthstone or a portal into a building), the objects of every room on that spot count, so now and then an object of the floor above or below can be named until you walk through a doorway. In the big halls the game calls outdoors (Ironforge, the Undercity) the game's map and area tell when you are in them. Nothing is said while wall detection is off, while swimming or on a flight path. Names are in English, German and French.
 
 Settings: open Navigation, Name What I Bump Into, then Name What I Bump Into (the alert). It has an Enabled switch and a TTS Alert. The TTS Alert speaks with a game voice of its own (the first one), not your speech voice, so a screen reader does not cut it off when you press the next movement key.
 
