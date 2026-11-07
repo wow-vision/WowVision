@@ -16,11 +16,13 @@ function doublePress.newState()
 end
 
 -- A press of key at time now, on screen with focus (a ControlId key) before the move. True when it doubles the
--- previous press.
+-- previous press. A press older than the previous one (dispatched late, after a speech stop delay) never doubles.
 function doublePress.press(state, key, now, screen, focus)
+    local elapsed = state.at ~= nil and now - state.at or nil
     local double = state.key == key
-        and state.at ~= nil
-        and now - state.at < doublePress.WINDOW
+        and elapsed ~= nil
+        and elapsed >= 0
+        and elapsed < doublePress.WINDOW
         and state.screen == screen
         and state.focus == focus
     state.key = key

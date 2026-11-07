@@ -61,6 +61,13 @@ testRunner:addSuite("DoublePress", {
         t:assertFalse(doublePress.press(state, "up", 10.7, "other", "y"), "another input in between")
     end,
 
+    ["a press dispatched out of order is a plain press"] = function(t)
+        local state = doublePress.newState()
+        doublePress.press(state, "down", 10.2, "screen", "a")
+        doublePress.settle(state, "a")
+        t:assertFalse(doublePress.press(state, "down", 10.1, "screen", "a"), "earlier than the previous press")
+    end,
+
     ["a skip passes the empty slots and lands on the next item"] = function(t)
         local kg, state = slotGraph({ "Bread", nil, nil, "Water", nil }, 5)
         local move = kg:moveSkippingEmpty("down")
