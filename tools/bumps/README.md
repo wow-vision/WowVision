@@ -12,8 +12,10 @@ The chain, from the game's files to the addon:
 
 1. **Export** (not in this repository): the wv-surroundings tools read each client's own map files offline (terrain,
    buildings with their rooms and doorways, objects; the AreaTable and WMOAreaTable database tables) and write
-   the surroundings data, the WowVision_Surroundings repository, one folder per client (`era/`, `tbc/`,
-   `forever/`), zone files in format 4 (a Lua header with the zone's frame, then JSON text). Object names come
+   the surroundings data, the public WowVision_Surroundings repository
+   (https://github.com/JeanStiletto/WowVision_Surroundings), one folder per client (`era/`, `tbc/`, `forever/`),
+   zone files in format 4 (a Lua header with the zone's frame, then JSON text). The export tools change with
+   every round of the surroundings work and are published with the surroundings module. Object names come
    from the model file names (the community listfile) with a word list per language.
 2. **Pack** (`pack.lua`, here): keeps of each zone only what naming a bump needs and writes it as Lua into
    `mapdata/bumps/<client>/`, with a `data.xml` per client that `vanilla/`, `tbc/` and `camelot/modules.xml`
