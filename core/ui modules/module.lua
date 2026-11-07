@@ -21,6 +21,23 @@ settings:add({
     default = true,
 })
 
+-- The game sound channel every WowVision sound and beacon plays on
+-- (core/audio/channels.lua): its volume is that channel's game slider,
+-- so a channel the player keeps for WowVision alone gives WowVision a volume of
+-- its own. The list and the default live in WowVision.audio (a version adds
+-- the channels its sound options have a slider for).
+local soundChannel = settings:add({
+    type = "Choice",
+    key = "soundChannel",
+    label = L["WowVision Sound Channel"],
+    default = WowVision.audio.defaultChannel,
+    choices = WowVision.audio.channels,
+    validate = WowVision.audio.validateChannel,
+})
+soundChannel.events.valueChange:subscribe(module, function(_, _, _, _, value)
+    WowVision.audio.selectedChannel = value
+end)
+
 -- Chasing stuck movement keys with testers: prints when windows take, wait
 -- for and release the navigation keys, and what the held check saw.
 module:registerCommand({

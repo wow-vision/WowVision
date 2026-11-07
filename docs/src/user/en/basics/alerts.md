@@ -45,7 +45,8 @@ Every output screen starts with Enabled. After that, depending on the kind of ou
 | Message | TTS | Only on TTS outputs that take their text from elsewhere, such as Announce Errors and the TTS Alert of a monitor rule. Alerts with wording of their own (combat started, a zone name, a chat message and so on) do not have it. When you type text here, it is spoken every time instead of the usual text. Leave it empty to hear the usual text. |
 | Sound | Sound | A button that opens the sound browser. It reads the current file's name. See [Picking a sound](./menu-and-settings.md#picking-a-sound). Some sound alerts have a fixed sound and only the Enabled checkbox. |
 | Voice Pack | Voice | Choose between the recorded voices Matthew and Joanna. |
-| Beacon Sound | Beacon | A browser like the sound browser, for the beacon sounds. Moving onto one plays a sample. |
+| Beacon Sound | Beacon | A browser like the sound browser, for the beacon sounds. Moving onto one plays a sample at the chosen Beacon Volume. |
+| Beacon Volume | Beacon | How loud the beacon pings are, 10 to 100 in steps of 10 (100 by default). Each 10 below 100 plays the pings one loudness level quieter; near and far targets still sound different. To silence the beacon, turn its Enabled off. |
 
 Example: have your target's name spoken by a different voice.
 
@@ -86,7 +87,7 @@ Menu paths read from the first level of the WowVision menu. The state in bracket
 | Diving Alert | Navigation, Compass | You go under water. Says "diving". | TTS, Sound Alert (off) |
 | Fall Detection | Navigation, Fall Detection | You fall. The announcement is said once when the falling sounds start. | Falling Sound (a rising series of sounds; the longer the fall, the higher the sound), Falling Announcement (TTS "Falling") |
 | Wall Detection | Navigation, Wall Detection | You are moving but something holds you back. | Five sounds for five degrees of blocking: Blocked, Mostly Blocked, Impeded, Slowed and Slightly Slowed. |
-| Beacon | Navigation, Maps | A route or beacon is active. | Beacon Sound (a directional ping that speeds up as you turn towards the target), Beacon Aligned (a click when you face it), Beacon Off Course (when you turn away), Waypoint Reached (when you arrive) |
+| Beacon | Navigation, Beacon Settings | A route or beacon is active. | Beacon Sound (a directional ping that speeds up as you turn towards the target), Beacon Aligned (a click when you face it), Beacon Off Course (when you turn away), Waypoint Reached (when you arrive) |
 
 Inside instances the game does not report which way you face, so Speak Compass Direction stays silent there while the other compass alerts keep working. The settings of Fall Detection (Delay (milliseconds), Ignore Jumps) are in the module's screen, see [Movement](../world/movement.md). The arrival settings of Beacon are in [Navigation](../world/navigation.md).
 
