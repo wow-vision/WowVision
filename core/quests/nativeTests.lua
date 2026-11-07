@@ -209,6 +209,7 @@ testRunner:addSuite("NativeQuestTargets", {
             local target = source:targets(503, "objectives")[1]
             t:assertNotNil(target, "the world map still shows it")
             t:assertNil(target.distance, "no distance across continents")
+            t:assertNil(target.nearest, "no headline position across continents, as the Adapter's rank")
             local node = inProgressNodes(source)["quest:503"]
             t:assertNil(node.x)
             t:assertNil(node.y)

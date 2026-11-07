@@ -104,9 +104,12 @@ local function stampDistance(spawn, ctx)
     return spawn
 end
 
+-- As the Adapter's rank: only a spawn on the player's continent is the
+-- target's headline position (nearest); one on another continent has none.
 local function singleTarget(kind, id, name, spawn, ctx)
     stampDistance(spawn, ctx)
-    return { kind = kind, id = id, name = name, spawns = { spawn }, nearest = spawn, distance = spawn.distance }
+    local nearest = spawn.distance ~= nil and spawn or nil
+    return { kind = kind, id = id, name = name, spawns = { spawn }, nearest = nearest, distance = spawn.distance }
 end
 
 local function sortByDistance(list)
@@ -685,7 +688,7 @@ function Native:_debugLogLines(lines, ctx)
             tinsert(maps, tostring(mapId))
         end
         local target = self:_questTarget(questId, ctx)
-        local spawn = target ~= nil and target.nearest or nil
+        local spawn = target ~= nil and (target.nearest or target.spawns[1]) or nil
         tinsert(lines, string.format(
             "  %s, id %s: quest map %s, %s; point on player map %s; zones with a point %s; target %s",
             tostring(entry.title),
