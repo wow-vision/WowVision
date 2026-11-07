@@ -18,7 +18,7 @@ Wenn du in einer Gruppe bist und ein Gegenstand fällt, um den die Gruppe würfe
 
 | Taste | Name der Belegung | Was sie tut |
 |-------|-------------------|-------------|
-| Alt+Strg+Y | Würfel-Tooltip (Roll Tooltip) | Sagt den Namen des Gegenstands, um den gewürfelt wird. |
+| Alt+Strg+Y | Würfel-Tooltip (Roll Tooltip) | Liest den ganzen Tooltip des Gegenstands vor, um den gewürfelt wird: Name, Qualität, Gegenstandsstufe, Werte und Voraussetzungen. |
 | Alt+Strg+U | Bedarf würfeln (Roll Need) | Würfelt auf Bedarf. |
 | Alt+Strg+I | Gier würfeln (Roll Greed) | Würfelt auf Gier. |
 | Alt+Strg+O | Passen (Roll Pass) | Passt. |

@@ -129,7 +129,7 @@ See [Targeting](../world/targeting.md).
 
 | Action | Default key | Notes |
 |---|---|---|
-| Roll Tooltip | Alt+Ctrl+Y | Says the name of the item up for a roll |
+| Roll Tooltip | Alt+Ctrl+Y | Reads the whole tooltip of the item up for a roll: name, quality, item level, stats and requirements |
 | Roll Need | Alt+Ctrl+U | |
 | Roll Greed | Alt+Ctrl+I | |
 | Roll Pass | Alt+Ctrl+O | |

@@ -133,7 +133,7 @@ Siehe [Zielerfassung](../world/targeting.md).
 
 | Aktion | Standardtaste | Hinweise |
 |---|---|---|
-| Würfel-Tooltip (Roll Tooltip) | Alt+Strg+Y | Sagt den Namen des Gegenstands, um den gewürfelt wird |
+| Würfel-Tooltip (Roll Tooltip) | Alt+Strg+Y | Liest den ganzen Tooltip des Gegenstands vor, um den gewürfelt wird: Name, Qualität, Gegenstandsstufe, Werte und Voraussetzungen |
 | Bedarf würfeln (Roll Need) | Alt+Strg+U | |
 | Gier würfeln (Roll Greed) | Alt+Strg+I | |
 | Passen (Roll Pass) | Alt+Strg+O | |
