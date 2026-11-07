@@ -130,7 +130,7 @@ Das Spiel zeigt den Questfortschritt als Meldung in der Bildschirmmitte. WowVisi
 - Ziel erreicht (Objective Complete Alert): die Meldung des Spiels, die ein erledigtes Ziel nennt, etwa "Erkundet die Mine (Abgeschlossen)". Sein Ton ist success1.
 - Quest abgeschlossen (Quest Complete Alert): die Meldung "Aufgabe abgeschlossen." des Spiels, die kein Ziel nennt. Sein Ton ist Tutorial_Success_01.
 
-Jeder Alarm hat TTS (an) und Sound (an) und lässt sich einzeln ausschalten. Sie arbeiten auch ohne Fehler ansagen, und diese Meldungen erscheinen nicht mehr im Filter pro Fehler des Moduls Fehler. Siehe [Alarme](../basics/alerts.md).
+Jede Meldung spricht ihr eigener Alarm, mit dessen Einstellungen: beim letzten Kill hörst du das "8/8" vom Alarm Questfortschritt und den Abschluss von dem Alarm, zu dem er gehört. Jeder Alarm hat TTS (an) und Sound (an) und lässt sich einzeln ausschalten. Sie arbeiten unabhängig vom Modul Fehler, auch wenn es ausgeschaltet ist, und diese Meldungen erscheinen nicht in seinem Filter pro Fehler. Hattest du eine dieser Meldungen dort stummgeschaltet oder Fehler ansagen ausgeschaltet, startet ihr Alarm ausgeschaltet. Siehe [Alarme](../basics/alerts.md).
 
 ## Quests und Questziele finden
 
