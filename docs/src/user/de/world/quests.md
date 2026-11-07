@@ -122,6 +122,24 @@ Der Alarm heißt Questgebiet (Quest Area Alert) und gehört zum Modul Quests. Wi
 | Soundalarm, Aktiviert | Aus | Spielt einen Ton statt oder neben der Sprache. |
 | Soundalarm, Sound | keiner | Welcher Ton gespielt wird. |
 
+## Questfortschritt-Töne
+
+Wenn eine Quest vorankommt, hörst du einen kurzen Ton: du findest einen Questgegenstand, tötest eine gesuchte Kreatur oder erreichst ein anderes Ziel. Ist die Quest damit fertig, hörst du stattdessen einen anderen Ton. Dann kannst du sie abgeben.
+
+Die Ansage des Spiels selbst, etwa "Kobold-Kerze: 3/8", spricht WowVision wie gewohnt über die Fehler- und Hinweismeldungen.
+
+Eine Quest, die du gerade angenommen hast, macht keinen Ton, auch wenn du ihre Ziele schon erfüllst. Verlierst du einen Questgegenstand, etwa weil du ihn verkaufst, bleibt es ebenfalls still.
+
+Der Alarm heißt Questfortschritt (Quest Progress Alert) und gehört zum Modul Quests. Beide Töne kannst du einzeln ausschalten oder durch einen anderen Ton ersetzen. Wie Alarme funktionieren, steht auf der Seite [Alarme](../basics/alerts.md).
+
+| Einstellung | Standard | Was sie tut |
+|-------------|----------|-------------|
+| Questfortschritt, Aktiviert | An | Schaltet beide Töne ein oder aus. |
+| Ton bei Fortschritt, Aktiviert | An | Der Ton, wenn ein Ziel vorankommt. |
+| Ton bei Fortschritt, Sound | success1 | Welcher Ton gespielt wird. |
+| Ton bei abgeschlossener Quest, Aktiviert | An | Der Ton, wenn die Quest fertig ist. |
+| Ton bei abgeschlossener Quest, Sound | success2 | Welcher Ton gespielt wird. |
+
 ## Quests und Questziele finden
 
 Der [Scanner](scanner.md) verwandelt Questdaten in Orte, zu denen du gehen kannst. Er ist der wichtigste Weg, mit WowVision Quests zu finden.
@@ -143,6 +161,7 @@ So werden Orte in den Listen beschrieben: Ein Fundort liest sich mit seinem Gebi
 | Stufenbereich für Quests in der Nähe | 5 | Die Liste In der Nähe blendet Quests aus, die um mehr als so viele Stufen unter deiner Stufe liegen. Von 0 bis 60. Stelle 60 ein, um jede Quest zu sehen, oder 0, um nur Quests auf deiner Stufe oder darüber zu sehen. |
 | Wiederholbare Quests einbeziehen | An | Ob wiederholbare und tägliche Quests in der Liste In der Nähe erscheinen. |
 | Questgebiet | siehe oben | Ansagen beim Betreten oder Verlassen eines Zielgebiets. |
+| Questfortschritt | siehe oben | Töne, wenn eine Quest vorankommt oder fertig ist. |
 
 Die Liste In der Nähe lässt außerdem Quests weg, die du noch nicht annehmen kannst, wegen deiner Stufe oder einer fehlenden Vorquest.
 

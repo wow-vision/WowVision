@@ -95,6 +95,90 @@ function module:onQuestArea(questId, isInside)
     areaAlert:fire({ text = prefix .. ": " .. title, questId = questId, inside = isInside })
 end
 
+-- Quest progress: a sound when an objective moves forward (an item found,
+-- a creature slain), another when that finishes the quest. The game's own
+-- "Kobold Candle: 3/8" line is spoken by the errors module.
+local progressAlert = module:addAlert({
+    key = "questProgress",
+    label = L["Quest Progress Alert"],
+})
+progressAlert:addOutput({
+    type = "Sound",
+    key = "progress",
+    action = "progress",
+    label = L["Quest Progress Sound"],
+    path = "Sound/WowVision/alerts/success1.mp3",
+})
+progressAlert:addOutput({
+    type = "Sound",
+    key = "complete",
+    action = "complete",
+    label = L["Quest Complete Sound"],
+    path = "Sound/WowVision/alerts/success2.mp3",
+})
+settings:addRef("questProgressAlert", progressAlert.parameters)
+
+local progressTracker = WowVision.quests.ProgressTracker:new()
+
+-- Quest log events come in bursts, and the game can fill in the new count
+-- ("Boar slain: 1/8") only after its last event: a single reading right
+-- after the event then misses the kill until something else touches the
+-- log. So every event starts a short chain of readings: the first soon,
+-- then a few more after it. While a quest's objectives have not arrived
+-- yet (just accepted), the chain goes on a while longer, so the first
+-- kill has a count to compare with. Each change sounds once: a reading
+-- becomes the next one's baseline.
+local FIRST_DELAY = 0.2
+local FOLLOW_DELAY = 0.5
+local FOLLOW_READS = 3
+local LOADING_READS = 20
+local progressScheduled = false
+local followReads, loadingReads = 0, 0
+
+local function scheduleRead(delay)
+    progressScheduled = true
+    C_Timer.After(delay, function()
+        module:checkProgress()
+    end)
+end
+
+function module:checkProgress()
+    progressScheduled = false
+    local ok, entries = pcall(WowVision.quests.gameQuestLog)
+    if not ok then
+        geterrorhandler()(entries)
+        return
+    end
+    local results = progressTracker:update(entries)
+    -- One sound per reading: completing a quest outranks progress on another.
+    local kind = nil
+    for _, result in ipairs(results) do
+        if result.kind == "complete" then
+            kind = "complete"
+        elseif kind == nil then
+            kind = "progress"
+        end
+    end
+    if kind ~= nil then
+        progressAlert:fire({ action = kind })
+    end
+    if followReads > 0 then
+        followReads = followReads - 1
+        scheduleRead(FOLLOW_DELAY)
+    elseif progressTracker.loading and loadingReads > 0 then
+        loadingReads = loadingReads - 1
+        scheduleRead(FOLLOW_DELAY)
+    end
+end
+
+function module:scheduleProgressCheck()
+    followReads = FOLLOW_READS
+    loadingReads = LOADING_READS
+    if not progressScheduled then
+        scheduleRead(FIRST_DELAY)
+    end
+end
+
 module.updateReasons = { accepted = "accepted", updated = "updated", turnedIn = "turnedIn", abandoned = "abandoned" }
 
 module.events = {
@@ -406,10 +490,17 @@ module:registerEvent("event", "QUEST_ACCEPTED")
 module:registerEvent("event", "QUEST_TURNED_IN")
 module:registerEvent("event", "QUEST_REMOVED")
 module:registerEvent("event", "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED")
+module:registerEvent("event", "UNIT_QUEST_LOG_CHANGED")
 
 function module:onEvent(event, arg1, arg2)
     if event == "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED" then
         self:onQuestArea(arg1, arg2)
+        return
+    end
+    if event == "QUEST_LOG_UPDATE" or (event == "UNIT_QUEST_LOG_CHANGED" and arg1 == "player") then
+        self:scheduleProgressCheck()
+    end
+    if event == "UNIT_QUEST_LOG_CHANGED" then
         return
     end
     local adapter = self.adapter
