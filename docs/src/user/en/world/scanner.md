@@ -38,8 +38,9 @@ Categories appear in this order. Some are left out while there is nothing to lis
 
 ### Player
 
-- Corpse: while you are dead or a ghost, the place where your body lies, if the game reports it on the current map. Press Enter to be guided to it, the usual way to find it on a corpse run.
-- Not dead: shown instead while you are alive.
+This category appears only while you are dead or a ghost.
+
+- Corpse: the place where your body lies, if the game reports it on the current map. Press Enter to be guided to it, the usual way to find it on a corpse run.
 - Graveyards: the graveyards of the map you are on, each with its distance. Open the group to see them.
 
 ### Group
