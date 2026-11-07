@@ -287,6 +287,7 @@ loadAddonFile("core/objects/types/tests.lua")
 -- catches recursion/typo failures the parse check cannot.
 loadAddonFile("core/alerts/alerts.lua")
 loadAddonFile("core/alerts/outputs.lua")
+loadAddonFile("core/audio/channelTests.lua")
 
 -- The real Module, for what it does with the stores. Its frames, bindings
 -- and profiler are the game's side: stand-ins, in place only while Module.lua

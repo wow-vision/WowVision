@@ -17,15 +17,17 @@ for _, channel in ipairs(consts.SOUND_CHANNELS or {}) do
 end
 WowVision.audio.defaultChannel = consts.DEFAULT_SOUND_CHANNEL or "SFX"
 
--- The channel WowVision's sounds play on: the UI module's setting, or the
--- default when the saved channel is not in this version's list.
+-- The channel WowVision's sounds play on: the UI module's setting keeps
+-- selectedChannel current (core/ui modules/module.lua).
 function WowVision.audio.channel()
-    local ui = WowVision.base.ui
-    local channel = ui and ui.settings and ui.settings.soundChannel
-    for _, choice in ipairs(WowVision.audio.channels) do
-        if choice.value == channel then
-            return channel
-        end
+    return WowVision.audio.selectedChannel or WowVision.audio.defaultChannel
+end
+
+-- The sound channel setting's validate: a saved channel this version does
+-- not offer (an older build's choice) reads as the default.
+function WowVision.audio.validateChannel(field, value)
+    if value ~= nil and field:getChoiceByValue(nil, value) == nil then
+        return WowVision.audio.defaultChannel
     end
-    return WowVision.audio.defaultChannel
+    return value
 end
