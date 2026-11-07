@@ -164,7 +164,7 @@ Die Haltepunkte:
 1. Reiter: deine primäre Spezialisierung und, sobald du die doppelte Spezialisierung gelernt hast, die sekundäre. Der geöffnete Reiter liest „ausgewählt“. Ein Reiter liest außerdem „Aktiv“, wenn es die Spezialisierung ist, die du spielst, oder den Grund des Spiels, wenn er gesperrt ist.
 2. Der Zustand des Reiters: eine Schaltfläche Activate, wenn es nicht die Spezialisierung ist, die du gerade benutzt, sonst die Zeile „Aktiv“.
 3. Unspent Points: „Unspent Points, 5“.
-4. Suchen und Optionen, siehe Zaubersuche oben.
+4. Optionen und Suchen, siehe Zaubersuche oben.
 5. Ein Haltepunkt für jede Spezialisierung. Sein Kontext ist der Name der Spezialisierung und die Punkte, die du darin ausgegeben hast: „Waffen, 11 Punkte“ (oder „1 Punkt“).
 6. Der letzte Haltepunkt ist eine Reihe: Apply, Änderungen rückgängig machen und die Zurücksetzen-Schaltfläche, die ein Menü ist.
 

@@ -160,7 +160,7 @@ The stops:
 1. Tabs: your primary specialization and, once you have learned dual specialization, the secondary one. The open tab reads "selected". A tab also reads "Active" if it is the specialization you play, or the game's reason if it is locked.
 2. The state of the tab: an Activate button when it is not the specialization you are using, otherwise the line "Active".
 3. Unspent Points: "Unspent Points, 5".
-4. Search and Options, see Spell search above.
+4. Options and Search, see Spell search above.
 5. One stop for each specialization. Its context is the specialization name and the points you spent in it: "Arms, 11 Points" (or "1 Point").
 6. The last stop is a row: Apply, Undo Changes and the reset button, which is a menu.
 
