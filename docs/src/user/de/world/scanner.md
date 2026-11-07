@@ -94,7 +94,7 @@ Diese Kategorie beginnt eingeklappt. Sie enthält die Verfolgungs- und Kartenfil
 Eingabe auf einem Eintrag mit Ort schließt den Scanner und beginnt, dich zu führen. Was dann folgt, ist das [Navigationsfenster](navigation.md):
 
 - Gibt es Routendaten für den Kontinent, auf dem du bist, öffnet sich das Navigationsfenster mit dem nächsten Einstiegspunkt ins Wegnetz und deinem gewählten Eintrag schon als Ziel ausgewählt. Drücke dort Eingabe, um die Route zu gehen. Sie folgt dem Wegpunktnetz und endet mit einem geraden letzten Stück bis zum Eintrag.
-- Gibt es keine Routendaten, hörst du "Signal gesetzt", gefolgt von der Entfernung in Metern, zum Beispiel "Signal gesetzt 40 Meter", und ein Klang-Signal führt dich in gerader Linie. Wenn du ankommst, hörst du "Angekommen".
+- Gibt es keine Routendaten, hörst du "Beacon gesetzt", gefolgt von der Entfernung in Metern, zum Beispiel "Beacon gesetzt 40 Meter", und ein Klang-Beacon führt dich in gerader Linie. Wenn du ankommst, hörst du "Angekommen".
 
 Bei einem gesehenen NPC, den der Minikarten-Scan gefunden hat, löst die Ankunft außerdem die Suche nach dem echten Namen aus, die im [Minikarten-Scanner](minimap.md) beschrieben ist.
 
@@ -115,14 +115,14 @@ Die zugehörigen Quest-Einstellungen stehen im Modul Quests: siehe [Quests](ques
 2. Gehe mit Pfeil runter zu Quests, drücke Pfeil rechts, um sie zu öffnen, und öffne dann In der Nähe.
 3. Der erste Eintrag ist die nächste Quest, zum Beispiel "A Threat Within, Stufe 1, Marshal McBride, 40 Meter, voraus, 1 von 4".
 4. Drücke Rücktaste, um zu lesen, was die Quest von dir verlangt, dann Esc, um zurückzukommen.
-5. Drücke Eingabe. Der Scanner schließt sich und das Navigationsfenster öffnet sich, oder du hörst "Signal gesetzt 40 Meter", wenn es keine Routendaten gibt.
+5. Drücke Eingabe. Der Scanner schließt sich und das Navigationsfenster öffnet sich, oder du hörst "Beacon gesetzt 40 Meter", wenn es keine Routendaten gibt.
 6. Geh zum Questgeber. Du hörst "Angekommen".
 
 ## Beispiel: Leichenlauf
 
 1. Gib deinen Geist frei.
 2. Drücke F9. Die Kategorie Spieler sagt "Leiche" mit Entfernung und Richtung.
-3. Drücke Eingabe, um geführt zu werden. Folge dem Signal oder der Route.
+3. Drücke Eingabe, um geführt zu werden. Folge dem Beacon oder der Route.
 
 ## Hinweise zu den Versionen
 
@@ -132,7 +132,7 @@ Die zugehörigen Quest-Einstellungen stehen im Modul Quests: siehe [Quests](ques
 - Verfolgung erscheint nur dort, wo das Spiel Minikarten-Verfolgungsarten bereitstellt.
 - Friedhöfe erscheinen, wenn das Spiel sie für die Karte auflisten kann.
 - Positionen von Gruppenmitgliedern lassen sich nur lesen, wo das Spiel sie bereitstellt.
-- Eingabe öffnet das [Navigationsfenster](navigation.md), wo Kartendaten für den Kontinent existieren, und fällt sonst auf ein gerades Signal zurück.
+- Eingabe öffnet das [Navigationsfenster](navigation.md), wo Kartendaten für den Kontinent existieren, und fällt sonst auf ein gerades Beacon zurück.
 - Der Scanner liegt auch auf der Kürzelebene des Controllers; siehe [Controller](../controller.md).
 
 ## Verwandte Seiten

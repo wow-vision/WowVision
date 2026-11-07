@@ -59,7 +59,7 @@ Zusätzliche Fenster in Retail und WoW: Forever:
 Tasten, die Sku behält (WowVision übernimmt sie nicht, solange Sku geladen ist):
 
 - Die Tasten für die Tooltipzeilen: Vorherige Tooltipzeile und Nächste Tooltipzeile (Umschalt+Pfeil hoch und Umschalt+Pfeil runter), Tooltip links vorlesen und Tooltip rechts vorlesen (Umschalt+Pfeil links und Umschalt+Pfeil rechts).
-- Die Umschalter der weichen Zielerfassung Weiches Ziel Feind, Weiches Ziel Freund und Weiches Ziel Interaktion (Umschalt+I, Umschalt+P und Umschalt+O).
+- Die Umschalter der weichen Zielerfassung Soft Target Feind, Soft Target Freund und Soft Target Interaktion (Umschalt+I, Umschalt+P und Umschalt+O).
 - Zielfokus 1 bis Zielfokus 5.
 
 Befehle, die Sku behält: /focus1 bis /focus5, /pquit (Gruppe verlassen) und /dquit (Dungeon- oder Schlachtfeldgruppe verlassen).

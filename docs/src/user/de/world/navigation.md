@@ -1,6 +1,6 @@
 # Navigation und Routen
 
-WowVision kann dich zu Fuß an einen Ort führen. Im Navigationsfenster (F10) wählst du, wo du startest und wohin du willst. WowVision berechnet eine Route entlang bekannter Wege, und ein akustisches Signal führt dich dann von Wegpunkt zu Wegpunkt, bis du ankommst. Diese Seite behandelt das Navigationsfenster, das Signal und alle Tasten, die du beim Gehen einer Route benutzt.
+WowVision kann dich zu Fuß an einen Ort führen. Im Navigationsfenster (F10) wählst du, wo du startest und wohin du willst. WowVision berechnet eine Route entlang bekannter Wege, und ein akustisches Beacon führt dich dann von Wegpunkt zu Wegpunkt, bis du ankommst. Diese Seite behandelt das Navigationsfenster, das Beacon und alle Tasten, die du beim Gehen einer Route benutzt.
 
 Hinweis: Die Ansagen dieser Seite kommen aus lokalisierten Texten und werden auf einem deutschen Client auf Deutsch gesprochen. Die Beispiele zeigen, was du hörst. Namen von Orten, NPCs und Objekten stammen aus den Spieldaten und bleiben so, wie sie dort stehen.
 
@@ -9,10 +9,10 @@ Hinweis: Die Ansagen dieser Seite kommen aus lokalisierten Texten und werden auf
 1. Drücke F10, um das Navigationsfenster zu öffnen.
 2. Wähle deinen Einstiegspunkt: den Ort im Netz der bekannten Wege, an dem deine Route beginnt. Der nächstgelegene ist schon für dich ausgewählt.
 3. Suche ein Ziel und drücke Eingabe darauf.
-4. WowVision sagt, wie viele Wegpunkte die Route hat und wie lang sie ist, und ein Signal beginnt zu pingen.
-5. Dreh dich zum Signal, geh los und hör zu. Jeder Wegpunkt, den du erreichst, spielt einen kurzen Ton, und das Signal wandert zum nächsten. Am Ende hörst du "Angekommen" und den Namen des Ortes.
+4. WowVision sagt, wie viele Wegpunkte die Route hat und wie lang sie ist, und ein Beacon beginnt zu pingen.
+5. Dreh dich zum Beacon, geh los und hör zu. Jeder Wegpunkt, den du erreichst, spielt einen kurzen Ton, und das Beacon wandert zum nächsten. Am Ende hörst du "Angekommen" und den Namen des Ortes.
 
-Du kannst auch ein Signal in gerader Linie ganz ohne Route setzen: mit dem Kontrollkästchen Direkt im Fenster, im Scanner oder mit dem Befehl /beacon.
+Du kannst auch ein Beacon in gerader Linie ganz ohne Route setzen: mit dem Kontrollkästchen Direkt im Fenster, im Scanner oder mit dem Befehl /beacon.
 
 ## Welche Routen du hast
 
@@ -23,9 +23,9 @@ Routen brauchen Kartendaten: ein Netz aus Wegpunkten, die miteinander verbunden 
 | WoW: Forever | [WowNav](./wownav.md), standardmäßig an. Du kannst es ausschalten und stattdessen die klassischen Routen benutzen. |
 | The Burning Crusade | [Klassische Routen](#klassische-routen). |
 | Classic Era | Klassische Routen, wenn das Spiel ihre Kartendaten lädt; siehe [Kartendaten](#kartendaten). |
-| Mists of Pandaria und Retail | Hier sind keine Kartendaten enthalten. Das Navigationsfenster öffnet sich, aber seine Listen sind leer. Signal in gerader Linie, /beacon, die Entfernungsansage und alle anderen Tasten dieser Seite funktionieren trotzdem. |
+| Mists of Pandaria und Retail | Hier sind keine Kartendaten enthalten. Das Navigationsfenster öffnet sich, aber seine Listen sind leer. Beacon in gerader Linie, /beacon, die Entfernungsansage und alle anderen Tasten dieser Seite funktionieren trotzdem. |
 
-Beide Systeme benutzen dasselbe Fenster, dieselben Tasten und dasselbe Signal. Diese Seite gilt also für beide und sagt es, wo sie sich unterscheiden. Was jedes von ihnen ausmacht, steht weiter unten unter [Klassische Routen](#klassische-routen) und auf der Seite [WowNav (WoW: Forever)](./wownav.md).
+Beide Systeme benutzen dasselbe Fenster, dieselben Tasten und dasselbe Beacon. Diese Seite gilt also für beide und sagt es, wo sie sich unterscheiden. Was jedes von ihnen ausmacht, steht weiter unten unter [Klassische Routen](#klassische-routen) und auf der Seite [WowNav (WoW: Forever)](./wownav.md).
 
 Die Beispiele auf dieser Seite benutzen die schlichten Ortsnamen von WowNav. Klassische Routen lesen Namen in einer längeren Form; siehe [Ortsnamen](#ortsnamen).
 
@@ -58,7 +58,7 @@ Die Route, die du bekommst, enthält den Weg von deinem Standort bis zum Einstie
 
 ### Direkt
 
-Hake Direkt an (drücke Eingabe auf dem Kontrollkästchen), wenn du keine Route willst. Die Einstiegspunkte verschwinden, und Eingabe auf einem Ziel setzt ein gerades Signal genau auf diesen Punkt. Du hörst zum Beispiel "Direkt: Innkeeper Allison (Innkeeper), 120 Meter" und bei der Ankunft "Angekommen" und den Namen. Nutze das, wenn du schon nah dran bist, wenn du in einem Gebäude bist, das das Netz nicht kennt, oder wenn du in gerader Linie irgendwohin willst.
+Hake Direkt an (drücke Eingabe auf dem Kontrollkästchen), wenn du keine Route willst. Die Einstiegspunkte verschwinden, und Eingabe auf einem Ziel setzt ein gerades Beacon genau auf diesen Punkt. Du hörst zum Beispiel "Direkt: Innkeeper Allison (Innkeeper), 120 Meter" und bei der Ankunft "Angekommen" und den Namen. Nutze das, wenn du schon nah dran bist, wenn du in einem Gebäude bist, das das Netz nicht kennt, oder wenn du in gerader Linie irgendwohin willst.
 
 Direkt ist die erste Station. Um dorthin zu kommen, drücke Umschalt+Tab von den Einstiegspunkten aus.
 
@@ -79,7 +79,7 @@ Drücke noch einmal Tab, um zu Ziele zu kommen. Es ist eine einzige lange Liste,
 |-------|-------------|
 | Pfeil hoch / Pfeil runter | Vorheriges / nächstes Ziel. |
 | Pos1 / Ende | Erstes / letztes Ziel. |
-| Eingabe | Das Fenster schließen und die Route starten (oder das gerade Signal, wenn Direkt an ist). |
+| Eingabe | Das Fenster schließen und die Route starten (oder das gerade Beacon, wenn Direkt an ist). |
 
 Jedes Ziel liest seinen Namen und seine Entfernung, dann seine Position in der Liste. Mit WowNav kommt nach der Entfernung, was der Ort ist und wo er ist, zum Beispiel "Innkeeper Allison (Innkeeper), 85 Meter, Questgeber, Händler, Gastwirt, Stormwind City, 1 von 342". Ein Ziel, das du in den letzten Minuten erreicht hast, wird mit Besucht davor angesagt; siehe [Besuchte Orte](#besuchte-orte). Eine leere Liste liest "Leer".
 
@@ -87,35 +87,35 @@ Wenn du Eingabe drückst, hörst du die Zusammenfassung der Route, zum Beispiel 
 
 ### Vom Scanner aus
 
-Im Scanner ([Scanner](./scanner.md)) öffnet Eingabe auf einer Quest, einem NPC oder einem anderen Eintrag mit Ort das Navigationsfenster, schon auf diesen Eintrag ausgerichtet. Der nächste Einstiegspunkt und der Eintrag des Scanners als Ziel sind beide ausgewählt, und der Fokus liegt auf dem Ziel. Drücke Eingabe, um dorthin zu routen; willst du einen anderen Einstiegspunkt, drücke vorher zweimal Umschalt+Tab. Ohne Kartendaten für den Kontinent setzt der Scanner direkt ein gerades Signal und öffnet das Fenster nicht.
+Im Scanner ([Scanner](./scanner.md)) öffnet Eingabe auf einer Quest, einem NPC oder einem anderen Eintrag mit Ort das Navigationsfenster, schon auf diesen Eintrag ausgerichtet. Der nächste Einstiegspunkt und der Eintrag des Scanners als Ziel sind beide ausgewählt, und der Fokus liegt auf dem Ziel. Drücke Eingabe, um dorthin zu routen; willst du einen anderen Einstiegspunkt, drücke vorher zweimal Umschalt+Tab. Ohne Kartendaten für den Kontinent setzt der Scanner direkt ein gerades Beacon und öffnet das Fenster nicht.
 
 ## Einer Route folgen
 
 ### Was du hörst
 
-Wenn die Route beginnt, spricht WowVision die Zusammenfassung, und das Signal beginnt zu pingen. Die Wegpunkte werden nicht einzeln vorgelesen. Stattdessen hörst du sie:
+Wenn die Route beginnt, spricht WowVision die Zusammenfassung, und das Beacon beginnt zu pingen. Die Wegpunkte werden nicht einzeln vorgelesen. Stattdessen hörst du sie:
 
-- Das Signal pingt in Richtung des aktuellen Wegpunkts. Der Ping ändert sich mit der Richtung und der Entfernung zum Wegpunkt. Er pingt schneller, je direkter du auf den Wegpunkt blickst: etwa alle 0,7 Sekunden, wenn du vom Kurs abweichst, und etwa alle 0,3 Sekunden, wenn du darauf ausgerichtet bist. Die Entfernung hörst du in Schritten von etwa 6 Metern, und sie reicht bis ungefähr 180 Meter.
-- Signal ausgerichtet (ein Klack) spielt, wenn du dich bis auf 10 Grad zum Wegpunkt gedreht hast. Signal abseits des Kurses (ein Klick) spielt, wenn du dich wieder abwendest. Diese Töne spielen nur, wenn du diese Linie durch Drehen überschreitest.
+- Das Beacon pingt in Richtung des aktuellen Wegpunkts. Der Ping ändert sich mit der Richtung und der Entfernung zum Wegpunkt. Er pingt schneller, je direkter du auf den Wegpunkt blickst: etwa alle 0,7 Sekunden, wenn du vom Kurs abweichst, und etwa alle 0,3 Sekunden, wenn du darauf ausgerichtet bist. Die Entfernung hörst du in Schritten von etwa 6 Metern, und sie reicht bis ungefähr 180 Meter.
+- Beacon ausgerichtet (ein Klack) spielt, wenn du dich bis auf 10 Grad zum Wegpunkt gedreht hast. Beacon abseits des Kurses (ein Klick) spielt, wenn du dich wieder abwendest. Diese Töne spielen nur, wenn du diese Linie durch Drehen überschreitest.
 - Wegpunkt erreicht (ein Erfolgston) spielt jedes Mal, wenn du nah genug an einen Wegpunkt kommst, auch beim letzten.
-- Gleich nach dem Ton sagt WowVision, wie viele Wegpunkte noch übrig sind, zum Beispiel "noch 3". Der Wegpunkt, zu dem das Signal jetzt führt, zählt mit. Am letzten Wegpunkt hörst du stattdessen Angekommen, und an einem Portal, der Tiefenbahn oder einem Aufzug auf einer WowNav-Route die eigenen Ansagen von WowNav. Das gilt für klassische Routen und WowNav-Routen gleichermaßen. Die Einstellung Verbleibende Wegpunkte ansagen (Announce Remaining Waypoints) im Modul Navigation (standardmäßig an) schaltet es aus.
+- Gleich nach dem Ton sagt WowVision, wie viele Wegpunkte noch übrig sind, zum Beispiel "noch 3". Der Wegpunkt, zu dem das Beacon jetzt führt, zählt mit. Am letzten Wegpunkt hörst du stattdessen Angekommen, und an einem Portal, der Tiefenbahn oder einem Aufzug auf einer WowNav-Route die eigenen Ansagen von WowNav. Das gilt für klassische Routen und WowNav-Routen gleichermaßen. Die Einstellung Verbleibende Wegpunkte ansagen (Announce Remaining Waypoints) im Modul Navigation (standardmäßig an) schaltet es aus.
 - Angekommen wird am Ende einer Route gesprochen, gefolgt vom Namen des Ziels.
-- Signal gestoppt wird gesprochen, wenn du abbrichst.
+- Beacon gestoppt wird gesprochen, wenn du abbrichst.
 
 Ein Wegpunkt gilt als erreicht, wenn du innerhalb der Ankunftsdistanz von ihm bist (siehe [Ankunftsdistanz](#ankunftsdistanz)). Mit WowNav kann ein Wegpunkt auch eine eigene, größere Distanz haben.
 
-### Signaltöne
+### Beacon-Töne
 
-Alle Signaltöne sind ein einziger Alarm namens Signal im Modul Karten (WowVision-Menü, Navigation, Karten, Signal). Der Alarm und jeder seiner vier Töne haben einen eigenen Schalter Aktiviert und einen eigenen Sound, sodass sich jedes Signal einzeln ausschalten oder ändern lässt. Wie Alarme funktionieren, steht auf der Seite [Alarme](../basics/alerts.md).
+Alle Beacon-Töne sind ein einziger Alarm namens Beacon im Modul Beacon-Einstellungen (WowVision-Menü, Navigation, Beacon-Einstellungen, Beacon). Der Alarm und jeder seiner vier Töne haben einen eigenen Schalter Aktiviert und einen eigenen Sound, sodass sich jedes Beacon einzeln ausschalten oder ändern lässt. Wie Alarme funktionieren, steht auf der Seite [Alarme](../basics/alerts.md).
 
 | Ton | Standard | Wann er spielt |
 |-----|----------|----------------|
-| Signalton (Beacon Sound) | Probe (Mid) | Der gerichtete Ping zum aktuellen Wegpunkt. |
-| Signal ausgerichtet (Beacon Aligned) | Klack | Du hast dich zum Wegpunkt gedreht. |
-| Signal abseits des Kurses (Beacon Off Course) | Klick | Du hast dich vom Wegpunkt abgewendet. |
+| Beacon-Ton (Beacon Sound) | Probe (Mid) | Der gerichtete Ping zum aktuellen Wegpunkt. |
+| Beacon ausgerichtet (Beacon Aligned) | Klack | Du hast dich zum Wegpunkt gedreht. |
+| Beacon abseits des Kurses (Beacon Off Course) | Klick | Du hast dich vom Wegpunkt abgewendet. |
 | Wegpunkt erreicht (Waypoint Reached) | Erfolgston | Du hast einen Wegpunkt erreicht. |
 
-Für Signalton wählst du eines der Signal-Sets: Notification, Probe (Deep), Probe (Mid), Steel Gong und Beacon 6 (Skus Signal 6). Wenn du in der Auswahl auf einen Eintrag gehst, spielt eine Hörprobe. Bei den anderen drei wählst du einen beliebigen Sound aus der Soundliste.
+Für Beacon-Ton wählst du eines der Beacon-Sets: Notification, Probe (Deep), Probe (Mid), Steel Gong und Beacon 6 (Skus Beacon 6). Wenn du in der Auswahl auf einen Eintrag gehst, spielt eine Hörprobe. Bei den anderen drei wählst du einen beliebigen Sound aus der Soundliste.
 
 ### Tasten beim Gehen
 
@@ -129,7 +129,7 @@ Für Signalton wählst du eines der Signal-Sets: Notification, Probe (Deep), Pro
 | Strg+S | Vorheriger Wegpunkt | Geht zum vorherigen Wegpunkt zurück. |
 | Strg+Umschalt+N | Route von hier neu starten | Startet die letzte Route von deinem Standort aus neu. |
 | Strg+Umschalt+R | Route umkehren (Reverse Route) | Kehrt die laufende Route um, zurück zu ihrem Start. |
-| Umschalt+F12 | Navigation abbrechen | Beendet die Route oder das Signal. |
+| Umschalt+F12 | Navigation abbrechen | Beendet die Route oder das Beacon. |
 | F10 | Navigation | Öffnet das Navigationsfenster. |
 
 All das lässt sich im Fenster für die Tastenbelegung ändern (WowVision-Menü, Benutzeroberfläche, Tastenbelegung); siehe [Tastenbelegung](../basics/keybindings.md). Die vollständige Liste steht in der [Tastenreferenz](../reference/keybindings.md).
@@ -170,7 +170,7 @@ Alt Gr spricht die Entfernung in Metern zu dem Wegpunkt, zu dem du gerade gehst,
 
 ### Nächster und vorheriger Wegpunkt
 
-Bist du vom Weg abgekommen oder willst du einen Wegpunkt überspringen, den du nicht erreichen kannst, drücke Strg+W, um das Signal zum nächsten Wegpunkt zu verschieben, oder Strg+S, um einen zurückzugehen. Der Schritt spielt den Ton für "Wegpunkt erreicht" und spricht, wie viele Wegpunkte noch bleiben, den aktuellen eingeschlossen, zum Beispiel "4 verbleibend". An den Enden hörst du Ende der Route oder Anfang der Route; nur das Gehen zum letzten Wegpunkt beendet die Route. Ohne Route hörst du Kein aktiver Wegpunkt.
+Bist du vom Weg abgekommen oder willst du einen Wegpunkt überspringen, den du nicht erreichen kannst, drücke Strg+W, um das Beacon zum nächsten Wegpunkt zu verschieben, oder Strg+S, um einen zurückzugehen. Der Schritt spielt den Ton für "Wegpunkt erreicht" und spricht, wie viele Wegpunkte noch bleiben, den aktuellen eingeschlossen, zum Beispiel "4 verbleibend". An den Enden hörst du Ende der Route oder Anfang der Route; nur das Gehen zum letzten Wegpunkt beendet die Route. Ohne Route hörst du Kein aktiver Wegpunkt.
 
 ### Die Route neu starten
 
@@ -178,13 +178,13 @@ Bist du weit von der Route abgekommen, drücke Strg+Umschalt+N. WowVision plant 
 
 ### Die Route umkehren
 
-Auf halber Strecke fällt dir ein, dass du noch einmal zurückmusst. Drücke Strg+Umschalt+R. Die Route kehrt sich um: Der Wegpunkt, zu dem das Signal gerade führt, wird zum Start einer neuen Route, und ihr Ziel ist der Ort, an dem die vorherige Route begann, also der Einstiegspunkt, den du im Navigationsfenster gewählt hast. Du hörst "Route umgekehrt, zurück zu" und den Namen dieses Ortes, danach die Zusammenfassung der neuen Route. Ein Beispiel: Auf dem Weg von Priesterin Anetta zu Marschall Dughan drückst du Strg+Umschalt+R und hörst "Route umgekehrt, zurück zu Priesterin Anetta". Hat der Start keinen Namen, hörst du "zurück zu dem Start der vorherigen Route".
+Auf halber Strecke fällt dir ein, dass du noch einmal zurückmusst. Drücke Strg+Umschalt+R. Die Route kehrt sich um: Der Wegpunkt, zu dem das Beacon gerade führt, wird zum Start einer neuen Route, und ihr Ziel ist der Ort, an dem die vorherige Route begann, also der Einstiegspunkt, den du im Navigationsfenster gewählt hast. Du hörst "Route umgekehrt, zurück zu" und den Namen dieses Ortes, danach die Zusammenfassung der neuen Route. Ein Beispiel: Auf dem Weg von Priesterin Anetta zu Marschall Dughan drückst du Strg+Umschalt+R und hörst "Route umgekehrt, zurück zu Priesterin Anetta". Hat der Start keinen Namen, hörst du "zurück zu dem Start der vorherigen Route".
 
 Das gilt für klassische Routen und WowNav-Routen gleichermaßen. Danach führt Strg+Umschalt+N wieder zu diesem Start. Ohne laufende Route hörst du "Keine Route zum Umkehren".
 
 ### Navigation abbrechen
 
-Umschalt+F12 beendet die Route oder das gerade Signal: Du hörst Signal gestoppt, und die Pings hören auf. Läuft nichts, hörst du Kein aktiver Wegpunkt. /beacon stop tut dasselbe.
+Umschalt+F12 beendet die Route oder das gerade Beacon: Du hörst Beacon gestoppt, und die Pings hören auf. Läuft nichts, hörst du Kein aktiver Wegpunkt. /beacon stop tut dasselbe.
 
 ## Route zu deinem Ziel
 
@@ -215,25 +215,25 @@ Zwei Belegungen, beide standardmäßig nicht belegt, führen dich zum nächsten 
 | Belegung | Was sie tut |
 |----------|-------------|
 | Route zum nächsten unbesuchten gleichnamigen Ziel | Plant eine Route dorthin, mit Einstieg an dem Einstiegspunkt, den das Fenster vorwählen würde. |
-| Direkt zum nächsten unbesuchten gleichnamigen Ziel | Setzt dorthin ein gerades Signal. |
+| Direkt zum nächsten unbesuchten gleichnamigen Ziel | Setzt dorthin ein gerades Beacon. |
 
 "Gleicher Name" heißt bei WowNav der ganze Name und bei klassischen Routen der Name vor dem ersten Semikolon ("Peacebloom"), ohne Beachtung der Groß- und Kleinschreibung. Der Ort, an dem du gerade bist, und die als besucht markierten werden übersprungen. Drücke die Taste immer wieder, und du gehst nacheinander jeden Spawn dieses Objekts ab.
 
 Ohne früher gewähltes Ziel hörst du Wähle zuerst ein Ziel im Navigationsfenster. Ist jeder Spawn besucht, hörst du "Kein unbesuchtes Ziel Peacebloom gefunden".
 
-## Gerade Signale und der Befehl /beacon
+## Gerade Beacons und der Befehl /beacon
 
-Du kannst ein Signal auch ohne das Fenster setzen. Tippe diese Befehle ins Chatfeld:
+Du kannst ein Beacon auch ohne das Fenster setzen. Tippe diese Befehle ins Chatfeld:
 
 | Befehl | Was er tut |
 |--------|------------|
-| /beacon | Spricht deine Position in Kartenprozent, zum Beispiel "50.5 30.4", und, falls ein Signal aktiv ist, dessen Entfernung und Winkel. |
-| /beacon 50.5 30.4 | Gerades Signal zu Kartenkoordinaten auf der Karte deines aktuellen Gebiets: die Zahlen, die Questführer dir geben. Du hörst "Signal gesetzt" und die Entfernung. |
+| /beacon | Spricht deine Position in Kartenprozent, zum Beispiel "50.5 30.4", und, falls ein Beacon aktiv ist, dessen Entfernung und Winkel. |
+| /beacon 50.5 30.4 | Gerades Beacon zu Kartenkoordinaten auf der Karte deines aktuellen Gebiets: die Zahlen, die Questführer dir geben. Du hörst "Beacon gesetzt" und die Entfernung. |
 | /beacon to bank | Routet zum nächsten bekannten Ort, dessen Name "bank" enthält. Du hörst seinen Namen, dann die Zusammenfassung der Route. Du wählst keinen Einstiegspunkt: WowNav benutzt den, den F10 vorwählen würde, und bei klassischen Routen nimmt der Router den besten der fünf nächsten Wegpunkte. |
-| /beacon world x y | Gerades Signal zu rohen Weltkoordinaten. |
+| /beacon world x y | Gerades Beacon zu rohen Weltkoordinaten. |
 | /beacon stop | Dasselbe wie Umschalt+F12. |
 
-Bei /beacon to ergibt ein unbekannter Name "Keine Route gefunden" und den Namen. Ein Signal von /beacon mit Koordinaten endet mit "Angekommen", wenn du nah genug bist, wie jede Route.
+Bei /beacon to ergibt ein unbekannter Name "Keine Route gefunden" und den Namen. Ein Beacon von /beacon mit Koordinaten endet mit "Angekommen", wenn du nah genug bist, wie jede Route.
 
 ## Klassische Routen
 
@@ -255,17 +255,17 @@ Liegt ein Ziel nicht im Verbindungsnetz (die meisten Kreaturen und Objekte tun d
 
 ## Einstellungen
 
-Öffne das WowVision-Menü (/wv), dann Navigation, dann Karten. Die Einstellungen gelten für alle deine Charaktere, solange du das nicht im Kontextmenü des Moduls änderst; siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).
+Öffne das WowVision-Menü (/wv), dann Navigation, dann Beacon-Einstellungen. Die Einstellungen gelten für alle deine Charaktere, solange du das nicht im Kontextmenü des Moduls änderst; siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
-| Aktiviert | An | Schaltet das ganze Modul Karten aus, einschließlich der Tasten und /beacon. |
+| Aktiviert | An | Schaltet das ganze Modul Beacon-Einstellungen aus: nicht nur das Beacon, sondern auch Routen, die Tasten und /beacon. |
 | Ankunftsradius (Arrival Radius) | Mittlere Distanz | Welche Ankunftsdistanz aktiv ist. Alt+P ändert sie auch. |
 | Kurze Distanz | 0,3 Meter | Die kurze Ankunftsdistanz (0,1 bis 20 Meter). |
 | Mittlere Distanz | 1 Meter | Die mittlere Ankunftsdistanz (0,1 bis 20 Meter). |
 | Weite Distanz | 3 Meter | Die weite Ankunftsdistanz (0,1 bis 20 Meter). |
 | Entfernung mit Alt Gr ansagen | An | Ob Alt Gr und Strg+Alt die Entfernung sprechen. Die Belegung Entfernung ansagen funktioniert in jedem Fall. |
-| Signal | (siehe oben) | Der Signal-Alarm und seine vier Töne: Signalton, Signal ausgerichtet, Signal abseits des Kurses, Wegpunkt erreicht. Jeder hat Aktiviert und eine Soundauswahl. |
+| Beacon | (siehe oben) | Der Beacon-Alarm und seine vier Töne: Beacon-Ton, Beacon ausgerichtet, Beacon abseits des Kurses, Wegpunkt erreicht. Jeder hat Aktiviert und eine Soundauswahl; Beacon-Ton hat dazu Beacon-Lautstärke. |
 
 Das Modul Besuchte Wegpunkte (unter Navigation) hat eine Einstellung:
 
@@ -289,7 +289,7 @@ Drei Einstellungen des Moduls Navigation hängen damit zusammen: Verbleibende We
 2. Drücke Tab. Du bist in Suchen und kannst gleich tippen. Tippe "Auktionator" und drücke Eingabe. WowVision wiederholt deinen Text.
 3. Drücke Tab, um zu Ziele zu kommen. Du hörst den nächsten Auktionator mit seiner Entfernung und seiner Position in der Liste. Drücke Pfeil runter, um den nächsten zu hören.
 4. Drücke Eingabe. Das Fenster schließt sich, und du hörst eine Zusammenfassung wie "9 Wegpunkte, 410 Meter".
-5. Drücke I, um dich zum ersten Wegpunkt zu drehen, und geh los. Wenn du das Signal schneller pingen hörst, blickst du in die richtige Richtung. Drücke jederzeit Alt Gr, um zu hören, wie weit der aktuelle Wegpunkt entfernt ist.
+5. Drücke I, um dich zum ersten Wegpunkt zu drehen, und geh los. Wenn du das Beacon schneller pingen hörst, blickst du in die richtige Richtung. Drücke jederzeit Alt Gr, um zu hören, wie weit der aktuelle Wegpunkt entfernt ist.
 6. Verirrst du dich, drücke Strg+Umschalt+N, um die Route von deinem Standort aus neu zu planen.
 7. Am Ende hörst du "Angekommen" und den Namen des Ortes.
 
@@ -298,7 +298,7 @@ Drei Einstellungen des Moduls Navigation hängen damit zusammen: Verbleibende We
 1. Drücke F9, um den Scanner zu öffnen, und finde die Quest, dann ihren NPC (siehe [Scanner](./scanner.md)).
 2. Drücke Eingabe auf dem NPC. Das Navigationsfenster öffnet sich mit dem nächsten Einstiegspunkt und dem NPC, beide ausgewählt, der Fokus auf dem Ziel.
 3. Drücke Eingabe. Willst du vorher einen anderen Startpunkt, drücke zweimal Umschalt+Tab, um zu den Einstiegspunkten zu kommen, wähle einen mit Eingabe und kehre mit zweimal Tab zurück.
-4. Geh die Route wie oben. Liegt der NPC nicht im Wegnetz, ist das letzte Stück kein bekannter Weg, nutze also das Signal und Alt Gr. Bei klassischen Routen sagt das die Zusammenfassung ("letzte 25 Meter direkt"), und WowNav sagt dir am Ende des Netzes, wie weit der NPC noch entfernt ist.
+4. Geh die Route wie oben. Liegt der NPC nicht im Wegnetz, ist das letzte Stück kein bekannter Weg, nutze also das Beacon und Alt Gr. Bei klassischen Routen sagt das die Zusammenfassung ("letzte 25 Meter direkt"), und WowNav sagt dir am Ende des Netzes, wie weit der NPC noch entfernt ist.
 
 ### Das nächste Kraut finden
 
@@ -312,4 +312,4 @@ Drei Einstellungen des Moduls Navigation hängen damit zusammen: Verbleibende We
 - [Bewegung und Orientierung](./movement.md): Kompass, Blickrichtung, Folgen, Fallen, Wände und der Leichenlauf.
 - [Scanner](./scanner.md): Listen von Dingen um dich herum, wobei Eingabe ans Navigationsfenster übergibt.
 - [Zielerfassung](./targeting.md): das Ziel für die Route zu deinem Ziel auswählen.
-- [Alarme](../basics/alerts.md): wie du die Signaltöne änderst.
+- [Alarme](../basics/alerts.md): wie du die Beacon-Töne änderst.

@@ -102,7 +102,7 @@ See [Chat](../windows/chat.md).
 | WowNav Route Status | Unbound | (WoW: Forever) Speaks the state of the WowNav route |
 | New WowNav Route Around a Blocked Spot | Unbound | (WoW: Forever) Plans a new route that avoids the spot where you are stuck |
 
-Alt Gr is not a binding: it is read directly, stays silent while you type in an edit box, and can be turned off with the Announce Distance with Alt Gr setting in the Maps module. See [Navigation and Routes](../world/navigation.md) and [WowNav](../world/wownav.md).
+Alt Gr is not a binding: it is read directly, stays silent while you type in an edit box, and can be turned off with the Announce Distance with Alt Gr setting in the Beacon Settings module (Navigation). See [Navigation and Routes](../world/navigation.md) and [WowNav](../world/wownav.md).
 
 ## Minimap
 
