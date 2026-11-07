@@ -63,7 +63,7 @@ loadAddonFile("core/navigation/corpseTests.lua")
 loadAddonFile("core/navigation/targetFind.lua")
 loadAddonFile("core/navigation/targetTests.lua")
 
--- What the player bumps into: the logic, then the bump data of every client (mapdata/bumps, tools/bumps-pack.lua).
+-- What the player bumps into: the logic, then the bump data of every client (mapdata/bumps, tools/bumps/pack.lua).
 loadAddonFile("core/navigation/bumpLogic.lua")
 for _, client in ipairs({ "era", "tbc", "forever" }) do
     local base = "mapdata/bumps/" .. client .. "/"

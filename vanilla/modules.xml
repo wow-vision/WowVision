@@ -2,7 +2,7 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="speech.lua" />
-  <!-- what the player bumps into (core/navigation/bumps.lua), written by tools/bumps-pack.lua -->
+  <!-- what the player bumps into (core/navigation/bumps.lua), written by tools/bumps/pack.lua -->
   <Include file="..\mapdata\bumps\era\data.xml" />
 
 </Ui>

@@ -1,5 +1,5 @@
 -- What the player bumps into, pure and headless-tested: the objects, buildings and structures of the bump data
--- (mapdata/bumps/<client>/, written by tools/bumps-pack.lua from the surroundings data, which is generated offline
+-- (mapdata/bumps/<client>/, written by tools/bumps/pack.lua from the surroundings data, which is generated offline
 -- from each client's own map files). A zone registers its data as text; it is read into tables only while the
 -- player is in the zone (bumpLogic.unpack) and dropped on leaving.
 --

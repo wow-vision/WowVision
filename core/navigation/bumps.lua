@@ -5,7 +5,7 @@ module:setLabel(L["Name What I Bump Into"])
 -- Naming what the player bumps into: when the wall detection says they push against something (its
 -- "blocked", held for a moment), the object in the way ("barrel", "fence", "mine cart"), or outdoors the
 -- wall of the building or structure ahead ("wall of Stormwind Keep"), or indoors a wall. Once per bump;
--- the same thing again only after moving freely. The data (mapdata/bumps/<client>/, tools/bumps-pack.lua)
+-- the same thing again only after moving freely. The data (mapdata/bumps/<client>/, tools/bumps/pack.lua)
 -- covers the zones the surroundings data has been exported for; elsewhere nothing is said. Nothing while
 -- the wall detection is off. Toggle it via the alert's enable.
 --
