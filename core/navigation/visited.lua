@@ -211,8 +211,9 @@ local function autoAllowed(self)
     return false
 end
 
--- Shift-F10 on a destination in F10: the chain starts there.
-function module:startAuto(wp, mode)
+-- Shift-F10 on a destination in F10: the chain starts there, its first leg from the entry point picked in F10
+-- (start, nil: the one F10 would preselect).
+function module:startAuto(wp, mode, start)
     if not autoAllowed(self) then
         return false
     end
@@ -224,7 +225,7 @@ function module:startAuto(wp, mode)
     logLine(string.format("start %s %s", mode, tostring(wp.n)))
     WowVision:speak(mode == "route" and L["Auto Route"] or L["Auto Direct"])
     return lead(function()
-        return maps:goToDestination(wp, mode == "direct")
+        return maps:goToDestination(wp, mode == "direct", start)
     end)
 end
 

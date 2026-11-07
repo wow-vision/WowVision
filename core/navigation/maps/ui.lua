@@ -159,8 +159,9 @@ local function selectedEntry(screen)
 end
 
 -- Shift-F10 on a destination or an entry point: the auto chains of its name (navigation/visited.lua).
--- waypointOf returns the focused row's waypoint, nil on an empty list.
-local function autoActions(waypointOf)
+-- waypointOf returns the focused row's waypoint, nil on an empty list; startOf (destinations only) the entry point
+-- the first leg starts at, as Enter would.
+local function autoActions(waypointOf, startOf)
     return function(add)
         local visited = WowVision.base.navigation.visited
         local wp = waypointOf()
@@ -169,8 +170,9 @@ local function autoActions(waypointOf)
         end
         local function auto(mode)
             return function()
+                local start = startOf ~= nil and startOf() or nil
                 WowVision.UIHost:closeWindow("atlas")
-                visited:startAuto(wp, mode)
+                visited:startAuto(wp, mode, start)
             end
         end
         add({ label = L["Auto Direct"], onActivate = auto("direct") })
@@ -307,6 +309,8 @@ local function destinationCursor(screen)
             local list, index = clampedIndex()
             local entry = list[index]
             return entry ~= nil and entry.waypoint or nil
+        end, function()
+            return selectedEntry(screen)
         end),
         bindings = {
             {

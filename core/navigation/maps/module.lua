@@ -439,12 +439,13 @@ function module:destinationsNamed(name, direct)
 end
 
 -- To a destination without the window: a direct point, or a route from the
--- entry point F10 would preselect (as /beacon to). It becomes the last
+-- entry point `start` (an entry of module:entryPoints, the one picked in
+-- F10) or else the one F10 would preselect (as /beacon to). It becomes the last
 -- picked destination and is remembered as visited once reached. A virtual
 -- destination (wp.virtual: the corpse) is a position without links, routed
 -- to with a straight last leg, its routeData handed to a route engine; too
 -- far from the network it gets a straight beacon, as the scanner's targets.
-function module:goToDestination(wp, direct)
+function module:goToDestination(wp, direct, start)
     self.lastDestination = wp
     local onArrive = self:arrivalFor(wp)
     if direct then
@@ -463,15 +464,16 @@ function module:goToDestination(wp, direct)
         if wp.virtual then
             data = wp.routeData
         end
-        local start = self:preselectedEntry(self:entryPoints(waypoints, px, py, map, engine))
-        if self:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, data, start and start.waypoint) then
+        local entry = start or self:preselectedEntry(self:entryPoints(waypoints, px, py, map, engine))
+        if self:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, data, entry and entry.waypoint) then
             return true
         end
     end
     if wp.virtual then
         waypoints[wp.id] = wp
     end
-    local entry = engine == nil and self:preselectedEntry(self:entryPoints(waypoints, px, py, map, nil)) or nil
+    local entry = engine == nil and (start or self:preselectedEntry(self:entryPoints(waypoints, px, py, map, nil)))
+        or nil
     local routed = self:navigateTo(wp.id, waypoints, { entryId = entry and entry.waypoint.id, onArrive = onArrive })
     if not routed and wp.virtual then
         self:beaconTo(wp.x, wp.y, wp.n, onArrive)
