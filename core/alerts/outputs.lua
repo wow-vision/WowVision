@@ -199,6 +199,9 @@ function Beacon:initialize(info)
         default = function()
             return self.beacon
         end,
+        preview = function(_, source)
+            self:previewSource(source)
+        end,
     })
     -- Base volume of the beacon, independent of every other WowVision sound
     -- (Beacon.fileLevel). 10 is the quietest; the output's Enabled switch
@@ -231,6 +234,20 @@ function Beacon.fileLevel(distance, volume, levels)
     end
     local offset = floor((100 - volume) / 10 + 0.5)
     return offset + math.ceil(level * (levels - offset) / levels)
+end
+
+-- The Beacon Sound picker's preview: the sample straight ahead at the level
+-- a target 25 yards away plays at the chosen Beacon Volume.
+local PREVIEW_DISTANCE = 25
+function Beacon:previewSource(source)
+    if source.playAt == nil then
+        if source.preview ~= nil then
+            source:preview()
+        end
+        return
+    end
+    local volume = self.parameters:getFieldValue("volume") or 100
+    source:preview(nil, Beacon.fileLevel(PREVIEW_DISTANCE, volume, source.maxDistance))
 end
 
 function Beacon:onFire(message)

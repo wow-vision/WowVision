@@ -37,9 +37,9 @@ function BeaconDataSource:playAt(angle, level, channel)
 end
 
 -- play(channel) as every audio source has it, so a beacon file picked where
--- a sound plays works too: a sample straight ahead (angle 0). preview is
--- AudioDataSource's, over this play.
+-- a sound plays works too: a sample straight ahead (angle 0), at level 5 or
+-- the level given. preview is AudioDataSource's, over this play.
 local SAMPLE_LEVEL = 5
-function BeaconDataSource:play(channel)
-    return self:playAt(0, SAMPLE_LEVEL, channel)
+function BeaconDataSource:play(channel, level)
+    return self:playAt(0, level or SAMPLE_LEVEL, channel)
 end
