@@ -398,6 +398,19 @@ local comparison = {
     end,
 }
 
+-- The two boxes the version folders fill: our own frames, so the game's
+-- ShoppingTooltip1 and 2 stay untouched.
+local compareFrames = nil
+function comparison.frames()
+    if compareFrames == nil then
+        compareFrames = {
+            CreateFrame("GameTooltip", "WowVisionCompareTooltip1", nil, "ShoppingTooltipTemplate"),
+            CreateFrame("GameTooltip", "WowVisionCompareTooltip2", nil, "ShoppingTooltipTemplate"),
+        }
+    end
+    return compareFrames
+end
+
 -- The game's heading over the stat changes in a comparison box ("If you
 -- replace this item, the following stat changes will occur:"): a block of
 -- its own for nextBlock/previousBlock.

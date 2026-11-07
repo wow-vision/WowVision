@@ -1,23 +1,12 @@
 -- The equipped items an item tooltip compares with (see
 -- WowVision.tooltips.comparison): the game fills two shopping tooltips with
 -- SetCompareItem, as GameTooltip_ShowCompareItem does when a sighted player
--- holds Shift. Our own frames, so the game's ShoppingTooltip1 and 2 stay
--- untouched. The game decides which slots (both rings, both hands for a
--- two-hander) and what goes into each box.
-local frames = nil
-
-local function getFrames()
-    if frames == nil then
-        frames = {
-            CreateFrame("GameTooltip", "WowVisionCompareTooltip1", nil, "ShoppingTooltipTemplate"),
-            CreateFrame("GameTooltip", "WowVisionCompareTooltip2", nil, "ShoppingTooltipTemplate"),
-        }
-    end
-    return frames
-end
-
+-- holds Shift, into our own boxes (comparison.frames). The game decides
+-- which slots (both rings, both hands for a two-hander) and what goes into
+-- each box.
 function WowVision.tooltips.comparison.fill(source)
-    local primary, secondary = unpack(getFrames())
+    local frames = WowVision.tooltips.comparison.frames()
+    local primary, secondary = unpack(frames)
     primary:SetOwner(WorldFrame, "ANCHOR_NONE")
     secondary:SetOwner(WorldFrame, "ANCHOR_NONE")
     primary:SetCompareItem(secondary, source)

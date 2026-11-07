@@ -6,17 +6,7 @@
 -- calls; C_TooltipComparison.CompareItem, which shows the game's own boxes,
 -- is protected. Both read functions refuse a secret argument from addon
 -- code: the link is checked before (Tooltip:addComparison), the guid here.
-local frames = nil
-
-local function getFrames()
-    if frames == nil then
-        frames = {
-            CreateFrame("GameTooltip", "WowVisionCompareTooltip1", nil, "ShoppingTooltipTemplate"),
-            CreateFrame("GameTooltip", "WowVisionCompareTooltip2", nil, "ShoppingTooltipTemplate"),
-        }
-    end
-    return frames
-end
+-- The boxes are our own (comparison.frames).
 
 -- The shown item as the game compares it: by guid where the tooltip has
 -- one (a bag item, with its upgrades), else by link (chat, vendor).
@@ -107,7 +97,7 @@ function WowVision.tooltips.comparison.fill(source, link)
     if compared.guid ~= nil and info.item.guid == compared.guid then
         return nil
     end
-    local primary, secondary = unpack(getFrames())
+    local primary, secondary = unpack(WowVision.tooltips.comparison.frames())
     local blocks = {}
     for index, frame in ipairs({ primary, secondary }) do
         local block = fillBox(frame, compared, info, index == 1)
