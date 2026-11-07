@@ -224,7 +224,7 @@ function Beacon:onFire(message)
         return
     end
     local source = directory:getPath(self.db.beacon)
-    if not source or not source.play then
+    if not source or not source.playAt then
         return
     end
     -- The file's distance index is a compressed proximity bucket (~6 yards per
@@ -237,5 +237,5 @@ function Beacon:onFire(message)
     if fileDistance < 1 then
         fileDistance = 1
     end
-    source:play(message.angle, fileDistance)
+    source:playAt(message.angle, fileDistance)
 end
