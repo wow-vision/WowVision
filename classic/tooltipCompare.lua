@@ -5,6 +5,11 @@
 -- which slots (both rings, both hands for a two-hander) and what goes into
 -- each box.
 function WowVision.tooltips.comparison.fill(source)
+    -- An item that is on already (the character window) is not compared
+    -- with itself, as the game skips it for its own automatic comparison.
+    if source.IsEquippedItem ~= nil and source:IsEquippedItem() then
+        return nil
+    end
     local frames = WowVision.tooltips.comparison.frames()
     local primary, secondary = unpack(frames)
     primary:SetOwner(WorldFrame, "ANCHOR_NONE")
