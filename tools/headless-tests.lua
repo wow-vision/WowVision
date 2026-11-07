@@ -1509,6 +1509,7 @@ local parseOnly = {
     "core/ui/WindowManager.lua",
     "core/windows/GameMenu.lua",
     "core/errors/module.lua",
+    "core/quests/module.lua",
     "core/ui modules/graphBindings.lua",
     "core/buffers/module.lua",
     "core/windows/options/ui.lua",

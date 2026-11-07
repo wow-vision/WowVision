@@ -58,9 +58,10 @@ areaAlert:addOutput({
 settings:addRef("questAreaAlert", areaAlert.parameters)
 
 -- Quest progress: the game's own progress messages ("Kobold Vermin slain:
--- 3/8", "Objective Complete."), spoken as the game words them. The errors
--- module catches every game message; it hands these to the alerts here
--- instead of its per-error filter, so they have their own settings.
+-- 3/8", "Objective Complete."), spoken as the game words them. The module
+-- listens to the game's info messages itself, so these alerts work whatever
+-- the errors module does; the errors module leaves the claimed names to it
+-- and lists no filter entry for them.
 local function addProgressAlert(key, label, sound)
     local progressAlert = module:addAlert({ key = key, label = label })
     progressAlert:addOutput({
@@ -87,8 +88,9 @@ local objectiveAlert =
 local completeAlert =
     addProgressAlert("questComplete", L["Quest Complete Alert"], "Sound/WowVision/alerts/Tutorial_Success_01.mp3")
 
--- One alert per kind of game message, nothing read into the text.
-local claimedMessages = {
+-- One alert per kind of game message, nothing read into the text. Each
+-- message is spoken by its own alert, with that alert's settings.
+local messageAlerts = {
     ERR_QUEST_ADD_KILL_SII = progressAlert,
     ERR_QUEST_ADD_ITEM_SII = progressAlert,
     ERR_QUEST_ADD_FOUND_SII = progressAlert,
@@ -97,42 +99,28 @@ local claimedMessages = {
     ERR_QUEST_UNKNOWN_COMPLETE = completeAlert,
 }
 
--- The last kill of a count brings two or three messages at once (8/8, then
--- the objective and the quest complete). They are gathered for a moment
--- and fired as ONE alert, the most important one, speaking every text.
-local alertRank = { [progressAlert] = 1, [objectiveAlert] = 2, [completeAlert] = 3 }
-local GATHER_DELAY = 0.2
-local pending = nil
+-- The same text arriving twice in one frame is spoken once.
+local repeats = WowVision.errors.utils.newFrameDedupe()
 
-local function flushMessages()
-    local batch = pending
-    pending = nil
-    local texts = {}
-    for i, message in ipairs(batch.messages) do
-        -- Joined texts need a stop between them to be spoken as sentences.
-        if i < #batch.messages and not message:find("[%.!?]$") then
-            message = message .. "."
-        end
-        texts[i] = message
+function module.onInfoMessage(messageType, message)
+    if message == nil then
+        return
     end
-    batch.alert:fire({ text = table.concat(texts, " ") })
-end
-
-local function gatherMessage(messageAlert, message)
-    if pending == nil then
-        pending = { alert = messageAlert, messages = {} }
-        C_Timer.After(GATHER_DELAY, flushMessages)
-    elseif alertRank[messageAlert] > alertRank[pending.alert] then
-        pending.alert = messageAlert
+    local errorName = WowVision.errors.lookupMessageInfo(messageType)
+    local messageAlert = errorName ~= nil and messageAlerts[errorName] or nil
+    if messageAlert == nil then
+        return
     end
-    table.insert(pending.messages, message)
+    -- A secret text cannot be compared, only spoken.
+    if not WowVision.isSecret(message) and not repeats:first(message, GetTime()) then
+        return
+    end
+    messageAlert:fire({ text = message })
 end
 
 local function claimMessages(claimed)
-    for name, messageAlert in pairs(claimedMessages) do
-        WowVision.errors.claimed[name] = claimed and function(message)
-            gatherMessage(messageAlert, message)
-        end or nil
+    for name in pairs(messageAlerts) do
+        WowVision.errors.claimed[name] = claimed or nil
     end
 end
 
@@ -518,10 +506,15 @@ module:registerEvent("event", "QUEST_ACCEPTED")
 module:registerEvent("event", "QUEST_TURNED_IN")
 module:registerEvent("event", "QUEST_REMOVED")
 module:registerEvent("event", "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED")
+module:registerEvent("event", "UI_INFO_MESSAGE")
 
 function module:onEvent(event, arg1, arg2)
     if event == "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED" then
         self:onQuestArea(arg1, arg2)
+        return
+    end
+    if event == "UI_INFO_MESSAGE" then
+        module.onInfoMessage(arg1, arg2)
         return
     end
     local adapter = self.adapter

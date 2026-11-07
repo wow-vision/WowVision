@@ -112,21 +112,23 @@ local function lookupMessageInfo(messageType)
     return errorName, template
 end
 
+-- The game message name (ERR_QUEST_ADD_KILL_SII) and its template, for
+-- modules that speak some messages with alerts of their own.
+WowVision.errors.lookupMessageInfo = lookupMessageInfo
+
 local throttle = utils.newThrottle()
 local dedupe = utils.newFrameDedupe()
 
 -- Every source funnels here: the UI_ERROR/UI_INFO/SYSMSG events and the
 -- UIErrorsFrame display hooks.
 function module.handleMessage(messageType, message)
-    if message == nil then
+    if not alert.enabled or message == nil then
         return
     end
     -- Retail may hand a secret string to the display hook: no table key or
     -- comparison is allowed on it, but speech accepts it as is.
     if WowVision.isSecret(message) then
-        if alert.enabled then
-            alert:fire({ text = message })
-        end
+        alert:fire({ text = message })
         return
     end
     if message == "" then
@@ -137,14 +139,8 @@ function module.handleMessage(messageType, message)
         return
     end
     local errorName, template = lookupMessageInfo(messageType)
-    -- A claimed message goes to its owner's alert, past the master switch
-    -- and the repeat delay (each kill of a count is news).
-    local claim = errorName ~= nil and WowVision.errors.claimed[errorName] or nil
-    if claim ~= nil then
-        claim(message)
-        return
-    end
-    if not alert.enabled then
+    -- A claimed message is spoken by the module that claimed it.
+    if errorName ~= nil and WowVision.errors.claimed[errorName] then
         return
     end
     local key, label = utils.identify(errorName, template, message)
@@ -213,11 +209,13 @@ end
 local function filterEntries()
     local labels = {}
     for key, entry in pairs(getStore() or {}) do
-        labels[key] = entry.label or key
+        if not WowVision.errors.claimed[key] then
+            labels[key] = entry.label or key
+        end
     end
     if showAll then
         for key, label in pairs(getKnownErrors()) do
-            if labels[key] == nil then
+            if labels[key] == nil and not WowVision.errors.claimed[key] then
                 labels[key] = label
             end
         end
