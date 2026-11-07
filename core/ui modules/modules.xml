@@ -8,5 +8,8 @@
   <Script file="combat.lua" />
   <Script file="tooltip.lua" />
   <Script file="tooltipQuality.lua" />
+  <Script file="gameDefaults.lua" />
+  <Script file="gameDefaultsTests.lua" />
+  <Script file="gameDefaultsMenu.lua" />
 
 </Ui>
