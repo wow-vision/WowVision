@@ -468,9 +468,11 @@ function Tracker:reset()
     self.room, self.byDoor, self.inHall, self.hallGap, self.cands = nil, false, false, 0, nil
 end
 
--- Sets the room known from elsewhere (a spot kept over a reload, another module's tracker).
-function Tracker:set(room, inHall)
+-- Sets the room known from elsewhere (a spot kept over a reload, another module's tracker). `cands` (optional): the
+-- candidate rooms here while the room is unknown.
+function Tracker:set(room, inHall, cands)
     self.room, self.byDoor, self.inHall, self.hallGap = room, room ~= nil and room ~= 0, inHall and true or false, 0
+    self.cands = cands
 end
 
 -- One look at (x, y), the last at (px, py) (nil: none).
@@ -575,8 +577,9 @@ end
 -- What to say for a bump along the unit vector (vx, vy): the object in the way, else inside "wall", outside the wall
 -- of the building or structure ahead. `rooms` as for objectAhead (inside: Tracker:objectRooms; not `inside and rooms
 -- or 0`, which with the room unknown gave the outdoor objects). `words`: the locale's "wall" and "wall of %s".
--- Returns the text and a key that is the same for the same thing, or nil.
-function bumpLogic.bumpText(zone, x, y, vx, vy, inside, rooms, words)
+-- `wall` (optional): another module's text for the wall ahead outside, function(x, y, vx, vy) -> text, key or nil,
+-- asked before the building or structure here. Returns the text and a key that is the same for the same thing, or nil.
+function bumpLogic.bumpText(zone, x, y, vx, vy, inside, rooms, words, wall)
     local search = 0
     if inside then
         search = rooms
@@ -587,6 +590,12 @@ function bumpLogic.bumpText(zone, x, y, vx, vy, inside, rooms, words)
     end
     if inside then
         return words.wall, "wall"
+    end
+    if wall then
+        local text, key = wall(x, y, vx, vy)
+        if text then
+            return text, key
+        end
     end
     local owner, what = bumpLogic.wallOwner(zone, x, y, vx, vy, bumpLogic.WALL_REACH)
     if owner and what == "place" then

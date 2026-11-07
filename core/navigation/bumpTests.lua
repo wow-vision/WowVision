@@ -196,6 +196,21 @@ testRunner:addSuite("BumpLogic", {
         t:assertEqual(tr.room, 0)
     end,
 
+    ["another module's room and wall text are taken"] = function(t)
+        local zone = makeZone()
+        local tr = bumpLogic.newTracker()
+        tr:set(2, false)
+        t:assertTrue(tr:objectRooms()[2])
+        t:assertTrue(tr:inside({ indoors = false }))
+        tr:set(nil, false, { 1, 2 })
+        t:assertTrue(tr:objectRooms()[1] and tr:objectRooms()[2])
+        local wall = function(x, y, vx, vy)
+            return "Stormwind, side", "side"
+        end
+        t:assertEqual(bumpLogic.bumpText(zone, 3.5, 0, 1, 0, false, nil, WORDS, wall), "Stormwind, side")
+        t:assertEqual(bumpLogic.bumpText(zone, 3.5, 0, 1, 0, false, nil, WORDS, function() end), "wall of bank")
+    end,
+
     ["a bump is named once until the player moved freely"] = function(t)
         local state = bumpLogic.newBumpState()
         t:assertFalse(bumpLogic.step(state, true, 0, 0.2)) -- one look blocked is not yet a bump

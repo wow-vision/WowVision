@@ -42,9 +42,10 @@ local restored = false
 local roomSource = nil
 
 -- Another module's room for this zone, used instead of the tracker's: `source(zone)` returns the room (an id of
--- the bump data's rooms, 0 outside, nil unknown) and whether the player is in a hall the game calls outdoors, or
--- false when it knows nothing here (the tracker's then). It must number the rooms as the bump data does
--- (zone.roomsId, the packed rooms' fingerprint, tells which). nil removes it.
+-- the bump data's rooms, 0 outside, nil unknown), whether the player is in a hall the game calls outdoors, and
+-- optionally a function(x, y, vx, vy) giving the text and key of the wall ahead outside (asked before the bump
+-- data's buildings and structures); or false when it knows nothing here (the tracker's then). It must number the
+-- rooms as the bump data does (zone.roomsId, the packed rooms' fingerprint, tells which). nil removes it.
 function module:setRoomSource(source)
     roomSource = source
 end
@@ -156,12 +157,17 @@ module:hasUpdate(function(self)
         px, py = nil, nil
     end
     local game = { indoors = IsIndoors(), uiMap = C_Map.GetBestMapForUnit("player"), subzone = GetSubZoneText() }
-    local given, givenHall = false, nil
+    local given, givenHall, givenWall = false, nil, nil
     if roomSource then
-        given, givenHall = roomSource(zone)
+        given, givenHall, givenWall = roomSource(zone)
     end
     if given ~= false then
-        tracker:set(given, givenHall)
+        -- (with the room unknown, the rooms whose floor is here count)
+        local cands = nil
+        if given == nil then
+            cands = bumpLogic.roomsAt(zone, x, y, bumpLogic.ROOM_MARGIN, game.indoors)
+        end
+        tracker:set(given, givenHall, cands)
     else
         tracker:update(zone, x, y, px, py, game)
     end
@@ -182,7 +188,7 @@ module:hasUpdate(function(self)
         return
     end
     local text, key = bumpLogic.bumpText(zone, x, y, vx, vy, tracker:inside(game), tracker:objectRooms(),
-        { wall = L["wall"], wallOf = L["wall of %s"] })
+        { wall = L["wall"], wallOf = L["wall of %s"] }, givenWall)
     if bumpLogic.take(state, key) then
         self:fireAlert("bump", { text = text })
     end
