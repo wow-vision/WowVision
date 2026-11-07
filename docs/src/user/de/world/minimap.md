@@ -160,7 +160,7 @@ Du brauchst diese nur für Fehlerberichte.
 | `/wv mscan clear` | Vergisst jeden gesehenen Eintrag und das Laufgedächtnis. Du hörst "Gesehene Einträge gelöscht". |
 | `/wv mscan log` | Zeigt, wie der letzte Scan verlaufen ist, und das Protokoll der Laufansagen. Das Protokoll wird nach `/reload` auch in der Datei der gespeicherten Variablen gesichert. |
 | `/wv mscan walk` | Zeigt, was die Laufprüfung gerade im Gedächtnis hat. |
-| `/wv mscan raw` | Macht eine unverarbeitete Messung der Minikarte zur Fehlersuche, für den Tag, an dem das Spiel die Benennung der Punkte ändert. |
+| `/wv mscan raw` | Macht eine unverarbeitete Messung der Minikarte zur Fehlersuche, für den Tag, an dem das Spiel die Benennung der Punkte ändert. Sie probiert die Minikarte auch verkleinert, in voller Größe und an ihrem eigenen Platz und nennt die Namen, die jede Variante ergab. Nach /reload steht das Ergebnis in der Datei `WTF\Account\<Account>\SavedVariables\WowVision.lua` (WowVisionDump, minimapRaw), die du einschicken kannst, statt das Fenster zu kopieren. |
 
 ## Verwandte Seiten
 

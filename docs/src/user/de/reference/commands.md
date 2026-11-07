@@ -154,7 +154,7 @@ Der Minikarten-Scanner. Allein getippt scannt er sofort, genau wie Strg+Umschalt
 | /wv mscan clear | Vergisst jeden gesehenen Eintrag und das Laufgedächtnis und sagt "Gesehene Einträge gelöscht" |
 | /wv mscan log | Zeigt, wie der letzte Scan und die Laufprüfung verlaufen sind (für Fehlermeldungen) |
 | /wv mscan walk | Zeigt, was sich die Laufprüfung merkt |
-| /wv mscan raw | Zeigt eine einzelne ungeparste Lesung der Minikarte (für Fehlermeldungen) |
+| /wv mscan raw | Zeigt eine einzelne ungeparste Lesung der Minikarte und, für welche Einstellungen der Minikarte das Spiel die Punkte noch benennt; nach /reload auch zum Einsenden gespeichert (für Fehlermeldungen) |
 
 Versionen: Den Befehl gibt es überall, aber das Scannen braucht eine Spielversion, deren Minikarte sich lesen lässt; sonst hörst du "Minikarten-Scanner auf diesem Client nicht verfügbar".
 

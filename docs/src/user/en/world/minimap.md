@@ -158,7 +158,7 @@ You only need these for bug reports.
 | `/wv mscan clear` | Forgets every seen entry and the walking memory. You hear "Seen entries cleared". |
 | `/wv mscan log` | Shows how the last scan went and the log of the walking announcements. The log is also saved in the saved variables file after `/reload`. |
 | `/wv mscan walk` | Shows what the walking check currently remembers. |
-| `/wv mscan raw` | Takes one unprocessed reading of the minimap for debugging, for the day the game changes the way dots are named. |
+| `/wv mscan raw` | Takes one unprocessed reading of the minimap for debugging, for the day the game changes the way dots are named. It also tries the minimap shrunk, at full size and in its own place, and lists the names each one gave. After /reload the result is in the file `WTF\Account\<account>\SavedVariables\WowVision.lua` (WowVisionDump, minimapRaw), which you can send instead of copying the window. |
 
 ## Related pages
 
