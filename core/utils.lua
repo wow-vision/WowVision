@@ -67,7 +67,9 @@ function utils.groupUnits(inRaid, inGroup)
 end
 
 -- Whether you or your group (pets included) are fighting a unit, for the
--- "Target in Combat" sound. Three signs, any one is enough:
+-- "Target in Combat" sound. Only a unit you can attack counts: yourself, a
+-- group member or another friendly unit is never a fight, even when its
+-- target is one of you. Then three signs, any one is enough:
 --   1. a group unit is on its threat list (UnitThreatSituation not nil; a
 --      secret answer is not nil either, so it counts);
 --   2. it targets a group unit (its "target" unit is one of them);
@@ -77,7 +79,7 @@ end
 -- after you target it, so on a target change sign 1 misses a fight only
 -- your group is in; signs 2 and 3 are known at once. A secret answer to
 -- signs 2 and 3 (Forever and Retail hide identities in combat) counts as
--- no. api: the game reads (tests pass fakes), the globals by default.
+-- no, and so does a secret answer to whether you can attack it. api: the game reads (tests pass fakes), the globals by default.
 local function plainTrue(value)
     if issecretvalue ~= nil and issecretvalue(value) then
         return false
@@ -101,7 +103,7 @@ function utils.groupFighting(unit, api)
     local inRaid = plainTrue(read("IsInRaid"))
     local inGroup = plainTrue(read("IsInGroup"))
     local members = utils.groupUnits(inRaid, inGroup)
-    if not plainTrue(read("UnitExists", unit)) then
+    if not plainTrue(read("UnitExists", unit)) or not plainTrue(read("UnitCanAttack", "player", unit)) then
         return false
     end
     local existing = {}
@@ -124,7 +126,6 @@ function utils.groupFighting(unit, api)
     if inGroup or inRaid then
         local tapDenied = read("UnitIsTapDenied", unit)
         if plainTrue(read("UnitAffectingCombat", unit))
-            and plainTrue(read("UnitCanAttack", "player", unit))
             and tapDenied ~= nil
             and not (issecretvalue ~= nil and issecretvalue(tapDenied))
             and not tapDenied then

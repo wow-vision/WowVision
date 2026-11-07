@@ -142,6 +142,38 @@ testRunner:addSuite("GroupFighting", {
         })))
     end,
 
+    ["targeting yourself is no fight, though your target's target is you"] = function(t)
+        local api = fight({
+            UnitIsUnit = function(a, b)
+                return a == "targettarget" and b == "player"
+            end,
+            UnitCanAttack = function()
+                return false
+            end,
+        })
+        api.exists.targettarget = true
+        t:assertFalse(utils.groupFighting("target", api))
+    end,
+
+    ["a group member who targets you is no fight"] = function(t)
+        local api = fight({
+            UnitIsUnit = function(a, b)
+                return a == "targettarget" and b == "player"
+            end,
+            UnitThreatSituation = function()
+                return 0
+            end,
+            UnitAffectingCombat = function()
+                return true
+            end,
+            UnitCanAttack = function()
+                return false
+            end,
+        })
+        api.exists.targettarget = true
+        t:assertFalse(utils.groupFighting("target", api))
+    end,
+
     ["a read that fails counts as no"] = function(t)
         t:assertFalse(utils.groupFighting("target", fight({
             UnitAffectingCombat = function()
