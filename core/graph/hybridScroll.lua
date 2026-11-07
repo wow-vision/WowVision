@@ -42,6 +42,8 @@ local ControlId = graph.ControlId
 --                row vtable's bindings.
 --   key          stable prefix for default ids (default "hybrid")
 --   label        announcement context wrapped around the entries
+--   emptyLabel   what the list says when it has no entries (text or
+--                function; default "Empty"), e.g. the game's own line
 --   id           function(index) -> ControlId; default structural key:index.
 --                TAINTED MODE REQUIRES this to return the SAME id the emit
 --                callback gives addItem for that index -- the page-scroll
@@ -76,7 +78,7 @@ function nodes.hybridScrollList(builder, config)
         end
         builder:addItem(
             ControlId.structural(keyPrefix .. ":empty"),
-            nodes.text({ label = WowVision:getLocale()["Empty"] })
+            nodes.text({ label = config.emptyLabel or WowVision:getLocale()["Empty"] })
         )
         if config.label ~= nil then
             builder:popContext()

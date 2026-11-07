@@ -157,6 +157,15 @@ local function actionButton(builder, button)
     builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button }))
 end
 
+-- The game's line for an empty quest log, else WowVision's own.
+local function emptyLogText()
+    local text = QuestLogNoQuestsText ~= nil and QuestLogNoQuestsText:GetText() or nil
+    if text == nil or text == "" then
+        return L["Empty"]
+    end
+    return text
+end
+
 local function render(builder, screen)
     local frame = QuestLogFrame
     if frame == nil or not frame:IsShown() then
@@ -165,30 +174,21 @@ local function render(builder, screen)
     builder:pushContext("questLog", L["Quest Log"])
 
     builder:beginStop("quests")
-    -- An empty log reads the game's own line for it instead of a bare Empty.
-    if QuestLogNoQuestsText ~= nil and QuestLogNoQuestsText:IsVisible() then
-        builder:pushContext("quests", L["Quests"])
-        builder:addItem(ControlId.structural("quests:empty"), nodes.text({
-            label = function()
-                return QuestLogNoQuestsText:GetText()
-            end,
-        }))
-        builder:popContext()
-    else
-        nodes.hybridScrollList(builder, {
-            scrollFrame = QuestLogListScrollFrame,
-            key = "quests",
-            label = L["Quests"],
-            count = function()
-                return (GetNumQuestLogEntries())
-            end,
-            rowHeight = QUESTLOG_QUEST_HEIGHT,
-            buttons = questButtons,
-            indexOf = questButtonIndex,
-            id = questEntryId,
-            emit = emitQuestEntry,
-        })
-    end
+    nodes.hybridScrollList(builder, {
+        scrollFrame = QuestLogListScrollFrame,
+        key = "quests",
+        label = L["Quests"],
+        -- an empty log reads the game's own line for it
+        emptyLabel = emptyLogText,
+        count = function()
+            return (GetNumQuestLogEntries())
+        end,
+        rowHeight = QUESTLOG_QUEST_HEIGHT,
+        buttons = questButtons,
+        indexOf = questButtonIndex,
+        id = questEntryId,
+        emit = emitQuestEntry,
+    })
 
     renderDetails(builder)
 
