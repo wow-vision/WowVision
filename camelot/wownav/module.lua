@@ -549,6 +549,12 @@ local function bindStart(self, request)
     return true
 end
 
+-- A job planning in time slices, as every search (stepJob runs it).
+local function newJob(N, request, work)
+    return { request = request, startedAt = GetTime(), job = work, frames = 0, misses = N.wholeMisses or 0,
+        answers = N.knownMissAnswers or 0 }
+end
+
 -- Starts the search for a request. request: { contract or nodeId, label, onArrive, start }; start: the entry point the
 -- route starts at (a row of catalog.entryPoints: a target or a waypoint). WowNav never binds the player's position for
 -- a start (his N.Bind): the player picks it in F10, like with the route data.
@@ -568,8 +574,7 @@ local function search(self, request)
     else
         work = N.Job(route.prepare, route, request.contract, { nativeMapId = map }, request.startOverride)
     end
-    job = { request = request, startedAt = GetTime(), job = work, frames = 0, misses = N.wholeMisses or 0,
-        answers = N.knownMissAnswers or 0 }
+    job = newJob(N, request, work)
 end
 
 -- The contract of a target maps hands over as a position (scanner, places list, /beacon to, the route data's points).
@@ -581,42 +586,17 @@ local function positionContract(target, map)
     }
 end
 
--- A route request from maps: { x, y, z, label, onArrive, data, start } (data: a row of the WowNav list; start: the
--- entry point picked in F10, a row of catalog.entryPoints). True when WowNav took it.
-function module:routeTo(target)
-    local N = ready(self)
-    if N == nil then
-        return false
-    end
-    local px, py, map = route.env.position()
-    local data = type(target.data) == "table" and target.data or nil
-    logLine(string.format("request %s at %.1f %.1f from %s %s map %s: %s", tostring(target.label), target.x or 0,
-        target.y or 0, px and string.format("%.1f", px) or "?", py and string.format("%.1f", py) or "?", tostring(map),
-        data == nil and "a position" or (data.boardingTargetId and "a boarding point") or (data.nodeId and "a waypoint")
-            or string.format("%s %s", tostring(data.tid), tostring(data.interactionMode or data.kind))))
-    if px == nil or not catalog.covers(N, map) then
-        logLine("not taken: no WowNav data here")
-        return false
-    end
-    N.activeMapId = map
-    if #N.ZonesForPoint(px, py) == 0 then
-        return false
-    end
-    -- every route starts at the entry point the player picked; none: nothing of the network near enough to list
+-- The request for one target maps hands over ({ x, y, z, label, onArrive, data, start, reversed }; data: a row of the
+-- WowNav list; start: the entry point picked in F10, a row of catalog.entryPoints): { nodeId or contract, label,
+-- onArrive, start, dockTarget, activationTarget, approx, lowestFloor, reversed }. Nil when there is nothing to walk
+-- to, with why: "fail" and the text to say, or "passive", the dock the player waits at and its source (routeTo says
+-- it; a nearest pick leaves the target out).
+local function targetRequest(N, target, px, py, map)
     local start = type(target.start) == "table" and target.start or nil
     if type(target.data) == "table" and target.data.nodeId ~= nil then
         -- an automatic waypoint: straight to it, no target to resolve
-        if start == nil then
-            say(L["No WowNav network here"])
-            return true
-        end
-        local request = { nodeId = target.data.nodeId, label = target.label, onArrive = target.onArrive, start = start,
+        return { nodeId = target.data.nodeId, label = target.label, onArrive = target.onArrive, start = start,
             reversed = target.reversed }
-        if bindStart(self, request) then
-            self:stopRoute()
-            search(self, request)
-        end
-        return true
     end
     -- a boarding point ("At the vehicle") picked as a route's destination is a place like any other: routed to on the
     -- network, never taken for its dock (it lies a few yards from the dock's waiting point); F10's Direct leads
@@ -640,14 +620,8 @@ function module:routeTo(target)
         if why ~= nil then
             logLine(why)
         end
-        if outcome == "fail" then
-            say(value)
-            return true
-        elseif outcome == "passive" then
-            self:stopRoute(nil, true)
-            passive = { name = WowVisionNavigationTargetName(value), near = false }
-            say(dock.passiveText(source, value))
-            return true
+        if outcome == "fail" or outcome == "passive" then
+            return nil, outcome, value, source
         end
         dockTarget = value
     end
@@ -656,8 +630,7 @@ function module:routeTo(target)
     if dockTarget == nil and type(target.data) == "table" and target.data.activationMode == "walk_into_trigger" then
         local outcome, value = dock.activation(N, target.data)
         if outcome == "fail" then
-            say(value)
-            return true
+            return nil, outcome, value
         end
         activationTarget = value
     end
@@ -666,22 +639,66 @@ function module:routeTo(target)
         -- a group member (his GroupMember): a live target that expires after 30 s, read again on a new route
         contract = module.unitContract(target.data.unit, map)
         if contract == nil then
-            say(WowVisionNavigationText("no_live_coordinates"))
-            return true
+            return nil, "fail", WowVisionNavigationText("no_live_coordinates")
         end
     elseif type(target.data) == "table" and target.data.tid ~= nil then
         contract = catalog.contract(target.data, map)
     else
         contract = positionContract(target, map)
     end
-    if start == nil then
-        say(L["No WowNav network here"])
-        return true
-    end
-    local request = { contract = contract, label = target.label, onArrive = target.onArrive, dockTarget = dockTarget,
+    return { contract = contract, label = target.label, onArrive = target.onArrive, dockTarget = dockTarget,
         activationTarget = activationTarget, approx = type(target.data) == "table" and target.data.approx == true,
         lowestFloor = type(target.data) == "table" and target.data.lowestFloor == true, start = start,
         reversed = target.reversed }
+end
+
+-- The network maps routes on here: N, the player's position and map; nil (logged) where WowNav has no data.
+local function routable(self, label)
+    local N = ready(self)
+    if N == nil then
+        return nil
+    end
+    local px, py, map = route.env.position()
+    if px == nil or not catalog.covers(N, map) then
+        logLine(string.format("not taken: no WowNav data here (%s)", tostring(label)))
+        return nil
+    end
+    N.activeMapId = map
+    if #N.ZonesForPoint(px, py) == 0 then
+        return nil
+    end
+    return N, px, py, map
+end
+
+-- A route request from maps (see targetRequest). True when WowNav took it.
+function module:routeTo(target)
+    local px, py, map = route.env.position()
+    local data = type(target.data) == "table" and target.data or nil
+    logLine(string.format("request %s at %.1f %.1f from %s %s map %s: %s", tostring(target.label), target.x or 0,
+        target.y or 0, px and string.format("%.1f", px) or "?", py and string.format("%.1f", py) or "?", tostring(map),
+        data == nil and "a position" or (data.boardingTargetId and "a boarding point") or (data.nodeId and "a waypoint")
+            or string.format("%s %s", tostring(data.tid), tostring(data.interactionMode or data.kind))))
+    local N
+    N, px, py, map = routable(self, target.label)
+    if N == nil then
+        return false
+    end
+    local request, why, value, source = targetRequest(N, target, px, py, map)
+    if request == nil then
+        if why == "passive" then
+            self:stopRoute(nil, true)
+            passive = { name = WowVisionNavigationTargetName(value), near = false }
+            say(dock.passiveText(source, value))
+        else
+            say(value)
+        end
+        return true
+    end
+    -- every route starts at the entry point the player picked; none: nothing of the network near enough to list
+    if request.start == nil then
+        say(L["No WowNav network here"])
+        return true
+    end
     if bindStart(self, request) then
         self:stopRoute()
         search(self, request)
@@ -689,22 +706,26 @@ function module:routeTo(target)
     return true
 end
 
+-- How far the walk to a planned target is: the whole route on the network (a transit is ridden, not walked; the plan's
+-- path itself stops at the first one) and the stretch from its end to the target.
+local function walkLength(N, outcome)
+    local whole = outcome.plan.result and outcome.plan.result.length or N.PathLength(outcome.plan.path)
+    local off = outcome.result and (outcome.result.delta3D or outcome.result.deltaXY) or 0
+    return whole + off
+end
+
 -- Auto Route (navigation/visited.lua): of several targets of the same name, requests as for routeTo with the same
 -- start, the one the shortest walk reaches. One job plans a route to each, in time slices like every search, and the
 -- shortest becomes the request (its onChosen runs first); a target whose floor is not clear is left out unless no
--- other has a route. True when WowNav took it. The search line of the log says how long the planning took.
+-- other has a route, and one with nothing to walk to (a dock the player waits at) is left out. True when WowNav took
+-- it. The search line of the log says how long the planning took.
 function module:routeToNearest(targets)
-    local N = ready(self)
     local first = targets[1]
-    if N == nil or first == nil then
+    if first == nil then
         return false
     end
-    local px, py, map = route.env.position()
-    if px == nil or not catalog.covers(N, map) then
-        return false
-    end
-    N.activeMapId = map
-    if #N.ZonesForPoint(px, py) == 0 then
+    local N, px, py, map = routable(self, first.label)
+    if N == nil then
         return false
     end
     local start = type(first.start) == "table" and first.start or nil
@@ -714,17 +735,19 @@ function module:routeToNearest(targets)
     end
     local candidates = {}
     for _, target in ipairs(targets) do
-        local data = type(target.data) == "table" and target.data or nil
-        tinsert(candidates, {
-            contract = (data ~= nil and data.tid ~= nil) and catalog.contract(data, map) or positionContract(target, map),
-            label = target.label,
-            onArrive = target.onArrive,
-            onChosen = target.onChosen,
-        })
+        local candidate = targetRequest(N, target, px, py, map)
+        if candidate ~= nil then
+            candidate.onChosen = target.onChosen
+            tinsert(candidates, candidate)
+        end
+    end
+    if #candidates == 0 then
+        say(L["No route found"])
+        return true
     end
     logLine(string.format("nearest by walk of %d %s from %.1f %.1f map %s", #candidates, tostring(first.label), px, py,
         tostring(map)))
-    local request = { contract = candidates[1].contract, label = candidates[1].label, start = start }
+    local request = { label = first.label, start = start }
     if not bindStart(self, request) then
         return true
     end
@@ -733,9 +756,14 @@ function module:routeToNearest(targets)
     local function plan()
         local best, bestLength, firstChoice, lastFail
         for _, candidate in ipairs(candidates) do
-            local outcome = route:prepare(candidate.contract, { nativeMapId = map }, request.startOverride)
+            local outcome
+            if candidate.nodeId ~= nil then
+                outcome = route:prepareNode(candidate.nodeId, request.startOverride)
+            else
+                outcome = route:prepare(candidate.contract, { nativeMapId = map }, request.startOverride)
+            end
             if outcome.kind == "start" then
-                local length = N.PathLength(outcome.plan.path)
+                local length = walkLength(N, outcome)
                 if bestLength == nil or length < bestLength then
                     best, bestLength = { candidate = candidate, outcome = outcome }, length
                 end
@@ -750,16 +778,18 @@ function module:routeToNearest(targets)
             return lastFail or { kind = "fail", reason = "no_route_found" }
         end
         -- the request becomes the picked one's: the route, its arrival and a floor question are about it
-        request.contract, request.label, request.onArrive = pick.candidate.contract, pick.candidate.label,
-            pick.candidate.onArrive
+        for key, value in pairs(pick.candidate) do
+            if key ~= "onChosen" and key ~= "start" then
+                request[key] = value
+            end
+        end
         if pick.candidate.onChosen ~= nil then
             pick.candidate.onChosen()
         end
         say(pick.candidate.label)
         return pick.outcome
     end
-    job = { request = request, startedAt = GetTime(), job = N.Job(plan), frames = 0, misses = N.wholeMisses or 0,
-        answers = N.knownMissAnswers or 0 }
+    job = newJob(N, request, N.Job(plan))
     return true
 end
 
@@ -1062,11 +1092,7 @@ local function checkAction(self)
             say(L["The route goes on"])
             local N = self:network()
             N.activeMapId = map
-            job = {
-                request = request, startedAt = GetTime(),
-                job = N.Job(route.continueTo, route, toNode, targetNodeId, result),
-                frames = 0, misses = N.wholeMisses or 0, answers = N.knownMissAnswers or 0,
-            }
+            job = newJob(N, request, N.Job(route.continueTo, route, toNode, targetNodeId, result))
         end
     end
 end

@@ -1570,6 +1570,7 @@ local parseOnly = {
     "core/navigation/maps/module.lua",
     "core/navigation/maps/ui.lua",
     "core/navigation/visited.lua",
+    "camelot/wownav/module.lua",
     "core/navigation/corpse.lua",
     "core/navigation/targetRoute.lua",
     "core/windows/Macros.lua",
