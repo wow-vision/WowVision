@@ -1378,7 +1378,7 @@ if haveNetwork then
     -- waypoint; the game teleports the player once he is in the portal's source volume, at its height. unseen: the
     -- teleport comes before any update sees him in it. Returns the transit event, the continuation's state after the
     -- landing, the walked route, the index of the waypoint the player walked to at the transit and at the portal ahead.
-    local function throughPortal(t, map, zoneId, portalId, unseen)
+    local function throughPortal(t, map, zoneId, portalId, unseen, radius)
         setup()
         N.activeMapId = map
         local game = newGame()
@@ -1393,6 +1393,7 @@ if haveNetwork then
         end
         t:assertNotNil(portal, portalId)
         local sv, av = portal.sourceVolume, portal.arrivalVolume
+        sv.radius = radius or sv.radius
         local startId
         for i = 0, 5000 do
             local id = zoneId * N.ZONE_BASE + i
@@ -1454,14 +1455,15 @@ if haveNetwork then
     end
 
     suite["a portal at the route's last waypoint: the route waits for it, seen in it or not"] = function(t)
-        -- Rut'theran to Darnassus: the route's last waypoint lies on the rim of the 10 yd portal (10.0 yd from its
-        -- centre, data 23b1131)
-        local transit, state, route, at = throughPortal(t, 1, 57, "portal:areatrigger:542", false)
+        -- Rut'theran to Darnassus: the route's last waypoint lies 10.4 yd from the centre of the 10 yd portal (data
+        -- 0d79304), so the volume is widened to put it on the rim, the case this test is about
+        local radius = 11
+        local transit, state, route, at = throughPortal(t, 1, 57, "portal:areatrigger:542", false, radius)
         t:assertEqual(at, #route.path, "in the portal at the route's last waypoint")
         t:assertTrue(transit.sourceEntered == true)
         t:assertTrue(transit.announced == true, "said before the portal, not again in it")
         t:assertEqual(state, "arrived", "the route goes on in Darnassus")
-        transit, state = throughPortal(t, 1, 57, "portal:areatrigger:542", true)
+        transit, state = throughPortal(t, 1, 57, "portal:areatrigger:542", true, radius)
         t:assertTrue(transit.teleported == true, "only the landing was seen")
         t:assertTrue(transit.announced == true, "said before the teleport")
         t:assertEqual(state, "arrived")
