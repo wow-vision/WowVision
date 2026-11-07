@@ -258,8 +258,9 @@ do
             end,
         },
     }
-    -- module.lua only parses headless; the stand-in log answers instead
-    WowVision.quests.gameQuestEntry = function(questId)
+    -- module.lua only parses headless; the stand-in log answers instead, put
+    -- in place by each live test and taken out after it
+    harness.gameQuestEntry = function(questId)
         return harness.log[questId]
     end
     loadAddonFile("core/quests/scanner.lua")
