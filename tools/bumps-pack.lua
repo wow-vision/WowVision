@@ -59,7 +59,8 @@ local function read(path)
     end
     local text = f:read("*a")
     f:close()
-    return text
+    -- (git may check the files out with Windows line endings: compared without them)
+    return (text:gsub("\r\n", "\n"))
 end
 
 -- A plain JSON decoder (objects, arrays, strings, numbers, true, false, null): enough for the zone files.
