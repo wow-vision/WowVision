@@ -276,7 +276,7 @@ local function renderReward(builder)
 
     -- The complete button names the picked reward, so it is clear what
     -- completing takes.
-    actionButton(builder, QuestFrameCompleteQuestButton, scrollFrame, function()
+    actionButton(builder, QuestFrameCompleteQuestButton, nil, function()
         local text = QuestFrameCompleteQuestButton:GetText() or ""
         local chosen = chosenReward()
         local name = chosen ~= nil and getItemLabel(chosen) or nil
