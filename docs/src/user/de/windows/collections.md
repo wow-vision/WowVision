@@ -77,7 +77,7 @@ Die Beschreibung des Reittiers, seine Herkunft und das Vorschaumodell rechts im 
 
 ## Haustiere (WoW: Forever)
 
-Haltepunkte in dieser Reihenfolge: Suchen (Eingabefeld), Filter (ein Dropdown; Eingabe öffnet das Filtermenü des Spiels), Begleitertagebuch (die Haustierliste), Details (die Karte des ausgewählten Haustiers) und die Schaltfläche Herbeirufen.
+Haltepunkte in dieser Reihenfolge: Filter (ein Dropdown; Eingabe öffnet das Filtermenü des Spiels), Suchen (Eingabefeld), Begleitertagebuch (die Haustierliste), Details (die Karte des ausgewählten Haustiers) und die Schaltfläche Herbeirufen.
 
 Eine Haustierzeile liest ihren Namen. Hast du dem Haustier einen eigenen Namen gegeben, liest sie zuerst den eigenen Namen und die Art in Klammern: „Flauschi (Katze)“. Haustiere, die du noch nicht besitzt, hängen „Nicht gesammelt“ an, Lieblingshaustiere hängen „Favorit“ an. Das Haustier, dessen Karte geöffnet ist, liest „ausgewählt“.
 
@@ -91,7 +91,7 @@ Details liest, je eine Zeile: den Namen des Haustiers (und unter einem eigenen N
 
 ## Spielzeugkiste (WoW: Forever)
 
-Haltepunkte in dieser Reihenfolge: Suchen, Filter, eine Fortschrittszeile (der Sammelzähler des Spiels), die Liste Spielzeugkiste und die Blätterzeile.
+Haltepunkte in dieser Reihenfolge: eine Fortschrittszeile (der Sammelzähler des Spiels), Filter, Suchen, die Liste Spielzeugkiste und die Blätterzeile.
 
 Die Spielzeugliste zeigt nur die aktuelle Seite, bis zu achtzehn Spielzeuge. Jedes Spielzeug liest seinen Namen, dann „Nicht gesammelt“, wenn du es nicht hast, dann „Favorit“, wenn du es markiert hast. Eine leere Seite liest „Leer“.
 
@@ -106,7 +106,7 @@ Die Blätterzeile besteht aus Vorherige Seite, dem Text mit der Seitenzahl und N
 
 ## Erbstücke (WoW: Forever)
 
-Der Reiter Erbstücke erscheint nur, solange das Spiel Erbstücke anbietet. Haltepunkte in dieser Reihenfolge: Suchen, Filter, Class (ein Dropdown, das „Klasse“ und deine aktuelle Wahl liest, zum Beispiel „Klasse, Alle“), eine Zeile Fortschritt, die Liste Erbstücke und die Blätterzeile.
+Der Reiter Erbstücke erscheint nur, solange das Spiel Erbstücke anbietet. Haltepunkte in dieser Reihenfolge: Class (ein Dropdown, das „Klasse“ und deine aktuelle Wahl liest, zum Beispiel „Klasse, Alle“), eine Zeile Fortschritt, Filter, Suchen, die Liste Erbstücke und die Blätterzeile.
 
 Die Liste ist unter Überschriften gruppiert, eine pro Platzgruppe, genau wie die Journalseite sie zeichnet. Jedes Erbstück liest seinen Namen, die Stufe, auf die es skaliert (bei Erbstücken, die du besitzt), eine PvP-Markierung, wo das Spiel eine zeigt, und „Nicht gesammelt“ bei denen, die dir fehlen.
 
@@ -117,7 +117,7 @@ Eingabe auf einem Erbstück erstellt es in deinen Taschen, wenn du es besitzt. M
 Das ist das Garderobenjournal, nicht der Transmogrifizierer. Haltepunkte in dieser Reihenfolge:
 
 1. Reiter: Gegenstände und Sets, eine Reihe. Der geöffnete liest „ausgewählt“.
-2. Suchen, Filter und (solange es angezeigt wird) Class, ein Dropdown, das „Klasse“ und deine Wahl liest.
+2. (Solange es angezeigt wird) Class, ein Dropdown, das „Klasse“ und deine Wahl liest, dann Filter und Suchen.
 3. Der Inhalt des geöffneten Unterreiters.
 
 Forever listet nur die Aussehen auf, die du in diesem Journal gesammelt hast, deshalb erscheint „Nicht gesammelt“ bei diesen Zeilen selten.
@@ -168,8 +168,8 @@ Haltepunkte in dieser Reihenfolge: eine Zusammenfassung, dann die Liste Belohnun
 Herausforderungen sind die Version der Erfolge von Forever und bringen Vermächtnispunkte. Haltepunkte in dieser Reihenfolge:
 
 1. Punkte: deine erworbenen Vermächtnispunkte, „Punkte 120/500“.
-2. Suchen: ein Eingabefeld.
-3. Filter: ein Dropdown für abgeschlossene und offene Herausforderungen.
+2. Filter: ein Dropdown für abgeschlossene und offene Herausforderungen.
+3. Suchen: ein Eingabefeld.
 4. Kategorien: der Kategorienbaum.
 5. Herausforderungen: die Liste der ausgewählten Kategorie, benannt „Herausforderungen“, gefolgt vom Kategorienamen.
 

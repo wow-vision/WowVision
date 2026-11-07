@@ -9,10 +9,12 @@ Almost everything in WoW has a tooltip: item stats, spell descriptions, button e
 | Space | Read Tooltip | Reads the whole tooltip of the focused control, from the first line to the last. |
 | Shift+Down | Next Tooltip Line | Moves to the next line of the tooltip and reads it. |
 | Shift+Up | Previous Tooltip Line | Moves to the previous line and reads it. |
+| Ctrl+Shift+Down | Next Tooltip Block | Jumps to the start of the next block (an item you wear, see [Comparing with what you wear](#comparing-with-what-you-wear)) and reads its first line. |
+| Ctrl+Shift+Up | Previous Tooltip Block | Jumps to the start of the previous block and reads its first line. |
 | Shift+Right | Read Tooltip Right | Reads only the right-hand column of the current line. |
 | Shift+Left | Read Tooltip Left | Reads only the left-hand column of the current line. |
 
-All five can be changed in the [keybinding screen](./keybindings.md). Press Ctrl at any time to stop the speech if a long tooltip is too much.
+All seven can be changed in the [keybinding screen](./keybindings.md). Press Ctrl at any time to stop the speech if a long tooltip is too much.
 
 ## How reading works
 
@@ -40,6 +42,20 @@ When the tooltip belongs to an item, WowVision adds two lines the game does not 
 - The item level, directly after the quality. If the game shows its own item level line (which accounts for upgrades), that line is moved there instead of adding a second one. Only equippable items get an item level.
 
 Money in a tooltip is read with its coins. The game shows gold, silver and copper as small coin pictures, which speech would leave out. WowVision reads the sell price and other amounts as "Sell Price: 1 Gold, 23 Silver, 45 Copper". An item worth only a few coins reads, for example, "Sell Price: 7 Copper".
+
+## Comparing with what you wear
+
+When the tooltip shows an item you could wear, and you already wear something in that slot, the tooltip goes on after the item with what you have on. This is the comparison a sighted player gets by holding Shift over an item (or always, with the game's "Always compare items" option), and the game decides what it compares:
+
+- One block for each item you wear there: two for rings, trinkets and one-handed weapons, both hands when you hold a two-handed weapon.
+- Each block starts with the game's own header ("Currently Equipped" or "Equipped"), then the lines of the item you wear.
+- On WoW: Forever and Retail the first block ends with the stat changes: "If you replace this item, the following stat changes will occur:", then one line per stat, for example "+12 Stamina". On the classic versions you hear whatever the game puts into its comparison box.
+
+Space reads only the item itself. Press Shift+Down past the item's last line to walk into the comparison, or Ctrl+Shift+Down to jump straight to the next block: each item you wear starts one, and so does the game's heading over the stat changes; Ctrl+Shift+Up jumps back a block, up to the item's first line.
+
+Example: you are on a pair of boots in your bags. Space reads the boots. Shift+Down line by line goes through the boots, then "Equipped", the boots you wear, and the stat changes.
+
+To switch it off, open the [WowVision menu](./menu-and-settings.md) with Shift+F1, then UI, Tooltip, Compare with Equipped, and uncheck Enabled. It is on by default.
 
 ## Item quality in names
 
@@ -79,7 +95,7 @@ Not every control has a tooltip. Where there is none, Space is left alone for th
 
 - An item the game has not loaded yet can have an empty tooltip at first. WowVision asks again when you press Space, by which time the information has usually arrived. Press Space once more if you heard nothing.
 - The tooltip keys read what belongs to the control you have focus on. They have nothing to read when no window is open.
-- If you also run the addon Sku, WowVision leaves the four Shift+arrow tooltip keys unbound so that the two addons do not fight over them. Space still works.
+- If you also run the addon Sku, WowVision leaves the Shift+arrow and Ctrl+Shift+arrow tooltip keys unbound so that the two addons do not fight over them. Space still works.
 
 ## Diagnostic command
 

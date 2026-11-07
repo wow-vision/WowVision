@@ -95,8 +95,8 @@ Wenn du einen Eintrag aufgibst und das Spiel „Blocked: Search()“ meldet, sag
 
 In WoW: Forever hat das Freundesfenster keinen Wer-Reiter, deshalb steckt er in der Gruppensuche. Es ist eine Spielersuche. Die Stationen:
 
-1. Suchen: ein Eingabefeld. Eingabe darin startet die Suche mit deinem Text und dem Filter. Die separate Suchschaltfläche des Spiels ist weggelassen, weil Eingabe dasselbe tut.
-2. Filter: ein Dropdown für Klasse, Volk, Zone und Sortierung.
+1. Filter: ein Dropdown für Klasse, Volk, Zone und Sortierung.
+2. Suchen: ein Eingabefeld. Eingabe darin startet die Suche mit deinem Text und dem Filter. Die separate Suchschaltfläche des Spiels ist weggelassen, weil Eingabe dasselbe tut.
 3. Eine nach dem Reiter benannte Liste (meist „Who“), eine Zeile pro Spieler: Name, „Stufe 60 Krieger“, Volk, Zone und Gilde, durch Kommas verbunden. Eingabe hebt den Spieler hervor, Rücktaste öffnet das Spielermenü (Flüstern, Einladen).
 4. Eine Summenzeile. Sie wird nur gelesen, wenn der Server mehr Spieler gefunden als gesendet hat; der Server sendet höchstens 50.
 

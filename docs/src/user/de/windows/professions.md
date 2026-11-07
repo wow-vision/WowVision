@@ -32,10 +32,10 @@ Esc schließt jedes dieser Fenster.
 
 Wird von jedem Herstellungsberuf benutzt, außer Verzauberkunst und Tierausbildung. Das Fenster ist nach dem Beruf benannt („Schneiderei“, „Erste Hilfe“), und der Bildschirm wird als Kette von Haltepunkten gelesen:
 
-1. Suchen, ein Eingabefeld. Wenn sich das Fenster öffnet, landest du hier und kannst sofort tippen. Das Tippen grenzt die Rezeptliste ein.
-2. Nur TBC: Material vorhanden (Have Materials), ein Kontrollkästchen, das Rezepte ausblendet, die du gerade nicht herstellen kannst.
-3. TBC: die Dropdowns Subclass und Inventory Slot. Mists: ein Dropdown Filter. Sie grenzen die Liste nach Kategorie oder Platz ein. Eingabe öffnet das Menü des Spiels.
-4. Rezepte, die Liste.
+1. Nur TBC: Material vorhanden (Have Materials), ein Kontrollkästchen, das Rezepte ausblendet, die du gerade nicht herstellen kannst.
+2. TBC: die Dropdowns Subclass und Inventory Slot. Mists: ein Dropdown Filter. Sie grenzen die Liste nach Kategorie oder Platz ein. Eingabe öffnet das Menü des Spiels.
+3. Suchen, ein Eingabefeld. Das Tippen grenzt die Rezeptliste ein.
+4. Rezepte, die Liste. Wenn sich das Fenster öffnet, landest du hier.
 5. Details des ausgewählten Rezepts.
 6. Menge, ein Eingabefeld, das enthält, wie viele du herstellen willst.
 7. Die Schaltflächen Herstellen (Create) und Alle herstellen (Create All), jede ein Haltepunkt.
@@ -73,8 +73,8 @@ Nachdem du ein Rezept ausgewählt hast:
 ### Beispiel: 5 Leinenverbände herstellen (TBC, Mists)
 
 1. Öffne das Fenster für Erste Hilfe: Drücke P für das Zauberbuch, gehe in Mists zum Reiter Berufe (in TBC zum Seitenreiter Allgemein), suche „Erste Hilfe“ und drücke Eingabe.
-2. Du landest auf Suchen. Tippe „Leinen“ und drücke Tab. Die Liste enthält jetzt nur noch passende Rezepte.
-3. Drücke Tab, bis du Rezepte hörst (in TBC an Material vorhanden und den beiden Dropdowns vorbei). Gehe mit Pfeil runter zu „Leinenverband 12 (Grün)“. Drücke Eingabe: „ausgewählt“.
+2. Du landest auf Rezepte. Drücke einmal Umschalt+Tab, um Suchen zu erreichen, tippe „Leinen“ und drücke Tab. Du bist wieder auf Rezepte, und die Liste enthält jetzt nur noch passende Rezepte.
+3. Gehe mit Pfeil runter zu „Leinenverband 12 (Grün)“. Drücke Eingabe: „ausgewählt“.
 4. Drücke Tab zu Details. Pfeil runter liest die Beschreibung und die Reagenzien, „Leinenstoff 12 /1“, sodass du weißt, dass du genug hast.
 5. Drücke Tab zu Menge, tippe 5, drücke Tab.
 6. Drücke auf Herstellen Eingabe. Das Spiel stellt fünf Verbände her.
@@ -89,7 +89,7 @@ Die Haltepunkte:
 2. Trainingspunkte mit den Punkten deines Begleiters, nur für die Tierausbildung.
 3. Material vorhanden, ein Kontrollkästchen (wird bei der Tierausbildung nicht gezeigt).
 4. Filter-Dropdown Slot, für Verzauberkunst.
-5. Rezepte, die Liste. Jeder Eintrag liest seinen Namen, seinen Rang oder Untertext, wie viele du herstellen kannst, seine Schwierigkeitsfarbe und bei der Tierausbildung seine Kosten in Trainingspunkten. Ein Verzauberungseintrag liest sich etwa so: „Armschiene verzaubern - Kraft 3 (Gelb)“.
+5. Rezepte, die Liste, auf der sich das Fenster öffnet. Jeder Eintrag liest seinen Namen, seinen Rang oder Untertext, wie viele du herstellen kannst, seine Schwierigkeitsfarbe und bei der Tierausbildung seine Kosten in Trainingspunkten. Ein Verzauberungseintrag liest sich etwa so: „Armschiene verzaubern - Kraft 3 (Gelb)“.
 6. Details: das Handwerkssymbol (Name und Anzahl), die Voraussetzungen, die Kosten, die Abklingzeit, die Beschreibung und eine Gruppe Reagenzien wie beim Berufsfenster.
 7. Verzaubern (bei der Tierausbildung Trainieren) und Schließen.
 
@@ -175,9 +175,9 @@ Wenn du den Zauber eines Berufs öffnest, erscheint die Herstellungsseite, benan
 
 1. Reiter: ein Reiter pro Beruf, der ein Herstellungsfenster hat. Eingabe auf einem Reiter wirkt den Zauber dieses Berufs und wechselt zu ihm. Der Beruf, in dem du bist, liest „ausgewählt“ und tut bei Eingabe nichts.
 2. Beruf (ein Haltepunkt): die Rangzeile, ein Link-Menü (verlinkt den Beruf im Chat) und deine Berufswerkzeug-Plätze. Ein Werkzeugplatz liest den Gegenstandsnamen oder „Leer“. Eingabe nimmt den Gegenstand auf oder legt den Gegenstand an deinem Cursor ab, wie im Charakterfenster.
-3. Suchen, das Eingabefeld. Tippe, um die Rezepte einzugrenzen.
-4. Filter, ein Dropdown-Menü.
-5. Rezepte, die Liste.
+3. Filter, ein Dropdown-Menü.
+4. Suchen, das Eingabefeld. Tippe, um die Rezepte einzugrenzen.
+5. Rezepte, die Liste. Die Seite öffnet sich hier.
 6. Details des ausgewählten Rezepts.
 7. Menge, ein Eingabefeld.
 8. Herstellen, Alle herstellen und View Guild Crafters, wenn sie gezeigt wird. Eine deaktivierte Herstellen-Schaltfläche liest außerdem den Grund des Spiels (was fehlt).
@@ -197,7 +197,7 @@ Ein Haltepunkt, Details. Er liest den hergestellten Gegenstand mit seiner Anzahl
 ### Beispiel: 5 Elixiere in WoW: Forever herstellen
 
 1. Drücke die Berufetaste. Gehe mit Tab zur Karte für Alchemie und drücke Eingabe auf ihrem Zauber (zum Beispiel „Alchemie“).
-2. Die Herstellungsseite öffnet sich. Drücke Tab, bis du bei Suchen bist, tippe den Rezeptnamen und gehe mit Tab zu Rezepte.
+2. Die Herstellungsseite öffnet sich auf Rezepte. Drücke einmal Umschalt+Tab, um Suchen zu erreichen, tippe den Rezeptnamen und gehe mit Tab zurück zu Rezepte.
 3. Gehe mit den Pfeiltasten zum Rezept und drücke Eingabe; Leertaste liest, was es braucht: „Friedensblume 3/2“.
 4. Gehe mit Tab zu Menge, tippe 5, gehe mit Tab zu Herstellen. Drücke Eingabe.
 

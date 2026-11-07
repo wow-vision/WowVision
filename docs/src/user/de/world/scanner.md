@@ -40,8 +40,9 @@ Die Kategorien erscheinen in dieser Reihenfolge. Einige fehlen, solange es nicht
 
 ### Spieler
 
-- Leiche: solange du tot oder ein Geist bist, der Ort, an dem dein Körper liegt, sofern das Spiel ihn auf der aktuellen Karte meldet. Drücke Eingabe, um dorthin geführt zu werden, der übliche Weg, die Leiche bei einem Leichenlauf zu finden.
-- Nicht tot: wird stattdessen angezeigt, solange du lebst.
+Diese Kategorie erscheint nur, solange du tot oder ein Geist bist.
+
+- Leiche: der Ort, an dem dein Körper liegt, sofern das Spiel ihn auf der aktuellen Karte meldet. Drücke Eingabe, um dorthin geführt zu werden, der übliche Weg, die Leiche bei einem Leichenlauf zu finden.
 - Friedhöfe: die Friedhöfe der Karte, auf der du bist, jeweils mit ihrer Entfernung. Öffne die Gruppe, um sie zu sehen.
 
 ### Gruppe

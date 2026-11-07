@@ -82,6 +82,10 @@ Up and Down move through the controls in the order they appear. Where controls s
 
 If you press an arrow key at the edge of a list, nothing happens and nothing is said. Windows do not wrap around with arrow keys.
 
+### Skipping empty slots
+
+In your bags, the bank and the action bars, press the same arrow key twice quickly (within a quarter of a second) to skip the empty slots: you land on the next slot that holds something. Keep tapping quickly to hop from item to item. If nothing follows in that direction, you land on the last slot, which reads "Empty". Two different arrow keys in a row never count as a double press. You can turn this off with the Skip Empty Slots on Double Arrow setting (UI menu, on by default).
+
 ### Tab stops
 
 Large windows are divided into tab stops, usually a list, a row of buttons, a search box and so on. Tab and Shift+Tab jump between them, wrapping around from the last to the first. Each stop remembers where you were, so Tab takes you back to the entry you left, or to the selected entry when you come into a stop for the first time. A window with a single stop, such as a simple menu, ignores Tab.

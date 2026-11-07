@@ -48,7 +48,9 @@ function module.renderSpellBook(builder)
     end
 
     if SpellBookSpellIconsFrame ~= nil and SpellBookSpellIconsFrame:IsShown() then
+        -- A fresh open lands on the spells.
         builder:beginStop("spells")
+        builder:setStartStop("spells")
         builder:pushContext("spells", L["Spells"])
         local buttons = { SpellBookSpellIconsFrame:GetChildren() }
         table.sort(buttons, function(a, b)
@@ -131,7 +133,9 @@ function module.renderCoreAbilities(builder)
         builder:popContext()
     end
 
+    -- A fresh open lands on the abilities.
     builder:beginStop("coreAbilities")
+    builder:setStartStop("coreAbilities")
     builder:pushContext("coreAbilities", frame.SpecName ~= nil and frame.SpecName:GetText() or "")
     for i, button in ipairs(frame.Abilities or {}) do
         if button:IsShown() then

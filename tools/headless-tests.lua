@@ -269,6 +269,14 @@ loadAddonFile("core/components/ClassRegistryType.lua")
 loadAddonFile("core/components/ComponentRegistry.lua")
 loadAddonFile("core/components/tests.lua")
 
+-- The tooltip reader's comparison blocks (the frames are the game's side).
+strtrim = strtrim or function(text)
+    return (text:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+loadAddonFile("core/ui/tooltip/TooltipReader.lua")
+loadAddonFile("core/ui/tooltip/Tooltip.lua")
+loadAddonFile("core/ui/tooltip/comparisonTests.lua")
+
 -- Object types read the game on demand: their spoken lines run here with
 -- stand-ins for the game functions they call.
 loadAddonFile("core/templates/Template.lua")
@@ -1368,6 +1376,7 @@ loadAddonFile("core/graph/Announcer.lua")
 loadAddonFile("core/graph/KeyGraph.lua")
 loadAddonFile("core/graph/typeAhead.lua")
 loadAddonFile("core/graph/typeAheadTests.lua")
+loadAddonFile("core/graph/doublePress.lua")
 loadAddonFile("core/graph/Builder.lua")
 loadAddonFile("core/graph/ControlTypes.lua")
 loadAddonFile("core/graph/nodes.lua")
@@ -1377,6 +1386,7 @@ loadAddonFile("core/graph/scrollBox.lua")
 loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
+loadAddonFile("core/graph/doublePressTests.lua")
 loadAddonFile("core/graph/controlTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")

@@ -28,7 +28,7 @@ Keys that work on spells and talent buttons, besides the usual Tab, Shift+Tab an
 
 ## The Burning Crusade: spellbook
 
-The stops, in order:
+The window opens on the spells. The stops, in order:
 
 1. Tabs, a row, only while you have a pet with a spellbook: Spellbook and Pet. The open one reads "selected".
 2. Side Tabs, a row of check boxes, one per skill line of the book (General, your specializations, and so on). Enter opens that page. They read "checked" for the open one.
@@ -43,7 +43,7 @@ Enter on a spell casts it, the same as clicking it in the book. Use the drag key
 
 ## Mists of Pandaria: spellbook
 
-The window title (normally "Spellbook") names the window. The first stop is Tabs, a row with the book pages: Spellbook, Professions, Core Abilities and What Has Changed, plus any other page tab the game shows. The open page reads "selected". Pick a page with Left and Right and press Enter.
+The window title (normally "Spellbook") names the window. The first stop is Tabs, a row with the book pages: Spellbook, Professions, Core Abilities and What Has Changed, plus any other page tab the game shows. The open page reads "selected". Pick a page with Left and Right and press Enter. The Spellbook page opens on its spells.
 
 ### The Spellbook page
 
@@ -75,13 +75,13 @@ Some abilities (mage teleports and portals, hunter pet calls, warlock summons) o
 
 ## WoW: Forever: spellbook
 
-Forever uses the modern spellbook. The stops are:
+Forever uses the modern spellbook. It opens on the spell list; Shift+Tab from there reaches the tabs, Tab the search. The stops are:
 
 1. Tabs: the book's category tabs by name (for example your class, general and pet). The open one reads "selected".
-2. Search, an edit box. Typing fills a list of suggestions, see Spell search below.
-3. Options, a dropdown menu with the book's display options.
-4. Spells: the spells of the current page, grouped under the game's headers (a header is spoken once when you enter its group). A spell reads its name and its sub text (such as the rank), and for spells you have not learned yet the level that is required.
-5. A paging row, only when the book has more than one page: Previous Page, the page text ("Page 2/3") and Next Page.
+2. Spells: the spells of the current page, grouped under the game's headers (a header is spoken once when you enter its group). A spell reads its name and its sub text (such as the rank), and for spells you have not learned yet the level that is required.
+3. A paging row, only when the book has more than one page: Previous Page, the page text ("Page 2/3") and Next Page.
+4. Search, an edit box. Typing fills a list of suggestions, see Spell search below.
+5. Options, a dropdown menu with the book's display options.
 
 Enter casts the spell, or opens the flyout if the spell is a flyout. Backspace on a pet spell toggles its autocast. The drag key picks the spell up. Space reads the spell tooltip.
 
@@ -160,7 +160,7 @@ The stops:
 1. Tabs: your primary specialization and, once you have learned dual specialization, the secondary one. The open tab reads "selected". A tab also reads "Active" if it is the specialization you play, or the game's reason if it is locked.
 2. The state of the tab: an Activate button when it is not the specialization you are using, otherwise the line "Active".
 3. Unspent Points: "Unspent Points, 5".
-4. Search and Options, see Spell search above.
+4. Options and Search, see Spell search above.
 5. One stop for each specialization. Its context is the specialization name and the points you spent in it: "Arms, 11 Points" (or "1 Point").
 6. The last stop is a row: Apply, Undo Changes and the reset button, which is a menu.
 
