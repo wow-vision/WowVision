@@ -83,12 +83,17 @@ end
 -- dots while nothing moves (measured 2026-09-28 outdoors: it named two
 -- towns and two indoor NPCs, the same frame's point read also a herb and
 -- a mailbox).
-function Engine.readDots()
+function Engine.askCentre()
     local cx, cy = Minimap:GetCenter()
-    if cx ~= nil then
-        local scale = Minimap:GetEffectiveScale()
-        pcall(Minimap.UpdateMouseoverAtPoint, Minimap, cx * scale, cy * scale)
+    if cx == nil then
+        return false
     end
+    local scale = Minimap:GetEffectiveScale()
+    return (pcall(Minimap.UpdateMouseoverAtPoint, Minimap, cx * scale, cy * scale))
+end
+
+function Engine.readDots()
+    Engine.askCentre()
     return readMouseover()
 end
 

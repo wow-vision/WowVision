@@ -1322,8 +1322,11 @@ end
 local RAW_READ_FRAMES = 30
 
 -- /wv mscan raw: reads of the shrunk minimap exactly as the game sends
--- them (each line's colour, escapes visible), then every tracking type. For
--- the day the tooltip layout changes and the scanner reads nothing.
+-- them (each line's colour, escapes visible), asked the way the scan and
+-- the walking check ask (Engine.readDots), then every tracking type. For
+-- the day the tooltip layout changes and the scanner reads nothing. The
+-- last read is also kept in WowVisionDump (key minimapRaw), so a player
+-- can send the SavedVariables file instead of copying the window.
 function module:rawRead()
     if self.task ~= nil or self.walkTask ~= nil then
         speak(L["Scan already running"])
@@ -1355,6 +1358,13 @@ function module:rawRead()
         Engine.onCleanup(function()
             Engine.restoreTracking(state, false)
         end)
+        -- Switching filters reads as leaving and entering quest areas, as
+        -- in the scan.
+        local quests = WowVision.base.quests
+        quests:muteAreaAlerts(true)
+        Engine.onCleanup(function()
+            quests:muteAreaAlerts(false)
+        end)
         Minimap:SetZoom(0)
         Engine.shrink(x, y)
         Engine.softCursor()
@@ -1365,6 +1375,7 @@ function module:rawRead()
             local lastSig = nil
             for frame = 1, RAW_READ_FRAMES do
                 Engine.wait()
+                Engine.askCentre()
                 local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
                 data = ok and data or nil
                 local sig = Scan.signature(Scan.parseMouseover(data, WowVision.isSecret))
@@ -1393,6 +1404,26 @@ function module:rawRead()
             flag(C_Minimap.ShouldUseHybridMinimap),
             Minimap.SetUsingSoftCursor ~= nil and "on" or "not on this client"
         )
+        -- What lies over the shrunk minimap under the cursor: other
+        -- addons' minimap icons (Questie's, for one) gather there.
+        local foci = {}
+        for _, focus in ipairs(GetMouseFoci ~= nil and GetMouseFoci() or {}) do
+            local ok, name = pcall(function()
+                return focus.GetDebugName ~= nil and focus:GetDebugName() or focus:GetName()
+            end)
+            tinsert(foci, ok and name ~= nil and name ~= "" and tostring(name) or "unnamed frame")
+        end
+        local icons = 0
+        for _, child in ipairs({ Minimap:GetChildren() }) do
+            if child:IsShown() and child:IsMouseEnabled() then
+                icons = icons + 1
+            end
+        end
+        task.mouse = string.format(
+            "Mouse focus: %s; shown minimap children taking the mouse: %d",
+            #foci > 0 and table.concat(foci, ", ") or "none",
+            icons
+        )
         -- The scan's baseline: every tracking filter off, spells as they
         -- are (town arrows, vendors and the like gone).
         local filters = {}
@@ -1404,14 +1435,12 @@ function module:rawRead()
         setFilters(filters, nil)
         readFrames("Every filter off")
         Engine.restoreTracking(state, false)
-        Engine.wait()
-        -- Then the game asked to name the centre point itself: does the
-        -- cursor's own read miss dots while nothing moves?
-        local cx, cy = Minimap:GetCenter()
-        local scale = Minimap:GetEffectiveScale()
-        local asked = pcall(Minimap.UpdateMouseoverAtPoint, Minimap, cx * scale, cy * scale)
+        -- Last the cursor's own read, not asked: it missed dots on
+        -- Forever's build of 2026-10-16 (see Engine.softCursor), so empty
+        -- here is no fault; the scan never uses it.
+        Engine.wait(2)
         local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
-        tinsert(task.reads, { label = "Asked at the centre (" .. (asked and "ok" or "failed") .. ")", data = ok and data or nil })
+        tinsert(task.reads, { label = "Cursor's own read, not asked (the scan does not use it)", data = ok and data or nil })
     end
     task.check = function()
         return InCombatLockdown() and "combat" or nil
@@ -1428,6 +1457,7 @@ function module:rawRead()
         local lines = { "WowVision minimap raw read, cursor over the game world: " .. tostring(task.overWorld) }
         if task.facts ~= nil then
             tinsert(lines, task.facts)
+            tinsert(lines, task.mouse)
         end
         for _, read in ipairs(task.reads) do
             tinsert(lines, read.label)
@@ -1450,6 +1480,8 @@ function module:rawRead()
                 )
             )
         end
+        WowVisionDump = WowVisionDump or {}
+        WowVisionDump.minimapRaw = { date("%Y-%m-%d %H:%M:%S"), unpack(lines) }
         WowVision.testing.showResults(table.concat(lines, "\n"))
     end
     Engine.run(task)
