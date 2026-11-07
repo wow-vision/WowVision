@@ -1,4 +1,4 @@
--- The trainer window (core/windows/training.lua) on WoW: Forever.
+-- The trainer window (core/windows/training.lua) on Retail and WoW: Forever.
 local module = WowVision.base.windows.training
 
 -- WoW: Forever turns Train on only while it draws the selected row, so on

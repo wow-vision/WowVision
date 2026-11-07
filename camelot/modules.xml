@@ -25,8 +25,6 @@
        retail ProfessionsFrame. -->
   <Script file="professions.lua" />
   <Script file="crafting.lua" />
-  <!-- The trainer: Train works as soon as the window opens. -->
-  <Script file="trainer.lua" />
   <!-- The Legacy window: reward track, challenges, and the Legacy talent
        trees. -->
   <Include file="legacy\modules.xml" />
