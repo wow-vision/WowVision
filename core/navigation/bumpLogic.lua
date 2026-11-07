@@ -28,6 +28,7 @@ bumpLogic.DOOR_HOLD = 4.0 -- yd from a doorway of the room entered through a doo
 -- (floor boxes are rough: on the Wizard's Sanctum's winding stairs the player stood 3 yd beyond theirs)
 bumpLogic.ROOM_FAR = 6.0
 bumpLogic.HALL_GAP = 15 -- yd walked in a hall with no hall floor near (a bridge, over lava) before it ends
+bumpLogic.DOOR_AWAY = 4.0 -- yd from the doorway left by before the halls can take the player again
 bumpLogic.HERE_SAME = 1.5 -- yd from the spot kept over a reload that still count as the same
 bumpLogic.JUMP = 100 -- yd between two looks from which the player was moved (a hearthstone, a portal)
 -- Objects go into buckets per block of BLOCK by BLOCK cells, not per cell (the surroundings module's measure: a
@@ -101,6 +102,7 @@ function bumpLogic.unpack(zone, locale)
     end
     local ix = {
         objects = {}, interiors = {}, rooms = {}, doorsOf = {}, neighbours = {}, struct = {}, waterStructs = {},
+        hallMaps = {},
     }
 
     -- objects: per object i its centre, half length and width, the cosine and sine of its angle, name, room, and
@@ -159,6 +161,7 @@ function bumpLogic.unpack(zone, locale)
         local room = { interior = list[i], boxes = {} }
         if list[i + 1] ~= 0 then
             room.hallMap = list[i + 1]
+            ix.hallMaps[room.hallMap] = true
             room.area = localized(zone.roomAreas, locale, id)
         end
         local nBoxes = list[i + 2]
@@ -209,6 +212,43 @@ function bumpLogic.unpack(zone, locale)
 
     zone._index = ix
     return ix
+end
+
+-- Whether two read-in zones hold the same rooms, buildings and doorways, numbered alike: the same buildings at the
+-- same places, each room in the same building on the same floor boxes, each room with the same doorways (to the same
+-- rooms). Another module handing its room over (bumps.lua setRoomSource) asks this once per zone.
+function bumpLogic.sameRooms(a, b)
+    local ia, ib = a._index, b._index
+    if #ia.rooms ~= #ib.rooms or #ia.interiors ~= #ib.interiors then
+        return false
+    end
+    for i, f in ipairs(ia.interiors) do
+        local g = ib.interiors[i]
+        if f.ox ~= g.ox or f.oy ~= g.oy or f.m00 ~= g.m00 or f.m01 ~= g.m01 then
+            return false
+        end
+    end
+    for id, r in ipairs(ia.rooms) do
+        local q = ib.rooms[id]
+        if r.interior ~= q.interior or #r.boxes ~= #q.boxes then
+            return false
+        end
+        for k, v in ipairs(r.boxes) do
+            if q.boxes[k] ~= v then
+                return false
+            end
+        end
+        local da, db = ia.doorsOf[id] or {}, ib.doorsOf[id] or {}
+        if #da ~= #db then
+            return false
+        end
+        for k, d in ipairs(da) do
+            if d.a ~= db[k].a or d.b ~= db[k].b then
+                return false
+            end
+        end
+    end
+    return true
 end
 
 -- Drops the zone's tables again (the text stays registered).
@@ -422,7 +462,7 @@ function bumpLogic.resolveRoom(zone, x, y, current, byDoor, indoors)
     -- a room the game's word does not fit while a candidate does is left (no longer held)
     if real and (ix.rooms[current].hallMap ~= nil) == indoors and #cands > 0
         and (ix.rooms[cands[1]].hallMap ~= nil) ~= indoors then
-        real, byDoor = false, false
+        current, real, byDoor = nil, false, false
     end
     if byDoor and real then
         -- entered through a doorway: it holds while its floor is near, or near one of its doorways
@@ -513,12 +553,13 @@ local Tracker = {}
 Tracker.__index = Tracker
 
 function bumpLogic.newTracker()
-    return setmetatable({ room = nil, byDoor = false, inHall = false, hallGap = 0, cands = nil }, Tracker)
+    local tracker = { room = nil, byDoor = false, inHall = false, hallGap = 0, cands = nil, doorOut = nil }
+    return setmetatable(tracker, Tracker)
 end
 
 -- Starts afresh (a new zone, a jump, a flight).
 function Tracker:reset()
-    self.room, self.byDoor, self.inHall, self.hallGap, self.cands = nil, false, false, 0, nil
+    self.room, self.byDoor, self.inHall, self.hallGap, self.cands, self.doorOut = nil, false, false, 0, nil, nil
 end
 
 -- Sets the room known from elsewhere (a spot kept over a reload, another module's tracker). `cands` (optional): the
@@ -539,13 +580,19 @@ function Tracker:update(zone, x, y, px, py, game)
         from = 0
     end
     local crossed = bumpLogic.crossedDoor(zone, from, px, py, x, y)
-    -- a room only guessed (not entered through a doorway) does not hide a doorway in from outside: the game calls
-    -- parts of the square around Stormwind's Wizard's Sanctum indoors, the only room there is one without doorways
-    -- (the square's own), and walking into the tower kept that room and named the square's trees (walk 2026-11-07)
-    if crossed == nil and not self.byDoor and from ~= 0 then
+    -- a room without doorways (only ever a guess) does not hide a doorway in from outside: the game calls parts of
+    -- the square around Stormwind's Wizard's Sanctum indoors, the only room there is the square's own, which has no
+    -- doorway, and walking into the tower kept it and named the square's trees (walk 2026-11-07). Only such a room:
+    -- upstairs over a house's entrance a doorway in from outside lies under the player (the Brill tavern, the
+    -- surroundings' trial 2026-10-03), and it must not take them down to the entrance.
+    if crossed == nil and from ~= nil and from ~= 0 and ix.doorsOf[from] == nil then
         crossed = bumpLogic.crossedDoor(zone, 0, px, py, x, y)
     end
     if crossed ~= nil then
+        if crossed == 0 and self.inHall then
+            -- out of the halls by a doorway: they do not take the player back near it
+            self.doorOut = { x, y }
+        end
         self.room, self.byDoor = crossed, crossed ~= 0
         if crossed == 0 then
             self.inHall = false
@@ -554,18 +601,28 @@ function Tracker:update(zone, x, y, px, py, game)
         end
         return
     end
-    -- the halls: in them while a hall's floor of the game's map is near, until HALL_GAP yd without one
+    if self.doorOut and dist(x, y, self.doorOut[1], self.doorOut[2]) > bumpLogic.DOOR_AWAY then
+        self.doorOut = nil
+    end
+    -- the halls: in them while the game's map is a hall's and a hall's floor of it is near, until HALL_GAP yd without
+    -- one; on another map out at once (out of Ironforge's gate the map is Dun Morogh's)
+    if not ix.hallMaps[game.uiMap or false] then
+        if self.inHall then
+            self.inHall, self.room, self.byDoor = false, nil, false
+        end
+        self.doorOut = nil
+    end
     local halls = bumpLogic.hallsAt(zone, x, y, game.uiMap, game.subzone)
     if self.inHall then
         if #halls > 0 then
             self.hallGap = 0
         else
             self.hallGap = self.hallGap + moved
-            if self.hallGap > bumpLogic.HALL_GAP or game.uiMap == nil then
+            if self.hallGap > bumpLogic.HALL_GAP then
                 self.inHall, self.room, self.byDoor = false, nil, false
             end
         end
-    elseif not game.indoors and #halls > 0 and (self.room == nil or self.room == 0) then
+    elseif not game.indoors and #halls > 0 and (self.room == nil or self.room == 0) and self.doorOut == nil then
         -- into the halls without a doorway (Ironforge's gate: the game's map becomes the halls')
         self.inHall, self.hallGap, self.byDoor = true, 0, false
         self.room = #halls == 1 and halls[1] or nil
@@ -694,6 +751,24 @@ local function fitsWhich(ix, i, which)
     return which == nil or ix.oroom[i] == which
 end
 
+-- Calls fn(i) once for each object whose box of cells overlaps rows r0..r1, columns c0..c1: block by block, each
+-- block's bucket read once.
+local function eachObjectIn(zone, r0, r1, c0, c1, fn)
+    local ix, b = zone._index, bumpLogic.BLOCK
+    local width = math.floor(zone.cols / b) + 1
+    local seen = {}
+    for br = math.floor(r0 / b), math.floor(r1 / b) do
+        for bc = math.floor(c0 / b), math.floor(c1 / b) do
+            for _, i in ipairs(ix.objects[br * width + bc] or {}) do
+                if not seen[i] and ix.or0[i] <= r1 and ix.or1[i] >= r0 and ix.oc0[i] <= c1 and ix.oc1[i] >= c0 then
+                    seen[i] = true
+                    fn(i)
+                end
+            end
+        end
+    end
+end
+
 -- The objects whose footprint lies within `radius` yards of the position, nearest first.
 function bumpLogic.objectsNear(map, x, y, radius, which)
     local zone = bumpLogic.zoneAt(map, x, y)
@@ -704,76 +779,71 @@ function bumpLogic.objectsNear(map, x, y, radius, which)
     local ix = zone._index
     local r0, c0 = bumpLogic.cellOf(zone, x, y)
     local n = math.ceil(radius / zone.cell)
-    local seen = {}
-    for r = r0 - n, r0 + n do
-        for c = c0 - n, c0 + n do
-            for _, i in ipairs(ix.objects[blockOf(zone, r, c)] or {}) do
-                if not seen[i] and r >= ix.or0[i] and r <= ix.or1[i] and c >= ix.oc0[i] and c <= ix.oc1[i] then
-                    seen[i] = true
-                    if fitsWhich(ix, i, which) then
-                        local _, _, d = objectPoint(ix, i, x, y)
-                        if d <= radius then
-                            local o = bumpLogic.object(zone, i)
-                            o.distance = d
-                            out[#out + 1] = o
-                        end
-                    end
-                end
+    eachObjectIn(zone, r0 - n, r0 + n, c0 - n, c0 + n, function(i)
+        if fitsWhich(ix, i, which) then
+            local _, _, d = objectPoint(ix, i, x, y)
+            if d <= radius then
+                local o = bumpLogic.object(zone, i)
+                o.distance = d
+                out[#out + 1] = o
             end
         end
-    end
+    end)
     table.sort(out, function(a, b)
         return a.distance < b.distance
     end)
     return out
 end
 
+-- The distance from the point (u, v) to the box -hl..hl by -hw..hw.
+local function pointToBox(u, v, hl, hw)
+    local eu = math.max(0, math.abs(u) - hl)
+    local ev = math.max(0, math.abs(v) - hw)
+    return math.sqrt(eu * eu + ev * ev)
+end
+
 -- The distance from the segment (u1, v1)-(u2, v2) to the box -hl..hl by -hw..hw (the object's own frame), and
 -- where along the segment (0..1) it comes closest (where it enters the box when it crosses it).
 local function segmentToBox(u1, v1, u2, v2, hl, hw)
-    -- crossing: the segment clipped to the box (Liang-Barsky)
+    -- crossing: the segment clipped to the box (Liang-Barsky), one edge after the other
     local du, dv = u2 - u1, v2 - v1
-    local t0, t1 = 0, 1
-    local crosses = true
-    for _, e in ipairs({ { -du, u1 + hl }, { du, hl - u1 }, { -dv, v1 + hw }, { dv, hw - v1 } }) do
-        local pe, qe = e[1], e[2]
+    local t0, t1, crosses = 0, 1, true
+    local function clip(pe, qe)
         if pe == 0 then
             if qe < 0 then
                 crosses = false
             end
+        elseif pe < 0 then
+            t0 = math.max(t0, qe / pe)
         else
-            local t = qe / pe
-            if pe < 0 then
-                t0 = math.max(t0, t)
-            else
-                t1 = math.min(t1, t)
-            end
+            t1 = math.min(t1, qe / pe)
         end
     end
+    clip(-du, u1 + hl)
+    clip(du, hl - u1)
+    clip(-dv, v1 + hw)
+    clip(dv, hw - v1)
     if crosses and t0 <= t1 then
         return 0, t0
     end
+    -- else the nearest of the segment's ends to the box and the box's corners to the segment
+    local best, bestT = pointToBox(u1, v1, hl, hw), 0
+    local d = pointToBox(u2, v2, hl, hw)
+    if d < best then
+        best, bestT = d, 1
+    end
     local len2 = du * du + dv * dv
-    local best, bestT = math.huge, 0
-    local function pointToBox(u, v)
-        local eu = math.max(0, math.abs(u) - hl)
-        local ev = math.max(0, math.abs(v) - hw)
-        return math.sqrt(eu * eu + ev * ev)
-    end
-    for _, t in ipairs({ 0, 1 }) do
-        local d = pointToBox(u1 + du * t, v1 + dv * t)
-        if d < best then
-            best, bestT = d, t
+    local function corner(cu, cv)
+        local t = len2 > 0 and math.max(0, math.min(1, ((cu - u1) * du + (cv - v1) * dv) / len2)) or 0
+        local dc = dist(u1 + du * t, v1 + dv * t, cu, cv)
+        if dc < best then
+            best, bestT = dc, t
         end
     end
-    -- the box's corners against the segment
-    for _, corner in ipairs({ { -hl, -hw }, { hl, -hw }, { hl, hw }, { -hl, hw } }) do
-        local t = len2 > 0 and math.max(0, math.min(1, ((corner[1] - u1) * du + (corner[2] - v1) * dv) / len2)) or 0
-        local d = dist(u1 + du * t, v1 + dv * t, corner[1], corner[2])
-        if d < best then
-            best, bestT = d, t
-        end
-    end
+    corner(-hl, -hw)
+    corner(hl, -hw)
+    corner(hl, hw)
+    corner(-hl, hw)
     return best, bestT
 end
 
@@ -790,27 +860,20 @@ function bumpLogic.objectOnLine(map, x1, y1, x2, y2, clearance, which)
     local rb, cb = bumpLogic.cellOf(zone, math.min(x1, x2), math.min(y1, y2))
     local n = math.ceil(clearance / zone.cell)
     local length = dist(x1, y1, x2, y2)
-    local best, bestAlong, bestD, seen = nil, math.huge, nil, {}
-    for r = ra - n, rb + n do
-        for c = ca - n, cb + n do
-            for _, i in ipairs(ix.objects[blockOf(zone, r, c)] or {}) do
-                if not seen[i] and r >= ix.or0[i] and r <= ix.or1[i] and c >= ix.oc0[i] and c <= ix.oc1[i] then
-                    seen[i] = true
-                    if fitsWhich(ix, i, which) then
-                        local cs, sn = ix.ocos[i], ix.osin[i]
-                        local ax, ay = x1 - ix.ox[i], y1 - ix.oy[i]
-                        local bx, by = x2 - ix.ox[i], y2 - ix.oy[i]
-                        local d, t = segmentToBox(ax * cs + ay * sn, -ax * sn + ay * cs, bx * cs + by * sn,
-                            -bx * sn + by * cs, ix.ohl[i], ix.ohw[i])
-                        local along = t * length
-                        if d <= clearance and (along < bestAlong or (along == bestAlong and d < bestD)) then
-                            best, bestAlong, bestD = i, along, d
-                        end
-                    end
-                end
+    local best, bestAlong, bestD = nil, math.huge, nil
+    eachObjectIn(zone, ra - n, rb + n, ca - n, cb + n, function(i)
+        if fitsWhich(ix, i, which) then
+            local cs, sn = ix.ocos[i], ix.osin[i]
+            local ax, ay = x1 - ix.ox[i], y1 - ix.oy[i]
+            local bx, by = x2 - ix.ox[i], y2 - ix.oy[i]
+            local d, t = segmentToBox(ax * cs + ay * sn, -ax * sn + ay * cs, bx * cs + by * sn, -bx * sn + by * cs,
+                ix.ohl[i], ix.ohw[i])
+            local along = t * length
+            if d <= clearance and (along < bestAlong or (along == bestAlong and d < bestD)) then
+                best, bestAlong, bestD = i, along, d
             end
         end
-    end
+    end)
     if best == nil then
         return nil
     end

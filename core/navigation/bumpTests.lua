@@ -5,7 +5,8 @@ local bumpLogic = WowVision.bumpLogic
 -- -vy; its room 1 spans world x 5..10, y -5..5, with a doorway from outside at world x 5; room 2 lies on the same
 -- floor boxes (a floor over it) and joins room 1 by a doorway. Building 2 is named only by its place (Old Town) and
 -- stands at y 45..55 (room 3; a doorway into it from outside lies 15 yd off its floor, at y 70); room 4 beside it
--- (x -20..-10) is a hall the game calls outdoors, on UI map 500, in the area "Trade Quarter". A barrel stands
+-- (x -20..-10) is a hall the game calls outdoors, on UI map 500, in the area "Trade Quarter", with a doorway out at
+-- x -10, y 50. A barrel stands
 -- outdoors at (0, 0), a crate in room 1 at (8, 0), a chair in room 2 at (8, 3). A city wall covers the cell of
 -- (-20, -2), a canal edge (a water structure) the cell of (-30, -2).
 local function makeZone(locale)
@@ -18,7 +19,7 @@ local function makeZone(locale)
         interiorWalls = { enUS = { [2] = "Old Town" }, deDE = { [2] = "Altstadt" } },
         rooms = "1 0 4 -10 -5 -5 5 4 -10.5 -5.5 -4.5 5.5 1 0 4 -10 -5 -5 5 0 2 0 4 -5 -5 5 5 0 2 500 4 10 -5 20 5 0",
         roomAreas = { enUS = { [4] = "Trade Quarter" } },
-        doors = "0 1 1 -5 0 1 0 1 2 1 2 1 -7 4 0 1 1 1 0 3 2 0 -20 0 1 1 2",
+        doors = "0 1 1 -5 0 1 0 1 2 1 2 1 -7 4 0 1 1 1 0 3 2 0 -20 0 1 1 2 4 0 2 10 0 1 0 1 2",
         structCells = "30 25 1 1 32 25 1 2",
         waterStructs = { 2 },
         structNames = { enUS = { "city wall", "canal" } },
@@ -226,6 +227,47 @@ testRunner:addSuite("BumpLogic", {
         t:assertNil(tr:objectRooms()[3])
     end,
 
+    ["upstairs over the entrance's doorway the room upstairs holds"] = function(t)
+        -- room 2 lies over room 1, whose doorway in from outside is at x 5: crossing over it upstairs (room 2,
+        -- reached by the stairs, not by a doorway) is no way into room 1 (the Brill tavern, trial 2026-10-03)
+        local zone = makeZone()
+        local tr = bumpLogic.newTracker()
+        tr.room, tr.byDoor = 2, false
+        tr:update(zone, 6, 0, 4, 0, { indoors = true })
+        t:assertEqual(tr.room, 2)
+    end,
+
+    ["the halls end at once on another map, and not again right by the doorway out"] = function(t)
+        local zone = makeZone()
+        local tr = bumpLogic.newTracker()
+        local hall = { indoors = false, uiMap = 500, subzone = "Trade Quarter" }
+        tr:update(zone, -15, 50, nil, nil, hall)
+        t:assertTrue(tr.inHall)
+        tr:update(zone, -15, 51, -15, 50, { indoors = false, uiMap = 1, subzone = "" })
+        t:assertFalse(tr.inHall)
+        t:assertEqual(tr.room, 0)
+        -- in again, then out by its doorway at x -10: the hall's floor still lies within reach, but no way back
+        tr:reset()
+        tr:update(zone, -12, 50, nil, nil, hall)
+        t:assertEqual(tr.room, 4)
+        tr:update(zone, -9, 50, -12, 50, hall)
+        t:assertEqual(tr.room, 0)
+        tr:update(zone, -9.5, 50, -9, 50, hall)
+        t:assertEqual(tr.room, 0)
+        t:assertFalse(tr.inHall)
+        -- 5 yd away the doorway is forgotten; coming back onto the hall's floor takes the player in
+        tr:update(zone, -4, 50, -9.5, 50, hall)
+        tr:update(zone, -11, 50, -4, 50, hall)
+        t:assertEqual(tr.room, 4)
+    end,
+
+    ["two zones number their rooms alike, or not"] = function(t)
+        local a, b = makeZone(), makeZone()
+        t:assertTrue(bumpLogic.sameRooms(a, b))
+        b._index.rooms[2].boxes[1] = -11
+        t:assertFalse(bumpLogic.sameRooms(a, b))
+    end,
+
     ["another module's room and wall text are taken"] = function(t)
         local zone = makeZone()
         local tr = bumpLogic.newTracker()
@@ -273,6 +315,10 @@ testRunner:addSuite("BumpLogic", {
         t:assertNil(bumpLogic.objectOnLine(0, 8, -2, 8, 5, 0.2, 0))
         -- a path leaving the zone
         t:assertNil(bumpLogic.objectOnLine(0, 0, 0, 300, 0, 1))
+        -- a long path over several blocks of cells meets the barrel 89.5 yd along
+        o = bumpLogic.objectOnLine(0, -90, 0, 90, 0, 0)
+        t:assertEqual(o.name, "barrel")
+        t:assertTrue(math.abs(o.along - 89.5) < 0.01)
         bumpLogic.zones = saved
     end,
 

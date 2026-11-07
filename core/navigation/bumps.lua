@@ -42,10 +42,11 @@ local restored = false
 local roomSource = nil
 
 -- Another module's room for this zone, used instead of the tracker's: `source(zone)` returns the room (an id of
--- the bump data's rooms, 0 outside, nil unknown), whether the player is in a hall the game calls outdoors, and
+-- the bump data's rooms, 0 outside, nil unknown), whether the player is in a hall the game calls outdoors,
 -- optionally a function(x, y, vx, vy) giving the text and key of the wall ahead outside (asked before the bump
--- data's buildings and structures); or false when it knows nothing here (the tracker's then). It must number the
--- rooms as the bump data does (zone.roomsId, the packed rooms' fingerprint, tells which). nil removes it.
+-- data's buildings and structures), and optionally a tag the bump line is spoken under in the speech queue; or
+-- false when it knows nothing here (the tracker's then). It must number the rooms as the bump data does
+-- (bumpLogic.sameRooms tells). nil removes it.
 function module:setRoomSource(source)
     roomSource = source
 end
@@ -156,7 +157,13 @@ module:hasUpdate(function(self)
         return
     end
     lastCheck = now
-    if not alert.enabled or UnitOnTaxi("player") then
+    if not alert.enabled then
+        -- switched off: the zone's tables go too
+        forget()
+        setZone(nil)
+        return
+    end
+    if UnitOnTaxi("player") then
         forget()
         return
     end
@@ -184,9 +191,9 @@ module:hasUpdate(function(self)
         px, py = nil, nil
     end
     local game = { indoors = IsIndoors(), uiMap = C_Map.GetBestMapForUnit("player"), subzone = GetSubZoneText() }
-    local given, givenHall, givenWall = false, nil, nil
+    local given, givenHall, givenWall, givenTag = false, nil, nil, nil
     if roomSource then
-        given, givenHall, givenWall = roomSource(zone)
+        given, givenHall, givenWall, givenTag = roomSource(zone)
     end
     if given ~= false then
         -- (with the room unknown, the rooms whose floor is here count)
@@ -219,6 +226,14 @@ module:hasUpdate(function(self)
         { wall = L["wall"], wallOf = L["wall of %s"] }, givenWall)
     if bumpLogic.take(state, key) then
         record(x, y, inside, rooms, text)
-        self:fireAlert("bump", { text = text })
+        local speech = WowVision.base.speech
+        if givenTag and speech and speech.withTag then
+            -- spoken under the source's tag in the speech queue (it may drop its lines still waiting, these too)
+            speech:withTag(givenTag, function()
+                self:fireAlert("bump", { text = text })
+            end)
+        else
+            self:fireAlert("bump", { text = text })
+        end
     end
 end)
