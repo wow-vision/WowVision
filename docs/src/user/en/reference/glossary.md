@@ -106,6 +106,10 @@ The game's own text to speech for chat is switched on as well. Turn it off in th
 
 Almost every announcement is an alert you can turn off or change to a sound. Find it in the module's entry in the WowVision menu. Game error messages can be muted one by one in Errors, Per-Error Filter. See [Alerts](../basics/alerts.md) and [Combat](../world/combat.md).
 
+### I am stuck on a route. What can I do?
+
+Jump, step aside, skip the waypoint with Ctrl+W, go back one with Ctrl+S, or change the arrival distance with Alt+P. If the NPC you are looking for stands behind a counter, talk to them directly. See [Troubleshooting](../getting-started/troubleshooting.md#i-am-stuck-on-a-route).
+
 ### Where can I see every key?
 
 In the [Keybinding Reference](../reference/keybindings.md), and in the game in the keybinding window: WowVision menu, UI, Bindings.

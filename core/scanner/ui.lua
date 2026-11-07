@@ -9,6 +9,8 @@ local kinds = graph.kinds
 -- The scanner window (F9): the provider tree as expandable groups, one
 -- tab stop, then a Refresh button. The tree is built once when the window
 -- opens and again on Refresh; expansion state persists across opens.
+-- With Scanner as Tree off, the same tree reads as a menu instead (one
+-- screen per level, see "menu mode" below).
 
 local WINDOW = "scanner"
 
@@ -51,11 +53,24 @@ local function ensureTree(screen)
     return screen._tree
 end
 
+local function isTree()
+    return module.settings == nil or module.settings.asTree ~= false
+end
+
 -- F9. From the quest log the scanner lands on the quest the log is on.
 function module:openFromKey()
     local quests = WowVision.base.quests
     self.focusQuest = quests ~= nil and quests.safeLogQuest ~= nil and quests:safeLogQuest() or nil
-    WowVision.UIHost:openWindow(WINDOW)
+    local instance = WowVision.UIHost:openWindow(WINDOW)
+    if not isTree() then
+        -- the menu walks to the quest here; the tree unfolds it as it renders
+        local questId = self.focusQuest
+        self.focusQuest = nil
+        if questId ~= nil and instance ~= nil and instance.stack ~= nil
+            and quests ~= nil and quests.scannerQuestPath ~= nil then
+            module:openMenuPath(instance.stack, quests:scannerQuestPath(questId))
+        end
+    end
 end
 
 local function resolveChildren(node)
@@ -177,6 +192,7 @@ local function vtableFor(node, screen, id)
             pushDetails(node)
         end
     end
+    vtable.tooltip = node.tooltip
     return vtable
 end
 
@@ -203,7 +219,184 @@ local function emit(builder, screen, node, path)
     builder:endGroup()
 end
 
+-- ---- menu mode (Scanner as Tree off) ----
+--
+-- One screen per level, like the WowVision menu: the root lists the
+-- categories, Enter (or Right) on an entry with children opens a screen
+-- with them, Escape (or Left) goes back. Enter goes deeper as long as an
+-- entry has children, so the menu reaches every level the tree does; only
+-- on the last level does Enter run the entry's action (the navigation
+-- window for a place). All levels of one open
+-- share a session holding the tree; each level finds its entries by the
+-- keys of its path, so Refresh on any level rebuilds them all.
+
+local function pathKey(path)
+    if #path == 0 then
+        return "scanner"
+    end
+    return "scanner/" .. table.concat(path, "/")
+end
+
+local function sessionTree(session)
+    if session.tree == nil then
+        session.tree = module:buildTree()
+    end
+    return session.tree
+end
+
+-- The entries at a path of keys ({} = the categories); nil when a level on
+-- the way is gone (after a Refresh).
+local function entriesAt(session, path)
+    local list = sessionTree(session)
+    for _, key in ipairs(path) do
+        local found = nil
+        for _, node in ipairs(list) do
+            if tostring(node.key) == key then
+                found = node
+                break
+            end
+        end
+        if found == nil or found.children == nil then
+            return nil
+        end
+        list = resolveChildren(found)
+    end
+    return list
+end
+
+local function nodeAt(session, path)
+    if #path == 0 then
+        return nil
+    end
+    local parent = {}
+    for i = 1, #path - 1 do
+        parent[i] = path[i]
+    end
+    for _, node in ipairs(entriesAt(session, parent) or {}) do
+        if tostring(node.key) == path[#path] then
+            return node
+        end
+    end
+    return nil
+end
+
+local renderMenuLevel
+
+local function pushMenuLevel(stack, session, path, label)
+    return WowVision.graphHost:push(stack, {
+        key = pathKey(path),
+        letterNavigation = true,
+        render = function(builder, screen)
+            renderMenuLevel(builder, screen, session, path, label)
+        end,
+    })
+end
+
+local function menuVtable(node, screen, session, path, id)
+    local vtable = vtableFor(node, screen, id)
+    local host = WowVision.graphHost
+    if node.children ~= nil and node.toggle == nil then
+        local childPath = {}
+        for i, key in ipairs(path) do
+            childPath[i] = key
+        end
+        tinsert(childPath, tostring(node.key))
+        local function descend()
+            local stack = host:focusedStack()
+            if stack ~= nil then
+                pushMenuLevel(stack, session, childPath, node.label)
+            end
+        end
+        -- Enter goes one level deeper as long as there is one, as in the
+        -- tree; a place to walk to is reached on the last level (the
+        -- quest's objective, its target, the target's spawn).
+        vtable.controlType = graph.controlTypes.button
+        vtable.stateText = nil
+        vtable.onActivate = descend
+        vtable.onRight = descend
+    end
+    if #path > 0 then
+        vtable.onLeft = function()
+            local stack = host:focusedStack()
+            if stack ~= nil then
+                host:pop(stack)
+            end
+        end
+    end
+    return vtable
+end
+
+local function addRefresh(builder, session)
+    builder:beginStop("refresh")
+    builder:addItem(
+        ControlId.structural("refresh"),
+        nodes.button({
+            label = L["Refresh"],
+            onActivate = function()
+                session.tree = nil
+                WowVision:speak(L["Refreshed"])
+            end,
+        })
+    )
+end
+
+renderMenuLevel = function(builder, screen, session, path, label)
+    local base = pathKey(path)
+    builder:beginStop("tree")
+    builder:pushContext(base, label)
+    local entries = entriesAt(session, path)
+    if entries == nil or #entries == 0 then
+        builder:addItem(ControlId.structural(base .. "/empty"), nodes.text({ label = L["Empty"] }))
+    end
+    for _, node in ipairs(entries or {}) do
+        local id = ControlId.structural(base .. "/" .. tostring(node.key))
+        builder:addItem(id, menuVtable(node, screen, session, path, id))
+    end
+    builder:popContext()
+    addRefresh(builder, session)
+end
+
+-- Opened from the quest log: one level per step of the quest's path, each
+-- on the entry the next one opened, the last on the quest itself.
+function module:openMenuPath(stack, keys)
+    local root = stack.screens[1]
+    if root == nil then
+        return
+    end
+    root._session = root._session or {}
+    local session = root._session
+    local path = {}
+    local screen = root
+    for index, key in ipairs(keys) do
+        screen.state.nextSuggestedMove = ControlId.structural(pathKey(path) .. "/" .. key)
+        if index == #keys then
+            break
+        end
+        tinsert(path, key)
+        local node = nodeAt(session, path)
+        if node == nil or node.children == nil then
+            break
+        end
+        local levelPath = {}
+        for i, part in ipairs(path) do
+            levelPath[i] = part
+        end
+        screen = pushMenuLevel(stack, session, levelPath, node.label)
+    end
+end
+
+local function renderMenu(builder, screen)
+    screen._session = screen._session or {}
+    renderMenuLevel(builder, screen, screen._session, {}, L["Scanner"])
+end
+
 local function render(builder, screen)
+    -- the menu takes letters like the WowVision menu; the tree does not
+    screen.config.letterNavigation = not isTree()
+    if not isTree() then
+        renderMenu(builder, screen)
+        return
+    end
     local tree = ensureTree(screen)
 
     builder:beginStop("tree")

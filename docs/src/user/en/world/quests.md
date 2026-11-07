@@ -133,6 +133,24 @@ The alert is the Quest Area Alert in the Quests module. See [Alerts](../basics/a
 | Sound Alert, Enabled | Off | Plays a sound instead of or besides the speech. |
 | Sound Alert, Sound | none | Which sound to play. |
 
+## Quest progress sounds
+
+When a quest moves forward, you hear a short sound: you find a quest item, kill a creature the quest asks for, or reach another objective. When that finishes the quest, you hear a different sound instead. The quest is then ready to hand in.
+
+The game's own line, such as "Kobold Candle: 3/8", is spoken by WowVision as usual with the error and info messages.
+
+A quest you have just accepted makes no sound, even when its objectives are already done. Losing a quest item, for example by selling it, is silent too.
+
+The alert is the Quest Progress Alert in the Quests module. You can switch each of the two sounds off on its own or replace it with another sound. See [Alerts](../basics/alerts.md) for how alerts work.
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| Quest Progress Alert, Enabled | On | Switches both sounds on or off. |
+| Quest Progress Sound, Enabled | On | The sound when an objective moves forward. |
+| Quest Progress Sound, Sound | success1 | Which sound to play. |
+| Quest Complete Sound, Enabled | On | The sound when the quest is finished. |
+| Quest Complete Sound, Sound | success2 | Which sound to play. |
+
 ## Finding quests and objectives
 
 The [Scanner](scanner.md) turns quest data into places you can walk to. It is the main way to find quests with WowVision.
@@ -154,6 +172,7 @@ Open the WowVision menu, then Quests. See [Menu and Settings](../basics/menu-and
 | Nearby Level Range | 5 | The Nearby list hides quests that are more than this many levels below your level. From 0 to 60. Set 60 to see every quest, or 0 to see only quests at or above your level. |
 | Include Repeatable Quests | On | Whether repeatable and daily quests appear in the Nearby list. |
 | Quest Area Alert | see above | Announcements when entering or leaving an objective area. |
+| Quest Progress Alert | see above | Sounds when a quest moves forward or is finished. |
 
 The Nearby list also leaves out quests you cannot take yet, because of your level or a missing prerequisite.
 

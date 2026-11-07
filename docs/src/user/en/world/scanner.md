@@ -4,11 +4,13 @@ The Scanner is a list of things around you and where they are: quests, quest giv
 
 Press F9 to open the Scanner. Press Escape to close it. The key is called Scanner in the keybinding window and can be changed there; see [Keybindings](../basics/keybindings.md). The Scanner works on every game version, but what it can list depends on the version and on the data available. See "Version notes" at the end.
 
+The Scanner is a tree by default. If you would rather go through it like the WowVision menu, one level at a time with Enter and back with Escape, switch off Scanner as Tree in the Scanner settings; see [The Scanner as a menu](#the-scanner-as-a-menu).
+
 Pressing F9 while you are in the quest log opens the Scanner right on that quest, under Quests, In Progress: the quest your cursor is on in the log, or else the quest whose details are open. Press Right to hear its objectives, or Enter to be guided to its next target.
 
 ## How it is laid out
 
-The Scanner is one tree. The top level holds categories, categories hold entries, and many entries hold more entries below them. Entries that hold more are groups. You hear "collapsed" or "expanded" after a group's name.
+By default the Scanner is one tree. The top level holds categories, categories hold entries, and many entries hold more entries below them. Entries that hold more are groups. You hear "collapsed" or "expanded" after a group's name.
 
 | Key | What it does |
 |-----|--------------|
@@ -21,6 +23,23 @@ The Scanner is one tree. The top level holds categories, categories hold entries
 | Escape | Close the Scanner. |
 
 Everything else works as in any WowVision window; see [Using the interface](../basics/interface.md) for Home, End and type-ahead.
+
+### The Scanner as a menu
+
+If you prefer moving through the Scanner like the WowVision menu, one level at a time, switch off Scanner as Tree in the Scanner settings (see [Settings](#settings)). The Scanner then opens on the list of categories, and each list you open replaces the one before:
+
+| Key | What it does |
+|-----|--------------|
+| Down and Up | Move to the next or previous entry. |
+| Enter | On an entry that holds more entries: open its list, one level deeper. On the last level, an entry with a position opens the navigation window to start a route there (see [What Enter does](#what-enter-does)). On a checkbox in the Tracking category: switch it on or off. |
+| Right | The same as Enter on an entry that holds more entries. |
+| Left or Escape | Go back one level, to the entry you opened. Escape on the first level closes the Scanner. |
+| A letter | Jump to the next entry starting with it, as in the WowVision menu. |
+| Backspace and Tab | The same as in the tree. |
+
+So the menu reaches every level the tree does: Quests, In Progress, the quest, its objective, the creature, its spawn. In the tree, Enter on a quest or an objective guides you to the nearest place right away; in the menu you go down to the place you want first.
+
+Refresh works on every level and keeps you on the level you are on. Pressing F9 in the quest log opens the levels Quests and In Progress for you and puts you on the quest; Escape takes you back through them.
 
 For each entry with a position you hear its name, an extra note when it has one, the distance and direction from where you stand now, and its place in the list. For example: "Marshal McBride, seen, quest available, 85 yards, ahead left, 3 of 12". The distance and direction are worked out when you land on the entry, so they follow you as you walk. The directions are relative to the way you face: ahead, ahead left, left, behind left, behind, behind right, right, ahead right.
 
@@ -50,11 +69,11 @@ Your party or raid members. Each is listed by name. The game only gives a positi
 
 Two sub-groups: Nearby and In Progress. These are filled from the quest data your game version offers: see [Quests](quests.md).
 
-Nearby lists quests you could pick up around you, nearest giver first. Each entry shows the quest name, then "Level" and the quest level, whether it is Daily or Repeatable, and the name of the giver. Where a giver is only a seen quest giver (found by the [Minimap Scanner](minimap.md)) the entry shows the giver's name instead, marked seen, quest available or turn in, low level when applicable, and indoors. Press Backspace on a quest to read its objective text. Which quests are listed depends on the Nearby Level Range and Include Repeatable Quests settings; see [Quests](quests.md).
+Nearby lists quests you could pick up around you, nearest giver first. Each entry shows the quest name, then "Level" and the quest level, whether it is Daily or Repeatable, and the name of the giver. Where a giver is only a seen quest giver (found by the [Minimap Scanner](minimap.md)) the entry shows the giver's name instead, marked seen, quest available or turn in, low level when applicable, and indoors. Press Backspace on a quest to read its objective text, or Shift+Down and Shift+Up to read its tooltip line by line: the title, the level with the quest colour (Grey, Green, Yellow, Orange or Red, as the game colours it for your level), the required level, what kind of quest it is (such as Elite, Dungeon, Daily, or how many players it is meant for), the quest giver with its place, and the quest text. Which quests are listed depends on the Nearby Level Range and Include Repeatable Quests settings; see [Quests](quests.md).
 
 If the data source is still starting, you hear "Loading". Without any data source at all the whole Quests category holds the single line "No quest data source".
 
-In Progress lists your quest log. Each entry shows the quest title and its state: "Complete", "Failed", or "2 of 3" for how many objectives are done. Press Backspace to read its objective text. Open a quest to see its objectives:
+In Progress lists your quest log. Each entry shows the quest title and its state: "Complete", "Failed", or "2 of 3" for how many objectives are done. Press Backspace to read its objective text, or Shift+Down and Shift+Up to read its tooltip line by line: the title, the level with the quest colour, what kind of quest it is, how many objectives are done, each objective with its progress, for a complete quest where to turn it in, and the quest text. The progress is read fresh each time. Open a quest to see its objectives:
 
 1. A quest in progress expands to its objectives (only when the data source knows the quest; a quest it does not know shows just its state), for example "Kobold Vermin slain: 3/10". A finished objective is marked "Complete".
 2. An objective expands to what it is about: the creatures, objects or item sources that count towards it. An item source is named like "Linen Cloth from Defias Thug". Each of these shows a note: its title, "seen" if the Minimap Scanner found it, "indoors", the number of spawns and, when there is only one spawn, where it is.
@@ -108,6 +127,7 @@ Open the WowVision menu, then Scanner. See [Menu and Settings](../basics/menu-an
 |---------|---------|--------------|
 | Scan Radius | 500 | How many yards around you the role groups and seen entries reach. From 50 to 5000. It does not limit the Nearby or In Progress quest lists. |
 | Entries Per Category | 25 | The most entries listed in one group, nearest first. From 5 to 200. |
+| Scanner as Tree | On | On: the Scanner is one tree whose groups open and close in place. Off: it is a menu, one level at a time (see [The Scanner as a menu](#the-scanner-as-a-menu)). |
 
 The related quest settings live in the Quests module: see [Quests](quests.md).
 
