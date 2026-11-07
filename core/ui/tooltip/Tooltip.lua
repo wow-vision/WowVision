@@ -10,6 +10,7 @@ function Tooltip:initialize(name)
     self.widget = nil
     self.tooltipData = nil
     self.currentLine = nil
+    self.comparisonCache = nil
 end
 
 function Tooltip:set(widget, data)
@@ -41,6 +42,7 @@ function Tooltip:reset()
     self.widget = nil
     self.tooltipData = nil
     self.currentLine = nil
+    self.comparisonCache = nil
 end
 
 function Tooltip:onFocus()
@@ -75,16 +77,18 @@ end
 -- The lines as read: { left, right } pairs from the frame, plus the item
 -- quality and item level when the tooltip shows an item (see
 -- WowVision.items.augmentTooltipLines), then the equipped items it compares
--- with (see addComparison).
-function Tooltip:collectLines()
+-- with (see addComparison) unless withComparison is false.
+function Tooltip:collectLines(withComparison)
     local frame = self.activeFrame
     if not frame then
         return {}
     end
     local lines = self:frameLines(frame)
-    local compared, err = pcall(self.addComparison, self, frame, lines)
-    if not compared then
-        geterrorhandler()(err)
+    if withComparison ~= false then
+        local compared, err = pcall(self.addComparison, self, frame, lines)
+        if not compared then
+            geterrorhandler()(err)
+        end
     end
     return lines
 end
@@ -93,7 +97,9 @@ end
 -- tooltips sighted players get on Shift), each as a block after the item's
 -- own lines: the header, the equipped item, the stat changes. The version
 -- folders fill comparison.fill; every block line is marked compare, so
--- reading the whole tooltip at once stays with the item itself.
+-- reading the whole tooltip at once stays with the item itself. The
+-- blocks are built once per shown item (walking the lines reads them again
+-- and again) and dropped when the tooltip is set again.
 function Tooltip:addComparison(frame, lines)
     local comparison = WowVision.tooltips.comparison
     if comparison.fill == nil or not comparison.isEnabled() then
@@ -103,10 +109,17 @@ function Tooltip:addComparison(frame, lines)
     if link == nil then
         return
     end
-    local blocks = comparison.fill(frame, link)
-    for _, block in ipairs(blocks or {}) do
-        comparison.append(lines, block.header, self:frameLines(block.frame))
-        block.frame:Hide()
+    local cache = self.comparisonCache
+    if cache == nil or cache.link ~= link then
+        cache = { link = link, blocks = {} }
+        for _, block in ipairs(comparison.fill(frame, link) or {}) do
+            tinsert(cache.blocks, { header = block.header, lines = self:frameLines(block.frame) })
+            block.frame:Hide()
+        end
+        self.comparisonCache = cache
+    end
+    for _, block in ipairs(cache.blocks) do
+        comparison.append(lines, block.header, block.lines)
     end
 end
 
@@ -193,7 +206,8 @@ function Tooltip:getText(lineNumber)
     if not self.activeFrame then
         return ""
     end
-    local lines = self:readLines()
+    -- The whole tooltip at once leaves the comparison out, so it is not built.
+    local lines = self:readLines(lineNumber ~= nil)
     local result = {}
     if lineNumber == nil then
         for _, line in ipairs(lines) do
@@ -237,9 +251,9 @@ function Tooltip:finishRead()
 end
 
 -- Fill the tooltip (immediate mode), collect its lines, and release it.
-function Tooltip:readLines()
+function Tooltip:readLines(withComparison)
     self:prepareRead()
-    local lines = self:collectLines()
+    local lines = self:collectLines(withComparison)
     self:finishRead()
     return lines
 end
