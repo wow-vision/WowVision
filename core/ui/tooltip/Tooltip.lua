@@ -55,9 +55,10 @@ function Tooltip:onUnfocus()
     end
 end
 
--- The link of the item a tooltip frame shows, nil for none or a secret one.
--- Classic tooltips answer GetItem; Retail and WoW: Forever dropped it for
--- TooltipUtil.GetDisplayedItem (their GameTooltip data mixin).
+-- The link of the item a tooltip frame shows, for the comparison; nil for
+-- none or a secret one. Classic tooltips answer GetItem; Retail and WoW:
+-- Forever dropped it for TooltipUtil.GetDisplayedItem (their GameTooltip
+-- data mixin).
 local function shownItemLink(frame)
     local ok, _, link
     if frame.GetItem ~= nil then
@@ -119,9 +120,9 @@ function Tooltip:frameLines(frame)
     if not spokeMoney then
         geterrorhandler()(err)
     end
-    if WowVision.items ~= nil then
-        local link = shownItemLink(frame)
-        if link ~= nil then
+    if frame.GetItem ~= nil and WowVision.items ~= nil then
+        local ok, _, link = pcall(frame.GetItem, frame)
+        if ok and link ~= nil and not WowVision.isSecret(link) then
             local augmented, err = pcall(WowVision.items.augmentTooltipLines, lines, link)
             if not augmented then
                 geterrorhandler()(err)
