@@ -75,13 +75,13 @@ Some abilities (mage teleports and portals, hunter pet calls, warlock summons) o
 
 ## WoW: Forever: spellbook
 
-Forever uses the modern spellbook. The stops are:
+Forever uses the modern spellbook. It opens on the spell list; Shift+Tab from there reaches the tabs, Tab the search. The stops are:
 
 1. Tabs: the book's category tabs by name (for example your class, general and pet). The open one reads "selected".
-2. Search, an edit box. Typing fills a list of suggestions, see Spell search below.
-3. Options, a dropdown menu with the book's display options.
-4. Spells: the spells of the current page, grouped under the game's headers (a header is spoken once when you enter its group). A spell reads its name and its sub text (such as the rank), and for spells you have not learned yet the level that is required.
-5. A paging row, only when the book has more than one page: Previous Page, the page text ("Page 2/3") and Next Page.
+2. Spells: the spells of the current page, grouped under the game's headers (a header is spoken once when you enter its group). A spell reads its name and its sub text (such as the rank), and for spells you have not learned yet the level that is required.
+3. A paging row, only when the book has more than one page: Previous Page, the page text ("Page 2/3") and Next Page.
+4. Search, an edit box. Typing fills a list of suggestions, see Spell search below.
+5. Options, a dropdown menu with the book's display options.
 
 Enter casts the spell, or opens the flyout if the spell is a flyout. Backspace on a pet spell toggles its autocast. The drag key picks the spell up. Space reads the spell tooltip.
 

@@ -79,13 +79,13 @@ Manche Fähigkeiten (Teleports und Portale der Magier, Rufe der Jäger-Begleiter
 
 ## WoW: Forever: Zauberbuch
 
-Forever benutzt das moderne Zauberbuch. Die Haltepunkte sind:
+Forever benutzt das moderne Zauberbuch. Es öffnet sich auf der Zauberliste; Umschalt+Tab von dort erreicht die Reiter, Tab die Suche. Die Haltepunkte sind:
 
 1. Reiter: die Kategorie-Reiter des Buchs mit ihren Namen (zum Beispiel deine Klasse, Allgemein und Begleiter). Der geöffnete liest „ausgewählt“.
-2. Suchen, ein Eingabefeld. Beim Tippen füllt sich eine Liste mit Vorschlägen, siehe Zaubersuche unten.
-3. Optionen, ein Dropdown-Menü mit den Anzeigeoptionen des Buchs.
-4. Zauber: die Zauber der aktuellen Seite, gruppiert unter den Überschriften des Spiels (eine Überschrift wird einmal gesprochen, wenn du in ihre Gruppe gehst). Ein Zauber liest seinen Namen und seinen Untertext (etwa den Rang) und bei Zaubern, die du noch nicht gelernt hast, die erforderliche Stufe.
-5. Eine Blätterzeile, nur wenn das Buch mehr als eine Seite hat: Vorherige Seite, der Seitentext („Seite 2/3“) und Nächste Seite.
+2. Zauber: die Zauber der aktuellen Seite, gruppiert unter den Überschriften des Spiels (eine Überschrift wird einmal gesprochen, wenn du in ihre Gruppe gehst). Ein Zauber liest seinen Namen und seinen Untertext (etwa den Rang) und bei Zaubern, die du noch nicht gelernt hast, die erforderliche Stufe.
+3. Eine Blätterzeile, nur wenn das Buch mehr als eine Seite hat: Vorherige Seite, der Seitentext („Seite 2/3“) und Nächste Seite.
+4. Suchen, ein Eingabefeld. Beim Tippen füllt sich eine Liste mit Vorschlägen, siehe Zaubersuche unten.
+5. Optionen, ein Dropdown-Menü mit den Anzeigeoptionen des Buchs.
 
 Eingabe wirkt den Zauber oder öffnet die Auswahl, wenn der Zauber eine Auswahl ist. Rücktaste bei einem Begleiterzauber schaltet seinen automatischen Zauber um. Die Ziehen-Taste nimmt den Zauber auf. Leertaste liest den Zauber-Tooltip.
 

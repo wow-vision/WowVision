@@ -153,22 +153,24 @@ local function renderSpells(builder, book)
     builder:popContext()
 end
 
+-- The tabs, the spells, then the search box and the options: Shift-Tab from
+-- the spells (where a fresh open lands) reaches the tabs, Tab the search.
 local function renderSpellBook(builder, book)
     renderCategoryTabs(builder, book)
 
-    builder:beginStop("options")
-    builder:addItem(
-        ControlId.forObject(book.SettingsDropdown),
-        nodes.proxyDropdown({ target = book.SettingsDropdown, label = L["Options"] })
-    )
+    renderSpells(builder, book)
+    nodes.pagingRow(builder, "spells", book.PagedSpellsFrame.PagingControls)
 
     builder:beginStop("search")
     -- No clear button stop, like the other search boxes: emptying the box and
     -- pressing Enter leaves search results the same way.
     builder:addItem(ControlId.structural("search"), spellSearch.node(book.SearchBox))
 
-    renderSpells(builder, book)
-    nodes.pagingRow(builder, "spells", book.PagedSpellsFrame.PagingControls)
+    builder:beginStop("options")
+    builder:addItem(
+        ControlId.forObject(book.SettingsDropdown),
+        nodes.proxyDropdown({ target = book.SettingsDropdown, label = L["Options"] })
+    )
 end
 
 local function render(builder, screen)
