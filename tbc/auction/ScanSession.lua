@@ -144,7 +144,7 @@ function ScanSession:_subscribeToScanner()
     self.scanner.events.scanComplete:subscribe(self, function(_, _, results, progress)
         self:_finalize(results, progress)
         self.state = "browsingResults"
-        WowVision:speak(self.L["Scan complete"] .. ", " .. #self.results .. " " .. self.L["Results"] .. " in " .. progress.total .. " " .. self.L["scanned"])
+        WowVision:speak(string.format(self.L["Scan complete, %s Results in %s scanned"], #self.results, progress.total))
     end)
     self.scanner.events.scanAborted:subscribe(self, function(_, _, results, progress)
         self:_finalize(results, progress)
