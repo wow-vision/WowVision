@@ -38,7 +38,7 @@ Was WowNav nicht tut:
 - Keine Gefahrenwarnungen vor Gegnern oder Kreaturenstufen. Die einzige Ausnahme ist die weiter unten beschriebene Warnung vor feindlichen Posten.
 - Das Tauchen ist deine Sache. Wasser ist in den Daten flach. Die einzige Tauchroute sind die Ruins of Blackfathom in Dunkelküste.
 
-Auf einer Karte, die die Daten nicht kennen, listet F10 nichts auf, und /beacon to antwortet "Keine Route gefunden". Der Scanner setzt mit Eingabe dann ein gerades Beacon, wie ohne Kartendaten. Kann die Ortsliste einer Karte gar nicht gelesen werden, hörst du "WowNav-Katalog nicht nutzbar", gefolgt von einem Grund; gib ihn bei einer Fehlermeldung an.
+Auf einer Karte, die die Daten nicht kennen, listet F10 nichts auf, und /beacon to antwortet "Keine Route gefunden". Der Scanner setzt mit Eingabe dann ein gerades Beacon, wie ohne Kartendaten. Wo WowNav Daten hat, führt Eingabe im Scanner auf einem NPC oder Objekt, das WowNavs Ortsliste an dieser Stelle kennt, zu WowNavs eigenem Eintrag dafür, mit seiner Höhe; siehe [Scanner](./scanner.md). Kann die Ortsliste einer Karte gar nicht gelesen werden, hörst du "WowNav-Katalog nicht nutzbar", gefolgt von einem Grund; gib ihn bei einer Fehlermeldung an.
 
 ## Wie es sich von den klassischen Routen unterscheidet
 

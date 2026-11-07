@@ -4,6 +4,8 @@ Der Scanner (Scanner) ist eine Liste der Dinge um dich herum und wo sie sind: Qu
 
 Drücke F9, um den Scanner zu öffnen. Mit Esc schließt du ihn. Die Taste heißt im Fenster für die Tastenbelegung Scanner und lässt sich dort ändern; siehe [Tastenbelegung](../basics/keybindings.md). Der Scanner funktioniert in jeder Spielversion, aber was er auflisten kann, hängt von der Version und von den verfügbaren Daten ab. Siehe "Hinweise zu den Versionen" am Ende.
 
+Drückst du F9, während du im Questlog bist, öffnet sich der Scanner direkt auf dieser Quest, unter Quests, Laufend: die Quest, auf der dein Cursor im Questlog steht, sonst die Quest, deren Details offen sind. Drücke Pfeil rechts, um ihre Questziele zu hören, oder Eingabe, um zu ihrem nächsten Ziel geführt zu werden.
+
 Hinweis: Die Ansagen des Scanners kommen größtenteils aus lokalisierten Texten und werden auf einem deutschen Client auf Deutsch gesprochen. Die Beispiele zeigen, was du hörst. Namen von NPCs, Orten und Questzielen stammen aus den Spieldaten und bleiben so, wie sie dort stehen.
 
 ## Wie er aufgebaut ist
@@ -95,6 +97,8 @@ Eingabe auf einem Eintrag mit Ort schließt den Scanner und beginnt, dich zu fü
 
 - Gibt es Routendaten für den Kontinent, auf dem du bist, öffnet sich das Navigationsfenster mit dem nächsten Einstiegspunkt ins Wegnetz und deinem gewählten Eintrag schon als Ziel ausgewählt. Drücke dort Eingabe, um die Route zu gehen. Sie folgt dem Wegpunktnetz und endet mit einem geraden letzten Stück bis zum Eintrag.
 - Gibt es keine Routendaten, hörst du "Beacon gesetzt", gefolgt von der Entfernung in Metern, zum Beispiel "Beacon gesetzt 40 Meter", und ein Klang-Beacon führt dich in gerader Linie. Wenn du ankommst, hörst du "Angekommen".
+
+Ist WowNav an (WoW: Forever), wird ein NPC oder Objekt, das WowNavs eigene Ortsliste an dieser Stelle kennt, aus dieser Liste genommen: dieselbe Kreatur, sonst ein Ort mit demselben Namen. Die Route kennt dann Höhe und Stockwerk des Ziels, führt also auf das richtige Stockwerk und endet ohne den Hinweis, dass das letzte Stück ungeprüft ist. Ein Ziel, das WowNav nicht kennt, wird wie bisher angesteuert.
 
 Bei einem gesehenen NPC, den der Minikarten-Scan gefunden hat, löst die Ankunft außerdem die Suche nach dem echten Namen aus, die im [Minikarten-Scanner](minimap.md) beschrieben ist.
 

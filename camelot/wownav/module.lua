@@ -214,6 +214,18 @@ function engine:unitTarget(creatureId, px, py, map)
         WowVision.targetFind.UNIT_RADIUS)
 end
 
+-- A target another source names (the scanner's quest NPCs and objects: { kind, id, name } at x, y): the catalogue's
+-- row of the same target near that position (catalog.matchRow), which brings its height; nil where WowNav has no data
+-- or no such target.
+function engine:matchTarget(match, x, y, map)
+    local N = ready(module)
+    if N == nil or x == nil or map == nil or not catalog.covers(N, map) then
+        return nil
+    end
+    N.activeMapId = map
+    return catalog.matchRow(N, _G.WowVisionNavigationTargetCatalog, map, match, x, y)
+end
+
 -- Shift-F12 (his /vn stop): ends the search, the route, a transit waiting for its far end, the dock guidance and the
 -- water beacon of a fishing spot. True when any of them was running.
 function engine:cancel()
@@ -875,10 +887,8 @@ function module:onRouteEvent(path, event)
                 self.dockPath = water
                 maps:pathfind(water)
             end
-        elseif result == nil or result.quality == "exact" or (not result.normalizedWater
-            and (result.delta3D or result.deltaXY or 0) <= radius) then
-            -- an approximate result whose network ends at the target is an arrival too: on Forever the game gives no
-            -- height, so a target on its network point resolves "approximate" only for want of one ("0.0 yards")
+        elseif Route.reachesTarget(result, radius) then
+            -- an approximate result whose network ends at the target is an arrival too (Route.reachesTarget)
             say(L["Arrived"] .. (label ~= nil and (" " .. label) or ""))
         elseif result.normalizedWater then
             -- his stop_water_net_ends / stop_net_ends: how far the network ends from the target

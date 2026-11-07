@@ -170,7 +170,7 @@ Page Up and Page Down scroll a list by a full page and put you on the nearest en
 
 In lists that own the keyboard, you can press a letter to jump to the next entry whose name starts with it. This works in:
 
-- the WowVision menu and every settings screen inside it,
+- the WowVision menu and every settings screen inside it, the key bindings included (there a letter finds an action by its name),
 - context menus,
 - the game's dropdown menus.
 

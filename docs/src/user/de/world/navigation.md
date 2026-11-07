@@ -33,6 +33,8 @@ Die Beispiele auf dieser Seite benutzen die schlichten Ortsnamen von WowNav. Kla
 
 Drücke F10, um das Navigationsfenster zu öffnen. Mit Esc schließt du es. Auf einem Controller halte beide Schultertasten gedrückt und drücke Steuerkreuz hoch (siehe [Controller](../controller.md)). Kann das Spiel WowVision nicht sagen, wo du bist (zum Beispiel in einer Instanz auf Retail), bleibt das Fenster leer.
 
+Drückst du F10, während du im Questlog bist, öffnet sich das Fenster auf das nächste Ziel dieser Quest ausgerichtet, denselben Ort, zu dem Eingabe auf der Quest im Scanner führt: das nächste Ziel ihres ersten offenen Questziels, oder die Abgabe, sobald sie fertig ist. Dieses Ziel steht oben in der Zielliste und ist ausgewählt, Eingabe startet also die Route. Die Quest ist die, auf der dein Cursor im Questlog steht, sonst die, deren Details offen sind. Eine Quest ohne Ort, oder ein Ort ohne Routendaten, öffnet das Fenster wie gewohnt.
+
 Das Fenster hat vier Stationen. Zwischen ihnen wechselst du mit Tab und Umschalt+Tab, innerhalb einer Liste bewegst du dich mit Pfeil hoch und Pfeil runter. Die allgemeinen Tasten stehen auf der Seite [Die Oberfläche bedienen](../basics/interface.md).
 
 | Station | Was es ist |

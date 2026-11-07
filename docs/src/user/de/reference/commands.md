@@ -35,6 +35,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /dquit | Verlässt die Dungeongruppe oder das Schlachtfeld | alle, nicht mit Sku |
 | /enableaddon, /disableaddon | Schaltet ein Addon ein oder aus und lädt neu | alle, nicht mit BlindSlash |
 | /wv soft | Liest die Werte der weichen Zielerfassung vor | alle |
+| /wv targetinfo | Listet auf, was jede Angabe der Zielansage für dein Ziel sagt | alle |
 | /wv mscan | Minikarten-Scan und sein Protokoll | wo der Minikarten-Scan funktioniert |
 | /wv quests | Prüfung der Questdaten | alle |
 | /wv errors | Zeigt Lua-Fehler | alle |
@@ -137,6 +138,10 @@ Benutze nicht /disableaddon wowvision; es würde WowVision selbst ausschalten. D
 ### /wv soft
 
 Liest den Modus der weichen Zielerfassung und jeden Spielwert der weichen Zielerfassung vor, je eine Zeile: zuerst den Sperrmodus (Soft Target bei festem Ziel), dann Zeilen wie "SoftTargetEnemy 3 (default 0)". Ein Wert, der auf das Kampfende wartet, wird mit "after combat" und dem Wert markiert, den er bekommt, und ein Wert, den deine Spielversion nicht hat, mit "not available". Die Zeilen werden in den Chat ausgegeben und gesprochen. Siehe [Zielerfassung](../world/targeting.md).
+
+### /wv targetinfo
+
+Listet für dein aktuelles Ziel alles auf, was die Zielansage sagen kann: die Art der Einheit, ob gerade Im Kampf oder Außerhalb des Kampfes gilt, und jede Angabe dieser Art mit dem, was sie für dieses Ziel sagt, ob ihr Kontrollkästchen an ist und ob deine Spielversion sie anbietet. Danach die Zeilen des Tooltips deines Ziels und zuletzt die Ansage, so wie du sie hörst. Die Liste öffnet sich im Ergebnisfenster und steht im Chat, die Ansage wird gesprochen. Eine Angabe, die das Spiel gerade verbirgt, steht dort als <secret>. Das hilft bei Fehlerberichten. Die Zeilen sind auf Englisch. Siehe [Zielerfassung](../world/targeting.md#was-angesagt-wird-namen).
 
 ### /wv mscan
 

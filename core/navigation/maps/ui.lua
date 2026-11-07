@@ -76,6 +76,12 @@ local function ensureData(screen)
     if target ~= nil then
         local wp = { id = TARGET_ID, n = target.label, x = target.x, y = target.y, virtual = true, onArrive = target.onArrive,
             routeData = target.data }
+        -- a route engine that knows the same target (WowNav: the creature, or a target of that name, near the
+        -- position) routes to its own row, with the height the position alone lacks
+        local row = module:engineMatch(screen._engine, target, map)
+        if row ~= nil then
+            wp.x, wp.y, wp.z, wp.routeData = row.x, row.y, row.z, row
+        end
         screen._waypoints[TARGET_ID] = wp
         screen._target = wp
         screen._destIndex = 1
@@ -408,5 +414,5 @@ module:registerBinding({
     key = "maps/openNavigation",
     label = L["Navigation"],
     inputs = { "F10" },
-    script = "/run WowVision.UIHost:openWindow('atlas')",
+    script = "/run WowVision.base.navigation.maps:openNavigationFromKey()",
 })

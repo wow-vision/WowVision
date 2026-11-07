@@ -36,7 +36,7 @@ Things WowNav does not do:
 - No danger warnings about enemies or creature levels. The only exception is the enemy outpost warning described below.
 - Diving is yours. Water is flat in the data. The only dive route is the Ruins of Blackfathom in Darkshore.
 
-On a map the data does not know, F10 lists nothing and /beacon to answers "No route found". The scanner's Enter then sets a straight beacon, as it does without map data. If the place list of a map cannot be read at all, you hear "WowNav catalogue not usable" followed by a reason; include it in a bug report.
+On a map the data does not know, F10 lists nothing and /beacon to answers "No route found". The scanner's Enter then sets a straight beacon, as it does without map data. Where WowNav has data, the scanner's Enter on an NPC or object that WowNav's place list knows near that spot routes to WowNav's own entry of it, with its height; see [Scanner](./scanner.md). If the place list of a map cannot be read at all, you hear "WowNav catalogue not usable" followed by a reason; include it in a bug report.
 
 ## How it differs from the classic routes
 

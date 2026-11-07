@@ -172,7 +172,7 @@ Bild auf und Bild ab scrollen eine Liste um eine volle Seite und setzen dich auf
 
 In Listen, die die Tastatur für sich haben, kannst du einen Buchstaben drücken, um zum nächsten Eintrag zu springen, dessen Name damit beginnt. Das funktioniert in:
 
-- dem WowVision-Menü und jedem Einstellungsbildschirm darin,
+- dem WowVision-Menü und jedem Einstellungsbildschirm darin, auch der Tastenbelegung (dort findet ein Buchstabe eine Aktion über ihren Namen),
 - Kontextmenüs,
 - den Dropdown-Menüs des Spiels.
 

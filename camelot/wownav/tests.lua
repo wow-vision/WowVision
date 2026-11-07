@@ -218,6 +218,17 @@ local suite = {
             :find("diving depth 3.0", 1, true))
     end,
 
+    ["a target without a height on its network point is reached, no unchecked last stretch"] = function(t)
+        t:assertTrue(Route.reachesTarget(nil, 1.5))
+        t:assertTrue(Route.reachesTarget({ quality = "exact" }, 1.5))
+        t:assertTrue(Route.reachesTarget({ quality = "approximate", deltaXY = 0, zUnknown = true }, 1.5),
+            "a quest marker or the current target on Forever: no height, on the network")
+        t:assertFalse(Route.reachesTarget({ quality = "approximate", deltaXY = 4.2, zUnknown = true }, 1.5),
+            "the network ends before the target")
+        t:assertFalse(Route.reachesTarget({ quality = "approximate", deltaXY = 0, normalizedWater = true }, 1.5),
+            "under water the diving stays unchecked")
+    end,
+
     ["his choke fallback switch is read from WowVisionNavigationDB"] = function(t)
         local saved = _G.WowVisionNavigationDB
         _G.WowVisionNavigationDB = nil
@@ -510,6 +521,30 @@ if haveNetwork then
         end
         -- every routed hit is a direct hit too, the direct list reaches no farther
         t:assertTrue(direct[#direct].distance <= routed[#routed].distance)
+    end
+
+    suite["a scanner target is found in the catalogue: by creature, else by name, near its position"] = function(t)
+        setup()
+        local rows = zoneRows(STORMWIND)
+        local innkeeper = rowsWith(rows, "innkeeper")
+        t:assertNotNil(innkeeper, "Stormwind has an innkeeper")
+        t:assertNotNil(innkeeper.creatureEntry, "a creature's row carries its creature ID")
+        -- the quest database's spawn lies a few yards off the catalogue's point
+        local x, y = innkeeper.x + 12, innkeeper.y - 9
+        local byId = catalog.matchRow(N, C, 0, { kind = "npc", id = innkeeper.creatureEntry, name = "someone else" }, x, y)
+        t:assertNotNil(byId, "the same creature near the position")
+        t:assertEqual(byId.id, innkeeper.id)
+        t:assertNotNil(byId.z, "the catalogue's row brings the height")
+        local byName = catalog.matchRow(N, C, 0, { kind = "object", name = "  " .. innkeeper.n:upper() .. " " }, x, y)
+        t:assertNotNil(byName, "the same name near the position, case and spaces aside")
+        t:assertEqual(byName.id, innkeeper.id)
+        local english = catalog.matchRow(N, C, 0, { name = innkeeper.nameEn }, x, y)
+        t:assertEqual(english and english.id, innkeeper.id, "the English name finds it too")
+        t:assertNil(catalog.matchRow(N, C, 0, { name = "No Such Target Anywhere" }, x, y), "an unknown name")
+        t:assertNil(catalog.matchRow(N, C, 0, { name = innkeeper.n }, innkeeper.x + 500, innkeeper.y),
+            "too far from the position: another place")
+        t:assertNil(catalog.matchRow(N, C, 0, nil, x, y))
+        t:assertNil(catalog.matchRow(N, C, 0, { name = "" }, x, y))
     end
 
     suite["F10's entry points: the nearest 50, waypoints beside the player always, farther ones with the setting"] = function(t)
@@ -1343,7 +1378,7 @@ if haveNetwork then
     -- waypoint; the game teleports the player once he is in the portal's source volume, at its height. unseen: the
     -- teleport comes before any update sees him in it. Returns the transit event, the continuation's state after the
     -- landing, the walked route, the index of the waypoint the player walked to at the transit and at the portal ahead.
-    local function throughPortal(t, map, zoneId, portalId, unseen)
+    local function throughPortal(t, map, zoneId, portalId, unseen, radius)
         setup()
         N.activeMapId = map
         local game = newGame()
@@ -1358,6 +1393,7 @@ if haveNetwork then
         end
         t:assertNotNil(portal, portalId)
         local sv, av = portal.sourceVolume, portal.arrivalVolume
+        sv.radius = radius or sv.radius
         local startId
         for i = 0, 5000 do
             local id = zoneId * N.ZONE_BASE + i
@@ -1419,14 +1455,15 @@ if haveNetwork then
     end
 
     suite["a portal at the route's last waypoint: the route waits for it, seen in it or not"] = function(t)
-        -- Rut'theran to Darnassus: the route's last waypoint lies on the rim of the 10 yd portal (10.0 yd from its
-        -- centre, data 23b1131)
-        local transit, state, route, at = throughPortal(t, 1, 57, "portal:areatrigger:542", false)
+        -- Rut'theran to Darnassus: the route's last waypoint lies 10.4 yd from the centre of the 10 yd portal (data
+        -- 0d79304), so the volume is widened to put it on the rim, the case this test is about
+        local radius = 11
+        local transit, state, route, at = throughPortal(t, 1, 57, "portal:areatrigger:542", false, radius)
         t:assertEqual(at, #route.path, "in the portal at the route's last waypoint")
         t:assertTrue(transit.sourceEntered == true)
         t:assertTrue(transit.announced == true, "said before the portal, not again in it")
         t:assertEqual(state, "arrived", "the route goes on in Darnassus")
-        transit, state = throughPortal(t, 1, 57, "portal:areatrigger:542", true)
+        transit, state = throughPortal(t, 1, 57, "portal:areatrigger:542", true, radius)
         t:assertTrue(transit.teleported == true, "only the landing was seen")
         t:assertTrue(transit.announced == true, "said before the teleport")
         t:assertEqual(state, "arrived")
