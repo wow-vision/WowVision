@@ -94,9 +94,12 @@ loadAddonFile("camelot/wownav/tests.lua")
 -- suite can play the game's side.
 do
     local hooks, eventFrame = {}, nil
-    local game = { moving = false, falling = false, now = 0 }
+    local game = { moving = false, falling = false, combat = false, now = 0 }
     function GetTime()
         return game.now
+    end
+    function UnitAffectingCombat(unit)
+        return unit == "player" and game.combat
     end
     function IsPlayerMoving()
         return game.moving
@@ -137,7 +140,8 @@ do
         for key in pairs(movement.flags) do
             movement.flags[key] = false
         end
-        game.moving, game.falling = false, false
+        game.moving, game.falling, game.combat = false, false, false
+        movement.attacking = false
     end
 
     WowVision.testing.testRunner:addSuite("Movement", {
@@ -200,6 +204,23 @@ do
             call("TurnLeftStart")
             t:assertEqual(movement.lastCommandAt, 7)
             call("TurnLeftStop")
+        end,
+
+        ["in combat, auto-attack with no key held is the game chasing the enemy"] = function(t)
+            reset()
+            t:assertFalse(movement:isChasing())
+            event("PLAYER_ENTER_COMBAT")
+            -- The walk up to the enemy, before the fight: obstacles count.
+            t:assertFalse(movement:isChasing())
+            game.combat = true
+            t:assertTrue(movement:isChasing())
+            -- A held key makes the movement yours again: walls still count.
+            call("MoveForwardStart")
+            t:assertFalse(movement:isChasing())
+            call("MoveForwardStop")
+            t:assertTrue(movement:isChasing())
+            event("PLAYER_LEAVE_COMBAT")
+            t:assertFalse(movement:isChasing())
         end,
 
         ["a stale key flag does not count while the game says standing"] = function(t)
