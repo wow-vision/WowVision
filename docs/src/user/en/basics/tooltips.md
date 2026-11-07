@@ -41,6 +41,17 @@ When the tooltip belongs to an item, WowVision adds two lines the game does not 
 
 Money in a tooltip is read with its coins. The game shows gold, silver and copper as small coin pictures, which speech would leave out. WowVision reads the sell price and other amounts as "Sell Price: 1 Gold, 23 Silver, 45 Copper". An item worth only a few coins reads, for example, "Sell Price: 7 Copper".
 
+## Pawn's upgrades and the item you wear
+
+On gear, WowVision adds lines at the end of the tooltip. Shift+Down reads them one at a time and Space reads them with the rest.
+
+- **Pawn's upgrades.** If the Pawn addon is installed and says the item is an upgrade, there is one line per Pawn scale it upgrades: "Pawn: Hunter: Marksmanship, upgrade of 12 percent, over Rusty Helm". "Big upgrade" replaces the percentage when Pawn gives none (an empty slot, a huge gain). Nothing is said when Pawn sees no upgrade. These lines replace the upgrade lines Pawn writes into the tooltip itself, so you do not hear each upgrade twice; Pawn's other lines stay.
+- **The comparison with what you wear.** "Compared to equipped: Rusty Helm", then the item level difference, then every stat that differs: armor and damage first, then the main stats, then the others by name. For example "Item level: 5 more", "Armor: 10 more", "Intellect: 4 less". Rings and trinkets are compared with both slots ("Slot 1 of 2: ..."). A one-hand weapon is compared with the off hand only when that holds a weapon. A two-hander adds "Also takes off the off hand: ...". An empty slot says "Nothing equipped in this slot". The item you already wear is not compared with itself.
+
+Amounts are spelled out ("5 more", "3 less") rather than "+5" and "-3", which speech engines read inconsistently. The stats come from the item itself, its suffix and bonuses included, and do not count gems or enchantments.
+
+To switch a part off, open the [WowVision menu](./menu-and-settings.md) with Shift+F1, then UI, Tooltip, Compare. Pawn Summary and Compare With Equipped Item are checkboxes, on by default. The Enabled checkbox at the top switches both off.
+
 ## Item quality in names
 
 In lists and slots, item names carry the quality as the colour a sighted player sees the name in, so you hear "Fur Boots, White" or "Thunderfury, Orange". This only affects names. The tooltip always reads the quality name ("Common", "Legendary") whatever you choose below.

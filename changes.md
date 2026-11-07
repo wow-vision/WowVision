@@ -8,6 +8,7 @@ The first update since launch: a rebuilt quest log for Retail and WoW: Forever, 
 The full manual is online, in English and German: [WowVision documentation](https://wow-vision.github.io/WowVision/).
 
 ### All Versions
+* Item tooltips now end with Pawn's upgrade summary and a comparison with the item you wear in that slot, read line by line with Shift+Down or all at once with Space. Pawn's summary has one line per scale the item upgrades ("Pawn: Hunter: Marksmanship, upgrade of 12 percent, over Rusty Helm") and replaces the upgrade lines Pawn writes itself. The comparison gives the item level difference and every stat that changes ("Armor: 10 more", "Intellect: 4 less"), for both rings and trinkets, a one-hand weapon against the off hand when it holds a weapon, and a two-hander also names the off hand it takes off. Two checkboxes under UI, Tooltip, Compare turn the parts off.
 * Buffers are now account-wide by default, so a group or buffer you add or change on one character is there on all of them. Press Shift+F10 on a group and use Scope to keep it on one character.
 * Targeting, Names: choose what a target announcement says, with separate choices for in combat and out of combat, and for players, NPCs, mobs, pets and totems. It is off by default, so you hear the full tooltip as before until you turn on Configured Target Announcement. /wv targetinfo lists what each fact says for your target.
 * Targeting: a new Target of Target binding makes your target's target your target. It works in combat and has no default key, because R stays the game's reply key.

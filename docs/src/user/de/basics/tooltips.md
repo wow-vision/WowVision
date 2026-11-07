@@ -41,6 +41,17 @@ Gehört der Tooltip zu einem Gegenstand, ergänzt WowVision zwei Zeilen, die das
 
 Geld im Tooltip wird mit seinen Münzen vorgelesen. Das Spiel zeigt Gold, Silber und Kupfer als kleine Münzbilder, die die Sprachausgabe weglassen würde. WowVision liest den Verkaufspreis und andere Beträge als „Verkaufspreis: 1 Gold, 23 Silber, 45 Kupfer“. Ein Gegenstand, der nur ein paar Münzen wert ist, klingt zum Beispiel so: „Verkaufspreis: 7 Kupfer“.
 
+## Pawns Aufwertungen und der Gegenstand, den du trägst
+
+Bei Ausrüstung hängt WowVision Zeilen ans Ende des Tooltips. Mit Umschalt+Pfeil runter liest du sie eine nach der anderen, mit der Leertaste zusammen mit dem Rest.
+
+- **Pawns Aufwertungen.** Ist das Addon Pawn installiert und sagt, der Gegenstand sei eine Aufwertung, gibt es eine Zeile pro Pawn-Skala, für die er eine ist: "Pawn: Jäger: Treffsicherheit, Aufwertung um 12 Prozent, gegenüber Rostiger Helm". "Große Aufwertung" ersetzt die Prozentzahl, wenn Pawn keine nennt (leerer Platz, riesiger Gewinn). Sieht Pawn keine Aufwertung, wird nichts gesagt. Diese Zeilen ersetzen die Aufwertungszeilen, die Pawn selbst in den Tooltip schreibt, damit du nicht jede Aufwertung doppelt hörst; Pawns übrige Zeilen bleiben.
+- **Der Vergleich mit dem, was du trägst.** "Verglichen mit dem angelegten Gegenstand: Rostiger Helm", dann der Unterschied der Gegenstandsstufe, dann jeder Wert, der abweicht: zuerst Rüstung und Schaden, dann die Hauptwerte, dann die übrigen nach Namen. Zum Beispiel "Gegenstandsstufe: 5 mehr", "Rüstung: 10 mehr", "Intelligenz: 4 weniger". Ringe und Schmuckstücke werden mit beiden Plätzen verglichen ("Platz 1 von 2: ..."). Eine Einhandwaffe wird nur dann mit der Nebenhand verglichen, wenn dort eine Waffe liegt. Eine Zweihandwaffe fügt "Nimmt auch die Nebenhand ab: ..." hinzu. Ein leerer Platz sagt "Nichts angelegt auf diesem Platz". Der Gegenstand, den du schon trägst, wird nicht mit sich selbst verglichen.
+
+Die Beträge werden ausgeschrieben ("5 mehr", "3 weniger") statt "+5" und "-3", die Sprachausgaben uneinheitlich lesen. Die Werte stammen vom Gegenstand selbst, mit Suffix und Boni, und zählen keine Edelsteine oder Verzauberungen mit.
+
+Um einen Teil abzuschalten, öffne das [WowVision-Menü](./menu-and-settings.md) mit Umschalt+F1, dann UI, Tooltip, Vergleichen. Pawn-Zusammenfassung und Mit angelegtem Gegenstand vergleichen sind Kontrollkästchen, standardmäßig an. Das Kästchen Aktiviert oben schaltet beide ab.
+
 ## Gegenstandsqualität in Namen
 
 In Listen und auf Plätzen tragen Gegenstandsnamen die Qualität als die Farbe, in der ein sehender Spieler den Namen sieht, sodass du „Pelzstiefel, Weiß“ oder „Donnerzorn, Orange“ hörst. Das betrifft nur Namen. Der Tooltip liest immer den Qualitätsnamen („Verbreitet“, „Legendär“), egal was du unten einstellst.

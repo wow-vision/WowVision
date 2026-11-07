@@ -8,5 +8,6 @@
   <Script file="combat.lua" />
   <Script file="tooltip.lua" />
   <Script file="tooltipQuality.lua" />
+  <Script file="tooltipCompare.lua" />
 
 </Ui>
