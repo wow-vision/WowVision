@@ -336,6 +336,7 @@ end
 -- Straight-line beacon to a world position (no routing). onArrive, if
 -- given, runs after "Arrived" is spoken.
 function module:beaconTo(wx, wy, label, onArrive)
+    self:guidanceStarts()
     local px, py = UnitPosition("player")
     local path = self.Path:new()
     path:add({ x = wx, y = wy, n = label })
@@ -359,6 +360,32 @@ end
 -- The destination last picked (F10's Enter, the visited waypoints' keys):
 -- what "the nearest unvisited of the same name" is named like.
 module.lastDestination = nil
+
+-- An auto chain (navigation/visited.lua) leads only the legs it starts
+-- itself, through leadingChain (Ctrl-Shift-N on its leg too): any other
+-- guidance -- another destination, a beacon, Ctrl-Shift-R -- ends it.
+module.chainLeg = false
+
+function module:guidanceStarts()
+    if self.chainLeg then
+        return
+    end
+    local visited = WowVision.base.navigation.visited
+    if visited ~= nil then
+        visited:endAuto()
+    end
+end
+
+function module:leadingChain(start)
+    self.chainLeg = true
+    local ok, result = pcall(start)
+    self.chainLeg = false
+    if not ok then
+        geterrorhandler()(result)
+        return false
+    end
+    return result
+end
 
 -- What runs when a picked destination is reached: it is remembered as
 -- visited (navigation/visited.lua), then its own onArrive runs, then an
@@ -460,6 +487,7 @@ end
 -- which plans them in the background). onChosen(wp) runs for the one picked
 -- before its route starts; it becomes the last picked destination.
 function module:routeToNearestWalk(candidates, onChosen)
+    self:guidanceStarts()
     local px, py, _, map = UnitPosition("player")
     if px == nil then
         WowVision:speak(L["Position unavailable"])
@@ -523,6 +551,13 @@ function module:restartRoute()
         WowVision:speak(L["No route to start again"])
         return false
     end
+    -- an auto chain's leg starts again and the chain goes on
+    local visited = WowVision.base.navigation.visited
+    if not self.chainLeg and visited ~= nil and visited:leads(wp) then
+        return self:leadingChain(function()
+            return self:restartRoute()
+        end)
+    end
     local px, py, _, map = UnitPosition("player")
     if px == nil then
         WowVision:speak(L["Position unavailable"])
@@ -570,6 +605,7 @@ module:registerBinding({
 -- none of its routes runs); the route data's route enters the network at
 -- that waypoint. The start becomes the last destination for Ctrl-Shift-N.
 function module:reverseRoute()
+    self:guidanceStarts()
     local engine = self:activeRouteEngine()
     if engine ~= nil and engine.reverseRoute ~= nil then
         local handled = engine:reverseRoute()
@@ -607,6 +643,7 @@ module:registerBinding({
 -- engine's too) ends first. Arrival says the point's name; onArrive runs
 -- after it.
 function module:directTo(wx, wy, label, onArrive)
+    self:guidanceStarts()
     local engine = self.routeEngine
     if engine ~= nil and engine.cancel ~= nil then
         engine:cancel()
@@ -666,6 +703,7 @@ end
 -- engine's own list (its target data). True when the active engine took it;
 -- false leaves it to the caller.
 function module:routeTo(wx, wy, label, onArrive, z, data, start)
+    self:guidanceStarts()
     local engine = self:activeRouteEngine()
     if engine == nil then
         return false
@@ -756,6 +794,7 @@ end
 -- opts passes through to the router (entryId for a user-chosen entry point);
 -- opts.onArrive runs after "Arrived" is spoken.
 function module:navigateTo(waypointId, waypoints, opts)
+    self:guidanceStarts()
     local px, py = UnitPosition("player")
     if px == nil then
         WowVision:speak(L["Position unavailable"])
@@ -843,7 +882,12 @@ end
 -- emits arriveAtWaypoint) and announces how many waypoints remain,
 -- current one included, like Sku's count-down.
 function module:stepWaypoint(offset)
+    local visited = WowVision.base.navigation.visited
     if self.path == nil then
+        -- an auto chain whose leg found no route steps on all the same
+        if visited ~= nil and visited:stepAuto(offset) then
+            return true
+        end
         WowVision:speak(L["No active waypoint"])
         return false
     end
@@ -853,7 +897,6 @@ function module:stepWaypoint(offset)
     self.stepping = false
     if waypoint == nil then
         -- past the ends of an auto chain's leg: its next or previous spot (navigation/visited.lua)
-        local visited = WowVision.base.navigation.visited
         if visited ~= nil and visited:stepAuto(offset) then
             return true
         end
@@ -897,6 +940,10 @@ function module:cancelNavigation()
     -- a route engine may hold guidance without a beacon (a search, a transit waiting for its far end)
     local engine = self.routeEngine
     local engineStopped = engine ~= nil and engine.cancel ~= nil and engine:cancel() == true
+    local visited = WowVision.base.navigation.visited
+    if visited ~= nil then
+        visited:endAuto()
+    end
     if not self:isGuiding() then
         if engineStopped then
             WowVision:speak(L["Beacon stopped"])

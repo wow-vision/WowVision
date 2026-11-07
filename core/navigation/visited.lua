@@ -10,11 +10,11 @@
 -- Auto mode chains that by itself (Shift-F10 on a destination in F10): each one reached leads on to the next
 -- unvisited one of the same name, until none is left. Auto Direct sets a direct point to the nearest in a straight
 -- line; Auto Route routes to the one the shortest walk reaches, of the AUTO_CANDIDATES nearest. It needs the visited
--- waypoints switched on: they are what the chain skips. The chain belongs to the destinations it picked: another
--- destination picked, or Shift-F12, and the arrival that would continue it never comes (a replaced route never
--- arrives); Ctrl-Shift-N restarts a leg and keeps the chain. Ctrl-W and Ctrl-S step through the chain like through a
--- route: past the end of a leg (a direct point is a leg of one point) the next spot -- one led to before, or the
--- nearest one the chain has not led to yet -- and before its start the spot before.
+-- waypoints switched on: they are what the chain skips. The chain leads only the legs it starts: any other guidance
+-- (another destination, a beacon, Ctrl-Shift-R) or Shift-F12 ends it, and so does its last spot; Ctrl-Shift-N
+-- restarts a leg and keeps the chain. Ctrl-W and Ctrl-S step through the chain like through a route: past the end of
+-- a leg (a direct point is a leg of one point) the next spot -- one led to before, or the nearest one the chain has
+-- not led to yet -- and before its start the spot before; a leg that found no route is stepped past the same way.
 local store = WowVision.visitedStore
 local maps = WowVision.base.navigation.maps
 
@@ -141,36 +141,50 @@ local function logLine(line)
 end
 
 -- The game events of each frame (at most EVENTS_KEPT) with the ms since the frame before ended: a long frame's line
--- names them, so a gap between two of them shows what the time went to (no event: an OnUpdate took it).
+-- names them, so a gap between two of them shows what the time went to (no event: an OnUpdate took it). Watched
+-- only while a chain runs.
 local EVENTS_KEPT = 30
 local hitchFrame
 local frameEvents, eventCount, frameStart = {}, 0, nil
-local function watchHitches()
-    if hitchFrame ~= nil then
+
+local function onHitchEvent(_, event)
+    if frameStart == nil then
         return
     end
-    hitchFrame = CreateFrame("Frame")
-    hitchFrame:RegisterAllEvents()
-    hitchFrame:SetScript("OnEvent", function(_, event)
-        if module.auto == nil or frameStart == nil then
+    eventCount = eventCount + 1
+    if eventCount <= EVENTS_KEPT then
+        frameEvents[eventCount] = string.format("%s +%.0f", event, debugprofilestop() - frameStart)
+    end
+end
+
+local function onHitchUpdate(_, elapsed)
+    if elapsed > HITCH_SECONDS then
+        local px, py = UnitPosition("player")
+        local shown = math.min(eventCount, EVENTS_KEPT)
+        logLine(string.format("frame of %.2f s at %.1f %.1f, now +%.0f, %d events: %s", elapsed, px or 0, py or 0,
+            frameStart and (debugprofilestop() - frameStart) or 0, eventCount,
+            table.concat(frameEvents, ", ", 1, shown)))
+    end
+    frameStart = debugprofilestop()
+    eventCount = 0
+end
+
+local function watchHitches(on)
+    if hitchFrame == nil then
+        if not on then
             return
         end
-        eventCount = eventCount + 1
-        if eventCount <= EVENTS_KEPT then
-            frameEvents[eventCount] = string.format("%s +%.0f", event, debugprofilestop() - frameStart)
-        end
-    end)
-    hitchFrame:SetScript("OnUpdate", function(_, elapsed)
-        if module.auto ~= nil and elapsed > HITCH_SECONDS then
-            local px, py = UnitPosition("player")
-            local shown = math.min(eventCount, EVENTS_KEPT)
-            logLine(string.format("frame of %.2f s at %.1f %.1f, now +%.0f, %d events: %s", elapsed, px or 0, py or 0,
-                frameStart and (debugprofilestop() - frameStart) or 0, eventCount,
-                table.concat(frameEvents, ", ", 1, shown)))
-        end
-        frameStart = debugprofilestop()
-        eventCount = 0
-    end)
+        hitchFrame = CreateFrame("Frame")
+        hitchFrame:SetScript("OnEvent", onHitchEvent)
+    end
+    frameStart, eventCount = nil, 0
+    if on then
+        hitchFrame:RegisterAllEvents()
+        hitchFrame:SetScript("OnUpdate", onHitchUpdate)
+    else
+        hitchFrame:UnregisterAllEvents()
+        hitchFrame:SetScript("OnUpdate", nil)
+    end
 end
 
 -- wp becomes the chain's current spot, after the one it is at (what came after that is dropped).
@@ -182,6 +196,11 @@ local function setCurrent(auto, wp)
     auto.index = #auto.history
     auto.seen[keyOf(wp)] = true
     auto.targets = { [wp] = true }
+end
+
+-- A chain's leg goes through maps:leadingChain: guidance started any other way ends the chain.
+local function lead(start)
+    return maps:leadingChain(start)
 end
 
 local function autoAllowed(self)
@@ -197,13 +216,31 @@ function module:startAuto(wp, mode)
     if not autoAllowed(self) then
         return false
     end
+    self:endAuto()
     local auto = { mode = mode, history = {}, index = 0, seen = {} }
     setCurrent(auto, wp)
     self.auto = auto
-    watchHitches()
+    watchHitches(true)
     logLine(string.format("start %s %s", mode, tostring(wp.n)))
     WowVision:speak(mode == "route" and L["Auto Route"] or L["Auto Direct"])
-    return maps:goToDestination(wp, mode == "direct")
+    return lead(function()
+        return maps:goToDestination(wp, mode == "direct")
+    end)
+end
+
+-- The chain ends: Shift-F12, guidance it did not start, its last spot, Visited Waypoints switched off.
+function module:endAuto()
+    if self.auto == nil then
+        return
+    end
+    self.auto = nil
+    watchHitches(false)
+    logLine("end")
+end
+
+-- Whether wp is where the running chain's leg leads (Ctrl-Shift-N keeps the chain then).
+function module:leads(wp)
+    return self.auto ~= nil and wp ~= nil and self.auto.targets[wp] == true
 end
 
 -- A picked destination was reached (maps:arrivalFor, after markVisited): the chain that led there goes on, a frame
@@ -216,7 +253,7 @@ function module:continueAuto(wp)
     auto.targets = {}
     logLine(string.format("arrived %s", tostring(wp.n)))
     if not autoAllowed(self) then
-        self.auto = nil
+        self:endAuto()
         return
     end
     C_Timer.After(0, function()
@@ -253,31 +290,40 @@ function module:autoNext(auto, last)
             return s
         end)
         WowVision:speak(string.format(L["No unvisited %s found"], name or ""))
+        self:endAuto()
         return false
     end
     if direct then
         setCurrent(auto, candidates[1].waypoint)
-        return maps:goToDestination(candidates[1].waypoint, true)
+        return lead(function()
+            return maps:goToDestination(candidates[1].waypoint, true)
+        end)
     end
     -- the walk decides which one, perhaps later (a route engine plans in the background): every candidate may be it
     auto.targets = {}
     for _, candidate in ipairs(candidates) do
         auto.targets[candidate.waypoint] = true
     end
-    return maps:routeToNearestWalk(candidates, function(wp)
-        if self.auto == auto then
-            setCurrent(auto, wp)
-        end
+    return lead(function()
+        return maps:routeToNearestWalk(candidates, function(wp)
+            if self.auto == auto then
+                setCurrent(auto, wp)
+            end
+        end)
     end)
 end
 
--- Ctrl-W / Ctrl-S past the ends of the leg a chain leads (maps:stepWaypoint): the spot after (one led to before, or
--- the next of the chain) or before. False when no chain leads the way: the step says the route's end as before.
+-- Ctrl-W / Ctrl-S past the ends of the leg a chain leads, or on a leg that found no route (maps:stepWaypoint): the
+-- spot after (one led to before, or the next of the chain) or before. The leg's destinations not reached are passed
+-- over from then on. False when no chain runs: the step says the route's end as before.
 function module:stepAuto(offset)
     local auto = self.auto
-    local current = maps.lastDestination
-    if auto == nil or current == nil or not auto.targets[current] then
+    local current = auto ~= nil and auto.history[auto.index] or nil
+    if current == nil then
         return false
+    end
+    for wp in pairs(auto.targets) do
+        auto.seen[keyOf(wp)] = true
     end
     self:autoStep(auto, current, offset)
     return true
@@ -297,7 +343,9 @@ function module:autoStep(auto, current, offset)
     end
     auto.index = auto.index + step
     auto.targets = { [wp] = true }
-    return maps:goToDestination(wp, auto.mode == "direct")
+    return lead(function()
+        return maps:goToDestination(wp, auto.mode == "direct")
+    end)
 end
 
 module:registerBinding({
