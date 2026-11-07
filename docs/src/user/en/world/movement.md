@@ -10,6 +10,7 @@ Everything here is in the WowVision menu (type /wv) under Navigation. The route 
 | Navigation, Compass | Facing, zone, indoors/outdoors, flying, swimming and diving alerts |
 | Navigation, Fall Detection | Falling sounds and announcement |
 | Navigation, Wall Detection | Collision sounds |
+| Navigation, Name What I Bump Into | Names the object or wall you are blocked by |
 | Navigation, Follow | Sounds for following and un-following |
 | Navigation, Pitch Lock | Keeps you level in water and air |
 
@@ -105,6 +106,21 @@ Settings: open Navigation, Wall Detection, then Wall Detection (the alert).
 |---------|---------|--------------|
 | Enabled | On | Switches wall detection on or off |
 | Blocked, Mostly Blocked, Impeded, Slowed, Slightly Slowed | All on | Five sound outputs, each with its own Enabled switch and Sound choice, so you can for instance keep only the two hardest ones |
+
+## What you bump into
+
+When wall detection says you are blocked, WowVision also says what you are pushing against, if it knows: the object in your way ("barrel", "fence", "mine cart", "tree"), outdoors the wall of the building or structure ahead ("wall of Stormwind Keep", "wall of Stormwind City"), indoors "wall". It is said once per bump. The same thing is said again only after you moved freely for a moment; something else is said at once.
+
+It knows the places WowVision has map data for, read from each game version's own map files:
+
+- TBC Anniversary: Elwynn Forest with Stormwind, Dun Morogh with Ironforge, Tirisfal Glades with the Undercity, the Deeprun Tram, Teldrassil with Darnassus, and the Swamp of Sorrows.
+- WoW: Forever: Elwynn Forest with Stormwind, Dun Morogh with Ironforge, Tirisfal Glades with the Undercity, the Deeprun Tram, and Zephras Isle.
+- Classic Era: Elwynn Forest with Stormwind, and Dun Morogh with Ironforge.
+- Mists of Pandaria Classic and Retail: no places yet.
+
+Elsewhere you hear only the wall detection's sounds. Indoors where floors lie on top of each other, the objects of the room you walked into through a doorway count. Nothing is said while wall detection is off, while swimming or on a flight path. Names are in English, German and French.
+
+Settings: open Navigation, Name What I Bump Into, then Name What I Bump Into (the alert). It has an Enabled switch and a TTS Alert. The TTS Alert speaks with a game voice of its own (the first one), not your speech voice, so a screen reader does not cut it off when you press the next movement key.
 
 ## Follow
 

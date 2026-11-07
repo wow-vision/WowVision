@@ -44,5 +44,7 @@
        mapdata/WowNavPacked. -->
   <Include file="wownav\modules.xml" />
   <Include file="..\mapdata\WowNavPacked\data.xml" />
+  <!-- what the player bumps into (core/navigation/bumps.lua), written by tools/bumps-pack.lua -->
+  <Include file="..\mapdata\bumps\forever\data.xml" />
 
 </Ui>
