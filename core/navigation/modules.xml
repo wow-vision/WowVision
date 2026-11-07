@@ -7,6 +7,9 @@
   <Script file="stuckMath.lua" />
   <Script file="stuckTests.lua" />
   <Script file="walls.lua" />
+  <Script file="bumpLogic.lua" />
+  <Script file="bumpTests.lua" />
+  <Script file="bumps.lua" />
   <Script file="falling.lua" />
   <Script file="compass.lua" />
   <Script file="follow.lua" />

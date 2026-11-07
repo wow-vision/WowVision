@@ -10,6 +10,7 @@ Alles hier steht im WowVision-Menü (tippe /wv) unter Navigation. Die Routen- un
 | Navigation, Kompass | Alarme für Blickrichtung, Gebiet, drinnen/draußen, Fliegen, Schwimmen und Tauchen |
 | Navigation, Fallerkennung | Fallgeräusche und Ansage |
 | Navigation, Wanderkennung | Kollisionsgeräusche |
+| Navigation, Benennen, wogegen ich laufe | Nennt den Gegenstand oder die Wand, die dich aufhält |
 | Navigation, Folgen | Töne für das Folgen und das Beenden des Folgens |
 | Navigation, Neigungssperre | Hält dich im Wasser und in der Luft waagerecht |
 
@@ -105,6 +106,21 @@ Einstellungen: Öffne Navigation, Wanderkennung, dann Wanderkennung (der Alarm).
 |-------------|----------|-------------|
 | Aktiviert | An | Schaltet die Wanderkennung ein oder aus |
 | Blockiert, Größtenteils blockiert, Behindert, Verlangsamt, Leicht verlangsamt | Alle an | Fünf Soundausgaben, jede mit eigenem Schalter Aktiviert und eigener Auswahl Sound, sodass du zum Beispiel nur die zwei härtesten behalten kannst |
+
+## Was dir im Weg steht
+
+Wenn die Wanderkennung meldet, dass du blockiert bist, sagt WowVision auch, wogegen du drückst, sofern es das weiß: den Gegenstand in deinem Weg ("Fass", "Zaun", "Lore", "Baum"), draußen die Wand des Gebäudes oder Bauwerks vor dir ("Wand von Burg Sturmwind"), drinnen "Wand". Das wird einmal pro Anstoßen gesagt. Dasselbe wird erst wieder gesagt, nachdem du dich einen Moment frei bewegt hast; etwas anderes sofort.
+
+Es kennt die Orte, für die WowVision Kartendaten hat, gelesen aus den Kartendateien der jeweiligen Spielversion:
+
+- TBC Anniversary: Wald von Elwynn mit Sturmwind, Dun Morogh mit Eisenschmiede, Tirisfal mit Unterstadt, die Tiefenbahn, Teldrassil mit Darnassus und die Sümpfe des Elends.
+- WoW: Forever: Wald von Elwynn mit Sturmwind, Dun Morogh mit Eisenschmiede, Tirisfal mit Unterstadt, die Tiefenbahn und die Insel Zephras.
+- Classic Era: Wald von Elwynn mit Sturmwind und Dun Morogh mit Eisenschmiede.
+- Mists of Pandaria Classic und Retail: noch keine Orte.
+
+Anderswo hörst du nur die Töne der Wanderkennung. Das Spiel nennt keine Höhe, deshalb folgt WowVision dort, wo Etagen übereinanderliegen, dem Raum, den du durch eine Tür betreten hast, und behält ihn über ein Neuladen. Wo es den Raum nicht kennt (nach einem Ruhestein oder Portal in ein Gebäude), zählen die Gegenstände aller Räume an dieser Stelle; dann kann ab und zu ein Gegenstand der Etage darüber oder darunter genannt werden, bis du durch eine Tür gehst. In den großen Hallen, die das Spiel draußen nennt (Eisenschmiede, Unterstadt), sagen die Karte und das Gebiet des Spiels, wann du drin bist. Nichts wird gesagt, solange die Wanderkennung aus ist, beim Schwimmen oder auf einem Flug. Die Namen gibt es auf Englisch, Deutsch und Französisch.
+
+Einstellungen: Öffne Navigation, Benennen, wogegen ich laufe, dann Benennen, wogegen ich laufe (der Alarm). Er hat einen Schalter Aktiviert und einen TTS-Alarm. Der TTS-Alarm spricht mit einer eigenen Spielstimme (der ersten), nicht mit deiner Sprachausgabe, damit ein Screenreader ihn beim nächsten Bewegungstastendruck nicht abschneidet.
 
 ## Folgen
 

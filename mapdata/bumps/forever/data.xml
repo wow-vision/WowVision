@@ -1,0 +1,7 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="deeprun.lua" />
+  <Script file="dunmorogh.lua" />
+  <Script file="elwynn.lua" />
+  <Script file="undercity.lua" />
+  <Script file="zephras.lua" />
+</Ui>
