@@ -81,6 +81,10 @@ function scanner:registerWindow(window)
     self.window = window
 end
 function scanner:registerBinding() end
+scanner.providers = {}
+function scanner:registerProvider(provider)
+    self.providers[provider.key] = provider
+end
 function scanner:buildTree()
     self.builds = self.builds + 1
     return {
@@ -109,9 +113,25 @@ function scanner:buildTree()
                     end,
                 },
                 { key = "nearby", label = "Nearby", children = {} },
+                {
+                    key = "later",
+                    label = "Later",
+                    children = function()
+                        return {}
+                    end,
+                },
             },
         },
         { key = "npcs", label = "NPCs", children = { { key = "npc:1", label = "Marshal", x = 5, y = 5 } } },
+        { key = "group", label = "Group", children = {} },
+        {
+            key = "player",
+            label = "Player",
+            children = {
+                { key = "self", label = "Anna", detail = "Level 12", unit = "player" },
+                { key = "unit:party1", label = "Bert", unit = "party1", x = 3, y = 4 },
+            },
+        },
     }
 end
 
@@ -119,6 +139,8 @@ do
     local savedBase = WowVision.base
     WowVision.base = { scanner = scanner }
     local chunk = assert(loadfile("core/scanner/ui.lua"))
+    chunk("WowVision", {})
+    chunk = assert(loadfile("core/scanner/providers.lua"))
     chunk("WowVision", {})
     WowVision.base = savedBase
 end
@@ -224,8 +246,10 @@ testRunner:addSuite("ScannerMenu", {
             t:assertEqual((focused(host)), "In Progress")
             press(host, "down")
             t:assertEqual((focused(host)), "Nearby")
+            t:assertEqual(lastSpoken(host), "Nearby, Button, Empty")
             press(host, "down")
-            t:assertEqual(lastSpoken(host), "Nearby, Button") -- the end reads again
+            press(host, "down")
+            t:assertEqual(lastSpoken(host), "Later, Button") -- the end reads again
         end)
     end,
 
@@ -319,13 +343,64 @@ testRunner:addSuite("ScannerMenu", {
         end)
     end,
 
-    ["an empty category opens a level that says Empty"] = function(t)
+    ["an empty category stays in place, reads Empty and does not open"] = function(t)
         withHost(function(host)
-            openScanner(host, false)
+            local stack = openScanner(host, false)
+            press(host, "down")
+            press(host, "down")
+            t:assertEqual((focused(host)), "Group")
+            enter(host)
+            t:assertEqual(#stack.screens, 1)
+            t:assertEqual(lastSpoken(host), "Empty")
+            press(host, "right")
+            t:assertEqual(#stack.screens, 1)
+            t:assertEqual(lastSpoken(host), "Empty")
+        end)
+    end,
+
+    ["an entry built when opened does not open when it turns out empty"] = function(t)
+        withHost(function(host)
+            local stack = openScanner(host, false)
             enter(host) -- Quests
             press(host, "down")
-            enter(host) -- Nearby
-            t:assertEqual((focused(host)), "Empty")
+            press(host, "down")
+            t:assertEqual((focused(host)), "Later")
+            enter(host)
+            t:assertEqual(#stack.screens, 2)
+            t:assertEqual(lastSpoken(host), "Empty")
+        end)
+    end,
+
+    ["in the tree an empty category is no group and Enter says Empty"] = function(t)
+        withHost(function(host)
+            local stack = openScanner(host, true)
+            press(host, "down") -- In Progress
+            press(host, "down") -- Nearby
+            local label, node = focused(host)
+            t:assertEqual(label, "Nearby")
+            t:assertFalse(node.expandable == true)
+            enter(host)
+            t:assertEqual(lastSpoken(host), "Empty")
+            t:assertEqual(#stack.screens, 1)
+        end)
+    end,
+
+    ["a unit entry targets on Enter, one with a place routes on Backspace"] = function(t)
+        withHost(function(host)
+            local stack = openScanner(host, false)
+            scanner:openMenuPath(stack, { "player", "self" })
+            local label, node = focused(host)
+            t:assertEqual(label, "Anna")
+            t:assertEqual(node.vtable.bindings[1].binding, "leftClick")
+            t:assertEqual(node.vtable.bindings[1].type, "Target")
+            t:assertEqual(node.vtable.bindings[1].unit, "player")
+            t:assertEqual(node.vtable.onActivate, nil)
+            t:assertEqual(node.vtable.onSecondary, nil)
+            press(host, "down")
+            label, node = focused(host)
+            t:assertEqual(label, "Bert")
+            t:assertEqual(node.vtable.bindings[1].unit, "party1")
+            t:assertTrue(node.vtable.onSecondary ~= nil)
         end)
     end,
 
@@ -377,6 +452,139 @@ testRunner:addSuite("ScannerMenu", {
             t:assertEqual(#stack.screens, 1)
             press(host, "down")
             t:assertEqual((focused(host)), "Kobold Camp")
+        end)
+    end,
+})
+
+-- ---- the Player and Group categories (core/scanner/providers.lua) ----
+
+local function gameReads(overrides)
+    local api = {
+        UnitLevel = function()
+            return 60
+        end,
+        UnitRace = function()
+            return "Human"
+        end,
+        UnitClass = function()
+            return "Warrior"
+        end,
+        GetGuildInfo = function()
+            return "Order of Light"
+        end,
+    }
+    for key, value in pairs(overrides or {}) do
+        api[key] = value
+    end
+    return api
+end
+
+-- Run fn with the game's unit globals faked for the providers' builds.
+local function withGame(globals, fn)
+    local saved = {}
+    for key, value in pairs(globals) do
+        saved[key] = _G[key]
+        _G[key] = value
+    end
+    local ok, err = pcall(fn)
+    for key in pairs(globals) do
+        _G[key] = saved[key]
+    end
+    if not ok then
+        error(err, 0)
+    end
+end
+
+testRunner:addSuite("ScannerUnits", {
+    ["you are described by level, race, class and guild"] = function(t)
+        t:assertEqual(
+            scanner.unitDescription("player", gameReads()),
+            "Level 60, Human, Warrior, Guild: Order of Light"
+        )
+    end,
+
+    ["what the game does not give is left out"] = function(t)
+        local text = scanner.unitDescription("player", gameReads({
+            GetGuildInfo = function()
+                return nil
+            end,
+            UnitRace = function()
+                error("no race here")
+            end,
+        }))
+        t:assertEqual(text, "Level 60, Warrior")
+    end,
+
+    ["Player lists you first, then the rest"] = function(t)
+        withGame({
+            UnitName = function()
+                return "Anna"
+            end,
+            C_Map = {
+                GetBestMapForUnit = function()
+                    return 1
+                end,
+            },
+            UnitIsGhost = function()
+                return false
+            end,
+            UnitIsDeadOrGhost = function()
+                return false
+            end,
+            C_DeathInfo = {},
+        }, function()
+            local out = scanner.providers.player.build({})
+            t:assertEqual(out[1].label, "Anna")
+            t:assertEqual(out[1].unit, "player")
+            t:assertEqual(out[2].key, "alive")
+        end)
+    end,
+
+    ["Group lists every member, a place only where the game gives one"] = function(t)
+        withGame({
+            IsInRaid = function()
+                return false
+            end,
+            GetNumGroupMembers = function()
+                return 3
+            end,
+            UnitExists = function(unit)
+                return unit == "party1" or unit == "party2"
+            end,
+            UnitIsUnit = function()
+                return false
+            end,
+            UnitName = function(unit)
+                return unit == "party1" and "Bert" or "Cleo"
+            end,
+            UnitPosition = function(unit)
+                if unit == "party1" then
+                    return 10, 20
+                end
+                return nil
+            end,
+        }, function()
+            local out = scanner.providers.group.build({})
+            t:assertEqual(#out, 2)
+            t:assertEqual(out[1].label, "Bert")
+            t:assertEqual(out[1].unit, "party1")
+            t:assertEqual(out[1].x, 10)
+            t:assertEqual(out[2].label, "Cleo")
+            t:assertEqual(out[2].x, nil)
+        end)
+    end,
+
+    ["Group is there with no group at all"] = function(t)
+        withGame({
+            IsInRaid = function()
+                return false
+            end,
+            GetNumGroupMembers = function()
+                return 0
+            end,
+        }, function()
+            t:assertEqual(#scanner.providers.group.build({}), 0)
+            t:assertEqual(scanner.providers.group.optional, nil)
         end)
     end,
 })

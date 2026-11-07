@@ -79,6 +79,7 @@ Press U in the main menu, then Enter. It contains:
 | Tooltip, then Quality | | Which item quality colours are spoken, see [Tooltips](./tooltips.md#item-quality-in-names). |
 | Bindings | | The keybinding screen, see [Keybindings](./keybindings.md). |
 | Interrupt Speech on Window Close | Off | Cut off speech whenever a window closes. |
+| Sounds on Opening and Closing WowVision Menus | On | Play a short sound when a WowVision window opens and another when it closes: the WowVision menu, the Scanner, the navigation window, the action bars and chat. The game's own windows make their own sounds and get none from WowVision. |
 | Letter Navigation in Menus | On | Let letter keys jump to entries in menus. Turn it off if you need your letter keys to keep working while a menu is open. |
 
 ### The Windows module

@@ -145,7 +145,7 @@ Der Alarm heißt Questfortschritt (Quest Progress Alert) und gehört zum Modul Q
 Der [Scanner](scanner.md) verwandelt Questdaten in Orte, zu denen du gehen kannst. Er ist der wichtigste Weg, mit WowVision Quests zu finden.
 
 - Quests, In der Nähe: Quests, die du in deiner Umgebung annehmen kannst, der nächste Questgeber zuerst.
-- Quests, Laufend: dein Log. Jede Quest, die die Datenquelle kennt, öffnet sich zu ihren Zielen, jedes Ziel zu den Kreaturen, Objekten und Gegenstandsquellen, um die es geht, und jede davon zu ihren Fundorten.
+- Quests, Laufend: dein Log, nach Zonen geordnet wie im Questlog, in jeder Zone die nächste Quest zuerst. Jede Quest, die die Datenquelle kennt, öffnet sich zu ihren Zielen, jedes Ziel zu den Kreaturen, Objekten und Gegenstandsquellen, um die es geht, und jede davon zu ihren Fundorten.
 - NPCs, Questgeber: dieselben Questgeber, nach NPC gruppiert.
 
 Eingabe auf einer Quest, einem Ziel, einem Ziel-NPC oder einem Fundort führt dich zu seinem Ort. Siehe [Navigation und Routen](navigation.md).
@@ -169,7 +169,7 @@ Die Liste In der Nähe lässt außerdem Quests weg, die du noch nicht annehmen k
 
 1. Geh zu einem Questgeber. Das Spiel öffnet das Questfenster. Du hörst den Namen des NPCs, dann "Quests" mit "Verfügbare Quest: A Threat Within" oder die Details der einzelnen Quest.
 2. Drücke Pfeil runter, um Beschreibung und Ziele zu lesen. Drücke Tab, dann Eingabe auf Annehmen.
-3. Drücke F9, öffne Quests, dann Laufend. Die Quest ist aufgelistet, "A Threat Within, 0 von 1". Drücke Pfeil rechts, um das Ziel zu öffnen, und noch einmal Pfeil rechts, um zu sehen, was du töten sollst, dann drücke Eingabe auf einem Fundort, um dorthin geführt zu werden.
+3. Drücke F9, öffne Quests, dann Laufend, dann Wald von Elwynn. Die Quest ist aufgelistet, "A Threat Within, 0 von 1". Drücke Pfeil rechts, um das Ziel zu öffnen, und noch einmal Pfeil rechts, um zu sehen, was du töten sollst, dann drücke Eingabe auf einem Fundort, um dorthin geführt zu werden.
 4. Draußen hörst du "Betrete Gebiet: A Threat Within", wenn du das Zielgebiet erreichst.
 5. Ist das Ziel erledigt, liest sich die Quest als "Abgeschlossen". Drücke F9, öffne sie und drücke Eingabe auf der Abgabe. Sprich den NPC an, gehe mit Tab zu Quest abschließen, wähle eine Belohnung, wenn es eine Auswahl gibt, dann Eingabe.
 

@@ -9,7 +9,8 @@ local L = quests.L
 -- Quests
 --   Nearby        available quests, nearest giver first; Enter beacons the
 --                 giver; a giver with several spawns expands to them
---   In Progress   the log; Enter beacons the first unfinished objective's
+--   In Progress   the log, one level per quest log zone, each zone's
+--                 quests nearest first (zones.lua); Enter beacons the first unfinished objective's
 --                 nearest target (the turn-in when complete), likewise
 --                 expanding to that target's spawns; with no target to walk
 --                 to, the game's own marker for the quest, then Questie's
@@ -437,9 +438,26 @@ function quests:questNavigationTarget(questId)
 end
 
 -- The scanner path of a quest in the log, for landing on it when the
--- scanner opens from the quest log.
+-- scanner opens from the quest log: under In Progress, its zone.
 function quests:scannerQuestPath(questId)
-    return { "quests", "inProgress", "quest:" .. tostring(questId) }
+    local zone = nil
+    local ok, entries = pcall(self.inProgress, self)
+    for _, entry in ipairs(ok and entries or {}) do
+        if entry.questId == questId then
+            zone = entry.zone
+            break
+        end
+    end
+    return { "quests", "inProgress", WowVision.quests.zoneKey(zone), "quest:" .. tostring(questId) }
+end
+
+-- Yards from the player to where a quest node points, nil without a place.
+local function nodeDistance(node)
+    local maps = WowVision.base.navigation and WowVision.base.navigation.maps or nil
+    if maps == nil or node.x == nil then
+        return nil
+    end
+    return maps:distanceTo(node.x, node.y)
 end
 
 local function loadingNode()
@@ -475,12 +493,10 @@ scanner:registerProvider({
             {
                 key = "inProgress",
                 label = L["In Progress"],
+                -- one level per quest log zone, each zone's quests
+                -- nearest first
                 children = function()
-                    local out = {}
-                    for _, entry in ipairs(quests:inProgress()) do
-                        tinsert(out, inProgressNode(entry))
-                    end
-                    return out
+                    return WowVision.quests.zoneGroups(quests:inProgress(), inProgressNode, nodeDistance)
                 end,
             },
         }

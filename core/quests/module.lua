@@ -396,14 +396,20 @@ function WowVision.quests.gameQuestLog()
     local count = C_QuestLog ~= nil and C_QuestLog.GetNumQuestLogEntries ~= nil and C_QuestLog.GetNumQuestLogEntries()
         or (GetNumQuestLogEntries ~= nil and GetNumQuestLogEntries())
         or 0
+    -- zone: the quest log header the quest sits under (Elwynn Forest,
+    -- Westfall, a class or a profession)
+    local zone = nil
     for index = 1, count do
         if C_QuestLog ~= nil and C_QuestLog.GetInfo ~= nil then
             local info = C_QuestLog.GetInfo(index)
-            if info ~= nil and not info.isHeader and info.questID ~= nil and info.questID > 0 then
+            if info ~= nil and info.isHeader then
+                zone = info.title
+            elseif info ~= nil and info.questID ~= nil and info.questID > 0 then
                 tinsert(entries, {
                     questId = info.questID,
                     title = info.title,
                     level = info.level,
+                    zone = zone,
                     complete = C_QuestLog.IsComplete ~= nil and C_QuestLog.IsComplete(info.questID) == true,
                     failed = C_QuestLog.IsFailed ~= nil and C_QuestLog.IsFailed(info.questID) == true,
                     objectives = objectivesFor(info.questID, index),
@@ -411,11 +417,14 @@ function WowVision.quests.gameQuestLog()
             end
         else
             local title, level, _, isHeader, _, isComplete, _, questId = GetQuestLogTitle(index)
-            if not isHeader and questId ~= nil and questId > 0 then
+            if isHeader then
+                zone = title
+            elseif questId ~= nil and questId > 0 then
                 tinsert(entries, {
                     questId = questId,
                     title = title,
                     level = level,
+                    zone = zone,
                     complete = isComplete == 1 or isComplete == true,
                     failed = isComplete == -1,
                     objectives = objectivesFor(questId, index),

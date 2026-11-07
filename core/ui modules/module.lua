@@ -12,6 +12,16 @@ settings:add({
     default = false,
 })
 
+-- A short sound when a WowVision window opens and another when it closes
+-- (the WowVision menu, the scanner, navigation, the action bars, chat), as
+-- Sku plays for its menu. The game's own windows make their own sounds.
+settings:add({
+    type = "Bool",
+    key = "menuSounds",
+    label = L["Sounds on Opening and Closing WowVision Menus"],
+    default = true,
+})
+
 -- Letters jump to the next entry starting with them in the lists that own the keyboard: the WowVision menu, context
 -- and dropdown menus (graph/typeAhead.lua, graph/Host.lua).
 settings:add({
