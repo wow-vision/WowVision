@@ -28,7 +28,7 @@ Keys that work on spells and talent buttons, besides the usual Tab, Shift+Tab an
 
 ## The Burning Crusade: spellbook
 
-The stops, in order:
+The window opens on the spells. The stops, in order:
 
 1. Tabs, a row, only while you have a pet with a spellbook: Spellbook and Pet. The open one reads "selected".
 2. Side Tabs, a row of check boxes, one per skill line of the book (General, your specializations, and so on). Enter opens that page. They read "checked" for the open one.
@@ -43,7 +43,7 @@ Enter on a spell casts it, the same as clicking it in the book. Use the drag key
 
 ## Mists of Pandaria: spellbook
 
-The window title (normally "Spellbook") names the window. The first stop is Tabs, a row with the book pages: Spellbook, Professions, Core Abilities and What Has Changed, plus any other page tab the game shows. The open page reads "selected". Pick a page with Left and Right and press Enter.
+The window title (normally "Spellbook") names the window. The first stop is Tabs, a row with the book pages: Spellbook, Professions, Core Abilities and What Has Changed, plus any other page tab the game shows. The open page reads "selected". Pick a page with Left and Right and press Enter. The Spellbook page opens on its spells.
 
 ### The Spellbook page
 

@@ -32,7 +32,7 @@ Tasten, die bei Zaubern und Talentschaltflächen funktionieren, neben den üblic
 
 ## The Burning Crusade: Zauberbuch
 
-Die Haltepunkte in dieser Reihenfolge:
+Das Fenster öffnet sich auf den Zaubern. Die Haltepunkte in dieser Reihenfolge:
 
 1. Reiter, eine Reihe, nur solange du einen Begleiter mit Zauberbuch hast: Zauberbuch und Begleiter. Der geöffnete liest „ausgewählt“.
 2. Seitenreiter, eine Reihe von Kontrollkästchen, eines pro Fertigkeitslinie des Buchs (Allgemein, deine Spezialisierungen und so weiter). Eingabe öffnet die Seite. Sie lesen „Aktiviert“ für die geöffnete.
@@ -47,7 +47,7 @@ Eingabe auf einem Zauber wirkt ihn, genauso wie ein Klick im Buch. Nimm ihn stat
 
 ## Mists of Pandaria: Zauberbuch
 
-Der Fenstertitel (normalerweise „Zauberbuch“) benennt das Fenster. Der erste Haltepunkt ist Reiter, eine Reihe mit den Buchseiten: Zauberbuch, Berufe, Kernfähigkeiten (Core Abilities) und Was sich geändert hat (What Has Changed), dazu alle weiteren Seitenreiter, die das Spiel zeigt. Die geöffnete Seite liest „ausgewählt“. Wähle eine Seite mit Pfeil links und Pfeil rechts und drücke Eingabe.
+Der Fenstertitel (normalerweise „Zauberbuch“) benennt das Fenster. Der erste Haltepunkt ist Reiter, eine Reihe mit den Buchseiten: Zauberbuch, Berufe, Kernfähigkeiten (Core Abilities) und Was sich geändert hat (What Has Changed), dazu alle weiteren Seitenreiter, die das Spiel zeigt. Die geöffnete Seite liest „ausgewählt“. Wähle eine Seite mit Pfeil links und Pfeil rechts und drücke Eingabe. Die Seite Zauberbuch öffnet sich auf ihren Zaubern.
 
 ### Die Seite Zauberbuch
 
