@@ -410,7 +410,8 @@ end
 -- The destinations named like `name` (the same object: the route data's
 -- name before its first field, WowNav's whole name), as { waypoint,
 -- distance } -- the route data's, or an active engine's (direct: without its
--- reachability check).
+-- reachability check). Then the waypoints and engine of
+-- module:destinationWaypoints they came from.
 function module:destinationsNamed(name, direct)
     local px, py, _, map = UnitPosition("player")
     local store = WowVision.visitedStore
@@ -435,7 +436,7 @@ function module:destinationsNamed(name, direct)
             add(row)
         end
     end
-    return found
+    return found, waypoints, engine
 end
 
 -- To a destination without the window: a direct point, or a route from the
@@ -485,10 +486,12 @@ end
 -- Auto Route (navigation/visited.lua): of several destinations ({ waypoint,
 -- distance }), the one the shortest walk from here reaches, routed to from
 -- the entry point F10 would preselect. The route data: one search for all
--- (Router.nearestByWalk); a route engine: its own pick (engine:routeToNearest,
--- which plans them in the background). onChosen(wp) runs for the one picked
--- before its route starts; it becomes the last picked destination.
-function module:routeToNearestWalk(candidates, onChosen)
+-- (Router.nearestByWalk, whose route is followed); a route engine: its own
+-- pick (engine:routeToNearest, which plans them in the background).
+-- onChosen(wp) runs for the one picked before its route starts; it becomes
+-- the last picked destination. waypoints, engine: as destinationsNamed gave
+-- them (module:destinationWaypoints), so they are not merged again.
+function module:routeToNearestWalk(candidates, onChosen, waypoints, engine)
     self:guidanceStarts()
     local px, py, _, map = UnitPosition("player")
     if px == nil then
@@ -501,7 +504,9 @@ function module:routeToNearestWalk(candidates, onChosen)
             onChosen(wp)
         end
     end
-    local waypoints, engine = self:destinationWaypoints()
+    if waypoints == nil then
+        waypoints, engine = self:destinationWaypoints()
+    end
     if engine ~= nil and engine.routeToNearest ~= nil then
         local start = self:preselectedEntry(self:entryPoints(waypoints, px, py, map, engine))
         local targets = {}
@@ -530,14 +535,15 @@ function module:routeToNearestWalk(candidates, onChosen)
     end
     local entry = engine == nil and self:preselectedEntry(self:entryPoints(waypoints, px, py, map, nil)) or nil
     local opts = { entryId = entry and entry.waypoint.id }
-    local wp, reason = WowVision.Router.nearestByWalk(waypoints, px, py, list, opts)
+    local wp, route = WowVision.Router.nearestByWalk(waypoints, px, py, list, opts)
     if wp == nil then
-        WowVision:speak(L["No route found"] .. " " .. (reason ~= nil and L[reason] or ""))
+        WowVision:speak(L["No route found"] .. " " .. (route ~= nil and L[route] or ""))
         return false
     end
     chosen(wp)
     WowVision:speak(wp.n)
     opts.onArrive = self:arrivalFor(wp)
+    opts.route = route
     return self:navigateTo(wp.id, waypoints, opts)
 end
 
@@ -794,7 +800,8 @@ end
 
 -- Route to a waypoint through the link graph and follow it with the beacon.
 -- opts passes through to the router (entryId for a user-chosen entry point);
--- opts.onArrive runs after "Arrived" is spoken.
+-- opts.onArrive runs after "Arrived" is spoken; opts.route: a route already
+-- searched (Router.nearestByWalk), followed without a search of its own.
 function module:navigateTo(waypointId, waypoints, opts)
     self:guidanceStarts()
     local px, py = UnitPosition("player")
@@ -803,7 +810,11 @@ function module:navigateTo(waypointId, waypoints, opts)
         return false
     end
     waypoints = waypoints or self:currentWaypoints()
-    local route, reason = WowVision.Router.route(waypoints, px, py, waypointId, opts)
+    local route = opts ~= nil and opts.route or nil
+    local reason
+    if route == nil then
+        route, reason = WowVision.Router.route(waypoints, px, py, waypointId, opts)
+    end
     if route == nil then
         -- The router's reasons are keys ("no entry"); spoken translated.
         WowVision:speak(L["No route found"] .. " " .. (reason ~= nil and L[reason] or ""))

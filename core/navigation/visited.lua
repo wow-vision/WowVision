@@ -275,7 +275,7 @@ function module:autoNext(auto, last)
         return key == lastKey or auto.seen[key] or self:isVisited(wp)
     end
     local started = debugprofilestop()
-    local found = maps:destinationsNamed(last.n, direct)
+    local found, waypoints, engine = maps:destinationsNamed(last.n, direct)
     local searched = debugprofilestop()
     local candidates
     if direct then
@@ -310,7 +310,7 @@ function module:autoNext(auto, last)
             if self.auto == auto then
                 setCurrent(auto, wp)
             end
-        end)
+        end, waypoints, engine)
     end)
 end
 

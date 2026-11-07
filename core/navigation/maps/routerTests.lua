@@ -306,8 +306,18 @@ testRunner:addSuite("MapRouter", {
         local near = { id = "near", x = -1, y = 10 }
         local far = { id = "far", x = 26, y = 0 }
         waypoints.near, waypoints.far = near, far
-        local wp = Router.nearestByWalk(waypoints, 0, 0, { near, far }, { entryId = "a", maxExitDistance = 2 })
+        local wp, route = Router.nearestByWalk(waypoints, 0, 0, { near, far }, { entryId = "a", maxExitDistance = 2 })
         t:assertEqual(wp and wp.id, "far")
+        -- the route comes along, as Router.route gives it: a, b, then the last leg to far
+        local ids = {}
+        for _, step in ipairs(route.waypoints) do
+            tinsert(ids, step.id)
+        end
+        t:assertEqual(table.concat(ids, " "), "a b far")
+        t:assertEqual(route.lastLeg, 1)
+        t:assertEqual(route.distance, 26)
+        local direct = Router.route(waypoints, 0, 0, "far", { entryId = "a", maxExitDistance = 2 })
+        t:assertEqual(route.distance, direct.distance, "the same as a search to it")
     end,
 
     ["nearest by walk: a linked target is reached on the network"] = function(t)
@@ -316,7 +326,11 @@ testRunner:addSuite("MapRouter", {
             { id = "b", x = 10, y = 0, links = { "a", "c" } },
             { id = "c", x = 20, y = 0, links = { "b" } },
         })
-        t:assertEqual(Router.nearestByWalk(waypoints, 0, 0, { waypoints.c, waypoints.b }, { entryId = "a" }).id, "b")
+        local wp, route = Router.nearestByWalk(waypoints, 0, 0, { waypoints.c, waypoints.b }, { entryId = "a" })
+        t:assertEqual(wp.id, "b")
+        t:assertEqual(#route.waypoints, 2)
+        t:assertNil(route.lastLeg)
+        t:assertEqual(route.distance, 10)
     end,
 
     ["nearest by walk: a target without links of its own, linked into"] = function(t)
