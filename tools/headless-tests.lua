@@ -219,6 +219,55 @@ loadAddonFile("core/navigation/maps/turnMath.lua")
 loadAddonFile("core/navigation/maps/turnTests.lua")
 loadAddonFile("core/quests/Adapter.lua")
 loadAddonFile("core/quests/tests.lua")
+-- The quest scanner over a stand-in quest module: the snapshot it builds
+-- from and the live log it reads while open (core/quests/scannerLiveTests.lua).
+do
+    local harness = { providers = {}, snapshot = {}, log = {} }
+    local savedBase = WowVision.base
+    local questModule = { L = setmetatable({}, {
+        __index = function(_, key)
+            return key
+        end,
+    }) }
+    function questModule:inProgress()
+        return harness.snapshot
+    end
+    function questModule:targets()
+        return {}
+    end
+    function questModule:objectiveTargets()
+        return {}
+    end
+    function questModule:markerTarget()
+        return nil
+    end
+    function questModule:gameMarkerTarget()
+        return nil
+    end
+    function questModule:hasSource()
+        return true
+    end
+    function questModule:isReady()
+        return true
+    end
+    WowVision.base = {
+        quests = questModule,
+        scanner = {
+            registerProvider = function(_, provider)
+                harness.providers[provider.key] = provider
+            end,
+        },
+    }
+    -- module.lua only parses headless; the stand-in log answers instead, put
+    -- in place by each live test and taken out after it
+    harness.gameQuestEntry = function(questId)
+        return harness.log[questId]
+    end
+    loadAddonFile("core/quests/scanner.lua")
+    WowVision.quests._scannerLiveHarness = harness
+    loadAddonFile("core/quests/scannerLiveTests.lua")
+    WowVision.base = savedBase
+end
 loadAddonFile("core/minimap/logic.lua")
 loadAddonFile("core/minimap/gatheringNames.lua")
 loadAddonFile("core/minimap/tests.lua")
@@ -238,6 +287,8 @@ loadAddonFile("core/db.lua")
 loadAddonFile("core/dbTests.lua")
 loadAddonFile("core/utils.lua")
 loadAddonFile("core/utilsTests.lua")
+loadAddonFile("core/scanner/nearest.lua")
+loadAddonFile("core/scanner/nearestTests.lua")
 loadAddonFile("core/secrets.lua")
 loadAddonFile("core/secretsTests.lua")
 loadAddonFile("core/ui/input/heldKeys.lua")
@@ -1381,6 +1432,65 @@ loadAddonFile("core/graph/controlTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
 
+-- Native quest source and the scanner's quest categories: the adapter and
+-- the provider load against stand-ins for the quest module and the scanner;
+-- the suite installs the game's map and quest log APIs per test and points
+-- the stand-in module at its own source.
+do
+    local savedBase = WowVision.base
+    local harness = { providers = {}, source = nil }
+    local questModule = { L = WowVision:getLocale() }
+    function questModule:hasSource()
+        return true
+    end
+    function questModule:isReady()
+        return true
+    end
+    function questModule:inProgress()
+        return harness.source:inProgress()
+    end
+    function questModule:targets(questId, phase)
+        return harness.source:targets(questId, phase)
+    end
+    function questModule:objectiveTargets(questId, index)
+        return harness.source:objectiveTargets(questId, index)
+    end
+    function questModule:quest(questId)
+        return harness.source:quest(questId)
+    end
+    function questModule:placeName()
+        return nil
+    end
+    -- the scanner's last resorts; like the real module, nil when the source
+    -- has no such lookup (the native source has neither)
+    function questModule:markerTarget(questId, index)
+        if harness.source.markerTarget == nil then
+            return nil
+        end
+        return harness.source:markerTarget(questId, index)
+    end
+    function questModule:gameMarkerTarget(questId)
+        if harness.source.gameMarkerTarget == nil then
+            return nil
+        end
+        return harness.source:gameMarkerTarget(questId)
+    end
+    WowVision.base = {
+        quests = questModule,
+        scanner = {
+            registerProvider = function(_, provider)
+                harness.providers[provider.key] = provider
+            end,
+        },
+    }
+    loadAddonFile("core/quests/Adapter.lua")
+    loadAddonFile("core/quests/native.lua")
+    loadAddonFile("core/quests/scanner.lua")
+    WowVision.quests._nativeTestHarness = harness
+    loadAddonFile("core/quests/nativeTests.lua")
+    WowVision.base = savedBase
+end
+
 -- Files that need the game client to run but should at least parse cleanly.
 local parseOnly = {
     "vanilla/speech.lua",
@@ -1400,6 +1510,7 @@ local parseOnly = {
     "core/ui/WindowManager.lua",
     "core/windows/GameMenu.lua",
     "core/errors/module.lua",
+    "core/quests/module.lua",
     "core/ui modules/graphBindings.lua",
     "core/buffers/module.lua",
     "core/windows/options/ui.lua",
@@ -1459,6 +1570,7 @@ local parseOnly = {
     "core/navigation/maps/module.lua",
     "core/navigation/maps/ui.lua",
     "core/navigation/visited.lua",
+    "camelot/wownav/module.lua",
     "core/navigation/corpse.lua",
     "core/navigation/targetRoute.lua",
     "core/windows/Macros.lua",

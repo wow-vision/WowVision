@@ -112,6 +112,10 @@ local function lookupMessageInfo(messageType)
     return errorName, template
 end
 
+-- The game message name (ERR_QUEST_ADD_KILL_SII) and its template, for
+-- modules that speak some messages with alerts of their own.
+WowVision.errors.lookupMessageInfo = lookupMessageInfo
+
 local throttle = utils.newThrottle()
 local dedupe = utils.newFrameDedupe()
 
@@ -135,6 +139,10 @@ function module.handleMessage(messageType, message)
         return
     end
     local errorName, template = lookupMessageInfo(messageType)
+    -- A claimed message is spoken by the module that claimed it.
+    if errorName ~= nil and WowVision.errors.claimed[errorName] then
+        return
+    end
     local key, label = utils.identify(errorName, template, message)
     if not throttle:allow(key, now, module.settings.repeatDelay) then
         return
@@ -201,11 +209,13 @@ end
 local function filterEntries()
     local labels = {}
     for key, entry in pairs(getStore() or {}) do
-        labels[key] = entry.label or key
+        if not WowVision.errors.claimed[key] then
+            labels[key] = entry.label or key
+        end
     end
     if showAll then
         for key, label in pairs(getKnownErrors()) do
-            if labels[key] == nil then
+            if labels[key] == nil and not WowVision.errors.claimed[key] then
                 labels[key] = label
             end
         end

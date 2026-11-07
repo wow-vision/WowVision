@@ -55,4 +55,19 @@ testRunner:addSuite("VisitedWaypoints", {
             return true
         end))
     end,
+
+    ["the nearest few not ruled out, nearest first"] = function(t)
+        local candidates = {
+            { waypoint = { id = "far" }, distance = 30 },
+            { waypoint = { id = "a" }, distance = 5 },
+            { waypoint = { id = "b" }, distance = 9 },
+            { waypoint = { id = "c" }, distance = 20 },
+        }
+        local list = store.nearestN(candidates, function(wp)
+            return wp.id == "a"
+        end, 2)
+        t:assertEqual(#list, 2)
+        t:assertEqual(list[1].waypoint.id, "b")
+        t:assertEqual(list[2].waypoint.id, "c")
+    end,
 })

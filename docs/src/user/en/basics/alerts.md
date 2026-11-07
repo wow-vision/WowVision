@@ -118,7 +118,7 @@ A message that reaches several tabs that speak is spoken only once. Temporary ch
 | Alert | Menu path | When it fires | Outputs |
 |---|---|---|---|
 | Announce Errors | Errors | The master switch for game error and info messages ("Ability is not ready yet", "Out of range"). It also voices Lua errors and messages the filter cannot sort. | TTS Alert |
-| One entry for each message you have seen | Errors, Per-Error Filter | That message appears. | TTS Alert (on), Sound Alert (off) |
+| One entry for each message you have seen | Errors, Per-Error Filter | That message appears. Quest progress messages are left to the quest progress alerts of the Quests module. | TTS Alert (on), Sound Alert (off) |
 
 The Per-Error Filter lists each message with its state read after its name: "Speech", "Sound", "Speech and Sound" or "Muted". Open one to change it. The Show All Known Errors checkbox at the top lists every message the game knows, including ones you have not met yet. Repeat Delay (2 seconds, 0 to 30) stops the same error from being spoken again while you hold a key. See [Combat](../world/combat.md).
 
@@ -128,6 +128,9 @@ The Per-Error Filter lists each message with its state read after its name: "Spe
 |---|---|---|---|
 | New Minimap Dot Alert | Minimap Scanner | While you walk, a named dot comes onto the minimap. Speaks its name, level, whether it is indoors, and its kind. Needs Announce Tracked Dots While Walking (on). | TTS (spoken by the game's voice 0 unless you choose another voice), Sound Alert (off) |
 | Quest Area Alert | Quests | You enter or leave the area of a quest. Says "Entering area: " or "Leaving area: " followed by the quest title. | TTS, Sound Alert (off) |
+| Quest Progress Alert | Quests | The game shows a quest count moving. Says the game's message, for example "Kobold Vermin slain: 3/8". | TTS, Sound Alert (on) |
+| Objective Complete Alert | Quests | The game shows an objective done as "... (Complete)". Says the game's message. | TTS, Sound Alert (on) |
+| Quest Complete Alert | Quests | The game shows "Objective Complete." without naming the objective. Says the game's message. | TTS, Sound Alert (on) |
 | Item Selected | Windows, Auction House | You select an auction in the browse list. Says "Selected: " and the item's name. (The Burning Crusade only.) | TTS |
 
 See [Minimap](../world/minimap.md) and [Quests](../world/quests.md).
