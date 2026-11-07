@@ -33,7 +33,8 @@ for _, zone in ipairs(bumpLogic.zones) do
                         pushes = pushes + 1
                         if #cands > 1 then
                             stacked = stacked + 1
-                            local f = bumpLogic.objectAhead(zone, x, y, (qx - x) / d, (qy - y) / d, bumpLogic.REACH, set)
+                            local vx, vy = (qx - x) / d, (qy - y) / d
+                            local f = bumpLogic.objectAhead(zone, x, y, vx, vy, bumpLogic.REACH, set)
                             if f and ix.oroom[f] ~= ix.oroom[i] then
                                 wrong = wrong + 1
                                 local key = ix.oname[f] .. " for " .. ix.oname[i]

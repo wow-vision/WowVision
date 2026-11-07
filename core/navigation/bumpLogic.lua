@@ -309,12 +309,32 @@ end
 -- nil): a hall the game calls outdoors fits only while it says outdoors, any other room only while it says
 -- indoors; where none fits, all of them (the game's word only decides between floors on top of each other: in
 -- Ironforge the Great Forge's floor lies over the throne room's stairs and the cavern below, and the game calls the
--- forge outdoors and the rest indoors).
-function bumpLogic.roomsAt(zone, x, y, margin, indoors)
-    local found = {}
-    for id in ipairs(zone._index.rooms) do
-        if bumpLogic.onFloor(zone, id, x, y, margin) then
-            found[#found + 1] = id
+-- forge outdoors and the rest indoors). `ids` (optional): the room ids to look at instead of all, in that order.
+function bumpLogic.roomsAt(zone, x, y, margin, indoors, ids)
+    local ix = zone._index
+    local found, inFrame = {}, {}
+    local function look(id)
+        local room = ix.rooms[id]
+        local pos = inFrame[room.interior]
+        if pos == nil then
+            pos = { bumpLogic.toBuilding(ix.interiors[room.interior], x, y) }
+            inFrame[room.interior] = pos
+        end
+        local b = room.boxes
+        for i = 1, #b - 3, 4 do
+            if inBox(b, i, pos[1], pos[2], margin) then
+                found[#found + 1] = id
+                return
+            end
+        end
+    end
+    if ids then
+        for _, id in ipairs(ids) do
+            look(id)
+        end
+    else
+        for id in ipairs(ix.rooms) do
+            look(id)
         end
     end
     if indoors == nil then
@@ -346,10 +366,11 @@ function bumpLogic.roomOutlineAt(zone, x, y)
 end
 
 -- Did the player walk through a doorway of room `current` (0 outside) between (px, py) and (x, y)? Returns the
--- room behind it (0 outside) or nil. A doorway into a room whose floor is not here (within ROOM_SLACK) is passed
--- over: a doorway has no height (the Trade Quarter's doorway into its shop lies 0.8 yd from the canal tunnel's 17
--- yd below it, and one step crossed both).
-function bumpLogic.crossedDoor(zone, current, px, py, x, y)
+-- room behind it (0 outside) or nil. A doorway into a room whose floor is not here is passed over: a doorway has no
+-- height (the Trade Quarter's doorway into its shop lies 0.8 yd from the canal tunnel's 17 yd below it, and one step
+-- crossed both). `fits` (optional): function(room) deciding that instead (the default: outside, or the room's floor
+-- within ROOM_SLACK).
+function bumpLogic.crossedDoor(zone, current, px, py, x, y, fits)
     if current == nil or px == nil then
         return nil
     end
@@ -374,9 +395,16 @@ function bumpLogic.crossedDoor(zone, current, px, py, x, y)
                 local before = ((ax - door.x) * door.nx + (ay - door.y) * door.ny) * mine
                 local after = ((bx - door.x) * door.nx + (by - door.y) * door.ny) * mine
                 local behind = current == door.a and door.b or door.a
-                if before > 0 and after < 0
-                    and (behind == 0 or bumpLogic.onFloor(zone, behind, x, y, bumpLogic.ROOM_SLACK)) then
-                    return behind
+                if before > 0 and after < 0 then
+                    local ok
+                    if fits then
+                        ok = fits(behind)
+                    else
+                        ok = behind == 0 or bumpLogic.onFloor(zone, behind, x, y, bumpLogic.ROOM_SLACK)
+                    end
+                    if ok then
+                        return behind
+                    end
                 end
             end
         end
@@ -635,6 +663,160 @@ function bumpLogic.bumpText(zone, x, y, vx, vy, inside, rooms, words, wall)
         return string.format(words.wallOf, owner), owner
     end
     return nil
+end
+
+-- Questions other modules ask (a route avoiding objects, for one). The zone of the position is read in when
+-- needed; one zone so read is kept besides the one the bump module holds (zone.held), the one before is dropped.
+-- `which`: nil every object, 0 the outdoor ones, a room id that room's. Objects come as tables (bumpLogic.object)
+-- with their `distance` in yards. Their footprints are boxes around the model (a tree's holds its crown): enough
+-- to tell that something stands in the way, not exact collision. Names are in bumpLogic.locale (the bump module
+-- sets the game's), English by default.
+bumpLogic.locale = "enUS"
+local queried = nil
+
+-- The zone of map `map` holding the position, read in (nil: no data there).
+function bumpLogic.zoneAt(map, x, y)
+    local zone = bumpLogic.findZone(x, y, map)
+    if zone == nil then
+        return nil
+    end
+    if zone ~= queried then
+        if queried and not queried.held then
+            bumpLogic.pack(queried)
+        end
+        queried = zone
+    end
+    bumpLogic.unpack(zone, bumpLogic.locale)
+    return zone
+end
+
+local function fitsWhich(ix, i, which)
+    return which == nil or ix.oroom[i] == which
+end
+
+-- The objects whose footprint lies within `radius` yards of the position, nearest first.
+function bumpLogic.objectsNear(map, x, y, radius, which)
+    local zone = bumpLogic.zoneAt(map, x, y)
+    local out = {}
+    if zone == nil then
+        return out
+    end
+    local ix = zone._index
+    local r0, c0 = bumpLogic.cellOf(zone, x, y)
+    local n = math.ceil(radius / zone.cell)
+    local seen = {}
+    for r = r0 - n, r0 + n do
+        for c = c0 - n, c0 + n do
+            for _, i in ipairs(ix.objects[blockOf(zone, r, c)] or {}) do
+                if not seen[i] and r >= ix.or0[i] and r <= ix.or1[i] and c >= ix.oc0[i] and c <= ix.oc1[i] then
+                    seen[i] = true
+                    if fitsWhich(ix, i, which) then
+                        local _, _, d = objectPoint(ix, i, x, y)
+                        if d <= radius then
+                            local o = bumpLogic.object(zone, i)
+                            o.distance = d
+                            out[#out + 1] = o
+                        end
+                    end
+                end
+            end
+        end
+    end
+    table.sort(out, function(a, b)
+        return a.distance < b.distance
+    end)
+    return out
+end
+
+-- The distance from the segment (u1, v1)-(u2, v2) to the box -hl..hl by -hw..hw (the object's own frame), and
+-- where along the segment (0..1) it comes closest (where it enters the box when it crosses it).
+local function segmentToBox(u1, v1, u2, v2, hl, hw)
+    -- crossing: the segment clipped to the box (Liang-Barsky)
+    local du, dv = u2 - u1, v2 - v1
+    local t0, t1 = 0, 1
+    local crosses = true
+    for _, e in ipairs({ { -du, u1 + hl }, { du, hl - u1 }, { -dv, v1 + hw }, { dv, hw - v1 } }) do
+        local pe, qe = e[1], e[2]
+        if pe == 0 then
+            if qe < 0 then
+                crosses = false
+            end
+        else
+            local t = qe / pe
+            if pe < 0 then
+                t0 = math.max(t0, t)
+            else
+                t1 = math.min(t1, t)
+            end
+        end
+    end
+    if crosses and t0 <= t1 then
+        return 0, t0
+    end
+    local len2 = du * du + dv * dv
+    local best, bestT = math.huge, 0
+    local function pointToBox(u, v)
+        local eu = math.max(0, math.abs(u) - hl)
+        local ev = math.max(0, math.abs(v) - hw)
+        return math.sqrt(eu * eu + ev * ev)
+    end
+    for _, t in ipairs({ 0, 1 }) do
+        local d = pointToBox(u1 + du * t, v1 + dv * t)
+        if d < best then
+            best, bestT = d, t
+        end
+    end
+    -- the box's corners against the segment
+    for _, corner in ipairs({ { -hl, -hw }, { hl, -hw }, { hl, hw }, { -hl, hw } }) do
+        local t = len2 > 0 and math.max(0, math.min(1, ((corner[1] - u1) * du + (corner[2] - v1) * dv) / len2)) or 0
+        local d = dist(u1 + du * t, v1 + dv * t, corner[1], corner[2])
+        if d < best then
+            best, bestT = d, t
+        end
+    end
+    return best, bestT
+end
+
+-- The first object a straight path from (x1, y1) to (x2, y2) passes within `clearance` yards of (one it crosses:
+-- 0), with its `distance` and `along` (yards from the start to where the path comes closest), or nil. The path lies
+-- in one zone of the data (nil where its end is outside the start's zone: ask in pieces).
+function bumpLogic.objectOnLine(map, x1, y1, x2, y2, clearance, which)
+    local zone = bumpLogic.zoneAt(map, x1, y1)
+    if zone == nil or not bumpLogic.covers(zone, x2, y2) then
+        return nil
+    end
+    local ix = zone._index
+    local ra, ca = bumpLogic.cellOf(zone, math.max(x1, x2), math.max(y1, y2))
+    local rb, cb = bumpLogic.cellOf(zone, math.min(x1, x2), math.min(y1, y2))
+    local n = math.ceil(clearance / zone.cell)
+    local length = dist(x1, y1, x2, y2)
+    local best, bestAlong, bestD, seen = nil, math.huge, nil, {}
+    for r = ra - n, rb + n do
+        for c = ca - n, cb + n do
+            for _, i in ipairs(ix.objects[blockOf(zone, r, c)] or {}) do
+                if not seen[i] and r >= ix.or0[i] and r <= ix.or1[i] and c >= ix.oc0[i] and c <= ix.oc1[i] then
+                    seen[i] = true
+                    if fitsWhich(ix, i, which) then
+                        local cs, sn = ix.ocos[i], ix.osin[i]
+                        local ax, ay = x1 - ix.ox[i], y1 - ix.oy[i]
+                        local bx, by = x2 - ix.ox[i], y2 - ix.oy[i]
+                        local d, t = segmentToBox(ax * cs + ay * sn, -ax * sn + ay * cs, bx * cs + by * sn,
+                            -bx * sn + by * cs, ix.ohl[i], ix.ohw[i])
+                        local along = t * length
+                        if d <= clearance and (along < bestAlong or (along == bestAlong and d < bestD)) then
+                            best, bestAlong, bestD = i, along, d
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if best == nil then
+        return nil
+    end
+    local o = bumpLogic.object(zone, best)
+    o.distance, o.along = bestD, bestAlong
+    return o
 end
 
 -- When a bump is named: the wall detection's "blocked" held for BUMP_TICKS looks in a row, once per bump; the same

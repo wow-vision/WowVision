@@ -6,6 +6,21 @@ bump data in `mapdata/bumps/<client>/`, one plain Lua file per zone. These tools
 well the module does with it. Everything runs offline with LuaJIT (Lua 5.1, the game's rules), from the repo root,
 and prints plain text.
 
+## Asking from another module
+
+`WowVision.bumpLogic` answers other modules too (a route that should go around objects, for one). The zone of the
+asked position is read in when needed.
+
+- `bumpLogic.objectsNear(map, x, y, radius, which)`: the objects within `radius` yards, nearest first.
+- `bumpLogic.objectOnLine(map, x1, y1, x2, y2, clearance, which)`: the first object a straight path passes within
+  `clearance` yards of, with `along` (yards from the start) and `distance` (0: the path crosses it); nil for none,
+  or where the path leaves the start's zone (ask in pieces).
+
+`map` and the positions are what `UnitPosition("player")` gives. `which`: nil every object, 0 the outdoor ones, a
+room id that room's. An object comes as a table: `x`, `y`, `halfLength`, `halfWidth`, `angle` (radians, the long
+axis), `name` (in the game's language), `room` (0 outdoors), `distance`. Footprints are boxes around the model (a
+tree's holds its crown): enough to tell that something stands in the way, not exact collision.
+
 ## Where the data comes from
 
 The chain, from the game's files to the addon:

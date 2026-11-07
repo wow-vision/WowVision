@@ -241,6 +241,41 @@ testRunner:addSuite("BumpLogic", {
         t:assertEqual(bumpLogic.bumpText(zone, 3.5, 0, 1, 0, false, nil, WORDS, function() end), "wall of bank")
     end,
 
+    ["objects near a point, nearest first, as other modules ask"] = function(t)
+        local saved = bumpLogic.zones
+        local zone = makeZone()
+        bumpLogic.zones = { zone }
+        local near = bumpLogic.objectsNear(0, 7, 1, 3)
+        t:assertEqual(#near, 2)
+        t:assertEqual(near[1].name, "crate")
+        t:assertEqual(near[2].name, "chair")
+        t:assertTrue(near[1].distance < near[2].distance)
+        t:assertEqual(#bumpLogic.objectsNear(0, 7, 1, 3, 2), 1)
+        t:assertEqual(#bumpLogic.objectsNear(0, 7, 1, 3, 0), 0)
+        t:assertEqual(#bumpLogic.objectsNear(1, 7, 1, 3), 0) -- another map
+        bumpLogic.zones = saved
+    end,
+
+    ["the first object along a path, within a clearance"] = function(t)
+        local saved = bumpLogic.zones
+        local zone = makeZone()
+        bumpLogic.zones = { zone }
+        -- straight through the barrel (0, 0), going north (+x): it is crossed at 4.5 yd
+        local o = bumpLogic.objectOnLine(0, -5, 0, 5, 0, 0.5)
+        t:assertEqual(o.name, "barrel")
+        t:assertEqual(o.distance, 0)
+        t:assertTrue(math.abs(o.along - 4.5) < 0.01)
+        -- passing 1 yd beside it: found with a clearance of 0.6 yd, not with 0.4
+        t:assertEqual(bumpLogic.objectOnLine(0, -5, 1, 5, 1, 0.6).name, "barrel")
+        t:assertNil(bumpLogic.objectOnLine(0, -5, 1, 5, 1, 0.4))
+        -- the crate before the chair along a path through both, outdoors only: none
+        t:assertEqual(bumpLogic.objectOnLine(0, 8, -2, 8, 5, 0.2).name, "crate")
+        t:assertNil(bumpLogic.objectOnLine(0, 8, -2, 8, 5, 0.2, 0))
+        -- a path leaving the zone
+        t:assertNil(bumpLogic.objectOnLine(0, 0, 0, 300, 0, 1))
+        bumpLogic.zones = saved
+    end,
+
     ["a bump is named once until the player moved freely"] = function(t)
         local state = bumpLogic.newBumpState()
         t:assertFalse(bumpLogic.step(state, true, 0, 0.2)) -- one look blocked is not yet a bump
@@ -316,6 +351,20 @@ testRunner:addSuite("BumpData", {
                         zone.key .. ": nothing found beside an object")
                 end
             end
+            -- a path straight through an object's middle meets one (the first fifty; the runner loads every
+            -- client's data, the game one: only this zone is asked)
+            local savedLocale, savedZones = bumpLogic.locale, bumpLogic.zones
+            bumpLogic.locale, bumpLogic.zones = "deDE", { zone }
+            local asked = 0
+            for i = 1, objects do
+                local x1, x2, y = ix.ox[i] - 3, ix.ox[i] + 3, ix.oy[i]
+                if asked < 50 and bumpLogic.covers(zone, x1, y) and bumpLogic.covers(zone, x2, y) then
+                    asked = asked + 1
+                    local o = bumpLogic.objectOnLine(zone.map, x1, y, x2, y, 0)
+                    t:assertTrue(o ~= nil and o.distance == 0, zone.key .. ": a path through an object missed it")
+                end
+            end
+            bumpLogic.locale, bumpLogic.zones = savedLocale, savedZones
             if not had then
                 bumpLogic.pack(zone)
             end

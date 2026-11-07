@@ -55,17 +55,21 @@ local function locale()
     return l == "enGB" and "enUS" or l
 end
 
+bumpLogic.locale = locale()
+
 local function setZone(found)
     if found == zone then
         return
     end
     if zone then
+        zone.held = nil
         bumpLogic.pack(zone)
     end
     zone = found
     tracker:reset()
     if found then
-        bumpLogic.unpack(found, locale())
+        found.held = true
+        bumpLogic.unpack(found, bumpLogic.locale)
     end
 end
 
