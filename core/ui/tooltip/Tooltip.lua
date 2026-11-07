@@ -399,7 +399,9 @@ end
 -- blockStart for nextBlock/previousBlock.
 function comparison.append(lines, header, blockLines)
     local first = #lines + 1
-    if header ~= nil and (blockLines[1] == nil or blockLines[1][1] ~= header) then
+    local firstText = blockLines[1] ~= nil and blockLines[1][1] or nil
+    -- A secret first line cannot be compared: the header goes in.
+    if header ~= nil and (firstText == nil or WowVision.secrets.isSecret(firstText) or firstText ~= header) then
         tinsert(lines, { header, nil, compare = true })
     end
     for _, line in ipairs(blockLines) do
