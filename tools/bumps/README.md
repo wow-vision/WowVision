@@ -85,6 +85,13 @@ luajit -joff tools/bumps/cost.lua <client>
 
 Per zone the index's memory once unpacked, the unpack time and a lookup's time.
 
+## Checking a walk in the game
+
+The module keeps the last 200 bumps it named in the saved variable `WowVisionDump.bumps` (written at a reload or a
+logout): date and time, zone, x and y, the room it held (nil: unknown), whether it counted the player inside, the
+rooms whose objects counted, and the text said. A bump that named the wrong thing can be looked up there: its
+position against the zone's rooms and objects in `mapdata/bumps/<client>/`.
+
 ## Results on 2026-11-07 (TBC Anniversary data)
 
 - stacked.lua: another floor's object would be named in 0 to 7.3% of all pushes (Elwynn 3.7%, Dun Morogh 0.9%,

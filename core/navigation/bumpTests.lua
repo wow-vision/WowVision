@@ -196,6 +196,36 @@ testRunner:addSuite("BumpLogic", {
         t:assertEqual(tr.room, 0)
     end,
 
+    ["a room without doorways around a building neither keeps nor takes the player"] = function(t)
+        -- the Wizard's Sanctum (walk 2026-11-07): a square's room without doorways (3) lies around a tower whose
+        -- entrance room (1, world x 5..10, its doorway at x 5) leads by a doorway to a stairs room (2, x 10..14,
+        -- its floor box rough); the game calls parts of the square indoors
+        local zone = {
+            key = "sanctum", map = 0, top = 100, left = 100, cell = 4, rows = 50, cols = 50,
+            objects = "200 0 20 20 0 1 3", objectNames = { enUS = { "tree" } },
+            interiors = "0 0 1 1 0 0 1", interiorNames = { enUS = { "Sanctum" } }, interiorWalls = {},
+            rooms = "1 0 4 -10 -5 -5 5 0 1 0 4 -14 -5 -10 5 0 1 0 4 -40 -40 20 40 0",
+            doors = "0 1 1 -5 0 1 0 1 2 1 2 1 -10 0 1 0 1 2",
+            structCells = "", structNames = { enUS = {} },
+        }
+        bumpLogic.unpack(zone, "enUS")
+        local tr = bumpLogic.newTracker()
+        local indoors = { indoors = true }
+        -- on the square, indoors by the game's word: the square's room, a guess
+        tr:update(zone, 2, 0, nil, nil, indoors)
+        t:assertEqual(tr.room, 3)
+        -- through the tower's doorway: its entrance room, though the guess had no doorway to cross
+        tr:update(zone, 4, 0, 2, 0, indoors)
+        tr:update(zone, 6, 0, 4, 0, indoors)
+        t:assertEqual(tr.room, 1)
+        tr:update(zone, 11, 0, 6, 0, indoors)
+        t:assertEqual(tr.room, 2)
+        -- 5 yd past the stairs' rough floor box, where only the square's floor lies: still the stairs
+        tr:update(zone, 19, 0, 11, 0, indoors)
+        t:assertEqual(tr.room, 2)
+        t:assertNil(tr:objectRooms()[3])
+    end,
+
     ["another module's room and wall text are taken"] = function(t)
         local zone = makeZone()
         local tr = bumpLogic.newTracker()

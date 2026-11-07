@@ -24,6 +24,9 @@ bumpLogic.ROOM_SLACK = 2.0 -- yd; where no floor lies right under the player, a 
 bumpLogic.DOOR_REACH = 3.0 -- yd from a doorway's plane (or centre, without its width) within which a crossing counts
 bumpLogic.DOOR_SIDE = 1.0 -- yd past the edges of the opening that still count as through it
 bumpLogic.DOOR_HOLD = 4.0 -- yd from a doorway of the room entered through a doorway within which that room holds
+-- yd off its floor within which a room entered through a doorway is left only for a room joined to it by a doorway
+-- (floor boxes are rough: on the Wizard's Sanctum's winding stairs the player stood 3 yd beyond theirs)
+bumpLogic.ROOM_FAR = 6.0
 bumpLogic.HALL_GAP = 15 -- yd walked in a hall with no hall floor near (a bridge, over lava) before it ends
 bumpLogic.HERE_SAME = 1.5 -- yd from the spot kept over a reload that still count as the same
 bumpLogic.JUMP = 100 -- yd between two looks from which the player was moved (a hearthstone, a portal)
@@ -404,9 +407,31 @@ function bumpLogic.resolveRoom(zone, x, y, current, byDoor, indoors)
                 return current, cands
             end
         end
+        -- no step leads into a room without a doorway between: near its floor it holds unless a room joined to it
+        -- is here (the square's doorless room around Stormwind's Wizard's Sanctum took the player off its stairs)
+        if bumpLogic.onFloor(zone, current, x, y, bumpLogic.ROOM_FAR) then
+            local joined = false
+            local neighbours = ix.neighbours[current] or {}
+            for _, id in ipairs(bumpLogic.roomsAt(zone, x, y, bumpLogic.ROOM_SLACK, indoors)) do
+                joined = joined or neighbours[id] == true
+            end
+            if not joined then
+                return current, cands
+            end
+        end
     end
     if #cands == 0 then
         cands = bumpLogic.roomsAt(zone, x, y, bumpLogic.ROOM_SLACK, indoors)
+    end
+    if real then
+        -- a room without any doorway is no room one walks into from another (only a guess where nothing else is)
+        local kept = {}
+        for _, id in ipairs(cands) do
+            if id == current or ix.doorsOf[id] ~= nil then
+                kept[#kept + 1] = id
+            end
+        end
+        cands = kept
     end
     if #cands == 0 then
         return nil, cands
@@ -486,6 +511,12 @@ function Tracker:update(zone, x, y, px, py, game)
         from = 0
     end
     local crossed = bumpLogic.crossedDoor(zone, from, px, py, x, y)
+    -- a room only guessed (not entered through a doorway) does not hide a doorway in from outside: the game calls
+    -- parts of the square around Stormwind's Wizard's Sanctum indoors, the only room there is one without doorways
+    -- (the square's own), and walking into the tower kept that room and named the square's trees (walk 2026-11-07)
+    if crossed == nil and not self.byDoor and from ~= 0 then
+        crossed = bumpLogic.crossedDoor(zone, 0, px, py, x, y)
+    end
     if crossed ~= nil then
         self.room, self.byDoor = crossed, crossed ~= 0
         if crossed == 0 then

@@ -92,6 +92,29 @@ local function restoreHere(x, y)
     end
 end
 
+-- The bumps named, to check a walk afterwards: WowVisionDump.bumps (saved at a reload or logout), the last
+-- RECORD_KEPT lines "<date time> <zone> <x> <y> room=<room held> inside=<true|false> rooms=<rooms whose objects
+-- counted> <text>" (room nil: unknown; rooms empty: outdoor objects, or any room's).
+local RECORD_KEPT = 200
+local function record(x, y, inside, rooms, text)
+    WowVisionDump = WowVisionDump or {}
+    local list = WowVisionDump.bumps
+    if type(list) ~= "table" then
+        list = {}
+        WowVisionDump.bumps = list
+    end
+    local ids = {}
+    for id in pairs(rooms or {}) do
+        ids[#ids + 1] = id
+    end
+    table.sort(ids)
+    list[#list + 1] = string.format("%s %s %.1f %.1f room=%s inside=%s rooms=%s %s", date("%Y-%m-%d %H:%M:%S"),
+        zone.key, x, y, tostring(tracker.room), tostring(inside and true or false), table.concat(ids, ","), text)
+    while #list > RECORD_KEPT do
+        table.remove(list, 1)
+    end
+end
+
 -- The way the player pushes from the movement keys held and the facing, as a unit vector, or nil.
 local function pushDirection()
     local facing = GetPlayerFacing()
@@ -187,9 +210,11 @@ module:hasUpdate(function(self)
     if vx == nil then
         return
     end
-    local text, key = bumpLogic.bumpText(zone, x, y, vx, vy, tracker:inside(game), tracker:objectRooms(),
+    local inside, rooms = tracker:inside(game), tracker:objectRooms()
+    local text, key = bumpLogic.bumpText(zone, x, y, vx, vy, inside, rooms,
         { wall = L["wall"], wallOf = L["wall of %s"] }, givenWall)
     if bumpLogic.take(state, key) then
+        record(x, y, inside, rooms, text)
         self:fireAlert("bump", { text = text })
     end
 end)
