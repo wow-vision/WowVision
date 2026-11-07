@@ -28,6 +28,8 @@ local settings = module:hasSettings()
 --   toggle     { get, set }: a checkbox instead; Enter flips it
 --   details    list of strings, or function -> list: Backspace opens them
 --              as a read-only child screen
+--   tooltip    tooltip data ({ type = "Hyperlink", link = ... }): the
+--              tooltip keys (Shift+Down, Shift+Up) read it
 
 settings:add({
     key = "radius",
@@ -44,6 +46,16 @@ settings:add({
     default = 25,
     min = 5,
     max = 200,
+})
+
+-- On: the scanner is one tree, groups open and close in place (Right,
+-- Left, Enter). Off: it is a menu like the WowVision menu, each Enter one
+-- level deeper, Escape one level back.
+settings:add({
+    key = "asTree",
+    type = "Bool",
+    label = L["Scanner as Tree"],
+    default = true,
 })
 
 module.providers = {}

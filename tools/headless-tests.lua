@@ -221,6 +221,8 @@ loadAddonFile("core/quests/Adapter.lua")
 loadAddonFile("core/quests/tests.lua")
 loadAddonFile("core/quests/progress.lua")
 loadAddonFile("core/quests/progressTests.lua")
+loadAddonFile("core/quests/tooltip.lua")
+loadAddonFile("core/quests/tooltipTests.lua")
 loadAddonFile("core/minimap/logic.lua")
 loadAddonFile("core/minimap/gatheringNames.lua")
 loadAddonFile("core/minimap/tests.lua")
@@ -1380,6 +1382,22 @@ loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
 loadAddonFile("core/graph/controlTests.lua")
+-- The graph host itself, with its frame stubbed (its announcer words saved and
+-- restored so the graph suites keep their own), then the scanner window on it.
+do
+    local announcer = WowVision.graph.announcer
+    local savedCreateFrame = CreateFrame
+    local savedPosition, savedExpanded = announcer.positionText, announcer.expandedStateText
+    CreateFrame = function()
+        return { RegisterEvent = function() end, SetScript = function() end }
+    end
+    loadAddonFile("core/graph/Screen.lua")
+    loadAddonFile("core/graph/Host.lua")
+    CreateFrame = savedCreateFrame
+    announcer.positionText, announcer.expandedStateText = savedPosition, savedExpanded
+    WowVision.graphHost = nil
+end
+loadAddonFile("core/scanner/menuTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
 
@@ -1486,6 +1504,7 @@ local parseOnly = {
     "core/chat/module.lua",
     "core/chat/ui.lua",
     "core/ui/tooltip/types/HyperlinkTooltip.lua",
+    "core/ui/tooltip/types/LinesTooltip.lua",
     "core/ui/tooltip/types/AuraTooltip.lua",
     "mists/auction.lua",
     "tbc/QuestLog.lua",

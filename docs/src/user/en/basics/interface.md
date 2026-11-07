@@ -80,7 +80,7 @@ While a control has focus, WowVision watches it. If its text, its checked state 
 
 Up and Down move through the controls in the order they appear. Where controls sit side by side in a row, Left and Right move along the row. Moving up or down from a row lands on the first control of the next row, except in grids and tables that are laid out in columns, where you stay in the same column.
 
-If you press an arrow key at the edge of a list, nothing happens and nothing is said. Windows do not wrap around with arrow keys.
+If you press Up on the first entry of a list or Down on the last, you stay there and hear that entry again, so you know you are at the end and the list is not empty. Left and Right at the end of a row stay silent. Windows do not wrap around with arrow keys.
 
 ### Tab stops
 

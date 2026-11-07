@@ -82,7 +82,7 @@ Solange ein Steuerelement den Fokus hat, behält WowVision es im Blick. Ändert 
 
 Pfeil hoch und Pfeil runter gehen in der Reihenfolge durch die Steuerelemente, in der sie erscheinen. Wo Steuerelemente nebeneinander in einer Zeile stehen, gehen Pfeil links und Pfeil rechts an der Zeile entlang. Wenn du aus einer Zeile nach oben oder unten gehst, landest du auf dem ersten Steuerelement der nächsten Zeile. Ausnahme sind Raster und Tabellen, die in Spalten angeordnet sind: Dort bleibst du in derselben Spalte.
 
-Drückst du am Rand einer Liste eine Pfeiltaste, passiert nichts und es wird nichts gesagt. Die Pfeiltasten springen in Fenstern nicht von hinten nach vorn.
+Drückst du auf dem ersten Eintrag einer Liste Pfeil hoch oder auf dem letzten Pfeil runter, bleibst du dort und hörst diesen Eintrag noch einmal. So weißt du, dass du am Ende bist und die Liste nicht leer ist. Pfeil links und Pfeil rechts am Ende einer Zeile bleiben still. Die Pfeiltasten springen in Fenstern nicht von hinten nach vorn.
 
 ### Tabstopps
 

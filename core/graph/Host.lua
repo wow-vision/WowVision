@@ -635,8 +635,10 @@ function GraphHost:_dispatchKey(key)
 end
 
 -- Arrows: a focused slider adjusts on left/right before any navigation;
--- edge-wired movement next; at an edge, left/right get tree semantics; a bump
--- with nothing to do re-reads the current node for orientation.
+-- edge-wired movement next; at an edge, a node's own onRight/onLeft (a menu
+-- entry opening its level, or going back), then tree semantics. Up or down
+-- past the first or last entry reads that entry again, so the end of a list
+-- never sounds like an empty one.
 function GraphHost:_arrow(screen, dir)
     local kg = screen.keyGraph
     local node = kg:currentNode()
@@ -656,6 +658,14 @@ function GraphHost:_arrow(screen, dir)
         return
     end
 
+    if dir == "right" and node.vtable.onRight ~= nil then
+        node.vtable.onRight()
+        return
+    elseif dir == "left" and node.vtable.onLeft ~= nil then
+        node.vtable.onLeft()
+        return
+    end
+
     if dir == "left" or dir == "right" then
         local result = dir == "right" and kg:treeRight() or kg:treeLeft()
         if result.kind == "expanded" or result.kind == "collapsed" then
@@ -672,8 +682,12 @@ function GraphHost:_arrow(screen, dir)
         end
     end
 
-    -- Focus did not move: stay silent. Re-reading the same node on a
-    -- boundary bump is noise when arrowing quickly.
+    -- Up or down did not move: the first or last entry. Read it again;
+    -- silence there sounds like an empty list. (Left and right stay
+    -- silent: a row's end is not a list's end.)
+    if dir == "up" or dir == "down" then
+        self:_speakFocusedState(screen)
+    end
 end
 
 function GraphHost:_tab(screen, key)
