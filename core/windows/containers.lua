@@ -199,6 +199,25 @@ function module.visualRows(buttons)
     return rows
 end
 
+-- One item slot of a bag or the bank: the label (with "[Favorite]" and "[Junk]"
+-- ahead of it when the player marked its item, see favorites.lua and junk.lua),
+-- the clicks, and the Select Favorite and Select Junk keys and menu entries.
+-- The bags' Item Lists stop (retail/containers/Bags.lua) lists slots again and
+-- builds them with this too, so they read the same wherever they are.
+local function slotNode(itemButton)
+    local function locate()
+        return module.slotLocation(itemButton)
+    end
+    local windows = WowVision.base.windows
+    local favorites, junk = windows.favorites, windows.junk
+    local node = module.itemSlotNode(itemButton, function()
+        local label = junk:tagLabel(module.getBagItemLabel(itemButton), locate())
+        return favorites:tagLabel(label, locate())
+    end, module.itemClickLabels(itemButton))
+    return junk:decorateSlot(favorites:decorateSlot(node, locate), locate)
+end
+module.slotNode = slotNode
+
 -- Emit a bag's item slots in the configured shape. Grid rows share the
 -- "grid" row key, so up and down follow POSITION in the row rather than
 -- the screen column: the combined bag fills from the bottom-right and a
@@ -212,12 +231,7 @@ function module.renderSlots(builder, buttons)
     if not grid then
         for _, itemButton in ipairs(buttons) do
             if itemButton:IsShown() then
-                builder:addItem(
-                    ControlId.forObject(itemButton),
-                    module.itemSlotNode(itemButton, function()
-                        return module.getBagItemLabel(itemButton)
-                    end, module.itemClickLabels(itemButton))
-                )
+                builder:addItem(ControlId.forObject(itemButton), slotNode(itemButton))
             end
         end
         return #rows
@@ -225,12 +239,7 @@ function module.renderSlots(builder, buttons)
     for _, row in ipairs(rows) do
         builder:startRow("grid")
         for _, itemButton in ipairs(row) do
-            builder:addItem(
-                ControlId.forObject(itemButton),
-                module.itemSlotNode(itemButton, function()
-                    return module.getBagItemLabel(itemButton)
-                end, module.itemClickLabels(itemButton))
-            )
+            builder:addItem(ControlId.forObject(itemButton), slotNode(itemButton))
         end
         builder:endRow()
     end

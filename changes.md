@@ -20,6 +20,8 @@ The full manual is online, in English and German: [WowVision documentation](http
 * Quest log: F9 opens the Scanner on the quest you are on, and F10 opens the navigation window aimed at that quest's next target.
 * Group invitations: /wv accept and a new unbound Accept Group Invitation binding accept an invitation, even in combat.
 * Fixed tooltip money lines failing on secret values.
+* Junk: the new Select Junk binding (Shift+Enter by default, changed under UI, Bindings) marks the item you stand on in the bags or bank as junk, and takes the mark off again. WowVision says what happened, and a marked item reads "[Junk]" before its name. Marked items are sold when a merchant opens (the new Automatically Sell Items Marked as Junk setting of Merchant, on by default), together with the grey items if Automatically Sell Poor Items is on, and WowVision now says what it sold, naming the marked items, instead of printing it in the chat. The marks are kept for each character. On bag and bank slots Select Junk takes Shift+Enter from the shift click, so give it another key if you split stacks with Shift+Enter. The automatic sale now also covers the reagent bag. On Retail and WoW: Forever the Junk category of the new Item Lists stop in the bags lists everything you marked, so all of it is in one place.
+* Favorites: the new Select Favorite binding (Shift+Backspace by default, changed under UI, Bindings) marks the item you stand on in the bags or bank as a favorite, and takes the mark off again, the way Select Junk does for junk. A favorite reads "[Favorite]" before its name, is listed in the Favorites category of the Item Lists stop (Retail and WoW: Forever) and is never sold at a merchant, even if it is also marked as junk. Backspace alone is still the right click.
 
 ### Modern
 * The quest log is rebuilt to match the screen. The details replace the list, with a real Back button. The list gains search, settings, your quest count, quest tags, collapse state and the game's right click menus. Press Right on a quest for its Track Quest checkbox and its objectives. Details now read in the game's order and include the rewards, timer, required money and group size.
@@ -38,6 +40,7 @@ The full manual is online, in English and German: [WowVision documentation](http
 * WowNav routes: routes now start from the network's nearest point within 30 yards, instead of saying "No WowNav network here" a few steps off it.
 * WowNav routes: a start and target on one link no longer walk a detour, and most routes no longer end with the unchecked last stretch warning.
 * WowNav routes: reaching the last point now says Arrived and the target's name.
+* Bags (Retail and WoW: Forever): a new stop right after the bags, Item Lists, holds categories you open with Right and close with Left, like the scanner's. The first, New Items, lists the items the game marks as new, so nothing you just looted is missed; items stay in it until you close the bags, even after the game clears their mark on hover. The stop only exists while some category has something in it.
 * WowNav: the Scanner's Enter on an NPC or object WowNav knows now routes to WowNav's own entry, with its height.
 
 ## V1.0.0

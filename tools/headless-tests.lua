@@ -230,6 +230,8 @@ loadAddonFile("core/colors/colors.lua")
 loadAddonFile("core/colors/tests.lua")
 loadAddonFile("core/windows/bars/lock.lua")
 loadAddonFile("core/windows/bars/tests.lua")
+loadAddonFile("core/windows/junkStore.lua")
+loadAddonFile("core/windows/junkStoreTests.lua")
 loadAddonFile("core/targeting/softTargeting.lua")
 loadAddonFile("core/targeting/softTargetingTests.lua")
 loadAddonFile("core/ui modules/enemyCount.lua")
@@ -240,6 +242,10 @@ loadAddonFile("core/utils.lua")
 loadAddonFile("core/utilsTests.lua")
 loadAddonFile("core/secrets.lua")
 loadAddonFile("core/secretsTests.lua")
+loadAddonFile("core/windows/bagLists.lua")
+loadAddonFile("core/windows/bagListsTests.lua")
+loadAddonFile("core/windows/newItems.lua")
+loadAddonFile("core/windows/newItemsTests.lua")
 loadAddonFile("core/ui/input/heldKeys.lua")
 loadAddonFile("core/ui/input/heldKeysTests.lua")
 loadAddonFile("core/ui/input/padLogic.lua")
@@ -1381,6 +1387,9 @@ loadAddonFile("core/graph/controlTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
 
+-- The junk module and the merchant sale, against a stand-in for the game.
+loadAddonFile("tools/junkModuleTests.lua")
+
 -- Files that need the game client to run but should at least parse cleanly.
 local parseOnly = {
     "vanilla/speech.lua",
@@ -1420,6 +1429,9 @@ local parseOnly = {
     "core/graph/hybridScroll.lua",
     "mists/QuestLog.lua",
     "core/windows/merchant.lua",
+    "core/windows/marks.lua",
+    "core/windows/junk.lua",
+    "core/windows/favorites.lua",
     "core/windows/containers.lua",
     "classic/containers/Bag.lua",
     "classic/containers/Bank.lua",
