@@ -319,7 +319,7 @@ local function addSoftTarget(info)
             if value then
                 text = info.label .. " " .. L["Enabled"]
             else
-                text = info.label .. " " .. L["Disabled"]
+                text = info.label .. " " .. L["SettingDisabled"]
             end
             -- The switch is secure: pressed in combat it lands when combat ends.
             if writer.pending[info.cvar] ~= nil then
