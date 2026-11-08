@@ -21,23 +21,35 @@ soft.lockModes = { "game", "always", "noHardTarget", "noAttackableHardTarget" }
 
 -- Returns the WithLocked and MatchLocked values for a mode and the current
 -- hard target, or nil for an unknown mode (the game's values stay).
-function soft.lockValues(mode, hasTarget, canAttack, dead)
+--
+-- loose: the target is one the game set itself (IsTargetLoose), because
+-- SoftTargetForce (on for enemies by default, or for friends) makes the
+-- soft target the target. Such a target is no hard target here. The game counts it as
+-- locked, though: with WithLocked 0 it dropped the soft enemy at once, the
+-- loose target with it, then picked the same enemy again, every frame or
+-- two (measured on Forever 2026-11-08: the event 40 times a second, gone
+-- with WithLocked 1 or Force 0). So 0 is written only for a target you
+-- chose, never as a resting value; with no such target soft targeting may
+-- act (2). Tabbing to a mob lets soft targeting act for the frame before
+-- the write lands. Attacking a loose target leaves it loose (measured: the
+-- whole fight), so these modes never hold back soft targeting for an enemy
+-- the game picked: soft targeting keeps working, as with Game Default.
+function soft.lockValues(mode, hasTarget, canAttack, dead, loose)
     if mode == soft.GAME_DEFAULT then
         return nil
     end
+    local chosen = hasTarget and not loose
     if mode == "always" then
         return 2, 0
     elseif mode == "noHardTarget" then
-        return 0, 1
+        return chosen and 0 or 2, 1
     elseif mode == "noAttackableHardTarget" then
-        -- 0 is the resting state, also with no target at all: WithLocked only
-        -- acts while a target is locked, and resting at 0 means a mob you tab
-        -- to suppresses soft targeting at once. 2 only for a target you cannot
-        -- attack: a corpse you loot, an NPC you talk to, a player you follow.
-        if hasTarget and (not canAttack or dead) then
-            return 2, 2
+        -- 2 also for a target you cannot attack: a corpse you loot, an NPC
+        -- you talk to, a player you follow.
+        if chosen and canAttack and not dead then
+            return 0, 2
         end
-        return 0, 2
+        return 2, 2
     end
     return nil
 end

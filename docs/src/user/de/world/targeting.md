@@ -225,7 +225,7 @@ Das Spiel hat eine zusätzliche Regel dafür, was die weiche Zielerfassung tut, 
 | Nur ohne festes Ziel | Jedes echte Ziel schaltet die weiche Zielerfassung aus |
 | Immer | Die weiche Zielerfassung arbeitet, was auch immer du im Ziel hast |
 
-Der Modus folgt jedem Zielwechsel und auch dem Tod deines Ziels, und er funktioniert ebenfalls im Kampf.
+Der Modus folgt jedem Zielwechsel und auch dem Tod deines Ziels, und er funktioniert ebenfalls im Kampf. Ein Ziel, das das Spiel von selbst aus deinem weichen Ziel setzt (Soft Target wird festes Ziel, im Spielstandard für Feinde an), ist hier kein echtes Ziel, auch während du es bekämpfst: Die weiche Zielerfassung arbeitet damit weiter. Nur ein Ziel, das du selbst wählst, mit Tab oder einem Klick, zählt. Mit dem Spielstandard treten die beiden Modi „Nur ohne“ also nur für Feinde zurück, die du selbst ins Ziel nimmst.
 
 Weiches Ziel wird festes Ziel (Make Soft Target the Hard Target; Standard Spielstandard) lässt das Spiel dein echtes Ziel zum weichen machen. Auswahl: Spielstandard, Aus, Feinde, Freunde. Wie die Ein/Aus-Schalter wird auch diese Einstellung bis zum Ende des Kampfes zurückgehalten, wenn du sie während eines Kampfes änderst.
 
@@ -234,7 +234,7 @@ Weiches Ziel wird festes Ziel (Make Soft Target the Hard Target; Standard Spiels
 1. Drücke Umschalt+O, um die weiche Interaktion einzuschalten. Du hörst "Weiches Ziel Interaktion Aktiviert".
 2. Stelle im Menü Zielerfassung die Einstellung Weiches Ziel bei festem Ziel auf Nur ohne angreifbares festes Ziel.
 3. Töte ein Monster und gehe zu seiner Leiche. WowVision sagt dir, was das weiche Interaktionsziel ist, sobald es wechselt.
-4. Drücke die Interaktionstaste des Spiels. Solange das tote Monster dein Ziel ist, bleibt die weiche Zielerfassung aktiv, die Taste plündert also die Leiche. Hättest du stattdessen einen lebenden Feind neben der Leiche im Ziel, würde die weiche Zielerfassung beiseitetreten, und die Interaktionstaste würde auf diesen Feind wirken.
+4. Drücke die Interaktionstaste des Spiels. Solange das tote Monster dein Ziel ist, bleibt die weiche Zielerfassung aktiv, die Taste plündert also die Leiche. Hättest du stattdessen selbst (Tab oder ein Klick) einen lebenden Feind neben der Leiche ins Ziel genommen, würde die weiche Zielerfassung beiseitetreten, und die Interaktionstaste würde auf diesen Feind wirken.
 
 ### Die Werte prüfen: /wv soft
 

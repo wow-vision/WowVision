@@ -223,7 +223,7 @@ The game has an extra rule for what soft targeting does while you already have a
 | Only Without a Hard Target | Any real target turns soft targeting off |
 | Always | Soft targeting works whatever you have targeted |
 
-The mode follows every target change and also your target's death, and it works in combat too.
+The mode follows every target change and also your target's death, and it works in combat too. A target the game sets by itself from your soft target (Make Soft Target the Hard Target, on for enemies by default) is not a real target here, also while you fight it: soft targeting keeps working with it. Only a target you choose yourself, with Tab or a click, counts. So with the game's default the two Only Without modes step aside only for enemies you target yourself.
 
 Make Soft Target the Hard Target (default Game Default) lets the game turn your real target into the soft one. Choices: Game Default, Off, Enemies, Friends. Like the on/off switches, this one is held until combat ends if you change it during a fight.
 
@@ -232,7 +232,7 @@ Make Soft Target the Hard Target (default Game Default) lets the game turn your 
 1. Press Shift+O to switch soft interact on. You hear "Soft Target Interact Enabled".
 2. In the Targeting menu set Soft Targeting With a Hard Target to Only Without an Attackable Hard Target.
 3. Kill a monster and walk up to its corpse. WowVision says what the soft interact target is as it changes.
-4. Press the game's interact key. While the dead monster is your target, soft targeting stays active, so the key loots the corpse. Had you targeted a living enemy next to the corpse instead, soft targeting would step aside and the interact key would act on that enemy.
+4. Press the game's interact key. While the dead monster is your target, soft targeting stays active, so the key loots the corpse. Had you targeted a living enemy next to the corpse yourself (Tab or a click) instead, soft targeting would step aside and the interact key would act on that enemy.
 
 ### Checking the values: /wv soft
 
