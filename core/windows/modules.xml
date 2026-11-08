@@ -3,7 +3,11 @@
 
 <Script file="module.lua" />
   <Include file="bars/modules.xml" />
+  <Script file="bagLists.lua" />
+  <Script file="bagListsTests.lua" />
   <Script file="containers.lua" />
+  <Script file="newItems.lua" />
+  <Script file="newItemsTests.lua" />
 <Script file="GameMenu.lua" />
   <Script file="gossip.lua" />
   <Script file="itemText.lua" />

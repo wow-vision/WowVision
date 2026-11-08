@@ -38,6 +38,7 @@ The full manual is online, in English and German: [WowVision documentation](http
 * WowNav routes: routes now start from the network's nearest point within 30 yards, instead of saying "No WowNav network here" a few steps off it.
 * WowNav routes: a start and target on one link no longer walk a detour, and most routes no longer end with the unchecked last stretch warning.
 * WowNav routes: reaching the last point now says Arrived and the target's name.
+* Bags (Retail and WoW: Forever): a new stop right after the bags, Item Lists, holds categories you open with Right and close with Left, like the scanner's. The first, New Items, lists the items the game marks as new, so nothing you just looted is missed; items stay in it until you close the bags, even after the game clears their mark on hover. The stop only exists while some category has something in it.
 * WowNav: the Scanner's Enter on an NPC or object WowNav knows now routes to WowNav's own entry, with its height.
 
 ## V1.0.0

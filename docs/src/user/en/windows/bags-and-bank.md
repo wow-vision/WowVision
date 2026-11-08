@@ -123,14 +123,21 @@ To move items between your bags and the bank, open both, pick an item up and pre
 
 These versions have two bag views, which you pick in the game's bag menu. WowVision follows what the game shows.
 
+### Item lists
+
+When there is something to look at, the bags get an extra stop called Item Lists. It comes right after the bags, so opening them still lands on their items. It holds categories like the scanner's, each reading its name and how many items it has, for example "New Items (2)". Right opens a category and Left closes it. Its items read like bag slots, and you can use, equip or move them from there as usual. The same items still sit in their slots in the bags. A category with nothing in it is left out, and with every category empty the stop is gone and the bags open as before.
+
+- New Items: what the game marks as new, the things you looted or bought since you last looked. It starts open. The game takes the new mark off an item as soon as you move the cursor onto it, and WowVision does the same when you land on a slot, so an item would vanish the moment you reach it. WowVision therefore keeps the items it has seen as new in the list until you close the bags. Open the bags again and only what is still marked new is listed.
+
 ### Combined bags
 
 All your bags are drawn as one big grid, and WowVision reads it the same way: the backpack first, then the other bags, no bag boundaries. The stops are:
 
 1. Bags: the slots, in the shape you chose (a grid is ten slots wide, with the first row possibly shorter). In the list shape the slots are in slot order, backpack first.
 2. Bag Slots: a row with the bag slot buttons of the backpack and your four bags. Each reads "Bag Slot" and the bag's name. The reagent bag and, on WoW: Forever, the keyring are drawn by the game as their own frames even in combined view. They are not in this row. Each gets a stop of its own, with its bag slot first, as in the individual view below.
-3. Search: a text box. Tab into it and type, and slots that do not match read Filtered. Tab out to leave it.
-4. Bag Controls: Bag Menu, a dropdown with one submenu per bag (filters, clean up, switch bag view); Sort Bags; Money, which reads your gold, for example "Money, 12 Gold 5 Silver"; and Add Slots when the game offers it.
+3. Item Lists: the categories described under Item lists above, when there is something in them.
+4. Search: a text box. Tab into it and type, and slots that do not match read Filtered. Tab out to leave it.
+5. Bag Controls: Bag Menu, a dropdown with one submenu per bag (filters, clean up, switch bag view); Sort Bags; Money, which reads your gold, for example "Money, 12 Gold 5 Silver"; and Add Slots when the game offers it.
 
 A backpack of an account without an authenticator shows four extra slots that cannot hold anything. WowVision does not read these as slots. The Add Slots button is still in Bag Controls.
 
@@ -147,6 +154,7 @@ Each bag is its own window, as on Classic. Each open bag is a stop, announced by
 
 - The first entry is the bag slot: "Bag Slot" and the bag name. Both clicks on it say Close Bag, or Place Item while you hold a bag. The bag's own menu (filters, clean up, switch bag view) is in the slot's context menu, as Bag Menu.
 - Search, Sort Bags, Money and Add Slots belong to the backpack. They appear in a stop called Bag Controls after the bags.
+- The Item Lists stop (see Item lists above) comes last, when there is something in it.
 
 ## Retail and WoW: Forever bank
 

@@ -125,14 +125,21 @@ Um Gegenstände zwischen deinen Taschen und der Bank zu verschieben, öffnest du
 
 Diese Versionen haben zwei Taschenansichten, die du im Taschenmenü des Spiels wählst. WowVision folgt dem, was das Spiel zeigt.
 
+### Gegenstandslisten
+
+Gibt es etwas anzusehen, bekommen die Taschen einen zusätzlichen Stopp namens Gegenstandslisten. Er kommt direkt nach den Taschen, sodass beim Öffnen weiterhin ihre Gegenstände zuerst gelesen werden. Er enthält Kategorien wie die des Scanners, jede liest ihren Namen und wie viele Gegenstände sie hat, zum Beispiel „Neue Gegenstände (2)“. Pfeil rechts öffnet eine Kategorie, Pfeil links schließt sie. Ihre Gegenstände werden wie Taschenplätze gelesen, und du kannst sie von dort wie gewohnt benutzen, anlegen oder verschieben. Dieselben Gegenstände liegen weiterhin in ihren Plätzen in den Taschen. Eine leere Kategorie fehlt, und sind alle leer, ist der Stopp weg und die Taschen öffnen sich wie bisher.
+
+- Neue Gegenstände: was das Spiel als neu markiert, also das, was du seit deinem letzten Blick erbeutet oder gekauft hast. Die Kategorie ist zu Beginn offen. Das Spiel nimmt die Neu-Markierung von einem Gegenstand, sobald du den Cursor darauf bewegst, und WowVision tut dasselbe, wenn du auf einem Platz landest; ein Gegenstand würde also verschwinden, sobald du ihn erreichst. WowVision behält deshalb die Gegenstände, die es als neu gesehen hat, in der Liste, bis du die Taschen schließt. Öffnest du sie erneut, werden nur die aufgelistet, die noch als neu markiert sind.
+
 ### Zusammengefasste Taschen
 
 Alle deine Taschen werden als ein großes Raster gezeichnet, und WowVision liest es genauso: zuerst der Rucksack, dann die anderen Taschen, ohne Taschengrenzen. Die Stopps sind:
 
 1. Taschen (Bags): die Plätze in der Form, die du gewählt hast (ein Raster ist zehn Plätze breit, die erste Zeile kann kürzer sein). In der Listenform stehen die Plätze in Platzreihenfolge, der Rucksack zuerst.
 2. Taschenplätze (Bag Slots): eine Zeile mit den Taschenplatz-Schaltflächen des Rucksacks und deiner vier Taschen. Jede liest „Taschenplatz“ und den Namen der Tasche. Die Reagenzientasche und, in WoW: Forever, der Schlüsselbund zeichnet das Spiel auch in der zusammengefassten Ansicht als eigene Rahmen. Sie stehen nicht in dieser Zeile. Jede bekommt einen eigenen Stopp, mit ihrem Taschenplatz zuerst, wie in der Einzelansicht weiter unten.
-3. Suchen (Search): ein Textfeld. Gehe mit Tab hinein und tippe, und Plätze, die nicht passen, lesen Gefiltert. Mit Tab verlässt du das Feld.
-4. Taschensteuerung (Bag Controls): Taschenmenü (Bag Menu), ein Dropdown mit einem Untermenü pro Tasche (Filter, Aufräumen, Taschenansicht wechseln); Taschen sortieren; Geld, das dein Gold liest, zum Beispiel „Geld, 12 Gold 5 Silber“; und Plätze hinzufügen, wenn das Spiel das anbietet.
+3. Gegenstandslisten (Item Lists): die oben beschriebenen Kategorien, wenn etwas darin ist.
+4. Suchen (Search): ein Textfeld. Gehe mit Tab hinein und tippe, und Plätze, die nicht passen, lesen Gefiltert. Mit Tab verlässt du das Feld.
+5. Taschensteuerung (Bag Controls): Taschenmenü (Bag Menu), ein Dropdown mit einem Untermenü pro Tasche (Filter, Aufräumen, Taschenansicht wechseln); Taschen sortieren; Geld, das dein Gold liest, zum Beispiel „Geld, 12 Gold 5 Silber“; und Plätze hinzufügen, wenn das Spiel das anbietet.
 
 Ein Rucksack eines Accounts ohne Authenticator zeigt vier zusätzliche Plätze, die nichts aufnehmen können. WowVision liest diese nicht als Plätze. Die Schaltfläche Plätze hinzufügen bleibt in der Taschensteuerung.
 
@@ -149,6 +156,7 @@ Jede Tasche ist ein eigenes Fenster, wie in Classic. Jede offene Tasche ist ein 
 
 - Der erste Eintrag ist der Taschenplatz: „Taschenplatz“ und der Taschenname. Beide Klicks darauf sagen Tasche schließen, oder Gegenstand ablegen, solange du eine Tasche hältst. Das eigene Menü der Tasche (Filter, Aufräumen, Taschenansicht wechseln) liegt im Kontextmenü des Platzes, als Taschenmenü.
 - Suche, Taschen sortieren, Geld und Plätze hinzufügen gehören zum Rucksack. Sie erscheinen nach den Taschen in einem Stopp namens Taschensteuerung.
+- Der Stopp Gegenstandslisten (siehe oben) kommt zuletzt, wenn etwas darin ist.
 
 ## Bank in Retail und WoW: Forever
 
