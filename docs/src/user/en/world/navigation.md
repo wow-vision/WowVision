@@ -106,7 +106,7 @@ A waypoint counts as reached when you are within the arrival distance of it (see
 
 ### Beacon sounds
 
-All beacon sounds are one alert called Beacon in the Beacon Settings module (WowVision menu, Navigation, Beacon Settings, Beacon). The alert and each of its four sounds has its own Enabled switch and its own sound, so each cue can be turned off or changed on its own. See [Alerts](../basics/alerts.md) for how alerts work.
+All beacon sounds are one alert called Beacon in the Beacon and Routes module (WowVision menu, Navigation, Beacon and Routes, Beacon). The alert and each of its four sounds has its own Enabled switch and its own sound, so each cue can be turned off or changed on its own. See [Alerts](../basics/alerts.md) for how alerts work.
 
 | Sound | Default | When it plays |
 |-------|---------|---------------|
@@ -255,11 +255,11 @@ When a destination is not on the link network (most creatures and objects are no
 
 ## Settings
 
-Open the WowVision menu (/wv), then Navigation, then Beacon Settings. Settings are shared by all your characters unless you change that in the module's context menu; see [Menu and settings](../basics/menu-and-settings.md).
+Open the WowVision menu (/wv), then Navigation, then Beacon and Routes. Settings are shared by all your characters unless you change that in the module's context menu; see [Menu and settings](../basics/menu-and-settings.md).
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| Enabled | On | Turns the whole Beacon Settings module off: not only the beacon but also routes, the keys and /beacon. |
+| Enabled | On | Turns the whole Beacon and Routes module off: not only the beacon but also routes, the keys and /beacon. |
 | Arrival Radius | Medium Range | Which arrival distance is active. Alt+P changes it too. |
 | Short Range | 0.3 yards | The short arrival distance (0.1 to 20 yards). |
 | Medium Range | 1 yard | The medium arrival distance (0.1 to 20 yards). |

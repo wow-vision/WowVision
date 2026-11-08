@@ -108,7 +108,7 @@ Ein Wegpunkt gilt als erreicht, wenn du innerhalb der Ankunftsdistanz von ihm bi
 
 ### Beacon-Töne
 
-Alle Beacon-Töne sind ein einziger Alarm namens Beacon im Modul Beacon-Einstellungen (WowVision-Menü, Navigation, Beacon-Einstellungen, Beacon). Der Alarm und jeder seiner vier Töne haben einen eigenen Schalter Aktiviert und einen eigenen Sound, sodass sich jedes Beacon einzeln ausschalten oder ändern lässt. Wie Alarme funktionieren, steht auf der Seite [Alarme](../basics/alerts.md).
+Alle Beacon-Töne sind ein einziger Alarm namens Beacon im Modul Beacon und Routen (WowVision-Menü, Navigation, Beacon und Routen, Beacon). Der Alarm und jeder seiner vier Töne haben einen eigenen Schalter Aktiviert und einen eigenen Sound, sodass sich jedes Beacon einzeln ausschalten oder ändern lässt. Wie Alarme funktionieren, steht auf der Seite [Alarme](../basics/alerts.md).
 
 | Ton | Standard | Wann er spielt |
 |-----|----------|----------------|
@@ -257,11 +257,11 @@ Liegt ein Ziel nicht im Verbindungsnetz (die meisten Kreaturen und Objekte tun d
 
 ## Einstellungen
 
-Öffne das WowVision-Menü (/wv), dann Navigation, dann Beacon-Einstellungen. Die Einstellungen gelten für alle deine Charaktere, solange du das nicht im Kontextmenü des Moduls änderst; siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).
+Öffne das WowVision-Menü (/wv), dann Navigation, dann Beacon und Routen. Die Einstellungen gelten für alle deine Charaktere, solange du das nicht im Kontextmenü des Moduls änderst; siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
-| Aktiviert | An | Schaltet das ganze Modul Beacon-Einstellungen aus: nicht nur das Beacon, sondern auch Routen, die Tasten und /beacon. |
+| Aktiviert | An | Schaltet das ganze Modul Beacon und Routen aus: nicht nur das Beacon, sondern auch Routen, die Tasten und /beacon. |
 | Ankunftsradius (Arrival Radius) | Mittlere Distanz | Welche Ankunftsdistanz aktiv ist. Alt+P ändert sie auch. |
 | Kurze Distanz | 0,3 Meter | Die kurze Ankunftsdistanz (0,1 bis 20 Meter). |
 | Mittlere Distanz | 1 Meter | Die mittlere Ankunftsdistanz (0,1 bis 20 Meter). |

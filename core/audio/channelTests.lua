@@ -50,7 +50,6 @@ end
 -- consts as retail/setup.lua declares them (Retail and WoW: Forever)
 local MAINLINE = {
     SOUND_CHANNELS = { { label = "Gameplay Sound Effects", value = "Gameplay SFX" } },
-    DEFAULT_SOUND_CHANNEL = "Gameplay SFX",
 }
 
 local function values(channels)
@@ -69,16 +68,16 @@ testRunner:addSuite("SoundChannels", {
         t:assertEqual(audio.defaultChannel, "SFX")
     end,
 
-    ["Retail and Forever: Gameplay SFX added and the default"] = function(t)
+    ["Retail and Forever: Gameplay SFX added, Sound Effects still the default"] = function(t)
         local audio = loadChannels(MAINLINE)
         t:assertEqual(values(audio.channels), "Master,SFX,Music,Ambience,Dialog,Gameplay SFX")
-        t:assertEqual(audio.defaultChannel, "Gameplay SFX")
+        t:assertEqual(audio.defaultChannel, "SFX")
     end,
 
     ["the selected channel, else the default"] = function(t)
         local audio = loadChannels(MAINLINE)
         withAudio(audio, function()
-            t:assertEqual(audio.channel(), "Gameplay SFX")
+            t:assertEqual(audio.channel(), "SFX")
             audio.selectedChannel = "Music"
             t:assertEqual(audio.channel(), "Music")
         end)

@@ -87,7 +87,7 @@ Menu paths read from the first level of the WowVision menu. The state in bracket
 | Diving Alert | Navigation, Compass | You go under water. Says "diving". | TTS, Sound Alert (off) |
 | Fall Detection | Navigation, Fall Detection | You fall. The announcement is said once when the falling sounds start. | Falling Sound (a rising series of sounds; the longer the fall, the higher the sound), Falling Announcement (TTS "Falling") |
 | Wall Detection | Navigation, Wall Detection | You are moving but something holds you back. | Five sounds for five degrees of blocking: Blocked, Mostly Blocked, Impeded, Slowed and Slightly Slowed. |
-| Beacon | Navigation, Beacon Settings | A route or beacon is active. | Beacon Sound (a directional ping that speeds up as you turn towards the target), Beacon Aligned (a click when you face it), Beacon Off Course (when you turn away), Waypoint Reached (when you arrive) |
+| Beacon | Navigation, Beacon and Routes | A route or beacon is active. | Beacon Sound (a directional ping that speeds up as you turn towards the target), Beacon Aligned (a click when you face it), Beacon Off Course (when you turn away), Waypoint Reached (when you arrive) |
 
 Inside instances the game does not report which way you face, so Speak Compass Direction stays silent there while the other compass alerts keep working. The settings of Fall Detection (Delay (milliseconds), Ignore Jumps) are in the module's screen, see [Movement](../world/movement.md). The arrival settings of Beacon are in [Navigation](../world/navigation.md).
 

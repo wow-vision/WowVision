@@ -106,7 +106,7 @@ Siehe [Chat](../windows/chat.md).
 | WowNav-Routenstatus (WowNav Route Status) | Unbelegt | (WoW: Forever) Spricht den Zustand der WowNav-Route |
 | Neue WowNav-Route um eine versperrte Stelle (New WowNav Route Around a Blocked Spot) | Unbelegt | (WoW: Forever) Plant eine neue Route, die die Stelle meidet, an der du feststeckst |
 
-Alt Gr ist keine Belegung: Es wird direkt gelesen, bleibt stumm, während du in einem Eingabefeld tippst, und lässt sich mit der Einstellung Entfernung mit Alt Gr ansagen (Announce Distance with Alt Gr) im Modul Beacon-Einstellungen (Beacon Settings, unter Navigation) ausschalten. Siehe [Navigation und Routen](../world/navigation.md) und [WowNav](../world/wownav.md).
+Alt Gr ist keine Belegung: Es wird direkt gelesen, bleibt stumm, während du in einem Eingabefeld tippst, und lässt sich mit der Einstellung Entfernung mit Alt Gr ansagen (Announce Distance with Alt Gr) im Modul Beacon und Routen (Beacon and Routes, unter Navigation) ausschalten. Siehe [Navigation und Routen](../world/navigation.md) und [WowNav](../world/wownav.md).
 
 ## Minimap
 

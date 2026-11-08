@@ -87,7 +87,7 @@ Die Menüpfade beginnen bei der ersten Ebene des WowVision-Menüs. Der Zustand i
 | Tauch-Alarm | Navigation, Kompass | Du tauchst unter Wasser. Sagt „tauchen“. | TTS, Soundalarm (aus) |
 | Fallerkennung | Navigation, Fallerkennung | Du fällst. Die Ansage wird einmal gesprochen, wenn die Fallsounds beginnen. | Fallgeräusch (eine aufsteigende Reihe von Sounds; je länger der Fall, desto höher der Sound), Fallansage (TTS „Fallen“) |
 | Wanderkennung | Navigation, Wanderkennung | Du bewegst dich, aber etwas hält dich zurück. | Fünf Sounds für fünf Grade der Behinderung: Blockiert, Größtenteils blockiert, Behindert, Verlangsamt und Leicht verlangsamt. |
-| Beacon | Navigation, Beacon-Einstellungen | Eine Route oder ein Beacon ist aktiv. | Beacon-Ton (ein Richtungs-Ping, der schneller wird, wenn du dich dem Ziel zuwendest), Beacon ausgerichtet (ein Klick, wenn du ihm zugewandt bist), Beacon abseits des Kurses (wenn du dich abwendest), Wegpunkt erreicht (wenn du ankommst) |
+| Beacon | Navigation, Beacon und Routen | Eine Route oder ein Beacon ist aktiv. | Beacon-Ton (ein Richtungs-Ping, der schneller wird, wenn du dich dem Ziel zuwendest), Beacon ausgerichtet (ein Klick, wenn du ihm zugewandt bist), Beacon abseits des Kurses (wenn du dich abwendest), Wegpunkt erreicht (wenn du ankommst) |
 
 In Instanzen meldet das Spiel nicht, in welche Richtung du blickst, daher bleibt Kompassrichtung ansagen dort stumm, während die übrigen Kompassalarme weiter funktionieren. Die Einstellungen der Fallerkennung (Verzögerung (Millisekunden), Sprünge ignorieren) stehen auf dem Bildschirm des Moduls, siehe [Bewegung und Orientierung](../world/movement.md). Die Ankunftseinstellungen von Beacon stehen unter [Navigation und Routen](../world/navigation.md).
 
