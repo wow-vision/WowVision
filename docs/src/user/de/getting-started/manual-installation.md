@@ -79,7 +79,7 @@ Für die Version gibt es keine Einstellung. Wenn eine Funktion nur auf manchen V
 
 WowVision bringt Texte auf Englisch, Deutsch und Französisch mit; die Sprache deines Spielclients entscheidet, welche benutzt wird, und jede andere Clientsprache fällt auf Englisch zurück.
 
-Die Sounds, Signaltöne und aufgenommenen Stimmen (Stimmenpakete) liegen ebenfalls im Ordner WowVision. Wenn du jemals ein Problem mit einem "fehlenden Sound" hast, liegt es an einer beschädigten oder unvollständigen Entpackung: Lösche den Ordner und entpacke das Zip erneut.
+Die Sounds, Beacon-Töne und aufgenommenen Stimmen (Stimmenpakete) liegen ebenfalls im Ordner WowVision. Wenn du jemals ein Problem mit einem "fehlenden Sound" hast, liegt es an einer beschädigten oder unvollständigen Entpackung: Lösche den Ordner und entpacke das Zip erneut.
 
 ## Von Hand aktualisieren
 

@@ -1,6 +1,6 @@
 local module = WowVision.base.navigation:createModule("maps")
 local L = module.L
-module:setLabel(L["Maps"])
+module:setLabel(L["Beacon Settings"])
 local settings = module:hasSettings()
 
 module.datasets = WowVision.Registry:new()

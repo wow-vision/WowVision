@@ -446,8 +446,12 @@ local function pushBrowse(field, owner, directory, segments)
                     end
                 end,
             })
+            -- A field may preview its entries itself (the Beacon Sound
+            -- picker plays them at the chosen Beacon Volume).
             vtable.onFocus = function()
-                if captured.preview ~= nil then
+                if field.preview ~= nil then
+                    field.preview(owner, captured)
+                elseif captured.preview ~= nil then
                     captured:preview()
                 end
             end

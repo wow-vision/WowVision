@@ -24,7 +24,7 @@ Den Bildschirm eines Moduls mit eigenen Einstellungen erreichst du direkt mit /w
 | /wv gsettings ui.tooltip.quality | Benutzeroberfläche, Tooltip, Qualität |
 | /wv gsettings ui.combat | Benutzeroberfläche, Kampf |
 | /wv gsettings navigation.compass | Navigation, Kompass |
-| /wv gsettings navigation.maps | Navigation, Karten |
+| /wv gsettings navigation.maps | Navigation, Beacon-Einstellungen |
 | /wv gsettings chat | Chat |
 | /wv gsettings targeting | Zielerfassung |
 | /wv gsettings errors | Fehler |
@@ -61,7 +61,7 @@ Die Einträge stehen in der alphabetischen Reihenfolge, in der du sie auf einem 
 | Fenster (Windows) | Alle | Ein Eintrag pro Spielfenster, das WowVision zugänglich macht. | [Spielfenster](../windows/overview.md) |
 | Minikarten-Scanner (Minimap Scanner) | Alle | Minikarten-Scan und die Ansagen beim Laufen. | [Minikarte](../world/minimap.md) |
 | Monitor (Monitors) | Alle | Aura-, Abklingzeit- und andere Monitore. | [Monitore](../information/monitors.md) |
-| Navigation | Alle | Atlas, Kompass, Fallerkennung, Folgen, Karten, Neigungssperre, Besuchte Wegpunkte, Wanderkennung und mehr. | [Bewegung und Orientierung](../world/movement.md), [Navigation und Routen](../world/navigation.md) |
+| Navigation | Alle | Atlas, Beacon-Einstellungen, Kompass, Fallerkennung, Folgen, Neigungssperre, Besuchte Wegpunkte, Wanderkennung und mehr. | [Bewegung und Orientierung](../world/movement.md), [Navigation und Routen](../world/navigation.md) |
 | Puffer (Buffers) | Alle | Deine Puffergruppen und Puffer und die Einstellung Elementrichtung umkehren. | [Puffer](../information/buffers.md) |
 | Quests | Alle | Werkzeuge für das Questlog, Alarme für Questgebiete. | [Quests](../world/quests.md) |
 | Scanner | Alle | Der Scanner (F9). | [Scanner](../world/scanner.md) |
@@ -82,6 +82,7 @@ Drücke im Hauptmenü B, dann Eingabe. Es enthält:
 | Tastenbelegung | | Der Tastenbelegungs-Bildschirm, siehe [Tastenbelegung](./keybindings.md). |
 | Sprache beim Schließen des Fensters unterbrechen | Aus | Die Sprache abschneiden, sobald sich ein Fenster schließt. |
 | Buchstaben-Navigation in Menüs | An | Buchstabentasten zu Einträgen in Menüs springen lassen. Schalte sie aus, wenn deine Buchstabentasten auch bei geöffnetem Menü weiter funktionieren sollen. |
+| WowVision-Soundkanal | Gameplay-Soundeffekte in Retail und WoW: Forever, sonst Soundeffekte | Der Soundkanal des Spiels, auf dem jeder WowVision-Sound spielt: Alarmsounds, Stimmenpakete, das Beacon und die Beispiele in den Sound-Browsern. Die Einträge heißen wie die Lautstärkeregler in den Soundoptionen des Spiels, dieser Regler ist dann die Lautstärke von WowVision. Ein Kanal, den du sonst kaum nutzt, gibt WowVision eine eigene Lautstärke. |
 
 ### Das Modul Fenster
 
@@ -98,7 +99,7 @@ Jedes Spielfenster, das WowVision behandelt, hat hier einen eigenen Eintrag, zum
 | Dauer | „(Name), Zahl, 1 Minute 5 Sekunden“ | Wie eine Zahl. Pfeil links und Pfeil rechts gehen jeweils eine Sekunde; beim Tippen gibst du Sekunden ein. |
 | Stimme | „Stimme, Dropdown, Microsoft Zira Desktop“ | Eine Auswahl unter deinen installierten TTS-Stimmen. |
 | Stimmenpaket | „Stimmenpaket, Dropdown, Matthew“ | Eine Auswahl unter den aufgenommenen Stimmenpaketen. Siehe [Sprache und Ton](./speech.md#aufgenommene-stimmenpakete). |
-| Sound- oder Signal-Auswahl | „Sound, Schalter, chat.mp3“ | Siehe [Einen Sound auswählen](#einen-sound-auswählen). |
+| Sound- oder Beacon-Auswahl | „Sound, Schalter, chat.mp3“ | Siehe [Einen Sound auswählen](#einen-sound-auswählen). |
 | Zauber | „Zauber, Schalter, Sternensog (78674)“ | Siehe [Einen Zauber auswählen](#einen-zauber-auswählen). |
 | Vorlage | „Vorlage, Schalter, Standard“ | Siehe [Eine Vorlage bearbeiten](#eine-vorlage-bearbeiten). |
 | Alarm | der Name des Alarms, als Schalter | Öffnet den Bildschirm des Alarms, siehe [Alarme](./alerts.md). |
@@ -108,7 +109,7 @@ Jedes Spielfenster, das WowVision behandelt, hat hier einen eigenen Eintrag, zum
 
 ### Einen Sound auswählen
 
-Die Einstellung Sound der Soundausgabe eines Alarms und die Einstellung Signalton eines Signals öffnen einen Browser für Audiodateien.
+Die Einstellung Sound der Soundausgabe eines Alarms und die Einstellung Beacon-Ton eines Beacons öffnen einen Browser für Audiodateien.
 
 1. Drücke Eingabe auf Sound. Du landest in einer Liste von Ordnern.
 2. Gehe in Sound, dann in WowVision für die Sounds, die mit WowVision geliefert werden, oder in LibSharedMedia für die Sounds, die andere Addons registriert haben. In WowVision heißen die Ordner alerts, errors, notes und falling.
@@ -117,7 +118,7 @@ Die Einstellung Sound der Soundausgabe eines Alarms und die Einstellung Signalto
 
 Esc geht einen Ordner zurück, ohne etwas auszuwählen. Oben im Browser siehst du außerdem die Ordner Voice und Beacon, die Dateien für andere Arten von Ausgaben enthalten. (Die Namen der Ordner und der Sounds werden auf Englisch angesagt.)
 
-Signal-Auswahlen funktionieren genauso, nur wählst du einen der Signaltöne (Notification, Probe (Deep), Probe (Mid), Steel Gong, Beacon 6), und beim Daraufgehen wird ein Beispiel-Signal abgespielt.
+Beacon-Auswahlen funktionieren genauso, nur wählst du einen der Beacon-Töne (Notification, Probe (Deep), Probe (Mid), Steel Gong, Beacon 6), und beim Daraufgehen wird ein Beispiel-Beacon abgespielt.
 
 ### Einen Zauber auswählen
 

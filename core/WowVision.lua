@@ -252,12 +252,11 @@ function WowVision:recursiveComp(a, b, level)
 end
 
 function WowVision:play(path, channel)
-    local channel = channel or "SFX"
     local resource = WowVision.audio.directory:getPath(path)
     if not resource then
         return nil
     end
-    resource:play()
+    resource:play(channel)
 end
 
 function WowVision:registerCommands()
