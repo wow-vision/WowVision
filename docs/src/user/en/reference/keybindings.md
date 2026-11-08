@@ -92,7 +92,7 @@ See [Chat](../windows/chat.md).
 | Next Waypoint | Ctrl+W | Skip ahead to the next waypoint. You hear how many waypoints remain, for example "12 remaining" |
 | Previous Waypoint | Ctrl+S | Go back to the previous waypoint, with the same count |
 | Start the Route Again From Here | Ctrl+Shift+N | Plans the route to your last destination again, starting from where you stand. You hear "No route to start again" if you have not chosen a destination yet |
-| Reverse Route | Ctrl+Shift+R | Turns the running route around: from the waypoint the beacon leads to now back to where the route started |
+| Reverse Route | Ctrl+Shift+R | Turns the running route around: from its destination back to its start, going on at the waypoint the beacon leads to now |
 | Cancel Navigation | Shift+F12 | Stops the active route or beacon |
 | Cycle Arrival Distance | Alt+P | Changes how close you must come before a waypoint counts as reached |
 | Announce Distance | Unbound | Speaks the distance to the waypoint. Alt Gr (or Ctrl+Alt) does the same out of the box |

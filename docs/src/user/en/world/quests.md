@@ -37,6 +37,8 @@ Open the quest log with the game's own key (L by default). WowVision reads the w
 
 In the quest list, Up and Down move between headers and quests. Press Enter on a quest to select it, which fills the details. Press Enter on a header to collapse or expand it. Press the tooltip key to hear the quest's tooltip; see [Tooltips](../basics/tooltips.md).
 
+Normally the focus starts on the selected quest. Turn on Always Start at Top in the WowVision menu under Windows, Quest Log, and it starts on the top entry of the list instead. It is off by default. If the quest log opens on a quest's details, you stay there.
+
 ### The Burning Crusade
 
 (The Burning Crusade only.)

@@ -865,6 +865,59 @@ if haveNetwork then
         t:assertNil(route:handleBlockage(px, py), "the same waypoint is locked for 20 s")
     end
 
+    suite["a reversed route runs from the old target to the old start and goes on at the old active waypoint"] = function(t)
+        setup()
+        local game = newGame()
+        local route = Route.new(game.env)
+        N.LoadZone(STORMWIND)
+        local nodes = {}
+        for i = 0, 20000 do
+            local id = STORMWIND * N.ZONE_BASE + i
+            if not N.Exists(id) then
+                break
+            end
+            nodes[#nodes + 1] = id
+        end
+        local there
+        for _, startIndex in ipairs({ 1, 50, 100, 200 }) do
+            local a, b = nodes[startIndex], nodes[#nodes - startIndex]
+            there = runJob(N.Job(route.prepareNode, route, b, a))
+            if there.kind == "start" and #there.plan.path >= 5 and there.plan.pendingAction == nil then
+                break
+            end
+            there = nil
+        end
+        t:assertNotNil(there, "a walkable route through Stormwind")
+        route:begin(there.plan, nil, there.result, "there")
+        local oldStart, oldEnd = route.path[1], route.path[#route.path]
+        local activeIndex = math.floor(#route.path / 2) + 1
+        local active = route.path[activeIndex]
+        local ax, ay, az = N.Position(active)
+
+        local back = runJob(N.Job(route.prepareNode, route, oldStart, oldEnd))
+        t:assertEqual(back.kind, "start", tostring(back.reason))
+        route:begin(back.plan, nil, back.result, "back")
+        t:assertEqual(route.path[1], oldEnd, "starts at the old target")
+        t:assertEqual(route.path[#route.path], oldStart, "ends at the old start")
+
+        local index = route:resumeAt({ id = active, x = ax, y = ay, z = az })
+        t:assertEqual(route.pathIndex, index)
+        local hasIt = false
+        for _, id in ipairs(route.path) do
+            hasIt = hasIt or id == active
+        end
+        if hasIt then
+            t:assertEqual(route.path[route.pathIndex], active, "the same waypoint stays active")
+        end
+        local rx, ry = N.Position(route.path[route.pathIndex])
+        t:assertTrue(Route.distance(rx, ry, ax, ay) < 150, "the active waypoint stays near the old one")
+        t:assertTrue(route.pathIndex > 1, "not back at the old target")
+
+        -- a virtual waypoint's id is not looked for: its position decides
+        route:resumeAt({ x = rx + 0.5, y = ry, z = az })
+        t:assertEqual(N.Position(route.path[route.pathIndex]), rx)
+    end
+
     suite["a route over an Undercity lift ends at the lift and continues from its far end"] = function(t)
         setup()
         local game = newGame()

@@ -357,6 +357,8 @@ Der Bildschirm Puffer im WowVision-Menü hat:
 | Aktiviert | An | Schaltet die Pufferfunktion ein oder aus (die Alt-Tasten funktionieren nicht, solange sie aus ist) |
 | Puffer | eine Gruppe | Die Liste der Gruppen |
 | Elementrichtung umkehren | Aus | Vertauscht Alt+Pfeil hoch und Alt+Pfeil runter, sodass Alt+Pfeil hoch Richtung neuestes Element geht |
+| Immer oben beginnen | Aus | Das erste Alt+Pfeil runter, nachdem du Alt losgelassen hast, führt zum ersten Element. Solange du Alt gedrückt hältst, gehst du mit jedem Pfeil runter ein Element weiter. Auch wenn du zu einem Puffer oder einer Gruppe wechselst, stehst du auf dem ersten Element. Alt+Pfeil hoch geht weiter von dort aus, wo du zuletzt warst. Mit Elementrichtung umkehren sind die beiden Pfeile vertauscht |
+| Töne beim Öffnen und Schließen | An | Spielt einen Ton, wenn du mit der ersten Alt-Pfeiltaste in die Puffer gehst, und einen anderen, wenn du Alt wieder loslässt |
 
 Die Einstellungen der Dinge, die du hinzufügst (Gruppe, Puffer, Element), sind in den Abschnitten oben beschrieben. Für Puffer gibt es keine Alarme; es wird nichts gesprochen, bis du eine Taste drückst.
 

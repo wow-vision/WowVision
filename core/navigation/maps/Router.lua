@@ -47,6 +47,38 @@ end
 
 local hasLinks = Router.hasLinks
 
+-- Where a new route picks up a walk in progress (a reversed route, Ctrl-Shift-R):
+-- the index of the waypoint with point.id, else of the waypoint nearest to
+-- point (x, y, z); a height counts when both are known. Nil without waypoints.
+function Router.resumeIndex(waypoints, point)
+    local found, nearest = nil, math.huge
+    for i, wp in ipairs(waypoints) do
+        if point.id ~= nil and wp.id == point.id then
+            return i
+        end
+        if wp.x ~= nil and wp.y ~= nil then
+            local dx, dy = wp.x - point.x, wp.y - point.y
+            local dz = (wp.z ~= nil and point.z ~= nil) and (wp.z - point.z) or 0
+            local distance = dx * dx + dy * dy + dz * dz
+            if distance < nearest then
+                found, nearest = i, distance
+            end
+        end
+    end
+    return found
+end
+
+-- The yards still to walk from (x, y) over the waypoints from index on.
+function Router.remainingDistance(waypoints, index, x, y)
+    local total = 0
+    for i = index, #waypoints do
+        local wp = waypoints[i]
+        total = total + distanceBetween(x, y, wp.x, wp.y)
+        x, y = wp.x, wp.y
+    end
+    return total
+end
+
 -- ---------------------------------------------------------------------------
 -- Binary min-heap on .f, for the A* open set
 -- ---------------------------------------------------------------------------
