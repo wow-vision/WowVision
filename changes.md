@@ -18,7 +18,6 @@ The full manual is online, in English and German: [WowVision documentation](http
 * Navigation: the three arrival distances (Alt+P) now default to 0.3, 1 and 3 yards, take values from 0.1 to 20, and also apply to WowNav routes.
 * Quests: when the quest data names nowhere to walk, the Scanner falls back to the game's quest marker, then Questie's.
 * Quest log: F9 opens the Scanner on the quest you are on, and F10 opens the navigation window aimed at that quest's next target.
-* Scanner, Quests, In Progress: quests now read with their level ("A Threat Within, Level 5") and come nearest first, by the place Enter on each would take you to. The new Sort Quests by Proximity setting (Quests menu, on by default) turns the ordering off to keep the order of the log.
 * Group invitations: /wv accept and a new unbound Accept Group Invitation binding accept an invitation, even in combat.
 * Fixed tooltip money lines failing on secret values.
 
