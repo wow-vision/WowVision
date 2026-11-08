@@ -75,10 +75,11 @@ Open the WowVision menu and go to Windows, then Merchant.
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| Automatically Sell Poor Items | Off | When a merchant opens, every grey item in your bags that has a vendor value is sold at once. WowVision prints "Sold N poor quality items for X." in the chat. |
+| Automatically Sell Poor Items | Off | When a merchant opens, every grey item in your bags that has a vendor value is sold at once. WowVision says "Sold N poor quality items for X." |
+| Automatically Sell Items Marked as Junk | On | When a merchant opens, every item you marked as junk (Select Junk in the bags, see [Junk](./bags-and-bank.md#junk)) is sold at once, together with the grey items if the setting above is on. WowVision says what it sold and for how much, with the names of the marked items: "Sold marked junk for X: Linen Cloth, Worn Shortsword." If grey items went too: "Sold marked junk and N poor quality items for X: Linen Cloth." Nothing is sold unless you marked it. |
 | Automatically Repair If Possible | Off | When a merchant opens, your gear is repaired at once with your own money. WowVision prints "Repaired all items for X." in the chat. It is skipped silently if the merchant cannot repair, nothing is damaged, or you cannot pay. |
 
-Both are meant for the common run: arrive at a vendor, hear what you sold and repaired, and move on. Locked items are not sold. The automatic sale looks at the backpack and your four bags.
+These are meant for the common run: arrive at a vendor, hear what you sold and repaired, and move on. Locked items are not sold, nor are items no vendor buys. The automatic sale makes one pass over the backpack, your bags and the reagent bag where the game has one, when the window opens. It never touches the bank or what you wear.
 
 Like every window, the merchant has an Enabled switch on the same menu page.
 

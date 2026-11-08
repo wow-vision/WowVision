@@ -5,6 +5,9 @@
   <Include file="bars/modules.xml" />
   <Script file="bagLists.lua" />
   <Script file="bagListsTests.lua" />
+  <Script file="junkStore.lua" />
+  <Script file="junkStoreTests.lua" />
+  <Script file="junk.lua" />
   <Script file="containers.lua" />
   <Script file="newItems.lua" />
   <Script file="newItemsTests.lua" />

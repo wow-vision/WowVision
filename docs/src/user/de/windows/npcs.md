@@ -75,10 +75,11 @@ Drücke im Stopp Reparieren auf Alles reparieren die Eingabe, um alles, was du a
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
-| Automatischer Verkauf schlechter Gegenstände (Automatically Sell Poor Items) | Aus | Wenn sich ein Händler öffnet, wird jeder graue Gegenstand in deinen Taschen, der einen Händlerwert hat, sofort verkauft. WowVision gibt im Chat „N schlechte Gegenstände für X verkauft.“ aus. |
+| Automatischer Verkauf schlechter Gegenstände (Automatically Sell Poor Items) | Aus | Wenn sich ein Händler öffnet, wird jeder graue Gegenstand in deinen Taschen, der einen Händlerwert hat, sofort verkauft. WowVision sagt „N schlechte Gegenstände für X verkauft.“ |
+| Automatischer Verkauf als Plunder markierter Gegenstände (Automatically Sell Items Marked as Junk) | An | Wenn sich ein Händler öffnet, wird jeder Gegenstand, den du als Plunder markiert hast (Plunder auswählen in den Taschen, siehe [Plunder](./bags-and-bank.md#plunder)), sofort verkauft, zusammen mit den grauen Gegenständen, wenn die Einstellung darüber an ist. WowVision sagt, was verkauft wurde und für wie viel, mit den Namen der markierten Gegenstände: „Markierter Plunder für X verkauft: Leinenstoff, Abgenutztes Kurzschwert.“ Gingen auch graue Gegenstände mit: „Markierter Plunder und N schlechte Gegenstände für X verkauft: Leinenstoff.“ Es wird nichts verkauft, was du nicht markiert hast. |
 | Automatisch reparieren, falls möglich (Automatically Repair If Possible) | Aus | Wenn sich ein Händler öffnet, wird deine Ausrüstung sofort mit deinem eigenen Geld repariert. WowVision gibt im Chat „Alles für X repariert.“ aus. Es wird still übersprungen, wenn der Händler nicht reparieren kann, nichts beschädigt ist oder du nicht bezahlen kannst. |
 
-Beide sind für den üblichen Ablauf gedacht: zu einem Händler kommen, hören, was du verkauft und repariert hast, und weitergehen. Gesperrte Gegenstände werden nicht verkauft. Der automatische Verkauf schaut in den Rucksack und deine vier Taschen.
+Diese Einstellungen sind für den üblichen Ablauf gedacht: zu einem Händler kommen, hören, was du verkauft und repariert hast, und weitergehen. Gesperrte Gegenstände werden nicht verkauft, ebenso wenig Gegenstände, die kein Händler kauft. Der automatische Verkauf geht beim Öffnen des Fensters einmal durch den Rucksack, deine Taschen und, wo das Spiel eine hat, die Reagenzientasche. Die Bank und das, was du trägst, fasst er nie an.
 
 Wie jedes Fenster hat der Händler auf derselben Menüseite einen Schalter Aktiviert.
 

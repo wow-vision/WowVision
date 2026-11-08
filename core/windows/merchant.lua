@@ -13,12 +13,22 @@ local kinds = graph.kinds
 -- gameDB Merchant item type (name, count, price, stock, alternate costs) and
 -- are live: page flips reuse the same buttons under focus.
 
+local junkStore = WowVision.junkStore
+
 local settings = module:hasSettings()
 settings:add({
     type = "Bool",
     key = "autoSellPoorItems",
     label = L["Automatically Sell Poor Items"],
     default = false,
+})
+-- Items the player marked as junk in the bags (see junk.lua). On by default:
+-- an item is only sold because the player marked it.
+settings:add({
+    type = "Bool",
+    key = "autoSellMarkedJunk",
+    label = L["Automatically Sell Items Marked as Junk"],
+    default = true,
 })
 settings:add({
     type = "Bool",
@@ -44,27 +54,43 @@ local function getSellPrice(itemID)
     return nil
 end
 
--- Sells every Poor quality (grey) bag item that actually has a vendor
--- value. UseContainerItem sells the slot directly, the same action a
--- manual right click performs while a merchant is open.
-local function sellPoorItems()
-    local soldCount = 0
-    local soldValue = 0
-    for bag = 0, NUM_BAG_SLOTS do
-        for slot = 1, C_Container.GetContainerNumSlots(bag) do
-            local info = C_Container.GetContainerItemInfo(bag, slot)
-            if info ~= nil and info.quality == 0 and not info.hasNoValue and not info.isLocked then
-                local price = getSellPrice(info.itemID)
-                if price ~= nil then
-                    soldValue = soldValue + price * (info.stackCount or 1)
-                end
-                C_Container.UseContainerItem(bag, slot)
-                soldCount = soldCount + 1
-            end
-        end
+-- The bags the player carries: the backpack, the bag slots and, where the
+-- game has one, the reagent bag. Never the bank.
+local function carriedBags()
+    local bags = {}
+    for bag = 0, NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS do
+        tinsert(bags, bag)
     end
-    if soldCount > 0 then
-        print(format(L["Sold %d poor quality items for %s."], soldCount, C_CurrencyInfo.GetCoinText(soldValue)))
+    return bags
+end
+
+-- One pass over the carried bags that sells the Poor quality (grey) items
+-- (Automatically Sell Poor Items) and the items marked as junk
+-- (Automatically Sell Items Marked as Junk), nothing else, and says what
+-- went and for how much. UseContainerItem sells the slot directly, the same
+-- action a manual right click performs while a merchant is open. What is
+-- sold is decided slot by slot in junkStore.lua.
+local function sellJunk(self)
+    local sellPoor = self.settings.autoSellPoorItems
+    local marks = self.settings.autoSellMarkedJunk and WowVision.base.windows.junk:getMarks() or nil
+    if not sellPoor and marks == nil then
+        return
+    end
+    local result = junkStore.sell({
+        bags = carriedBags(),
+        numSlots = C_Container.GetContainerNumSlots,
+        getInfo = C_Container.GetContainerItemInfo,
+        sellPrice = getSellPrice,
+        sell = C_Container.UseContainerItem,
+        marks = marks,
+        sellPoor = sellPoor,
+    })
+    local text = junkStore.summary(result, L, C_CurrencyInfo.GetCoinText)
+    if text ~= nil then
+        WowVision:speak(text)
+    end
+    if result.error ~= nil then
+        geterrorhandler()(result.error)
     end
 end
 
@@ -86,16 +112,26 @@ end
 
 module:registerEvent("event", "MERCHANT_SHOW")
 
+-- One pass per opening of the window and no more: only MERCHANT_SHOW starts
+-- a sale (the bag updates the sale causes start nothing), and sellJunk looks
+-- at each slot once. A failure is reported and never stops the rest, nor
+-- the window.
 function module:onEvent(event)
-    if event ~= "MERCHANT_SHOW" then
+    if event ~= "MERCHANT_SHOW" or self.selling then
         return
     end
-    if self.settings.autoSellPoorItems then
-        sellPoorItems()
+    self.selling = true
+    local ok, err = pcall(sellJunk, self)
+    if not ok then
+        geterrorhandler()(err)
     end
     if self.settings.autoRepair then
-        repairAll()
+        ok, err = pcall(repairAll)
+        if not ok then
+            geterrorhandler()(err)
+        end
     end
+    self.selling = false
 end
 
 local function merchantItemLabel(button, buyback)

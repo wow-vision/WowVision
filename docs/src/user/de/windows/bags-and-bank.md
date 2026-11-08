@@ -45,7 +45,8 @@ Drücke die Leertaste für den vollständigen Tooltip des Gegenstands.
 | Rücktaste | Rechtsklick. Er benutzt, legt an, öffnet oder verschiebt den Gegenstand, je nachdem, was offen ist (siehe unten). |
 | \\ oder Strg+D (Ziehen) | Nimmt den Gegenstand auf deinen Cursor, wie beim Ziehen mit der Maus. |
 | Entf oder Alt+Strg+\\ (Cursorgegenstand zerstören) | Zerstört den Gegenstand auf deinem Cursor, nach einer Rückfrage. Das funktioniert überall im Spiel, nicht nur in den Taschen. |
-| Umschalt+F10 | Das Kontextmenü des Platzes. Es führt Linksklick, Rechtsklick und Ziehen auf und sagt, was jeder Klick gerade bewirkt. |
+| Umschalt+Eingabe (Plunder auswählen, Select Junk) | Markiert den Gegenstand als Plunder oder nimmt die Markierung weg. Siehe [Plunder](#plunder) weiter unten. |
+| Umschalt+F10 | Das Kontextmenü des Platzes. Es führt Linksklick, Rechtsklick und Ziehen auf, sagt, was jeder Klick gerade bewirkt, und enthält Als Plunder markieren (oder Plundermarkierung entfernen). |
 
 (\\ liegt auf deutschen Tastaturen auf Alt Gr+ß; belege die Aktion bei Bedarf um.)
 
@@ -73,6 +74,23 @@ Der Linksklick-Eintrag sagt Aufnehmen, oder Gegenstand ablegen, solange du etwas
 ### Einen Stapel teilen
 
 Um einen Stapel zu teilen, drücke Umschalt+Eingabe auf dem Platz. Das Spiel öffnet ein kleines Feld, das fragt, wie viele Gegenstände du nehmen willst; WowVision liest es nicht vor. Tippe die Menge, drücke Eingabe und lege den neuen Stapel mit Eingabe auf einem leeren Platz ab.
+
+Umschalt+Eingabe ist auch die Standardtaste von Plunder auswählen (siehe [Plunder](#plunder)). Auf den Gegenstandsplätzen deiner Taschen und der Bank hat Plunder auswählen Vorrang: Umschalt+Eingabe markiert dort Plunder und teilt keinen Stapel mehr und legt auch keinen Gegenstandslink ins Chatfeld. Willst du den Umschaltklick zurück, gib Plunder auswählen eine andere Taste im Fenster für die Tastenbelegung (Tastenbelegung unter Benutzeroberfläche im WowVision-Menü); Umschalt+Eingabe tut dann wieder, was es vorher tat.
+
+## Plunder
+
+Du kannst Gegenstände als Plunder markieren. WowVision verkauft dann jeden markierten Gegenstand für dich, sobald sich ein Händler öffnet, und sagt, was verkauft wurde.
+
+- Stelle dich in deinen Taschen auf den Gegenstand und drücke Plunder auswählen (standardmäßig Umschalt+Eingabe). WowVision sagt zum Beispiel „Leinenstoff: als Plunder markiert“. Drückst du die Taste noch einmal, sagt es „Leinenstoff: ist kein Plunder mehr“, und die Markierung ist weg. Das Kontextmenü des Platzes (Umschalt+F10) hat dieselbe Aktion, benannt Als Plunder markieren oder Plundermarkierung entfernen.
+- Ein markierter Gegenstand wird mit „[Plunder]“ vor dem Namen gelesen, zum Beispiel „[Plunder] Leinenstoff, Weiß, 12“. Das Etikett verschwindet, sobald du die Markierung wegnimmst.
+- Die Markierung gehört zum Gegenstand, nicht zum Platz oder Stapel: Jeder Stapel Leinenstoff in deinen Taschen und in der Bank wird mit „[Plunder]“ gelesen, und alle werden verkauft. Gegenstände, die in zufälligen Varianten vorkommen, etwa „Handschuhe des Affen“ und „Handschuhe des Adlers“, werden Variante für Variante markiert; markierst du die Affen-Handschuhe, bleiben die Adler-Handschuhe unberührt. Verzauberungen, Edelsteine und die Stufe des Gegenstands ändern nichts daran, um welchen Gegenstand es sich handelt.
+- Ein Gegenstand, den kein Händler kauft, etwa ein Questgegenstand oder der Ruhestein, lässt sich nicht markieren: WowVision sagt das. Eine schon vorhandene Markierung lässt sich immer wegnehmen.
+- Die Markierungen bleiben zwischen den Sitzungen erhalten, für jeden Charakter einzeln. Eine Markierung auf einem Charakter verkauft nie etwas auf einem anderen.
+- Unter Fenster, dann Plunder im WowVision-Menü gibt es Alle Plundermarkierungen vergessen, das nach einer Rückfrage jede Markierung wegnimmt, und einen Schalter Aktiviert. Ist das Modul aus, gibt es keine Etiketten, keine Taste und keinen Verkauf.
+
+In Retail und WoW: Forever führt die Kategorie Plunder des Stopps Gegenstandslisten (siehe [Gegenstandslisten](#gegenstandslisten)) jeden markierten Gegenstand der offenen Taschen auf, in Taschenreihenfolge, sodass dein ganzer Plunder an einem Ort liegt. Jeder Eintrag ist derselbe Platz wie in den Taschen: Eingabe nimmt den Gegenstand auf, Rücktaste klickt ihn mit rechts an, die Leertaste liest seinen Tooltip, und Plunder auswählen nimmt die Markierung weg, woraufhin der Gegenstand aus der Liste verschwindet.
+
+Was verkauft wird und wann, stellst du in den Händler-Einstellungen ein: siehe [Händler-Einstellungen](./npcs.md#händler-einstellungen). Kurz gesagt: Der Verkauf geschieht einmal, wenn sich das Händlerfenster öffnet. Er verkauft die Gegenstände, die du markiert hast, und nichts sonst (auch graue Gegenstände, wenn du diese Einstellung eingeschaltet hast), nur aus deinen Taschen, nie aus der Bank und nie etwas, das du trägst. Gesperrte Gegenstände und Gegenstände, die kein Händler kauft, werden übersprungen. Danach sagt WowVision, was verkauft wurde, zum Beispiel „Markierter Plunder für 3 Silber 20 Kupfer verkauft: Leinenstoff, Abgenutztes Kurzschwert.“ Bis zu fünf Namen werden vorgelesen, dann „und N weitere“. Was du aus Versehen verkauft hast, kannst du im Reiter Rückkauf des Händlers zurückkaufen.
 
 ## Der Cursor
 
@@ -129,6 +147,7 @@ Diese Versionen haben zwei Taschenansichten, die du im Taschenmenü des Spiels w
 
 Gibt es etwas anzusehen, bekommen die Taschen einen zusätzlichen Stopp namens Gegenstandslisten. Er kommt direkt nach den Taschen, sodass beim Öffnen weiterhin ihre Gegenstände zuerst gelesen werden. Er enthält Kategorien wie die des Scanners, jede liest ihren Namen und wie viele Gegenstände sie hat, zum Beispiel „Neue Gegenstände (2)“. Pfeil rechts öffnet eine Kategorie, Pfeil links schließt sie. Ihre Gegenstände werden wie Taschenplätze gelesen, und du kannst sie von dort wie gewohnt benutzen, anlegen oder verschieben. Dieselben Gegenstände liegen weiterhin in ihren Plätzen in den Taschen. Eine leere Kategorie fehlt, und sind alle leer, ist der Stopp weg und die Taschen öffnen sich wie bisher.
 
+- Plunder: jeder Gegenstand, den du als Plunder markiert hast, mit dem Zusatz, in Taschenreihenfolge (siehe [Plunder](#plunder)). Die Kategorie ist zu Beginn geschlossen.
 - Neue Gegenstände: was das Spiel als neu markiert, also das, was du seit deinem letzten Blick erbeutet oder gekauft hast. Die Kategorie ist zu Beginn offen. Das Spiel nimmt die Neu-Markierung von einem Gegenstand, sobald du den Cursor darauf bewegst, und WowVision tut dasselbe, wenn du auf einem Platz landest; ein Gegenstand würde also verschwinden, sobald du ihn erreichst. WowVision behält deshalb die Gegenstände, die es als neu gesehen hat, in der Liste, bis du die Taschen schließt. Öffnest du sie erneut, werden nur die aufgelistet, die noch als neu markiert sind.
 
 ### Zusammengefasste Taschen
