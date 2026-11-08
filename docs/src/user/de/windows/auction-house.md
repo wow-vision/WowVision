@@ -124,7 +124,7 @@ Bei eingeschaltetem Filter gilt:
 
 Während des Scannens hörst du „Wird gescannt, 12 Seite“ (die Seitenzahl) und bei jeder fünften Seite „Seite 5 / 12“. Die Schaltfläche Scan abbrechen sagt ihren Fortschritt, zum Beispiel „Scan abbrechen (3/12)“, und Eingabe hält ihn an. Wenn er endet, hörst du eines von:
 
-- „Scan abgeschlossen, 23 Ergebnisse in 340 gescannten“: 23 Treffer wurden unter 340 angesehenen Auktionen gefunden (die Ansage ist so zusammengesetzt, das Wort „in“ spricht WowVision auf Englisch).
+- „Scan abgeschlossen, 23 Ergebnisse in 340 gescannten“: 23 Treffer wurden unter 340 angesehenen Auktionen gefunden.
 - „Scan abgebrochen, 7 Ergebnisse“: Du hast ihn angehalten; was bisher gefunden wurde, bleibt erhalten.
 - „Scan fehlgeschlagen“: Das Spiel hat die Suche nach der nächsten Seite innerhalb von 10 Sekunden nicht angenommen.
 
@@ -203,8 +203,8 @@ Die Schaltfläche Vollständiger Scan auf dem Reiter „Suchen“ fragt den Serv
 | Was du hörst | Was es bedeutet |
 |---|---|
 | „Vollständiger Scan“ | Du kannst einen Scan starten; Eingabe startet ihn |
-| „Vollständiger Scan, Abklingzeit aktiv“ | Dein letzter Scan liegt weniger als 15 Minuten zurück; Eingabe nennt dir die verbleibende Zeit, zum Beispiel „12 min 30 sec“ |
-| „Wird gescannt, 45 sec“ | Der Server bereitet die Daten vor (die bisher gewartete Zeit in Sekunden); Eingabe bricht ab |
+| „Vollständiger Scan, Abklingzeit aktiv“ | Dein letzter Scan liegt weniger als 15 Minuten zurück; Eingabe nennt dir die verbleibende Zeit, zum Beispiel „12 Min. 30 Sek.“ |
+| „Wird gescannt, 45 Sek.“ | Der Server bereitet die Daten vor (die bisher gewartete Zeit in Sekunden); Eingabe bricht ab |
 | „Wird gescannt, 63%“ | Die Daten werden verarbeitet; Eingabe bricht ab |
 
 Gesprochener Fortschritt: „Vollständiger Scan gestartet, 45000 Auktionen“, wenn die Daten eintreffen, „Vollständiger Scan abgeschlossen, 3200 Gegenstände aktualisiert“ am Ende. Weitere Meldungen: „Vollständiger Scan abgebrochen“ (du hast beim Scannen Eingabe gedrückt), „Abklingzeit aktiv“, „Auktionshaus nicht geöffnet“ (du hast das Auktionshaus während des Scans geschlossen) und „Vollständiger Scan fehlgeschlagen“. Ein beendeter Scan behält seine Abklingzeit auch über ein Neuladen des Interface hinweg. Ein abgebrochener oder fehlgeschlagener Scan hält die Abklingzeit trotzdem, bis du neu lädst.
