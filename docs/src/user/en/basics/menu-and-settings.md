@@ -52,7 +52,7 @@ Because it is a list that owns the keyboard, you can press letters to jump: S fo
 
 | Entry | Game versions | What it holds | More |
 |---|---|---|---|
-| Auction Prices | The Burning Crusade | Price history and extra price lines on item tooltips. | [Tooltips](./tooltips.md#prices-in-tooltips-the-burning-crusade-only) |
+| Auction Prices | The Burning Crusade | Price history and extra price lines on item tooltips. | [Tooltips](./tooltips.md#prices-in-tooltips) |
 | Buffers | All | Your buffer groups and buffers, and the Invert Item Direction setting. | [Buffers](../information/buffers.md) |
 | Chat | All | One alert per chat tab, whisper tabs, chat box sounds. | [Chat](../windows/chat.md) |
 | Errors | All | How game error and info messages are spoken. | [Combat](../world/combat.md) |
