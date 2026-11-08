@@ -464,8 +464,9 @@ function module:applySoftTargeting()
     self:updateSoftTargetLock()
 end
 
--- Runs on every target change and death, in combat too: the lock variables
--- are not secure. Writes only when the wanted value changes.
+-- Runs on every target change and death, and when the target stops or
+-- starts being one the game set (watchLooseTarget), in combat too: the
+-- lock variables are not secure. Writes only when the wanted value changes.
 function module:updateSoftTargetLock()
     local withLocked, matchLocked = soft.lockValues(
         self.settings.softTargetLock,
@@ -581,11 +582,24 @@ function module:updateSoftTarget(target, newGuid)
     end
 end
 
+-- Choosing the target the game set (Tab or a click on it, or attacking it
+-- where the game locks it then) keeps the same unit, so no target change
+-- event comes; the game has no event for the flag either. Read every tick,
+-- the lock follows when it flips.
+function module:watchLooseTarget()
+    local loose = IsTargetLoose ~= nil and IsTargetLoose()
+    if loose ~= self._targetLoose then
+        self._targetLoose = loose
+        self:updateSoftTargetLock()
+    end
+end
+
 function module:onEnable()
     -- Initialize cached target GUID (in case target exists at startup)
     self._cachedTargetGuid = UnitGUID("target")
     self:hasUpdate(function(self)
         self:updateHardTarget()
+        self:watchLooseTarget()
     end)
 end
 

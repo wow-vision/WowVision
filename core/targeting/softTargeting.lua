@@ -23,8 +23,8 @@ soft.lockModes = { "game", "always", "noHardTarget", "noAttackableHardTarget" }
 -- hard target, or nil for an unknown mode (the game's values stay).
 --
 -- loose: the target is one the game set itself (IsTargetLoose), because
--- SoftTargetForce, on for enemies by default, makes the soft enemy the
--- target. Such a target is no hard target here. The game counts it as
+-- SoftTargetForce (on for enemies by default, or for friends) makes the
+-- soft target the target. Such a target is no hard target here. The game counts it as
 -- locked, though: with WithLocked 0 it dropped the soft enemy at once, the
 -- loose target with it, then picked the same enemy again, every frame or
 -- two (measured on Forever 2026-11-08: the event 40 times a second, gone
@@ -33,7 +33,7 @@ soft.lockModes = { "game", "always", "noHardTarget", "noAttackableHardTarget" }
 -- act (2). Tabbing to a mob lets soft targeting act for the frame before
 -- the write lands. Attacking a loose target leaves it loose (measured: the
 -- whole fight), so these modes never hold back soft targeting for an enemy
--- the game picked; as Game Default does.
+-- the game picked: soft targeting keeps working, as with Game Default.
 function soft.lockValues(mode, hasTarget, canAttack, dead, loose)
     if mode == soft.GAME_DEFAULT then
         return nil
