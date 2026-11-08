@@ -38,6 +38,7 @@ The full manual is online, in English and German: [WowVision documentation](http
 * WowNav routes: routes now start from the network's nearest point within 30 yards, instead of saying "No WowNav network here" a few steps off it.
 * WowNav routes: a start and target on one link no longer walk a detour, and most routes no longer end with the unchecked last stretch warning.
 * WowNav routes: reaching the last point now says Arrived and the target's name.
+* The hunter's pet training window (the Beast Training ability) is now read: the class trainer window opened by the spell. It reads the pet's name, the training points left, and each skill with its cost in training points.
 * WowNav: the Scanner's Enter on an NPC or object WowNav knows now routes to WowNav's own entry, with its height.
 
 ## V1.0.0

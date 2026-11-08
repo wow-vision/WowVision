@@ -112,6 +112,12 @@ Example: learn a new spell.
 4. Press Tab until "Details" and read the cost. Then press Tab to Train.
 5. Press Enter. The game teaches you the spell, and your money goes down.
 
+### Your pet's Beast Training
+
+On WoW: Forever the hunter's Beast Training ability opens your pet's skills in the same trainer window, without a trainer to talk to. WowVision reads it like the class trainer. The window is named after your pet, and the stops are the same: Filter, Training and the Train button. One stop is new, at the top: Training Points, which reads how many points your pet has left, for example "Training Points: 19".
+
+A skill costs training points, not money, and says so: "Natural Armor Rank 1, Training point cost: 1, Requires: Level 8". Press Enter on a skill to select it, then Tab to Train and Enter to teach it. The points go down, and you hear the new total.
+
 ## Flight masters
 
 A flight master window lists where you can fly. It has one stop, named with the title of the map (usually the flight master's location or the continent), and one entry per destination.
