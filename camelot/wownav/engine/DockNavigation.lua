@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/DockNavigation.lua at
--- 3684248), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Passive waiting-point mode with a fixed boarding orientation point. Audio and the XY arrival signal run only in the
 -- core OnUpdate; there is no vehicle detection.

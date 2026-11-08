@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/TransitActivation.lua at
--- 3684248), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Purely local continuation to a raw-checked AreaTrigger activation area.
 -- This does not confirm a server-side action, a target zone or a world edge.
