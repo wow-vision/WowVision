@@ -59,6 +59,10 @@ local gameWalkStart = nil
 -- When the game said the walk stopped, and the last check's severity then
 -- (checks after the stop see a standing player).
 local stoppedAt, stoppedSeverity = nil, nil
+-- Whether a check during the walk went unjudged (a secret speed with no key
+-- held, see the update). Its end then says nothing: one judged check after
+-- combat, at melee range, reads the last steps as slowed.
+local gameWalkBlind = false
 
 module:registerEvent("event", "PLAYER_STARTED_MOVING")
 module:registerEvent("event", "PLAYER_STOPPED_MOVING")
@@ -67,6 +71,7 @@ function module:onEvent(event)
     if event == "PLAYER_STARTED_MOVING" then
         if stoppedAt == nil then
             gameWalkStart = not WowVision.movement:isTranslating() and GetTime() or nil
+            gameWalkBlind = false
         end
         stoppedAt = nil
     elseif event == "PLAYER_STOPPED_MOVING" and gameWalkStart ~= nil then
@@ -87,7 +92,7 @@ local function checkGameWalkEnd(self, now)
         return
     end
     gameWalkStart, stoppedAt = nil, nil
-    if not lostControl() and stuckMath.walkEndedShort(stoppedSeverity) then
+    if not lostControl() and not gameWalkBlind and stuckMath.walkEndedShort(stoppedSeverity) then
         self:fireAlert("stuck", { action = "stuck1" })
     end
 end
@@ -125,12 +130,24 @@ module:hasUpdate(function(self)
         local actual = math.sqrt(dx * dx + dy * dy)
         local speed, _, _, swimSpeed = GetUnitSpeed("player")
         -- In water the first return stays the run speed, which would read
-        -- every stroke as a shortfall.
-        if IsSwimming() then
+        -- every stroke as a shortfall. The swim speed is what the player
+        -- could swim, so a first return of 0 (the game's moving state left
+        -- on while the player floats still) stays 0: no judgement.
+        if IsSwimming() and not WowVision.isSecret(speed) and speed > 0 then
             speed = swimSpeed
         end
         local severity
-        if WowVision.isSecret(speed) then
+        local secret = WowVision.isSecret(speed)
+        if secret and not WowVision.movement:isTranslating() then
+            -- With no key held a standstill is no wall: after the interact
+            -- key walked the player into melee the game keeps its moving
+            -- state on at speed 0 for the rest of the fight. A keyless walk
+            -- that is blocked ends on its own (checkGameWalkEnd).
+            severity = nil
+            if gameWalkStart ~= nil then
+                gameWalkBlind = true
+            end
+        elseif secret then
             -- Speed is a secret value in combat on the modern engine, and the
             -- grading compares it. The position stays plain, so a standstill
             -- is still judged.
