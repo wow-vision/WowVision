@@ -108,6 +108,10 @@ Die eigene Text-zu-Sprache-Funktion des Spiels für den Chat ist ebenfalls einge
 
 Fast jede Ansage ist ein Alarm, den du ausschalten oder auf einen Sound umstellen kannst. Du findest ihn im Eintrag des Moduls im WowVision-Menü. Fehlermeldungen des Spiels lassen sich unter Fehler, Filter pro Fehler einzeln stummschalten. Siehe [Alarme](../basics/alerts.md) und [Kampf](../world/combat.md).
 
+### Ich hänge auf einer Route fest. Was kann ich tun?
+
+Spring, geh zur Seite, überspring den Wegpunkt mit Strg+W, geh mit Strg+S einen zurück, oder ändere die Ankunftsdistanz mit Alt+P. Steht der NPC, den du suchst, hinter einem Tresen, sprich ihn direkt an. Siehe [Fehlerbehebung](../getting-started/troubleshooting.md#ich-hänge-auf-einer-route-fest).
+
 ### Wo sehe ich jede Taste?
 
 In der [Tastenreferenz](../reference/keybindings.md) und im Spiel im Fenster für die Tastenbelegung: WowVision-Menü, Benutzeroberfläche, Tastenbelegung.
