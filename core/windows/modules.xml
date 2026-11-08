@@ -20,8 +20,6 @@
   <Script file="questieSetup.lua" />
   <Script file="taxi.lua" />
   <Script file="trade.lua" />
-  <Script file="petTraining.lua" />
-  <Script file="petTrainingTests.lua" />
   <Script file="training.lua" />
   <Include file="options/modules.xml" />
 

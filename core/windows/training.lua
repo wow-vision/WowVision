@@ -35,8 +35,8 @@ local function servicePayload(data)
     return data
 end
 
--- The hunter's pet training (petTraining.lua). Class training must not depend on it: without the
--- file there is simply never a pet window.
+-- The hunter's pet training on WoW: Forever (camelot/petTraining.lua). Class training must not
+-- depend on it: on the other versions there is simply never a pet window.
 local function petTraining()
     local pet = WowVision.petTraining
     if pet ~= nil and pet.isActive() then
@@ -102,7 +102,7 @@ local function serviceLabel(index)
     if info.category ~= "header" then
         local cost = GetTrainerServiceCost ~= nil and GetTrainerServiceCost(index) or nil
         if cost ~= nil and cost > 0 then
-            -- the hunter's pet pays in training points (petTraining.lua)
+            -- the hunter's pet pays in training points (camelot/petTraining.lua)
             local pet = petTraining()
             if pet ~= nil then
                 label = label .. ", " .. pet.costText(cost)
@@ -350,15 +350,5 @@ module:registerWindow({
     graphScreen = { render = render },
 })
 
--- The hunter's Beast Training spell opens the same window on WoW: Forever with
--- no trainer to interact with, so the frame itself says it is open
--- (petTraining.lua).
-module:registerWindow({
-    type = "CustomWindow",
-    name = "beastTraining",
-    isOpen = function()
-        return petTraining() ~= nil
-    end,
-    conflictingAddons = { "Sku" },
-    graphScreen = { render = render },
-})
+-- The same screen for WoW: Forever's pet training window (camelot/beastTraining.lua).
+module.renderTrainer = render
