@@ -170,3 +170,61 @@ testRunner:addSuite("SoftTargeting", {
         t:assertEqual(state.writes, 0)
     end,
 })
+
+-- A soft target unit standing in for the game's: guid and name may be
+-- secret ({ secret = value }), plate is a frame or nil.
+local function unitApi(unit)
+    return {
+        UnitExists = function()
+            return unit.exists ~= false and (unit.guid ~= nil or unit.exists == true)
+        end,
+        UnitGUID = function()
+            return unit.guid
+        end,
+        UnitName = function()
+            return unit.name
+        end,
+        nameplate = function()
+            return unit.plate
+        end,
+        isSecret = function(value)
+            return type(value) == "table" and value.secret ~= nil
+        end,
+    }
+end
+
+testRunner:addSuite("SoftTargetIdentity", {
+    ["a readable GUID is the identity"] = function(t)
+        t:assertEqual(soft.identity(unitApi({ guid = "Creature-1" }), "softenemy"), "Creature-1")
+    end,
+
+    ["no unit has no identity"] = function(t)
+        t:assertNil(soft.identity(unitApi({ exists = false }), "softenemy"))
+    end,
+
+    ["a secret GUID gives the same identity on every read of the same unit"] = function(t)
+        local plate = {}
+        local unit = { guid = { secret = "Creature-1" }, plate = plate }
+        local first = soft.identity(unitApi(unit), "softenemy")
+        unit.guid = { secret = "Creature-1" }
+        t:assertEqual(first, plate)
+        t:assertEqual(soft.identity(unitApi(unit), "softenemy"), first)
+    end,
+
+    ["a secret GUID with another nameplate is a different unit"] = function(t)
+        local a = soft.identity(unitApi({ guid = { secret = "1" }, plate = {} }), "softenemy")
+        local b = soft.identity(unitApi({ guid = { secret = "2" }, plate = {} }), "softenemy")
+        t:assertTrue(a ~= b)
+    end,
+
+    ["with no nameplate a readable name is the identity"] = function(t)
+        local api = unitApi({ guid = { secret = "1" }, name = "Wolf" })
+        t:assertEqual(soft.identity(api, "softenemy"), "name:Wolf")
+    end,
+
+    ["nothing readable gives one fixed identity"] = function(t)
+        local api = unitApi({ guid = { secret = "1" }, name = { secret = "Wolf" } })
+        t:assertEqual(soft.identity(api, "softenemy"), soft.UNREADABLE)
+        t:assertEqual(soft.identity(api, "softenemy"), soft.identity(api, "softenemy"))
+    end,
+})

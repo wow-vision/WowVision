@@ -102,6 +102,39 @@ function Writer:restore(name)
     return self:write(name, default)
 end
 
+-- What tells one soft target from the next, for a change test that never
+-- meets a secret. Where the game hides identities (Forever, Retail), the
+-- GUID is secret and cannot be compared, and the soft target events repeat
+-- while the same unit stays soft targeted: taking each event as a change
+-- spoke the name without end. In order: the GUID when readable, else the
+-- unit's nameplate (a frame, never secret; it stays with the unit while
+-- shown), else the name when readable, else one fixed marker, so a unit
+-- that shows nothing readable is announced once, when it is soft targeted.
+-- nil when there is no unit.
+--
+-- api: UnitExists(unit), UnitGUID(unit), UnitName(unit),
+-- nameplate(unit) -> frame or nil, isSecret(value)
+soft.UNREADABLE = "unreadable"
+
+function soft.identity(api, unit)
+    local guid = api.UnitGUID(unit)
+    if guid ~= nil and not api.isSecret(guid) then
+        return guid
+    end
+    if guid == nil and not api.UnitExists(unit) then
+        return nil
+    end
+    local plate = api.nameplate ~= nil and api.nameplate(unit) or nil
+    if plate ~= nil then
+        return plate
+    end
+    local name = api.UnitName(unit)
+    if name ~= nil and not api.isSecret(name) then
+        return "name:" .. name
+    end
+    return soft.UNREADABLE
+end
+
 -- Tries every waiting write again, in name order.
 function Writer:flush()
     local names = {}
