@@ -250,7 +250,7 @@ local function renderBrowseResults(builder)
             local parts = {}
             tinsert(parts, scrapeRowName(helpers) or itemKeyName(entry.itemKey) or "")
             tinsert(parts, coin(entry.minPrice))
-            tinsert(parts, L["Available"] .. " " .. tostring(entry.totalQuantity or 0))
+            tinsert(parts, L["AuctionAvailable"] .. " " .. tostring(entry.totalQuantity or 0))
             return table.concat(parts, ", ")
         end),
     })
@@ -281,7 +281,7 @@ local function renderCommoditiesBuy(builder)
             local parts = {}
             tinsert(parts, name or "")
             tinsert(parts, L["Unit Price"] .. " " .. coin(entry.unitPrice))
-            tinsert(parts, L["Available"] .. " " .. tostring(entry.quantity or 0))
+            tinsert(parts, L["AuctionAvailable"] .. " " .. tostring(entry.quantity or 0))
             return table.concat(parts, ", ")
         end),
     })
