@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/Guidance.lua at
--- 3684248), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Guidance (schema 7, concept chapter 7 points 5 to 8): arrival at a waypoint, gate line, angle bisector, height
 -- state of the route and local re-entry. Pure functions on the NavNetwork; the player state (Navigation.path, index,

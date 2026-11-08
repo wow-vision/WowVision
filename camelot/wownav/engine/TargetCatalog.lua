@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/TargetCatalog.lua at
--- 3684248), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Independent provider snapshots. No provider owns a physical graph node.
 WowVisionNavigationTargetCatalog = { providers = {}, revision = 0 }
@@ -8,7 +8,7 @@ local forbidden = { nodeId=true, node_id=true, endNodeId=true, reachable=true,
     attachment_edge=true, targetDistance=true, node_distance=true,
     route_attachment_point=true, attachment_corridor=true }
 local kinds = {npc=true,mob=true,creature=true,gameobject=true,herb=true,mining=true,
-    mailbox=true,search_area=true,transit_facility=true,zone_transition=true,live=true,fishing_spot=true}
+    mailbox=true,search_area=true,transit_facility=true,zone_transition=true,live=true,fishing_spot=true,cave_center=true}
 
 local function denseArray(value)
     if type(value) ~= "table" then return false end

@@ -1599,6 +1599,119 @@ if haveNetwork then
         t:assertTrue(back == nil or #back.path > 2, "against it, only over other links")
     end
 
+    -- the first cells of a zone whose point in the middle has several checked attachments
+    local function poolsOf(zone, wanted)
+        local out = {}
+        for cell = 1, #zone.cellSize do
+            local half = zone.cellSize[cell] / 2
+            local x, y = zone.cellX[cell] + half + 0.5, zone.cellY[cell] + half + 0.5
+            local pool = N.CertifiedBindings(zone, cell, x, y, 0)
+            if #pool >= 2 then
+                out[#out + 1] = pool
+                if #out == wanted then
+                    break
+                end
+            end
+        end
+        return out
+    end
+
+    local function holds(pool, binding)
+        for _, member in ipairs(pool) do
+            if member.id == binding.id then
+                return true
+            end
+        end
+        return false
+    end
+
+    suite["the cheapest pair of checked attachments wins, on the target side and on the start side"] = function(t)
+        setup()
+        N.SetComfort(0) -- one pass: the costs of the routes compare directly
+        local zone = N.LoadZone(ELWYNN)
+        local origin = zone.base + 1
+        local pools = poolsOf(zone, 8)
+        t:assertTrue(#pools > 0, "Elwynn has cells with several checked attachments")
+        local compared = 0
+        for _, pool in ipairs(pools) do
+            local toward = N.RouteIds(origin, pool[1].id, nil, nil, nil, pool)
+            if toward ~= nil then
+                compared = compared + 1
+                t:assertTrue(holds(pool, toward.targetBinding), "the target attachment comes from the pool")
+                t:assertTrue(math.abs(toward.total - toward.cost - toward.targetBinding.airDistance) < 0.001,
+                    "the walk from the attachment counts")
+                for _, member in ipairs(pool) do
+                    local single = N.RouteIds(origin, member.id)
+                    if single ~= nil then
+                        t:assertTrue(toward.total <= single.cost + member.airDistance + 0.001, "no attachment is cheaper")
+                    end
+                end
+            end
+            local from = N.RouteIds(pool[1].id, origin, nil, nil, pool, nil)
+            if from ~= nil then
+                t:assertTrue(holds(pool, from.startBinding), "the start attachment comes from the pool")
+                t:assertEqual(from.targetBinding.id, origin)
+            end
+        end
+        t:assertTrue(compared > 0, "a pool was reached")
+    end
+
+    suite["a start with several checked attachments: the search reports the one it used"] = function(t)
+        setup()
+        local game = newGame()
+        local route = Route.new(game.env)
+        local zone = N.LoadZone(ELWYNN)
+        local x, y = bindablePosition(ELWYNN, game, route)
+        t:assertNotNil(x, "a position that binds")
+        local startId = route:startBinding(x, y)
+        local path, _, result, used = route:routeFromStart(startId, zone.base + 1, false, x, y)
+        t:assertNotNil(path, "a route")
+        t:assertEqual(used, result.startBinding.id)
+    end
+
+    suite["a known miss never answers for a pair on one link, and still answers for others"] = function(t)
+        setup()
+        local zone = N.LoadZone(ELWYNN)
+        local forward, other
+        for k = 1, #zone.lu do
+            if zone.ldir[k] == 1 then
+                if forward == nil then
+                    forward = k
+                elseif other == nil and zone.lu[k] ~= zone.lu[forward] and zone.lv[k] ~= zone.lv[forward]
+                    and zone.lu[k] ~= zone.lv[forward] and zone.lv[k] ~= zone.lu[forward] then
+                    other = k
+                end
+            end
+        end
+        t:assertNotNil(other, "two one-way links apart")
+        local c, d = N.LinkpointNode(zone, forward, 50), N.LinkpointNode(zone, forward, 200)
+        local reached = { [zone.base + zone.lv[forward]] = true } -- only the far end of the link: the near end is out of reach
+
+        local job = N.Job(N.RouteIds, c, d)
+        job.reach.all = { reached }
+        local joined = runJob(job)
+        t:assertNotNil(joined, "the piece of the link is the route")
+        t:assertEqual(#joined.path, 2)
+
+        local before = N.knownMissAnswers
+        local apart = N.Job(N.RouteIds, c, N.LinkpointNode(zone, other, 200))
+        apart.reach.all = { reached }
+        t:assertEqual(runJob(apart), nil)
+        t:assertEqual(N.knownMissAnswers, before + 1, "answered from the set")
+    end
+
+    suite["the central point of a cave: a valid target with its name and category; quest exploration"] = function(t)
+        local row = { availability = "static", category = { "cave" }, coordinateSpace = "world", id = "cave_center:34",
+            kind = "cave_center", nameAreaId = 34, nameEn = "Central point: Echo Ridge Mine", nameKey = "cave_center",
+            nameParam = "Echo Ridge Mine", nativeMapId = 0, type = "cave_center", x = -8583.5, y = -161.3, z = 91.8,
+            zStatus = "known" }
+        t:assertTrue(C.Validate(row), "the catalogue takes the kind")
+        t:assertEqual(text.targetName({ nameKey = "cave_center", nameParam = "Echo Ridge Mine" }, false),
+            "Central point: Echo Ridge Mine")
+        t:assertEqual(text.categories(row), "cave")
+        t:assertEqual(text.categories({ category = "quest_explore" }), "quest exploration")
+    end
+
     suite["the same spot: floors apart is not, a missing height does not count"] = function(t)
         t:assertTrue(Route.sameSpot({ x = 1, y = 1, z = 5 }, { x = 1, y = 2, z = 6 }))
         t:assertEqual(Route.sameSpot({ x = 1, y = 1 }, { x = 1, y = 4 }), false, "too far in the plane")

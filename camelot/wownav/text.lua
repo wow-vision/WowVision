@@ -128,6 +128,7 @@ local DYN = {
     dive_exit = L["Surface here"],
     fishing_spot_shore = L["Fishing spot on the shore: %s"],
     fishing_spot_structure = L["Fishing spot on pier or quay: %s"],
+    cave_center = L["Central point: %s"],
     -- the transitions of Zephras Isle (their places are named in the key)
     rohashi_portal = L["Portal to Rohashi Spires"],
     rohashi_arrival = L["Arrival at Rohashi Spires"],
@@ -240,6 +241,7 @@ local CATEGORY = {
     waypoint = L["waypoint"], orientation = L["orientation point"], transport = L["transport"], live = L["live target"],
     zone_transition = L["zone transition"], transit = L["transit"], boat = L["ship"], tram = L["tram"],
     dungeon = L["dungeon"], portal = L["portal"], zeppelin = L["zeppelin"], lift = L["elevator"], dive = L["dive"],
+    cave = L["cave"], quest_explore = L["quest exploration"],
 }
 
 -- Automatic waypoints are named by their height in whole yards only (his auto_prefix_z: "the player finds re-entry
