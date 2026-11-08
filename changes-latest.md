@@ -14,4 +14,7 @@
 ### Modern
 
 #### Forever
+* WowNav data: Stormwind, Ironforge, Undercity, Darnassus, Orgrimmar and Thunder Bluff are rebuilt, and the start zones updated again. The Deeprun Tram is linked like the Sku data, so a route between its two stations follows the tunnel.
+* WowNav routes: a route now picks the cheapest pair of checked entry points near you and near the target, so it no longer starts or ends with a detour to a worse one.
+* WowNav: new destinations for the central points of caves and for quest exploration objectives.
 * Training: the hunter's Beast Training window is now read. It is named after your pet, reads the training points left, and says each skill's cost in training points.
