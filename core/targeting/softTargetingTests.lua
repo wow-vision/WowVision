@@ -171,61 +171,22 @@ testRunner:addSuite("SoftTargeting", {
     end,
 })
 
--- A soft target unit standing in for the game's: guid and name may be
--- secret ({ secret = value }), plate is a frame or nil.
-local function unitApi(unit)
-    return {
-        UnitExists = function()
-            return unit.exists ~= false and (unit.guid ~= nil or unit.exists == true)
-        end,
-        UnitGUID = function()
-            return unit.guid
-        end,
-        UnitName = function()
-            return unit.name
-        end,
-        nameplate = function()
-            return unit.plate
-        end,
-        isSecret = function(value)
-            return type(value) == "table" and value.secret ~= nil
-        end,
-    }
+local function isSecret(value)
+    return type(value) == "table" and value.secret ~= nil
 end
 
 testRunner:addSuite("SoftTargetIdentity", {
     ["a readable GUID is the identity"] = function(t)
-        t:assertEqual(soft.identity(unitApi({ guid = "Creature-1" }), "softenemy"), "Creature-1")
+        t:assertEqual(soft.identity("Creature-1", isSecret), "Creature-1")
     end,
 
     ["no unit has no identity"] = function(t)
-        t:assertNil(soft.identity(unitApi({ exists = false }), "softenemy"))
+        t:assertNil(soft.identity(nil, isSecret))
     end,
 
-    ["a secret GUID gives the same identity on every read of the same unit"] = function(t)
-        local plate = {}
-        local unit = { guid = { secret = "Creature-1" }, plate = plate }
-        local first = soft.identity(unitApi(unit), "softenemy")
-        unit.guid = { secret = "Creature-1" }
-        t:assertEqual(first, plate)
-        t:assertEqual(soft.identity(unitApi(unit), "softenemy"), first)
-    end,
-
-    ["a secret GUID with another nameplate is a different unit"] = function(t)
-        local a = soft.identity(unitApi({ guid = { secret = "1" }, plate = {} }), "softenemy")
-        local b = soft.identity(unitApi({ guid = { secret = "2" }, plate = {} }), "softenemy")
-        t:assertTrue(a ~= b)
-    end,
-
-    ["with no nameplate a readable name is the identity"] = function(t)
-        local api = unitApi({ guid = { secret = "1" }, name = "Wolf" })
-        t:assertEqual(soft.identity(api, "softenemy"), "name:Wolf")
-    end,
-
-    ["nothing readable gives one fixed identity"] = function(t)
-        local api = unitApi({ guid = { secret = "1" }, name = { secret = "Wolf" } })
-        t:assertEqual(soft.identity(api, "softenemy"), soft.UNREADABLE)
-        t:assertEqual(soft.identity(api, "softenemy"), soft.identity(api, "softenemy"))
+    ["every secret GUID is the one hidden marker"] = function(t)
+        t:assertEqual(soft.identity({ secret = "Creature-1" }, isSecret), soft.HIDDEN)
+        t:assertEqual(soft.identity({ secret = "Creature-2" }, isSecret), soft.HIDDEN)
     end,
 })
 
@@ -242,9 +203,10 @@ testRunner:addSuite("SoftTargetFlicker", {
         local now = 0
         for _ = 1, 50 do
             now = now + 0.02
-            t:assertEqual(soft.track(state, nil, now), "lost")
+            t:assertNil(soft.track(state, nil, now))
+            t:assertEqual(soft.expire(state, now + 0.01), false)
             now = now + 0.03
-            t:assertEqual(soft.track(state, "A", now), "back")
+            t:assertNil(soft.track(state, "A", now))
         end
     end,
 
@@ -260,13 +222,22 @@ testRunner:addSuite("SoftTargetFlicker", {
         soft.track(state, "A", 0)
         soft.track(state, nil, 1)
         t:assertEqual(soft.track(state, "B", 1.01), "new")
-        t:assertEqual(soft.track(state, "B", 1.02), nil)
+        t:assertNil(soft.track(state, "B", 1.02))
     end,
 
-    ["losing a unit twice reports it lost once"] = function(t)
+    ["a unit lost for the whole hold expires once"] = function(t)
         local state = {}
         soft.track(state, "A", 0)
-        t:assertEqual(soft.track(state, nil, 1), "lost")
-        t:assertNil(soft.track(state, nil, 1.1))
+        soft.track(state, nil, 1)
+        t:assertEqual(soft.expire(state, 1 + soft.FLICKER_HOLD / 2), false)
+        t:assertEqual(soft.expire(state, 1 + soft.FLICKER_HOLD + 0.1), true)
+        t:assertEqual(soft.expire(state, 2), false)
+        t:assertNil(state.identity)
+    end,
+
+    ["a unit that stays never expires"] = function(t)
+        local state = {}
+        soft.track(state, "A", 0)
+        t:assertEqual(soft.expire(state, 100), false)
     end,
 })

@@ -102,71 +102,57 @@ function Writer:restore(name)
     return self:write(name, default)
 end
 
--- What tells one soft target from the next, for a change test that never
--- meets a secret. Where the game hides identities (Forever, Retail), the
--- GUID is secret and cannot be compared, and the soft target events repeat
--- while the same unit stays soft targeted: taking each event as a change
--- spoke the name without end. In order: the GUID when readable, else the
--- unit's nameplate (a frame, never secret; it stays with the unit while
--- shown), else the name when readable, else one fixed marker, so a unit
--- that shows nothing readable is announced once, when it is soft targeted.
--- nil when there is no unit.
---
--- api: UnitExists(unit), UnitGUID(unit), UnitName(unit),
--- nameplate(unit) -> frame or nil, isSecret(value)
-soft.UNREADABLE = "unreadable"
-
-function soft.identity(api, unit)
-    local guid = api.UnitGUID(unit)
-    if guid ~= nil and not api.isSecret(guid) then
-        return guid
-    end
-    if guid == nil and not api.UnitExists(unit) then
-        return nil
-    end
-    local plate = api.nameplate ~= nil and api.nameplate(unit) or nil
-    if plate ~= nil then
-        return plate
-    end
-    local name = api.UnitName(unit)
-    if name ~= nil and not api.isSecret(name) then
-        return "name:" .. name
-    end
-    return soft.UNREADABLE
-end
-
--- The game's soft enemy can flicker: measured on Forever (2026-11-08, any
+-- The game's soft enemy flickers: measured on Forever (2026-11-08, any
 -- enemy, out of combat, in a city), it is cleared and the same unit picked
 -- again every frame or two, 20 times a second, for as long as it stays in
 -- front of you. A unit that comes back within FLICKER_HOLD seconds of being
--- lost is the same soft target, not a new one.
+-- lost is the same soft target: no announcement and no other work. Only a
+-- loss that lasts the whole hold ends it (soft.expire, from the update).
 soft.FLICKER_HOLD = 0.3
+
+-- Where the game hides identities (Forever, Retail) the GUID is secret and
+-- cannot be compared: every such unit counts as this one marker, announced
+-- when it is soft targeted, not on each event.
+soft.HIDDEN = "hidden"
+
+-- The unit a soft target event is about, comparable: the GUID, the marker
+-- for a secret one, nil for none.
+function soft.identity(guid, isSecret)
+    if guid ~= nil and isSecret(guid) then
+        return soft.HIDDEN
+    end
+    return guid
+end
 
 -- One soft target event against the state kept between events
 -- ({ identity, lostAt }, changed in place). Returns
 --   "new"  a unit to announce
---   "back" the last unit, back within the hold: no announcement
---   "lost" the unit is gone (kept in state for the hold)
---   nil    nothing changed
+--   nil    the same unit (also back within the hold), or no unit
 function soft.track(state, identity, now)
     if identity == nil then
         if state.identity ~= nil and state.lostAt == nil then
             state.lostAt = now
-            return "lost"
         end
         return nil
     end
-    if identity == state.identity then
-        if state.lostAt == nil then
-            return nil
-        end
-        local back = now - state.lostAt <= soft.FLICKER_HOLD
+    if identity == state.identity and (state.lostAt == nil or now - state.lostAt <= soft.FLICKER_HOLD) then
         state.lostAt = nil
-        return back and "back" or "new"
+        return nil
     end
     state.identity = identity
     state.lostAt = nil
     return "new"
+end
+
+-- True once a lost unit stayed lost for the whole hold: the soft target is
+-- gone for good and the state is cleared.
+function soft.expire(state, now)
+    if state.lostAt == nil or now - state.lostAt <= soft.FLICKER_HOLD then
+        return false
+    end
+    state.identity = nil
+    state.lostAt = nil
+    return true
 end
 
 -- Tries every waiting write again, in name order.

@@ -201,18 +201,6 @@ end
 
 local softTargets = {}
 
--- The game reads behind soft.identity. A nameplate frame is never secret.
-local identityApi = {
-    UnitExists = UnitExists,
-    UnitGUID = UnitGUID,
-    UnitName = UnitName,
-    isSecret = secrets.isSecret,
-    nameplate = C_NamePlate ~= nil and C_NamePlate.GetNamePlateForUnit ~= nil and function(unit)
-        local ok, plate = pcall(C_NamePlate.GetNamePlateForUnit, unit)
-        return ok and plate or nil
-    end or nil,
-}
-
 -- The soft targeting console variables go through one writer that reads each
 -- write back and holds the secure ones (the on/off switches, Force, measured
 -- on Forever) until combat ends. See softTargeting.lua.
@@ -512,10 +500,10 @@ function module:onEvent(event, a, b)
 
     -- Only a different unit is a change: the soft enemy flickers (the same
     -- unit lost and back every frame), and the GUID can be secret on
-    -- Forever and Retail (softTargeting.lua: soft.identity, soft.track).
+    -- Forever and Retail (softTargeting.lua: soft.track, soft.identity).
     for _, v in ipairs(softTargets) do
         if event == v.event then
-            module:updateSoftTarget(v, soft.identity(identityApi, v.unit))
+            module:updateSoftTarget(v, soft.identity(UnitGUID(v.unit), secrets.isSecret))
         end
     end
 end
@@ -571,22 +559,27 @@ function module:updateHardTarget()
     end
 end
 
--- Returns what soft.track made of the event.
+-- Runs on every soft target event, 40 times a second while the soft enemy
+-- flickers: only a new unit does any work.
 function module:updateSoftTarget(target, identity)
     if not target.alert:getEnabled() then
-        return nil
+        return
     end
     target.state = target.state or {}
-    local result = soft.track(target.state, identity, GetTime())
-    if result == "new" or result == "back" then
+    if soft.track(target.state, identity, GetTime()) == "new" then
         target.tooltip:set(nil, { type = "Unit", unit = target.unit })
-        if result == "new" then
-            target.alert:fire({ name = UnitName(target.unit) })
-        end
-    elseif result == "lost" then
-        target.tooltip:reset()
+        target.alert:fire({ name = UnitName(target.unit) })
     end
-    return result
+end
+
+-- From the update: a soft target lost for the whole hold is gone, and so is
+-- its tooltip.
+function module:expireSoftTargets(now)
+    for _, info in ipairs(softTargets) do
+        if info.state ~= nil and soft.expire(info.state, now) then
+            info.tooltip:reset()
+        end
+    end
 end
 
 function module:onEnable()
@@ -594,6 +587,7 @@ function module:onEnable()
     self._cachedTargetGuid = UnitGUID("target")
     self:hasUpdate(function(self)
         self:updateHardTarget()
+        self:expireSoftTargets(GetTime())
     end)
 end
 
