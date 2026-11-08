@@ -76,10 +76,18 @@ local function sellJunk(self)
     if not sellPoor and marks == nil then
         return
     end
+    local favorites = WowVision.base.windows.favorites
     local result = junkStore.sell({
         bags = carriedBags(),
         numSlots = C_Container.GetContainerNumSlots,
-        getInfo = C_Container.GetContainerItemInfo,
+        -- a favorite is never sold, whatever else is marked on it, grey or not
+        getInfo = function(bag, slot)
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info ~= nil and favorites:keeps(info.hyperlink) then
+                return nil
+            end
+            return info
+        end,
         sellPrice = getSellPrice,
         sell = C_Container.UseContainerItem,
         marks = marks,

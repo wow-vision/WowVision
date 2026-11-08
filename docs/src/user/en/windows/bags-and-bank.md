@@ -46,7 +46,8 @@ Press Space for the full tooltip of the item.
 | \\ or Ctrl+D (Drag) | Picks the item up onto your cursor, like a mouse drag. |
 | Delete or Alt+Ctrl+\\ (Destroy Cursor Item) | Destroys the item on your cursor, after a confirmation. It works wherever you are in the game, not only in the bags. |
 | Shift+Enter (Select Junk) | Marks the item as junk, or takes the mark off. See [Junk](#junk) below. |
-| Shift+F10 | The context menu of the slot. It lists Left Click, Right Click and Drag, says what each click does right now, and has Mark as Junk (or Unmark as Junk). |
+| Shift+Backspace (Select Favorite) | Marks the item as a favorite, or takes the mark off. See [Favorites](#favorites) below. Backspace alone is still the right click. |
+| Shift+F10 | The context menu of the slot. It lists Left Click, Right Click and Drag, says what each click does right now, and has Mark as Favorite and Mark as Junk (or Unmark as Favorite and Unmark as Junk). |
 
 The context menu is the quickest way to find out what Backspace will do. Each click entry is named for its effect, for example "Sell, Right Click" or "Equip, Right Click".
 
@@ -89,6 +90,18 @@ You can mark items as junk. WowVision then sells every marked item for you when 
 On Retail and WoW: Forever the Junk category of the Item Lists stop (see [Item lists](#item-lists)) lists every marked item of the bags that are open, in bag order, so all your junk is in one place. Each entry is the same slot as in the bags: Enter picks the item up, Backspace right-clicks it, Space reads its tooltip, and Select Junk takes the mark off, after which the item leaves the list.
 
 What is sold, and when, is set in the merchant settings: see [Merchant settings](./npcs.md#merchant-settings). In short, the sale happens once when the merchant window opens. It sells the items you marked and nothing else (grey items too, if you turned that setting on), only from your bags, never from the bank, and never anything you wear. Items that are locked or that no vendor buys are skipped. Then WowVision says what it sold, for example "Sold marked junk for 3 Silver 20 Copper: Linen Cloth, Worn Shortsword." Up to five names are read, then "and N more". Anything sold by mistake can be bought back on the Buyback tab of the merchant.
+
+## Favorites
+
+You can mark items as favorites, to find them again easily. Unlike junk, a favorite is never sold.
+
+- Stand on the item in your bags and press Select Favorite (Shift+Backspace by default; Backspace alone is the right click). WowVision says, for example, "Linen Cloth: marked as favorite". Press it again and it says "Linen Cloth: no longer a favorite" and the mark is gone. The slot's context menu (Shift+F10) has the same action, named Mark as Favorite or Unmark as Favorite.
+- A favorite reads "[Favorite]" before its name, ahead of "[Junk]" if the item is also marked as junk: "[Favorite] [Junk] Linen Cloth, White, 12".
+- As with junk, the mark belongs to the item, not to the slot or the stack, and items that come in random variants are marked one variant at a time. Any item can be a favorite, also one no vendor buys, such as the Hearthstone.
+- The marks are remembered between sessions, for each character on its own.
+- On Retail and WoW: Forever the Favorites category of the Item Lists stop (see [Item lists](#item-lists)) lists every favorite of the bags that are open, in bag order. Each entry is the same slot as in the bags, and Select Favorite there takes the mark off, after which the item leaves the list.
+- The sale at a merchant never sells a favorite, even one that is also marked as junk or that is grey, and not when the Favorites module is switched off either: switching it off only hides the marks.
+- Windows, then Favorites in the WowVision menu has Forget All Favorites, which takes every mark off after a confirmation, and an Enabled switch. With the module off there are no tags and no key.
 
 ## The cursor
 
@@ -146,6 +159,7 @@ These versions have two bag views, which you pick in the game's bag menu. WowVis
 When there is something to look at, the bags get an extra stop called Item Lists. It comes right after the bags, so opening them still lands on their items. It holds categories like the scanner's, each reading its name and how many items it has, for example "New Items (2)". Right opens a category and Left closes it. Its items read like bag slots, and you can use, equip or move them from there as usual. The same items still sit in their slots in the bags. A category with nothing in it is left out, and with every category empty the stop is gone and the bags open as before.
 
 - Junk: every item you marked as junk, with the tag, in bag order (see [Junk](#junk)). It starts closed.
+- Favorites: every item you marked as a favorite, in bag order (see [Favorites](#favorites)). It starts closed.
 - New Items: what the game marks as new, the things you looted or bought since you last looked. It starts open. The game takes the new mark off an item as soon as you move the cursor onto it, and WowVision does the same when you land on a slot, so an item would vanish the moment you reach it. WowVision therefore keeps the items it has seen as new in the list until you close the bags. Open the bags again and only what is still marked new is listed.
 
 ### Combined bags

@@ -199,22 +199,22 @@ function module.visualRows(buttons)
     return rows
 end
 
--- One item slot of a bag or the bank: the label (with "[Junk]" ahead of it
--- when the player marked its item, see junk.lua), the clicks, and the Select
--- Junk key and menu entry. The bags' Item Lists stop (retail/containers/Bags.lua)
--- lists slots again and builds them with this too, so they read the same
--- wherever they are.
+-- One item slot of a bag or the bank: the label (with "[Favorite]" and "[Junk]"
+-- ahead of it when the player marked its item, see favorites.lua and junk.lua),
+-- the clicks, and the Select Favorite and Select Junk keys and menu entries.
+-- The bags' Item Lists stop (retail/containers/Bags.lua) lists slots again and
+-- builds them with this too, so they read the same wherever they are.
 local function slotNode(itemButton)
     local function locate()
         return module.slotLocation(itemButton)
     end
-    local junk = WowVision.base.windows.junk
-    return junk:decorateSlot(
-        module.itemSlotNode(itemButton, function()
-            return junk:tagLabel(module.getBagItemLabel(itemButton), locate())
-        end, module.itemClickLabels(itemButton)),
-        locate
-    )
+    local windows = WowVision.base.windows
+    local favorites, junk = windows.favorites, windows.junk
+    local node = module.itemSlotNode(itemButton, function()
+        local label = junk:tagLabel(module.getBagItemLabel(itemButton), locate())
+        return favorites:tagLabel(label, locate())
+    end, module.itemClickLabels(itemButton))
+    return junk:decorateSlot(favorites:decorateSlot(node, locate), locate)
 end
 module.slotNode = slotNode
 

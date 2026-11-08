@@ -7,7 +7,9 @@
   <Script file="bagListsTests.lua" />
   <Script file="junkStore.lua" />
   <Script file="junkStoreTests.lua" />
+  <Script file="marks.lua" />
   <Script file="junk.lua" />
+  <Script file="favorites.lua" />
   <Script file="containers.lua" />
   <Script file="newItems.lua" />
   <Script file="newItemsTests.lua" />

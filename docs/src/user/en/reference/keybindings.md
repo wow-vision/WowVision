@@ -90,7 +90,9 @@ See [Chat](../windows/chat.md).
 |---|---|---|
 | Select Junk | Shift+Enter | On an item slot of the bags or the bank: marks the item as junk, or takes the mark off. Marked items are sold when a merchant opens. Shift+Enter is a shift click everywhere else; on bag slots Select Junk takes it, so give Select Junk another key if you need the shift click there (splitting a stack, linking an item into chat) |
 
-See [Junk](../windows/bags-and-bank.md#junk).
+| Select Favorite | Shift+Backspace | On an item slot of the bags or the bank: marks the item as a favorite, or takes the mark off. A favorite reads "[Favorite]" before its name, is listed in the Favorites category of the Item Lists stop and is never sold. Backspace alone is Right Click; this is Backspace with Shift |
+
+See [Junk](../windows/bags-and-bank.md#junk) and [Favorites](../windows/bags-and-bank.md#favorites).
 
 ## Navigation and routes
 

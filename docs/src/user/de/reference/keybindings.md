@@ -94,7 +94,9 @@ Siehe [Chat](../windows/chat.md).
 |---|---|---|
 | Plunder auswählen (Select Junk) | Umschalt+Eingabe | Auf einem Gegenstandsplatz der Taschen oder der Bank: markiert den Gegenstand als Plunder oder nimmt die Markierung weg. Markierte Gegenstände werden verkauft, wenn sich ein Händler öffnet. Umschalt+Eingabe ist sonst überall ein Umschaltklick; auf Taschenplätzen hat Plunder auswählen Vorrang, gib der Belegung also eine andere Taste, wenn du dort den Umschaltklick brauchst (einen Stapel teilen, einen Gegenstand in den Chat linken) |
 
-Siehe [Plunder](../windows/bags-and-bank.md#plunder).
+| Favorit auswählen (Select Favorite) | Umschalt+Rücktaste | Auf einem Gegenstandsplatz der Taschen oder der Bank: markiert den Gegenstand als Favorit oder nimmt die Markierung weg. Ein Favorit wird mit „[Favorit]“ vor dem Namen gelesen, steht in der Kategorie Favoriten der Gegenstandslisten und wird nie verkauft. Die Rücktaste allein ist Rechtsklick; hier ist es die Rücktaste mit Umschalt |
+
+Siehe [Plunder](../windows/bags-and-bank.md#plunder) und [Favoriten](../windows/bags-and-bank.md#favoriten).
 
 ## Navigation und Routen
 

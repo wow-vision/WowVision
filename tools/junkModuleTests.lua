@@ -179,10 +179,13 @@ local function withGame(game, body)
         end,
     }
 
+    loadFile("core/windows/marks.lua")
     loadFile("core/windows/junk.lua")
+    loadFile("core/windows/favorites.lua")
     loadFile("core/windows/merchant.lua")
-    local env = { junk = parent.junk, merchant = parent.merchant }
+    local env = { junk = parent.junk, favorites = parent.favorites, merchant = parent.merchant }
     env.junk.data = env.junk:getDefaultData()
+    env.favorites.data = env.favorites:getDefaultData()
 
     local ok, err = pcall(body, env)
 
@@ -991,6 +994,198 @@ testRunner:addSuite("JunkWiring", {
             for _, spec in ipairs(items[1].bindings) do
                 t:assertNotEqual(spec.binding, "junk/toggle")
             end
+        end)
+    end,
+})
+
+local function favorite(env, id)
+    env.favorites.data.marks[tostring(id)] = "Item " .. id
+end
+
+local function favoritesList()
+    for _, list in ipairs(WowVision.bagLists.lists) do
+        if list.key == "favorites" then
+            return list
+        end
+    end
+    error("the Favorites list is not registered")
+end
+
+testRunner:addSuite("FavoritesModule", {
+    ["the Select Favorite key is a dormant keymap, Shift+Backspace by default"] = function(t)
+        withGame(newGame(), function(env)
+            local keymap = env.favorites.registeredBindings[1]
+            t:assertEqual(#env.favorites.registeredBindings, 1)
+            t:assertEqual(keymap.key, "favorite/toggle")
+            t:assertEqual(keymap.type, "Flexible")
+            t:assertTrue(keymap.dorment, "held only while a node asks for it")
+            t:assertEqual(keymap.inputs[1], "SHIFT-BACKSPACE")
+            t:assertEqual(#keymap.inputs, 1)
+            t:assertEqual(keymap.label, "Select Favorite")
+            t:assertEqual(env.favorites.label, "Favorites")
+        end)
+    end,
+
+    ["Select Favorite marks the item, says so, and a second press takes the mark off"] = function(t)
+        local game = newGame()
+        game.add(0, 3, 25, { itemName = "Worn Shortsword" })
+        game.screen = { _liveKey = "node" }
+        withGame(game, function(env)
+            env.favorites:toggleAt(0, 3)
+            t:assertEqual(game.spoken[1], "Worn Shortsword: marked as favorite")
+            t:assertTrue(env.favorites:isMarkedAt(0, 3))
+            t:assertEqual(env.favorites.data.marks["25"], "Worn Shortsword")
+            t:assertFalse(env.junk:isMarkedAt(0, 3), "junk is a mark of its own")
+            t:assertNil(game.screen._liveKey, "the live watch is told: the label was just said")
+            env.favorites:toggleAt(0, 3)
+            t:assertEqual(game.spoken[2], "Worn Shortsword: no longer a favorite")
+            t:assertFalse(env.favorites:isMarkedAt(0, 3))
+            t:assertNil(env.favorites.data.marks["25"])
+        end)
+    end,
+
+    ["an item no vendor buys can be a favorite"] = function(t)
+        local game = newGame()
+        game.add(0, 1, 6948, { itemName = "Hearthstone", hasNoValue = true })
+        withGame(game, function(env)
+            env.favorites:toggleAt(0, 1)
+            t:assertEqual(game.spoken[1], "Hearthstone: marked as favorite")
+            t:assertTrue(env.favorites:isMarkedAt(0, 1))
+        end)
+    end,
+
+    ["an empty slot and an item with no usable link mark nothing"] = function(t)
+        local game = newGame()
+        game.add(0, 2, 25, { hyperlink = "|Hbattlepet:1:2:3|h[Cat]|h" })
+        withGame(game, function(env)
+            env.favorites:toggleAt(0, 5)
+            t:assertEqual(game.spoken[1], "Empty")
+            env.favorites:toggleAt(0, 2)
+            t:assertEqual(game.spoken[2], "This item cannot be marked as a favorite.")
+            t:assertNil(next(env.favorites.data.marks))
+        end)
+    end,
+
+    ["with the module off, the key does nothing and the slots are what they were"] = function(t)
+        local game = newGame()
+        game.add(0, 1, 25, { itemName = "Worn Shortsword" })
+        withGame(game, function(env)
+            loadFile("core/windows/containers.lua")
+            env.containers = WowVision.base.windows.containers
+            env.containers.getBagItemLabel = function()
+                return "Worn Shortsword, White"
+            end
+            favorite(env, 25)
+            env.favorites.enabled = false
+            env.favorites:toggleAt(0, 1)
+            t:assertEqual(#game.spoken, 0)
+            local items = renderedSlots(env, { slotButton(0, 1) })
+            t:assertEqual(items[1].announcements[1].text(), "Worn Shortsword, White")
+            for _, spec in ipairs(items[1].bindings) do
+                t:assertNotEqual(spec.binding, "favorite/toggle")
+            end
+        end)
+    end,
+
+    ["bag slots read [Favorite] ahead of [Junk], and carry both keys and both menu entries"] = function(t)
+        local game = newGame()
+        game.add(0, 1, 25, { itemName = "Worn Shortsword" })
+        game.add(0, 2, 26, { itemName = "Linen Cloth" })
+        withGame(game, function(env)
+            loadFile("core/windows/containers.lua")
+            env.containers = WowVision.base.windows.containers
+            env.containers.getBagItemLabel = function(button)
+                local info = C_Container.GetContainerItemInfo(button:GetBagID(), button:GetID())
+                return info.itemName .. ", White"
+            end
+            favorite(env, 25)
+            mark(env, 25)
+            favorite(env, 26)
+            local items = renderedSlots(env, { slotButton(0, 1), slotButton(0, 2) })
+            t:assertEqual(items[1].announcements[1].text(), "[Favorite] [Junk] Worn Shortsword, White")
+            t:assertEqual(items[2].announcements[1].text(), "[Favorite] Linen Cloth, White")
+            local keys = {}
+            for _, spec in ipairs(items[1].bindings) do
+                keys[spec.binding] = spec
+            end
+            t:assertNotNil(keys["favorite/toggle"])
+            t:assertNotNil(keys["junk/toggle"])
+            keys["favorite/toggle"].func()
+            t:assertFalse(env.favorites:isMarkedAt(0, 1))
+            t:assertTrue(env.junk:isMarkedAt(0, 1), "the other mark stays")
+            local labels = {}
+            items[1].contextActions(function(entry)
+                tinsert(labels, entry.label)
+            end, {})
+            t:assertEqual(table.concat(labels, ","), "Left Click,Right Click,Drag,Mark as Favorite,Unmark as Junk")
+        end)
+    end,
+
+    ["the Favorites list of the Item Lists holds the marked slots in bag order, after Junk"] = function(t)
+        local game = newGame()
+        game.add(2, 3, 30, { itemName = "Third" })
+        game.add(0, 5, 10, { itemName = "First" })
+        game.add(0, 2, 11, { itemName = "Not marked" })
+        withGame(game, function(env)
+            loadFile("core/windows/containers.lua")
+            local containers = WowVision.base.windows.containers
+            containers.getBagItemLabel = function(button)
+                return C_Container.GetContainerItemInfo(button:GetBagID(), button:GetID()).itemName
+            end
+            favorite(env, 30)
+            favorite(env, 10)
+            local list = favoritesList()
+            t:assertEqual(list.label, "Favorites")
+            t:assertTrue(list.order > junkList().order)
+            local selected = list.select(WowVision.bagLists.sorted({ slotButton(2, 3), slotButton(0, 5), slotButton(0, 2) }))
+            t:assertEqual(#selected, 2)
+            t:assertEqual(containers.slotNode(selected[1]).announcements[1].text(), "[Favorite] First")
+            t:assertEqual(containers.slotNode(selected[2]).announcements[1].text(), "[Favorite] Third")
+            env.favorites.enabled = false
+            t:assertEqual(#list.select({ slotButton(0, 5) }), 0, "switched off, the list is empty")
+        end)
+    end,
+
+    ["a favorite is not sold at a merchant, even marked as junk, even grey"] = function(t)
+        local game = newGame()
+        game.add(0, 1, 100, { itemName = "Linen Cloth" })
+        game.add(0, 2, 101, { itemName = "Worn Shortsword" })
+        game.add(0, 3, 102, { itemName = "Grey Fang", quality = 0 })
+        game.add(0, 4, 103, { itemName = "Grey Claw", quality = 0 })
+        withGame(game, function(env)
+            mark(env, 100)
+            mark(env, 101)
+            favorite(env, 100)
+            favorite(env, 102)
+            env.merchant.settings.autoSellPoorItems = true
+            open(env)
+            t:assertEqual(table.concat(game.sold, " "), "0:2 0:4")
+            t:assertNotNil(game.bags[0][1], "marked as junk and as favorite: kept")
+            t:assertNotNil(game.bags[0][3], "a grey favorite: kept")
+            t:assertEqual(#game.errors, 0)
+        end)
+    end,
+
+    ["switching the favorites off hides them without making the items sellable"] = function(t)
+        local game = newGame()
+        game.add(0, 1, 100, { itemName = "Linen Cloth" })
+        withGame(game, function(env)
+            mark(env, 100)
+            favorite(env, 100)
+            env.favorites.enabled = false
+            open(env)
+            t:assertEqual(#game.sold, 0)
+        end)
+    end,
+
+    ["favorites alone sell nothing"] = function(t)
+        local game = newGame()
+        game.add(0, 1, 100, { itemName = "Linen Cloth", quality = 0 })
+        withGame(game, function(env)
+            favorite(env, 100)
+            open(env)
+            t:assertEqual(#game.sold, 0)
+            t:assertEqual(#game.spoken, 0)
         end)
     end,
 })
