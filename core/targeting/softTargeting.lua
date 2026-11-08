@@ -114,59 +114,6 @@ function Writer:restore(name)
     return self:write(name, default)
 end
 
--- The game's soft enemy flickers: measured on Forever (2026-11-08, any
--- enemy, out of combat, in a city), it is cleared and the same unit picked
--- again every frame or two, 20 times a second, for as long as it stays in
--- front of you. A unit that comes back within FLICKER_HOLD seconds of being
--- lost is the same soft target: no announcement and no other work. Only a
--- loss that lasts the whole hold ends it (soft.expire, from the update).
-soft.FLICKER_HOLD = 0.3
-
--- Where the game hides identities (Forever, Retail) the GUID is secret and
--- cannot be compared: every such unit counts as this one marker, announced
--- when it is soft targeted, not on each event.
-soft.HIDDEN = "hidden"
-
--- The unit a soft target event is about, comparable: the GUID, the marker
--- for a secret one, nil for none.
-function soft.identity(guid, isSecret)
-    if guid ~= nil and isSecret(guid) then
-        return soft.HIDDEN
-    end
-    return guid
-end
-
--- One soft target event against the state kept between events
--- ({ identity, lostAt }, changed in place). Returns
---   "new"  a unit to announce
---   nil    the same unit (also back within the hold), or no unit
-function soft.track(state, identity, now)
-    if identity == nil then
-        if state.identity ~= nil and state.lostAt == nil then
-            state.lostAt = now
-        end
-        return nil
-    end
-    if identity == state.identity and (state.lostAt == nil or now - state.lostAt <= soft.FLICKER_HOLD) then
-        state.lostAt = nil
-        return nil
-    end
-    state.identity = identity
-    state.lostAt = nil
-    return "new"
-end
-
--- True once a lost unit stayed lost for the whole hold: the soft target is
--- gone for good and the state is cleared.
-function soft.expire(state, now)
-    if state.lostAt == nil or now - state.lostAt <= soft.FLICKER_HOLD then
-        return false
-    end
-    state.identity = nil
-    state.lostAt = nil
-    return true
-end
-
 -- Tries every waiting write again, in name order.
 function Writer:flush()
     local names = {}

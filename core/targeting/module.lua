@@ -278,7 +278,7 @@ local function addSoftTarget(info)
     end
     enabled.events.valueChange:subscribe(nil, function(event, obj, key, value)
         if value ~= true then
-            info.state = {}
+            info.guid = nil
         end
         if module.softTargetingReady then
             -- 3 = keyboard and gamepad
@@ -499,12 +499,18 @@ function module:onEvent(event, a, b)
         return
     end
 
-    -- Only a different unit is a change: the soft enemy flickers (the same
-    -- unit lost and back every frame), and the GUID can be secret on
-    -- Forever and Retail (softTargeting.lua: soft.track, soft.identity).
+    -- The payload GUIDs can be secret (hidden identities on Forever and
+    -- Retail): then they cannot be compared, and the event itself is the
+    -- change.
     for _, v in ipairs(softTargets) do
         if event == v.event then
-            module:updateSoftTarget(v, soft.identity(UnitGUID(v.unit), secrets.isSecret))
+            local newGuid
+            if (a or b) and secrets.changed(a, b) then
+                newGuid = b
+            else
+                newGuid = UnitGUID(v.unit)
+            end
+            module:updateSoftTarget(v, newGuid)
         end
     end
 end
@@ -560,26 +566,18 @@ function module:updateHardTarget()
     end
 end
 
--- Runs on every soft target event, 40 times a second while the soft enemy
--- flickers: only a new unit does any work.
-function module:updateSoftTarget(target, identity)
+function module:updateSoftTarget(target, newGuid)
     if not target.alert:getEnabled() then
         return
     end
-    target.state = target.state or {}
-    if soft.track(target.state, identity, GetTime()) == "new" then
-        target.tooltip:set(nil, { type = "Unit", unit = target.unit })
-        target.alert:fire({ name = UnitName(target.unit) })
-    end
-end
-
--- From the update: a soft target lost for the whole hold is gone, and so is
--- its tooltip.
-function module:expireSoftTargets(now)
-    for _, info in ipairs(softTargets) do
-        if info.state ~= nil and soft.expire(info.state, now) then
-            info.tooltip:reset()
+    if secrets.changed(newGuid, target.guid) then
+        if newGuid then
+            target.tooltip:set(nil, { type = "Unit", unit = target.unit })
+            target.alert:fire({ name = UnitName(target.unit) })
+        else
+            target.tooltip:reset()
         end
+        target.guid = newGuid
     end
 end
 
@@ -588,7 +586,6 @@ function module:onEnable()
     self._cachedTargetGuid = UnitGUID("target")
     self:hasUpdate(function(self)
         self:updateHardTarget()
-        self:expireSoftTargets(GetTime())
     end)
 end
 
