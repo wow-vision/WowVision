@@ -332,10 +332,21 @@ local function objectiveNodes(entry, allDone)
     end
 end
 
+-- The title of a quest in the log with its level: "A Threat Within, Level 5".
+-- The log's level is the quest's own and can be a scaled one, so it is
+-- approximate; a quest with no level in the log reads its bare title.
+local function questTitle(entry)
+    local title = entry.title or unknown()
+    if type(entry.level) == "number" and entry.level > 0 then
+        return string.format("%s, %s %d", title, L["Level"], entry.level)
+    end
+    return title
+end
+
 local function inProgressNode(entry)
     local node = {
         key = "quest:" .. entry.questId,
-        label = entry.title or unknown(),
+        label = questTitle(entry),
         details = questDetails(entry.questId),
     }
     local unfinished = 0
@@ -407,7 +418,7 @@ function quests:questNavigationTarget(questId)
             return {
                 x = node.x,
                 y = node.y,
-                label = node.targetName or node.label,
+                label = node.targetName or entry.title or node.label,
                 onArrive = node.onArrive,
                 match = node.match,
             }
@@ -459,6 +470,10 @@ scanner:registerProvider({
                     local out = {}
                     for _, entry in ipairs(quests:inProgress()) do
                         tinsert(out, inProgressNode(entry))
+                    end
+                    -- nearest first, by where each quest's node would take you
+                    if quests.settings.sortByProximity then
+                        out = Adapter.sortByProximity(out, quests:playerContext())
                     end
                     return out
                 end,

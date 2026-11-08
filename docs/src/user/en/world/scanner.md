@@ -54,7 +54,7 @@ Nearby lists quests you could pick up around you, nearest giver first. Each entr
 
 If the data source is still starting, you hear "Loading". Without any data source at all the whole Quests category holds the single line "No quest data source".
 
-In Progress lists your quest log. Each entry shows the quest title and its state: "Complete", "Failed", or "2 of 3" for how many objectives are done. Press Backspace to read its objective text. Open a quest to see its objectives:
+In Progress lists your quest log. Each entry shows the quest title with its level ("A Threat Within, Level 5"; the level is the log's, so it can differ a little from the level of a scaled quest) and its state: "Complete", "Failed", or "2 of 3" for how many objectives are done. The list is nearest first, by the place Enter on each quest would take you to, so a quest you can hand in a few steps away comes before one on the other side of the zone; quests with no place to walk to come last. The Sort Quests by Proximity setting turns this off to keep the order of the log; see [Quests](quests.md). Press Backspace to read its objective text. Open a quest to see its objectives:
 
 1. A quest in progress expands to its objectives (only when the data source knows the quest; a quest it does not know shows just its state), for example "Kobold Vermin slain: 3/10". A finished objective is marked "Complete".
 2. An objective expands to what it is about: the creatures, objects or item sources that count towards it. An item source is named like "Linen Cloth from Defias Thug". Each of these shows a note: its title, "seen" if the Minimap Scanner found it, "indoors", the number of spawns and, when there is only one spawn, where it is.

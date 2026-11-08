@@ -170,6 +170,45 @@ function Adapter:_playerContext()
     return self.backend.player() or {}
 end
 
+-- Where the player stands now ({ x, y, continent, ... } as the backend's
+-- player() gives it), for callers that rank their own nodes.
+function Adapter:playerContext()
+    return self:_playerContext()
+end
+
+-- Nodes nearest first. A node is anything with world coordinates x and y (a
+-- scanner node); player is { x, y }. A node with no position (nothing known
+-- to walk to, or another continent) goes after every node that has one, and
+-- nodes at the same distance, or without a position, keep the order they
+-- came in. Without a player position the list is returned as it is.
+function Adapter.sortByProximity(nodes, player)
+    if player == nil or player.x == nil or player.y == nil then
+        return nodes
+    end
+    local ranked = {}
+    for index, node in ipairs(nodes) do
+        local distance = nil
+        if node.x ~= nil and node.y ~= nil then
+            distance = distanceBetween(player.x, player.y, node.x, node.y)
+        end
+        ranked[index] = { node = node, index = index, distance = distance }
+    end
+    table.sort(ranked, function(a, b)
+        if a.distance ~= nil and b.distance ~= nil and a.distance ~= b.distance then
+            return a.distance < b.distance
+        end
+        if (a.distance == nil) ~= (b.distance == nil) then
+            return a.distance ~= nil
+        end
+        return a.index < b.index
+    end)
+    local sorted = {}
+    for index, entry in ipairs(ranked) do
+        sorted[index] = entry.node
+    end
+    return sorted
+end
+
 -- ---- targets: the places a quest sends you ----
 
 local function copyTarget(source)

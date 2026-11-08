@@ -153,6 +153,7 @@ Open the WowVision menu, then Quests. See [Menu and Settings](../basics/menu-and
 |---------|---------|--------------|
 | Nearby Level Range | 5 | The Nearby list hides quests that are more than this many levels below your level. From 0 to 60. Set 60 to see every quest, or 0 to see only quests at or above your level. |
 | Include Repeatable Quests | On | Whether repeatable and daily quests appear in the Nearby list. |
+| Sort Quests by Proximity | On | Whether the In Progress list is nearest first, by the place Enter on each quest would take you to (the next open objective, or the turn-in once a quest is complete). Quests with no place to walk to follow, in the order of your log. Turn it off to keep the order of the log. |
 | Quest Area Alert | see above | Announcements when entering or leaving an objective area. |
 
 The Nearby list also leaves out quests you cannot take yet, because of your level or a missing prerequisite.

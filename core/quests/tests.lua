@@ -448,6 +448,46 @@ testRunner:addSuite("QuestAdapter", {
         t:assertEqual(names(adapter:placeTargets("npc", { 103, 100 }, {})), "Marshal McBride,Deputy Willem")
     end,
 
+    ["the player context is the backend's player"] = function(t)
+        local adapter = Adapter:new(fakeBackend())
+        local player = adapter:playerContext()
+        t:assertEqual(player.x, 100)
+        t:assertEqual(player.y, 100)
+        t:assertEqual(player.continent, 0)
+    end,
+
+    ["nodes sort nearest first, unplaced ones last, ties in order"] = function(t)
+        local function keys(list)
+            local out = {}
+            for _, node in ipairs(list) do
+                tinsert(out, node.key)
+            end
+            return table.concat(out, ",")
+        end
+        local nodes = {
+            { key = "a", x = 500, y = 100 }, -- 400 yards
+            { key = "b" }, -- nothing to walk to
+            { key = "c", x = 110, y = 100 }, -- 10 yards
+            { key = "d", x = 100, y = 600 }, -- 500 yards
+            { key = "e" },
+            { key = "f", x = 100, y = 500 }, -- 400 yards, like a: a came first
+        }
+        local sorted = Adapter.sortByProximity(nodes, { x = 100, y = 100 })
+        t:assertEqual(keys(sorted), "c,a,f,d,b,e")
+        t:assertEqual(keys(nodes), "a,b,c,d,e,f", "the list given is not changed")
+    end,
+
+    ["without a player position the order stays"] = function(t)
+        local nodes = { { key = "far", x = 900, y = 900 }, { key = "near", x = 1, y = 1 } }
+        t:assertEqual(Adapter.sortByProximity(nodes, nil), nodes)
+        t:assertEqual(Adapter.sortByProximity(nodes, {}), nodes)
+        t:assertEqual(Adapter.sortByProximity(nodes, { x = 1 }), nodes)
+    end,
+
+    ["an empty list sorts to an empty list"] = function(t)
+        t:assertEqual(#Adapter.sortByProximity({}, { x = 0, y = 0 }), 0)
+    end,
+
     ["unknown phase errors"] = function(t)
         local adapter = Adapter:new(fakeBackend())
         t:assertError(function()

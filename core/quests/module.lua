@@ -33,6 +33,15 @@ settings:add({
     label = L["Include Repeatable Quests"],
     default = true,
 })
+-- The scanner's In Progress list nearest first (by the place Enter would
+-- take you to: the next open objective, or the turn-in once a quest is
+-- complete) instead of in the order of the log.
+settings:add({
+    key = "sortByProximity",
+    type = "Bool",
+    label = L["Sort Quests by Proximity"],
+    default = true,
+})
 
 -- Quest areas: the game tells us when the player enters or leaves the
 -- shaded objective area of a tracked quest (PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED,
@@ -131,6 +140,15 @@ function module:nearbyQuests(opts)
         opts.includeRepeatable = self.settings.includeRepeatable
     end
     return self.adapter:nearbyQuests(opts)
+end
+
+-- Where the player stands, for ranking things by distance; nil without a
+-- data source (no coordinates then either).
+function module:playerContext()
+    if self.adapter == nil then
+        return nil
+    end
+    return self.adapter:playerContext()
 end
 
 function module:inProgress()
