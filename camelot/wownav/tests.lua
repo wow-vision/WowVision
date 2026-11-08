@@ -1442,22 +1442,24 @@ if haveNetwork then
     end
 
     suite["a portal crossed before the route's end: the route waits for it as the player walks in"] = function(t)
-        -- Darnassus to Rut'theran: the route crosses the portal (waypoints 7.9 and 9.3 yd from its centre) before its
-        -- end, 10.8 yd outside
-        local transit, state = throughPortal(t, 1, 1457, "portal:areatrigger:527", false)
+        -- Darnassus to Rut'theran: the route's last three waypoints lie 39.9, 14.7 and 10.05 yd from the centre of the
+        -- 10 yd portal (data 51460d3), so the volume is widened: the second of them is in it, before the route's end, and
+        -- the first within Route.TRANSIT_AHEAD of it, where the portal is said
+        local radius = 25
+        local transit, state = throughPortal(t, 1, 1457, "portal:areatrigger:527", false, radius)
         t:assertTrue(transit.sourceEntered == true, "in the portal, before the route's last waypoint")
         t:assertTrue(transit.announced == true, "said before the portal, not again in it")
         t:assertEqual(state, "arrived", "the route goes on in Rut'theran")
-        transit, state = throughPortal(t, 1, 1457, "portal:areatrigger:527", true)
+        transit, state = throughPortal(t, 1, 1457, "portal:areatrigger:527", true, radius)
         t:assertTrue(transit.teleported == true, "only the landing was seen")
         t:assertTrue(transit.announced == true, "said before the teleport")
         t:assertEqual(state, "arrived")
     end
 
     suite["a portal at the route's last waypoint: the route waits for it, seen in it or not"] = function(t)
-        -- Rut'theran to Darnassus: the route's last waypoint lies 10.4 yd from the centre of the 10 yd portal (data
-        -- 0d79304), so the volume is widened to put it on the rim, the case this test is about
-        local radius = 11
+        -- Rut'theran to Darnassus: the route's last waypoint lies 11.0 yd from the centre of the 10 yd portal (data
+        -- 51460d3), so the volume is widened to put it on the rim, the case this test is about
+        local radius = 12
         local transit, state, route, at = throughPortal(t, 1, 57, "portal:areatrigger:542", false, radius)
         t:assertEqual(at, #route.path, "in the portal at the route's last waypoint")
         t:assertTrue(transit.sourceEntered == true)
