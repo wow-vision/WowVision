@@ -135,6 +135,40 @@ function soft.identity(api, unit)
     return soft.UNREADABLE
 end
 
+-- The game's soft enemy can flicker: measured on Forever (2026-11-08, any
+-- enemy, out of combat, in a city), it is cleared and the same unit picked
+-- again every frame or two, 20 times a second, for as long as it stays in
+-- front of you. A unit that comes back within FLICKER_HOLD seconds of being
+-- lost is the same soft target, not a new one.
+soft.FLICKER_HOLD = 0.3
+
+-- One soft target event against the state kept between events
+-- ({ identity, lostAt }, changed in place). Returns
+--   "new"  a unit to announce
+--   "back" the last unit, back within the hold: no announcement
+--   "lost" the unit is gone (kept in state for the hold)
+--   nil    nothing changed
+function soft.track(state, identity, now)
+    if identity == nil then
+        if state.identity ~= nil and state.lostAt == nil then
+            state.lostAt = now
+            return "lost"
+        end
+        return nil
+    end
+    if identity == state.identity then
+        if state.lostAt == nil then
+            return nil
+        end
+        local back = now - state.lostAt <= soft.FLICKER_HOLD
+        state.lostAt = nil
+        return back and "back" or "new"
+    end
+    state.identity = identity
+    state.lostAt = nil
+    return "new"
+end
+
 -- Tries every waiting write again, in name order.
 function Writer:flush()
     local names = {}

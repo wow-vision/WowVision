@@ -290,7 +290,7 @@ local function addSoftTarget(info)
     end
     enabled.events.valueChange:subscribe(nil, function(event, obj, key, value)
         if value ~= true then
-            info.identity = nil
+            info.state = {}
         end
         if module.softTargetingReady then
             -- 3 = keyboard and gamepad
@@ -510,9 +510,9 @@ function module:onEvent(event, a, b)
         return
     end
 
-    -- The events repeat while the same unit stays soft targeted, so only a
-    -- different identity is a change (softTargeting.lua: soft.identity
-    -- copes with the GUID being secret on Forever and Retail).
+    -- Only a different unit is a change: the soft enemy flickers (the same
+    -- unit lost and back every frame), and the GUID can be secret on
+    -- Forever and Retail (softTargeting.lua: soft.identity, soft.track).
     for _, v in ipairs(softTargets) do
         if event == v.event then
             module:updateSoftTarget(v, soft.identity(identityApi, v.unit))
@@ -571,19 +571,22 @@ function module:updateHardTarget()
     end
 end
 
+-- Returns what soft.track made of the event.
 function module:updateSoftTarget(target, identity)
     if not target.alert:getEnabled() then
-        return
+        return nil
     end
-    if identity ~= target.identity then
-        if identity ~= nil then
-            target.tooltip:set(nil, { type = "Unit", unit = target.unit })
+    target.state = target.state or {}
+    local result = soft.track(target.state, identity, GetTime())
+    if result == "new" or result == "back" then
+        target.tooltip:set(nil, { type = "Unit", unit = target.unit })
+        if result == "new" then
             target.alert:fire({ name = UnitName(target.unit) })
-        else
-            target.tooltip:reset()
         end
-        target.identity = identity
+    elseif result == "lost" then
+        target.tooltip:reset()
     end
+    return result
 end
 
 function module:onEnable()

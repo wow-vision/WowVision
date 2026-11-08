@@ -228,3 +228,45 @@ testRunner:addSuite("SoftTargetIdentity", {
         t:assertEqual(soft.identity(api, "softenemy"), soft.identity(api, "softenemy"))
     end,
 })
+
+testRunner:addSuite("SoftTargetFlicker", {
+    ["a new unit is announced once while it stays"] = function(t)
+        local state = {}
+        t:assertEqual(soft.track(state, "A", 1), "new")
+        t:assertNil(soft.track(state, "A", 1.1))
+    end,
+
+    ["the same unit lost and back every frame is never announced again"] = function(t)
+        local state = {}
+        t:assertEqual(soft.track(state, "A", 0), "new")
+        local now = 0
+        for _ = 1, 50 do
+            now = now + 0.02
+            t:assertEqual(soft.track(state, nil, now), "lost")
+            now = now + 0.03
+            t:assertEqual(soft.track(state, "A", now), "back")
+        end
+    end,
+
+    ["the same unit back after the hold is announced again"] = function(t)
+        local state = {}
+        soft.track(state, "A", 0)
+        soft.track(state, nil, 1)
+        t:assertEqual(soft.track(state, "A", 1 + soft.FLICKER_HOLD + 0.1), "new")
+    end,
+
+    ["another unit is announced at once, also within the hold"] = function(t)
+        local state = {}
+        soft.track(state, "A", 0)
+        soft.track(state, nil, 1)
+        t:assertEqual(soft.track(state, "B", 1.01), "new")
+        t:assertEqual(soft.track(state, "B", 1.02), nil)
+    end,
+
+    ["losing a unit twice reports it lost once"] = function(t)
+        local state = {}
+        soft.track(state, "A", 0)
+        t:assertEqual(soft.track(state, nil, 1), "lost")
+        t:assertNil(soft.track(state, nil, 1.1))
+    end,
+})
