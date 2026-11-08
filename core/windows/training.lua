@@ -35,6 +35,16 @@ local function servicePayload(data)
     return data
 end
 
+-- The hunter's pet training (petTraining.lua). Class training must not depend on it: without the
+-- file there is simply never a pet window.
+local function petTraining()
+    local pet = WowVision.petTraining
+    if pet ~= nil and pet.isActive() then
+        return pet
+    end
+    return nil
+end
+
 local function getServiceInfo(index)
     local a, b, c, d, e = GetTrainerServiceInfo(index)
     if type(c) == "number" then
@@ -92,7 +102,13 @@ local function serviceLabel(index)
     if info.category ~= "header" then
         local cost = GetTrainerServiceCost ~= nil and GetTrainerServiceCost(index) or nil
         if cost ~= nil and cost > 0 then
-            label = label .. ", " .. C_CurrencyInfo.GetCoinText(cost)
+            -- the hunter's pet pays in training points (petTraining.lua)
+            local pet = petTraining()
+            if pet ~= nil then
+                label = label .. ", " .. pet.costText(cost)
+            else
+                label = label .. ", " .. C_CurrencyInfo.GetCoinText(cost)
+            end
         end
         if info.category ~= "used" then
             local requirements = serviceRequirements(index, info)
@@ -221,7 +237,26 @@ local function render(builder, screen)
     if ClassTrainerFrame == nil or not ClassTrainerFrame:IsShown() then
         return
     end
-    builder:pushContext("trainer", ClassTrainerNameText ~= nil and ClassTrainerNameText:GetText() or L["Training"])
+    local title = ClassTrainerNameText ~= nil and ClassTrainerNameText:GetText() or nil
+    local pet = petTraining()
+    if (title == nil or title == "") and pet ~= nil then
+        title = pet.title()
+    end
+    builder:pushContext("trainer", title or L["Training"])
+
+    -- The hunter's pet: how many training points are left, read live.
+    if pet ~= nil and pet.pointsText() ~= nil then
+        builder:beginStop("trainingPoints")
+        builder:addItem(
+            ControlId.structural("trainingPoints"),
+            nodes.text({
+                label = function()
+                    return pet.pointsText() or ""
+                end,
+                live = "focus",
+            })
+        )
+    end
 
     -- WoW: Forever lifts the profession's next rank (Apprentice Cooking for
     -- someone who has not learned it yet) out of the service list into its
@@ -312,5 +347,18 @@ module:registerWindow({
     name = "training",
     conflictingAddons = { "Sku" },
     interactionType = Enum.PlayerInteractionType.Trainer,
+    graphScreen = { render = render },
+})
+
+-- The hunter's Beast Training spell opens the same window on WoW: Forever with
+-- no trainer to interact with, so the frame itself says it is open
+-- (petTraining.lua).
+module:registerWindow({
+    type = "CustomWindow",
+    name = "beastTraining",
+    isOpen = function()
+        return petTraining() ~= nil
+    end,
+    conflictingAddons = { "Sku" },
     graphScreen = { render = render },
 })
