@@ -232,14 +232,29 @@ local function questieSpeaksClientLanguage()
     return not asked or uiLocale == nil or uiLocale == GetLocale()
 end
 
+-- Questie's database can exist before Questie has finished loading it, and a lookup then misses. Once Questie says
+-- it is ready, everything remembered so far is forgotten, so those names are asked again. Hooked on the first lookup
+-- (and again for a new Questie.API table); Questie fires the hook at once when it is already ready.
+local hookedQuestieApi = nil
+local function forgetWhenQuestieIsReady()
+    local questie = rawget(_G, "Questie")
+    local api = type(questie) == "table" and questie.API or nil
+    if type(api) ~= "table" or api == hookedQuestieApi or type(api.RegisterOnReady) ~= "function" then
+        return
+    end
+    hookedQuestieApi = api
+    pcall(api.RegisterOnReady, text.clearLocalNames)
+end
+
 -- A text field ("name", "subName") Questie gives an ID, or nil. A miss is remembered, but only when Questie could be
 -- asked properly: before its table exists, or before it speaks the client's language, a lookup must still be able to
--- succeed later.
+-- succeed later. A miss while Questie is still loading is forgotten when it is ready (forgetWhenQuestieIsReady).
 local function questieField(databaseName, id, field)
     local database = _G[databaseName]
     if type(database) ~= "table" or type(database.Get) ~= "function" then
         return nil
     end
+    forgetWhenQuestieIsReady()
     local remembered = localNames[databaseName][field]
     local known = remembered[id]
     if known ~= nil then

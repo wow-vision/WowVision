@@ -38,7 +38,6 @@ The full manual is online, in English and German: [WowVision documentation](http
 * WowNav routes: routes now start from the network's nearest point within 30 yards, instead of saying "No WowNav network here" a few steps off it.
 * WowNav routes: a start and target on one link no longer walk a detour, and most routes no longer end with the unchecked last stretch warning.
 * WowNav routes: reaching the last point now says Arrived and the target's name.
-* WowNav: creatures and objects in the destination list and the route announcements are named in your game language from Questie's database where it knows them (the WowNav data only has English and German), titles included, so searching for "aubergiste" or "cuisinier" works on a French client. New setting Names in Your Language (WowNav Routes menu, on by default).
 * WowNav: the Scanner's Enter on an NPC or object WowNav knows now routes to WowNav's own entry, with its height.
 
 ## V1.0.0

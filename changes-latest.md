@@ -2,6 +2,7 @@
 * Wall detection: no more blocked sound every half second in a fight when you are not holding a movement key, after the interact key walked you into melee.
 * Targeting: with Soft Targeting With a Hard Target on one of the Only Without modes, the soft enemy name no longer repeats many times a second. A target the game set by itself from your soft target no longer counts as a hard target.
 * Scanner, Quests, In Progress: quests now read with their level ("A Threat Within, Level 5") and come nearest first, by the place Enter on each would take you to. The new Sort Quests by Proximity setting (Quests menu, on by default) turns the ordering off to keep the order of the log.
+* WowNav: creatures and objects in the destination list and the route announcements are named in your game language from Questie's database where it knows them (the WowNav data only has English and German), titles included, so searching for "aubergiste" or "cuisinier" works on a French client. New setting Names in Your Language (WowNav Routes menu, on by default).
 
 ### Classic
 

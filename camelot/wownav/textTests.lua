@@ -34,7 +34,7 @@ end
 -- Runs fn with a French client and Questie answering, then puts the globals back.
 local function inFrench(fn, options)
     options = options or {}
-    local saved = { GetLocale, NpcDB, ObjectDB, QuestieLoader, text.localNamesEnabled }
+    local saved = { GetLocale, NpcDB, ObjectDB, QuestieLoader, text.localNamesEnabled, Questie }
     GetLocale = function()
         return options.locale or "frFR"
     end
@@ -46,9 +46,10 @@ local function inFrench(fn, options)
     }, { [3191] = "Cuisinier", [6928] = "Aubergiste" }, options.asked)
     ObjectDB = database({ [1618] = "Pacifique", [104555] = "Enclume" }, { [1618] = "Ne devrait pas apparaître" })
     QuestieLoader = nil
+    Questie = nil
     text.clearLocalNames()
     local ok, err = pcall(fn)
-    GetLocale, NpcDB, ObjectDB, QuestieLoader, text.localNamesEnabled = unpack(saved, 1, 5)
+    GetLocale, NpcDB, ObjectDB, QuestieLoader, text.localNamesEnabled, Questie = unpack(saved, 1, 6)
     text.clearLocalNames()
     if not ok then
         error(err, 0)
@@ -236,6 +237,30 @@ testRunner:addSuite("WowNav local names", {
             uiLocale = "frFR"
             t:assertEqual(text.targetName(class("npc", 10556, "Lazy Peon")), "Péon fainéant", "the refusal was not kept")
         end, { asked = asked })
+    end,
+
+    ["a name missed while Questie is still loading is asked again once it is ready"] = function(t)
+        inFrench(function()
+            local onReady = {}
+            Questie = {
+                API = {
+                    isReady = false,
+                    RegisterOnReady = function(fn)
+                        onReady[#onReady + 1] = fn
+                    end,
+                },
+            }
+            local loaded = NpcDB
+            NpcDB = database({})
+            t:assertEqual(text.targetName(class("npc", 10556, "Lazy Peon")), "Lazy Peon", "not loaded yet")
+            NpcDB = loaded
+            t:assertEqual(text.targetName(class("npc", 10556, "Lazy Peon")), "Lazy Peon", "the miss is remembered")
+            t:assertEqual(#onReady, 1, "hooked once")
+            Questie.API.isReady = true
+            onReady[1]()
+            t:assertEqual(text.targetName(class("npc", 10556, "Lazy Peon")), "Péon fainéant", "asked again when ready")
+            t:assertEqual(#onReady, 1, "not hooked again")
+        end)
     end,
 
     ["a failing Questie lookup does not break naming"] = function(t)
