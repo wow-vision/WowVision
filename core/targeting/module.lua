@@ -439,11 +439,6 @@ force.events.valueChange:subscribe(nil, onVariableSettingChange("SoftTargetForce
 module:registerEvent("event", "PLAYER_REGEN_ENABLED")
 -- A target that dies stays locked: its death has to switch the lock too.
 module:registerEvent("unit", "UNIT_HEALTH", "target")
--- A target the game set from the soft enemy (loose) becomes one you chose
--- when you attack it: the fight starting, or your auto-attack, switches the
--- lock too.
-module:registerEvent("event", "PLAYER_ENTER_COMBAT")
-module:registerEvent("event", "PLAYER_REGEN_DISABLED")
 
 -- Writes a value unless the setting is at its "game default", which leaves
 -- the variable as the game has it.
@@ -495,7 +490,7 @@ function module:onEvent(event, a, b)
         self:updateSoftTargetLock()
         return
     end
-    if event == "UNIT_HEALTH" or event == "PLAYER_ENTER_COMBAT" or event == "PLAYER_REGEN_DISABLED" then
+    if event == "UNIT_HEALTH" then
         self:updateSoftTargetLock()
         return
     end

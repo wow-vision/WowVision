@@ -225,7 +225,7 @@ Das Spiel hat eine zusätzliche Regel dafür, was die weiche Zielerfassung tut, 
 | Nur ohne festes Ziel | Jedes echte Ziel schaltet die weiche Zielerfassung aus |
 | Immer | Die weiche Zielerfassung arbeitet, was auch immer du im Ziel hast |
 
-Der Modus folgt jedem Zielwechsel, dem Tod deines Ziels und dem Beginn eines Kampfes, und er funktioniert ebenfalls im Kampf. Ein Ziel, das das Spiel von selbst aus deinem weichen Feindziel setzt (Soft Target wird festes Ziel), ist hier kein echtes Ziel: Die weiche Zielerfassung arbeitet damit weiter. Sobald du es angreifst, zählt es.
+Der Modus folgt jedem Zielwechsel und auch dem Tod deines Ziels, und er funktioniert ebenfalls im Kampf. Ein Ziel, das das Spiel von selbst aus deinem weichen Feindziel setzt (Soft Target wird festes Ziel), ist hier kein echtes Ziel, auch während du es bekämpfst: Die weiche Zielerfassung arbeitet damit weiter. Nur ein Ziel, das du selbst wählst, mit Tab oder einem Klick, zählt.
 
 Weiches Ziel wird festes Ziel (Make Soft Target the Hard Target; Standard Spielstandard) lässt das Spiel dein echtes Ziel zum weichen machen. Auswahl: Spielstandard, Aus, Feinde, Freunde. Wie die Ein/Aus-Schalter wird auch diese Einstellung bis zum Ende des Kampfes zurückgehalten, wenn du sie während eines Kampfes änderst.
 

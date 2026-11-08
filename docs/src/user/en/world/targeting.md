@@ -223,7 +223,7 @@ The game has an extra rule for what soft targeting does while you already have a
 | Only Without a Hard Target | Any real target turns soft targeting off |
 | Always | Soft targeting works whatever you have targeted |
 
-The mode follows every target change, your target's death and the start of a fight, and it works in combat too. A target the game sets by itself from your soft enemy (Make Soft Target the Hard Target) is not a real target here: soft targeting keeps working with it. Once you attack it, it counts.
+The mode follows every target change and also your target's death, and it works in combat too. A target the game sets by itself from your soft enemy (Make Soft Target the Hard Target) is not a real target here, also while you fight it: soft targeting keeps working with it. Only a target you choose yourself, with Tab or a click, counts.
 
 Make Soft Target the Hard Target (default Game Default) lets the game turn your real target into the soft one. Choices: Game Default, Off, Enemies, Friends. Like the on/off switches, this one is held until combat ends if you change it during a fight.
 

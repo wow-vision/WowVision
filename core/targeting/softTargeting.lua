@@ -31,7 +31,9 @@ soft.lockModes = { "game", "always", "noHardTarget", "noAttackableHardTarget" }
 -- with WithLocked 1 or Force 0). So 0 is written only for a target you
 -- chose, never as a resting value; with no such target soft targeting may
 -- act (2). Tabbing to a mob lets soft targeting act for the frame before
--- the write lands.
+-- the write lands. Attacking a loose target leaves it loose (measured: the
+-- whole fight), so these modes never hold back soft targeting for an enemy
+-- the game picked; as Game Default does.
 function soft.lockValues(mode, hasTarget, canAttack, dead, loose)
     if mode == soft.GAME_DEFAULT then
         return nil
