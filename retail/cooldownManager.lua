@@ -47,7 +47,7 @@ local function markChanged()
     changes.made = true
     if not changes.announced then
         changes.announced = true
-        speak(L["Changes made here apply after the interface reloads. A Reload Interface button is at the end of the window."])
+        WowVision:notify(L["Changes made here apply after the interface reloads. A Reload Interface button is at the end of the window."])
     end
 end
 
@@ -551,7 +551,7 @@ function module:onFullEnable()
     self._hideHooked = true
     frame:HookScript("OnHide", function()
         if changes.made then
-            speak(L["Cooldown manager changes apply after you reload the interface. Type /reload when ready."])
+            WowVision:notify(L["Cooldown manager changes apply after you reload the interface. Type /reload when ready."])
         end
     end)
 end

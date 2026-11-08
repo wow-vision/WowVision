@@ -70,7 +70,7 @@ function module:forget()
     if list ~= nil then
         store.forget(list)
     end
-    WowVision:speak(L["Visited waypoints forgotten"])
+    WowVision:notify(L["Visited waypoints forgotten"])
 end
 
 function module:getGraphMenuItems(builder)
@@ -89,7 +89,7 @@ end
 function module:goToNext(direct)
     local last = maps.lastDestination
     if last == nil then
-        WowVision:speak(L["Choose a destination in the navigation window first"])
+        WowVision:notify(L["Choose a destination in the navigation window first"])
         return false
     end
     local lastKey = keyOf(last)
@@ -100,7 +100,7 @@ function module:goToNext(direct)
         return s
     end)
     if best == nil then
-        WowVision:speak(string.format(L["No unvisited %s found"], name or ""))
+        WowVision:notify(string.format(L["No unvisited %s found"], name or ""))
         return false
     end
     return maps:goToDestination(best.waypoint, direct)

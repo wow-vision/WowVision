@@ -420,7 +420,7 @@ end
 function module:unavailable()
     if not self.unavailableSaid then
         self.unavailableSaid = true
-        WowVision:speak(L["Group health monitor unavailable here"])
+        WowVision:notify(L["Group health monitor unavailable here"])
     end
 end
 

@@ -36,7 +36,7 @@ local function rollLoot(rollType)
             return
         end
     end
-    WowVision:speak(L["No loot."])
+    WowVision:notify(L["No loot."])
 end
 
 module:registerBinding({

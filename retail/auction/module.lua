@@ -66,36 +66,36 @@ local spokenStep = 0 -- the last quarter of the progress that was said
 
 scanner.events.scanRequested:subscribe(module, function()
     db.lastScan = time()
-    WowVision:speak(L["Scanning"])
+    WowVision:notify(L["Scanning"])
 end)
 
 scanner.events.scanStarted:subscribe(module, function(_, _, total)
     spokenStep = 0
-    WowVision:speak(L["Full scan started"] .. ", " .. total .. " " .. L["auctions"])
+    WowVision:notify(L["Full scan started"] .. ", " .. total .. " " .. L["auctions"])
 end)
 
 scanner.events.scanProgress:subscribe(module, function(_, _, processed, total)
     local step = math.floor(processed * 4 / total)
     if step > spokenStep and step < 4 then
         spokenStep = step
-        WowVision:speak(L["Scanning"] .. ", " .. (step * 25) .. "%")
+        WowVision:notify(L["Scanning"] .. ", " .. (step * 25) .. "%")
     end
 end)
 
 scanner.events.scanComplete:subscribe(module, function(_, _, results)
     local count = prices.store(db, results, today(), module.settings.historyDays)
-    WowVision:speak(L["Full scan complete"] .. ", " .. count .. " " .. L["items updated"])
+    WowVision:notify(L["Full scan complete"] .. ", " .. count .. " " .. L["items updated"])
 end)
 
 scanner.events.scanFailed:subscribe(module, function(_, _, reason)
     if reason == "aborted" then
-        WowVision:speak(L["Full scan aborted"])
+        WowVision:notify(L["Full scan aborted"])
     elseif reason == "cooldown" then
-        WowVision:speak(L["Cooldown active"])
+        WowVision:notify(L["Cooldown active"])
     elseif reason == "ah_closed" then
-        WowVision:speak(L["Auction not open"])
+        WowVision:notify(L["Auction not open"])
     else
-        WowVision:speak(L["Full scan failed"])
+        WowVision:notify(L["Full scan failed"])
     end
 end)
 

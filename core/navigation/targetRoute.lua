@@ -89,7 +89,7 @@ function maps:routeToTarget()
     local api = gameApi()
     local plan = targetFind.plan(api)
     if plan.say ~= nil then
-        WowVision:speak(plan.say)
+        WowVision:notify(plan.say)
     end
     local target = plan.window or plan.route
     if target == nil then
@@ -104,12 +104,12 @@ function maps:routeToTarget()
         or { id = TARGET_ID, n = target.n, x = target.x, y = target.y, z = target.z, virtual = true, routeData = target.data }
     maps.lastDestination = wp
     local onArrive = maps:arrivalFor(wp)
-    WowVision:speak(target.n)
+    WowVision:notify(target.n)
     if api.engine ~= nil then
         if maps:routeTo(target.x, target.y, target.n, onArrive, target.z, target.data, plan.start) then
             return true
         end
-        WowVision:speak(L["No route to your target"])
+        WowVision:notify(L["No route to your target"])
         return false
     end
     local px, py, map = api.player()

@@ -197,7 +197,7 @@ function engine:startHere(px, py, map)
     local start, why = self:startAt(px, py, map)
     if start == nil then
         -- WowVision:speak, not say: this file's say is declared further down
-        WowVision:speak(why == "ambiguous" and L["Your floor is not clear here"] or L["No WowNav network here"])
+        WowVision:notify(why == "ambiguous" and L["Your floor is not clear here"] or L["No WowNav network here"])
     end
     return start
 end
@@ -252,7 +252,7 @@ maps:setRouteEngine(engine)
 
 -- ---- speech
 local function say(text)
-    WowVision:speak(text)
+    WowVision:notify(text)
 end
 -- what his dock module says (WowVisionNavigationPrint)
 WowVision.wownavText.say = say

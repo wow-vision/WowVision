@@ -329,7 +329,7 @@ local function discordRange(scrollBox)
 end
 
 local function speakDiscordHint()
-    WowVision:speak(L["Reload, then search settings for Discord, to use this"])
+    WowVision:notify(L["Reload, then search settings for Discord, to use this"])
 end
 
 -- What Enter clicks on a Discord row with no frame: the secure click needs a
@@ -1433,7 +1433,7 @@ local function render(builder, screen)
 end
 
 local function onKeybindRebindSuccess()
-    WowVision:speak("Rebinding successful")
+    WowVision:notify("Rebinding successful")
 end
 
 function module:onEnable()

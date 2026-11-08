@@ -257,6 +257,8 @@ loadAddonFile("core/chat/links.lua")
 loadAddonFile("core/chat/linkTests.lua")
 loadAddonFile("core/chat/tabs.lua")
 loadAddonFile("core/chat/tabTests.lua")
+loadAddonFile("core/chat/echo.lua")
+loadAddonFile("core/chat/echoTests.lua")
 loadAddonFile("core/ClassTests.lua")
 loadAddonFile("core/ttsVoiceTests.lua")
 loadAddonFile("core/errors/utils.lua")
@@ -1311,6 +1313,79 @@ WowVision.testing.testRunner:addSuite("ModuleSettings", {
     end,
 })
 
+-- The chat module's real hook, on a stand-in for the module frame around it.
+WowVision.testing.testRunner:addSuite("ChatEchoHistory", {
+    ["an addon message lands in the tab's history and is not spoken again"] = function(t)
+        local function noop() end
+        local chatModule = {
+            L = setmetatable({}, {
+                __index = function(_, key)
+                    return key
+                end,
+            }),
+            setLabel = noop,
+            addAlert = function()
+                return { addOutput = noop, parameters = { add = noop } }
+            end,
+            hasSettings = function()
+                return { add = noop, addRef = noop }
+            end,
+        }
+        local savedBase, savedDate = WowVision.base, date
+        WowVision.base = {
+            createModule = function()
+                return chatModule
+            end,
+        }
+        date = date or os.date
+        loadAddonFile("core/chat/module.lua")
+
+        local stored, fired = {}, 0
+        local frame = {
+            GetID = function()
+                return 1
+            end,
+            IsShown = function()
+                return true
+            end,
+        }
+        function frame:AddMessage(text)
+            chatModule.onMessage(self, text)
+        end
+        chatModule.frames = {
+            [1] = {
+                frame = frame,
+                store = {
+                    add = function(_, data)
+                        stored[#stored + 1] = data.message
+                    end,
+                },
+                alert = {
+                    enabled = true,
+                    parameters = {
+                        getFieldValue = function()
+                            return "always"
+                        end,
+                    },
+                    fire = function()
+                        fired = fired + 1
+                    end,
+                },
+            },
+        }
+
+        WowVision.chatEcho.send(frame, "Route started")
+        local firedAfterEcho = fired
+        frame:AddMessage("Someone says hello")
+        WowVision.base, date = savedBase, savedDate
+
+        t:assertEqual(stored[1], "WowVision: Route started")
+        t:assertEqual(firedAfterEcho, 0, "already spoken by notify")
+        t:assertEqual(stored[2], "Someone says hello")
+        t:assertEqual(fired, 1, "a normal line still speaks")
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("AlertConstruction", {
     ["an alert with an output constructs enabled"] = function(t)
         local alert = WowVision.alerts.Alert:new({ key = "smoke", label = "Smoke" })
@@ -1363,6 +1438,7 @@ WowVision.testing.testRunner:addSuite("AlertConstruction", {
         C_VoiceChat = nil
         WowVision.base = nil
     end,
+
 })
 
 loadAddonFile("core/graph/ControlId.lua")
