@@ -48,10 +48,24 @@ testRunner:addSuite("SoftTargeting", {
         t:assertEqual(matchLocked, 1)
     end,
 
-    ["attackable mode rests at 0 with no target"] = function(t)
+    ["no hard target mode allows soft targeting with no target"] = function(t)
+        local withLocked, matchLocked = soft.lockValues("noHardTarget", false, false, false)
+        t:assertEqual(withLocked, 2)
+        t:assertEqual(matchLocked, 1)
+    end,
+
+    ["no hard target mode allows soft targeting with a target the game set"] = function(t)
+        t:assertEqual(soft.lockValues("noHardTarget", true, true, false, true), 2)
+    end,
+
+    ["attackable mode allows soft targeting with no target"] = function(t)
         local withLocked, matchLocked = soft.lockValues("noAttackableHardTarget", false, false, false)
-        t:assertEqual(withLocked, 0)
+        t:assertEqual(withLocked, 2)
         t:assertEqual(matchLocked, 2)
+    end,
+
+    ["attackable mode allows soft targeting with an enemy the game set"] = function(t)
+        t:assertEqual(soft.lockValues("noAttackableHardTarget", true, true, false, true), 2)
     end,
 
     ["attackable mode suppresses for a living enemy"] = function(t)
