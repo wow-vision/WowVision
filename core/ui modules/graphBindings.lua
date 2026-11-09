@@ -161,6 +161,7 @@ module.renderGraphBindings = renderBindings
 function module:getGraphMenuItems(builder)
     local vtable = nodes.button({
         label = L["Bindings"],
+        opensLevel = true,
         onActivate = function()
             local host = WowVision.graphHost
             local stack = host:focusedStack()

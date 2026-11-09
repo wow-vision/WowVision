@@ -348,6 +348,7 @@ function module:beaconTo(wx, wy, label, onArrive)
         end
     end)
     self:pathfind(path)
+    self:closeWindowsForGuidance()
     if px ~= nil then
         local dx, dy = wx - px, wy - py
         local distance = math.sqrt(dx * dx + dy * dy)
@@ -373,6 +374,18 @@ function module:guidanceStarts()
     local visited = WowVision.base.navigation.visited
     if visited ~= nil then
         visited:endAuto()
+    end
+end
+
+-- Guidance the player started is under way: every open window closes (setting, Navigation menu), so the keys are free
+-- for walking. Not for a leg an auto chain leads on its own (force: the leg the player started the chain with). Called
+-- once the route stands, before its summary is said; a route that was not found leaves the windows open.
+function module:closeWindowsForGuidance(force)
+    if self.chainLeg and not force then
+        return
+    end
+    if WowVision.base.navigation.settings.closeWindowsOnRoute then
+        WowVision.UIHost:closeAllWindows()
     end
 end
 
@@ -678,6 +691,7 @@ function module:directTo(wx, wy, label, onArrive)
         end
     end)
     self:pathfind(path)
+    self:closeWindowsForGuidance()
     WowVision:speak(string.format(L["Direct: %s, %d yards"], label or "", self:distanceTo(wx, wy) or 0))
 end
 
@@ -848,6 +862,7 @@ function module:navigateTo(waypointId, waypoints, opts)
         end
     end)
     self:pathfind(path)
+    self:closeWindowsForGuidance()
     local count, distance = #route.waypoints, route.distance
     local resumeIndex = opts ~= nil and opts.resume ~= nil and WowVision.Router.resumeIndex(route.waypoints, opts.resume)
         or nil

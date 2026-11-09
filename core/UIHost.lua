@@ -33,6 +33,10 @@ function UIHost:closeWindow(window)
     return self.windowManager:closeWindow(window)
 end
 
+function UIHost:closeAllWindows()
+    return self.windowManager:closeAll()
+end
+
 function UIHost:update()
     if self.inCombat then
         return

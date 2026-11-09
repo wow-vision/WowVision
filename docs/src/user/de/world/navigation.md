@@ -291,6 +291,8 @@ Das Modul Besuchte Wegpunkte (unter Navigation) hat eine Einstellung:
 |-------------|----------|-------------|
 | Gilt als besucht für (Minuten) | 15 | Wie lange ein erreichtes Ziel als besucht gilt (1 bis 1440 Minuten). |
 
+Beim Start einer Route alle Fenster schließen (Modul Navigation, standardmäßig an) schließt jedes offene Fenster, sobald du eine Route oder ein Beacon startest, damit deine Tasten zum Laufen frei sind; die Etappen, die eine Auto-Kette von selbst startet, lassen deine Fenster in Ruhe.
+
 Drei Einstellungen des Moduls Navigation hängen damit zusammen: Verbleibende Wegpunkte ansagen (standardmäßig an) sagt nach jedem erreichten Wegpunkt, wie viele noch übrig sind, Automatisch zur Leiche navigieren (standardmäßig an) startet eine Route zu deinem Körper, sobald du ein Geist bist, und Automatisch zum Interaktionsziel bewegen wird bei den Bewegungsfunktionen erklärt. Dazu, zum Kompass und zum Folgen eines Spielers siehe [Bewegung und Orientierung](./movement.md).
 
 ## Diagnosebefehle

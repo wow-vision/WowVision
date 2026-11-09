@@ -8,6 +8,8 @@ Im WowVision-Menü konfigurierst du das Addon: Sprache, Alarme, Navigation, Puff
 |---|---|
 | Umschalt+F1 | Öffnet das Menü (die Belegung WowVision-Menü). |
 | /wv | Öffnet das Menü. Auch /wv gefolgt von etwas, das WowVision nicht kennt, öffnet es. |
+| Pfeil rechts | Öffnet die nächste Ebene, wenn der Eintrag eine hat. |
+| Pfeil links | Geht eine Ebene zurück. Auf der ersten Ebene passiert nichts, das Menü bleibt offen. |
 | Esc | Geht eine Ebene zurück. Auf der ersten Ebene schließt es das Menü. |
 | /wv close | Schließt zwangsweise alle WowVision-Fenster. |
 

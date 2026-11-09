@@ -56,6 +56,7 @@ See [Tooltips](../basics/tooltips.md).
 | Action | Default key | Page |
 |---|---|---|
 | WowVision Menu | Shift+F1 (or type `/wv`) | [The WowVision Menu and Settings](../basics/menu-and-settings.md) |
+| Close All Windows | Shift+Escape | Closes every open WowVision window and every window of the game |
 | Chat | Shift+F3 | [Chat](../windows/chat.md) |
 | Action Bars | Shift+F4 | [Action Bars](../windows/action-bars.md) |
 | Scanner | F9 | [Scanner](../world/scanner.md) |

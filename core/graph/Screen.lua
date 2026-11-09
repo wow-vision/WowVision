@@ -13,6 +13,8 @@ local graph = WowVision.graph
 --   onRequestClose  function(stack) -- close/escape pressed on the last screen;
 --                   the owner (window bridge) closes the real UI. Absent = the
 --                   host just closes the stack.
+--   noLevelBack     the left arrow does not go back from this pushed screen
+--                   (a yes/no question)
 local Screen = WowVision.Class("GraphScreen")
 graph.Screen = Screen
 
@@ -36,6 +38,10 @@ end
 
 function Screen:buildRender()
     local builder = graph.Builder:new(self.state.expanded)
+    -- a list behind one node (listCursor, Host.lua) filters itself
+    if self.listFilter ~= nil and self.listFilter.cursor == nil then
+        builder.listFilter = self.listFilter
+    end
     -- xpcall keeps the failing render's stack; a plain pcall would leave the
     -- error handler only this frame's stack to record.
     local ok, err = xpcall(self.config.render, function(message)
@@ -50,7 +56,13 @@ function Screen:buildRender()
         end
         return nil
     end
-    return builder:build()
+    local render = builder:build()
+    if self.listFilter ~= nil and self.listFilter.stale then
+        -- the filtered list is gone from the screen: so is its filter
+        self.listFilter = nil
+        WowVision.graphHost._bindingsDirty = true
+    end
+    return render
 end
 
 -- Reset the differ so the next update announces the landing in full.

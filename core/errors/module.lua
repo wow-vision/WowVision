@@ -289,6 +289,7 @@ local function renderFilter(builder)
                 value = function()
                     return entryState(key)
                 end,
+                opensLevel = true,
                 onActivate = function()
                     local errorAlert = getAlert(key, label)
                     if errorAlert == nil then
@@ -309,6 +310,7 @@ function module:getGraphMenuItems(builder)
         ControlId.structural("errorFilter"),
         graph.nodes.button({
             label = L["Per-Error Filter"],
+            opensLevel = true,
             onActivate = function()
                 graph.settings.pushScreen("errorFilter", renderFilter)
             end,

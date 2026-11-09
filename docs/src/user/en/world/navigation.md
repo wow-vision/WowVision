@@ -289,6 +289,8 @@ The Visited Waypoints module (under Navigation) has one setting:
 |---------|---------|--------------|
 | Visited For (Minutes) | 15 | How long a reached destination counts as visited (1 to 1440 minutes). |
 
+Close All Windows When a Route Starts (Navigation module, on by default) closes every open window as soon as you start a route or a beacon, so your keys are free for walking; the legs an Auto chain starts by itself leave your windows alone.
+
 Three settings of the Navigation module are related: Announce Remaining Waypoints (on by default) says how many waypoints are left after each one you reach, Automatically Navigate to Corpse (on by default) starts a route to your body as soon as you are a ghost, and Auto-move to Interact Target is explained with the movement features. See [Movement](./movement.md) for those, for the compass and for following a player.
 
 ## Diagnostic commands

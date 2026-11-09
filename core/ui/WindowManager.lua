@@ -9,6 +9,7 @@ function WindowManager:initialize()
     self.openWindows = { autoWindows = {} }
     self.dropdownMenuFrame = nil
     self.dropdownMenuIndex = nil
+    self.quietCloseUntil = 0 -- windows closing until then do not stop speech (closeAll)
 end
 
 -- Type registry methods
@@ -72,7 +73,7 @@ function WindowManager:notifyOpened(window, instance)
 end
 
 function WindowManager:notifyClosed(window, instance, shouldHandleContext)
-    if WowVision.base.ui.settings.interruptSpeechOnWindowClose then
+    if WowVision.base.ui.settings.interruptSpeechOnWindowClose and GetTime() >= self.quietCloseUntil then
         WowVision.base.speech:uiStop()
     end
 
@@ -145,6 +146,37 @@ function WindowManager:closeWindow(ref, shouldHandleContext)
     window._openInstance = nil
     window._isCurrentlyOpen = false
     self:notifyClosed(window, instance, shouldHandleContext)
+end
+
+-- How long after closeAll a window going away keeps quiet: long enough for the game's frames to be seen closing, so
+-- what is said next (a route's summary) is not cut off by Interrupt Speech on Window Close.
+local CLOSE_ALL_QUIET = 0.5
+
+-- Close every open WowVision window and every window of the game. Popups that wait for an answer stay; in combat the
+-- game's protected windows stay too. True when something was open.
+function WindowManager:closeAll()
+    self.quietCloseUntil = GetTime() + CLOSE_ALL_QUIET
+    local host = WowVision.graphHost
+    local stacks = {}
+    for _, stack in ipairs(host.stacks) do
+        tinsert(stacks, stack)
+    end
+    local closed = #stacks > 0
+    for i = #stacks, 1, -1 do
+        local stack = stacks[i]
+        if stack.config ~= nil and stack.config.onRequestClose ~= nil then
+            local ok, err = pcall(stack.config.onRequestClose, stack)
+            if not ok then
+                geterrorhandler()(err)
+            end
+        else
+            host:close(stack)
+        end
+    end
+    if CloseAllWindows ~= nil and not InCombatLockdown() and CloseAllWindows() then
+        closed = true
+    end
+    return closed
 end
 
 -- Update loop for auto-detecting window state changes

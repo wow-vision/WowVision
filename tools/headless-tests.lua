@@ -1580,6 +1580,23 @@ loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
 loadAddonFile("core/graph/doublePressTests.lua")
 loadAddonFile("core/graph/controlTests.lua")
+-- The graph host and window manager, with the host's frame stubbed (its announcer words saved and restored so the
+-- graph suites keep their own), then the key-press suite on them.
+do
+    local announcer = WowVision.graph.announcer
+    local savedCreateFrame = CreateFrame
+    local savedPosition, savedExpanded = announcer.positionText, announcer.expandedStateText
+    CreateFrame = function()
+        return { RegisterEvent = function() end, SetScript = function() end }
+    end
+    loadAddonFile("core/graph/Screen.lua")
+    loadAddonFile("core/graph/Host.lua")
+    loadAddonFile("core/ui/WindowManager.lua")
+    CreateFrame = savedCreateFrame
+    announcer.positionText, announcer.expandedStateText = savedPosition, savedExpanded
+    WowVision.graphHost = nil
+end
+loadAddonFile("core/graph/menuNavTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
 
@@ -1649,8 +1666,6 @@ local parseOnly = {
     "tbc/speech.lua",
     "mists/speech.lua",
     "retail/speech.lua",
-    "core/graph/Screen.lua",
-    "core/graph/Host.lua",
     "core/graph/liveWatch.lua",
     "core/graph/textEntry.lua",
     "core/graph/keyCapture.lua",
@@ -1659,7 +1674,6 @@ local parseOnly = {
     "core/ui/input/pad.lua",
     "core/ui/input/tests.lua",
     "core/ui/Window.lua",
-    "core/ui/WindowManager.lua",
     "core/windows/GameMenu.lua",
     "core/errors/module.lua",
     "core/quests/module.lua",

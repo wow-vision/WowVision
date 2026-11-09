@@ -270,7 +270,8 @@ end
 -- showing the value it edits). An optional selected function marks the
 -- button as the current pick, read like proxyFoundButton's (a tab drawn
 -- by plain frames).
--- config: { label = string|function, onActivate = function, value = string|function?, onSecondary = function?, stateText = function?, selected = function? }
+-- opensLevel: Enter opens the next level of a menu, so the right arrow does too.
+-- config: { label = string|function, onActivate = function, value = string|function?, onSecondary = function?, stateText = function?, selected = function?, opensLevel = boolean? }
 function nodes.button(config)
     if config.label == nil then
         error("button requires a label")
@@ -296,6 +297,7 @@ function nodes.button(config)
         onActivate = config.onActivate,
         onSecondary = config.onSecondary,
         stateText = config.stateText,
+        opensLevel = config.opensLevel,
     }
 end
 
@@ -458,6 +460,7 @@ function nodes.choice(config)
             { text = config.label, kind = kinds.label },
             { text = valueText, kind = kinds.value, live = "focus" },
         },
+        opensLevel = true,
         onActivate = function()
             local host = WowVision.graphHost
             local stack = host:focusedStack()
@@ -724,6 +727,7 @@ function nodes.pushConfirm(config)
     end
     host:push(stack, {
         key = "confirm",
+        noLevelBack = true,
         render = function(builder)
             builder:addItem(ControlId.structural("prompt"), nodes.text({ label = config.prompt }))
             builder:addItem(

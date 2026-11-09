@@ -339,6 +339,7 @@ end
 local function alertButton(alert, label)
     return WowVision.graph.nodes.button({
         label = label,
+        opensLevel = true,
         onActivate = function()
             alert.parameters.label = label
             WowVision.graph.settings.pushScreen("settings:chatAlert:" .. alert.key, function(builder)

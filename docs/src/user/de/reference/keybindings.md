@@ -60,6 +60,7 @@ Siehe [Tooltips](../basics/tooltips.md).
 | Aktion | Standardtaste | Seite |
 |---|---|---|
 | WowVision-Menü (WowVision Menu) | Umschalt+F1 (oder tippe `/wv`) | [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md) |
+| Alle Fenster schließen (Close All Windows) | Umschalt+Esc | Schließt jedes offene WowVision-Fenster und jedes Fenster des Spiels |
 | Chat | Umschalt+F3 | [Chat](../windows/chat.md) |
 | Aktionsleisten (Action Bars) | Umschalt+F4 | [Aktionsleisten](../windows/action-bars.md) |
 | Scanner | F9 | [Scanner](../world/scanner.md) |

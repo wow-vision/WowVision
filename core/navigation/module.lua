@@ -35,6 +35,14 @@ settings:add({
     default = true,
 })
 
+-- A route or beacon the player starts closes every open window (maps:closeWindowsForGuidance).
+settings:add({
+    key = "closeWindowsOnRoute",
+    type = "Bool",
+    label = L["Close All Windows When a Route Starts"],
+    default = true,
+})
+
 -- The camera settings turn to waypoint and the pitch lock need, set once
 -- per character (see camera.lua).
 settings:add({

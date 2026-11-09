@@ -360,6 +360,29 @@ function Module:registerWindow(config)
     end
     self.registeredWindows = self.registeredWindows or {}
     self.registeredWindows[window.name] = window
+    -- Every window has its switch for letters and filtering in a module's menu, its own unless it names another.
+    local owner = window.letterSettings or self
+    owner:addWindowLetterSetting()
+    window._letterOwner = owner
+end
+
+-- The Letter Navigation switch of this module's windows: their lists take letters (graph/Host.lua). Off by default:
+-- with it on the letter keys belong to the list while the window is open, so walking and the game's letter keys stop.
+function Module:addWindowLetterSetting()
+    if self._hasWindowLetterSetting then
+        return
+    end
+    self._hasWindowLetterSetting = true
+    self:hasSettings():add({
+        type = "Bool",
+        key = "windowLetterNavigation",
+        label = WowVision:getLocale()["Letter Navigation"],
+        default = false,
+    })
+end
+
+function Module:windowLettersOn()
+    return self.settings ~= nil and self.settings.windowLetterNavigation == true
 end
 
 function Module:unregisterWindow(name)
