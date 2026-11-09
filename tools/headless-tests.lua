@@ -222,6 +222,8 @@ loadAddonFile("core/quests/Adapter.lua")
 loadAddonFile("core/quests/tests.lua")
 loadAddonFile("core/quests/completion.lua")
 loadAddonFile("core/quests/completionTests.lua")
+loadAddonFile("core/quests/nearbyEngine.lua")
+loadAddonFile("core/quests/nearbyEngineTests.lua")
 -- The quest scanner over a stand-in quest module: the snapshot it builds
 -- from and the live log it reads while open (core/quests/scannerLiveTests.lua).
 do
@@ -1497,6 +1499,91 @@ WowVision.testing.testRunner:addSuite("ModuleSettings", {
     end,
 })
 
+WowVision.testing.testRunner:addSuite("NearbyQuestSounds", {
+    ["the three alerts construct with Sku's defaults and a ping plays the file for its level"] = function(t)
+        local alerts, refs, played = {}, {}, {}
+        local nearby = {
+            L = setmetatable({}, {
+                __index = function(_, key)
+                    return key
+                end,
+            }),
+        }
+        function nearby:setLabel() end
+        function nearby:registerEvent() end
+        function nearby:hasSettings()
+            return {
+                add = function() end,
+                addRef = function(_, key)
+                    tinsert(refs, key)
+                end,
+            }
+        end
+        function nearby:addAlert(info)
+            local alert = WowVision.alerts.Alert:new(info)
+            alerts[info.key] = alert
+            return alert
+        end
+        local directory = {
+            getPath = function(_, key)
+                return {
+                    maxDistance = 30,
+                    getFile = function(_, angle, level)
+                        return key .. ";" .. angle .. ";" .. level
+                    end,
+                }
+            end,
+        }
+        local audio = WowVision.audio
+        local savedBase, savedPlay = WowVision.base, PlaySoundFile
+        local savedGetPath, savedChannel = rawget(audio, "getPath"), rawget(audio, "channel")
+        WowVision.base = {
+            quests = {
+                createModule = function()
+                    return nearby
+                end,
+            },
+            speech = { settings = {} },
+        }
+        audio.getPath = function()
+            return directory
+        end
+        audio.channel = function()
+            return "SFX"
+        end
+        PlaySoundFile = function(path, channel)
+            tinsert(played, path .. "@" .. channel)
+        end
+        local ok, err = pcall(function()
+            loadAddonFile("core/quests/nearbySounds.lua")
+            t:assertEqual(#refs, 3)
+            local expected = {
+                availableQuest = { "WowVision/Notification_soft_100", 30 },
+                turnInQuest = { "WowVision/steel_gong", 40 },
+                questObjective = { "WowVision/probe_deep_1", 30 },
+            }
+            for key, want in pairs(expected) do
+                local db = alerts[key]:getDefaultDBRecursive()
+                t:assertEqual(db.outputs.beacon.beacon, want[1])
+                t:assertEqual(db.outputs.beacon.volume, want[2])
+                t:assertEqual(db.outputs.tts.enabled, false)
+                alerts[key]:setDB(db)
+            end
+            -- volume 30 is seven levels down; the file levels stop at 1 and 30
+            alerts.availableQuest:fire({ angle = 10, level = 4, text = "x" })
+            alerts.availableQuest:fire({ angle = 10, level = 29, text = "x" })
+            t:assertEqual(played[1], "WowVision/Notification_soft_100;10;11@SFX")
+            t:assertEqual(played[2], "WowVision/Notification_soft_100;10;30@SFX")
+            t:assertEqual(#played, 2, "the speech output starts off")
+        end)
+        WowVision.base, PlaySoundFile = savedBase, savedPlay
+        audio.getPath, audio.channel = savedGetPath, savedChannel
+        if not ok then
+            error(err, 0)
+        end
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("AlertConstruction", {
     ["an alert with an output constructs enabled"] = function(t)
         local alert = WowVision.alerts.Alert:new({ key = "smoke", label = "Smoke" })
@@ -1694,6 +1781,7 @@ local parseOnly = {
     "classic/friends.lua",
     "classic/quests/questie.lua",
     "core/quests/module.lua",
+    "core/quests/nearbySounds.lua",
     "core/quests/scanner.lua",
     "core/quests/places.lua",
     "core/quests/native.lua",

@@ -293,6 +293,43 @@ testRunner:addSuite("QuestAdapter", {
         t:assertEqual(names(adapter:nearbyQuests({ levelRange = 5 })), "Scout the Ridge,Candles")
     end,
 
+    ["nearby leaves out a holiday quest whose event is not running"] = function(t)
+        local backend = fakeBackend()
+        backend.eventInactive = function(id)
+            return id == 1
+        end
+        local adapter = Adapter:new(backend)
+        t:assertEqual(names(adapter:nearbyQuests({ levelRange = 5 })), "Scout the Ridge,Candles")
+    end,
+
+    ["nearby keeps a holiday quest whose event is running"] = function(t)
+        local backend = fakeBackend()
+        backend.eventInactive = function()
+            return false
+        end
+        local adapter = Adapter:new(backend)
+        t:assertEqual(names(adapter:nearbyQuests({ levelRange = 5 })), "Kobold Camp Cleanup,Scout the Ridge,Candles")
+    end,
+
+    ["availableEntry gives the data nearbyQuests lists, nil for a quest it leaves out"] = function(t)
+        local backend = fakeBackend()
+        local adapter = Adapter:new(backend)
+        local ctx = adapter:playerContext()
+        local entry = adapter:availableEntry(2, { levelRange = 5 }, ctx)
+        local listed = adapter:nearbyQuests({ levelRange = 5 })[3]
+        t:assertEqual(entry.questId, listed.questId)
+        t:assertEqual(entry.name, "Candles")
+        t:assertEqual(entry.level, 4)
+        t:assertEqual(entry.distance, listed.distance)
+        t:assertEqual(entry.starter.name, "Wanted Poster")
+        t:assertNil(adapter:availableEntry(4, { levelRange = 5 }, ctx), "too low")
+        t:assertNil(adapter:availableEntry(3, { levelRange = 5 }, ctx), "another continent")
+        backend.eventInactive = function()
+            return true
+        end
+        t:assertNil(adapter:availableEntry(2, { levelRange = 5 }, ctx), "event not running")
+    end,
+
     ["zone scan is cached per area and cleared by invalidate"] = function(t)
         local backend = fakeBackend()
         local scans = 0

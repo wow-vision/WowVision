@@ -18,6 +18,8 @@
 --   object(id)                -> { id, name, spawns?, zone? }
 --   item(id)                  -> { id, name, npcDrops?, objectDrops?, vendors? }
 --   isDoable(id)              -> bool: the player is eligible right now
+--   eventInactive(id)         -> bool (optional): a holiday quest whose event is not running
+--   canTurnInOutsideEvent(id) -> bool (optional): such a quest that may still be handed in
 --   availableQuestIds()       -> set { [id] = true } the backend maintains, or nil
 --   allQuestIds()             -> array of every quest id (fallback scan)
 --   questZone(id)             -> areaId the quest belongs to (cheap single read)
@@ -585,6 +587,46 @@ function Adapter:_candidateIds(areaId)
     return self._zoneScan.ids
 end
 
+-- One candidate quest as a nearby entry (see nearbyQuests), or nil when it is
+-- not offered to the player: a holiday quest out of season, not doable, below
+-- the level floor, repeatable when those are off, or with no reachable giver.
+function Adapter:availableEntry(questId, opts, ctx)
+    if self.backend.eventInactive ~= nil and self.backend.eventInactive(questId) then
+        return nil
+    end
+    if not self.backend.isDoable(questId) then
+        return nil
+    end
+    local quest = self.backend.quest(questId)
+    if quest == nil then
+        return nil
+    end
+    local playerLevel = ctx.level or 0
+    local requiredOk = (quest.requiredLevel or 0) <= playerLevel
+    local floorOk = opts.levelRange == nil
+        or quest.level == nil
+        or quest.level < 0
+        or quest.level >= playerLevel - opts.levelRange
+    local repeatableOk = opts.includeRepeatable == true or quest.repeatable ~= true
+    if not (requiredOk and floorOk and repeatableOk) then
+        return nil
+    end
+    local starter = self:targets(questId, Adapter.phases.start, ctx)[1]
+    if starter == nil or starter.distance == nil then
+        return nil
+    end
+    return {
+        questId = questId,
+        name = quest.name,
+        level = quest.level,
+        requiredLevel = quest.requiredLevel,
+        repeatable = quest.repeatable == true,
+        daily = quest.daily == true,
+        starter = starter,
+        distance = starter.distance,
+    }
+end
+
 -- opts: levelRange (hide quests more than this many levels below the
 -- player; nil = no floor), includeRepeatable (default false; dailies are
 -- repeatable), maxCount.
@@ -601,34 +643,10 @@ function Adapter:nearbyQuests(opts)
     if ctx.x == nil then
         return result
     end
-    local playerLevel = ctx.level or 0
     for _, questId in ipairs(self:_candidateIds(ctx.areaId)) do
-        if self.backend.isDoable(questId) then
-            local quest = self.backend.quest(questId)
-            if quest ~= nil then
-                local requiredOk = (quest.requiredLevel or 0) <= playerLevel
-                local floorOk = opts.levelRange == nil
-                    or quest.level == nil
-                    or quest.level < 0
-                    or quest.level >= playerLevel - opts.levelRange
-                local repeatableOk = opts.includeRepeatable == true or quest.repeatable ~= true
-                if requiredOk and floorOk and repeatableOk then
-                    local starters = self:targets(questId, Adapter.phases.start, ctx)
-                    local starter = starters[1]
-                    if starter ~= nil and starter.distance ~= nil then
-                        tinsert(result, {
-                            questId = questId,
-                            name = quest.name,
-                            level = quest.level,
-                            requiredLevel = quest.requiredLevel,
-                            repeatable = quest.repeatable == true,
-                            daily = quest.daily == true,
-                            starter = starter,
-                            distance = starter.distance,
-                        })
-                    end
-                end
-            end
+        local entry = self:availableEntry(questId, opts, ctx)
+        if entry ~= nil then
+            tinsert(result, entry)
         end
     end
     sortByDistance(result)
