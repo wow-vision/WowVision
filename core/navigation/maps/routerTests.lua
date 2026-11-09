@@ -183,6 +183,37 @@ testRunner:addSuite("MapRouter", {
         t:assertEqual(reason, "no entry")
     end,
 
+    ["a resumed route finds the waypoint by id, else the nearest"] = function(t)
+        local waypoints = {
+            { id = "a", x = 0, y = 0 },
+            { id = "b", x = 10, y = 0 },
+            { id = "c", x = 20, y = 0 },
+        }
+        t:assertEqual(Router.resumeIndex(waypoints, { id = "c", x = 0, y = 0 }), 3, "the id wins over the position")
+        t:assertEqual(Router.resumeIndex(waypoints, { x = 11, y = 2 }), 2)
+        t:assertEqual(Router.resumeIndex(waypoints, { id = "gone", x = 19, y = 0 }), 3)
+        t:assertNil(Router.resumeIndex({}, { x = 0, y = 0 }))
+    end,
+
+    ["a resumed route prefers a waypoint on the same floor"] = function(t)
+        local waypoints = {
+            { id = "upstairs", x = 0, y = 0, z = 30 },
+            { id = "downstairs", x = 3, y = 0, z = 0 },
+        }
+        t:assertEqual(Router.resumeIndex(waypoints, { x = 0, y = 0, z = 1 }), 2)
+        t:assertEqual(Router.resumeIndex(waypoints, { x = 0, y = 0 }), 1, "no height known: only the plane counts")
+    end,
+
+    ["the remaining distance counts from the player over the waypoints left"] = function(t)
+        local waypoints = {
+            { id = "a", x = 0, y = 0 },
+            { id = "b", x = 10, y = 0 },
+            { id = "c", x = 20, y = 0 },
+        }
+        t:assertEqual(Router.remainingDistance(waypoints, 2, 10, 5), 15)
+        t:assertEqual(Router.remainingDistance(waypoints, 1, 0, 0), 20)
+    end,
+
     ["an unlinked destination ends with a straight last leg"] = function(t)
         local waypoints = graph({
             { id = "a", x = 0, y = 0, links = { "b" } },

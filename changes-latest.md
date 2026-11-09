@@ -8,6 +8,9 @@
 * Quests: the game's quest progress messages have alerts of their own in the Quests module. A count moving plays Sku's progress sound, an objective done plays a new objective sound, and a quest with every objective done plays Sku's quest complete sound instead. They work with the Errors module switched off, and a message you had muted there stays muted.
 * Scanner: quest progress in Quests, In Progress stays current while the Scanner is open. Backspace on a category, or Navigate to Nearest in its context menu, goes to the nearest entry in it.
 * Navigation window (F10): Shift+F10 on a destination offers Auto Direct and Auto Route, which lead you to every unvisited destination of that name in turn. They need Visited Waypoints switched on.
+* Navigation: Reverse Route (Ctrl+Shift+R) now walks back from where you are, along the route from its destination to its start.
+* Buffers: new settings Always Start at Top (off by default) and Sounds When Opening and Closing (on by default).
+* Quest log: new setting Always Start at Top (off by default), which opens the quest log on its first entry instead of the selected quest.
 
 ### Classic
 

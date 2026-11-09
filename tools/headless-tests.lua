@@ -565,6 +565,133 @@ WowVision.testing.testRunner:addSuite("AuraBufferFilters", {
 })
 
 WowVision.testing.testRunner:addSuite("BufferConstruction", {
+    ["Always Start at Top lands a switched-to buffer on its first item"] = function(t)
+        local spoken = {}
+        local savedSpeak, savedStarts = WowVision.speak, WowVision.buffers.startsAtTop
+        WowVision.speak = function(_, text)
+            spoken[#spoken + 1] = text
+        end
+        local function filled(label, lines)
+            local buffer = WowVision.buffers:create("Static", { label = label })
+            for _, line in ipairs(lines) do
+                buffer:add(WowVision.buffers.MessageItem:new({ data = line }))
+            end
+            return buffer
+        end
+        local root = WowVision.buffers.RootBufferGroup:new({})
+        local first = WowVision.buffers:create("Group", { label = "One" })
+        local second = WowVision.buffers:create("Group", { label = "Two" })
+        root:addBuffer(first)
+        root:addBuffer(second)
+        local a = filled("A", { "a1", "a2", "a3" })
+        local b = filled("B", { "b1", "b2", "b3" })
+        local c = filled("C", { "c1", "c2" })
+        first:addBuffer(a)
+        first:addBuffer(b)
+        second:addBuffer(c)
+        root:getFocus()
+        first:getFocus()
+
+        -- Off: a buffer keeps its place
+        WowVision.buffers.startsAtTop = function()
+            return false
+        end
+        a:focusDirection(1)
+        a:focusDirection(1)
+        first:UIFocusDirection(1)
+        first:UIFocusDirection(-1)
+        local keptOff = a:getFocus():getFocusString()
+
+        -- On: between buffers
+        WowVision.buffers.startsAtTop = function()
+            return true
+        end
+        b:focusIndex(2)
+        first:UIFocusDirection(1)
+        local onB = spoken[#spoken]
+        local bIndex = b.index
+
+        -- On: between groups, the group keeps its buffer
+        c:focusIndex(2)
+        root:UIFocusDirection(1)
+        local onC = spoken[#spoken]
+        local cIndex = c.index
+
+        WowVision.speak, WowVision.buffers.startsAtTop = savedSpeak, savedStarts
+        t:assertEqual(keptOff, "a2")
+        t:assertEqual(onB, "B b1")
+        t:assertEqual(bIndex, 1)
+        t:assertEqual(onC, "Two C c1")
+        t:assertEqual(cIndex, 1)
+        t:assertEqual(first.index, 2, "the group stays on its buffer")
+    end,
+
+    ["a run opens with its first buffer key and closes once when Alt is let go"] = function(t)
+        local buffers = WowVision.buffers
+        buffers.endRun()
+        local savedStarted, savedEnded = buffers.runStarted, buffers.runEnded
+        local log = {}
+        buffers.runStarted = function()
+            log[#log + 1] = "open"
+        end
+        buffers.runEnded = function()
+            log[#log + 1] = "close"
+        end
+        buffers.endRun() -- Alt or another modifier changing with no run: nothing
+        buffers.takeNewRun()
+        buffers.takeNewRun() -- Alt held: the run goes on
+        buffers.endRun()
+        buffers.endRun() -- another modifier changing after the close: nothing
+        buffers.takeNewRun()
+        buffers.endRun()
+        buffers.runStarted, buffers.runEnded = savedStarted, savedEnded
+        t:assertEqual(table.concat(log, ","), "open,close,open,close")
+    end,
+
+    ["Always Start at Top: Alt let go, the next Alt-Down lands on the first item again"] = function(t)
+        local spoken = {}
+        local savedSpeak = WowVision.speak
+        WowVision.speak = function(_, text)
+            spoken[#spoken + 1] = text
+        end
+        local buffers = WowVision.buffers
+        local buffer = buffers:create("Static", { label = "A" })
+        for _, line in ipairs({ "health", "mana", "xp" }) do
+            buffer:add(buffers.MessageItem:new({ data = line }))
+        end
+        local function press(direction)
+            buffer:UIMoveItem(direction, buffers.takeNewRun())
+            return spoken[#spoken]
+        end
+
+        buffers.endRun()
+        local first = press(1)
+        buffers.endRun()
+        local again = press(1)
+        local held = press(1)
+        local heldOn = press(1)
+        buffers.endRun()
+        local backward = press(-1)
+        buffers.endRun()
+        local restarted = press(1)
+
+        -- A switch reads the first item: the run goes on from there.
+        local group = buffers:create("Group", { label = "G" })
+        group:addBuffer(buffer)
+        buffers.endRun()
+        group:UIFocusDirection(1)
+        local afterSwitch = buffers.takeNewRun()
+
+        WowVision.speak = savedSpeak
+        t:assertEqual(first, "health")
+        t:assertEqual(again, "health")
+        t:assertEqual(held, "mana", "Alt held walks on")
+        t:assertEqual(heldOn, "xp")
+        t:assertEqual(backward, "mana", "a backward press moves on from where the buffer stands")
+        t:assertEqual(restarted, "health")
+        t:assertEqual(afterSwitch, false)
+    end,
+
     ["Retail and Forever offer no tracked buffer, and saved ones still load"] = function(t)
         local groupTypes = WowVision.buffers.groupTypes
         local saved = {}

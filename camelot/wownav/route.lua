@@ -523,6 +523,27 @@ function Route:dropToEnd()
     return true
 end
 
+-- A reversed route (Ctrl-Shift-R) goes on at the waypoint its predecessor led to: point = { id, x, y, z }, the id only
+-- for a real network point (a virtual one's id may have been given away). The way back need not hold that waypoint
+-- (other steering targets, one-way links), then its nearest one takes over. Main thread, after Route:begin.
+function Route:resumeAt(point)
+    local N = self.N
+    local waypoints = {}
+    for i, id in ipairs(self.path or {}) do
+        local x, y, z = N.Position(id)
+        waypoints[i] = { id = id, x = x, y = y, z = z }
+    end
+    local index = WowVision.Router.resumeIndex(waypoints, point)
+    if index == nil then
+        return nil
+    end
+    self.pathIndex = index
+    self:setRouteState(self.path[index - 1], self.path[index])
+    self:resetApproach()
+    self:setHeightAnchor(waypoints[index].z)
+    return index
+end
+
 -- Makes a plan the running route (main thread). source/result: the target and its resolution.
 function Route:begin(plan, source, result, name)
     local N = self.N

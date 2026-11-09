@@ -178,7 +178,7 @@ If you have strayed far from the route, press Ctrl+Shift+N. WowVision plans the 
 
 ### Reverse the route
 
-Halfway along a route you may remember that you have to go back. Press Ctrl+Shift+R. The route turns around: the waypoint the beacon leads to now becomes the start of a new route, and its destination is where the previous route started, the entry point you chose in the navigation window. You hear "Route reversed, back to" and the name of that place, then the summary of the new route. For example, on the way from Priestess Anetta to Marshal Dughan you press Ctrl+Shift+R and hear "Route reversed, back to Priestess Anetta". If the start has no name, you hear "back to the start of the previous route".
+Halfway along a route you may remember that you have to go back. Press Ctrl+Shift+R. The route turns around: the new route begins at the destination of the previous one, and its destination is where the previous route started, the entry point you chose in the navigation window. The waypoint the beacon was leading to stays active, so you walk back from where you are and do not go to the old destination first. You hear "Route reversed, back to" and the name of that place, then the summary of the new route with the waypoints and yards still ahead of you. For example, on the way from Priestess Anetta to Marshal Dughan you press Ctrl+Shift+R and hear "Route reversed, back to Priestess Anetta". If the start has no name, you hear "back to the start of the previous route".
 
 This works on classic routes and WowNav routes alike. Afterwards, Ctrl+Shift+N goes to that start again. Without a running route you hear "No route to reverse".
 

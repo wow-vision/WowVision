@@ -39,6 +39,8 @@ Auf WoW: Forever liefert Questie eine Version, die auf Classic-Era-Daten aufbaut
 
 In der Questliste bewegen Pfeil hoch und Pfeil runter zwischen Überschriften und Quests. Drücke Eingabe auf einer Quest, um sie auszuwählen, wodurch die Details gefüllt werden. Drücke Eingabe auf einer Überschrift, um sie ein- oder auszuklappen. Drücke die Tooltip-Taste, um den Tooltip der Quest zu hören; siehe [Tooltips](../basics/tooltips.md).
 
+Normalerweise steht der Fokus beim Öffnen auf der ausgewählten Quest. Schalte im WowVision-Menü unter Fenster, Questlog die Einstellung Immer oben beginnen ein, dann steht er beim Öffnen auf dem obersten Eintrag der Liste. Standardmäßig ist sie aus. Öffnet sich das Questlog in den Details einer Quest, bleibst du dort.
+
 ### The Burning Crusade
 
 (Nur The Burning Crusade.)

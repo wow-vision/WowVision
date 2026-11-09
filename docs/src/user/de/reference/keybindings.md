@@ -96,7 +96,7 @@ Siehe [Chat](../windows/chat.md).
 | Nächster Wegpunkt (Next Waypoint) | Strg+W | Springt zum nächsten Wegpunkt vor. Du hörst, wie viele Wegpunkte noch übrig sind, zum Beispiel "12 verbleibend" |
 | Vorheriger Wegpunkt (Previous Waypoint) | Strg+S | Geht zum vorherigen Wegpunkt zurück, mit derselben Zählung |
 | Route von hier neu starten (Start the Route Again From Here) | Strg+Umschalt+N | Plant die Route zu deinem letzten Ziel noch einmal, beginnend dort, wo du stehst. Du hörst "Keine Route zum Neustarten", wenn du noch kein Ziel gewählt hast |
-| Route umkehren (Reverse Route) | Strg+Umschalt+R | Kehrt die laufende Route um: vom Wegpunkt, zu dem das Beacon gerade führt, zurück zu ihrem Start |
+| Route umkehren (Reverse Route) | Strg+Umschalt+R | Kehrt die laufende Route um: vom Ziel zurück zum Start, weiter ab dem Wegpunkt, zu dem das Beacon gerade führt |
 | Navigation abbrechen (Cancel Navigation) | Umschalt+F12 | Beendet die aktive Route oder das aktive Beacon |
 | Ankunftsdistanz wechseln (Cycle Arrival Distance) | Alt+P | Ändert, wie nah du an einen Wegpunkt herankommen musst, damit er als erreicht gilt |
 | Entfernung ansagen (Announce Distance) | Unbelegt | Spricht die Entfernung zum Wegpunkt. Alt Gr (oder Strg+Alt) tut von Haus aus dasselbe |

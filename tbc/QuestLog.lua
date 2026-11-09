@@ -7,6 +7,14 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
 
+local settings = module:hasSettings()
+settings:add({
+    key = "alwaysStartAtTop",
+    type = "Bool",
+    label = L["Always Start at Top"],
+    default = false,
+})
+
 -- The TBC quest log: a true FauxScrollFrame with a six-button pool
 -- (QuestLogTitle1-6) whose ids are POOL-RELATIVE -- logical index is id
 -- plus scroll offset -- then the details pane with live objectives and the
@@ -166,11 +174,31 @@ local function emptyLogText()
     return text
 end
 
+-- Always Start at Top: the window opens on the list's top entry, not on the
+-- selected quest. Once per opening, when the list first has entries.
+local function landOnTop(screen)
+    local state = screen.state
+    if state.questLogLanded then
+        return
+    end
+    for index = 1, (GetNumQuestLogEntries()) do
+        local _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, isHidden = GetQuestLogTitle(index)
+        if not isHidden then
+            state.questLogLanded = true
+            if module.settings.alwaysStartAtTop then
+                state.nextSuggestedMove = questEntryId(index)
+            end
+            return
+        end
+    end
+end
+
 local function render(builder, screen)
     local frame = QuestLogFrame
     if frame == nil or not frame:IsShown() then
         return
     end
+    landOnTop(screen)
     builder:pushContext("questLog", L["Quest Log"])
 
     builder:beginStop("quests")

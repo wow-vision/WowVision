@@ -607,11 +607,13 @@ module:registerBinding({
 })
 
 -- Ctrl-Shift-R: the running route turned around ("I have to go back"). The
--- waypoint the beacon leads to now starts the new route, and its
--- destination is where the previous route started (the entry point picked
--- in F10). A route engine turns its own route (engine:reverseRoute, nil when
--- none of its routes runs); the route data's route enters the network at
--- that waypoint. The start becomes the last destination for Ctrl-Shift-N.
+-- new route starts at the previous route's destination and ends where that
+-- route started (the entry point picked in F10), and it goes on at the
+-- waypoint the beacon leads to now, so the player walks back from where they
+-- are. A route engine turns its own route (engine:reverseRoute, nil when none
+-- of its routes runs); the route data's route enters the network at the
+-- previous destination, or its last linked waypoint when that has no links.
+-- The start becomes the last destination for Ctrl-Shift-N.
 function module:reverseRoute()
     self:guidanceStarts()
     local engine = self:activeRouteEngine()
@@ -623,7 +625,16 @@ function module:reverseRoute()
     end
     local route, path = self.lastRoute, self.path
     local current = path ~= nil and path.currentWaypoint or nil
-    if route == nil or path ~= route.path or path.complete or current == nil or current.id == nil
+    local entry = nil
+    if path ~= nil then
+        for i = #path.waypoints, 1, -1 do
+            if WowVision.Router.hasLinks(path.waypoints[i]) then
+                entry = path.waypoints[i]
+                break
+            end
+        end
+    end
+    if route == nil or path ~= route.path or path.complete or current == nil or entry == nil
         or route.start == nil or route.start.id == nil then
         WowVision:speak(L["No route to reverse"])
         return false
@@ -631,7 +642,7 @@ function module:reverseRoute()
     local start = route.start
     local intro = string.format(L["Route reversed, back to %s"], start.n or L["the start of the previous route"])
     -- said and remembered only when the way back was found
-    if not self:navigateTo(start.id, route.waypoints, { entryId = current.id, intro = intro }) then
+    if not self:navigateTo(start.id, route.waypoints, { entryId = entry.id, resume = current, intro = intro }) then
         return false
     end
     self.lastDestination = start
@@ -801,7 +812,9 @@ end
 -- Route to a waypoint through the link graph and follow it with the beacon.
 -- opts passes through to the router (entryId for a user-chosen entry point);
 -- opts.onArrive runs after "Arrived" is spoken; opts.route: a route already
--- searched (Router.nearestByWalk), followed without a search of its own.
+-- searched (Router.nearestByWalk), followed without a search of its own;
+-- opts.resume (a waypoint): the route goes on at this waypoint, or the
+-- nearest of its own, and its summary counts from there.
 function module:navigateTo(waypointId, waypoints, opts)
     self:guidanceStarts()
     local px, py = UnitPosition("player")
@@ -835,7 +848,15 @@ function module:navigateTo(waypointId, waypoints, opts)
         end
     end)
     self:pathfind(path)
-    local text = string.format("%d %s, %d %s", #route.waypoints, L["waypoints"], route.distance, L["yards"])
+    local count, distance = #route.waypoints, route.distance
+    local resumeIndex = opts ~= nil and opts.resume ~= nil and WowVision.Router.resumeIndex(route.waypoints, opts.resume)
+        or nil
+    if resumeIndex ~= nil then
+        path:resumeAt(resumeIndex)
+        count = count - resumeIndex + 1
+        distance = WowVision.Router.remainingDistance(route.waypoints, resumeIndex, px, py)
+    end
+    local text = string.format("%d %s, %d %s", count, L["waypoints"], distance, L["yards"])
     -- The destination is off the network: say how much is walked straight,
     -- without a road to follow. A leg inside the arrival distance is no
     -- walk of its own, so it goes unsaid ("last 0 yards direct").

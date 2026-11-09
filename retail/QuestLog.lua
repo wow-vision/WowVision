@@ -7,6 +7,14 @@ local nodes = graph.nodes
 local ControlId = graph.ControlId
 local kinds = graph.kinds
 
+local settings = module:hasSettings()
+settings:add({
+    key = "alwaysStartAtTop",
+    type = "Bool",
+    label = L["Always Start at Top"],
+    default = false,
+})
+
 -- The quest log on clients where it merged into the world map (Retail, and
 -- WoW: Forever since patch 1.60.1): pressing L opens QuestMapFrame, a panel
 -- beside the map rather than the old standalone QuestLogFrame.
@@ -150,6 +158,10 @@ local function questRowId(questID)
     return ControlId.structural("quest:" .. tostring(questID))
 end
 
+local function headerRowId(title)
+    return ControlId.structural("header:" .. tostring(title))
+end
+
 local function headerStateText(kid)
     if kid.questLogIndex == nil then
         return nil
@@ -181,7 +193,7 @@ local function emitHeader(builder, kid)
         live = "focus",
     })
     vtable.tooltipFrame = find
-    builder:addItem(ControlId.structural("header:" .. tostring(title)), vtable)
+    builder:addItem(headerRowId(title), vtable)
 end
 
 local function isTracked(questID)
@@ -316,7 +328,21 @@ local function emptyListText(scrollFrame)
     return nil
 end
 
-local function renderQuestList(builder, questsFrame)
+-- Always Start at Top: the window opens on the list's top entry, not on the
+-- selected quest. Once per opening, when the list first has entries.
+local function landOnTop(screen, entries)
+    local state = screen.state
+    if state.questLogLanded or #entries == 0 then
+        return
+    end
+    state.questLogLanded = true
+    if module.settings.alwaysStartAtTop then
+        local top = entries[1]
+        state.nextSuggestedMove = top.header ~= nil and headerRowId(rowText(top.header)) or questRowId(top.quest.questID)
+    end
+end
+
+local function renderQuestList(builder, questsFrame, screen)
     local scrollFrame = questsFrame.ScrollFrame
     local scrollChild = questScrollChild()
     if scrollChild == nil then
@@ -330,6 +356,7 @@ local function renderQuestList(builder, questsFrame)
         or nil
     builder:pushContext("quests", count or L["Quests"])
     local entries = listEntries(scrollChild)
+    landOnTop(screen, entries)
     for _, entry in ipairs(entries) do
         if entry.header ~= nil then
             emitHeader(builder, entry.header)
@@ -581,11 +608,13 @@ local function render(builder, screen)
 
     builder:pushContext("questLog", L["Quest Log"])
     if showingDetails then
+        -- Opened on a quest's details, Back later lands on that quest's row.
+        screen.state.questLogLanded = true
         renderDetailText(builder, detailsFrame)
         renderRewards(builder)
         renderActions(builder, detailsFrame)
     else
-        renderQuestList(builder, questsFrame)
+        renderQuestList(builder, questsFrame, screen)
     end
     builder:popContext()
 end
