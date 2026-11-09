@@ -1190,6 +1190,13 @@ if haveNetwork then
             local docks = lineDocks()
             local from = docks.feathermoon
             t:assertNotNil(from, "the dock at Feathermoon")
+            -- the coast dock lies where Feralas and the Barrens overlap: its boarding point needs both decoded, which
+            -- earlier tests may or may not have done (the game decodes the zones around the player)
+            for _, d in pairs(docks) do
+                for _, zoneId in ipairs(N.ZonesForPoint(d.x, d.y)) do
+                    N.LoadZone(zoneId)
+                end
+            end
             local rows = dock.boardingRows(N, from.x, from.y)
             local ofLine = 0
             for _, r in ipairs(rows) do
