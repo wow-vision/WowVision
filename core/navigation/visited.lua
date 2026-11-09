@@ -124,9 +124,8 @@ local AUTO_CANDIDATES = 8
 module.auto = nil
 
 -- The saved trail of the chains (WowVisionDump.autoMode, on disk after /reload; the newest last): each leg's search
--- with its time, and every frame of more than HITCH_SECONDS while a chain runs, so a freeze can be placed.
+-- with its time.
 local LOG_SIZE = 60
-local HITCH_SECONDS = 0.5
 local function logLine(line)
     WowVisionDump = WowVisionDump or {}
     local trail = WowVisionDump.autoMode
@@ -137,53 +136,6 @@ local function logLine(line)
     trail[#trail + 1] = date("%H:%M:%S") .. " " .. line
     while #trail > LOG_SIZE do
         table.remove(trail, 1)
-    end
-end
-
--- The game events of each frame (at most EVENTS_KEPT) with the ms since the frame before ended: a long frame's line
--- names them, so a gap between two of them shows what the time went to (no event: an OnUpdate took it). Watched
--- only while a chain runs.
-local EVENTS_KEPT = 30
-local hitchFrame
-local frameEvents, eventCount, frameStart = {}, 0, nil
-
-local function onHitchEvent(_, event)
-    if frameStart == nil then
-        return
-    end
-    eventCount = eventCount + 1
-    if eventCount <= EVENTS_KEPT then
-        frameEvents[eventCount] = string.format("%s +%.0f", event, debugprofilestop() - frameStart)
-    end
-end
-
-local function onHitchUpdate(_, elapsed)
-    if elapsed > HITCH_SECONDS then
-        local px, py = UnitPosition("player")
-        local shown = math.min(eventCount, EVENTS_KEPT)
-        logLine(string.format("frame of %.2f s at %.1f %.1f, now +%.0f, %d events: %s", elapsed, px or 0, py or 0,
-            frameStart and (debugprofilestop() - frameStart) or 0, eventCount,
-            table.concat(frameEvents, ", ", 1, shown)))
-    end
-    frameStart = debugprofilestop()
-    eventCount = 0
-end
-
-local function watchHitches(on)
-    if hitchFrame == nil then
-        if not on then
-            return
-        end
-        hitchFrame = CreateFrame("Frame")
-        hitchFrame:SetScript("OnEvent", onHitchEvent)
-    end
-    frameStart, eventCount = nil, 0
-    if on then
-        hitchFrame:RegisterAllEvents()
-        hitchFrame:SetScript("OnUpdate", onHitchUpdate)
-    else
-        hitchFrame:UnregisterAllEvents()
-        hitchFrame:SetScript("OnUpdate", nil)
     end
 end
 
@@ -221,7 +173,6 @@ function module:startAuto(wp, mode, start)
     local auto = { mode = mode, history = {}, index = 0, seen = {} }
     setCurrent(auto, wp)
     self.auto = auto
-    watchHitches(true)
     logLine(string.format("start %s %s", mode, tostring(wp.n)))
     WowVision:speak(mode == "route" and L["Auto Route"] or L["Auto Direct"])
     return lead(function()
@@ -235,7 +186,6 @@ function module:endAuto()
         return
     end
     self.auto = nil
-    watchHitches(false)
     logLine("end")
 end
 

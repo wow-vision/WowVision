@@ -230,7 +230,7 @@ local questMessageAlerts = {
     ERR_QUEST_ADD_FOUND_SII = "questProgress",
     ERR_QUEST_ADD_PLAYER_KILL_SII = "questProgress",
     ERR_QUEST_OBJECTIVE_COMPLETE_S = "objectiveComplete",
-    ERR_QUEST_UNKNOWN_COMPLETE = "questComplete",
+    ERR_QUEST_UNKNOWN_COMPLETE = "objectiveComplete",
 }
 
 local function silenced(saved)
@@ -253,6 +253,10 @@ local function carryQuestMessageMutes(db)
     local allOff = silenced(errors.alerts and errors.alerts.announce)
     local entries = errors.data and errors.data.errors or {}
     local off = {}
+    -- no message of its own: a finished quest is read from the log
+    if allOff then
+        off.questComplete = true
+    end
     for name, key in pairs(questMessageAlerts) do
         local entry = entries[name]
         if allOff or silenced(entry and entry.alert) then

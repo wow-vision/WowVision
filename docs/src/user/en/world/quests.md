@@ -135,13 +135,13 @@ The alert is the Quest Area Alert in the Quests module. See [Alerts](../basics/a
 
 ## Quest progress alerts
 
-The game shows quest progress as a message in the middle of the screen. WowVision speaks those messages as the game words them, with three alerts of their own:
+The game shows quest progress as a message in the middle of the screen. WowVision speaks those messages as the game words them, and plays a sound for what happened, with three alerts of their own:
 
-- Quest Progress Alert: a count moves, for example "Kobold Vermin slain: 3/8" or "Linen Cloth: 2/6", the last one ("8/8") too. Its sound is glass1.
-- Objective Complete Alert: the game's message naming an objective done, for example "Explore the Mine (Complete)". Its sound is success1.
-- Quest Complete Alert: the game's "Objective Complete." message, which names no objective. Its sound is Tutorial_Success_01.
+- Quest Progress Alert: a count moves, for example "Kobold Vermin slain: 3/8" or "Linen Cloth: 2/6". Its sound is success1, the one Sku plays.
+- Objective Complete Alert: an objective is done, for example "Explore the Mine (Complete)", or the game's "Objective Complete." message, which names no objective. Its sound is objective_complete.
+- Quest Complete Alert: every objective of a quest is done, so it is ready to hand in. Its sound is success2, the one Sku plays, and it plays in place of the objective's sound. The game sends no message for this, so WowVision reads it from your quest log. Its speech, the quest's title and "Complete", starts switched off, because you already hear the game's line for the last objective.
 
-Each message is spoken by its own alert, with that alert's settings: with the last kill you hear the "8/8" from the Quest Progress Alert and the completion from the alert it belongs to. Each alert has TTS (on) and Sound (on) and can be switched off on its own. They work whatever the Errors module does, also with it switched off, and these messages do not appear in its Per-Error Filter. If you had muted one of these messages there, or switched Announce Errors off, its alert starts switched off. See [Alerts](../basics/alerts.md).
+The game's line is spoken at once. When an objective is done, its sound waits a moment, less than half a second, to learn whether that finished the quest. Each alert has TTS and Sound and can be switched off on its own. They work whatever the Errors module does, also with it switched off, and these messages do not appear in its Per-Error Filter. If you had muted one of these messages there, or switched Announce Errors off, its alert starts switched off. See [Alerts](../basics/alerts.md).
 
 ## Finding quests and objectives
 

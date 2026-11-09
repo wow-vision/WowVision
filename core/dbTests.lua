@@ -242,6 +242,7 @@ testRunner:addSuite("DB migrations", {
                 ERR_QUEST_ADD_KILL_SII = { alert = { enabled = false } },
                 ERR_QUEST_OBJECTIVE_COMPLETE_S = { alert = { enabled = true, outputs = { tts = { enabled = false } } } },
                 ERR_QUEST_UNKNOWN_COMPLETE = { alert = { enabled = true, outputs = { tts = { enabled = true } } } },
+                ERR_QUEST_ADD_ITEM_SII = { alert = { enabled = true } },
             } } } } }
         end
         local char = saved()
@@ -254,7 +255,7 @@ testRunner:addSuite("DB migrations", {
             local alerts = db.submodules.quests.alerts
             t:assertEqual(alerts.questProgress.enabled, false)
             t:assertEqual(alerts.objectiveComplete.enabled, false, "speech off counts as silenced")
-            t:assertNil(alerts.questComplete, "a spoken message leaves its alert alone")
+            t:assertNil(alerts.questComplete, "the quest complete alert has no message of its own")
         end
     end,
 

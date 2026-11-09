@@ -130,8 +130,8 @@ The Per-Error Filter lists each message with its state read after its name: "Spe
 | New Minimap Dot Alert | Minimap Scanner | While you walk, a named dot comes onto the minimap. Speaks its name, level, whether it is indoors, and its kind. Needs Announce Tracked Dots While Walking (on). | TTS (spoken by the game's voice 0 unless you choose another voice), Sound Alert (off) |
 | Quest Area Alert | Quests | You enter or leave the area of a quest. Says "Entering area: " or "Leaving area: " followed by the quest title. | TTS, Sound Alert (off) |
 | Quest Progress Alert | Quests | The game shows a quest count moving. Says the game's message, for example "Kobold Vermin slain: 3/8". | TTS, Sound Alert (on) |
-| Objective Complete Alert | Quests | The game shows an objective done as "... (Complete)". Says the game's message. | TTS, Sound Alert (on) |
-| Quest Complete Alert | Quests | The game shows "Objective Complete." without naming the objective. Says the game's message. | TTS, Sound Alert (on) |
+| Objective Complete Alert | Quests | The game shows an objective done, as "... (Complete)" or "Objective Complete.". Says the game's message. | TTS, Sound Alert (on) |
+| Quest Complete Alert | Quests | Every objective of a quest is done, read from your quest log. Plays in place of the objective's sound; its speech says the quest's title and "Complete". | TTS (off), Sound Alert (on) |
 | Item Selected | Windows, Auction House | You select an auction in the browse list. Says "Selected: " and the item's name. (The Burning Crusade only.) | TTS |
 
 See [Minimap](../world/minimap.md) and [Quests](../world/quests.md).

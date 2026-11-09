@@ -124,13 +124,13 @@ Der Alarm heißt Questgebiet (Quest Area Alert) und gehört zum Modul Quests. Wi
 
 ## Alarme für den Questfortschritt
 
-Das Spiel zeigt den Questfortschritt als Meldung in der Bildschirmmitte. WowVision spricht diese Meldungen so, wie das Spiel sie formuliert, mit drei eigenen Alarmen:
+Das Spiel zeigt den Questfortschritt als Meldung in der Bildschirmmitte. WowVision spricht diese Meldungen so, wie das Spiel sie formuliert, und spielt einen Ton für das, was passiert ist, mit drei eigenen Alarmen:
 
-- Questfortschritt (Quest Progress Alert): ein Zähler ändert sich, etwa "Kobold Vermin getötet: 3/8" oder "Leinenstoff: 2/6", auch der letzte ("8/8"). Sein Ton ist glass1.
-- Ziel erreicht (Objective Complete Alert): die Meldung des Spiels, die ein erledigtes Ziel nennt, etwa "Erkundet die Mine (Abgeschlossen)". Sein Ton ist success1.
-- Quest abgeschlossen (Quest Complete Alert): die Meldung "Aufgabe abgeschlossen." des Spiels, die kein Ziel nennt. Sein Ton ist Tutorial_Success_01.
+- Questfortschritt (Quest Progress Alert): ein Zähler ändert sich, etwa "Kobold Vermin getötet: 3/8" oder "Leinenstoff: 2/6". Sein Ton ist success1, der Ton von Sku.
+- Ziel erreicht (Objective Complete Alert): ein Ziel ist erledigt, etwa "Erkundet die Mine (Abgeschlossen)", oder die Meldung "Aufgabe abgeschlossen." des Spiels, die kein Ziel nennt. Sein Ton ist objective_complete.
+- Quest abgeschlossen (Quest Complete Alert): alle Ziele einer Quest sind erledigt, du kannst sie abgeben. Sein Ton ist success2, der Ton von Sku, und er spielt statt des Tons für das Ziel. Das Spiel schickt dafür keine Meldung, deshalb liest WowVision es aus deinem Questlog. Seine Sprachausgabe, der Questtitel und "Abgeschlossen", startet ausgeschaltet, denn die Meldung des Spiels zum letzten Ziel hörst du schon.
 
-Jede Meldung spricht ihr eigener Alarm, mit dessen Einstellungen: beim letzten Kill hörst du das "8/8" vom Alarm Questfortschritt und den Abschluss von dem Alarm, zu dem er gehört. Jeder Alarm hat TTS (an) und Sound (an) und lässt sich einzeln ausschalten. Sie arbeiten unabhängig vom Modul Fehler, auch wenn es ausgeschaltet ist, und diese Meldungen erscheinen nicht in seinem Filter pro Fehler. Hattest du eine dieser Meldungen dort stummgeschaltet oder Fehler ansagen ausgeschaltet, startet ihr Alarm ausgeschaltet. Siehe [Alarme](../basics/alerts.md).
+Die Meldung des Spiels wird sofort gesprochen. Ist ein Ziel erledigt, wartet sein Ton einen Moment, weniger als eine halbe Sekunde, um zu erfahren, ob damit die Quest fertig ist. Jeder Alarm hat TTS und Sound und lässt sich einzeln ausschalten. Sie arbeiten unabhängig vom Modul Fehler, auch wenn es ausgeschaltet ist, und diese Meldungen erscheinen nicht in seinem Filter pro Fehler. Hattest du eine dieser Meldungen dort stummgeschaltet oder Fehler ansagen ausgeschaltet, startet ihr Alarm ausgeschaltet. Siehe [Alarme](../basics/alerts.md).
 
 ## Quests und Questziele finden
 

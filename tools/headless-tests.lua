@@ -220,6 +220,8 @@ loadAddonFile("core/navigation/maps/turnMath.lua")
 loadAddonFile("core/navigation/maps/turnTests.lua")
 loadAddonFile("core/quests/Adapter.lua")
 loadAddonFile("core/quests/tests.lua")
+loadAddonFile("core/quests/completion.lua")
+loadAddonFile("core/quests/completionTests.lua")
 -- The quest scanner over a stand-in quest module: the snapshot it builds
 -- from and the live log it reads while open (core/quests/scannerLiveTests.lua).
 do
@@ -230,6 +232,8 @@ do
             return key
         end,
     }) }
+    -- the module's settings as the scanner reads them (Sort Quests by Proximity off: the log's order)
+    questModule.settings = { sortByProximity = false }
     function questModule:inProgress()
         return harness.snapshot
     end
@@ -1445,6 +1449,7 @@ do
     local savedBase = WowVision.base
     local harness = { providers = {}, source = nil }
     local questModule = { L = WowVision:getLocale() }
+    questModule.settings = { sortByProximity = false }
     function questModule:hasSource()
         return true
     end
