@@ -57,7 +57,8 @@ end
 
 -- The lines as read: { left, right } pairs from the frame, plus the item
 -- quality and item level when the tooltip shows an item (see
--- WowVision.items.augmentTooltipLines).
+-- WowVision.items.augmentTooltipLines), then Pawn's upgrade summary and the comparison with the equipped item (see
+-- WowVision.items.augmentComparisonLines).
 function Tooltip:collectLines()
     local frame = self.activeFrame
     local lines = {}
@@ -78,6 +79,13 @@ function Tooltip:collectLines()
             local augmented, err = pcall(WowVision.items.augmentTooltipLines, lines, link)
             if not augmented then
                 geterrorhandler()(err)
+            end
+            -- Pawn's upgrade summary and the comparison with the equipped item (gameDB/itemCompare.lua)
+            if WowVision.items.augmentComparisonLines ~= nil then
+                local compared, compareErr = pcall(WowVision.items.augmentComparisonLines, lines, link)
+                if not compared then
+                    geterrorhandler()(compareErr)
+                end
             end
         end
     end

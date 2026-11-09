@@ -12,6 +12,7 @@
 * Buffers: new settings Always Start at Top (off by default) and Sounds When Opening and Closing (on by default).
 * Quest log: new setting Always Start at Top (off by default), which opens the quest log on its first entry instead of the selected quest.
 * UI menu: a new Apply Recommended Game Settings button, only a suggestion, turns on auto loot and all action bars and, where the game has it, sets up the game's Audio Assist (your health, target health and resource every 20 percent, and when you are targeted). It does nothing in combat, and reloads the interface after a change.
+* Item tooltips now end with Pawn's upgrade summary and a comparison with the item you wear in that slot, read line by line with Shift+Down or all at once with Space. Pawn's summary has one line per scale the item upgrades ("Pawn: Hunter: Marksmanship, upgrade of 12 percent, over Rusty Helm") and replaces the upgrade lines Pawn writes itself. The comparison gives the item level difference and every stat that changes ("Armor: 10 more", "Intellect: 4 less"), for both rings and trinkets, a one-hand weapon against the off hand when it holds a weapon, and a two-hander also names the off hand it takes off. Two checkboxes under UI, Tooltip, Compare turn the parts off.
 
 ### Classic
 

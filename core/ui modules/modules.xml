@@ -11,5 +11,6 @@
   <Script file="gameDefaults.lua" />
   <Script file="gameDefaultsTests.lua" />
   <Script file="gameDefaultsMenu.lua" />
+  <Script file="tooltipCompare.lua" />
 
 </Ui>
