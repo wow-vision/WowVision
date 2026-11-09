@@ -1679,15 +1679,18 @@ end
 -- Inside a running task: frames of the cursor's own reads, the fullest
 -- one of each channel kept.
 local function naturalRead(frames)
-    local best = { count = 0, names = "none", tooltip = {} }
+    local best = { count = 0, dots = 0, names = "none", tooltip = {} }
     for _ = 1, frames do
         Engine.wait()
         local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
         data = ok and data or nil
         local count = data ~= nil and type(data.lines) == "table" and #data.lines or 0
-        if count > best.count then
-            best.count = count
-            best.names = Scan.signature(Scan.parseMouseover(data, WowVision.isSecret)):gsub("\n", ", ")
+        best.count = math.max(best.count, count)
+        -- One tooltip line holds every name (first run, 2026-11-10).
+        local dots = Scan.parseMouseover(data, WowVision.isSecret)
+        if #dots > best.dots then
+            best.dots = #dots
+            best.names = Scan.signature(dots):gsub("\n", ", ")
         end
         local tip = gameTooltipLines()
         if #tip > #best.tooltip then
@@ -1789,7 +1792,7 @@ function module:skuTest()
         Engine.shrink(x, y)
         Engine.wait(3)
         local fastRead = naturalRead(SKU_READ_FRAMES)
-        task.fastNames = math.max(fastRead.count, #fastRead.tooltip)
+        task.fastNames = fastRead.dots
         add(readText("A fast, shrunk, hidden, soft cursor off (Sku's way)", fastRead))
 
         local scale = Minimap:GetEffectiveScale()
@@ -1807,7 +1810,7 @@ function module:skuTest()
             Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale, y / scale)
             Engine.wait(3)
             local read = naturalRead(4)
-            add(string.format("Reach, size %.0f (full %.0f): %d names: %s", size, state.width, read.count, read.names))
+            add(string.format("Reach, size %.0f (full %.0f): %d names: %s", size, state.width, read.dots, read.names))
         end
         Minimap:SetSize(state.width, state.height)
 
@@ -1910,7 +1913,7 @@ function module:skuTest()
         WowVision.testing.showResults(table.concat(lines, "\n"))
         local grids = task.gridPlaces or {}
         speak(string.format(
-            "Sku test done. Fast scan %d lines, grid places: wait 0 frames %d, 1 frame %d, 2 frames %d",
+            "Sku test done. Fast scan %d names, grid places: wait 0 frames %d, 1 frame %d, 2 frames %d",
             task.fastNames or 0,
             grids[0] or 0,
             grids[1] or 0,
