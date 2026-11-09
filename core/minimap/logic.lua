@@ -264,13 +264,11 @@ function Scan.offsetToWorld(ox, oy, yardsPerUnit, facing)
 end
 
 -- ---- the sweep ----
--- Measured on WoW: Forever (2026-09-24):
--- Minimap:UpdateMouseoverAtPoint names the dots at any point in the frame
--- it is called in, each call on its own, for a few microseconds. So one
--- dense pass asks every grid cell; a dot answers over a patch around it
--- (about 9.4 units each way at effective scale 0.85), and the middle of
--- its patch is the dot. Cells are integer (ix, iy), offsets ix and iy
--- times the step.
+-- One pass asks every grid cell (the engine moves the minimap so each
+-- lies under the cursor, a frame each); a dot answers over a patch
+-- around it (about 9.4 units each way at effective scale 0.85, measured
+-- 2026-09-24), and the middle of its patch is the dot. Cells are integer
+-- (ix, iy), offsets ix and iy times the step.
 
 -- Every cell whose offset lies within radius.
 function Scan.sweepCells(radius, step)

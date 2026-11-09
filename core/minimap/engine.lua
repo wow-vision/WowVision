@@ -8,9 +8,14 @@ local Scan = WowVision.minimapScan
 -- - shrunk: the minimap squeezed to a few pixels with its centre on the
 --   cursor puts every dot in range under it, so one read names them all
 --   (the walking check, and the sorting passes);
--- - at a point: the minimap at full size under the cursor, and
---   Minimap:UpdateMouseoverAtPoint (WoW: Forever) asks any point of it;
---   the points where a name answers give its offset from the player.
+-- - at a point: the minimap at full size, moved so that point lies under
+--   the cursor; the game names what is there one frame later (Sku's grid
+--   scan). The points where a name answers give its offset from the
+--   player. Minimap:UpdateMouseoverAtPoint, which asked any point in the
+--   same frame, is a no-op since Forever build 70862 and goes in 1.60.2;
+--   moving the minimap under the resting cursor still answers (measured
+--   2026-11-10, /wv mscan sku: 13 dots placed, 1 frame a point, 0 frames
+--   gives the last frame's names).
 -- Tracking types switched one at a time sort the names (see logic.lua).
 --
 -- Everything the scan changes (points, size, alpha, zoom, tracking) is
@@ -23,6 +28,9 @@ Scan.engine = Engine
 
 local SHRUNK_SIZE = 15
 
+-- The running task (Engine.run), nil between frames.
+local current = nil
+
 function Engine.available()
     return C_TooltipInfo ~= nil
         and C_TooltipInfo.GetMinimapMouseover ~= nil
@@ -31,7 +39,6 @@ function Engine.available()
         and C_Minimap.GetTrackingInfo ~= nil
         and C_Minimap.GetTrackingFilter ~= nil
         and Minimap ~= nil
-        and Minimap.UpdateMouseoverAtPoint ~= nil
 end
 
 -- The game's above and below arrow atlases (the ones the quest line pins
@@ -79,21 +86,9 @@ local function readMouseover()
     return dots
 end
 
--- The shrunk minimap asked at its centre. The cursor's own read misses
--- dots while nothing moves (measured 2026-09-28 outdoors: it named two
--- towns and two indoor NPCs, the same frame's point read also a herb and
--- a mailbox).
-function Engine.askCentre()
-    local cx, cy = Minimap:GetCenter()
-    if cx == nil then
-        return false
-    end
-    local scale = Minimap:GetEffectiveScale()
-    return (pcall(Minimap.UpdateMouseoverAtPoint, Minimap, cx * scale, cy * scale))
-end
-
+-- The shrunk minimap under the resting cursor, as the game names it now
+-- (give it a frame after placing it).
 function Engine.readDots()
-    Engine.askCentre()
     return readMouseover()
 end
 
@@ -180,7 +175,37 @@ function Engine.trackingRestored(state)
     return true
 end
 
+-- Inside a running task, once: as in Sku, the minimap's cluster on top
+-- of every other frame and the minimap's own mouse-taking children
+-- (other addons' icons, Questie's for one) hidden, so the cursor meets
+-- the minimap itself (2026-11-09 a Questie icon held the mouse focus).
+-- Both come back when the task ends.
+function Engine.clearWay()
+    if current.wayCleared then
+        return
+    end
+    current.wayCleared = true
+    local strata, level = MinimapCluster:GetFrameStrata(), MinimapCluster:GetFrameLevel()
+    local hidden = {}
+    Engine.onCleanup(function()
+        for _, child in ipairs(hidden) do
+            pcall(child.Show, child)
+        end
+        pcall(MinimapCluster.SetFrameStrata, MinimapCluster, strata)
+        pcall(MinimapCluster.SetFrameLevel, MinimapCluster, level)
+    end)
+    MinimapCluster:SetFrameStrata("HIGH")
+    MinimapCluster:SetFrameLevel(9002)
+    for _, child in ipairs({ Minimap:GetChildren() }) do
+        if child:IsShown() and child:IsMouseEnabled() then
+            tinsert(hidden, child)
+            child:Hide()
+        end
+    end
+end
+
 function Engine.shrink(cursorX, cursorY)
+    Engine.clearWay()
     local scale = Minimap:GetEffectiveScale()
     Minimap:SetAlpha(0)
     Minimap:SetSize(SHRUNK_SIZE, SHRUNK_SIZE)
@@ -207,6 +232,7 @@ end
 
 -- Full size, centred on the cursor.
 function Engine.fullSize(state, cursorX, cursorY)
+    Engine.clearWay()
     local scale = Minimap:GetEffectiveScale()
     Minimap:SetSize(state.width, state.height)
     Minimap:ClearAllPoints()
@@ -214,52 +240,22 @@ function Engine.fullSize(state, cursorX, cursorY)
 end
 
 -- ---- asking at a point ----
--- Minimap:UpdateMouseoverAtPoint (Forever) names the dots at a screen
--- point in the frame it is called in; the next frame the cursor's own
--- mouseover is back. It answered only with the minimap under the resting
--- cursor (measured 2026-09-24).
+-- The game works out what lies under the cursor once a frame: the
+-- minimap moved so a point lies under the resting cursor names that
+-- point's dots the next frame (several moves in one frame read the last
+-- frame's names, measured 2026-11-10).
 
--- A reader for the minimap as it lies now: offset (units from its
--- centre) -> dots there.
+-- Inside a running task, the full-size minimap centred on the cursor
+-- (Engine.fullSize): a reader offset (units from its centre) -> dots
+-- there. Each question takes one frame.
 function Engine.pointReader()
     local cx, cy = Minimap:GetCenter()
-    local scale = Minimap:GetEffectiveScale()
     return function(ox, oy)
-        local ok = pcall(Minimap.UpdateMouseoverAtPoint, Minimap, (cx + ox) * scale, (cy + oy) * scale)
-        if not ok then
-            return {}
-        end
+        Minimap:ClearAllPoints()
+        Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cx - ox, cy - oy)
+        Engine.wait()
         return readMouseover()
     end
-end
-
--- The client limits how much Lua time runs per second and in one burst
--- (GetScriptBucketThrottleLimits, Forever; the limits are only known at
--- runtime, what happens past them is not documented). Work split over
--- frames stays at a quarter of both, and at most FRAME_BUDGET ms a frame.
--- Returns ms per frame and the limits read.
-local FRAME_BUDGET = 4
-local MIN_BUDGET = 0.5
-
-function Engine.frameBudget()
-    local budget = FRAME_BUDGET
-    local limits = nil
-    if GetScriptBucketThrottleLimits ~= nil then
-        local ok, result = pcall(GetScriptBucketThrottleLimits)
-        if ok and type(result) == "table" then
-            limits = result
-            local fps = math.max(GetFramerate() or 60, 20)
-            local perSecond = result.luaScriptBucketThrottleMaxMsPerSecondNormal
-            local burst = result.luaScriptBucketThrottleMaxMsBurstNormal
-            if type(perSecond) == "number" and not WowVision.isSecret(perSecond) and perSecond > 0 then
-                budget = math.min(budget, perSecond / fps / 4)
-            end
-            if type(burst) == "number" and not WowVision.isSecret(burst) and burst > 0 then
-                budget = math.min(budget, burst / 4)
-            end
-        end
-    end
-    return math.max(budget, MIN_BUDGET), limits
 end
 
 -- True when the cursor rests over the game world (nothing else would let
@@ -305,7 +301,7 @@ end
 -- task.finish(ok, abortReason, err). Cleanups registered with
 -- Engine.onCleanup run first, newest first, however the task ends (WoW's
 -- Lua cannot yield inside pcall, so a task cannot guard its own waits).
-local current = nil
+-- (current, the running task, is declared at the top.)
 
 function Engine.onCleanup(fn)
     tinsert(current.cleanups, fn)

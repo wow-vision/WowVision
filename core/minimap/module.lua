@@ -13,15 +13,17 @@ local settings = module:hasSettings()
 -- - The scan (Ctrl+Shift+F, standing still): sorting passes on the
 --   shrunk minimap first: every tracking type at once, then one at a
 --   time when that showed anything (well under two seconds); when that
---   finds nothing new it stops there. Otherwise the sweep asks every
---   point of the full-size minimap (Minimap:UpdateMouseoverAtPoint, a
---   few frames) and finds each new dot's edges by halving.
+--   finds nothing new it stops there. Otherwise the sweep asks the
+--   full-size minimap every 8 units, moving it under the cursor (one
+--   frame a point, about ten seconds), and finds each new dot's edges by
+--   halving.
 --   Moving, turning, the mouse moving, mouselook and combat abort it;
 --   everything half-measured is dropped.
 -- - The walking check (a setting): twice a second while moving, one read
 --   of the shrunk minimap with the player's own tracking; a name that
 --   comes into range is announced once, with its kind when a scan
---   already sorted it. A new dot is placed by a sweep while walking on;
+--   already sorted it. A new dot is not placed while walking (a sweep
+--   takes seconds and the minimap slides meanwhile; the scan places it);
 --   its name is said again only after the player walked out of its range
 --   (Scan.Walk). Dots without a place fall back to 30 seconds out of
 --   view while walking outdoors.
@@ -295,13 +297,12 @@ end
 -- otherLevel when its name read grey. Nil when it named none of the
 -- work's names.
 --
--- Classic clients have no Minimap:UpdateMouseoverAtPoint. A port there
--- would need the old way (gridPositions in this feature's first
--- version): the minimap moved so each grid point in turn lies under the
--- cursor, one point per frame, coarse over the whole minimap, then fine
--- around each find.
-local SWEEP_STEP = 2
-local EDGE_HALVINGS = 10
+-- Each question takes a frame (the minimap moved under the cursor), so
+-- the cells are 8 units: a dot answers over about 16 to 24 units, 2 to 9
+-- cells (measured 2026-11-10, 476 cells in 8 s at 60 frames a second),
+-- and four halvings bring an edge to half a unit.
+local SWEEP_STEP = 8
+local EDGE_HALVINGS = 4
 
 local function sweepPositions(task, work, radius)
     local stats = task.stats
@@ -310,22 +311,11 @@ local function sweepPositions(task, work, radius)
         expected[item.name] = true
     end
     local read = Engine.pointReader()
-    local budget, limits = Engine.frameBudget()
-    stats.budget, stats.limits = budget, limits
-    local chunkStart = debugprofilestop()
-    -- Every question goes through here; past the frame's budget, one
-    -- frame goes to the game.
+    -- Every question goes through here; each one is a frame.
     local function ask(ox, oy)
         stats.questions = stats.questions + 1
-        local dots = read(ox, oy)
-        local now = debugprofilestop()
-        if now - chunkStart > budget then
-            stats.ms = stats.ms + (now - chunkStart)
-            stats.frames = stats.frames + 1
-            Engine.wait()
-            chunkStart = debugprofilestop()
-        end
-        return dots
+        stats.frames = stats.frames + 1
+        return read(ox, oy)
     end
     local function has(dots, name)
         for _, dot in ipairs(dots) do
@@ -360,7 +350,6 @@ local function sweepPositions(task, work, radius)
         end
     end
     if not any then
-        stats.ms = stats.ms + (debugprofilestop() - chunkStart)
         return nil
     end
 
@@ -458,7 +447,6 @@ local function sweepPositions(task, work, radius)
         m.spot[1] = Scan.edgeCentre(m.e.left, m.e.right, half)
         m.spot[2] = Scan.edgeCentre(m.e.bottom, m.e.top, half)
     end
-    stats.ms = stats.ms + (debugprofilestop() - chunkStart)
     return found
 end
 
@@ -812,16 +800,6 @@ local function eventText(e)
     return e.kind .. (e.name ~= nil and (": " .. e.name) or "")
 end
 
-local COMPASS = { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" }
-
--- "231 yd north-west": a world point seen from the player.
-local function fromPlayer(px, py, wx, wy)
-    local north, east = wx - px, -(wy - py)
-    local angle = math.deg(math.atan2(east, north)) % 360
-    local word = COMPASS[math.floor(angle / 45 + 0.5) % 8 + 1]
-    return string.format("%.0f yd %s", math.sqrt(north * north + east * east), word)
-end
-
 -- The outdoor view radius at zoom 0, read on each outdoor walking check.
 module.outdoorRadius = Scan.Walk.RADIUS
 
@@ -879,66 +857,6 @@ function module:walkJudge(dots, indoors)
     return locate
 end
 
--- Inside the walking check: the sweep (as the scan does it) over the
--- full-size minimap for the names with new dots, while the player walks
--- on. Positions are taken from the player's position halfway through.
-function module:walkLocate(task, state, cursorX, cursorY, names)
-    task.locating = true
-    task.cursorX, task.cursorY = cursorX, cursorY
-    task.stats = { questions = 0, frames = 0, ms = 0, dots = 0, merged = 0 }
-    local work = {}
-    for _, name in ipairs(names) do
-        tinsert(work, { name = name })
-    end
-    local viewRadius = C_Minimap.GetViewRadius()
-    local facing = GetCVar("rotateMinimap") == "1" and (GetPlayerFacing() or 0) or 0
-    local startX, startY, _, continent = UnitPosition("player")
-    local started = GetTime()
-    Engine.fullSize(state, cursorX, cursorY)
-    Engine.wait(2)
-    local radius = state.width / 2
-    local found = sweepPositions(task, work, radius) or {}
-    local endX, endY = UnitPosition("player")
-    if endX == nil then
-        endX, endY = startX, startY
-    end
-    local px, py = (startX + endX) / 2, (startY + endY) / 2
-    local s = task.stats
-    walkNote(
-        string.format(
-            "located %s: %d questions, %d extra frames, %.2f s, walked %.0f yd meanwhile",
-            table.concat(names, ", "),
-            s.questions,
-            s.frames,
-            GetTime() - started,
-            math.sqrt((endX - startX) ^ 2 + (endY - startY) ^ 2)
-        )
-    )
-    for _, name in ipairs(names) do
-        local positions = {}
-        for _, offset in ipairs(found[name] or {}) do
-            local north, west = Scan.offsetToWorld(offset[1], offset[2], viewRadius / radius, facing)
-            tinsert(positions, { wx = px + north, wy = py + west })
-        end
-        local result = self.walk:placed(name, positions, continent)
-        local parts = {}
-        for _, dot in ipairs(result.placed) do
-            tinsert(parts, fromPlayer(px, py, dot.wx, dot.wy))
-        end
-        local line = "placed " .. name .. ": " .. (#parts > 0 and table.concat(parts, ", ") or "none")
-        if result.refreshed > 0 then
-            line = line .. string.format("; %d known found again", result.refreshed)
-        end
-        if result.unplaced > 0 then
-            line = line .. string.format("; %d not found, name rule for them", result.unplaced)
-        end
-        if result.extra > 0 then
-            line = line .. string.format("; %d more found than new", result.extra)
-        end
-        walkNote(line)
-    end
-end
-
 function module:walkCheck()
     local task = {}
     self.walkTask = task
@@ -970,34 +888,28 @@ function module:walkCheck()
                 module.outdoorRadius = radius
             end
         end
+        -- New dots stay on the name rule: since build 70862 a sweep asks
+        -- one point a frame, seconds while the minimap slides under a
+        -- walking player.
         local locate = module:walkJudge(dots, indoors)
         if #locate > 0 then
-            module:walkLocate(task, state, x, y, locate)
+            local _, _, _, continent = UnitPosition("player")
+            for _, name in ipairs(locate) do
+                module.walk:placed(name, {}, continent)
+            end
+            walkNote("not placed while walking, name rule: " .. table.concat(locate, ", "))
         end
     end
     task.check = function()
         if InCombatLockdown() then
             return "combat"
         end
-        if task.locating then
-            -- The sweep asks points of the minimap under the resting cursor.
-            if IsMouselooking ~= nil and IsMouselooking() then
-                return "mouselook"
-            end
-            local x, y = GetCursorPosition()
-            if math.abs(x - task.cursorX) > 2 or math.abs(y - task.cursorY) > 2 then
-                return "mouse"
-            end
-        end
         return nil
     end
     task.finish = function(ok, reason, err)
         self.walkTask = nil
         if not ok then
-            walkNote(
-                (task.locating and "locating stopped, new dots stay on the name rule: " or "check stopped: ")
-                    .. tostring(reason or "error")
-            )
+            walkNote("check stopped: " .. tostring(reason or "error"))
             if err ~= nil then
                 geterrorhandler()(err)
             end
@@ -1260,23 +1172,11 @@ function module:logText()
             tinsert(
                 lines,
                 string.format(
-                    "sweep: %d questions over %d extra frames, %.1f ms Lua, %.4f ms per question, budget %.2f ms a frame",
-                    s.questions,
-                    s.frames,
-                    s.ms,
-                    s.ms / s.questions,
-                    s.budget or 0
+                    "sweep: %d questions, one frame each",
+                    s.questions
                 )
             )
             tinsert(lines, string.format("dots placed %d, %d of them split from touching dots of one name; one dot's half size %s units", s.dots, s.merged, s.half and string.format("%.2f", s.half) or "not measured"))
-        end
-        if s.limits ~= nil then
-            local parts = {}
-            for key, value in pairs(s.limits) do
-                tinsert(parts, key .. " " .. tostring(value))
-            end
-            table.sort(parts)
-            tinsert(lines, "script limits: " .. table.concat(parts, ", "))
         end
     end
     tinsert(lines, arrowAtlasText())
@@ -1375,7 +1275,6 @@ function module:rawRead()
             local lastSig = nil
             for frame = 1, RAW_READ_FRAMES do
                 Engine.wait()
-                Engine.askCentre()
                 local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
                 data = ok and data or nil
                 local sig = Scan.signature(Scan.parseMouseover(data, WowVision.isSecret))
@@ -1435,153 +1334,6 @@ function module:rawRead()
         setFilters(filters, nil)
         readFrames("Every filter off")
         Engine.restoreTracking(state, false)
-        -- Last the cursor's own read, not asked: it missed dots on
-        -- Forever's build of 2026-10-16 (see Engine.softCursor), so empty
-        -- here is no fault; the scan never uses it.
-        Engine.wait(2)
-        local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
-        tinsert(task.reads, { label = "Cursor's own read, not asked (the scan does not use it)", data = ok and data or nil })
-
-        -- Which minimap setup the game still names dots for. Forever's
-        -- build 70862 (2026-11-07) sent the shrunk, hidden minimap's
-        -- mouseover with no lines at all, nothing over it; the UI source
-        -- changed nothing there, so the client did.
-        task.probes = {}
-        local function soft(on)
-            if Minimap.SetUsingSoftCursor ~= nil then
-                pcall(Minimap.SetUsingSoftCursor, Minimap, on)
-            end
-        end
-        -- Four frames asked at the centre; the fullest read counts.
-        local function centreProbe(label)
-            local most, names = 0, ""
-            for _ = 1, 4 do
-                Engine.wait()
-                Engine.askCentre()
-                local okRead, read = pcall(C_TooltipInfo.GetMinimapMouseover)
-                read = okRead and read or nil
-                local count = read ~= nil and type(read.lines) == "table" and #read.lines or 0
-                if count > most then
-                    most = count
-                    names = Scan.signature(Scan.parseMouseover(read, WowVision.isSecret)):gsub("\n", ", ")
-                end
-            end
-            tinsert(task.probes, string.format("%s: %d tooltip lines, names: %s", label, most, most > 0 and names or "none"))
-        end
-        -- Every 10 units of the minimap asked; the names any point gave.
-        local function gridProbe(label)
-            Engine.wait(2)
-            local ask = Engine.pointReader()
-            local radius = math.min(Minimap:GetWidth(), Minimap:GetHeight()) / 2
-            local found, names, asked = {}, {}, 0
-            for ox = -radius, radius, 10 do
-                for oy = -radius, radius, 10 do
-                    if ox * ox + oy * oy <= radius * radius then
-                        for _, dot in ipairs(ask(ox, oy)) do
-                            if not found[dot.name] then
-                                found[dot.name] = true
-                                tinsert(names, dot.name)
-                            end
-                        end
-                        asked = asked + 1
-                        if asked % 50 == 0 then
-                            Engine.wait()
-                        end
-                    end
-                end
-            end
-            tinsert(task.probes, string.format("%s, %d points: names: %s", label, asked, #names > 0 and table.concat(names, ", ") or "none"))
-        end
-        soft(true)
-        Minimap:SetAlpha(0)
-        centreProbe("Shrunk, hidden, soft cursor on (the scan's way)")
-        Minimap:SetAlpha(1)
-        centreProbe("Shrunk, shown, soft cursor on")
-        soft(false)
-        Minimap:SetAlpha(0)
-        centreProbe("Shrunk, hidden, soft cursor off")
-        Minimap:SetAlpha(1)
-        centreProbe("Shrunk, shown, soft cursor off")
-        Engine.fullSize(state, x, y)
-        soft(true)
-        gridProbe("Full size under the cursor, shown, soft cursor on")
-        soft(false)
-        gridProbe("Full size under the cursor, shown, soft cursor off")
-        Engine.restoreFrame(state)
-        soft(true)
-        gridProbe("In its own place, soft cursor on")
-        soft(false)
-        gridProbe("In its own place, soft cursor off")
-
-        -- Since 70862 the minimap names dots only when the cursor really
-        -- moves (WoWUIBugs #894). A keyboard player has no mouse to move,
-        -- but the game itself puts the cursor back when a short mouselook
-        -- ends (Engine.centreCursor), at the height CursorCenteredYPos
-        -- says. Asked here: does that jump count as movement for a shrunk
-        -- minimap waiting where the cursor lands? Each probe first jumps
-        -- to the landing point to learn it, then to a second height, puts
-        -- the minimap at the landing point and jumps back onto it, so the
-        -- cursor really travels (the first run, 2026-11-09, jumped from
-        -- the centre to the centre). Only the cursor's own read, nothing
-        -- asked at a point; names only, no positions.
-        local LAND_Y, AWAY_Y = 0.3, 0.7
-        local function cursorProbe(label, jump)
-            Minimap:ClearAllPoints()
-            Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", 0, 0)
-            Engine.wait()
-            Engine.centreCursor(LAND_Y)
-            Engine.wait(2)
-            local landX, landY = GetCursorPosition()
-            Engine.centreCursor(AWAY_Y)
-            Engine.wait(2)
-            Engine.shrink(landX, landY)
-            Engine.wait(2)
-            local beforeX, beforeY = GetCursorPosition()
-            local jumped = "no jump asked"
-            if jump then
-                Engine.centreCursor(LAND_Y)
-                Engine.wait()
-                jumped = "jump done"
-            end
-            local afterX, afterY = GetCursorPosition()
-            local most, names = 0, ""
-            for _ = 1, 10 do
-                Engine.wait()
-                local okRead, read = pcall(C_TooltipInfo.GetMinimapMouseover)
-                read = okRead and read or nil
-                local count = read ~= nil and type(read.lines) == "table" and #read.lines or 0
-                if count > most then
-                    most = count
-                    names = Scan.signature(Scan.parseMouseover(read, WowVision.isSecret)):gsub("\n", ", ")
-                end
-            end
-            tinsert(
-                task.probes,
-                string.format(
-                    "%s: %s, cursor %.0f %.0f to %.0f %.0f, minimap centre %.0f %.0f, mouse over the minimap %s: %d tooltip lines, names: %s",
-                    label,
-                    jumped,
-                    beforeX,
-                    beforeY,
-                    afterX,
-                    afterY,
-                    landX,
-                    landY,
-                    tostring(Minimap:IsMouseOver()),
-                    most,
-                    most > 0 and names or "none"
-                )
-            )
-        end
-        soft(false)
-        Minimap:SetAlpha(1)
-        cursorProbe("Mouselook jump test, control: shrunk at the landing point, shown, cursor not moved onto it", false)
-        cursorProbe("Mouselook jump test: shrunk at the landing point, shown, soft cursor off", true)
-        Minimap:SetAlpha(0)
-        cursorProbe("Mouselook jump test: shrunk at the landing point, hidden, soft cursor off", true)
-        soft(true)
-        cursorProbe("Mouselook jump test: shrunk at the landing point, hidden, soft cursor on", true)
-        soft(false)
     end
     task.check = function()
         return InCombatLockdown() and "combat" or nil
@@ -1606,10 +1358,6 @@ function module:rawRead()
                 tinsert(lines, line)
             end
             tinsert(lines, "Parsed: " .. Scan.signature(Scan.parseMouseover(read.data, WowVision.isSecret)):gsub("\n", ", "))
-        end
-        tinsert(lines, "Minimap setups tried")
-        for _, probe in ipairs(task.probes or {}) do
-            tinsert(lines, probe)
         end
         tinsert(lines, arrowAtlasText())
         tinsert(lines, "Tracking types")
