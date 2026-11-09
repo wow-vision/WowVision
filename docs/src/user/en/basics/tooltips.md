@@ -98,7 +98,7 @@ To change them, open the [WowVision menu](./menu-and-settings.md) with Shift+F1,
 
 Example: you find too many "White" and "Grey" items cluttering your bag readout. Turn off White (Common) and Grey (Poor). Names now read "Linen Cloth" for those, while "Fur Boots, Green" keeps its colour.
 
-## Prices in tooltips (The Burning Crusade only)
+## Prices in tooltips
 
 On The Burning Crusade, item tooltips can carry extra price lines, read like any other line:
 
@@ -108,6 +108,8 @@ On The Burning Crusade, item tooltips can carry extra price lines, read like any
 - Vendor Buy, what a vendor charges, once you have seen the item at a merchant.
 
 These come from the price database WowVision builds as you use the auction house. A line only appears when WowVision has that price: an item you never saw at the auction house gets no auction lines, and one you never saw at a merchant gets no Vendor Buy line. The Tooltip Prices checkbox in the Auction Prices menu (on by default) switches the extra lines off or on. The same menu has History Days (21), Mean Days (7) and Auto Scan (off), see [Auction House](../windows/auction-house.md).
+
+On Retail and WoW: Forever, item tooltips end with Vendor price per item, Auction minimum, Auction average, Auction maximum and Vendor Buy once you turn on Full Scan in the WowVision menu under Windows, then Auction House. See [Auction House](../windows/auction-house.md#full-scan-and-prices-in-tooltips-retail-and-wow-forever).
 
 ## Controls without a tooltip
 

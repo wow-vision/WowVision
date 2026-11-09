@@ -101,7 +101,7 @@ Einzelheiten zum Questlog pro Version stehen auf der Seite [Quests](../world/que
 | Vermächtnis (Belohnungsleiste, Herausforderungen, Bäume) | Nein | Nein | Nein | Nein | Ja |
 | Gruppensuche | Nein | Ja | Nein | Ja (Dungeonbrowser; andere Reiter noch nicht) | Ja |
 | Tierstall | Nein | Ja | Nein | Nein | Nein |
-| Auktionshaus | Nein | Ja (mit Preisdatenbank und Komplett-Scan) | Ja | Ja | Ja |
+| Auktionshaus | Nein | Ja (mit Preisdatenbank und Komplett-Scan) | Ja | Ja (mit Preisdatenbank und Komplett-Scan) | Ja (mit Preisdatenbank und Komplett-Scan) |
 
 Siehe [Sammlungen und Vermächtnis](../windows/collections.md), [Gruppensuche](../windows/group-finder.md) und [Auktionshaus](../windows/auction-house.md).
 

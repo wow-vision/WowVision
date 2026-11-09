@@ -15,8 +15,8 @@ Das passiert am ehesten, wenn du eine Menge einer Handelsware eingibst. Oft gibt
 | Classic Era | Nicht verfügbar |
 | The Burning Crusade (TBC) | Ja: das klassische Fenster mit drei Reitern (Suchen, Gebote, Auktionen), mit den zusätzlichen Scan-Werkzeugen und der Preisdatenbank |
 | Mists of Pandaria (Mists) | Ja: das moderne Fenster (Kaufen, Verkaufen, Auktionen) |
-| Retail | Ja: dasselbe moderne Fenster wie in Mists (es lädt denselben Leser) |
-| WoW: Forever | Ja: dasselbe moderne Fenster wie in Mists |
+| Retail | Ja: dasselbe moderne Fenster wie in Mists (es lädt denselben Leser), mit vollständigem Scan und Preisen in Tooltips |
+| WoW: Forever | Ja: dasselbe moderne Fenster wie in Mists, mit vollständigem Scan und Preisen in Tooltips |
 
 Die beiden Fenster funktionieren recht unterschiedlich, deshalb haben sie unten getrennte Abschnitte: [TBC](#das-auktionshaus-in-the-burning-crusade) und [Mists, Retail und WoW: Forever](#das-moderne-auktionshaus-mists-retail-und-wow-forever).
 
@@ -252,6 +252,7 @@ Die Stationen der Reihe nach:
 3. Suchen: ein Eingabefeld. Tippe einen Namen und drücke Eingabe.
 4. Die Schaltfläche Suchen des Spiels.
 5. Ergebnisse: die Liste der gefundenen Gegenstände.
+6. Vollständiger Scan: in Retail und WoW: Forever, sobald du ihn eingeschaltet hast (siehe [Vollständiger Scan und Preise in Tooltips](#vollständiger-scan-und-preise-in-tooltips-retail-und-wow-forever)).
 
 Jedes Ergebnis sagt den Gegenstandsnamen, den niedrigsten Preis und wie viele verfügbar sind, zum Beispiel:
 
@@ -305,6 +306,37 @@ Unterreiter „Auktionen“: eine Liste namens „Auktionen“ mit deinen laufen
 Unterreiter „Gebote“: eine Liste namens „Gebote“ mit den Auktionen, auf die du geboten hast. Jede sagt Gegenstandsname, „Bieter“ (wer das höchste Gebot hat), „Gebotsbetrag“, „Mindestgebot“ und die Gruppe der verbleibenden Zeit. Nach dem Auswählen: das Gebot-Fenster mit den Feldern Gold, Silber und Kupfer und einer Gebot-Schaltfläche, um dein Gebot zu erhöhen, und ein Sofortkauf-Fenster mit dem Preis und einer Schaltfläche Sofortkauf.
 
 Die Gegenstandsnamen in all diesen Listen werden vom Spiel gelesen, sobald eine Zeile in Sicht kommt. Ist ein Name noch nicht geladen, wird die Zeile ohne ihn gelesen; gehe weg und wieder zurück oder drücke Umschalt+Tab und Tab, dann erscheint er.
+
+### Vollständiger Scan und Preise in Tooltips (Retail und WoW: Forever)
+
+Der vollständige Scan fragt den Server in einer einzigen Anfrage nach dem gesamten Auktionshaus und merkt sich die Preise aller Gegenstände. Er ist aus, bis du ihn einschaltest: Öffne das WowVision-Menü mit Umschalt+F1, gehe zu Fenster, dann Auktionshaus, und aktiviere Vollständiger Scan. Die Schaltfläche Vollständiger Scan ist dann die letzte Station auf dem Reiter „Kaufen“. Der Server erlaubt einen Scan alle 15 Minuten. Die Schaltfläche ändert sich mit dem Stand des Scans:
+
+| Du hörst | Bedeutung |
+|---|---|
+| „Vollständiger Scan“ | Du kannst einen Scan starten; Eingabe startet ihn |
+| „Vollständiger Scan, Abklingzeit aktiv“ | Dein letzter Scan liegt weniger als 15 Minuten zurück; Eingabe nennt dir die verbleibende Zeit, zum Beispiel „12 min 30 sec“ |
+| „Wird gescannt, 12 sec“ | Der Server bereitet die Daten vor; Eingabe bricht den Scan ab |
+| „Wird gescannt, 40%“ | WowVision liest die Daten; Eingabe bricht den Scan ab |
+
+Gesprochener Fortschritt: „Wird gescannt“, wenn du die Schaltfläche drückst, „Vollständiger Scan gestartet, 45000 Auktionen“, wenn die Daten eintreffen, „Wird gescannt, 25%“ bei jedem Viertel und „Vollständiger Scan abgeschlossen, 3200 Gegenstände aktualisiert“ am Ende. Wenn du das Auktionshaus schließt, endet der Scan.
+
+Gegenstands-Tooltips enden dann mit diesen Zeilen, die wie jede andere Zeile gelesen werden:
+
+- Händlerpreis pro Stück, was ein Händler für ein einzelnes Stück zahlt. Wo das Spiel seinen eigenen Verkaufspreis zeigt, der den ganzen Stapel zählt, folgt die Zeile darauf,
+- Auktion Minimum, der niedrigste Preis pro Stück, mit der Angabe, vor wie vielen Tagen der Gegenstand zuletzt gesehen wurde (entfällt, wenn es heute war),
+- Auktion Durchschnitt, der Durchschnittspreis pro Stück über alle Gegenstände aller Stapel,
+- Auktion Maximum, der höchste Preis pro Stück,
+- Händler-Kaufpreis, was ein Händler dafür verlangt, sobald du den Gegenstand bei einem Händler gesehen hast.
+
+Die drei Auktionspreise umfassen jeden Tag, an dem ein Scan den Gegenstand gesehen hat, höchstens die letzten 30 Tage. Jede dieser Zeilen nennt die Anzahl der Tage vor dem Preis, zum Beispiel „Auktion Minimum 3 Tage: 5 Silber“.
+
+Die Einstellungen findest du im WowVision-Menü unter Fenster, dann Auktionshaus:
+
+| Einstellung | Standard | Was sie tut |
+|---|---|---|
+| Vollständiger Scan | Aus | Zeigt die Schaltfläche Vollständiger Scan und die Preiszeilen in Gegenstands-Tooltips |
+| Tage im Preisverlauf | 30 | Wie viele Tage an Preisen aufbewahrt und gezählt werden, höchstens 30 |
+| Preise im Tooltip | An | Fügt die Preiszeilen zu Gegenstands-Tooltips hinzu, solange Vollständiger Scan an ist |
 
 ### Beispiel: das günstigste Kupfererz finden und 20 kaufen (Mists, Retail, Forever)
 

@@ -54,7 +54,7 @@ Die Einträge stehen in der alphabetischen Reihenfolge, in der du sie auf einem 
 
 | Eintrag | Spielversionen | Was er enthält | Mehr |
 |---|---|---|---|
-| Auktionspreise (Auction Prices) | The Burning Crusade | Preisverlauf und zusätzliche Preiszeilen in Gegenstands-Tooltips. | [Tooltips](./tooltips.md#preise-in-tooltips-nur-the-burning-crusade) |
+| Auktionspreise (Auction Prices) | The Burning Crusade | Preisverlauf und zusätzliche Preiszeilen in Gegenstands-Tooltips. | [Tooltips](./tooltips.md#preise-in-tooltips) |
 | Benutzeroberfläche (UI) | Alle | Fensterverhalten, Belegungen, Kampf, Cursor, Tooltips. | unten |
 | Chat | Alle | Ein Alarm pro Chat-Reiter, Flüster-Reiter, Sounds des Chat-Eingabefelds. | [Chat](../windows/chat.md) |
 | Fehler (Errors) | Alle | Wie Fehler- und Infomeldungen des Spiels gesprochen werden. | [Kampf](../world/combat.md) |

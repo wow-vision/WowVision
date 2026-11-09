@@ -28,6 +28,8 @@
 * Auction house: the scan result and the full scan cooldown times are now fully translated.
 
 ### Modern
+* Auction house: a Full Scan records the prices of the whole auction house. It is off by default; turn on Full Scan under Windows, Auction House, and the button is the last stop on the Buy tab. The game allows one scan every 15 minutes.
+* Item tooltips: with Full Scan on, tooltips end with the minimum, average and maximum auction price over up to 30 days, the vendor price per item, and what a vendor charges. The Tooltip Prices checkbox turns the lines off.
 * Trainer: Train works as soon as the window opens, and pressing it again and again learns everything in turn.
 * Cooldown manager: the window no longer closes itself when the game shows no tabs.
 * Quest log: a finished or failed quest says Complete or Failed after its title.

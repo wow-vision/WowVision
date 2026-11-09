@@ -102,7 +102,7 @@ Zum Ändern öffnest du das [WowVision-Menü](./menu-and-settings.md) mit Umscha
 
 Beispiel: Du findest, dass zu viele „Weiß“ und „Grau“ deine Taschenansage zumüllen. Schalte Weiß (Verbreitet) und Grau (Schlecht) aus. Die Namen lauten dann bei diesen „Leinenstoff“, während „Pelzstiefel, Grün“ seine Farbe behält.
 
-## Preise in Tooltips (nur The Burning Crusade)
+## Preise in Tooltips
 
 In The Burning Crusade können Gegenstands-Tooltips zusätzliche Preiszeilen enthalten, die wie jede andere Zeile gelesen werden:
 
@@ -112,6 +112,8 @@ In The Burning Crusade können Gegenstands-Tooltips zusätzliche Preiszeilen ent
 - Händler-Kaufpreis (Vendor Buy), was ein Händler dafür verlangt, sobald du den Gegenstand bei einem Händler gesehen hast.
 
 Diese Preise stammen aus der Preisdatenbank, die WowVision aufbaut, während du das Auktionshaus benutzt. Eine Zeile erscheint nur, wenn WowVision diesen Preis kennt: Ein Gegenstand, den du nie im Auktionshaus gesehen hast, bekommt keine Auktionszeilen, und einer, den du nie bei einem Händler gesehen hast, keine Zeile Händler-Kaufpreis. Das Kontrollkästchen Preise im Tooltip im Menü Auktionspreise (standardmäßig an) schaltet die zusätzlichen Zeilen aus oder ein. Im selben Menü gibt es Tage im Preisverlauf (21), Tage für den Mittelwert (7) und Automatischer Scan (aus), siehe [Auktionshaus](../windows/auction-house.md).
+
+In Retail und WoW: Forever enden Gegenstands-Tooltips mit Händlerpreis pro Stück, Auktion Minimum, Auktion Durchschnitt, Auktion Maximum und Händler-Kaufpreis, sobald du Vollständiger Scan im WowVision-Menü unter Fenster, dann Auktionshaus, eingeschaltet hast. Siehe [Auktionshaus](../windows/auction-house.md#vollständiger-scan-und-preise-in-tooltips-retail-und-wow-forever).
 
 ## Steuerelemente ohne Tooltip
 

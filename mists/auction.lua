@@ -418,6 +418,10 @@ local function renderBuyTab(builder, screen)
     elseif AuctionHouseFrame.ItemBuyFrame:IsShown() then
         renderItemBuy(builder)
     end
+    -- Retail and WoW: Forever (retail/auction/module.lua)
+    if module.renderFullScan ~= nil then
+        module.renderFullScan(builder)
+    end
 end
 
 ------------------------------------------------------------
