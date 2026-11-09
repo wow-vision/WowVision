@@ -1632,7 +1632,355 @@ function module:rawRead()
     Engine.run(task)
 end
 
+-- /wv mscan sku: Sku's own ways, read only as the game sends them (no
+-- UpdateMouseoverAtPoint anywhere). The raw read's setups asked through
+-- UpdateMouseoverAtPoint, a no-op since build 70862, so they never tested
+-- these (2026-11-10). A: the minimap moved under the resting cursor, Sku's
+-- fast scan (shrunk) and grid scan (full size, stepped; gives positions).
+-- B: SetCursorPosition, which insecure code may call once per controller
+-- button press, moves the real cursor onto a shrunk minimap. As in Sku the
+-- minimap cluster goes on top and the minimap's mouse-taking children
+-- (Questie's icons) are hidden while it runs. Saved to
+-- WowVisionDump.minimapSku.
+local SKU_READ_FRAMES = 10
+local SKU_GRID_STEP = 8
+local SKU_CLUSTER = 20
+local SKU_PRESS_SECONDS = 20
+local skuPadFrame = nil
+
+-- The game's GameTooltip lines, the channel Sku reads.
+local function gameTooltipLines()
+    if not GameTooltip:IsShown() then
+        return {}
+    end
+    local lines = {}
+    for i = 1, GameTooltip:NumLines() do
+        local region = _G["GameTooltipTextLeft" .. i]
+        local ok, text = pcall(function()
+            return region ~= nil and region:GetText() or nil
+        end)
+        if ok and text ~= nil then
+            tinsert(lines, WowVision.isSecret(text) and "(secret)" or tostring(text))
+        end
+    end
+    return lines
+end
+
+local function mouseFocusText()
+    local foci = {}
+    for _, focus in ipairs(GetMouseFoci ~= nil and GetMouseFoci() or {}) do
+        local ok, name = pcall(function()
+            return focus.GetDebugName ~= nil and focus:GetDebugName() or focus:GetName()
+        end)
+        tinsert(foci, ok and name ~= nil and name ~= "" and tostring(name) or "unnamed frame")
+    end
+    return #foci > 0 and table.concat(foci, ", ") or "none"
+end
+
+-- Inside a running task: frames of the cursor's own reads, the fullest
+-- one of each channel kept.
+local function naturalRead(frames)
+    local best = { count = 0, names = "none", tooltip = {} }
+    for _ = 1, frames do
+        Engine.wait()
+        local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
+        data = ok and data or nil
+        local count = data ~= nil and type(data.lines) == "table" and #data.lines or 0
+        if count > best.count then
+            best.count = count
+            best.names = Scan.signature(Scan.parseMouseover(data, WowVision.isSecret)):gsub("\n", ", ")
+        end
+        local tip = gameTooltipLines()
+        if #tip > #best.tooltip then
+            best.tooltip = tip
+        end
+    end
+    best.focus = mouseFocusText()
+    best.over = tostring(Minimap:IsMouseOver())
+    return best
+end
+
+local function readText(label, read)
+    return string.format(
+        "%s: mouse over the minimap %s, focus %s: %d minimap lines, names: %s; GameTooltip %d lines: %s",
+        label,
+        read.over,
+        read.focus,
+        read.count,
+        read.names,
+        #read.tooltip,
+        #read.tooltip > 0 and table.concat(read.tooltip, " / ") or "none"
+    )
+end
+
+-- Hits of one name within SKU_CLUSTER units are one dot (Sku's boxes).
+local function clusterHits(hits)
+    local clusters = {}
+    for _, hit in ipairs(hits) do
+        local home = nil
+        for _, c in ipairs(clusters) do
+            if math.abs(c.x - hit.x) < SKU_CLUSTER and math.abs(c.y - hit.y) < SKU_CLUSTER then
+                home = c
+                break
+            end
+        end
+        if home == nil then
+            home = { sumX = 0, sumY = 0, n = 0 }
+            tinsert(clusters, home)
+        end
+        home.sumX, home.sumY, home.n = home.sumX + hit.x, home.sumY + hit.y, home.n + 1
+        home.x, home.y = home.sumX / home.n, home.sumY / home.n
+    end
+    return clusters
+end
+
+local function skuPadFrameGet()
+    if skuPadFrame == nil then
+        skuPadFrame = CreateFrame("Frame", nil, UIParent)
+        skuPadFrame:Hide()
+    end
+    return skuPadFrame
+end
+
+function module:skuTest()
+    if self.task ~= nil or self.walkTask ~= nil then
+        speak(L["Scan already running"])
+        return
+    end
+    if not Engine.available() then
+        speak(L["Minimap scanner not available on this client"])
+        return
+    end
+    if InCombatLockdown() then
+        speak(L["Not in combat"])
+        return
+    end
+    local task = { lines = {} }
+    self.task = task
+    local function add(line)
+        tinsert(task.lines, line)
+    end
+    task.body = function()
+        speak("Sku minimap test, keep still")
+        -- Sku centres the cursor once, then it rests.
+        Engine.centreCursor()
+        Engine.wait(10)
+        local x, y = GetCursorPosition()
+        local state = Engine.capture()
+        task.state = state
+        Engine.onCleanup(function()
+            Engine.restoreFrame(state)
+        end)
+        local strata, level = MinimapCluster:GetFrameStrata(), MinimapCluster:GetFrameLevel()
+        Engine.onCleanup(function()
+            pcall(MinimapCluster.SetFrameStrata, MinimapCluster, strata)
+            pcall(MinimapCluster.SetFrameLevel, MinimapCluster, level)
+        end)
+        MinimapCluster:SetFrameStrata("HIGH")
+        MinimapCluster:SetFrameLevel(9002)
+        local hidden = {}
+        for _, child in ipairs({ Minimap:GetChildren() }) do
+            if child:IsShown() and child:IsMouseEnabled() then
+                tinsert(hidden, child)
+                child:Hide()
+            end
+        end
+        Engine.onCleanup(function()
+            for _, child in ipairs(hidden) do
+                pcall(child.Show, child)
+            end
+        end)
+        Engine.onCleanup(function()
+            if Minimap.SetUsingSoftCursor ~= nil then
+                pcall(Minimap.SetUsingSoftCursor, Minimap, false)
+            end
+        end)
+        local function soft(on)
+            if Minimap.SetUsingSoftCursor ~= nil then
+                pcall(Minimap.SetUsingSoftCursor, Minimap, on)
+            end
+        end
+        Minimap:SetZoom(0)
+        add(string.format("Cursor resting at %.0f %.0f; hidden minimap children: %d; view radius %s yd", x, y, #hidden, tostring(C_Minimap.GetViewRadius())))
+
+        -- A, fast scan: shrunk under the resting cursor.
+        task.fastNames = 0
+        local function fast(label, alpha, softOn)
+            soft(softOn)
+            Engine.shrink(x, y)
+            Minimap:SetAlpha(alpha)
+            Engine.wait(3)
+            local read = naturalRead(SKU_READ_FRAMES)
+            task.fastNames = math.max(task.fastNames, read.count, #read.tooltip)
+            add(readText(label, read))
+        end
+        fast("A fast, shrunk, hidden, soft cursor off (Sku's way)", 0, false)
+        fast("A fast, shrunk, shown, soft cursor off", 1, false)
+        fast("A fast, shrunk, hidden, soft cursor on", 0, true)
+        fast("A fast, shrunk, shown, soft cursor on", 1, true)
+
+        -- A, grid scan: full size, the point (ox, oy) of the minimap laid
+        -- under the cursor step by step.
+        soft(false)
+        Engine.restoreFrame(state)
+        Minimap:SetZoom(0)
+        Minimap:SetAlpha(1)
+        local scale = Minimap:GetEffectiveScale()
+        local radius = math.min(Minimap:GetWidth(), Minimap:GetHeight()) / 2
+        local viewRadius = C_Minimap.GetViewRadius() or 0
+        local hits, order, asked = {}, {}, 0
+        for oy = -radius, radius, SKU_GRID_STEP do
+            for ox = -radius, radius, SKU_GRID_STEP do
+                if ox * ox + oy * oy <= radius * radius then
+                    Minimap:ClearAllPoints()
+                    Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale - ox, y / scale - oy)
+                    Engine.wait(2)
+                    asked = asked + 1
+                    local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
+                    for _, dot in ipairs(Scan.parseMouseover(ok and data or nil, WowVision.isSecret)) do
+                        if hits[dot.name] == nil then
+                            hits[dot.name] = {}
+                            tinsert(order, dot.name)
+                        end
+                        tinsert(hits[dot.name], { x = ox, y = oy })
+                    end
+                end
+            end
+        end
+        task.gridPlaces = 0
+        add(string.format("A grid, full size, step %d, %d points, radius %.0f units: %d names", SKU_GRID_STEP, asked, radius, #order))
+        for _, name in ipairs(order) do
+            for _, c in ipairs(clusterHits(hits[name])) do
+                task.gridPlaces = task.gridPlaces + 1
+                local east = radius > 0 and c.x / radius * viewRadius or 0
+                local north = radius > 0 and c.y / radius * viewRadius or 0
+                add(string.format(
+                    "  %s: %d hits, %.0f yd %s, %.0f yd %s, %.0f yd away",
+                    name,
+                    c.n,
+                    math.abs(north),
+                    north >= 0 and "north" or "south",
+                    math.abs(east),
+                    east >= 0 and "east" or "west",
+                    math.sqrt(east * east + north * north)
+                ))
+            end
+        end
+
+        -- B: a controller press moves the real cursor onto a shrunk
+        -- minimap 200 pixels left of it. Press 1 in UI units, press 2 in
+        -- the pixels GetCursorPosition gives (the unit is not documented).
+        task.padNames = 0
+        local frame = skuPadFrameGet()
+        Engine.onCleanup(function()
+            frame:SetScript("OnGamePadButtonDown", nil)
+            if not InCombatLockdown() then
+                pcall(frame.EnableGamePadButton, frame, false)
+            end
+            frame:Hide()
+        end)
+        local function press(label, toUnits)
+            local tx, ty = x - 200, y
+            Engine.restoreFrame(state)
+            Minimap:SetZoom(0)
+            Engine.shrink(tx, ty)
+            Minimap:SetAlpha(1)
+            local result = nil
+            frame:SetScript("OnGamePadButtonDown", function(_, button)
+                if result ~= nil then
+                    return
+                end
+                local bx, by = GetCursorPosition()
+                local ux, uy = toUnits(tx, ty)
+                local ok, err = pcall(SetCursorPosition, ux, uy)
+                result = { button = button, bx = bx, by = by, ok = ok, err = err, ux = ux, uy = uy }
+            end)
+            frame:Show()
+            frame:EnableGamePadButton(true)
+            speak(label .. ". " .. L["Press a controller button"])
+            local started = GetTime()
+            while result == nil and GetTime() - started < SKU_PRESS_SECONDS do
+                Engine.wait()
+            end
+            frame:EnableGamePadButton(false)
+            frame:Hide()
+            if result == nil then
+                add(label .. ": no controller press in " .. SKU_PRESS_SECONDS .. " seconds")
+                return
+            end
+            Engine.wait()
+            local ax, ay = GetCursorPosition()
+            local read = naturalRead(SKU_READ_FRAMES)
+            task.padNames = math.max(task.padNames, read.count, #read.tooltip)
+            add(string.format(
+                "%s: button %s, SetCursorPosition(%.0f, %.0f) %s, cursor %.0f %.0f to %.0f %.0f, minimap centre %.0f %.0f, using gamepad %s, cursor visible %s",
+                label,
+                tostring(result.button),
+                result.ux,
+                result.uy,
+                result.ok and "ok" or ("failed: " .. tostring(result.err)),
+                result.bx,
+                result.by,
+                ax,
+                ay,
+                tx,
+                ty,
+                tostring(IsUsingGamepad ~= nil and IsUsingGamepad()),
+                tostring(IsCursorVisible ~= nil and IsCursorVisible())
+            ))
+            add(readText(label .. " read", read))
+        end
+        if SetCursorPosition == nil then
+            add("B: SetCursorPosition does not exist on this client")
+        else
+            local uiScale = UIParent:GetEffectiveScale()
+            press("B press 1, UI units", function(px, py)
+                return px / uiScale, py / uiScale
+            end)
+            press("B press 2, pixels", function(px, py)
+                return px, py
+            end)
+        end
+    end
+    task.check = function()
+        return InCombatLockdown() and "combat" or nil
+    end
+    task.finish = function(ok, reason, err)
+        self.task = nil
+        if not ok then
+            speak(tostring(reason or L["Minimap scan failed"]))
+            if err ~= nil then
+                geterrorhandler()(err)
+            end
+            return
+        end
+        local lines = { "WowVision Sku minimap test" }
+        for _, line in ipairs(task.lines) do
+            tinsert(lines, line)
+        end
+        tinsert(lines, "Tracking types on")
+        for _, t in ipairs(task.state.tracking) do
+            if t.active then
+                tinsert(lines, string.format("%d %s", t.index, t.name))
+            end
+        end
+        WowVisionDump = WowVisionDump or {}
+        WowVisionDump.minimapSku = { date("%Y-%m-%d %H:%M:%S"), unpack(lines) }
+        WowVision.testing.showResults(table.concat(lines, "\n"))
+        speak(string.format(
+            "Sku test done. Fast scan %d lines, grid %d places, controller %d lines",
+            task.fastNames or 0,
+            task.gridPlaces or 0,
+            task.padNames or 0
+        ))
+    end
+    Engine.run(task)
+end
+
 local COMMANDS = {
+    sku = function()
+        module:skuTest()
+    end,
     list = function()
         WowVision.testing.showResults(module:listText())
     end,
