@@ -173,12 +173,12 @@ end
 function module:announceDistance()
     local waypoint = self.path ~= nil and self.path.currentWaypoint or nil
     if waypoint == nil then
-        WowVision:speak(L["No active waypoint"])
+        WowVision:notify(L["No active waypoint"])
         return false
     end
     local distance = self:distanceTo(waypoint.x, waypoint.y)
     if distance == nil then
-        WowVision:speak(L["Position unavailable"])
+        WowVision:notify(L["Position unavailable"])
         return false
     end
     WowVision:speak(string.format("%d %s", distance, L["yards"]))
@@ -266,7 +266,7 @@ end
 function module:navigateToName(fragment)
     local px, py = UnitPosition("player")
     if px == nil then
-        WowVision:speak(L["Position unavailable"])
+        WowVision:notify(L["Position unavailable"])
         return false
     end
     local waypoints, engine = self:destinationWaypoints()
@@ -285,10 +285,10 @@ function module:navigateToName(fragment)
         end
     end
     if target == nil then
-        WowVision:speak(L["No route found"] .. " " .. fragment)
+        WowVision:notify(L["No route found"] .. " " .. fragment)
         return false
     end
-    WowVision:speak(target.n)
+    WowVision:notify(target.n)
     -- the destination of Ctrl-Shift-N and the visited waypoints, as if picked in F10
     self.lastDestination = target
     local onArrive = self:arrivalFor(target)
@@ -342,7 +342,7 @@ function module:beaconTo(wx, wy, label, onArrive)
     path:add({ x = wx, y = wy, n = label })
     path.events.complete:subscribe(self, function()
         self.path = nil
-        WowVision:speak(L["Arrived"])
+        WowVision:notify(L["Arrived"])
         if onArrive ~= nil then
             onArrive()
         end
@@ -351,9 +351,9 @@ function module:beaconTo(wx, wy, label, onArrive)
     if px ~= nil then
         local dx, dy = wx - px, wy - py
         local distance = math.sqrt(dx * dx + dy * dy)
-        WowVision:speak(string.format("%s %d %s", L["Beacon set"], distance, L["yards"]))
+        WowVision:notify(string.format("%s %d %s", L["Beacon set"], distance, L["yards"]))
     else
-        WowVision:speak(L["Beacon set"])
+        WowVision:notify(L["Beacon set"])
     end
 end
 
@@ -455,10 +455,10 @@ function module:goToDestination(wp, direct, start)
     end
     local px, py, _, map = UnitPosition("player")
     if px == nil then
-        WowVision:speak(L["Position unavailable"])
+        WowVision:notify(L["Position unavailable"])
         return false
     end
-    WowVision:speak(wp.n)
+    WowVision:notify(wp.n)
     local waypoints, engine = self:destinationWaypoints()
     if engine ~= nil then
         local data = wp
@@ -495,7 +495,7 @@ function module:routeToNearestWalk(candidates, onChosen, waypoints, engine)
     self:guidanceStarts()
     local px, py, _, map = UnitPosition("player")
     if px == nil then
-        WowVision:speak(L["Position unavailable"])
+        WowVision:notify(L["Position unavailable"])
         return false
     end
     local function chosen(wp)
@@ -537,11 +537,11 @@ function module:routeToNearestWalk(candidates, onChosen, waypoints, engine)
     local opts = { entryId = entry and entry.waypoint.id }
     local wp, route = WowVision.Router.nearestByWalk(waypoints, px, py, list, opts)
     if wp == nil then
-        WowVision:speak(L["No route found"] .. " " .. (route ~= nil and L[route] or ""))
+        WowVision:notify(L["No route found"] .. " " .. (route ~= nil and L[route] or ""))
         return false
     end
     chosen(wp)
-    WowVision:speak(wp.n)
+    WowVision:notify(wp.n)
     opts.onArrive = self:arrivalFor(wp)
     opts.route = route
     return self:navigateTo(wp.id, waypoints, opts)
@@ -556,7 +556,7 @@ end
 function module:restartRoute()
     local wp = self.lastDestination
     if wp == nil then
-        WowVision:speak(L["No route to start again"])
+        WowVision:notify(L["No route to start again"])
         return false
     end
     -- an auto chain's leg starts again and the chain goes on
@@ -568,7 +568,7 @@ function module:restartRoute()
     end
     local px, py, _, map = UnitPosition("player")
     if px == nil then
-        WowVision:speak(L["Position unavailable"])
+        WowVision:notify(L["Position unavailable"])
         return false
     end
     local onArrive = self:arrivalFor(wp)
@@ -585,7 +585,7 @@ function module:restartRoute()
         if self:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, data, start) then
             return true
         end
-        WowVision:speak(L["No route found"])
+        WowVision:notify(L["No route found"])
         return false
     end
     if wp.virtual then
@@ -636,7 +636,7 @@ function module:reverseRoute()
     end
     if route == nil or path ~= route.path or path.complete or current == nil or entry == nil
         or route.start == nil or route.start.id == nil then
-        WowVision:speak(L["No route to reverse"])
+        WowVision:notify(L["No route to reverse"])
         return false
     end
     local start = route.start
@@ -672,13 +672,13 @@ function module:directTo(wx, wy, label, onArrive)
     path:add({ x = wx, y = wy, n = label })
     path.events.complete:subscribe(self, function()
         self.path = nil
-        WowVision:speak(L["Arrived"] .. (label ~= nil and (" " .. label) or ""))
+        WowVision:notify(L["Arrived"] .. (label ~= nil and (" " .. label) or ""))
         if onArrive ~= nil then
             onArrive()
         end
     end)
     self:pathfind(path)
-    WowVision:speak(string.format(L["Direct: %s, %d yards"], label or "", self:distanceTo(wx, wy) or 0))
+    WowVision:notify(string.format(L["Direct: %s, %d yards"], label or "", self:distanceTo(wx, wy) or 0))
 end
 
 -- Another route engine can take over the routing (camelot/wownav registers
@@ -796,12 +796,12 @@ end
 function module:beaconToMapCoords(xPercent, yPercent)
     local mapId = C_Map.GetBestMapForUnit("player")
     if mapId == nil then
-        WowVision:speak(L["Position unavailable"])
+        WowVision:notify(L["Position unavailable"])
         return false
     end
     local _, worldPos = C_Map.GetWorldPosFromMapPos(mapId, CreateVector2D(xPercent / 100, yPercent / 100))
     if worldPos == nil then
-        WowVision:speak(L["Position unavailable"])
+        WowVision:notify(L["Position unavailable"])
         return false
     end
     local wx, wy = worldPos:GetXY()
@@ -819,7 +819,7 @@ function module:navigateTo(waypointId, waypoints, opts)
     self:guidanceStarts()
     local px, py = UnitPosition("player")
     if px == nil then
-        WowVision:speak(L["Position unavailable"])
+        WowVision:notify(L["Position unavailable"])
         return false
     end
     waypoints = waypoints or self:currentWaypoints()
@@ -830,7 +830,7 @@ function module:navigateTo(waypointId, waypoints, opts)
     end
     if route == nil then
         -- The router's reasons are keys ("no entry"); spoken translated.
-        WowVision:speak(L["No route found"] .. " " .. (reason ~= nil and L[reason] or ""))
+        WowVision:notify(L["No route found"] .. " " .. (reason ~= nil and L[reason] or ""))
         return false
     end
     local path = self.Path:new()
@@ -842,7 +842,7 @@ function module:navigateTo(waypointId, waypoints, opts)
     path.events.complete:subscribe(self, function()
         self.path = nil
         local last = route.waypoints[#route.waypoints]
-        WowVision:speak(L["Arrived"] .. (last.n ~= nil and (" " .. last.n) or ""))
+        WowVision:notify(L["Arrived"] .. (last.n ~= nil and (" " .. last.n) or ""))
         if opts ~= nil and opts.onArrive ~= nil then
             opts.onArrive()
         end
@@ -867,7 +867,7 @@ function module:navigateTo(waypointId, waypoints, opts)
     if opts ~= nil and opts.intro ~= nil then
         text = opts.intro .. ". " .. text
     end
-    WowVision:speak(text)
+    WowVision:notify(text)
     return true
 end
 
@@ -922,7 +922,7 @@ function module:stepWaypoint(offset)
         if visited ~= nil and visited:stepAuto(offset) then
             return true
         end
-        WowVision:speak(L["No active waypoint"])
+        WowVision:notify(L["No active waypoint"])
         return false
     end
     -- the step speaks its own count; the arrival cue's count would repeat it
@@ -934,7 +934,7 @@ function module:stepWaypoint(offset)
         if visited ~= nil and visited:stepAuto(offset) then
             return true
         end
-        WowVision:speak(offset > 0 and L["End of route"] or L["Start of route"])
+        WowVision:notify(offset > 0 and L["End of route"] or L["Start of route"])
         return false
     end
     local remaining = #self.path.waypoints - self.path.currentIndex + 1
@@ -980,14 +980,14 @@ function module:cancelNavigation()
     end
     if not self:isGuiding() then
         if engineStopped then
-            WowVision:speak(L["Beacon stopped"])
+            WowVision:notify(L["Beacon stopped"])
             return true
         end
-        WowVision:speak(L["No active waypoint"])
+        WowVision:notify(L["No active waypoint"])
         return false
     end
     self:stopPath()
-    WowVision:speak(L["Beacon stopped"])
+    WowVision:notify(L["Beacon stopped"])
     return true
 end
 

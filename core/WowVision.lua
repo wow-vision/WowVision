@@ -175,6 +175,8 @@ function WowVision:OnUpdate()
 end
 
 -- voice: a game voice id for this text; nil speaks with the Speech Voice.
+-- For reading things out; a message of the addon uses WowVision:notify
+-- (core/chat/echo.lua).
 function WowVision:speak(text, voice)
     self.base.speech:speak(text, voice)
 end

@@ -79,7 +79,7 @@ function module:forget()
     if list ~= nil then
         store.forget(list)
     end
-    WowVision:speak(L["Visited waypoints forgotten"])
+    WowVision:notify(L["Visited waypoints forgotten"])
 end
 
 function module:getGraphMenuItems(builder)
@@ -98,7 +98,7 @@ end
 function module:goToNext(direct)
     local last = maps.lastDestination
     if last == nil then
-        WowVision:speak(L["Choose a destination in the navigation window first"])
+        WowVision:notify(L["Choose a destination in the navigation window first"])
         return false
     end
     local lastKey = keyOf(last)
@@ -109,7 +109,7 @@ function module:goToNext(direct)
         return s
     end)
     if best == nil then
-        WowVision:speak(string.format(L["No unvisited %s found"], name or ""))
+        WowVision:notify(string.format(L["No unvisited %s found"], name or ""))
         return false
     end
     return maps:goToDestination(best.waypoint, direct)
@@ -159,7 +159,7 @@ local function autoAllowed(self)
     if self:getEnabled() then
         return true
     end
-    WowVision:speak(L["Auto mode needs Visited Waypoints switched on"])
+    WowVision:notify(L["Auto mode needs Visited Waypoints switched on"])
     return false
 end
 
@@ -174,7 +174,7 @@ function module:startAuto(wp, mode, start)
     setCurrent(auto, wp)
     self.auto = auto
     logLine(string.format("start %s %s", mode, tostring(wp.n)))
-    WowVision:speak(mode == "route" and L["Auto Route"] or L["Auto Direct"])
+    WowVision:notify(mode == "route" and L["Auto Route"] or L["Auto Direct"])
     return lead(function()
         return maps:goToDestination(wp, mode == "direct", start)
     end)
@@ -240,7 +240,7 @@ function module:autoNext(auto, last)
         local name = store.baseName(last.n, function(s)
             return s
         end)
-        WowVision:speak(string.format(L["No unvisited %s found"], name or ""))
+        WowVision:notify(string.format(L["No unvisited %s found"], name or ""))
         self:endAuto()
         return false
     end
@@ -286,7 +286,7 @@ function module:autoStep(auto, current, offset)
     local step = offset > 0 and 1 or -1
     local wp = auto.history[auto.index + step]
     if wp == nil and step < 0 then
-        WowVision:speak(L["Start of route"])
+        WowVision:notify(L["Start of route"])
         return false
     end
     if wp == nil then

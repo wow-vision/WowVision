@@ -134,27 +134,27 @@ function ScanSession:_subscribeToScanner()
         end
         self.state = "scanning"
         local pages = info and info.totalPages or "?"
-        WowVision:speak(self.L["Scanning"] .. ", " .. pages .. " " .. self.L["Page"])
+        WowVision:notify(self.L["Scanning"] .. ", " .. pages .. " " .. self.L["Page"])
     end)
     self.scanner.events.pageScanned:subscribe(self, function(_, _, progress)
         if progress.page > 0 and progress.page % 5 == 0 then
-            WowVision:speak(self.L["Page"] .. " " .. progress.page .. " / " .. progress.totalPages)
+            WowVision:notify(self.L["Page"] .. " " .. progress.page .. " / " .. progress.totalPages)
         end
     end)
     self.scanner.events.scanComplete:subscribe(self, function(_, _, results, progress)
         self:_finalize(results, progress)
         self.state = "browsingResults"
-        WowVision:speak(string.format(self.L["Scan complete, %s Results in %s scanned"], #self.results, progress.total))
+        WowVision:notify(string.format(self.L["Scan complete, %s Results in %s scanned"], #self.results, progress.total))
     end)
     self.scanner.events.scanAborted:subscribe(self, function(_, _, results, progress)
         self:_finalize(results, progress)
         self.state = "browsingResults"
-        WowVision:speak(self.L["Scan aborted"] .. ", " .. #self.results .. " " .. self.L["Results"])
+        WowVision:notify(self.L["Scan aborted"] .. ", " .. #self.results .. " " .. self.L["Results"])
     end)
     self.scanner.events.scanFailed:subscribe(self, function(_, _, reason)
         self.pendingAppend = false
         self.state = (self.results and #self.results > 0) and "browsingResults" or "idle"
-        WowVision:speak(self.L["Scan failed"])
+        WowVision:notify(self.L["Scan failed"])
     end)
 end
 
@@ -226,7 +226,7 @@ function ScanSession:_onSelectFrameEvent()
         self:removeResult(expectedItem)
         self.pendingItem = nil
         self.state = "browsingResults"
-        WowVision:speak(self.L["Item not found"])
+        WowVision:notify(self.L["Item not found"])
     end
 end
 
@@ -246,14 +246,14 @@ function ScanSession:_onPurchaseEvent(event, ...)
         if message == ERR_AUCTION_BID_PLACED then
             self:removeResult(self.pendingItem)
             self:returnToResults()
-            WowVision:speak(self.L["Item purchased"])
+            WowVision:notify(self.L["Item purchased"])
         end
     elseif event == "UI_ERROR_MESSAGE" then
         local _, message = ...
         if message == ERR_ITEM_NOT_FOUND then
             self:removeResult(self.pendingItem)
             self:returnToResults()
-            WowVision:speak(self.L["Item not found"])
+            WowVision:notify(self.L["Item not found"])
         end
     end
 end

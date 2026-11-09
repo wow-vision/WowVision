@@ -116,7 +116,7 @@ local function navigateNearest(node)
         return m:distanceTo(x, y)
     end, resolveChildren)
     if nearest == nil then
-        WowVision:speak(L["Nothing to navigate to"])
+        WowVision:notify(L["Nothing to navigate to"])
         return
     end
     local text = labelText(nearest) or ""
@@ -124,7 +124,7 @@ local function navigateNearest(node)
     if where ~= nil then
         text = text .. ", " .. where
     end
-    WowVision:speak(text)
+    WowVision:notify(text)
     beaconTo(nearest)
 end
 

@@ -74,7 +74,7 @@ local function ensureData(screen)
     end
     -- only the engine's points know water: swimming without one nearby is said
     if noWater and screen._engine ~= nil then
-        WowVision:speak(L["No water point nearby"])
+        WowVision:notify(L["No water point nearby"])
     end
     screen._search = ""
     local target = module.pendingTarget
@@ -273,7 +273,7 @@ local function destinationCursor(screen)
             if wp.virtual then
                 module:beaconTo(wp.x, wp.y, wp.n, onArrive)
             else
-                WowVision:speak(L["No route found"])
+                WowVision:notify(L["No route found"])
             end
             return
         end

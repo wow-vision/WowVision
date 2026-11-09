@@ -376,7 +376,7 @@ function module:onEvent(event, ...)
         combatStartedAlert:fire({})
         if enemyCountAlert.enabled and not self.plateHintGiven and not enemyPlatesShown() then
             self.plateHintGiven = true
-            WowVision:speak(L["Turn on enemy nameplates to count enemies"])
+            WowVision:notify(L["Turn on enemy nameplates to count enemies"])
         end
         queueRecount()
     elseif event == "PLAYER_REGEN_ENABLED" then

@@ -183,7 +183,7 @@ function module:categoryLabel(category)
 end
 
 local function speak(text)
-    WowVision:speak(text)
+    WowVision:notify(text)
 end
 
 -- "Scan canceled, moved": the reason in one word.
@@ -1068,13 +1068,13 @@ function module:learnName(entryId)
         return
     end
     if entry.realName ~= nil then
-        speak(entry.realName .. ", " .. entry.name)
+        WowVision:speak(entry.realName .. ", " .. entry.name)
         return
     end
     local name, reason = Scan.pickName(entry.name, Engine.nearbyNpcs())
     if name ~= nil then
         entry.realName = name
-        speak(name .. ", " .. entry.name)
+        WowVision:speak(name .. ", " .. entry.name)
     elseif reason == "none" and not self.plateHintGiven and not Engine.friendlyPlatesShown() then
         self.plateHintGiven = true
         speak(L["Turn on friendly NPC nameplates to learn NPC names"])

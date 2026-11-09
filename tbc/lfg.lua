@@ -519,6 +519,6 @@ module:registerEvent("event", "ADDON_ACTION_BLOCKED")
 
 function module:onEvent(event, addon, func)
     if event == "ADDON_ACTION_BLOCKED" and addon == "WowVision" and func == "Search()" then
-        WowVision:speak(L["Group search blocked, reload to search again"])
+        WowVision:notify(L["Group search blocked, reload to search again"])
     end
 end

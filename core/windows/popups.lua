@@ -163,11 +163,11 @@ function module.acceptInvite()
         end
     end)
     if accept == nil then
-        WowVision:speak(L["No group invitation"])
+        WowVision:notify(L["No group invitation"])
         return false
     end
     accept:Click()
-    WowVision:speak(L["Group invitation accepted"])
+    WowVision:notify(L["Group invitation accepted"])
     return true
 end
 

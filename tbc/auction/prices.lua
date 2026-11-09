@@ -166,7 +166,7 @@ fullScanner.events.scanStarted:subscribe(module, function(self, event, totalAuct
     -- The server's cooldown runs from the query, so it is saved now: a scan
     -- aborted before it completes still counts after a reload.
     db.lastScan = time()
-    WowVision:speak(L["Full scan started"] .. ", " .. totalAuctions .. " " .. L["auctions"])
+    WowVision:notify(L["Full scan started"] .. ", " .. totalAuctions .. " " .. L["auctions"])
 end)
 
 fullScanner.events.scanComplete:subscribe(module, function(self, event, results)
@@ -177,18 +177,18 @@ fullScanner.events.scanComplete:subscribe(module, function(self, event, results)
         count = count + 1
     end
     db.lastScan = time()
-    WowVision:speak(L["Full scan complete"] .. ", " .. count .. " " .. L["items updated"])
+    WowVision:notify(L["Full scan complete"] .. ", " .. count .. " " .. L["items updated"])
 end)
 
 fullScanner.events.scanFailed:subscribe(module, function(self, event, reason)
     if reason == "aborted" then
-        WowVision:speak(L["Full scan aborted"])
+        WowVision:notify(L["Full scan aborted"])
     elseif reason == "cooldown" then
-        WowVision:speak(L["Cooldown active"])
+        WowVision:notify(L["Cooldown active"])
     elseif reason == "ah_closed" then
-        WowVision:speak(L["Auction not open"])
+        WowVision:notify(L["Auction not open"])
     else
-        WowVision:speak(L["Full scan failed"])
+        WowVision:notify(L["Full scan failed"])
     end
 end)
 

@@ -218,6 +218,7 @@ Alles für den Chat findest du im WowVision-Menü unter Chat.
 | Flüster-Reiter | siehe oben | Der gemeinsame Alarm für alle Flüster-Reiter, dieselben Einstellungen, aber Nachrichten sprechen steht standardmäßig auf Immer. |
 | Chat-Eingabefeld geöffnet | An | Ton, wenn das Chat-Eingabefeld die Tastatur übernimmt. Hat Aktiviert und einen Soundalarm mit Aktiviert und Sound. |
 | Chat-Eingabefeld geschlossen | An | Ton, wenn das Chat-Eingabefeld die Tastatur loslässt. Dieselben Einstellungen. |
+| Addon-Meldungen im Chat | Aus | Schreibt die Meldungen von WowVision zusätzlich in deinen Haupt-Chat-Reiter, mit "WowVision:" davor: zum Beispiel, dass eine Route gestartet ist, wie weit ein Auktionshaus-Scan ist oder warum etwas nicht geht. Vorgelesenes wie Menüs, dein Ziel oder Tooltips erscheint dort nicht, und auch keine Alarme. Diese Zeilen werden nicht noch einmal gesprochen. Sie stehen wie jede andere Zeile im Verlauf des Reiters. |
 
 Beide Chat-Eingabefeld-Töne funktionieren in jedem Chatfenster, im klassischen Chatstil (in dem das Feld im Leerlauf auf dem Bildschirm bleibt) ebenso wie im modernen Stil. Es geht um den Tastaturfokus, nicht darum, ob das Feld sichtbar ist.
 

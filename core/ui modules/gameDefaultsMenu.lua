@@ -67,7 +67,7 @@ local function gameApi()
 end
 
 local function announce(lines)
-    WowVision:speak(table.concat(lines, ". "))
+    WowVision:notify(table.concat(lines, ". "))
     for _, line in ipairs(lines) do
         print(line)
     end
@@ -76,7 +76,7 @@ end
 function gameDefaults.run()
     local report = gameDefaults.apply(gameApi(), L)
     if report.refused then
-        WowVision:speak(L["Not in combat: try again after the fight"])
+        WowVision:notify(L["Not in combat: try again after the fight"])
         return
     end
     local lines = gameDefaults.reportLines(report, L)
