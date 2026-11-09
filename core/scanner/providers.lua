@@ -2,10 +2,10 @@ local module = WowVision.base.scanner
 local L = module.L
 
 -- Scanner categories that need nothing but the game. Player: you yourself
--- first (name, level, race, class, guild; Enter targets you), then your
--- corpse while you are a ghost (the map API reports it on the current map)
--- and the graveyards of the current map, so a corpse run has somewhere to
--- point. Group: the party or raid members (Enter targets one).
+-- first (name, zone, level, race, class, guild; Enter targets you), then
+-- your corpse while you are a ghost (the map API reports it on the current
+-- map) and the graveyards of the current map, so a corpse run has somewhere
+-- to point. Group: the party or raid members (Enter routes to one).
 
 local function mapPositionNode(key, label, mapId, position)
     if position == nil then
@@ -59,23 +59,66 @@ function module.unitDescription(unit, api)
     return table.concat(parts, ", ")
 end
 
--- A unit's entry: its name, its description, Enter targets it (the game's
--- secure target action, see the node's `unit` in module.lua).
+-- The name of the map a unit is on; errors (a secret value) reach the pcall
+-- in unitPlace.
+local function bestMapName(unit, api)
+    local map = api.C_Map
+    if map == nil or map.GetBestMapForUnit == nil or map.GetMapInfo == nil then
+        return nil
+    end
+    local mapId = map.GetBestMapForUnit(unit)
+    local info = mapId ~= nil and map.GetMapInfo(mapId) or nil
+    return info ~= nil and info.name or nil
+end
+
+-- The zone a unit is in, in the client's language; nil when the game does
+-- not say. You: the zone you stand in. A raid member: the roster, which also
+-- knows members far away. Otherwise the unit's map. api: the game reads
+-- (tests pass fakes).
+function module.unitPlace(unit, api)
+    api = api or _G
+    local place = nil
+    if unit == "player" and api.GetRealZoneText ~= nil then
+        local ok, zone = pcall(api.GetRealZoneText)
+        place = ok and zone or nil
+    end
+    local raidIndex = tonumber(unit:match("^raid(%d+)$"))
+    if not readable(place) and raidIndex ~= nil and api.GetRaidRosterInfo ~= nil then
+        local ok, zone = pcall(function()
+            return (select(7, api.GetRaidRosterInfo(raidIndex)))
+        end)
+        place = ok and zone or nil
+    end
+    if not readable(place) then
+        local ok, name = pcall(bestMapName, unit, api)
+        place = ok and name or nil
+    end
+    return readable(place) and place or nil
+end
+
+-- A unit's entry: its name, then where it is and its description, read when
+-- spoken. What Enter does is up to the category (see the node's `unit` in
+-- module.lua).
 local function unitNode(key, unit)
     return {
         key = key,
         label = UnitName(unit) or unit,
-        detail = function()
-            return module.unitDescription(unit)
+        nameDetail = function()
+            local place = module.unitPlace(unit)
+            local description = module.unitDescription(unit)
+            if place ~= nil and description ~= nil then
+                return place .. ", " .. description
+            end
+            return place or description
         end,
-        unit = unit,
     }
 end
 
 -- The party or raid members. A member whose position the game gives (on
--- the map for everyone in the group) also reads distance and direction and
--- carries its unit as routeData, so Backspace routes to it and a route
--- engine can read the position again (WowNav: a new route).
+-- the map for everyone in the group) also reads distance and direction;
+-- Enter opens the navigation window aimed at it, and its unit as routeData
+-- lets a route engine read the position again (WowNav: a new route). Enter
+-- on any other member says there is no position.
 module:registerProvider({
     key = "group",
     label = L["Group"],
@@ -93,6 +136,10 @@ module:registerProvider({
                     and not (issecretvalue ~= nil and (issecretvalue(x) or issecretvalue(y))) then
                     node.x, node.y = x, y
                     node.routeData = { unit = unit }
+                else
+                    node.onActivate = function()
+                        WowVision:notify(L["Position unavailable"])
+                    end
                 end
                 tinsert(out, node)
             end
@@ -106,7 +153,9 @@ module:registerProvider({
     label = L["Player"],
     order = 5,
     build = function()
-        local out = { unitNode("self", "player") }
+        local me = unitNode("self", "player")
+        me.unit = "player"
+        local out = { me }
         local mapId = C_Map.GetBestMapForUnit("player")
         if mapId == nil or not UnitIsDeadOrGhost("player") then
             return out

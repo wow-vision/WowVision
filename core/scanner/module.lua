@@ -23,6 +23,8 @@ local settings = module:hasSettings()
 --   key        string, unique among siblings, stable across refreshes
 --              (an id, never a position in the list)
 --   label      string | function -> string (read each time it is spoken)
+--   nameDetail string | function -> spoken with the name, before the word
+--              for the kind of entry
 --   detail     string | function -> extra spoken part after the label
 --   x, y       world position (Enter sets a beacon there and closes)
 --   children   list of nodes, or function() -> list (built when expanded)
@@ -34,9 +36,8 @@ local settings = module:hasSettings()
 --              as a read-only child screen
 --   tooltip    tooltip data ({ type = "Hyperlink", link = ... }): the
 --              tooltip keys (Shift+Down, Shift+Up) read it
---   unit       a unit token ("player", "party1"): Enter targets it (the
---              game's secure target action); with x, y Backspace opens the
---              navigation window aimed at it instead
+--   unit       a unit token ("player"): Enter targets it (the game's secure
+--              target action) instead of the actions above
 
 settings:add({
     key = "radius",

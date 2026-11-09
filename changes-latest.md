@@ -24,7 +24,7 @@
 * Navigation window (F10): Backspace on a destination always sets a direct beacon; Enter routes.
 * Quest window: the reward you picked reads Selected and Complete Quest names it. Focusing Complete Quest no longer scrolls the rewards.
 * Scanner: every category is always there, in the same place; an empty one says Empty and does not open.
-* Scanner: Player starts with your own character: name, level, race, class and guild. Group members read the same. Enter on your name or a group member's targets them; Backspace on a member routes to them.
+* Scanner: Player starts with your own character: name, level, race, class and guild. Group members read the same. After the name comes the zone the character is in ("Bert, Westfall, Level 60, Human, Warrior"). Enter on your own name targets you; Enter on a group member opens the navigation window aimed at them, or says Position unavailable when the game gives none.
 * WowVision's own windows (the menu, the Scanner, navigation, action bars, chat) play a sound when they open and another when they close. The new setting Sounds on Opening and Closing WowVision Menus (UI menu, on by default) turns them off.
 * Targeting: the Target in Combat sound also plays when only your group is fighting your target.
 * Loot: Ctrl+Alt+Y reads the whole tooltip of the item up for a roll, not only its name.

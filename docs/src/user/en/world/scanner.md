@@ -17,8 +17,8 @@ By default the Scanner is one tree. The top level holds categories, categories h
 | Down and Up | Move to the next or previous entry. |
 | Right | Open a collapsed group, or step into an open one. |
 | Left | Close an open group, or step out to its parent. |
-| Enter | On an entry with a position: guide you there (see below). On a group without a position: open or close it. On your own name or a group member's name: target that character. On a checkbox in the Tracking category: switch it on or off. |
-| Backspace | On entries that have extra text (quests): open a small read-only list with that text. On a group member with a position: guide you there. |
+| Enter | On an entry with a position: guide you there (see below). On a group without a position: open or close it. On your own name: target yourself. On a checkbox in the Tracking category: switch it on or off. |
+| Backspace | On entries that have extra text (quests): open a small read-only list with that text. |
 | Tab | Jump from the tree to the Refresh button and back. |
 | Escape | Close the Scanner. |
 
@@ -31,7 +31,7 @@ If you prefer moving through the Scanner like the WowVision menu, one level at a
 | Key | What it does |
 |-----|--------------|
 | Down and Up | Move to the next or previous entry. |
-| Enter | On an entry that holds more entries: open its list, one level deeper. An entry with nothing in it says "Empty" and does not open. On your own name or a group member's name: target that character. On the last level, an entry with a position opens the navigation window to start a route there (see [What Enter does](#what-enter-does)). On a checkbox in the Tracking category: switch it on or off. |
+| Enter | On an entry that holds more entries: open its list, one level deeper. An entry with nothing in it says "Empty" and does not open. On your own name: target yourself. On the last level, an entry with a position opens the navigation window to start a route there (see [What Enter does](#what-enter-does)). On a checkbox in the Tracking category: switch it on or off. |
 | Right | The same as Enter on an entry that holds more entries. |
 | Left or Escape | Go back one level, to the entry you opened. Escape on the first level closes the Scanner. |
 | A letter | Jump to the next entry starting with it, as in the WowVision menu. |
@@ -57,13 +57,13 @@ The categories are always there, in this order, even when one has nothing to lis
 
 ### Player
 
-- You: your character's name first, then level, race, class and guild, for example "Anna, Level 12, Human, Warrior, Guild: Order of Light". Press Enter to target yourself.
+- You: your character's name first, then the zone you are in, then level, race, class and guild, for example "Anna, Elwynn Forest, Level 12, Human, Warrior, Guild: Order of Light". Press Enter to target yourself.
 - Corpse: while you are dead or a ghost, the place where your body lies, if the game reports it on the current map. Press Enter to be guided to it, the usual way to find it on a corpse run.
 - Graveyards: the graveyards of the map you are on, each with its distance. Open the group to see them.
 
 ### Group
 
-Your party or raid members. Each is listed by name, then level, race, class and guild. Press Enter to target the member. The game only gives a position for group members who are on your map; for them you also hear distance and direction. Press Backspace on such a member to be guided there: the navigation window aims at the member's position at that moment. With WowNav on WoW: Forever, WowNav is told which member you chose, so a new route or Ctrl+Shift+N reads the member's position again instead of using the old one; see [WowNav](wownav.md). If the member is no longer on your map you hear "No position of the group member available". While you are not in a group, Group says "Empty".
+Your party or raid members. Each is listed by name, then the zone the member is in, then level, race, class and guild. The game only gives a position for group members who are on your map; for them you also hear distance and direction. Press Enter on such a member to be guided there: the navigation window aims at the member's position at that moment. On a member without a position, Enter says "Position unavailable". With WowNav on WoW: Forever, WowNav is told which member you chose, so a new route or Ctrl+Shift+N reads the member's position again instead of using the old one; see [WowNav](wownav.md). If the member is no longer on your map you hear "No position of the group member available". While you are not in a group, Group says "Empty".
 
 ### Quests
 
