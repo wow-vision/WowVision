@@ -157,6 +157,15 @@ local function actionButton(builder, button)
     builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button }))
 end
 
+-- The game's line for an empty quest log, else WowVision's own.
+local function emptyLogText()
+    local text = QuestLogNoQuestsText ~= nil and QuestLogNoQuestsText:GetText() or nil
+    if text == nil or text == "" then
+        return L["Empty"]
+    end
+    return text
+end
+
 local function render(builder, screen)
     local frame = QuestLogFrame
     if frame == nil or not frame:IsShown() then
@@ -169,6 +178,8 @@ local function render(builder, screen)
         scrollFrame = QuestLogListScrollFrame,
         key = "quests",
         label = L["Quests"],
+        -- an empty log reads the game's own line for it
+        emptyLabel = emptyLogText,
         count = function()
             return (GetNumQuestLogEntries())
         end,

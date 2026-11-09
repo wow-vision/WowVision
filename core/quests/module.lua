@@ -66,6 +66,73 @@ areaAlert:addOutput({
 })
 settings:addRef("questAreaAlert", areaAlert.parameters)
 
+-- Quest progress: the game's own progress messages ("Kobold Vermin slain:
+-- 3/8", "Objective Complete."), spoken as the game words them. The module
+-- listens to the game's info messages itself, so these alerts work whatever
+-- the errors module does; the errors module leaves the claimed names to it
+-- and lists no filter entry for them.
+local function addProgressAlert(key, label, sound)
+    local progressAlert = module:addAlert({ key = key, label = label })
+    progressAlert:addOutput({
+        type = "TTS",
+        key = "tts",
+        label = L["TTS Alert"],
+        buildMessage = function(self, message)
+            return message.text
+        end,
+    })
+    progressAlert:addOutput({
+        type = "Sound",
+        key = "sound",
+        label = L["Sound Alert"],
+        path = sound,
+    })
+    settings:addRef(key .. "Alert", progressAlert.parameters)
+    return progressAlert
+end
+
+local progressAlert = addProgressAlert("questProgress", L["Quest Progress Alert"], "Sound/WowVision/alerts/glass1.mp3")
+local objectiveAlert =
+    addProgressAlert("objectiveComplete", L["Objective Complete Alert"], "Sound/WowVision/alerts/success1.mp3")
+local completeAlert =
+    addProgressAlert("questComplete", L["Quest Complete Alert"], "Sound/WowVision/alerts/Tutorial_Success_01.mp3")
+
+-- One alert per kind of game message, nothing read into the text. Each
+-- message is spoken by its own alert, with that alert's settings.
+local messageAlerts = {
+    ERR_QUEST_ADD_KILL_SII = progressAlert,
+    ERR_QUEST_ADD_ITEM_SII = progressAlert,
+    ERR_QUEST_ADD_FOUND_SII = progressAlert,
+    ERR_QUEST_ADD_PLAYER_KILL_SII = progressAlert,
+    ERR_QUEST_OBJECTIVE_COMPLETE_S = objectiveAlert,
+    ERR_QUEST_UNKNOWN_COMPLETE = completeAlert,
+}
+
+-- The same text arriving twice in one frame is spoken once.
+local repeats = WowVision.errors.utils.newFrameDedupe()
+
+function module.onInfoMessage(messageType, message)
+    if message == nil then
+        return
+    end
+    local errorName = WowVision.errors.lookupMessageInfo(messageType)
+    local messageAlert = errorName ~= nil and messageAlerts[errorName] or nil
+    if messageAlert == nil then
+        return
+    end
+    -- A secret text cannot be compared, only spoken.
+    if not WowVision.isSecret(message) and not repeats:first(message, GetTime()) then
+        return
+    end
+    messageAlert:fire({ text = message })
+end
+
+local function claimMessages(claimed)
+    for name in pairs(messageAlerts) do
+        WowVision.errors.claimed[name] = claimed or nil
+    end
+end
+
 -- The last state spoken per quest: a repeat of it stays silent. While
 -- muted, the state from before the first muted change is kept instead,
 -- and taken over on unmuting, so events that only flip back are silent.
@@ -303,61 +370,94 @@ end
 -- with or without a data source), in the adapter's shape. Modern clients
 -- read it through C_QuestLog.GetInfo; classic ones through
 -- GetQuestLogTitle; C_QuestLog.GetQuestObjectives exists on every client.
+local function objectivesFor(questId, index)
+    local objectives = {}
+    local list = C_QuestLog ~= nil and C_QuestLog.GetQuestObjectives ~= nil and C_QuestLog.GetQuestObjectives(questId)
+        or nil
+    if list ~= nil then
+        for i, objective in ipairs(list) do
+            objectives[i] = {
+                text = objective.text,
+                type = objective.type,
+                finished = objective.finished == true,
+                collected = objective.numFulfilled,
+                needed = objective.numRequired,
+            }
+        end
+    elseif GetNumQuestLeaderBoards ~= nil and index ~= nil then
+        for i = 1, GetNumQuestLeaderBoards(index) do
+            local text, objectiveType, finished = GetQuestLogLeaderBoard(i, index)
+            objectives[i] = { text = text, type = objectiveType, finished = finished == true }
+        end
+    end
+    return objectives
+end
+
+-- The log entry at one index, nil for headers and empty rows.
+local function questLogEntry(index)
+    if C_QuestLog ~= nil and C_QuestLog.GetInfo ~= nil then
+        local info = C_QuestLog.GetInfo(index)
+        if info ~= nil and not info.isHeader and info.questID ~= nil and info.questID > 0 then
+            return {
+                questId = info.questID,
+                title = info.title,
+                level = info.level,
+                complete = C_QuestLog.IsComplete ~= nil and C_QuestLog.IsComplete(info.questID) == true,
+                failed = C_QuestLog.IsFailed ~= nil and C_QuestLog.IsFailed(info.questID) == true,
+                objectives = objectivesFor(info.questID, index),
+            }
+        end
+        return nil
+    end
+    local title, level, _, isHeader, _, isComplete, _, questId = GetQuestLogTitle(index)
+    if not isHeader and questId ~= nil and questId > 0 then
+        return {
+            questId = questId,
+            title = title,
+            level = level,
+            complete = isComplete == 1 or isComplete == true,
+            failed = isComplete == -1,
+            objectives = objectivesFor(questId, index),
+        }
+    end
+    return nil
+end
+
 function WowVision.quests.gameQuestLog()
     local entries = {}
-    local function objectivesFor(questId, index)
-        local objectives = {}
-        local list = C_QuestLog ~= nil and C_QuestLog.GetQuestObjectives ~= nil and C_QuestLog.GetQuestObjectives(questId)
-            or nil
-        if list ~= nil then
-            for i, objective in ipairs(list) do
-                objectives[i] = {
-                    text = objective.text,
-                    type = objective.type,
-                    finished = objective.finished == true,
-                    collected = objective.numFulfilled,
-                    needed = objective.numRequired,
-                }
-            end
-        elseif GetNumQuestLeaderBoards ~= nil and index ~= nil then
-            for i = 1, GetNumQuestLeaderBoards(index) do
-                local text, objectiveType, finished = GetQuestLogLeaderBoard(i, index)
-                objectives[i] = { text = text, type = objectiveType, finished = finished == true }
-            end
-        end
-        return objectives
-    end
     local count = C_QuestLog ~= nil and C_QuestLog.GetNumQuestLogEntries ~= nil and C_QuestLog.GetNumQuestLogEntries()
         or (GetNumQuestLogEntries ~= nil and GetNumQuestLogEntries())
         or 0
     for index = 1, count do
-        if C_QuestLog ~= nil and C_QuestLog.GetInfo ~= nil then
-            local info = C_QuestLog.GetInfo(index)
-            if info ~= nil and not info.isHeader and info.questID ~= nil and info.questID > 0 then
-                tinsert(entries, {
-                    questId = info.questID,
-                    title = info.title,
-                    level = info.level,
-                    complete = C_QuestLog.IsComplete ~= nil and C_QuestLog.IsComplete(info.questID) == true,
-                    failed = C_QuestLog.IsFailed ~= nil and C_QuestLog.IsFailed(info.questID) == true,
-                    objectives = objectivesFor(info.questID, index),
-                })
-            end
-        else
-            local title, level, _, isHeader, _, isComplete, _, questId = GetQuestLogTitle(index)
-            if not isHeader and questId ~= nil and questId > 0 then
-                tinsert(entries, {
-                    questId = questId,
-                    title = title,
-                    level = level,
-                    complete = isComplete == 1 or isComplete == true,
-                    failed = isComplete == -1,
-                    objectives = objectivesFor(questId, index),
-                })
-            end
+        local entry = questLogEntry(index)
+        if entry ~= nil then
+            tinsert(entries, entry)
         end
     end
     return entries
+end
+
+-- One quest's entry as the log holds it right now, nil once it left the
+-- log (turned in, abandoned). Cheap enough to read per spoken line, which
+-- is how the scanner keeps its progress live.
+function WowVision.quests.gameQuestEntry(questId)
+    if questId == nil then
+        return nil
+    end
+    local index = nil
+    if C_QuestLog ~= nil and C_QuestLog.GetLogIndexForQuestID ~= nil then
+        index = C_QuestLog.GetLogIndexForQuestID(questId)
+    elseif GetQuestLogIndexByID ~= nil then
+        index = GetQuestLogIndexByID(questId)
+    end
+    if index == nil or index <= 0 then
+        return nil
+    end
+    local entry = questLogEntry(index)
+    if entry == nil or entry.questId ~= questId then
+        return nil
+    end
+    return entry
 end
 
 -- ---- source lifecycle ----
@@ -424,10 +524,15 @@ module:registerEvent("event", "QUEST_ACCEPTED")
 module:registerEvent("event", "QUEST_TURNED_IN")
 module:registerEvent("event", "QUEST_REMOVED")
 module:registerEvent("event", "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED")
+module:registerEvent("event", "UI_INFO_MESSAGE")
 
 function module:onEvent(event, arg1, arg2)
     if event == "PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED" then
         self:onQuestArea(arg1, arg2)
+        return
+    end
+    if event == "UI_INFO_MESSAGE" then
+        module.onInfoMessage(arg1, arg2)
         return
     end
     local adapter = self.adapter
@@ -462,9 +567,14 @@ function module:onEvent(event, arg1, arg2)
 end
 
 function module:onEnable()
+    claimMessages(true)
     if self.adapter == nil and not self:_attachQuestie() then
         self:_attachNative()
     end
+end
+
+function module:onDisable()
+    claimMessages(false)
 end
 
 -- ---- /wv quests: a plain-spoken dump for checking the data in game ----
@@ -587,7 +697,7 @@ end
 module:registerCommand({
     name = "quests",
     scope = "WowVision",
-    description = "Quest data check. Usage: /wv quests near, /wv quests log, /wv quests go questId [start|objectives|finish], /wv quests probe (every quest and map point API, one report)",
+    description = "Quest data check. Usage: /wv quests near, /wv quests log, /wv quests go questId [start|objectives|finish], /wv quests raw (map and quest point state, per log quest where its point is), /wv quests probe (every quest and map point API, one report)",
     func = function(args)
         module:handleCommand(args or "")
     end,

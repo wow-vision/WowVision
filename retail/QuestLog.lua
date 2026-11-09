@@ -188,6 +188,21 @@ local function isTracked(questID)
     return questID ~= nil and C_QuestLog.GetQuestWatchType(questID) ~= nil
 end
 
+-- The log marks a finished quest with a check (and, with Show Objectives,
+-- its "Ready for turn-in" line), a failed one only with a red Failed icon.
+local function questStateWord(questID)
+    if questID == nil then
+        return nil
+    end
+    if C_QuestLog.IsFailed ~= nil and C_QuestLog.IsFailed(questID) then
+        return L["Failed"]
+    end
+    if C_QuestLog.IsComplete ~= nil and C_QuestLog.IsComplete(questID) then
+        return L["Complete"]
+    end
+    return nil
+end
+
 local function questLabel(kid)
     local text = nodes.plainText(rowText(kid))
     if text == nil then
@@ -195,6 +210,10 @@ local function questLabel(kid)
     end
     if kid.TagText ~= nil and kid.TagText:IsShown() then
         text = text .. " " .. (kid.TagText:GetText() or "")
+    end
+    local state = questStateWord(kid.questID)
+    if state ~= nil then
+        text = text .. ", " .. state
     end
     local color = questDifficultyWord(kid.questID)
     if color ~= nil then

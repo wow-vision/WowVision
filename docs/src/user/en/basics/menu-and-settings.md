@@ -59,7 +59,7 @@ Because it is a list that owns the keyboard, you can press letters to jump: S fo
 | Minimap Scanner | All | Minimap scan and the walking announcements. | [Minimap](../world/minimap.md) |
 | Monitors | All | Aura, cooldown and other monitors. | [Monitors](../information/monitors.md) |
 | Navigation | All | Atlas, Beacon and Routes, Compass, Fall Detection, Follow, Pitch Lock, Visited Waypoints, Wall Detection and more. | [Movement](../world/movement.md), [Navigation](../world/navigation.md) |
-| Quests | All | Quest log tools, quest area alerts. | [Quests](../world/quests.md) |
+| Quests | All | Quest log tools, quest area and quest progress alerts. | [Quests](../world/quests.md) |
 | Scanner | All | The scanner (F9). | [Scanner](../world/scanner.md) |
 | Speech | All | Voice, rate, volume and speech behaviour. | [Speech](./speech.md) |
 | Targeting | All | Target announcements, soft targeting, focus targets. | [Targeting](../world/targeting.md) |

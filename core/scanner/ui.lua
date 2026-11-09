@@ -70,6 +70,16 @@ local function resolveChildren(node)
     return node.children
 end
 
+-- A label may be a function, read each time it is spoken (live state on a
+-- snapshot node); the beacon and the details title take its current text.
+local function labelText(node)
+    if type(node.label) == "function" then
+        local ok, text = pcall(node.label)
+        return ok and text or nil
+    end
+    return node.label
+end
+
 local function whereText(node)
     local m = maps()
     if m == nil or node.x == nil then
@@ -89,10 +99,33 @@ local function beaconTo(node)
     end
     WowVision.UIHost:closeWindow(WINDOW)
     if m.openNavigationTo ~= nil then
-        m:openNavigationTo(node.x, node.y, node.label, node.onArrive, node.routeData, node.match)
+        m:openNavigationTo(node.x, node.y, labelText(node), node.onArrive, node.routeData, node.match)
     else
-        m:beaconTo(node.x, node.y, node.label, node.onArrive)
+        m:beaconTo(node.x, node.y, labelText(node), node.onArrive)
     end
+end
+
+-- Backspace (or the context menu) on a category: the nearest placed entry in
+-- it, subcategories included, is announced and routed to like Enter on it.
+local function navigateNearest(node)
+    local m = maps()
+    if m == nil then
+        return
+    end
+    local nearest, distance = WowVision.scannerNearest.pick(resolveChildren(node), function(x, y)
+        return m:distanceTo(x, y)
+    end, resolveChildren)
+    if nearest == nil then
+        WowVision:speak(L["Nothing to navigate to"])
+        return
+    end
+    local text = labelText(nearest) or ""
+    local where = whereText(nearest)
+    if where ~= nil then
+        text = text .. ", " .. where
+    end
+    WowVision:speak(text)
+    beaconTo(nearest)
 end
 
 local function pushDetails(node)
@@ -108,7 +141,7 @@ local function pushDetails(node)
             if type(lines) == "function" then
                 lines = lines()
             end
-            builder:pushContext("details", node.label)
+            builder:pushContext("details", labelText(node))
             if lines == nil or #lines == 0 then
                 builder:addItem(ControlId.structural("empty"), nodes.text({ label = L["Empty"] }))
             end
@@ -171,6 +204,19 @@ local function vtableFor(node, screen, id)
             local expanded = screen.state.expanded[id.key] == true
             return graph.announcer.expandedStateText(expanded)
         end
+        -- Backspace on a category routes to its nearest entry; the context
+        -- menu (Shift-F10) offers the same.
+        vtable.onSecondary = function()
+            navigateNearest(node)
+        end
+        vtable.contextActions = {
+            {
+                label = L["Navigate to Nearest"],
+                onActivate = function()
+                    navigateNearest(node)
+                end,
+            },
+        }
     end
     if node.details ~= nil then
         vtable.onSecondary = function()

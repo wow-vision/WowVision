@@ -60,7 +60,7 @@ In der Questliste bewegen Pfeil hoch und Pfeil runter zwischen Überschriften un
 
 (Retail und WoW: Forever.) In diesen Versionen ist das Questlog Teil der Weltkarte. Die Taste öffnet ein Panel neben der Karte, und WowVision liest dieses Panel.
 
-- Die Liste zeigt Gebietsüberschriften und Quests. Eine Quest liest sich etwa "[12] Wolves Across the Border, Grün, ausgewählt, verfolgt". Das Farbwort (Grau, Grün, Gelb, Orange, Rot) ist die Schwierigkeitsfarbe des Spiels für deine Stufe, so wie ein sehender Spieler sie sieht. "ausgewählt" und "verfolgt" kommen dazu, wenn sie zutreffen. Zielzeilen in der Liste werden übersprungen, weil die Details denselben Text lesen.
+- Die Liste zeigt Gebietsüberschriften und Quests. Eine Quest liest sich etwa "[12] Wolves Across the Border, Grün, ausgewählt, verfolgt". Eine fertige Quest hat nach dem Titel "Abgeschlossen" ("[12] Wolves Across the Border, Abgeschlossen, Grün"), eine gescheiterte "Fehlgeschlagen", dort wo das Spiel sein Häkchen und die Zeile "Bereit zur Abgabe" oder sein Kennzeichen Fehlgeschlagen zeigt. Das Farbwort (Grau, Grün, Gelb, Orange, Rot) ist die Schwierigkeitsfarbe des Spiels für deine Stufe, so wie ein sehender Spieler sie sieht. "ausgewählt" und "verfolgt" kommen dazu, wenn sie zutreffen. Zielzeilen in der Liste werden übersprungen, weil die Details denselben Text lesen.
 - Die Gruppe Details enthält den Titel, die Beschreibung, den Zieltext, jedes aktuelle Ziel und eine einzeilige Zusammenfassung der Belohnungen.
 - Schaltflächen: abbrechen, verfolgen (sie liest "Nicht mehr verfolgen", wenn die Quest verfolgt wird), teilen und die Kartenschaltfläche. Ihre Beschriftungen stammen vom Spiel, und die Beschriftung wird nach dem Drücken der Schaltfläche noch einmal gesprochen.
 - Eine Belohnung wählst du hier nicht. Das geschieht, wenn du die Quest abgibst.
@@ -122,6 +122,16 @@ Der Alarm heißt Questgebiet (Quest Area Alert) und gehört zum Modul Quests. Wi
 | Soundalarm, Aktiviert | Aus | Spielt einen Ton statt oder neben der Sprache. |
 | Soundalarm, Sound | keiner | Welcher Ton gespielt wird. |
 
+## Alarme für den Questfortschritt
+
+Das Spiel zeigt den Questfortschritt als Meldung in der Bildschirmmitte. WowVision spricht diese Meldungen so, wie das Spiel sie formuliert, mit drei eigenen Alarmen:
+
+- Questfortschritt (Quest Progress Alert): ein Zähler ändert sich, etwa "Kobold Vermin getötet: 3/8" oder "Leinenstoff: 2/6", auch der letzte ("8/8"). Sein Ton ist glass1.
+- Ziel erreicht (Objective Complete Alert): die Meldung des Spiels, die ein erledigtes Ziel nennt, etwa "Erkundet die Mine (Abgeschlossen)". Sein Ton ist success1.
+- Quest abgeschlossen (Quest Complete Alert): die Meldung "Aufgabe abgeschlossen." des Spiels, die kein Ziel nennt. Sein Ton ist Tutorial_Success_01.
+
+Jede Meldung spricht ihr eigener Alarm, mit dessen Einstellungen: beim letzten Kill hörst du das "8/8" vom Alarm Questfortschritt und den Abschluss von dem Alarm, zu dem er gehört. Jeder Alarm hat TTS (an) und Sound (an) und lässt sich einzeln ausschalten. Sie arbeiten unabhängig vom Modul Fehler, auch wenn es ausgeschaltet ist, und diese Meldungen erscheinen nicht in seinem Filter pro Fehler. Hattest du eine dieser Meldungen dort stummgeschaltet oder Fehler ansagen ausgeschaltet, startet ihr Alarm ausgeschaltet. Siehe [Alarme](../basics/alerts.md).
+
 ## Quests und Questziele finden
 
 Der [Scanner](scanner.md) verwandelt Questdaten in Orte, zu denen du gehen kannst. Er ist der wichtigste Weg, mit WowVision Quests zu finden.
@@ -144,6 +154,7 @@ So werden Orte in den Listen beschrieben: Ein Fundort liest sich mit seinem Gebi
 | Wiederholbare Quests einbeziehen | An | Ob wiederholbare und tägliche Quests in der Liste In der Nähe erscheinen. |
 | Quests nach Entfernung sortieren | An | Ob die Liste Laufend nach Entfernung sortiert ist, die nächste zuerst, und zwar nach dem Ort, zu dem dich Eingabe auf der jeweiligen Quest führen würde (das nächste offene Ziel, oder die Abgabe, sobald eine Quest abgeschlossen ist). Quests ohne Ort, zu dem du gehen kannst, folgen in der Reihenfolge deines Questlogs. Schalte die Einstellung aus, um die Reihenfolge des Questlogs zu behalten. |
 | Questgebiet | siehe oben | Ansagen beim Betreten oder Verlassen eines Zielgebiets. |
+| Questfortschritt, Ziel erreicht, Quest abgeschlossen | siehe oben | Ansagen zum Questfortschritt. |
 
 Die Liste In der Nähe lässt außerdem Quests weg, die du noch nicht annehmen kannst, wegen deiner Stufe oder einer fehlenden Vorquest.
 
