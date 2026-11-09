@@ -1515,25 +1515,33 @@ function module:rawRead()
 
         -- Since 70862 the minimap names dots only when the cursor really
         -- moves (WoWUIBugs #894). A keyboard player has no mouse to move,
-        -- but the game itself puts the cursor back at the screen centre
-        -- when a short mouselook ends (Engine.centreCursor). Asked here:
-        -- does that jump count as movement for a shrunk minimap waiting
-        -- at the centre? Only the cursor's own read, nothing asked at a
-        -- point; names only, no positions.
-        local uiScale = UIParent:GetEffectiveScale()
-        local midX, midY = UIParent:GetWidth() * uiScale / 2, UIParent:GetHeight() * uiScale / 2
+        -- but the game itself puts the cursor back when a short mouselook
+        -- ends (Engine.centreCursor), at the height CursorCenteredYPos
+        -- says. Asked here: does that jump count as movement for a shrunk
+        -- minimap waiting where the cursor lands? Each probe first jumps
+        -- to the landing point to learn it, then to a second height, puts
+        -- the minimap at the landing point and jumps back onto it, so the
+        -- cursor really travels (the first run, 2026-11-09, jumped from
+        -- the centre to the centre). Only the cursor's own read, nothing
+        -- asked at a point; names only, no positions.
+        local LAND_Y, AWAY_Y = 0.3, 0.7
         local function cursorProbe(label, jump)
-            Engine.shrink(midX, midY)
+            Minimap:ClearAllPoints()
+            Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", 0, 0)
+            Engine.wait()
+            Engine.centreCursor(LAND_Y)
+            Engine.wait(2)
+            local landX, landY = GetCursorPosition()
+            Engine.centreCursor(AWAY_Y)
+            Engine.wait(2)
+            Engine.shrink(landX, landY)
             Engine.wait(2)
             local beforeX, beforeY = GetCursorPosition()
             local jumped = "no jump asked"
             if jump then
-                if IsMouselooking ~= nil and IsMouselooking() then
-                    jumped = "no jump, already mouselooking"
-                else
-                    Engine.centreCursor()
-                    jumped = "jump done"
-                end
+                Engine.centreCursor(LAND_Y)
+                Engine.wait()
+                jumped = "jump done"
             end
             local afterX, afterY = GetCursorPosition()
             local most, names = 0, ""
@@ -1557,8 +1565,8 @@ function module:rawRead()
                     beforeY,
                     afterX,
                     afterY,
-                    midX,
-                    midY,
+                    landX,
+                    landY,
                     tostring(Minimap:IsMouseOver()),
                     most,
                     most > 0 and names or "none"
@@ -1567,12 +1575,12 @@ function module:rawRead()
         end
         soft(false)
         Minimap:SetAlpha(1)
-        cursorProbe("Mouselook jump test, control: shrunk at the centre, shown, cursor not moved", false)
-        cursorProbe("Mouselook jump test: shrunk at the centre, shown, soft cursor off", true)
+        cursorProbe("Mouselook jump test, control: shrunk at the landing point, shown, cursor not moved onto it", false)
+        cursorProbe("Mouselook jump test: shrunk at the landing point, shown, soft cursor off", true)
         Minimap:SetAlpha(0)
-        cursorProbe("Mouselook jump test: shrunk at the centre, hidden, soft cursor off", true)
+        cursorProbe("Mouselook jump test: shrunk at the landing point, hidden, soft cursor off", true)
         soft(true)
-        cursorProbe("Mouselook jump test: shrunk at the centre, hidden, soft cursor on", true)
+        cursorProbe("Mouselook jump test: shrunk at the landing point, hidden, soft cursor on", true)
         soft(false)
     end
     task.check = function()

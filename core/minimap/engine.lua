@@ -388,13 +388,17 @@ local CENTRE_CVARS = {
     CursorStickyCentering = "1",
 }
 
--- Inside a running task.
-function Engine.centreCursor()
+-- Inside a running task. yPos (0 to 1, the CVar's own scale) moves the
+-- landing height; the raw read's jump test uses it, the scan never does.
+function Engine.centreCursor(yPos)
     if MouselookStart == nil or IsMouselooking == nil or IsMouselooking() then
         return
     end
     local saved = {}
     for name, value in pairs(CENTRE_CVARS) do
+        if name == "CursorCenteredYPos" and yPos ~= nil then
+            value = tostring(yPos)
+        end
         local ok, current = pcall(GetCVar, name)
         if ok and current ~= nil then
             saved[name] = current
