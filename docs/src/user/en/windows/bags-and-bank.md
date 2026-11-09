@@ -160,7 +160,7 @@ When there is something to look at, the bags get an extra stop called Item Lists
 
 - Junk: every item you marked as junk, with the tag, in bag order (see [Junk](#junk)). It starts closed.
 - Favorites: every item you marked as a favorite, in bag order (see [Favorites](#favorites)). It starts closed.
-- New Items: what the game marks as new, the things you looted or bought since you last looked. It starts open. The game takes the new mark off an item as soon as you move the cursor onto it, and WowVision does the same when you land on a slot, so an item would vanish the moment you reach it. WowVision therefore keeps the items it has seen as new in the list until you close the bags. Open the bags again and only what is still marked new is listed.
+- New Items: what you got since you last looked, such as the things you looted, bought or were sent, and the rewards of quests. It starts open. The game marks some new items itself, and WowVision lists those. But the game does not always mark everything (the reward of a quest went unmarked on WoW: Forever), so WowVision also counts what your bags hold of each item after every change. An item of which you now have more than before is new, on every slot that holds it. Moving, sorting or splitting items, or using part of a stack, makes nothing new, and neither do the items you already carried when you logged in or reloaded. The game takes its new mark off an item as soon as you move the cursor onto it, and WowVision does the same when you land on a slot, so an item would vanish the moment you reach it. WowVision therefore keeps the new items in the list until you have opened the bags and closed them again. An item that arrives while the bags are closed waits for you.
 
 ### Combined bags
 

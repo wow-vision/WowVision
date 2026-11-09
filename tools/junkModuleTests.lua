@@ -1189,3 +1189,40 @@ testRunner:addSuite("FavoritesModule", {
         end)
     end,
 })
+
+-- newItems.lua starts listening to the bags as it loads. It is loaded afresh here, with a stand-in for frames, and
+-- what it replaced on WowVision is put back.
+testRunner:addSuite("NewItemsWiring", {
+    ["the new items start listening to the bags and to entering the world when the file loads"] = function(t)
+        local savedNewItems, savedFrame = WowVision.newItems, CreateFrame
+        local previous
+        for _, list in ipairs(WowVision.bagLists.lists) do
+            if list.key == "new" then
+                previous = list
+            end
+        end
+        local registered, scripts = {}, {}
+        CreateFrame = function()
+            return {
+                RegisterEvent = function(_, event)
+                    registered[event] = true
+                end,
+                SetScript = function(_, name, fn)
+                    scripts[name] = fn
+                end,
+            }
+        end
+        local ok, err = pcall(loadFile, "core/windows/newItems.lua")
+        CreateFrame = savedFrame
+        WowVision.newItems = savedNewItems
+        if previous ~= nil then
+            WowVision.bagLists.register(previous)
+        end
+        if not ok then
+            error(err, 0)
+        end
+        t:assertTrue(registered.PLAYER_ENTERING_WORLD)
+        t:assertTrue(registered.BAG_UPDATE_DELAYED)
+        t:assertEqual(type(scripts.OnEvent), "function")
+    end,
+})
