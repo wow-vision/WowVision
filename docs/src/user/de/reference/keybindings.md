@@ -101,7 +101,7 @@ Siehe [Chat](../windows/chat.md).
 | Ankunftsdistanz wechseln (Cycle Arrival Distance) | Alt+P | Ändert, wie nah du an einen Wegpunkt herankommen musst, damit er als erreicht gilt |
 | Entfernung ansagen (Announce Distance) | Unbelegt | Spricht die Entfernung zum Wegpunkt. Alt Gr (oder Strg+Alt) tut von Haus aus dasselbe |
 | Route zu deinem Ziel (Route to Your Target) | Unbelegt | Startet eine Route zu deinem aktuellen Ziel |
-| Route zum nächsten unbesuchten gleichnamigen Ziel (Route to the Nearest Unvisited of the Same Name) | Unbelegt | Führt per Route zum nächsten Ort mit demselben Namen, den du noch nicht besucht hast |
+| Route zum nächsten unbesuchten gleichnamigen Ziel (Route to the Nearest Unvisited of the Same Name) | Unbelegt | Führt per Route zu dem Ort mit demselben Namen, den du noch nicht besucht hast, der den kürzesten Fußweg entfernt ist |
 | Direkt zum nächsten unbesuchten gleichnamigen Ziel (Direct to the Nearest Unvisited of the Same Name) | Unbelegt | Dasselbe als gerades Beacon statt als Route |
 | WowNav-Routenstatus (WowNav Route Status) | Unbelegt | (WoW: Forever) Spricht den Zustand der WowNav-Route |
 | Neue WowNav-Route um eine versperrte Stelle (New WowNav Route Around a Blocked Spot) | Unbelegt | (WoW: Forever) Plant eine neue Route, die die Stelle meidet, an der du feststeckst |
