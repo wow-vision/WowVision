@@ -60,7 +60,7 @@ Because it is a list that owns the keyboard, you can press letters to jump: S fo
 | Monitors | All | Aura, cooldown and other monitors. | [Monitors](../information/monitors.md) |
 | Navigation | All | Atlas, Beacon and Routes, Compass, Fall Detection, Follow, Pitch Lock, Visited Waypoints, Wall Detection and more. | [Movement](../world/movement.md), [Navigation](../world/navigation.md) |
 | Quests | All | Quest log tools, quest area and quest progress alerts. | [Quests](../world/quests.md) |
-| Scanner | All | The scanner (F9). | [Scanner](../world/scanner.md) |
+| Scanner | All | The scanner (F9): scan radius, entries per category, and Scanner as Tree to choose between a tree and a menu. | [Scanner](../world/scanner.md) |
 | Speech | All | Voice, rate, volume and speech behaviour. | [Speech](./speech.md) |
 | Targeting | All | Target announcements, soft targeting, focus targets. | [Targeting](../world/targeting.md) |
 | UI | All | Window behaviour, bindings, combat, cursor, tooltips. | below |

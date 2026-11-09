@@ -4,13 +4,15 @@ Der Scanner (Scanner) ist eine Liste der Dinge um dich herum und wo sie sind: Qu
 
 Drücke F9, um den Scanner zu öffnen. Mit Esc schließt du ihn. Die Taste heißt im Fenster für die Tastenbelegung Scanner und lässt sich dort ändern; siehe [Tastenbelegung](../basics/keybindings.md). Der Scanner funktioniert in jeder Spielversion, aber was er auflisten kann, hängt von der Version und von den verfügbaren Daten ab. Siehe "Hinweise zu den Versionen" am Ende.
 
+Standardmäßig ist der Scanner ein Baum. Willst du ihn lieber wie das WowVision-Menü durchgehen, eine Ebene nach der anderen mit Eingabe und zurück mit Esc, schalte in den Scanner-Einstellungen Scanner als Baum aus; siehe [Der Scanner als Menü](#der-scanner-als-menü).
+
 Drückst du F9, während du im Questlog bist, öffnet sich der Scanner direkt auf dieser Quest, unter Quests, Laufend: die Quest, auf der dein Cursor im Questlog steht, sonst die Quest, deren Details offen sind. Drücke Pfeil rechts, um ihre Questziele zu hören, oder Eingabe, um zu ihrem nächsten Ziel geführt zu werden.
 
 Hinweis: Die Ansagen des Scanners kommen größtenteils aus lokalisierten Texten und werden auf einem deutschen Client auf Deutsch gesprochen. Die Beispiele zeigen, was du hörst. Namen von NPCs, Orten und Questzielen stammen aus den Spieldaten und bleiben so, wie sie dort stehen.
 
 ## Wie er aufgebaut ist
 
-Der Scanner ist ein einziger Baum. Die oberste Ebene enthält Kategorien, Kategorien enthalten Einträge, und viele Einträge enthalten weitere Einträge darunter. Einträge, die weitere enthalten, sind Gruppen. Nach dem Namen einer Gruppe hörst du "Eingeklappt" oder "Ausgeklappt".
+Standardmäßig ist der Scanner ein einziger Baum. Die oberste Ebene enthält Kategorien, Kategorien enthalten Einträge, und viele Einträge enthalten weitere Einträge darunter. Einträge, die weitere enthalten, sind Gruppen. Nach dem Namen einer Gruppe hörst du "Eingeklappt" oder "Ausgeklappt".
 
 | Taste | Was sie tut |
 |-------|-------------|
@@ -23,6 +25,23 @@ Der Scanner ist ein einziger Baum. Die oberste Ebene enthält Kategorien, Katego
 | Esc | Den Scanner schließen. |
 
 Alles andere funktioniert wie in jedem WowVision-Fenster; siehe [Die Oberfläche bedienen](../basics/interface.md) für Pos1, Ende und die Schnellsuche per Buchstaben.
+
+### Der Scanner als Menü
+
+Wenn du den Scanner lieber wie das WowVision-Menü durchgehst, eine Ebene nach der anderen, schalte in den Scanner-Einstellungen Scanner als Baum aus (siehe [Einstellungen](#einstellungen)). Der Scanner öffnet sich dann auf der Liste der Kategorien, und jede Liste, die du öffnest, ersetzt die vorherige:
+
+| Taste | Was sie tut |
+|-------|-------------|
+| Pfeil runter und Pfeil hoch | Zum nächsten oder vorherigen Eintrag gehen. |
+| Eingabe | Auf einem Eintrag, der weitere Einträge enthält: seine Liste öffnen, eine Ebene tiefer. Auf der letzten Ebene öffnet ein Eintrag mit Ort das Navigationsfenster, um dorthin eine Route zu starten (siehe [Was Eingabe tut](#was-eingabe-tut)). Auf einem Kontrollkästchen in der Kategorie Verfolgung: ein- oder ausschalten. |
+| Pfeil rechts | Wie Eingabe auf einem Eintrag, der weitere Einträge enthält. |
+| Pfeil links oder Esc | Eine Ebene zurück, zu dem Eintrag, den du geöffnet hast. Esc auf der ersten Ebene schließt den Scanner. |
+| Ein Buchstabe | Zum nächsten Eintrag springen, der damit beginnt, wie im WowVision-Menü. |
+| Rücktaste und Tab | Wie im Baum. |
+
+So erreicht das Menü jede Ebene, die auch der Baum hat: Quests, Laufend, die Quest, ihr Ziel, die Kreatur, ihr Fundort. Im Baum führt dich Eingabe auf einer Quest oder einem Ziel sofort zum nächsten Ort; im Menü gehst du zuerst bis zu dem Ort hinunter, den du willst.
+
+Aktualisieren funktioniert auf jeder Ebene und lässt dich auf der Ebene, auf der du bist. Drückst du F9 im Questlog, öffnet der Scanner für dich die Ebenen Quests und Laufend und setzt dich auf die Quest; mit Esc gehst du durch sie zurück.
 
 Bei jedem Eintrag mit Ort hörst du seinen Namen, einen Zusatzhinweis, wenn er einen hat, die Entfernung und die Richtung von dem Ort, an dem du jetzt stehst, und seinen Platz in der Liste. Zum Beispiel: "Marshal McBride, gesehen, Quest verfügbar, 85 Meter, voraus links, 3 von 12". Entfernung und Richtung werden berechnet, wenn du auf den Eintrag gehst, sie folgen dir also beim Gehen. Die Richtungen sind relativ zu deiner Blickrichtung: voraus, voraus links, links, hinten links, hinten, hinten rechts, rechts, voraus rechts.
 
@@ -53,11 +72,11 @@ Die Mitglieder deiner Gruppe oder deines Schlachtzugs. Jedes ist mit Namen aufge
 
 Zwei Untergruppen: In der Nähe und Laufend. Sie werden aus den Questdaten gefüllt, die deine Spielversion bietet: siehe [Quests](quests.md).
 
-In der Nähe listet Quests, die du in deiner Umgebung annehmen könntest, der nächste Questgeber zuerst. Jeder Eintrag zeigt den Questnamen, dann "Stufe" und die Quest-Stufe, ob sie Täglich oder Wiederholbar ist, und den Namen des Questgebers. Ist ein Questgeber nur ein gesehener Questgeber (vom [Minikarten-Scanner](minimap.md) gefunden), zeigt der Eintrag stattdessen den Namen des Gebers, markiert mit gesehen, Quest verfügbar oder Abgabe, gegebenenfalls niedrigstufig, und drinnen. Drücke Rücktaste auf einer Quest, um ihren Zieltext zu lesen. Welche Quests aufgelistet werden, hängt von den Einstellungen Stufenbereich für Quests in der Nähe und Wiederholbare Quests einbeziehen ab; siehe [Quests](quests.md).
+In der Nähe listet Quests, die du in deiner Umgebung annehmen könntest, der nächste Questgeber zuerst. Jeder Eintrag zeigt den Questnamen, dann "Stufe" und die Quest-Stufe, ob sie Täglich oder Wiederholbar ist, und den Namen des Questgebers. Ist ein Questgeber nur ein gesehener Questgeber (vom [Minikarten-Scanner](minimap.md) gefunden), zeigt der Eintrag stattdessen den Namen des Gebers, markiert mit gesehen, Quest verfügbar oder Abgabe, gegebenenfalls niedrigstufig, und drinnen. Drücke Rücktaste auf einer Quest, um ihren Zieltext zu lesen, oder Umschalt+Pfeil runter und Umschalt+Pfeil hoch, um ihren Tooltip Zeile für Zeile zu lesen: den Titel, die Stufe mit der Questfarbe (Grau, Grün, Gelb, Orange oder Rot, so wie das Spiel sie für deine Stufe färbt), die benötigte Stufe, die Art der Quest (etwa Elite, Dungeon, Täglich oder für wie viele Spieler sie gedacht ist), den Questgeber mit seinem Ort und den Questtext. Welche Quests aufgelistet werden, hängt von den Einstellungen Stufenbereich für Quests in der Nähe und Wiederholbare Quests einbeziehen ab; siehe [Quests](quests.md).
 
 Startet die Datenquelle noch, hörst du "Lädt". Ohne jede Datenquelle enthält die ganze Kategorie Quests nur die eine Zeile "Keine Questdatenquelle".
 
-Laufend listet dein Questlog. Jeder Eintrag zeigt den Questtitel mit seiner Stufe ("Eine Bedrohung von innen, Stufe 5"; es ist die Stufe aus dem Questlog, bei einer skalierenden Quest kann sie leicht abweichen) und seinen Zustand: "Abgeschlossen", "Fehlgeschlagen" oder "2 von 3" dafür, wie viele Ziele erledigt sind. Die Liste ist nach Entfernung sortiert, die nächste zuerst, und zwar nach dem Ort, zu dem dich Eingabe auf der jeweiligen Quest führen würde. Eine Quest, die du ein paar Schritte entfernt abgeben kannst, steht also vor einer am anderen Ende des Gebiets; Quests ohne Ort, zu dem du gehen kannst, folgen zuletzt. Die Einstellung Quests nach Entfernung sortieren schaltet das aus und behält die Reihenfolge des Questlogs bei; siehe [Quests](quests.md). Drücke Rücktaste, um den Zieltext zu lesen. Öffne eine Quest, um ihre Ziele zu sehen:
+Laufend listet dein Questlog. Jeder Eintrag zeigt den Questtitel mit seiner Stufe ("Eine Bedrohung von innen, Stufe 5"; es ist die Stufe aus dem Questlog, bei einer skalierenden Quest kann sie leicht abweichen) und seinen Zustand: "Abgeschlossen", "Fehlgeschlagen" oder "2 von 3" dafür, wie viele Ziele erledigt sind. Die Liste ist nach Entfernung sortiert, die nächste zuerst, und zwar nach dem Ort, zu dem dich Eingabe auf der jeweiligen Quest führen würde. Eine Quest, die du ein paar Schritte entfernt abgeben kannst, steht also vor einer am anderen Ende des Gebiets; Quests ohne Ort, zu dem du gehen kannst, folgen zuletzt. Die Einstellung Quests nach Entfernung sortieren schaltet das aus und behält die Reihenfolge des Questlogs bei; siehe [Quests](quests.md). Drücke Rücktaste, um den Zieltext zu lesen, oder Umschalt+Pfeil runter und Umschalt+Pfeil hoch, um ihren Tooltip Zeile für Zeile zu lesen: den Titel, die Stufe mit der Questfarbe, die Art der Quest, wie viele Ziele erledigt sind, jedes Ziel mit seinem Fortschritt, bei einer abgeschlossenen Quest, wo du sie abgibst, und den Questtext. Der Fortschritt wird jedes Mal frisch gelesen. Öffne eine Quest, um ihre Ziele zu sehen:
 
 1. Eine laufende Quest klappt zu ihren Zielen auf (nur wenn die Datenquelle die Quest kennt; eine Quest, die sie nicht kennt, zeigt nur ihren Zustand), zum Beispiel "Kobold Vermin slain: 3/10". Ein erledigtes Ziel ist mit "Abgeschlossen" markiert.
 2. Ein Ziel klappt zu dem auf, worum es geht: den Kreaturen, Objekten oder Gegenstandsquellen, die dafür zählen. Eine Gegenstandsquelle heißt etwa "Linen Cloth von Defias Thug". Jede davon zeigt einen Hinweis: ihren Titel, "gesehen", wenn der Minikarten-Scanner sie gefunden hat, "drinnen", die Zahl der Fundorte und, wenn es nur einen Fundort gibt, wo er ist.
@@ -111,6 +130,7 @@ Bei einem gesehenen NPC, den der Minikarten-Scan gefunden hat, löst die Ankunft
 |-------------|----------|-------------|
 | Scan-Radius | 500 | Wie viele Meter um dich herum die Rollengruppen und gesehenen Einträge reichen. Von 50 bis 5000. Er begrenzt nicht die Questlisten In der Nähe oder Laufend. |
 | Einträge pro Kategorie | 25 | Die meisten Einträge in einer Gruppe, der nächste zuerst. Von 5 bis 200. |
+| Scanner als Baum (Scanner as Tree) | An | An: Der Scanner ist ein Baum, dessen Gruppen sich an Ort und Stelle öffnen und schließen. Aus: Er ist ein Menü, eine Ebene nach der anderen (siehe [Der Scanner als Menü](#der-scanner-als-menü)). |
 
 Die zugehörigen Quest-Einstellungen stehen im Modul Quests: siehe [Quests](quests.md).
 

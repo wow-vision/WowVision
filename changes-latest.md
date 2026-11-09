@@ -1,4 +1,6 @@
 ### All Versions
+* Scanner: switch off the new Scanner as Tree setting (Scanner menu, on by default) to use the scanner as a menu like the WowVision menu: Enter or Right goes one level deeper, Left or Escape goes back, letters jump to entries.
+* Scanner: Shift+Down on a quest in Nearby or In Progress reads a full tooltip: the level with the quest colour, the kind of quest, the giver or your progress per objective, and the quest text.
 * Chat: a new setting, Addon Messages in Chat (off by default), also writes WowVision's own messages to the main chat tab with "WowVision:" in front: a route started, how far a scan is, why something did not work. They are not spoken a second time.
 * Wall detection: no more blocked sound every half second in a fight when you are not holding a movement key, after the interact key walked you into melee.
 * Targeting: with Soft Targeting With a Hard Target on one of the Only Without modes, the soft enemy name no longer repeats many times a second. A target the game set by itself from your soft target no longer counts as a hard target.

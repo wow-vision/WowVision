@@ -642,7 +642,8 @@ function GraphHost:_dispatchKey(key, at)
 end
 
 -- Arrows: a focused slider adjusts on left/right before any navigation;
--- edge-wired movement next; at an edge, left/right get tree semantics; a bump
+-- edge-wired movement next; at an edge, a node's own onRight/onLeft (a menu
+-- entry opening its level, or going back), then tree semantics; a bump
 -- with nothing to do re-reads the current node for orientation. The same
 -- arrow pressed twice quickly skips empty slots (doublePress.lua).
 function GraphHost:_arrow(screen, dir, at)
@@ -669,6 +670,14 @@ function GraphHost:_arrow(screen, dir, at)
     graph.doublePress.settle(self._doublePressState, landed ~= nil and landed.id.key or nil)
     if move.moved then
         self:_announceMove(screen, move)
+        return
+    end
+
+    if dir == "right" and node.vtable.onRight ~= nil then
+        node.vtable.onRight()
+        return
+    elseif dir == "left" and node.vtable.onLeft ~= nil then
+        node.vtable.onLeft()
         return
     end
 

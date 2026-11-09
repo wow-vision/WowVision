@@ -170,6 +170,24 @@ local function pointAt(node, target)
     return node
 end
 
+-- The quest tooltip, read with the tooltip keys (Shift+Down) on a quest in
+-- Nearby and In Progress: title, level and colour, kind, progress or giver,
+-- the quest text (core/quests/tooltip.lua), then what the game's own quest
+-- link tooltip adds.
+local function questTooltip(entry, kind)
+    local link = "quest:" .. tostring(entry.questId)
+    if type(entry.level) == "number" then
+        link = link .. ":" .. tostring(entry.level)
+    end
+    return {
+        type = "Lines",
+        link = link,
+        lines = function()
+            return WowVision.quests.tooltipLines(entry, kind)
+        end,
+    }
+end
+
 local function questDetails(questId)
     return function()
         local quest = quests:quest(questId)
@@ -241,6 +259,7 @@ local function nearbyQuestNode(entry)
         label = entry.name or unknown(),
         detail = detail,
         details = questDetails(entry.questId),
+        tooltip = questTooltip(entry, "nearby"),
     }, entry.starter)
 end
 
@@ -418,6 +437,7 @@ local function inProgressNode(entry)
         key = "quest:" .. entry.questId,
         label = questTitle(entry),
         details = questDetails(entry.questId),
+        tooltip = questTooltip(entry, "inProgress"),
     }
     local unfinished = 0
     for _, objective in ipairs(entry.objectives) do
