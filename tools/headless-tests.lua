@@ -288,6 +288,8 @@ loadAddonFile("core/targeting/softTargeting.lua")
 loadAddonFile("core/targeting/softTargetingTests.lua")
 loadAddonFile("core/ui modules/enemyCount.lua")
 loadAddonFile("core/ui modules/enemyCountTests.lua")
+loadAddonFile("core/ui modules/gameDefaults.lua")
+loadAddonFile("core/ui modules/gameDefaultsTests.lua")
 loadAddonFile("core/db.lua")
 loadAddonFile("core/dbTests.lua")
 loadAddonFile("core/utils.lua")
@@ -1649,6 +1651,7 @@ local parseOnly = {
     "core/errors/module.lua",
     "core/quests/module.lua",
     "core/ui modules/graphBindings.lua",
+    "core/ui modules/gameDefaultsMenu.lua",
     "core/buffers/module.lua",
     "core/windows/options/ui.lua",
     "core/windows/options/Module.lua",

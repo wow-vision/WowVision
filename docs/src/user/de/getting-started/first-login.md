@@ -43,6 +43,15 @@ Zwei weitere Dinge folgen den Einstellungen von WowVision, statt einmalig zu ges
 
 Der Puffer Allgemein bekommt außerdem ein paar neue Zeilen (freie Taschenplätze, Haltbarkeit, Post, Ruhestein, Spieluhr), wenn sich ein bestehender Charakter zum ersten Mal nach einem Update einloggt, das sie hinzufügt. Siehe [Puffer](../information/buffers.md).
 
+### Empfohlene Spieleinstellungen (freiwillig)
+
+Im Menü Benutzeroberfläche gibt es den Schalter Empfohlene Spieleinstellungen übernehmen. Das ist nur ein Vorschlag: Es ändert sich nichts, solange du ihn nicht drückst, und jede Einstellung kannst du danach in den Spieloptionen wieder ändern. Er setzt:
+
+- Automatisch plündern an und alle Aktionsleisten sichtbar.
+- Die Audiounterstützung des Spiels an: deine Gesundheit, die Gesundheit deines Ziels und deine Ressource alle 20 Prozent (die Gesundheit nur als Zahl) und wenn du anvisiert wirst (ohne Namen des Angreifers). Kampfbeginn und -ende, Zielname und deine Schwächungen werden abgeschaltet.
+
+Tastenbelegungen, Kamera, weiche Zielerfassung und Lautstärken bleiben unberührt. Im Kampf tut der Schalter nichts. Nach einer Änderung lädt die Oberfläche neu, dann sagt WowVision an, was sich geändert hat, und schreibt dasselbe in dein Chatfenster. Ressource und Anvisiert speichert das Spiel je Spezialisierung; drücke den Schalter nach einem Wechsel der Spezialisierung noch einmal.
+
 ## Wie es weitergeht
 
 - [Schnellstart](./quick-start.md): die ersten fünfzehn Minuten.

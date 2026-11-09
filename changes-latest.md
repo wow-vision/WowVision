@@ -11,6 +11,7 @@
 * Navigation: Reverse Route (Ctrl+Shift+R) now walks back from where you are, along the route from its destination to its start.
 * Buffers: new settings Always Start at Top (off by default) and Sounds When Opening and Closing (on by default).
 * Quest log: new setting Always Start at Top (off by default), which opens the quest log on its first entry instead of the selected quest.
+* UI menu: a new Apply Recommended Game Settings button, only a suggestion, turns on auto loot and all action bars and, where the game has it, sets up the game's Audio Assist (your health, target health and resource every 20 percent, and when you are targeted). It does nothing in combat, and reloads the interface after a change.
 
 ### Classic
 
