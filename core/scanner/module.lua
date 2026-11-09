@@ -12,8 +12,10 @@ local settings = module:hasSettings()
 -- plus labels and details a provider gives as functions: a cheap read of
 -- one thing's current state when it is spoken (quest progress).
 --
--- A provider: { key, label, order?, optional?, build = function(ctx) -> nodes }
--- An optional provider's category is left out while it has no nodes.
+-- A provider: { key, label, order?, build = function(ctx) -> nodes }
+-- Every category is always there, empty or not, so each one keeps its place
+-- (Group under Player even outside a group); an empty one reads Empty and
+-- does not open.
 -- ctx: { radius, maxEntries } from the settings, plus whatever the
 -- provider needs from the game.
 --
@@ -32,6 +34,9 @@ local settings = module:hasSettings()
 --              as a read-only child screen
 --   tooltip    tooltip data ({ type = "Hyperlink", link = ... }): the
 --              tooltip keys (Shift+Down, Shift+Up) read it
+--   unit       a unit token ("player", "party1"): Enter targets it (the
+--              game's secure target action); with x, y Backspace opens the
+--              navigation window aimed at it instead
 
 settings:add({
     key = "radius",
@@ -98,14 +103,12 @@ function module:buildTree()
             geterrorhandler()(children)
             children = { { key = "error", label = L["Error"] .. " " .. tostring(children) } }
         end
-        if not (provider.optional and (children == nil or #children == 0)) then
-            tinsert(tree, {
-                key = provider.key,
-                label = provider.label,
-                children = children or {},
-                expanded = provider.expanded ~= false,
-            })
-        end
+        tinsert(tree, {
+            key = provider.key,
+            label = provider.label,
+            children = children or {},
+            expanded = provider.expanded ~= false,
+        })
     end
     return tree
 end

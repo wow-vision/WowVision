@@ -18,7 +18,7 @@ When you are in a group and an item drops that the group rolls on, the game open
 
 | Key | Binding name | What it does |
 |-----|--------------|--------------|
-| Alt+Ctrl+Y | Roll Tooltip | Says the name of the item that is up for a roll. |
+| Alt+Ctrl+Y | Roll Tooltip | Reads the whole tooltip of the item that is up for a roll: name, quality, item level, stats and requirements. |
 | Alt+Ctrl+U | Roll Need | Rolls Need. |
 | Alt+Ctrl+I | Roll Greed | Rolls Greed. |
 | Alt+Ctrl+O | Roll Pass | Passes. |

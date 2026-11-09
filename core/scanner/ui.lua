@@ -95,6 +95,20 @@ local function labelText(node)
     return node.label
 end
 
+-- A list of entries known to be empty (a category with nothing in it):
+-- it reads Empty and does not open, in the tree as in the menu. Entries
+-- built only when opened are known once opened.
+local function knownEmpty(node)
+    return type(node.children) == "table" and #node.children == 0
+end
+
+local function emptyText(node)
+    if knownEmpty(node) then
+        return L["Empty"]
+    end
+    return nil
+end
+
 local function whereText(node)
     local m = maps()
     if m == nil or node.x == nil then
@@ -192,19 +206,45 @@ local function vtableFor(node, screen, id)
             kind = kinds.value,
         })
     end
+    if node.children ~= nil then
+        -- "Empty" when there is nothing to open (known before opening for a
+        -- category, after it for entries built when opened)
+        tinsert(announcements, {
+            text = function()
+                return emptyText(node)
+            end,
+            kind = kinds.value,
+        })
+    end
     local vtable = { announcements = announcements }
     if node.children ~= nil then
         vtable.controlType = graph.controlTypes.group
-    elseif node.x ~= nil or node.onActivate ~= nil then
+    elseif node.x ~= nil or node.onActivate ~= nil or node.unit ~= nil then
         vtable.controlType = graph.controlTypes.button
     else
         vtable.controlType = graph.controlTypes.text
     end
-    if node.onActivate ~= nil then
+    if node.unit ~= nil then
+        -- Enter targets the unit; targeting is protected, so it is the
+        -- game's own secure target action bound to Enter. A unit with a
+        -- position routes on Backspace instead.
+        vtable.bindings = { { binding = "leftClick", type = "Target", unit = node.unit } }
+        if node.x ~= nil then
+            vtable.onSecondary = function()
+                beaconTo(node)
+            end
+        end
+    elseif node.onActivate ~= nil then
         vtable.onActivate = node.onActivate
     elseif node.x ~= nil then
         vtable.onActivate = function()
             beaconTo(node)
+        end
+    elseif knownEmpty(node) then
+        -- nothing to open: Enter says Empty again
+        vtable.onActivate = function() end
+        vtable.stateText = function()
+            return L["Empty"]
         end
     elseif node.children ~= nil then
         -- Enter on a plain category toggles it, like right and left do.
@@ -245,7 +285,7 @@ end
 local function emit(builder, screen, node, path)
     local key = path .. "/" .. tostring(node.key)
     local id = ControlId.structural(key)
-    if node.children == nil then
+    if node.children == nil or knownEmpty(node) then
         builder:addItem(id, vtableFor(node, screen, id))
         return
     end
@@ -347,19 +387,29 @@ local function menuVtable(node, screen, session, path, id)
             childPath[i] = key
         end
         tinsert(childPath, tostring(node.key))
+        -- An empty entry stays where it is: Enter reads its state (Empty),
+        -- Right says Empty itself.
         local function descend()
             local stack = host:focusedStack()
-            if stack ~= nil then
+            if stack ~= nil and #resolveChildren(node) > 0 then
                 pushMenuLevel(stack, session, childPath, node.label)
+                return true
             end
+            return false
         end
         -- Enter goes one level deeper as long as there is one, as in the
         -- tree; a place to walk to is reached on the last level (the
         -- quest's objective, its target, the target's spawn).
         vtable.controlType = graph.controlTypes.button
-        vtable.stateText = nil
+        vtable.stateText = function()
+            return emptyText(node)
+        end
         vtable.onActivate = descend
-        vtable.onRight = descend
+        vtable.onRight = function()
+            if not descend() then
+                host:_speak(L["Empty"])
+            end
+        end
     end
     if #path > 0 then
         vtable.onLeft = function()

@@ -64,7 +64,19 @@ end
 
 -- Notification methods (called by Window when it opens/closes)
 
+-- The game's sound kits Sku plays when its menu opens and closes.
+WindowManager.OPEN_SOUND = 88
+WindowManager.CLOSE_SOUND = 89
+
+local function playMenuSound(window, kit)
+    local settings = WowVision.base.ui.settings
+    if settings.menuSounds and window.playsMenuSounds ~= nil and window:playsMenuSounds() and PlaySound ~= nil then
+        PlaySound(kit)
+    end
+end
+
 function WindowManager:notifyOpened(window, instance)
+    playMenuSound(window, WindowManager.OPEN_SOUND)
     tinsert(self.openWindows, instance)
     if window:needsPolling() then
         self.openWindows.autoWindows[window.name] = true
@@ -75,6 +87,7 @@ function WindowManager:notifyClosed(window, instance, shouldHandleContext)
     if WowVision.base.ui.settings.interruptSpeechOnWindowClose then
         WowVision.base.speech:uiStop()
     end
+    playMenuSound(window, WindowManager.CLOSE_SOUND)
 
     -- Remove from open windows list
     for i, v in ipairs(self.openWindows) do

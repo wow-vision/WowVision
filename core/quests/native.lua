@@ -538,6 +538,7 @@ function Native:inProgress()
             questId = entry.questId,
             title = entry.title,
             level = entry.level,
+            zone = entry.zone,
             complete = entry.complete == true,
             failed = entry.failed == true,
             known = true,

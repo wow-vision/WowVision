@@ -140,7 +140,7 @@ Target Change is the announcement above.
 | Enabled (alert) | On | Switches the whole Target Change alert on or off |
 | TTS Alert | On | Speaks the target. Its Priority Message (interrupts) setting is on by default, and Voice lets you pick a voice just for this alert |
 | Announce Raid Target Marker on Hard Target | On | Puts the raid marker in front of the target's description |
-| Target in Combat Sound | On | Plays the sound when the new target is in combat with you or your group; you can choose a different sound with its Sound setting |
+| Target in Combat Sound | On | Plays the sound when the new target is in combat with you or your group, also when only your group is fighting it and you have not joined yet; you can choose a different sound with its Sound setting |
 
 (Classic Era, The Burning Crusade and Mists of Pandaria) Health Monitor reads your target's health aloud as it drops (or rises) in steps of five percent.
 

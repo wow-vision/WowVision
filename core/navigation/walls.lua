@@ -49,6 +49,14 @@ local function lostControl()
     return C_LossOfControl.GetActiveLossOfControlDataCount() > 0
 end
 
+-- No wall to judge: out of control, or the game chasing the enemy you
+-- attack with no key held (movement:isChasing). Such a chase stays
+-- "moving" while you stand in reach; in combat, where the speed is
+-- hidden, that standstill would sound Blocked without pause.
+local function notJudged()
+    return lostControl() or WowVision.movement:isChasing()
+end
+
 -- A walk the game makes with no key held (the interact key, click to move)
 -- ends on its own when the way is blocked, mostly before three checks could
 -- grade it. A walk that ended short of its goal plays the blocked sound
@@ -92,7 +100,7 @@ local function checkGameWalkEnd(self, now)
         return
     end
     gameWalkStart, stoppedAt = nil, nil
-    if not lostControl() and not gameWalkBlind and stuckMath.walkEndedShort(stoppedSeverity) then
+    if not notJudged() and not gameWalkBlind and stuckMath.walkEndedShort(stoppedSeverity) then
         self:fireAlert("stuck", { action = "stuck1" })
     end
 end
@@ -120,7 +128,7 @@ module:hasUpdate(function(self)
     local px, py = UnitPosition("player")
     local moving = WowVision.movement:isMoving()
 
-    if lostControl() then
+    if notJudged() then
         lastSeverity = nil
         cadence:sample(nil)
     -- Only judge intervals where the player was moving end to end and both

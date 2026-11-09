@@ -4,7 +4,7 @@
 * Chat: a new setting, Addon Messages in Chat (off by default), also writes WowVision's own messages to the main chat tab with "WowVision:" in front: a route started, how far a scan is, why something did not work. They are not spoken a second time.
 * Wall detection: no more blocked sound every half second in a fight when you are not holding a movement key, after the interact key walked you into melee.
 * Targeting: with Soft Targeting With a Hard Target on one of the Only Without modes, the soft enemy name no longer repeats many times a second. A target the game set by itself from your soft target no longer counts as a hard target.
-* Scanner, Quests, In Progress: quests now read with their level ("A Threat Within, Level 5") and come nearest first, by the place Enter on each would take you to. The new Sort Quests by Proximity setting (Quests menu, on by default) turns the ordering off to keep the order of the log.
+* Scanner, Quests, In Progress: quests now read with their level ("A Threat Within, Level 5") and sit under their quest log zone (Elwynn Forest, Westfall), one more level. Inside a zone the nearest quest comes first, by the place it guides you to. The new Sort Quests by Proximity setting (Quests menu, on by default) turns the ordering off to keep the order of the log inside each zone.
 * WowNav: creatures and objects in the destination list and the route announcements are named in your game language from Questie's database where it knows them (the WowNav data only has English and German), titles included, so searching for "aubergiste" or "cuisinier" works on a French client. New setting Names in Your Language (WowNav Routes menu, on by default).
 * Sound: the new WowVision Sound Channel setting (UI menu) picks the game sound channel WowVision's sounds play on, so that channel's volume slider in the game's sound options sets WowVision's volume. Sound Effects stays the default. Retail and WoW: Forever also offer Gameplay Sound Effects.
 * Navigation: a new Beacon Volume setting turns the beacon ping down, while near and far still sound different. The Navigation menu's Maps entry is now called Beacon and Routes; its Enabled switch turns off routes and the beacon keys as well as the beacon.
@@ -23,7 +23,12 @@
 * Search boxes now sit right before what they search, after the filters and options: trade skill windows and bags.
 * Navigation window (F10): Backspace on a destination always sets a direct beacon; Enter routes.
 * Quest window: the reward you picked reads Selected and Complete Quest names it. Focusing Complete Quest no longer scrolls the rewards.
-* Scanner: the Player category is left out while you are alive.
+* Scanner: every category is always there, in the same place; an empty one says Empty and does not open.
+* Scanner: Player starts with your own character: name, level, race, class and guild. Group members read the same. Enter on your name or a group member's targets them; Backspace on a member routes to them.
+* WowVision's own windows (the menu, the Scanner, navigation, action bars, chat) play a sound when they open and another when they close. The new setting Sounds on Opening and Closing WowVision Menus (UI menu, on by default) turns them off.
+* Targeting: the Target in Combat sound also plays when only your group is fighting your target.
+* Loot: Ctrl+Alt+Y reads the whole tooltip of the item up for a roll, not only its name.
+* Wall detection: no more Blocked sound during a fight while the game walks you after the enemy you attack with the interact key.
 
 ### Classic
 

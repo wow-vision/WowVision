@@ -7,11 +7,13 @@
   <Script file="seen.lua" />
   <Script file="completion.lua" />
   <Script file="tooltip.lua" />
+  <Script file="zones.lua" />
   <Script file="module.lua" />
   <Script file="probe.lua" />
   <Script file="scanner.lua" />
   <Script file="tests.lua" />
   <Script file="completionTests.lua" />
   <Script file="tooltipTests.lua" />
+  <Script file="zonesTests.lua" />
 
 </Ui>

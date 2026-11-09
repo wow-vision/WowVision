@@ -150,7 +150,7 @@ The game's line is spoken at once. When an objective is done, its sound waits a 
 The [Scanner](scanner.md) turns quest data into places you can walk to. It is the main way to find quests with WowVision.
 
 - Quests, Nearby: quests you can accept around you, nearest giver first.
-- Quests, In Progress: your log. Each quest the data source knows opens to its objectives, each objective to the creatures, objects and item sources it is about, and each of those to its spawns.
+- Quests, In Progress: your log, grouped by zone like the quest log, the nearest quest first in each zone. Each quest the data source knows opens to its objectives, each objective to the creatures, objects and item sources it is about, and each of those to its spawns.
 - NPCs, Quest Givers: the same givers, grouped by NPC.
 
 Enter on a quest, an objective, a target or a spawn guides you to its place. See [Navigation](navigation.md).
@@ -165,7 +165,7 @@ Open the WowVision menu, then Quests. See [Menu and Settings](../basics/menu-and
 |---------|---------|--------------|
 | Nearby Level Range | 5 | The Nearby list hides quests that are more than this many levels below your level. From 0 to 60. Set 60 to see every quest, or 0 to see only quests at or above your level. |
 | Include Repeatable Quests | On | Whether repeatable and daily quests appear in the Nearby list. |
-| Sort Quests by Proximity | On | Whether the In Progress list is nearest first, by the place Enter on each quest would take you to (the next open objective, or the turn-in once a quest is complete). Quests with no place to walk to follow, in the order of your log. Turn it off to keep the order of the log. |
+| Sort Quests by Proximity | On | Whether each zone of the In Progress list is nearest first, by the place Enter on each quest would take you to (the next open objective, or the turn-in once a quest is complete). Quests with no place to walk to follow, in the order of your log. Turn it off to keep the order of the log inside each zone. |
 | Quest Area Alert | see above | Announcements when entering or leaving an objective area. |
 | Quest Progress Alert, Objective Complete Alert, Quest Complete Alert | see above | Announcements of quest progress. |
 
@@ -175,7 +175,7 @@ The Nearby list also leaves out quests you cannot take yet, because of your leve
 
 1. Walk to a quest giver. The game opens the quest window. You hear the NPC's name, then "Quests" with "Available Quest: A Threat Within" or the details of the single quest.
 2. Press Down to read the description and objectives. Press Tab, then Enter on Accept.
-3. Press F9, open Quests, then In Progress. The quest is listed, "A Threat Within, 0 of 1". Press Right to open the objective and Right again to see what to kill, then press Enter on a spawn to be guided there.
+3. Press F9, open Quests, then In Progress, then Elwynn Forest. The quest is listed, "A Threat Within, 0 of 1". Press Right to open the objective and Right again to see what to kill, then press Enter on a spawn to be guided there.
 4. In the field, you hear "Entering area: A Threat Within" when you reach the objective area.
 5. When the objective is done, the quest reads "Complete". Press F9, open it, and press Enter on the turn-in. Talk to the NPC, press Tab to Complete Quest, choose a reward if there is a choice, then Enter.
 

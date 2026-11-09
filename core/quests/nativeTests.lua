@@ -153,8 +153,11 @@ local function inProgressNodes(source)
     local out = {}
     for _, category in ipairs(harness.providers.quests.build({ maxEntries = 25, radius = 500 })) do
         if category.key == "inProgress" then
-            for _, node in ipairs(category.children()) do
-                out[node.key] = node
+            -- one level per quest log zone, then the zone's quests
+            for _, zone in ipairs(category.children()) do
+                for _, node in ipairs(zone.children) do
+                    out[node.key] = node
+                end
             end
         end
     end

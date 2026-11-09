@@ -96,6 +96,7 @@ Worum es sich kümmert:
 - Es folgt deinen Bewegungsbefehlen, egal welche Tasten du zum Bewegen belegt hast. Automatisches Laufen zählt auch als Bewegung.
 - Es deckt auch Wege ab, die das Spiel für dich geht: wenn du die Interaktionstaste drückst und das Spiel dich zu einem NPC laufen lässt, oder wenn du Klicken-zum-Bewegen benutzt. Endet ein solcher Weg, bevor er sein Ziel erreicht (du bist an etwas hängen geblieben), wird der Ton Blockiert einmal gespielt.
 - Betäubt, festgewurzelt, in Furcht versetzt oder anderweitig die Kontrolle verloren zu haben wird nie als Wand gemeldet, und solange du auf einem Flugweg bist, wird nichts eingestuft.
+- Greifst du mit der Interaktionstaste an, läuft dein Charakter dem Gegner den ganzen Kampf über hinterher. Sobald du im Kampf bist, bleibt die Wanderkennung dabei still, solange dein automatischer Angriff läuft und du keine Bewegungstaste drückst. Auf dem Weg zum Gegner, bevor der Kampf beginnt, warnt sie bei einem Hindernis wie immer, und ebenso, wenn du eine Bewegungstaste drückst.
 - Beim Schwimmen wird deine Schwimmgeschwindigkeit zum Vergleich benutzt.
 - (Nur Retail und WoW: Forever) Im Kampf verbirgt das Spiel deine Bewegungsgeschwindigkeit, sodass nur ein völliger Stillstand bemerkt werden kann: Du hörst den Ton Blockiert, aber keine der langsameren Stufen.
 

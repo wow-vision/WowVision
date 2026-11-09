@@ -6,7 +6,7 @@ Press F9 to open the Scanner. Press Escape to close it. The key is called Scanne
 
 The Scanner is a tree by default. If you would rather go through it like the WowVision menu, one level at a time with Enter and back with Escape, switch off Scanner as Tree in the Scanner settings; see [The Scanner as a menu](#the-scanner-as-a-menu).
 
-Pressing F9 while you are in the quest log opens the Scanner right on that quest, under Quests, In Progress: the quest your cursor is on in the log, or else the quest whose details are open. Press Right to hear its objectives, or Enter to be guided to its next target.
+Pressing F9 while you are in the quest log opens the Scanner right on that quest, under Quests, In Progress and the quest's zone: the quest your cursor is on in the log, or else the quest whose details are open. Press Right to hear its objectives, or Enter to be guided to its next target.
 
 ## How it is laid out
 
@@ -17,8 +17,8 @@ By default the Scanner is one tree. The top level holds categories, categories h
 | Down and Up | Move to the next or previous entry. |
 | Right | Open a collapsed group, or step into an open one. |
 | Left | Close an open group, or step out to its parent. |
-| Enter | On an entry with a position: guide you there (see below). On a group without a position: open or close it. On a checkbox in the Tracking category: switch it on or off. |
-| Backspace | On entries that have extra text (quests): open a small read-only list with that text. |
+| Enter | On an entry with a position: guide you there (see below). On a group without a position: open or close it. On your own name or a group member's name: target that character. On a checkbox in the Tracking category: switch it on or off. |
+| Backspace | On entries that have extra text (quests): open a small read-only list with that text. On a group member with a position: guide you there. |
 | Tab | Jump from the tree to the Refresh button and back. |
 | Escape | Close the Scanner. |
 
@@ -31,15 +31,15 @@ If you prefer moving through the Scanner like the WowVision menu, one level at a
 | Key | What it does |
 |-----|--------------|
 | Down and Up | Move to the next or previous entry. |
-| Enter | On an entry that holds more entries: open its list, one level deeper. On the last level, an entry with a position opens the navigation window to start a route there (see [What Enter does](#what-enter-does)). On a checkbox in the Tracking category: switch it on or off. |
+| Enter | On an entry that holds more entries: open its list, one level deeper. An entry with nothing in it says "Empty" and does not open. On your own name or a group member's name: target that character. On the last level, an entry with a position opens the navigation window to start a route there (see [What Enter does](#what-enter-does)). On a checkbox in the Tracking category: switch it on or off. |
 | Right | The same as Enter on an entry that holds more entries. |
 | Left or Escape | Go back one level, to the entry you opened. Escape on the first level closes the Scanner. |
 | A letter | Jump to the next entry starting with it, as in the WowVision menu. |
 | Backspace and Tab | The same as in the tree. |
 
-So the menu reaches every level the tree does: Quests, In Progress, the quest, its objective, the creature, its spawn. In the tree, Enter on a quest or an objective guides you to the nearest place right away; in the menu you go down to the place you want first.
+So the menu reaches every level the tree does: Quests, In Progress, the zone, the quest, its objective, the creature, its spawn. In the tree, Enter on a quest or an objective guides you to the nearest place right away; in the menu you go down to the place you want first.
 
-Refresh works on every level and keeps you on the level you are on. Pressing F9 in the quest log opens the levels Quests and In Progress for you and puts you on the quest; Escape takes you back through them.
+Refresh works on every level and keeps you on the level you are on. Pressing F9 in the quest log opens the levels Quests, In Progress and the quest's zone for you and puts you on the quest; Escape takes you back through them.
 
 For each entry with a position you hear its name, an extra note when it has one, the distance and direction from where you stand now, and its place in the list. For example: "Marshal McBride, seen, quest available, 85 yards, ahead left, 3 of 12". The distance and direction are worked out when you land on the entry, so they follow you as you walk. The directions are relative to the way you face: ahead, ahead left, left, behind left, behind, behind right, right, ahead right.
 
@@ -49,22 +49,21 @@ The Scanner builds its lists once, when you open it. It does not change while it
 
 Which groups you have opened is remembered between openings until you log out. On your first opening of a session every category is open except Tracking.
 
-If a category has an error while it is being built, you hear a line starting with "Error" in its place and the rest of the Scanner still works. A group with nothing in it reads "Empty".
+If a category has an error while it is being built, you hear a line starting with "Error" in its place and the rest of the Scanner still works. A category or group with nothing in it says "Empty" after its name and does not open.
 
 ## The categories
 
-Categories appear in this order. Some are left out while there is nothing to list.
+The categories are always there, in this order, even when one has nothing to list. So every category keeps its place: Group always comes right after Player, also when you are not in a group. An empty category says "Empty" and does not open.
 
 ### Player
 
-This category appears only while you are dead or a ghost.
-
-- Corpse: the place where your body lies, if the game reports it on the current map. Press Enter to be guided to it, the usual way to find it on a corpse run.
+- You: your character's name first, then level, race, class and guild, for example "Anna, Level 12, Human, Warrior, Guild: Order of Light". Press Enter to target yourself.
+- Corpse: while you are dead or a ghost, the place where your body lies, if the game reports it on the current map. Press Enter to be guided to it, the usual way to find it on a corpse run.
 - Graveyards: the graveyards of the map you are on, each with its distance. Open the group to see them.
 
 ### Group
 
-Your party or raid members. Each is listed by name. The game only gives a position for group members who are on your map. When you press Enter the navigation window aims at the member's position at that moment. With WowNav on WoW: Forever, WowNav is told which member you chose, so a new route or Ctrl+Shift+N reads the member's position again instead of using the old one; see [WowNav](wownav.md). If the member is no longer on your map you hear "No position of the group member available". The Group category is left out while no member can be placed.
+Your party or raid members. Each is listed by name, then level, race, class and guild. Press Enter to target the member. The game only gives a position for group members who are on your map; for them you also hear distance and direction. Press Backspace on such a member to be guided there: the navigation window aims at the member's position at that moment. With WowNav on WoW: Forever, WowNav is told which member you chose, so a new route or Ctrl+Shift+N reads the member's position again instead of using the old one; see [WowNav](wownav.md). If the member is no longer on your map you hear "No position of the group member available". While you are not in a group, Group says "Empty".
 
 ### Quests
 
@@ -74,14 +73,14 @@ Nearby lists quests you could pick up around you, nearest giver first. Each entr
 
 If the data source is still starting, you hear "Loading". Without any data source at all the whole Quests category holds the single line "No quest data source".
 
-In Progress lists your quest log. Each entry shows the quest title with its level ("A Threat Within, Level 5"; the level is the log's, so it can differ a little from the level of a scaled quest) and its state: "Complete", "Failed", or "2 of 3" for how many objectives are done. The list is nearest first, by the place Enter on each quest would take you to, so a quest you can hand in a few steps away comes before one on the other side of the zone; quests with no place to walk to come last. The Sort Quests by Proximity setting turns this off to keep the order of the log; see [Quests](quests.md). Press Backspace to read its objective text, or Shift+Down and Shift+Up to read its tooltip line by line: the title, the level with the quest colour, what kind of quest it is, how many objectives are done, each objective with its progress, for a complete quest where to turn it in, and the quest text. The progress is read fresh each time. Open a quest to see its objectives:
+In Progress lists your quest log, sorted by zone like the quest log: first the zones (such as Elwynn Forest or Westfall, or a class or profession) with the number of quests in each, and under each zone its quests, the nearest first. Nearest means the place the quest guides you to, so the quest you can work on with the shortest walk comes first. Quests without a place follow. The Sort Quests by Proximity setting turns this off to keep the order of the log inside each zone; see [Quests](quests.md). Each quest shows the quest title with its level ("A Threat Within, Level 5"; the level is the log's, so it can differ a little from the level of a scaled quest) and its state: "Complete", "Failed", or "2 of 3" for how many objectives are done. Press Backspace to read its objective text, or Shift+Down and Shift+Up to read its tooltip line by line: the title, the level with the quest colour, what kind of quest it is, how many objectives are done, each objective with its progress, for a complete quest where to turn it in, and the quest text. The progress is read fresh each time. Open a quest to see its objectives:
 
 1. A quest in progress expands to its objectives (only when the data source knows the quest; a quest it does not know shows just its state), for example "Kobold Vermin slain: 3/10". A finished objective is marked "Complete".
 2. An objective expands to what it is about: the creatures, objects or item sources that count towards it. An item source is named like "Linen Cloth from Defias Thug". Each of these shows a note: its title, "seen" if the Minimap Scanner found it, "indoors", the number of spawns and, when there is only one spawn, where it is.
 3. Something with several spawns expands again to each spawn, named by its place, for example "Valley of the Four Winds, Halfhill Market, 80 yards". A spawn marked phased out is one that probably does not exist for your character right now, but it is kept in case the guess was wrong.
 4. A quest that is complete expands straight to the turn-in NPC or object instead, marked "turn in".
 
-So you hear what to look for before you hear where. Example: you have the quest "Wolves Across the Border" with the objective "Prowler slain: 3/10". Land on the quest and you hear its name and "0 of 1" (no objective finished yet). Press Right: the first entry is the objective, "Prowler slain: 3/10". Press Right again: "Prowler, 12 spawns". Press Right once more and you walk through the spawns, nearest first, each with its place name and distance. Press Enter on the one you want.
+So you hear what to look for before you hear where. Example: you have the quest "Wolves Across the Border" in Elwynn Forest with the objective "Prowler slain: 3/10". Open In Progress, then Elwynn Forest, and land on the quest and you hear its name and "0 of 1" (no objective finished yet). Press Right: the first entry is the objective, "Prowler slain: 3/10". Press Right again: "Prowler, 12 spawns". Press Right once more and you walk through the spawns, nearest first, each with its place name and distance. Press Enter on the one you want.
 
 The quest line and the objective each also carry a position of their own, the first unfinished target, so Enter on the quest itself guides you to the nearest place where you can make progress. A complete quest guides you to its turn-in.
 
@@ -96,11 +95,11 @@ How many show depends on the data. With a quest database (Questie, see [Quests](
 
 ### Points of Interest
 
-The towns and landmarks the last minimap scan saw on the minimap. These are names only, without a position, so Enter does nothing on them. Shown only after a scan found some. See [Minimap Scanner](minimap.md).
+The towns and landmarks the last minimap scan saw on the minimap. These are names only, without a position, so Enter does nothing on them. Empty until a scan found some. See [Minimap Scanner](minimap.md).
 
 ### Gathering
 
-Herb, ore and treasure nodes found by the minimap scan, with one group for each tracking ability, named after it, such as "Find Herbs" or "Find Minerals". A group "Unsorted" holds dots from other tracking abilities that could not be sorted. Shown only after a scan found some. Each node is marked "seen" and "indoors" where it applies. See [Minimap Scanner](minimap.md).
+Herb, ore and treasure nodes found by the minimap scan, with one group for each tracking ability, named after it, such as "Find Herbs" or "Find Minerals". A group "Unsorted" holds dots from other tracking abilities that could not be sorted. Empty until a scan found some. Each node is marked "seen" and "indoors" where it applies. See [Minimap Scanner](minimap.md).
 
 ### Tracking
 
@@ -144,15 +143,15 @@ The related quest settings live in the Quests module: see [Quests](quests.md).
 ## Example: corpse run
 
 1. Release your spirit.
-2. Press F9. The Player category says "Corpse" with distance and direction.
-3. Press Enter to be guided. Follow the beacon or the route.
+2. Press F9 and open the Player category. After your own name comes "Corpse" with distance and direction.
+3. Press Enter on it to be guided. Follow the beacon or the route.
 
 ## Version notes
 
 - Classic Era, The Burning Crusade and Mists of Pandaria: the quest groups and NPC role groups use the Questie addon when it is loaded. Without Questie, WowVision falls back to the game's own quest map data where the client has it, as Retail does; where it does not, you hear "No quest data source".
 - Retail: the quest lists come from the game's own quest map data. There are no spawn tables, so each quest entry has a single position, and the NPC groups only list quest givers, who appear as "Quest Giver" at a place rather than by name. There are no role groups.
 - WoW: Forever: uses Questie when it is loaded, otherwise the game's own quest data. The game's own quest data is often incomplete there, so the Minimap Scanner fills in quest givers, NPC kinds, gathering nodes and points of interest. See [Minimap Scanner](minimap.md).
-- Tracking appears only where the game provides minimap tracking types.
+- Tracking is empty where the game provides no minimap tracking types.
 - Graveyards appear when the game can list them for the map.
 - Group member positions can only be read where the game exposes them.
 - Enter opens the [navigation window](navigation.md) where map data exists for the continent, and falls back to a straight beacon elsewhere.

@@ -67,6 +67,13 @@ function Window:needsPolling()
     return false
 end
 
+-- Whether opening and closing it play the menu sounds. Only WowVision's
+-- own windows (ManualWindow: the WowVision menu, scanner, navigation,
+-- action bars, chat); the game's windows make their own sounds.
+function Window:playsMenuSounds()
+    return false
+end
+
 function Window:initialize(config)
     self:applyFields(config)
     self._isCurrentlyOpen = false
@@ -267,6 +274,10 @@ end
 -- isOpen returns internal state - only changes when opened/closed externally
 function ManualWindow:isOpen()
     return self._isCurrentlyOpen
+end
+
+function ManualWindow:playsMenuSounds()
+    return true
 end
 
 WowVision.ManualWindow = ManualWindow

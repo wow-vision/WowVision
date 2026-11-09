@@ -142,7 +142,7 @@ Zielwechsel (Target Change) ist die oben beschriebene Ansage.
 | Aktiviert (Alarm) | An | Schaltet den ganzen Alarm Zielwechsel ein oder aus |
 | TTS-Alarm | An | Spricht das Ziel. Seine Einstellung Prioritätsnachricht (unterbricht) ist standardmäßig an, und mit Stimme kannst du eine Stimme nur für diesen Alarm wählen |
 | Schlachtzugmarkierung bei festem Ziel ansagen | An | Stellt die Schlachtzugmarkierung vor die Beschreibung des Ziels |
-| Ziel-im-Kampf-Sound | An | Spielt den Ton, wenn das neue Ziel im Kampf mit dir oder deiner Gruppe ist; mit seiner Einstellung Sound kannst du einen anderen Ton wählen |
+| Ziel-im-Kampf-Sound | An | Spielt den Ton, wenn das neue Ziel im Kampf mit dir oder deiner Gruppe ist, auch wenn nur deine Gruppe es bekämpft und du noch nicht mitkämpfst; mit seiner Einstellung Sound kannst du einen anderen Ton wählen |
 
 (Classic Era, The Burning Crusade und Mists of Pandaria) Die Lebensüberwachung (Health Monitor) liest die Gesundheit deines Ziels in Fünf-Prozent-Schritten vor, wenn sie sinkt (oder steigt).
 

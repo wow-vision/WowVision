@@ -32,6 +32,10 @@ local movement = {
     -- PLAYER_STOPPED_TURNING): the ground truth behind the turn flags, as
     -- IsPlayerMoving is behind the movement flags.
     turning = false,
+    -- Whether your auto-attack is on (PLAYER_ENTER_COMBAT and
+    -- PLAYER_LEAVE_COMBAT, which despite their names follow the attack, not
+    -- the fight).
+    attacking = false,
 }
 WowVision.movement = movement
 
@@ -58,6 +62,17 @@ end
 -- straight down has no sideways movement to judge.
 function movement:isMoving()
     return IsPlayerMoving() and (self:isTranslating() or not IsFalling())
+end
+
+-- Whether the game is chasing the enemy you fight: you are in combat, your
+-- auto-attack is on and you command no translation. Attacking with the
+-- interact key (click to move) keeps the game walking you after the enemy
+-- for the whole fight, with small steps while you stand in reach: the
+-- game's moving state stays on though you hardly move. The walk up to the
+-- enemy, before the fight begins, is no chase: an obstacle on the way
+-- still counts.
+function movement:isChasing()
+    return self.attacking and not self:isTranslating() and UnitAffectingCombat("player") == true
 end
 
 local function flagSetter(key, value)
@@ -132,6 +147,8 @@ frame:RegisterEvent("PLAYER_STOPPED_MOVING")
 frame:RegisterEvent("AUTOFOLLOW_END")
 frame:RegisterEvent("PLAYER_STARTED_TURNING")
 frame:RegisterEvent("PLAYER_STOPPED_TURNING")
+frame:RegisterEvent("PLAYER_ENTER_COMBAT")
+frame:RegisterEvent("PLAYER_LEAVE_COMBAT")
 frame:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_STOPPED_MOVING" then
         movement.flags.autorun = false
@@ -141,5 +158,9 @@ frame:SetScript("OnEvent", function(_, event)
         movement.turning = true
     elseif event == "PLAYER_STOPPED_TURNING" then
         movement.turning = false
+    elseif event == "PLAYER_ENTER_COMBAT" then
+        movement.attacking = true
+    elseif event == "PLAYER_LEAVE_COMBAT" then
+        movement.attacking = false
     end
 end)
