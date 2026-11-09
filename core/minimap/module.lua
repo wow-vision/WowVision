@@ -1512,6 +1512,68 @@ function module:rawRead()
         gridProbe("In its own place, soft cursor on")
         soft(false)
         gridProbe("In its own place, soft cursor off")
+
+        -- Since 70862 the minimap names dots only when the cursor really
+        -- moves (WoWUIBugs #894). A keyboard player has no mouse to move,
+        -- but the game itself puts the cursor back at the screen centre
+        -- when a short mouselook ends (Engine.centreCursor). Asked here:
+        -- does that jump count as movement for a shrunk minimap waiting
+        -- at the centre? Only the cursor's own read, nothing asked at a
+        -- point; names only, no positions.
+        local uiScale = UIParent:GetEffectiveScale()
+        local midX, midY = UIParent:GetWidth() * uiScale / 2, UIParent:GetHeight() * uiScale / 2
+        local function cursorProbe(label, jump)
+            Engine.shrink(midX, midY)
+            Engine.wait(2)
+            local beforeX, beforeY = GetCursorPosition()
+            local jumped = "no jump asked"
+            if jump then
+                if IsMouselooking ~= nil and IsMouselooking() then
+                    jumped = "no jump, already mouselooking"
+                else
+                    Engine.centreCursor()
+                    jumped = "jump done"
+                end
+            end
+            local afterX, afterY = GetCursorPosition()
+            local most, names = 0, ""
+            for _ = 1, 10 do
+                Engine.wait()
+                local okRead, read = pcall(C_TooltipInfo.GetMinimapMouseover)
+                read = okRead and read or nil
+                local count = read ~= nil and type(read.lines) == "table" and #read.lines or 0
+                if count > most then
+                    most = count
+                    names = Scan.signature(Scan.parseMouseover(read, WowVision.isSecret)):gsub("\n", ", ")
+                end
+            end
+            tinsert(
+                task.probes,
+                string.format(
+                    "%s: %s, cursor %.0f %.0f to %.0f %.0f, minimap centre %.0f %.0f, mouse over the minimap %s: %d tooltip lines, names: %s",
+                    label,
+                    jumped,
+                    beforeX,
+                    beforeY,
+                    afterX,
+                    afterY,
+                    midX,
+                    midY,
+                    tostring(Minimap:IsMouseOver()),
+                    most,
+                    most > 0 and names or "none"
+                )
+            )
+        end
+        soft(false)
+        Minimap:SetAlpha(1)
+        cursorProbe("Mouselook jump test, control: shrunk at the centre, shown, cursor not moved", false)
+        cursorProbe("Mouselook jump test: shrunk at the centre, shown, soft cursor off", true)
+        Minimap:SetAlpha(0)
+        cursorProbe("Mouselook jump test: shrunk at the centre, hidden, soft cursor off", true)
+        soft(true)
+        cursorProbe("Mouselook jump test: shrunk at the centre, hidden, soft cursor on", true)
+        soft(false)
     end
     task.check = function()
         return InCombatLockdown() and "combat" or nil
