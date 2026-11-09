@@ -34,6 +34,24 @@ local function servicePayload(data)
     end
     return data
 end
+module.servicePayload = servicePayload
+
+-- The service the Train button buys: the trainer frame's own selection, not
+-- GetTrainerSelectionIndex, which can still name a row while the frame has
+-- none and Train is off. WoW: Forever keeps it as a display index (0 is the
+-- profession step button) and maps it to the skill index; Classic/TBC/Mists
+-- keep the skill index itself.
+local function selectedSkillIndex()
+    local selected = ClassTrainerFrame ~= nil and ClassTrainerFrame.selectedService or nil
+    if selected == nil then
+        return nil
+    end
+    local map = ClassTrainerFrame.displayIndexToSkillIndex
+    if map ~= nil then
+        return map[selected]
+    end
+    return selected
+end
 
 -- The hunter's pet training on WoW: Forever (camelot/petTraining.lua). Class training must not
 -- depend on it: on the other versions there is simply never a pet window.
@@ -143,7 +161,7 @@ local function serviceAnnouncements(index)
     else
         tinsert(announcements, {
             text = function()
-                if index == GetTrainerSelectionIndex() then
+                if index == selectedSkillIndex() then
                     return L["selected"]
                 end
                 return nil

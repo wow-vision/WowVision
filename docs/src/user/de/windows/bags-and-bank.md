@@ -127,28 +127,28 @@ Diese Versionen haben zwei Taschenansichten, die du im Taschenmenü des Spiels w
 
 ### Zusammengefasste Taschen
 
-Alle deine Taschen werden als ein großes Raster gezeichnet, und WowVision liest es genauso: zuerst der Rucksack, dann die anderen Taschen, ohne Taschengrenzen. Die Stopps sind:
+Alle deine Taschen werden als ein großes Raster gezeichnet, und WowVision liest es genauso: zuerst der Rucksack, dann die anderen Taschen, ohne Taschengrenzen. Das Fenster öffnet sich auf dem Stopp Taschen. Die Stopps sind:
 
-1. Taschen (Bags): die Plätze in der Form, die du gewählt hast (ein Raster ist zehn Plätze breit, die erste Zeile kann kürzer sein). In der Listenform stehen die Plätze in Platzreihenfolge, der Rucksack zuerst.
-2. Taschenplätze (Bag Slots): eine Zeile mit den Taschenplatz-Schaltflächen des Rucksacks und deiner vier Taschen. Jede liest „Taschenplatz“ und den Namen der Tasche. Die Reagenzientasche und, in WoW: Forever, der Schlüsselbund zeichnet das Spiel auch in der zusammengefassten Ansicht als eigene Rahmen. Sie stehen nicht in dieser Zeile. Jede bekommt einen eigenen Stopp, mit ihrem Taschenplatz zuerst, wie in der Einzelansicht weiter unten.
-3. Suchen (Search): ein Textfeld. Gehe mit Tab hinein und tippe, und Plätze, die nicht passen, lesen Gefiltert. Mit Tab verlässt du das Feld.
-4. Taschensteuerung (Bag Controls): Taschenmenü (Bag Menu), ein Dropdown mit einem Untermenü pro Tasche (Filter, Aufräumen, Taschenansicht wechseln); Taschen sortieren; Geld, das dein Gold liest, zum Beispiel „Geld, 12 Gold 5 Silber“; und Plätze hinzufügen, wenn das Spiel das anbietet.
+1. Taschensteuerung (Bag Controls): Taschenmenü (Bag Menu), ein Dropdown mit einem Untermenü pro Tasche (Filter, Aufräumen, Taschenansicht wechseln); Taschen sortieren; Geld, das dein Gold liest, zum Beispiel „Geld, 12 Gold 5 Silber“; und Plätze hinzufügen, wenn das Spiel das anbietet.
+2. Suchen (Search): ein Textfeld. Gehe mit Tab hinein und tippe, und Plätze, die nicht passen, lesen Gefiltert. Mit Tab verlässt du das Feld.
+3. Taschen (Bags): die Plätze in der Form, die du gewählt hast (ein Raster ist zehn Plätze breit, die erste Zeile kann kürzer sein). In der Listenform stehen die Plätze in Platzreihenfolge, der Rucksack zuerst.
+4. Taschenplätze (Bag Slots): eine Zeile mit den Taschenplatz-Schaltflächen des Rucksacks und deiner vier Taschen. Jede liest „Taschenplatz“ und den Namen der Tasche. Die Reagenzientasche und, in WoW: Forever, der Schlüsselbund zeichnet das Spiel auch in der zusammengefassten Ansicht als eigene Rahmen. Sie stehen nicht in dieser Zeile. Jede bekommt einen eigenen Stopp, mit ihrem Taschenplatz zuerst, wie in der Einzelansicht weiter unten.
 
 Ein Rucksack eines Accounts ohne Authenticator zeigt vier zusätzliche Plätze, die nichts aufnehmen können. WowVision liest diese nicht als Plätze. Die Schaltfläche Plätze hinzufügen bleibt in der Taschensteuerung.
 
 Beispiel: deinen Ruhestein mit der Suche finden.
 
 1. Öffne die Taschen mit B. Drücke Strg+Tab, wenn du in einem anderen Fenster bist.
-2. Drücke Tab, bis du „Suchen“ hörst.
+2. Das Fenster öffnet sich auf Taschen. Drücke einmal Umschalt+Tab, um „Suchen“ zu erreichen.
 3. Tippe `ruhe`. Die Plätze, die nicht passen, lesen jetzt Gefiltert.
-4. Gehe mit Tab zurück zum Stopp Taschen und lies die Plätze mit Pfeil runter.
+4. Gehe mit Tab zum Stopp Taschen und lies die Plätze mit Pfeil runter.
 
 ### Einzelne Taschen
 
 Jede Tasche ist ein eigenes Fenster, wie in Classic. Jede offene Tasche ist ein Stopp, der mit dem Namen der Tasche angesagt wird. Die Rucksacktaste allein öffnet nur den Rucksack. Die Taste Alle Taschen öffnen (Open All Bags) des Spiels (standardmäßig Umschalt zusammen mit der Rucksacktaste) öffnet alles.
 
 - Der erste Eintrag ist der Taschenplatz: „Taschenplatz“ und der Taschenname. Beide Klicks darauf sagen Tasche schließen, oder Gegenstand ablegen, solange du eine Tasche hältst. Das eigene Menü der Tasche (Filter, Aufräumen, Taschenansicht wechseln) liegt im Kontextmenü des Platzes, als Taschenmenü.
-- Suche, Taschen sortieren, Geld und Plätze hinzufügen gehören zum Rucksack. Sie erscheinen nach den Taschen in einem Stopp namens Taschensteuerung.
+- Taschen sortieren, Geld und Plätze hinzufügen gehören zum Rucksack. Sie erscheinen vor den Taschen in einem Stopp namens Taschensteuerung, gefolgt vom Stopp Suchen. Das Fenster öffnet sich auf der ersten Tasche.
 
 ## Bank in Retail und WoW: Forever
 

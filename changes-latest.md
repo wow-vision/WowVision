@@ -12,7 +12,15 @@
 * Buffers: new settings Always Start at Top (off by default) and Sounds When Opening and Closing (on by default).
 * Quest log: new setting Always Start at Top (off by default), which opens the quest log on its first entry instead of the selected quest.
 * UI menu: a new Apply Recommended Game Settings button, only a suggestion, turns on auto loot and all action bars and, where the game has it, sets up the game's Audio Assist (your health, target health and resource every 20 percent, and when you are targeted). It does nothing in combat, and reloads the interface after a change.
-* Item tooltips now end with Pawn's upgrade summary and a comparison with the item you wear in that slot, read line by line with Shift+Down or all at once with Space. Pawn's summary has one line per scale the item upgrades ("Pawn: Hunter: Marksmanship, upgrade of 12 percent, over Rusty Helm") and replaces the upgrade lines Pawn writes itself. The comparison gives the item level difference and every stat that changes ("Armor: 10 more", "Intellect: 4 less"), for both rings and trinkets, a one-hand weapon against the off hand when it holds a weapon, and a two-hander also names the off hand it takes off. Two checkboxes under UI, Tooltip, Compare turn the parts off.
+* Item tooltips: with the Pawn addon installed, the tooltip ends with Pawn's upgrade summary, one line per scale the item upgrades ("Pawn: Hunter: Marksmanship, upgrade of 12 percent, over Rusty Helm"). These replace the upgrade lines Pawn writes itself. The Pawn Summary checkbox under UI, Tooltip, Compare turns it off.
+* Item tooltips: gear is compared with what you wear in that slot. Space still reads only the item; Shift+Down walks on into the comparison. The new Compare With Equipped Item setting under UI, Tooltip, Compare picks the comparison: Game (the default) reads the game's own comparison, the one sighted players get on Shift; WowVision says only what differs, spelled out ("Armor: 10 more", "Intellect: 4 less"); None turns it off.
+* Tooltips: two new unbound keys, Previous Tooltip Block and Next Tooltip Block (Ctrl+Shift+Up and Ctrl+Shift+Down in the manual), jump between the item, each equipped item and the stat changes.
+* Bags, bank and action bars: with the new Skip Empty Slots on Double Arrow setting (UI menu, off by default), pressing the same arrow twice quickly skips the empty slots to the next filled one.
+* Windows land on their content: the profession recipe lists and the spellbooks open on the list, the game's settings panel on its search box.
+* Search boxes now sit right before what they search, after the filters and options: trade skill windows and bags.
+* Navigation window (F10): Backspace on a destination always sets a direct beacon; Enter routes.
+* Quest window: the reward you picked reads Selected and Complete Quest names it. Focusing Complete Quest no longer scrolls the rewards.
+* Scanner: the Player category is left out while you are alive.
 
 ### Classic
 
@@ -20,9 +28,13 @@
 * Auction house: the scan result and the full scan cooldown times are now fully translated.
 
 ### Modern
+* Trainer: Train works as soon as the window opens, and pressing it again and again learns everything in turn.
+* Cooldown manager: the window no longer closes itself when the game shows no tabs.
 * Quest log: a finished or failed quest says Complete or Failed after its title.
 
 #### Forever
+* Target Names: NPC titles such as Innkeeper are read again.
+* Search boxes sit right before what they search in crafting, talents, collections, challenges and Who. The spellbook goes tabs, spells, then search and options. The Social window opens on its list.
 * Quests: a quest whose area lies in another zone now has a point to navigate to, from the game's world map.
 * WowNav data: Stormwind, Ironforge, Undercity, Darnassus, Orgrimmar and Thunder Bluff are rebuilt, and the start zones updated again. The Deeprun Tram is linked like the Sku data, so a route between its two stations follows the tunnel.
 * WowNav routes: a route now picks the cheapest pair of checked entry points near you and near the target, so it no longer starts or ends with a detour to a worse one.

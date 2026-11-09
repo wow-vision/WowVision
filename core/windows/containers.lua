@@ -37,12 +37,14 @@ end
 -- An item slot node: live label (bag contents change constantly under
 -- focus), real clicks for pickup, use, and split, and drag support.
 -- clickLabels (optional) name what the clicks do, for the context menu.
-function module.itemSlotNode(itemButton, label, clickLabels)
+-- isEmpty (optional) marks the slot as empty for the double arrow skip.
+function module.itemSlotNode(itemButton, label, clickLabels, isEmpty)
     local vtable = nodes.proxyButton({ target = itemButton, label = label, clickLabels = clickLabels })
     if vtable == nil then
         return nil
     end
     vtable.announcements[1].live = "focus"
+    vtable.isEmpty = isEmpty
     tinsert(vtable.bindings, {
         binding = "drag",
         type = "Function",
@@ -145,6 +147,14 @@ function module.itemClickLabels(itemButton)
     }
 end
 
+-- An item slot holding nothing: the same read its label makes.
+function module.slotIsEmpty(itemButton)
+    return function()
+        local bagID, slotID = module.slotLocation(itemButton)
+        return C_Container.GetContainerItemInfo(bagID, slotID) == nil
+    end
+end
+
 -- Bag shape: item slots read as the grid the frame draws (rows, with
 -- up/down moving between them) or as one flat list per bag.
 local settings = module:hasSettings()
@@ -216,7 +226,7 @@ function module.renderSlots(builder, buttons)
                     ControlId.forObject(itemButton),
                     module.itemSlotNode(itemButton, function()
                         return module.getBagItemLabel(itemButton)
-                    end, module.itemClickLabels(itemButton))
+                    end, module.itemClickLabels(itemButton), module.slotIsEmpty(itemButton))
                 )
             end
         end
@@ -229,7 +239,7 @@ function module.renderSlots(builder, buttons)
                 ControlId.forObject(itemButton),
                 module.itemSlotNode(itemButton, function()
                     return module.getBagItemLabel(itemButton)
-                end, module.itemClickLabels(itemButton))
+                end, module.itemClickLabels(itemButton), module.slotIsEmpty(itemButton))
             )
         end
         builder:endRow()

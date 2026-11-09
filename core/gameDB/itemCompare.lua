@@ -1,8 +1,8 @@
 local L = WowVision:getLocale()
 
 -- What an item tooltip says after the game's own lines (and the quality and item level of itemQuality.lua), in two
--- parts that read as sentences of their own, so the line keys (Shift+Down) walk them one by one and the whole-tooltip
--- key (Space) reads them with the rest:
+-- parts that read as sentences of their own, so the line keys (Shift+Down) walk them one by one. The whole-tooltip
+-- key (Space) reads Pawn's lines with the rest and leaves the comparison out:
 --
 --   * Pawn's upgrade summary, one line per scale the item is an upgrade for: "Pawn: Hunter: Marksmanship, upgrade of
 --     12 percent, over Rusty Helm". Pawn is optional; its functions are looked up when a tooltip is read.
@@ -448,28 +448,24 @@ function items.augmentComparisonLines(lines, link)
         return
     end
 
-    local added = {}
-
     if items.compareEnabled("pawn") then
         local pawn = items.pawnUpgradeLines(link)
         if pawn ~= nil then
             items.removePawnUpgradeLines(lines)
             for _, text in ipairs(pawn) do
-                added[#added + 1] = text
+                lines[#lines + 1] = { text, nil }
             end
         end
     end
 
+    -- Marked like the game's comparison (Tooltip:addComparison): reading the whole tooltip at once stays with the
+    -- item, the line keys walk on into the comparison, and the block keys jump to its start.
     if items.compareEnabled("equipped") then
         local comparison = items.comparisonLines(link)
         if comparison ~= nil then
-            for _, text in ipairs(comparison) do
-                added[#added + 1] = text
+            for index, text in ipairs(comparison) do
+                lines[#lines + 1] = { text, nil, compare = true, blockStart = index == 1 or nil }
             end
         end
-    end
-
-    for _, text in ipairs(added) do
-        lines[#lines + 1] = { text, nil }
     end
 end

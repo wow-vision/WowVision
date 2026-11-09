@@ -32,6 +32,7 @@ function Builder:initialize(expansion)
     self.rowOf = {} -- node -> its menu row (absent for raw nodes)
     self.ids = {} -- structural key -> true, for duplicate detection
     self.start = nil
+    self.startStop = nil
     self.stopKey = "stop#0"
     self.stopAuto = 1
     -- The parent stack: structural levels (pushContext) and group headers
@@ -222,9 +223,19 @@ function Builder:isExpanded(id)
 end
 
 -- Focus starts here when the graph has no prior position (defaults to the
--- first node).
+-- first node). A named start is exact: only the default start yields to its
+-- stop's selected member.
 function Builder:setStart(id)
     self.start = id
+    return self
+end
+
+-- Focus starts in this tab stop (its first node) when the graph has no prior
+-- position: a window landing on its content, whatever ids the content's list
+-- helper gives its rows. An explicit setStart wins; a stop that declares
+-- nothing falls back to the first node.
+function Builder:setStartStop(stopKey)
+    self.startStop = stopKey
     return self
 end
 
@@ -370,8 +381,18 @@ function Builder:build()
 
     if self.start ~= nil and render.nodes[self.start.key] ~= nil then
         render.startKey = self.start
+        render.startNamed = true
     else
         render.startKey = render.order[1].id
+        if self.startStop ~= nil then
+            for _, node in ipairs(render.order) do
+                if node.stopKey == self.startStop then
+                    render.startKey = node.id
+                    render.startNamed = true
+                    break
+                end
+            end
+        end
     end
     self:_stampPositions()
     return render

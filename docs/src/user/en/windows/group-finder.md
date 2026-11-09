@@ -94,8 +94,8 @@ If you post a listing and the game reports "Blocked: Search()", WowVision says "
 
 On WoW: Forever the friends window has no Who tab, so the group finder holds it. It is a player search. Stops:
 
-1. Search: an edit box. Enter inside it searches with your text and the filter. The game's separate search button is left out because Enter does the same.
-2. Filter: a dropdown for class, race, zone and sort order.
+1. Filter: a dropdown for class, race, zone and sort order.
+2. Search: an edit box. Enter inside it searches with your text and the filter. The game's separate search button is left out because Enter does the same.
 3. A list named after the tab (usually "Who"), one row per player: name, "Level 60 Warrior", race, zone and guild, joined by commas. Enter highlights the player, Backspace opens the player menu (whisper, invite).
 4. A totals line. It is read only when the server found more players than it sent; the server sends at most 50.
 

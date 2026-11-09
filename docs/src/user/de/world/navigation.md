@@ -64,6 +64,8 @@ Hake Direkt an (drücke Eingabe auf dem Kontrollkästchen), wenn du keine Route 
 
 Direkt ist die erste Station. Um dorthin zu kommen, drücke Umschalt+Tab von den Einstiegspunkten aus.
 
+Für ein einzelnes gerades Beacon brauchst du das Kontrollkästchen nicht: Rücktaste auf einem Ziel setzt es sofort, Eingabe routet weiter. Mit WowNav bleibt das Kontrollkästchen trotzdem nützlich, denn nur mit Direkt an zeigt die Liste auch Orte, zu denen keine Route führt.
+
 ### Nach einem Ziel suchen
 
 Drücke Tab von den Einstiegspunkten aus, um zu Suchen zu kommen. Das Eingabefeld nimmt deine Eingabe sofort an, und was du tippst, wird beim Tippen vorgelesen. Tippe ein Namensstück, zum Beispiel "Auktionator", und drücke Eingabe, um es anzuwenden. WowVision liest vor, was du getippt hast. Die Liste darunter wird sofort gefiltert. Tab wendet den Text ebenfalls an und geht zur nächsten Station weiter; Esc schließt das Eingabefeld, ohne die Suche zu ändern.
@@ -82,6 +84,7 @@ Drücke noch einmal Tab, um zu Ziele zu kommen. Es ist eine einzige lange Liste,
 | Pfeil hoch / Pfeil runter | Vorheriges / nächstes Ziel. |
 | Pos1 / Ende | Erstes / letztes Ziel. |
 | Eingabe | Das Fenster schließen und die Route starten (oder das gerade Beacon, wenn Direkt an ist). |
+| Rücktaste | Das Fenster schließen und ein gerades Beacon auf das Ziel setzen, ohne Route, egal ob Direkt an ist. |
 
 Jedes Ziel liest seinen Namen und seine Entfernung, dann seine Position in der Liste. Mit WowNav kommt nach der Entfernung, was der Ort ist und wo er ist, zum Beispiel "Innkeeper Allison (Innkeeper), 85 Meter, Questgeber, Händler, Gastwirt, Stormwind City, 1 von 342". Ein Ziel, das du in den letzten Minuten erreicht hast, wird mit Besucht davor angesagt; siehe [Besuchte Orte](#besuchte-orte). Eine leere Liste liest "Leer".
 

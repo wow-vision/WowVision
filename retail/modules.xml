@@ -6,6 +6,10 @@
   <Script file="targeting.lua" />
   <Script file="QuestLog.lua" />
   <Script file="cooldownManager.lua" />
+  <Script file="tooltipCompare.lua" />
+  <!-- The trainer (ClassTrainerFrame with a ScrollBox on Retail and WoW:
+       Forever): Train works as soon as the window opens. -->
+  <Script file="trainer.lua" />
   <Include file="monitors/modules.xml" />
   <!-- Retail's auction house is the same Blizzard_AuctionHouseUI as Mists
        (also on WoW: Forever, which loads these modules too). -->

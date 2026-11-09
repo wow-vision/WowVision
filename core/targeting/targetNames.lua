@@ -212,9 +212,10 @@ end
 
 -- An NPC's subtitle ("<Innkeeper>"): the line between the name and the
 -- level. With typed tooltip lines it is an untyped line right after the
--- UnitName line and before the UnitLevel line. Without types, the classic
--- shape: line 2 is the subtitle when line 3 carries the level and line 2
--- does not. Anything secret or unclear says nothing.
+-- UnitName line and before the UnitLevel line. Without types, or without a
+-- UnitLevel line (WoW: Forever), the classic shape: line 2 is the subtitle
+-- when line 3 carries the level and line 2 does not. Anything secret or
+-- unclear says nothing.
 local function npcTitle(ctx)
     local lines = ctx:tooltipLines()
     local first, second = lines[1], lines[2]
@@ -237,7 +238,8 @@ local function npcTitle(ctx)
                 return stripBrackets(second.text)
             end
         end
-        return nil
+        -- WoW: Forever types the name, quest, threat and owner lines but
+        -- never the level line: the untyped rule below decides.
     end
     local third = lines[3]
     if third == nil or isSecret(second.text) or not hasText(third.text) or isSecret(third.text) then

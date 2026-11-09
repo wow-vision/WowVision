@@ -373,6 +373,19 @@ testRunner:addSuite("Item compare", {
         end)
     end,
 
+    ["Pawn's lines read with the tooltip, the comparison is a block of its own"] = function(t)
+        inWorld(function(w)
+            w.add(101, "New Helm", 3, "INVTYPE_HEAD", 55)
+            w.pawn({ { ScaleName = "a", LocalizedScaleName = "Mage: Fire", PercentUpgrade = 0.2 } })
+            local lines = { { "New Helm" } }
+            items.augmentComparisonLines(lines, w.link(101))
+            t:assertEqual(#lines, 3)
+            t:assertNil(lines[2].compare, "Pawn's line is read with the whole tooltip")
+            t:assertTrue(lines[3].compare, "the comparison is left out of the whole tooltip")
+            t:assertTrue(lines[3].blockStart, "the comparison starts a block")
+        end)
+    end,
+
     ["each part can be switched off"] = function(t)
         inWorld(function(w)
             w.add(100, "Old Helm", 2, "INVTYPE_HEAD", 50)

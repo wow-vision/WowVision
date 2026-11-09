@@ -1361,7 +1361,9 @@ local function render(builder, screen)
     -- rebuilt result rows then hit protected calls (C_Discord.IsUserOAuthed
     -- in the Social category) -> ADDON_ACTION_FORBIDDEN.
     if frame.SearchBox ~= nil then
+        -- A fresh open lands on the search box: typing a search is the way in.
         builder:beginStop("search")
+        builder:setStartStop("search")
         builder:addItem(
             ControlId.structural("search"),
             nodes.proxyEditBox({ editBox = frame.SearchBox, label = L["Search"] })

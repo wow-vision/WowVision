@@ -182,13 +182,6 @@ local function render(builder, screen)
     end
     builder:pushContext("tradeskill", TradeSkillFrameTitleText:GetText())
 
-    if TradeSearchInputBox ~= nil then
-        builder:beginStop("search")
-        builder:addItem(
-            ControlId.structural("search"),
-            nodes.proxyEditBox({ editBox = TradeSearchInputBox, label = L["Search"] })
-        )
-    end
     if TradeSkillFrameAvailableFilterCheckButton ~= nil and TradeSkillFrameAvailableFilterCheckButton:IsShown() then
         builder:beginStop("availableFilter")
         builder:addItem(
@@ -210,8 +203,18 @@ local function render(builder, screen)
             nodes.proxyDropdown({ target = TradeSkillInvSlotDropdown })
         )
     end
+    -- The search box sits right before the recipes it searches.
+    if TradeSearchInputBox ~= nil then
+        builder:beginStop("search")
+        builder:addItem(
+            ControlId.structural("search"),
+            nodes.proxyEditBox({ editBox = TradeSearchInputBox, label = L["Search"] })
+        )
+    end
 
+    -- A fresh open lands on the top of the recipes (a category heading).
     builder:beginStop("recipes")
+    builder:setStartStop("recipes")
     nodes.hybridScrollList(builder, {
         scrollFrame = TradeSkillListScrollFrame,
         key = "recipes",

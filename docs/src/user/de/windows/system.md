@@ -22,7 +22,7 @@ Optionen im Spielmenü öffnen das Einstellungsfenster des Spiels. Der WowVision
 
 ### Die Teile des Fensters
 
-Die Stopps, der Reihe nach:
+Das Fenster öffnet sich auf Suchen. Die Stopps, der Reihe nach:
 
 1. Reiter (Tabs): Spiel (Game) und AddOns, als Zeile. Die Reiter sind nur da, wenn das Spiel sie zeigt. Eine frische WoW: Forever-Installation hat keine Reiter, bis ein Addon Einstellungen registriert.
 2. Suchen (Search): ein Textfeld. Wenn du mit Tab hineingehst, ist es sofort zum Tippen bereit. Tippe einen Teil des Namens einer Einstellung, und die Liste zeigt passende Einstellungen aus allen Kategorien. Tab verlässt das Feld.
