@@ -935,6 +935,10 @@ end
 -- position and facing of its frame; Scan.placeHits groups them by name.
 -- The places only tell dots apart (Walk.MATCH), they are never spoken.
 local SWEEP_WALK = { scale = 1 / 3, step = 24 }
+-- Rough places further out than this share of the view radius are pulled
+-- in to it (see walkPositions): inside the rim, in the walking memory's
+-- band (Walk.INNER), where a dot may or may not show.
+local RIM_PLACE = 0.97
 
 -- Inside a running task: names -> list of { wx, wy }, and the continent.
 -- counts: name -> dots the shrunk read named.
@@ -969,11 +973,28 @@ function module:walkPositions(task, state, cursorX, cursorY, names, counts)
     -- Answers of one dot lie a cell apart: link them a cell and a half
     -- apart in yards.
     local link = step * yardsPerUnit * 1.5
+    -- A dot at the rim answers mostly from cells beyond it, so its middle
+    -- lands too far out (2026-11-10 Stormwind: mailboxes "placed" at 196
+    -- yards, the sweep's outer ring, with 150 in view; the walking memory
+    -- then took them for new). No dot shows beyond the view radius: such a
+    -- place is pulled in to just inside it, in its direction from the
+    -- player.
+    local rim = viewRadius * RIM_PLACE
+    local px, py = UnitPosition("player")
     local found = {}
     for name, hits in pairs(wanted) do
         found[name] = {}
         for _, place in ipairs(Scan.placeHits(hits, counts[name], link)) do
-            tinsert(found[name], { wx = place.x, wy = place.y })
+            local wx, wy = place.x, place.y
+            if px ~= nil then
+                local dx, dy = wx - px, wy - py
+                local d = math.sqrt(dx * dx + dy * dy)
+                if d > rim then
+                    wx, wy = px + dx * rim / d, py + dy * rim / d
+                    task.stats.pulledIn = (task.stats.pulledIn or 0) + 1
+                end
+            end
+            tinsert(found[name], { wx = wx, wy = wy })
         end
     end
     return found, continent
@@ -994,11 +1015,12 @@ function module:walkLocate(task, state, cursorX, cursorY, names, counts)
     end
     walkNote(
         string.format(
-            "located %s: %d questions, %.2f s, walked %.0f yd meanwhile",
+            "located %s: %d questions, %.2f s, walked %.0f yd meanwhile%s",
             table.concat(names, ", "),
             task.stats.questions,
             GetTime() - started,
-            math.sqrt((px - startX) ^ 2 + (py - startY) ^ 2)
+            math.sqrt((px - startX) ^ 2 + (py - startY) ^ 2),
+            task.stats.pulledIn ~= nil and string.format(", %d pulled in from beyond the rim", task.stats.pulledIn) or ""
         )
     )
     for _, name in ipairs(names) do
