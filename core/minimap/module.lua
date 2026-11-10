@@ -949,6 +949,7 @@ function module:walkPositions(task, state, cursorX, cursorY, names, counts)
     end
     local radius = state.width / 2
     local viewRadius = C_Minimap.GetViewRadius()
+    task.stats.viewRadius = viewRadius
     local yardsPerUnit = viewRadius / radius
     local rotating = GetCVar("rotateMinimap") == "1"
     local read = Engine.pointReader(state, cursorX, cursorY, SWEEP_WALK.scale)
@@ -1015,12 +1016,15 @@ function module:walkLocate(task, state, cursorX, cursorY, names, counts)
     end
     walkNote(
         string.format(
-            "located %s: %d questions, %.2f s, walked %.0f yd meanwhile%s",
+            "located %s: %d questions, %.2f s, walked %.0f yd meanwhile%s; view radius %s at the start, %s now, the walking memory's %s",
             table.concat(names, ", "),
             task.stats.questions,
             GetTime() - started,
             math.sqrt((px - startX) ^ 2 + (py - startY) ^ 2),
-            task.stats.pulledIn ~= nil and string.format(", %d pulled in from beyond the rim", task.stats.pulledIn) or ""
+            task.stats.pulledIn ~= nil and string.format(", %d pulled in from beyond the rim", task.stats.pulledIn) or "",
+            tostring(task.stats.viewRadius),
+            tostring(C_Minimap.GetViewRadius()),
+            tostring(self.outdoorRadius)
         )
     )
     for _, name in ipairs(names) do
@@ -1687,8 +1691,26 @@ function module:skuTest()
             Engine.restoreFrame(state)
         end)
         local hidden = Engine.clearWay()
+        -- The view radius frame by frame after the zoom goes to 0: does the
+        -- game report the old zoom's radius for a while? (Walk 2026-11-10
+        -- 02:52: a rough place at 171 yards passed a pull-in at 0.97 of
+        -- the radius read then, while the walking memory used 150.)
+        local zoomBefore = Minimap:GetZoom()
+        local radii = { tostring(C_Minimap.GetViewRadius()) }
         Minimap:SetZoom(0)
-        add(string.format("Cursor resting at %.0f %.0f; hidden minimap children: %d; view radius %s yd", x, y, hidden, tostring(C_Minimap.GetViewRadius())))
+        for _ = 1, 6 do
+            tinsert(radii, tostring(C_Minimap.GetViewRadius()))
+            Engine.wait()
+        end
+        add(string.format(
+            "Cursor resting at %.0f %.0f; hidden minimap children: %d; zoom before %s; view radius before the zoom, then right after it and the next 5 frames: %s; indoors %s",
+            x,
+            y,
+            hidden,
+            tostring(zoomBefore),
+            table.concat(radii, " "),
+            tostring(IsIndoors ~= nil and IsIndoors())
+        ))
 
         -- The fast read (Sku's way): every name in range, the work for the
         -- sweeps below.
