@@ -629,6 +629,15 @@ local function nearSpawn(target, seen)
     return false
 end
 
+local function nearAnySpawn(targets, seen)
+    for _, target in ipairs(targets) do
+        if nearSpawn(target, seen) then
+            return true
+        end
+    end
+    return false
+end
+
 -- Database targets plus seen ones, nearest first. A seen NPC is left out
 -- when the database lists its name (one NPC, one name). A seen object of
 -- a PLACE_ONLY category is left out when a database one stands within
@@ -648,15 +657,7 @@ local function withSeen(targets, roleKey, ctx)
         tinsert(out, target)
     end
     for _, target in ipairs(seen) do
-        local known = names[target.name] == true
-        if PLACE_ONLY[roleKey] then
-            for i = 1, #targets do
-                if known then
-                    break
-                end
-                known = nearSpawn(targets[i], target)
-            end
-        end
+        local known = names[target.name] == true or (PLACE_ONLY[roleKey] and nearAnySpawn(targets, target))
         if not known then
             tinsert(out, target)
         end

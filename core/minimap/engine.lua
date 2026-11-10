@@ -8,9 +8,9 @@ local Scan = WowVision.minimapScan
 -- - shrunk: the minimap squeezed to a few pixels with its centre on the
 --   cursor puts every dot in range under it, so one read names them all
 --   (the walking check, and the sorting passes);
--- - at a point: the minimap at full size, moved so that point lies under
---   the cursor; the game names what is there one frame later (Sku's grid
---   scan). The points where a name answers give its offset from the
+-- - at a point: the minimap (at a scale of its size, the dots keep theirs)
+--   moved so that point lies under the cursor; the game names what is
+--   there one frame later (Sku's grid scan). The points where a name answers give its offset from the
 --   player. Minimap:UpdateMouseoverAtPoint, which asked any point in the
 --   same frame, is a no-op since Forever build 70862 and goes in 1.60.2;
 --   moving the minimap under the resting cursor still answers (measured
@@ -20,8 +20,8 @@ local Scan = WowVision.minimapScan
 --
 -- Everything the scan changes (points, size, alpha, zoom, tracking, the
 -- minimap cluster's strata and level, hidden minimap children, the
--- cursor CVars) is captured first and restored at the end, on abort and
--- on error. The
+-- minimap's clicks, the game tooltip's alpha, the cursor CVars) is
+-- captured first and restored at the end, on abort and on error. The
 -- minimap is not a protected frame; the scanner still keeps out of
 -- combat.
 
@@ -142,7 +142,7 @@ function Engine.capture(withTracking)
 end
 
 -- Frame state only; tracking is restored separately (restoreTracking),
--- because the presence check never touches it.
+-- because the walking check never touches it.
 function Engine.restoreFrame(state)
     pcall(Minimap.SetSize, Minimap, state.width, state.height)
     pcall(Minimap.SetAlpha, Minimap, state.alpha)
@@ -190,6 +190,7 @@ end
 -- 2026-11-10): invisible until a tenth of a second after the task, when
 -- the minimap has left the cursor and Blizzard's OnLeave has hidden it.
 local tooltipHolds = 0
+local tooltipAlpha = 1
 
 function Engine.clearWay()
     if current.wayCleared then
@@ -199,6 +200,9 @@ function Engine.clearWay()
     local strata, level = MinimapCluster:GetFrameStrata(), MinimapCluster:GetFrameLevel()
     local clicks = Minimap.IsMouseClickEnabled ~= nil and Minimap:IsMouseClickEnabled() or nil
     local hidden = {}
+    if tooltipHolds == 0 then
+        tooltipAlpha = GameTooltip:GetAlpha()
+    end
     tooltipHolds = tooltipHolds + 1
     Engine.onCleanup(function()
         for _, child in ipairs(hidden) do
@@ -212,7 +216,7 @@ function Engine.clearWay()
         C_Timer.After(0.1, function()
             tooltipHolds = tooltipHolds - 1
             if tooltipHolds == 0 then
-                GameTooltip:SetAlpha(1)
+                GameTooltip:SetAlpha(tooltipAlpha)
             end
         end)
     end)
@@ -308,12 +312,19 @@ end
 -- does not tell (it is about mounting): large parts of Stormwind read
 -- outdoors there while the minimap is in its indoor scale (2026-11-10: at
 -- zoom 0 the view radius is 233.3 yards outdoors, 150 in that scale).
--- Inside a scan or walking check (zoom 0): true in the indoor scale.
-local OUTDOOR_RADIUS = 233
-
-function Engine.minimapIndoors()
+-- The view radius in yards, nil when the game gives none (or a secret).
+function Engine.viewRadius()
     local radius = C_Minimap.GetViewRadius()
-    return type(radius) == "number" and not WowVision.isSecret(radius) and radius < OUTDOOR_RADIUS * 0.8
+    if type(radius) ~= "number" or WowVision.isSecret(radius) or radius <= 0 then
+        return nil
+    end
+    return radius
+end
+
+-- Inside a scan or walking check (zoom 0): true in the indoor scale.
+function Engine.minimapIndoors()
+    local radius = Engine.viewRadius()
+    return radius ~= nil and radius < Scan.Walk.RADIUS * 0.8
 end
 
 -- Why the cursor is busy for the player, or nil: a spell waiting to be
@@ -467,9 +478,9 @@ function Engine.centreCursor()
     end
     local saved = {}
     for name, value in pairs(CENTRE_CVARS) do
-        local ok, current = pcall(GetCVar, name)
-        if ok and current ~= nil then
-            saved[name] = current
+        local ok, was = pcall(GetCVar, name)
+        if ok and was ~= nil then
+            saved[name] = was
             pcall(SetCVar, name, value)
         end
     end

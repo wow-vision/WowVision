@@ -11,7 +11,7 @@
 --   ("Mailbox\nMailbox").
 -- - At zoom 0 the view radius is 150 yards indoors and 233 outdoors (the
 --   game switches; read it live) across the 198 unit wide minimap; a
---   dot's hit area is roughly 8 units around it.
+--   dot's hit area is about 9 units around it (see the sweep below).
 -- - Indoors the minimap shows only the building the player is in. From
 --   outside, dots inside a building (another level) read grey.
 -- - Quest givers show whatever tracking is switched on; every other kind
@@ -788,7 +788,6 @@ function Scan.missingWork(classified, store, wx, wy, continent, radius)
     return work
 end
 
--- category -> name -> count, for Store:dropMissing.
 -- Splits one category out of classified entries: returns the rest and
 -- that category's names, sorted and each once.
 function Scan.splitCategory(classified, category)
@@ -805,6 +804,7 @@ function Scan.splitCategory(classified, category)
     return rest, names
 end
 
+-- category -> name -> count, for Store:dropMissing.
 function Scan.presentByCategory(classified)
     local present = {}
     for _, item in ipairs(classified) do
@@ -865,9 +865,10 @@ Walk.RADIUS = 233
 -- Yards: a found dot this close to a placed one of its name is that one.
 Walk.MATCH = 25
 -- A far place is less sure: several dots of one name far out overlap on
--- the walking check's third-size minimap and are split by count (walk
--- 2026-11-10 03:21 Stormwind: one mailbox 100 to 230 yards out came out
--- 30 to 90 yards apart in two sweeps; standing NPCs near by, 5 to 12).
+-- the walking check's smaller minimap and are split by count (walk
+-- 2026-11-10 03:21 Stormwind, third size then: one mailbox 100 to 230
+-- yards out came out 30 to 90 yards apart in two sweeps; standing NPCs
+-- near by, 5 to 12).
 -- The match grows by this share of the place's distance from the player,
 -- up to MATCH_MAX (the mailboxes there stood 70 yards apart and more).
 Walk.MATCH_GROWTH = 0.25
@@ -1030,7 +1031,7 @@ function Walk:update(read)
                 end
                 rec.dots = kept
                 tinsert(events, { kind = "gone", name = name, dropped = inView - count, missing = rec.missing })
-                rec.short, rec.missing = false, 0
+                rec.short, rec.missing, rec.hiddenIndoors = false, 0, nil
             end
         elseif rec.short then
             tinsert(events, { kind = "back", name = name, missing = rec.missing })
@@ -1038,9 +1039,10 @@ function Walk:update(read)
             -- The count alone cannot tell the dot that left from another
             -- one of the name coming into view (2026-11-10 Stormwind: a
             -- new mailbox counted as one back and was never said). Not
-            -- when it went missing indoors: the minimap showed only the
-            -- building, the dots outside were hidden, not gone.
-            if read.px ~= nil and not self.nameOnly[name] and not rec.hiddenIndoors then
+            -- when it went missing indoors, nor while indoors now: the
+            -- minimap shows only the building, the dots outside are
+            -- hidden, not gone.
+            if read.px ~= nil and not self.nameOnly[name] and not rec.hiddenIndoors and not read.indoors then
                 verify[name] = true
                 tinsert(locate, name)
             end
@@ -1063,7 +1065,8 @@ end
 -- check { px, py, radius } (a name back in view, Walk:update's verify):
 -- a position no remembered dot matches is a new dot, placed and counted
 -- in new (the caller announces it); a placed dot in view that matched no
--- position is gone (dropped).
+-- position is gone (dropped), unless the sweep found none at all (no
+-- proof of anything: a cancelled or empty sweep).
 function Walk:placed(name, positions, continent, check)
     local result = { placed = {}, refreshed = 0, extra = 0, unplaced = 0, new = 0, dropped = 0 }
     local rec = self.names[name]
@@ -1123,7 +1126,7 @@ function Walk:placed(name, positions, continent, check)
             tinsert(result.placed, dot)
         end
     end
-    if check ~= nil then
+    if check ~= nil and #positions > 0 then
         local inside = (check.radius or Walk.RADIUS) - Walk.INNER
         local kept = {}
         for _, dot in ipairs(rec.dots) do
