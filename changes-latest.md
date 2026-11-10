@@ -17,6 +17,7 @@
 * New key Close All Windows (Shift+Escape): closes every WowVision window and every game window. A popup waiting for an answer stays open, and so do protected windows in combat. Starting a route or beacon does the same; the new setting for it in the Navigation menu is on by default.
 * Scanner: quest progress in Quests, In Progress stays current while the Scanner is open. Backspace on a category, or Navigate to Nearest in its context menu, goes to the nearest entry in it.
 * Navigation window (F10): Shift+F10 on a destination offers Auto Direct and Auto Route, which lead you to every unvisited destination of that name in turn. They need Visited Waypoints switched on.
+* Visited waypoints: the key Route to the Nearest Unvisited of the Same Name now takes the one with the shortest walk among the nearest, as Auto Route does. Both next-spot keys remember the spots they already led you to, so they no longer send you back to one you left before reaching it. Pressed while Auto Direct or Auto Route is running, they move that chain on to its next spot.
 * Navigation: Reverse Route (Ctrl+Shift+R) now walks back from where you are, along the route from its destination to its start.
 * Buffers: new settings Always Start at Top (off by default) and Sounds When Opening and Closing (on by default).
 * Quest log: new setting Always Start at Top (off by default), which opens the quest log on its first entry instead of the selected quest.

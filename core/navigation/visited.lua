@@ -5,7 +5,8 @@
 --
 -- Two key bindings (none set by default) lead to the nearest unvisited destination of the same name as the last one
 -- picked (the next Peacebloom, the next Sack of Hay): one routes there, one sets it as a direct point. Chained, they
--- walk all spawns of an object.
+-- walk all spawns of an object. They pick as auto mode does (the route key by the shortest walk) and do not offer a
+-- spot they led to again until another destination is picked; while an auto chain runs, either key steps it on.
 --
 -- Auto mode chains that by itself (Shift-F10 on a destination in F10): each one reached leads on to the next
 -- unvisited one of the same name, until none is left. Auto Direct sets a direct point to the nearest in a straight
@@ -94,50 +95,73 @@ function module:getGraphMenuItems(builder)
     )
 end
 
--- The nearest unvisited destination named like the last one picked in F10; routed to, or set as a direct point.
+-- How many of the nearest unvisited ones a route to the next is measured by the walk (a route engine plans one
+-- route each).
+local AUTO_CANDIDATES = 8
+
+-- Where the next leg after `last` may go: the nearest unvisited one of its name (direct), or the AUTO_CANDIDATES
+-- nearest for the walk to decide, as { waypoint, distance }; none that is `last` or in seen ({ [key] = true }). Then
+-- the waypoints and engine they came from (maps:destinationsNamed).
+local function nextCandidates(self, last, direct, seen)
+    local lastKey = keyOf(last)
+    local function skip(wp)
+        local key = keyOf(wp)
+        return key == lastKey or seen[key] or self:isVisited(wp)
+    end
+    local found, waypoints, engine = maps:destinationsNamed(last.n, direct)
+    if direct then
+        local best = store.nearest(found, skip)
+        return best ~= nil and { best } or {}, waypoints, engine
+    end
+    return store.nearestN(found, skip, AUTO_CANDIDATES), waypoints, engine
+end
+
+local function sayNoneLeft(last)
+    local name = store.baseName(last.n, function(s)
+        return s
+    end)
+    WowVision:notify(string.format(L["No unvisited %s found"], name or ""))
+end
+
+-- The keys' own memory: { last = the spot they led to, seen = { [key] = true } (every spot they led to since a
+-- destination was picked another way: one left before it was reached is not visited and would come back) }.
+module.steps = nil
+
+-- The nearest unvisited destination named like the last one picked in F10: set as a direct point, or routed to the
+-- one the shortest walk reaches. A running auto chain steps on instead (as Ctrl-W past the end of its leg).
 function module:goToNext(direct)
+    if self.auto ~= nil then
+        return self:stepAuto(1)
+    end
     local last = maps.lastDestination
     if last == nil then
         WowVision:notify(L["Choose a destination in the navigation window first"])
         return false
     end
-    local lastKey = keyOf(last)
-    local best = store.nearest(maps:destinationsNamed(last.n, direct), function(wp)
-        return keyOf(wp) == lastKey or self:isVisited(wp)
-    end)
-    local name = store.baseName(last.n, function(s)
-        return s
-    end)
-    if best == nil then
-        WowVision:notify(string.format(L["No unvisited %s found"], name or ""))
+    local steps = self.steps
+    if steps == nil or steps.last ~= last then
+        steps = { seen = {} }
+        self.steps = steps
+    end
+    steps.seen[keyOf(last)] = true
+    local candidates, waypoints, engine = nextCandidates(self, last, direct, steps.seen)
+    if #candidates == 0 then
+        sayNoneLeft(last)
         return false
     end
-    return maps:goToDestination(best.waypoint, direct)
+    if direct then
+        steps.last = candidates[1].waypoint
+        return maps:goToDestination(steps.last, true)
+    end
+    return maps:routeToNearestWalk(candidates, function(wp)
+        steps.last = wp
+    end, waypoints, engine)
 end
-
--- How many of the nearest unvisited ones Auto Route measures by the walk (a route engine plans one route each).
-local AUTO_CANDIDATES = 8
 
 -- The running chain: { mode = "direct" | "route", targets = { [wp] = true } (the destinations the leg it leads may
 -- end at), history = { wp, ... } (the spots it led to, in order), index (the current one), seen = { [key] = true }
 -- (every spot it led to: a skipped one is not visited and would come back) }.
 module.auto = nil
-
--- The saved trail of the chains (WowVisionDump.autoMode, on disk after /reload; the newest last): each leg's search
--- with its time.
-local LOG_SIZE = 60
-local function logLine(line)
-    WowVisionDump = WowVisionDump or {}
-    local trail = WowVisionDump.autoMode
-    if type(trail) ~= "table" then
-        trail = {}
-        WowVisionDump.autoMode = trail
-    end
-    trail[#trail + 1] = date("%H:%M:%S") .. " " .. line
-    while #trail > LOG_SIZE do
-        table.remove(trail, 1)
-    end
-end
 
 -- wp becomes the chain's current spot, after the one it is at (what came after that is dropped).
 local function setCurrent(auto, wp)
@@ -173,7 +197,6 @@ function module:startAuto(wp, mode, start)
     local auto = { mode = mode, history = {}, index = 0, seen = {} }
     setCurrent(auto, wp)
     self.auto = auto
-    logLine(string.format("start %s %s", mode, tostring(wp.n)))
     WowVision:notify(mode == "route" and L["Auto Route"] or L["Auto Direct"])
     maps:closeWindowsForGuidance(true)
     return lead(function()
@@ -187,7 +210,6 @@ function module:endAuto()
         return
     end
     self.auto = nil
-    logLine("end")
 end
 
 -- Whether wp is where the running chain's leg leads (Ctrl-Shift-N keeps the chain then).
@@ -203,7 +225,6 @@ function module:continueAuto(wp)
         return
     end
     auto.targets = {}
-    logLine(string.format("arrived %s", tostring(wp.n)))
     if not autoAllowed(self) then
         self:endAuto()
         return
@@ -218,30 +239,10 @@ end
 -- The next leg of a chain after `last`: the nearest unvisited one of its name it has not led to, or the end of the
 -- chain (said; the leg it leads stays).
 function module:autoNext(auto, last)
-    local mode = auto.mode
-    local direct = mode == "direct"
-    local lastKey = keyOf(last)
-    local function skip(wp)
-        local key = keyOf(wp)
-        return key == lastKey or auto.seen[key] or self:isVisited(wp)
-    end
-    local started = debugprofilestop()
-    local found, waypoints, engine = maps:destinationsNamed(last.n, direct)
-    local searched = debugprofilestop()
-    local candidates
-    if direct then
-        local best = store.nearest(found, skip)
-        candidates = best ~= nil and { best } or {}
-    else
-        candidates = store.nearestN(found, skip, AUTO_CANDIDATES)
-    end
-    logLine(string.format("next %s after %s: %d found, search %.1f ms, pick %.1f ms", mode, tostring(last.n), #found,
-        searched - started, debugprofilestop() - searched))
+    local direct = auto.mode == "direct"
+    local candidates, waypoints, engine = nextCandidates(self, last, direct, auto.seen)
     if #candidates == 0 then
-        local name = store.baseName(last.n, function(s)
-            return s
-        end)
-        WowVision:notify(string.format(L["No unvisited %s found"], name or ""))
+        sayNoneLeft(last)
         self:endAuto()
         return false
     end

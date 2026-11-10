@@ -217,10 +217,12 @@ Two bindings, both unbound by default, lead you to the nearest unvisited destina
 
 | Binding | What it does |
 |---------|--------------|
-| Route to the Nearest Unvisited of the Same Name | Plans a route there, entering at the entry point the window would preselect. |
+| Route to the Nearest Unvisited of the Same Name | Plans a route, entering at the entry point the window would preselect. Of the nearest 8 by straight line it takes the one with the shortest walk, as Auto Route does. |
 | Direct to the Nearest Unvisited of the Same Name | Sets a straight beacon there. |
 
-"Same name" means the whole name with WowNav and the name before the first semicolon with classic routes ("Peacebloom"), ignoring capital letters. The spot you are already at, and the ones marked visited, are skipped. Chain the key and you walk through every spawn of that object, one after the other.
+"Same name" means the whole name with WowNav and the name before the first semicolon with classic routes ("Peacebloom"), ignoring capital letters. The spot you are already at, and the ones marked visited, are skipped. So are the spots the keys already led you to, even when you left one before reaching it, until you pick a destination another way. Chain the key and you walk through every spawn of that object, one after the other.
+
+While auto mode runs (below), either key steps the chain on to its next spawn, the same as Ctrl+W past the end of a leg.
 
 Without a destination picked earlier you hear Choose a destination in the navigation window first. If every spawn is visited you hear "No unvisited" and the name, for example "No unvisited Peacebloom found".
 

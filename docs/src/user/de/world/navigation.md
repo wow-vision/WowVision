@@ -219,10 +219,12 @@ Zwei Belegungen, beide standardmäßig nicht belegt, führen dich zum nächsten 
 
 | Belegung | Was sie tut |
 |----------|-------------|
-| Route zum nächsten unbesuchten gleichnamigen Ziel | Plant eine Route dorthin, mit Einstieg an dem Einstiegspunkt, den das Fenster vorwählen würde. |
+| Route zum nächsten unbesuchten gleichnamigen Ziel | Plant eine Route, mit Einstieg an dem Einstiegspunkt, den das Fenster vorwählen würde. Von den 8 in Luftlinie nächsten nimmt sie das mit dem kürzesten Fußweg, wie Automatisch routen. |
 | Direkt zum nächsten unbesuchten gleichnamigen Ziel | Setzt dorthin ein gerades Beacon. |
 
-"Gleicher Name" heißt bei WowNav der ganze Name und bei klassischen Routen der Name vor dem ersten Semikolon ("Peacebloom"), ohne Beachtung der Groß- und Kleinschreibung. Der Ort, an dem du gerade bist, und die als besucht markierten werden übersprungen. Drücke die Taste immer wieder, und du gehst nacheinander jeden Spawn dieses Objekts ab.
+"Gleicher Name" heißt bei WowNav der ganze Name und bei klassischen Routen der Name vor dem ersten Semikolon ("Peacebloom"), ohne Beachtung der Groß- und Kleinschreibung. Der Ort, an dem du gerade bist, und die als besucht markierten werden übersprungen. Ebenso die Orte, zu denen dich die Tasten schon geführt haben, auch wenn du einen vor der Ankunft verlassen hast, bis du ein Ziel auf anderem Weg wählst. Drücke die Taste immer wieder, und du gehst nacheinander jeden Spawn dieses Objekts ab.
+
+Läuft der Automatikmodus (unten), führt jede der beiden Tasten die Kette zum nächsten Spawn weiter, wie Strg+W hinter dem Ende einer Etappe.
 
 Ohne früher gewähltes Ziel hörst du Wähle zuerst ein Ziel im Navigationsfenster. Ist jeder Spawn besucht, hörst du "Kein unbesuchtes Ziel Peacebloom gefunden".
 
