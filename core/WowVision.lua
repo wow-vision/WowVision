@@ -175,6 +175,8 @@ function WowVision:OnUpdate()
 end
 
 -- voice: a game voice id for this text; nil speaks with the Speech Voice.
+-- For reading things out; a message of the addon uses WowVision:notify
+-- (core/chat/echo.lua).
 function WowVision:speak(text, voice)
     self.base.speech:speak(text, voice)
 end
@@ -252,12 +254,11 @@ function WowVision:recursiveComp(a, b, level)
 end
 
 function WowVision:play(path, channel)
-    local channel = channel or "SFX"
     local resource = WowVision.audio.directory:getPath(path)
     if not resource then
         return nil
     end
-    resource:play()
+    resource:play(channel)
 end
 
 function WowVision:registerCommands()

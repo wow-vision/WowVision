@@ -6,6 +6,7 @@
   <Script file="Announcer.lua" />
   <Script file="KeyGraph.lua" />
   <Script file="typeAhead.lua" />
+  <Script file="doublePress.lua" />
   <Script file="Builder.lua" />
   <Script file="ControlTypes.lua" />
   <Script file="nodes.lua" />
@@ -21,6 +22,7 @@
   <Script file="textEntry.lua" />
   <Script file="keyCapture.lua" />
   <Script file="tests.lua" />
+  <Script file="doublePressTests.lua" />
   <Script file="typeAheadTests.lua" />
   <Script file="dropdownTests.lua" />
   <Script file="controlTests.lua" />

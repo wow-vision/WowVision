@@ -84,6 +84,10 @@ Pfeil hoch und Pfeil runter gehen in der Reihenfolge durch die Steuerelemente, i
 
 Drückst du am Rand einer Liste eine Pfeiltaste, passiert nichts und es wird nichts gesagt. Die Pfeiltasten springen in Fenstern nicht von hinten nach vorn.
 
+### Leere Plätze überspringen
+
+Ist die Einstellung „Leere Plätze beim doppelten Pfeildruck überspringen“ eingeschaltet (Menü Benutzeroberfläche, standardmäßig aus), kannst du in deinen Taschen, der Bank und den Aktionsleisten dieselbe Pfeiltaste zweimal schnell hintereinander drücken (innerhalb einer Viertelsekunde), um die leeren Plätze zu überspringen: Du landest auf dem nächsten Platz, in dem etwas liegt. Tippst du weiter schnell, springst du von Gegenstand zu Gegenstand. Folgt in dieser Richtung nichts mehr, landest du auf dem letzten Platz, der „Leer“ sagt. Zwei verschiedene Pfeiltasten hintereinander zählen nie als Doppeldruck.
+
 ### Tabstopps
 
 Große Fenster sind in Tabstopps unterteilt, meist eine Liste, eine Zeile mit Schaltern, ein Suchfeld und so weiter. Tab und Umschalt+Tab springen zwischen ihnen und laufen vom letzten wieder zum ersten. Jeder Tabstopp merkt sich, wo du warst: Tab bringt dich zu dem Eintrag zurück, den du verlassen hast, oder zum ausgewählten Eintrag, wenn du zum ersten Mal in einen Tabstopp kommst. Ein Fenster mit nur einem Tabstopp, etwa ein einfaches Menü, ignoriert Tab.

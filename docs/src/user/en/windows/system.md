@@ -24,7 +24,7 @@ The Discord rows in the Social category only work from a search made right after
 
 ### The parts of the window
 
-The stops, in order:
+The window opens on Search. The stops, in order:
 
 1. Tabs: Game and AddOns, as a row. The tabs are only there when the game shows them. A fresh WoW: Forever install has no tabs until an addon registers settings.
 2. Search: a text box. Tabbing into it makes it ready for typing at once. Type part of a setting's name and the list shows matching settings from every category. Tab leaves the box.

@@ -9,7 +9,8 @@ local L = quests.L
 -- Quests
 --   Nearby        available quests, nearest giver first; Enter beacons the
 --                 giver; a giver with several spawns expands to them
---   In Progress   the log; Enter beacons the first unfinished objective's
+--   In Progress   the log, one level per quest log zone, each zone's
+--                 quests nearest first (zones.lua); Enter beacons the first unfinished objective's
 --                 nearest target (the turn-in when complete), likewise
 --                 expanding to that target's spawns; with no target to walk
 --                 to, the game's own marker for the quest, then Questie's
@@ -23,6 +24,15 @@ local Adapter = WowVision.quests.Adapter
 
 local function unknown()
     return L["Unknown"]
+end
+
+-- Whether a spawn lies on the player's continent: the sources give a
+-- distance only there (and a target's nearest spawn is always one). World
+-- coordinates of another continent mean nothing from here, so a spawn node
+-- takes a position only from these (the scanner's nearest pick and the
+-- beacon would otherwise aim at them).
+local function reachable(spawn)
+    return spawn.distance ~= nil
 end
 
 -- What a node points at, for a route engine that knows the same target
@@ -67,8 +77,8 @@ local function spawnNodes(target)
                 key = key,
                 label = quests:placeName(spawn) or unknown(),
                 detail = spawn.phased and L["phased out"] or nil,
-                x = spawn.wx,
-                y = spawn.wy,
+                x = reachable(spawn) and spawn.wx or nil,
+                y = reachable(spawn) and spawn.wy or nil,
                 match = match,
             })
         end
@@ -161,6 +171,24 @@ local function pointAt(node, target)
     return node
 end
 
+-- The quest tooltip, read with the tooltip keys (Shift+Down) on a quest in
+-- Nearby and In Progress: title, level and colour, kind, progress or giver,
+-- the quest text (core/quests/tooltip.lua), then what the game's own quest
+-- link tooltip adds.
+local function questTooltip(entry, kind)
+    local link = "quest:" .. tostring(entry.questId)
+    if type(entry.level) == "number" then
+        link = link .. ":" .. tostring(entry.level)
+    end
+    return {
+        type = "Lines",
+        link = link,
+        lines = function()
+            return WowVision.quests.tooltipLines(entry, kind)
+        end,
+    }
+end
+
 local function questDetails(questId)
     return function()
         local quest = quests:quest(questId)
@@ -232,6 +260,7 @@ local function nearbyQuestNode(entry)
         label = entry.name or unknown(),
         detail = detail,
         details = questDetails(entry.questId),
+        tooltip = questTooltip(entry, "nearby"),
     }, entry.starter)
 end
 
@@ -290,6 +319,59 @@ local function pointAtGameMarker(node, entry)
     return marker
 end
 
+-- The tree is a snapshot (see core/scanner/module.lua), but quest progress
+-- moves while it is open (a group's kills credit everyone), so what a quest
+-- line says about progress reads the log each time it is spoken: the
+-- quest's state and each objective's text and state. The structure (which
+-- objective a quest points at, the marker notes) stays as built; Refresh
+-- rebuilds that.
+
+-- The quest as the log holds it now; the snapshot once it left the log.
+local function liveEntry(entry)
+    return WowVision.quests.gameQuestEntry(entry.questId) or entry
+end
+
+local function questStatus(entry)
+    if entry.complete then
+        return L["Complete"]
+    elseif entry.failed then
+        return L["Failed"]
+    end
+    local objectives = entry.objectives or {}
+    if #objectives == 0 then
+        return nil
+    end
+    local done = 0
+    for _, objective in ipairs(objectives) do
+        if objective.finished then
+            done = done + 1
+        end
+    end
+    return string.format("%d %s %d", done, L["of"], #objectives)
+end
+
+-- Puts a live status ahead of the parts the node was built with.
+local function withLiveStatus(node, status)
+    local built = node.detail
+    node.detail = function()
+        local text = status()
+        if text == nil then
+            return built
+        elseif built == nil then
+            return text
+        end
+        return text .. ", " .. built
+    end
+end
+
+local function objectiveLabel(objective)
+    local label = objective.text
+    if label == nil or label == "" then
+        label = objective.target ~= nil and objective.target.name or unknown()
+    end
+    return label
+end
+
 local function objectiveNodes(entry, allDone)
     return function()
         local out = {}
@@ -302,14 +384,19 @@ local function objectiveNodes(entry, allDone)
             return out
         end
         for index, objective in ipairs(entry.objectives) do
-            local label = objective.text
-            if label == nil or label == "" then
-                label = objective.target ~= nil and objective.target.name or unknown()
+            local function live()
+                return liveEntry(entry).objectives[index] or objective
             end
-            local node = { key = "objective:" .. index, label = label }
-            if objective.finished then
-                node.detail = L["Complete"]
-            end
+            local node = {
+                key = "objective:" .. index,
+                label = function()
+                    local current = live()
+                    if current.text == nil or current.text == "" then
+                        return objectiveLabel(objective)
+                    end
+                    return current.text
+                end,
+            }
             local targets = quests:objectiveTargets(entry.questId, index)
             local marker = nil
             if pointAtFirst(node, targets) == nil and not objective.finished
@@ -326,30 +413,38 @@ local function objectiveNodes(entry, allDone)
                     return spawnNodes(marker)
                 end
             end
+            withLiveStatus(node, function()
+                return live().finished and L["Complete"] or nil
+            end)
             tinsert(out, node)
         end
         return out
     end
 end
 
+-- The title of a quest in the log with its level: "A Threat Within, Level 5".
+-- The log's level is the quest's own and can be a scaled one, so it is
+-- approximate; a quest with no level in the log reads its bare title.
+local function questTitle(entry)
+    local title = entry.title or unknown()
+    if type(entry.level) == "number" and entry.level > 0 then
+        return string.format("%s, %s %d", title, L["Level"], entry.level)
+    end
+    return title
+end
+
 local function inProgressNode(entry)
     local node = {
         key = "quest:" .. entry.questId,
-        label = entry.title or unknown(),
+        label = questTitle(entry),
         details = questDetails(entry.questId),
+        tooltip = questTooltip(entry, "inProgress"),
     }
     local unfinished = 0
     for _, objective in ipairs(entry.objectives) do
         if not objective.finished then
             unfinished = unfinished + 1
         end
-    end
-    if entry.complete then
-        node.detail = L["Complete"]
-    elseif entry.failed then
-        node.detail = L["Failed"]
-    elseif #entry.objectives > 0 then
-        node.detail = string.format("%d %s %d", #entry.objectives - unfinished, L["of"], #entry.objectives)
     end
     if entry.known then
         local allDone = entry.complete or unfinished == 0
@@ -386,6 +481,9 @@ local function inProgressNode(entry)
         -- a quest Questie does not know still has the game's marker
         pointAtGameMarker(node, entry)
     end
+    withLiveStatus(node, function()
+        return questStatus(liveEntry(entry))
+    end)
     return node
 end
 
@@ -407,7 +505,7 @@ function quests:questNavigationTarget(questId)
             return {
                 x = node.x,
                 y = node.y,
-                label = node.targetName or node.label,
+                label = node.targetName or entry.title or node.label,
                 onArrive = node.onArrive,
                 match = node.match,
             }
@@ -417,9 +515,26 @@ function quests:questNavigationTarget(questId)
 end
 
 -- The scanner path of a quest in the log, for landing on it when the
--- scanner opens from the quest log.
+-- scanner opens from the quest log: under In Progress, its zone.
 function quests:scannerQuestPath(questId)
-    return { "quests", "inProgress", "quest:" .. tostring(questId) }
+    local zone = nil
+    local ok, entries = pcall(self.inProgress, self)
+    for _, entry in ipairs(ok and entries or {}) do
+        if entry.questId == questId then
+            zone = entry.zone
+            break
+        end
+    end
+    return { "quests", "inProgress", WowVision.quests.zoneKey(zone), "quest:" .. tostring(questId) }
+end
+
+-- Yards from the player to where a quest node points, nil without a place.
+local function nodeDistance(node)
+    local maps = WowVision.base.navigation and WowVision.base.navigation.maps or nil
+    if maps == nil or node.x == nil then
+        return nil
+    end
+    return maps:distanceTo(node.x, node.y)
 end
 
 local function loadingNode()
@@ -455,12 +570,18 @@ scanner:registerProvider({
             {
                 key = "inProgress",
                 label = L["In Progress"],
+                -- one level per quest log zone, each zone's quests
+                -- nearest first
                 children = function()
-                    local out = {}
-                    for _, entry in ipairs(quests:inProgress()) do
-                        tinsert(out, inProgressNode(entry))
+                    -- nearest first inside a zone, unless Sort Quests by Proximity is off
+                    -- (then the log's order)
+                    local distanceOf = nodeDistance
+                    if not quests.settings.sortByProximity then
+                        distanceOf = function()
+                            return nil
+                        end
                     end
-                    return out
+                    return WowVision.quests.zoneGroups(quests:inProgress(), inProgressNode, distanceOf)
                 end,
             },
         }

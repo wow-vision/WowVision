@@ -19,7 +19,7 @@ Sollte nach einem Kampf einmal ein WowVision-Fenster hängen bleiben, tippe /wv 
 
 ### Was auf das Ende des Kampfes wartet
 
-- Das Ein- oder Ausschalten der weichen Zielerfassung und die Einstellung Weiches Ziel wird festes Ziel: WowVision sagt "nach dem Kampf" und übernimmt die Änderung, wenn der Kampf endet. Siehe [Zielerfassung](targeting.md).
+- Das Ein- oder Ausschalten der weichen Zielerfassung und die Einstellung Soft Target wird festes Ziel: WowVision sagt "nach dem Kampf" und übernimmt die Änderung, wenn der Kampf endet. Siehe [Zielerfassung](targeting.md).
 - Das Speichern eines virtuellen Fokus mit /focus1 bis /focus5: wird mit der Meldung "Virtueller Fokus kann im Kampf nicht gesetzt werden." abgelehnt.
 - Eine neue Taste im Fenster für die Tastenbelegung aufzunehmen: WowVision sagt "Nicht im Kampf".
 - Der Minikarten-Scan und ähnliche Aktionen: Auch sie sagen "Nicht im Kampf". Siehe [Minimap](minimap.md).

@@ -159,7 +159,7 @@ testRunner:addSuite("DB migrations", {
         local db = { someKey = 1 }
         local ok, err = pcall(dbManager.beginReconcile, dbManager, {}, db)
         t:assertTrue(ok, err)
-        t:assertEqual(db._version, 8)
+        t:assertEqual(db._version, 9)
         t:assertType(db.bindings, "table")
     end,
 
@@ -234,6 +234,44 @@ testRunner:addSuite("DB migrations", {
         t:assertEqual(settings.arrivalShort, 1)
         t:assertEqual(settings.arrivalMedium, 3)
         t:assertEqual(settings.arrivalLong, 8)
+    end,
+
+    ["muted quest messages in the errors filter mute their quest alert, in both stores"] = function(t)
+        local function saved()
+            return { submodules = { errors = { data = { errors = {
+                ERR_QUEST_ADD_KILL_SII = { alert = { enabled = false } },
+                ERR_QUEST_OBJECTIVE_COMPLETE_S = { alert = { enabled = true, outputs = { tts = { enabled = false } } } },
+                ERR_QUEST_UNKNOWN_COMPLETE = { alert = { enabled = true, outputs = { tts = { enabled = true } } } },
+                ERR_QUEST_ADD_ITEM_SII = { alert = { enabled = true } },
+            } } } } }
+        end
+        local char = saved()
+        char._version = 8
+        dbManager:beginReconcile({}, char)
+        local global = saved()
+        global._version = 6
+        dbManager:beginReconcileGlobal({}, global)
+        for _, db in ipairs({ char, global }) do
+            local alerts = db.submodules.quests.alerts
+            t:assertEqual(alerts.questProgress.enabled, false)
+            t:assertEqual(alerts.objectiveComplete.enabled, false, "speech off counts as silenced")
+            t:assertNil(alerts.questComplete, "the quest complete alert has no message of its own")
+        end
+    end,
+
+    ["Announce Errors off mutes all three quest alerts"] = function(t)
+        local db = { _version = 6, submodules = { errors = { alerts = { announce = { enabled = false } } } } }
+        dbManager:beginReconcileGlobal({}, db)
+        local alerts = db.submodules.quests.alerts
+        t:assertEqual(alerts.questProgress.enabled, false)
+        t:assertEqual(alerts.objectiveComplete.enabled, false)
+        t:assertEqual(alerts.questComplete.enabled, false)
+    end,
+
+    ["errors left on add no quest alert records"] = function(t)
+        local db = { _version = 8, submodules = { errors = { alerts = { announce = { enabled = true } } } } }
+        dbManager:beginReconcile({}, db)
+        t:assertNil(db.submodules.quests)
     end,
 
     ["a Range module switched off stays off through its alert"] = function(t)
@@ -387,6 +425,6 @@ testRunner:addSuite("DB migrations", {
         dbManager:beginReconcileGlobal({}, db)
         t:assertEqual(#general.items, 7)
         t:assertEqual(general.items[7].object.type, "GameClock")
-        t:assertEqual(db._version, 6)
+        t:assertEqual(db._version, 7)
     end,
 })

@@ -30,10 +30,10 @@ Escape closes any of these windows.
 
 Used by every crafting profession except Enchanting and Beast Training. The window is named after the profession ("Tailoring", "First Aid") and the screen reads as a chain of stops:
 
-1. Search, an edit box. When the window opens you land here and you can type straight away. Typing narrows the recipe list.
-2. TBC only: Have Materials, a check box that hides recipes you cannot make right now.
-3. TBC: Subclass and Inventory Slot dropdowns. Mists: one Filter dropdown. They narrow the list by category or slot. Enter opens the game's menu.
-4. Recipes, the list.
+1. TBC only: Have Materials, a check box that hides recipes you cannot make right now.
+2. TBC: Subclass and Inventory Slot dropdowns. Mists: one Filter dropdown. They narrow the list by category or slot. Enter opens the game's menu.
+3. Search, an edit box. Typing narrows the recipe list.
+4. Recipes, the list. When the window opens you land here.
 5. Details of the selected recipe.
 6. Quantity, an edit box that holds how many you want to make.
 7. The Create and Create All buttons, each a stop.
@@ -71,8 +71,8 @@ After you select a recipe:
 ### Example: craft 5 Linen Bandages (TBC, Mists)
 
 1. Open the First Aid window: press P for the spellbook, go to the Professions tab on Mists (or the General side tab on TBC), find "First Aid" and press Enter.
-2. You land on Search. Type "linen" and press Tab. The list now only holds matching recipes.
-3. Press Tab until you hear Recipes (on TBC, past Have Materials and the two dropdowns). Arrow down to "Linen Bandage 12 (Green)". Press Enter: "selected".
+2. You land on Recipes. Press Shift+Tab once to reach Search, type "linen" and press Tab. You are back on Recipes, and the list now only holds matching recipes.
+3. Arrow down to "Linen Bandage 12 (Green)". Press Enter: "selected".
 4. Press Tab to Details. Down reads the description and the reagents, "Linen Cloth 12 /1", so you know you have enough.
 5. Press Tab to Quantity, type 5, press Tab.
 6. On Create, press Enter. The game makes five bandages.
@@ -87,7 +87,7 @@ The stops:
 2. Training Points with your pet's points, for Beast Training only.
 3. Have Materials, a check box (not shown for Beast Training).
 4. Slot filter dropdown, for Enchanting.
-5. Recipes, the list. Each entry reads its name, its rank or sub text, how many you can make, its difficulty colour, and for Beast Training its training point cost. An enchanting entry reads like "Enchant Bracer - Brawn 3 (Yellow)".
+5. Recipes, the list, where the window opens. Each entry reads its name, its rank or sub text, how many you can make, its difficulty colour, and for Beast Training its training point cost. An enchanting entry reads like "Enchant Bracer - Brawn 3 (Yellow)".
 6. Details: the craft icon (name and count), the requirements, the cost, the cooldown, the description and a Reagents group like the trade skill window's.
 7. Enchant (or Train for Beast Training) and Close.
 
@@ -173,9 +173,9 @@ Opening a profession's spell shows the crafting page, named after the profession
 
 1. Tabs: one tab per profession that has a crafting window. Enter on a tab casts that profession's spell and switches to it. The profession you are on reads "selected" and does nothing on Enter.
 2. Profession (one stop): the rank line, a Link menu (links the profession to chat) and your profession tool slots. A tool slot reads the item name or "Empty". Enter picks the item up or drops the item on your cursor, like the character pane.
-3. Search, the edit box. Type to narrow the recipes.
-4. Filter, a dropdown menu.
-5. Recipes, the list.
+3. Filter, a dropdown menu.
+4. Search, the edit box. Type to narrow the recipes.
+5. Recipes, the list. The page opens here.
 6. Details of the selected recipe.
 7. Quantity, an edit box.
 8. Create, Create All, and View Guild Crafters when it is shown. A disabled create button also reads the game's reason (what is missing).
@@ -195,7 +195,7 @@ One stop, Details. It reads the output item with its count, a Favorite check box
 ### Example: craft 5 Elixirs on WoW: Forever
 
 1. Press the professions key. Tab to the card for Alchemy and press Enter on its spell (for example "Alchemy").
-2. The crafting page opens. Press Tab until Search, type the recipe name and Tab to Recipes.
+2. The crafting page opens on Recipes. Press Shift+Tab once to reach Search, type the recipe name and Tab back to Recipes.
 3. Arrow to the recipe and press Enter; Space reads what it needs: "Peacebloom 3/2".
 4. Tab to Quantity, type 5, Tab to Create. Press Enter.
 

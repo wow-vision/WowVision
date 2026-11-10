@@ -96,17 +96,17 @@ Siehe [Chat](../windows/chat.md).
 | Nächster Wegpunkt (Next Waypoint) | Strg+W | Springt zum nächsten Wegpunkt vor. Du hörst, wie viele Wegpunkte noch übrig sind, zum Beispiel "12 verbleibend" |
 | Vorheriger Wegpunkt (Previous Waypoint) | Strg+S | Geht zum vorherigen Wegpunkt zurück, mit derselben Zählung |
 | Route von hier neu starten (Start the Route Again From Here) | Strg+Umschalt+N | Plant die Route zu deinem letzten Ziel noch einmal, beginnend dort, wo du stehst. Du hörst "Keine Route zum Neustarten", wenn du noch kein Ziel gewählt hast |
-| Route umkehren (Reverse Route) | Strg+Umschalt+R | Kehrt die laufende Route um: vom Wegpunkt, zu dem das Signal gerade führt, zurück zu ihrem Start |
-| Navigation abbrechen (Cancel Navigation) | Umschalt+F12 | Beendet die aktive Route oder das aktive Signal |
+| Route umkehren (Reverse Route) | Strg+Umschalt+R | Kehrt die laufende Route um: vom Ziel zurück zum Start, weiter ab dem Wegpunkt, zu dem das Beacon gerade führt |
+| Navigation abbrechen (Cancel Navigation) | Umschalt+F12 | Beendet die aktive Route oder das aktive Beacon |
 | Ankunftsdistanz wechseln (Cycle Arrival Distance) | Alt+P | Ändert, wie nah du an einen Wegpunkt herankommen musst, damit er als erreicht gilt |
 | Entfernung ansagen (Announce Distance) | Unbelegt | Spricht die Entfernung zum Wegpunkt. Alt Gr (oder Strg+Alt) tut von Haus aus dasselbe |
 | Route zu deinem Ziel (Route to Your Target) | Unbelegt | Startet eine Route zu deinem aktuellen Ziel |
 | Route zum nächsten unbesuchten gleichnamigen Ziel (Route to the Nearest Unvisited of the Same Name) | Unbelegt | Führt per Route zum nächsten Ort mit demselben Namen, den du noch nicht besucht hast |
-| Direkt zum nächsten unbesuchten gleichnamigen Ziel (Direct to the Nearest Unvisited of the Same Name) | Unbelegt | Dasselbe als gerades Signal statt als Route |
+| Direkt zum nächsten unbesuchten gleichnamigen Ziel (Direct to the Nearest Unvisited of the Same Name) | Unbelegt | Dasselbe als gerades Beacon statt als Route |
 | WowNav-Routenstatus (WowNav Route Status) | Unbelegt | (WoW: Forever) Spricht den Zustand der WowNav-Route |
 | Neue WowNav-Route um eine versperrte Stelle (New WowNav Route Around a Blocked Spot) | Unbelegt | (WoW: Forever) Plant eine neue Route, die die Stelle meidet, an der du feststeckst |
 
-Alt Gr ist keine Belegung: Es wird direkt gelesen, bleibt stumm, während du in einem Eingabefeld tippst, und lässt sich mit der Einstellung Entfernung mit Alt Gr ansagen (Announce Distance with Alt Gr) im Modul Karten (Maps) ausschalten. Siehe [Navigation und Routen](../world/navigation.md) und [WowNav](../world/wownav.md).
+Alt Gr ist keine Belegung: Es wird direkt gelesen, bleibt stumm, während du in einem Eingabefeld tippst, und lässt sich mit der Einstellung Entfernung mit Alt Gr ansagen (Announce Distance with Alt Gr) im Modul Beacon und Routen (Beacon and Routes, unter Navigation) ausschalten. Siehe [Navigation und Routen](../world/navigation.md) und [WowNav](../world/wownav.md).
 
 ## Minimap
 
@@ -120,9 +120,9 @@ Siehe [Minimap](../world/minimap.md).
 
 | Aktion | Standardtaste | Hinweise |
 |---|---|---|
-| Weiches Ziel Feind (Soft Target Enemy) | Umschalt+I | Schaltet die weiche Zielerfassung für Feinde ein oder aus und sagt "Weiches Ziel Feind Aktiviert" oder "Deaktiviert" (mit "nach dem Kampf", wenn du die Taste im Kampf drückst) |
-| Weiches Ziel Freund (Soft Target Friend) | Umschalt+P | Dasselbe für die weiche Zielerfassung von Freunden |
-| Weiches Ziel Interaktion (Soft Target Interact) | Umschalt+O | Dasselbe für die weiche Zielerfassung zur Interaktion |
+| Soft Target Feind (Soft Target Enemy) | Umschalt+I | Schaltet die weiche Zielerfassung für Feinde ein oder aus und sagt "Soft Target Feind Aktiviert" oder "Deaktiviert" (mit "nach dem Kampf", wenn du die Taste im Kampf drückst) |
+| Soft Target Freund (Soft Target Friend) | Umschalt+P | Dasselbe für die weiche Zielerfassung von Freunden |
+| Soft Target Interaktion (Soft Target Interact) | Umschalt+O | Dasselbe für die weiche Zielerfassung zur Interaktion |
 | Ziel des Ziels (Target of Target) | Unbelegt | Macht das Ziel deines Ziels zu deinem Ziel, ohne einen Angriff zu beginnen |
 | Zielmenü öffnen (Open Target Menu) | Alt+T | Öffnet das Menü deines Ziels, wie ein Rechtsklick auf sein Porträt |
 | Zielfokus 1 bis Zielfokus 5 (Target Focus 1 bis 5) | Unbelegt | Erfasst eines der fünf WowVision-Fokusziele |
@@ -133,7 +133,7 @@ Siehe [Zielerfassung](../world/targeting.md).
 
 | Aktion | Standardtaste | Hinweise |
 |---|---|---|
-| Würfel-Tooltip (Roll Tooltip) | Alt+Strg+Y | Sagt den Namen des Gegenstands, um den gewürfelt wird |
+| Würfel-Tooltip (Roll Tooltip) | Alt+Strg+Y | Liest den ganzen Tooltip des Gegenstands vor, um den gewürfelt wird: Name, Qualität, Gegenstandsstufe, Werte und Voraussetzungen |
 | Bedarf würfeln (Roll Need) | Alt+Strg+U | |
 | Gier würfeln (Roll Greed) | Alt+Strg+I | |
 | Passen (Roll Pass) | Alt+Strg+O | |

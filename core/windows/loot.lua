@@ -18,12 +18,36 @@ local function rollButton(frame, rollType)
     return buttons.GreedButton
 end
 
+-- The whole tooltip of the item up for a roll (name, quality, item level,
+-- stats, requirements), read from its link on a private tooltip frame. If
+-- the game gives no link or no lines, the name on the roll frame.
+local rollTooltip = WowVision.Tooltip:new("lootRoll")
+
+local function rollText(frame)
+    local link = nil
+    if frame.rollID ~= nil and GetLootRollItemLink ~= nil then
+        local ok, result = pcall(GetLootRollItemLink, frame.rollID)
+        if ok then
+            link = result
+        end
+    end
+    if link ~= nil and not WowVision.isSecret(link) then
+        rollTooltip:set(nil, { type = "Hyperlink", link = link })
+        local text = rollTooltip:getText()
+        rollTooltip:reset()
+        if WowVision.secrets.hasText(text) then
+            return text
+        end
+    end
+    return frame.Name:GetText()
+end
+
 local function rollLoot(rollType)
     for i = 1, 6 do
         local frame = _G["GroupLootFrame" .. i]
         if frame and frame:IsVisible() then
             if rollType == "info" then
-                WowVision:speak(frame.Name:GetText())
+                WowVision:speak(rollText(frame))
             else
                 local button = rollButton(frame, rollType)
                 if button:IsEnabled() then
@@ -36,7 +60,7 @@ local function rollLoot(rollType)
             return
         end
     end
-    WowVision:speak(L["No loot."])
+    WowVision:notify(L["No loot."])
 end
 
 module:registerBinding({

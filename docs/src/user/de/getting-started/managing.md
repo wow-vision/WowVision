@@ -11,7 +11,7 @@ WowVision hält seine Daten in den eigenen Dateien des Spiels für gespeicherte 
 | WowVisionGlobalDB | Standardmäßig die meisten Einstellungen, Alarme, Tastenbelegungen, Puffer und Monitore | Der ganze Account |
 | WowVisionDB | Einstellungen, die du auf "dieser Charakter" gelegt hast, sowie deine Zauberhistorie | Eine Datei pro Charakter |
 | WowVisionDump | Diagnoseaufzeichnungen: Lua-Fehler, Aufzeichnungen blockierter Aufrufe, das Controller-Log, das Laufprotokoll der Minikarte, der Quest-Probe-Bericht und Ähnliches | Der ganze Account |
-| WowVisionPriceDB | Die Preisdatenbank des Auktionshauses (nur TBC) | Der ganze Account |
+| WowVisionPriceDB | Die Preisdatenbank des Auktionshauses (The Burning Crusade, Retail und WoW: Forever) | Der ganze Account |
 
 Die Dateien liegen im WTF-Ordner des Spiels, im Versionsordner, in den du installiert hast:
 

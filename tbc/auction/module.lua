@@ -79,18 +79,18 @@ local function formatCooldownTime(seconds)
     local mins = math.floor(seconds / 60)
     local secs = math.floor(seconds % 60)
     if mins > 0 and secs > 0 then
-        return mins .. " min " .. secs .. " sec"
+        return string.format(L["%s min %s sec"], mins, secs)
     elseif mins > 0 then
-        return mins .. " min"
+        return string.format(L["%s min"], mins)
     else
-        return secs .. " sec"
+        return string.format(L["%s sec"], secs)
     end
 end
 
 local function fullScanScanningLabel()
     local state = ahPrices.getFullScanState()
     if state == "waiting" then
-        return L["Scanning"] .. ", " .. math.floor(ahPrices.getFullScanWaitElapsed()) .. " sec"
+        return L["Scanning"] .. ", " .. string.format(L["%s sec"], math.floor(ahPrices.getFullScanWaitElapsed()))
     elseif state == "processing" then
         local p = ahPrices.getFullScanProgress()
         if p.total > 0 then

@@ -102,6 +102,6 @@ module:registerBinding({
                 monitor.enabled = not anyOn
             end
         end
-        WowVision:speak(anyOn and L["Monitors off"] or L["Monitors on"])
+        WowVision:notify(anyOn and L["Monitors off"] or L["Monitors on"])
     end,
 })

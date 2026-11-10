@@ -128,6 +128,7 @@ local DYN = {
     dive_exit = L["Surface here"],
     fishing_spot_shore = L["Fishing spot on the shore: %s"],
     fishing_spot_structure = L["Fishing spot on pier or quay: %s"],
+    cave_center = L["Central point: %s"],
     -- the transitions of Zephras Isle (their places are named in the key)
     rohashi_portal = L["Portal to Rohashi Spires"],
     rohashi_arrival = L["Arrival at Rohashi Spires"],
@@ -191,6 +192,120 @@ local function nameSuffix(target)
     return template
 end
 
+-- ---- creatures and objects in the client's language
+--
+-- The catalogues name a creature or an object in English and German only. Each one also carries its game ID (entry),
+-- and Questie's database (QuestieDB: NpcDB and ObjectDB, the globals it publishes) holds the same creatures and
+-- objects by ID with their names in the client's language. So on a client that is neither English nor German the
+-- name comes from Questie where it knows the ID, and the catalogue's own name is the fallback.
+local NPC_KINDS = { npc = true, mob = true, creature = true }
+local OBJECT_KINDS = { gameobject = true, herb = true, mining = true, mailbox = true }
+local OWN_LOCALES = { enUS = true, enGB = true, deDE = true }
+
+-- Whether the Names in Your Language setting is on; the module (module.lua) replaces this.
+function text.localNamesEnabled()
+    return true
+end
+
+local localNames = { NpcDB = { name = {}, subName = {} }, ObjectDB = { name = {}, subName = {} } }
+
+-- Forgets what Questie answered (a new language, or a Questie that was not ready).
+function text.clearLocalNames()
+    localNames = { NpcDB = { name = {}, subName = {} }, ObjectDB = { name = {}, subName = {} } }
+end
+
+local function isSecret(value)
+    return WowVision.secrets ~= nil and WowVision.secrets.isSecret(value) == true
+end
+
+-- Questie answers in its own language setting (Auto follows the game, but it can be forced), and until its start-up
+-- has run it still says English. Its names are used only while that language is the client's; when Questie cannot be
+-- asked, it is taken to agree.
+local function questieSpeaksClientLanguage()
+    if QuestieLoader == nil or type(QuestieLoader.ImportModule) ~= "function" then
+        return true
+    end
+    local ok, l10n = pcall(QuestieLoader.ImportModule, QuestieLoader, "l10n")
+    if not ok or type(l10n) ~= "table" or type(l10n.GetUILocale) ~= "function" then
+        return true
+    end
+    local asked, uiLocale = pcall(l10n.GetUILocale, l10n)
+    return not asked or uiLocale == nil or uiLocale == GetLocale()
+end
+
+-- Questie's database can exist before Questie has finished loading it, and a lookup then misses. Once Questie says
+-- it is ready, everything remembered so far is forgotten, so those names are asked again. Hooked on the first lookup
+-- (and again for a new Questie.API table); Questie fires the hook at once when it is already ready.
+local hookedQuestieApi = nil
+local function forgetWhenQuestieIsReady()
+    local questie = rawget(_G, "Questie")
+    local api = type(questie) == "table" and questie.API or nil
+    if type(api) ~= "table" or api == hookedQuestieApi or type(api.RegisterOnReady) ~= "function" then
+        return
+    end
+    hookedQuestieApi = api
+    pcall(api.RegisterOnReady, text.clearLocalNames)
+end
+
+-- A text field ("name", "subName") Questie gives an ID, or nil. A miss is remembered, but only when Questie could be
+-- asked properly: before its table exists, or before it speaks the client's language, a lookup must still be able to
+-- succeed later. A miss while Questie is still loading is forgotten when it is ready (forgetWhenQuestieIsReady).
+local function questieField(databaseName, id, field)
+    local database = _G[databaseName]
+    if type(database) ~= "table" or type(database.Get) ~= "function" then
+        return nil
+    end
+    forgetWhenQuestieIsReady()
+    local remembered = localNames[databaseName][field]
+    local known = remembered[id]
+    if known ~= nil then
+        return known or nil
+    end
+    if not questieSpeaksClientLanguage() then
+        return nil
+    end
+    local ok, value = pcall(database.Get, id, field)
+    if ok and type(value) == "string" and not isSecret(value) and value ~= "" then
+        remembered[id] = value
+        return value
+    end
+    remembered[id] = false
+    return nil
+end
+
+-- The catalogue writes the title an NPC carries under its name in parentheses, "Innkeeper Grosk (Innkeeper)". Players
+-- search by it ("cook"), so the localized name keeps one: Questie's title for the NPC, in the same place.
+local function hasTitle(nameEn)
+    return type(nameEn) == "string" and nameEn:find("%b()%s*$") ~= nil
+end
+
+-- The name of a creature or an object in the client's language, or nil: a target named by a template (a dungeon
+-- entrance, a dock), without an ID, of another kind, or one Questie does not know.
+function text.localName(target)
+    if type(target) ~= "table" or target.nameKey ~= nil or not text.localNamesEnabled() then
+        return nil
+    end
+    if OWN_LOCALES[GetLocale ~= nil and GetLocale() or "enUS"] then
+        return nil
+    end
+    local entry = target.entry
+    if type(entry) ~= "number" or isSecret(entry) then
+        return nil
+    end
+    local databaseName = NPC_KINDS[target.kind] and "NpcDB" or OBJECT_KINDS[target.kind] and "ObjectDB" or nil
+    if databaseName == nil then
+        return nil
+    end
+    local name = questieField(databaseName, entry, "name")
+    if name ~= nil and databaseName == "NpcDB" and hasTitle(target.nameEn) then
+        local title = questieField(databaseName, entry, "subName")
+        if title ~= nil then
+            name = name .. " (" .. title .. ")"
+        end
+    end
+    return name
+end
+
 -- The spoken name of a target (WowNav's WowVisionNavigationTargetName).
 function text.targetName(target, german)
     if type(target) ~= "table" then
@@ -214,6 +329,12 @@ function text.targetName(target, german)
         return string.format(template, placeName(target) or L["unknown destination"]) .. nameSuffix(target)
     end
     local english, deutsch = target.nameEn, target.nameDe
+    if not german then
+        local localName = text.localName(target)
+        if localName ~= nil then
+            return localName .. nameSuffix(target)
+        end
+    end
     if german and type(deutsch) == "string" and deutsch ~= "" then
         return deutsch .. nameSuffix(target)
     end
@@ -240,6 +361,7 @@ local CATEGORY = {
     waypoint = L["waypoint"], orientation = L["orientation point"], transport = L["transport"], live = L["live target"],
     zone_transition = L["zone transition"], transit = L["transit"], boat = L["ship"], tram = L["tram"],
     dungeon = L["dungeon"], portal = L["portal"], zeppelin = L["zeppelin"], lift = L["elevator"], dive = L["dive"],
+    cave = L["cave"], quest_explore = L["quest exploration"],
 }
 
 -- Automatic waypoints are named by their height in whole yards only (his auto_prefix_z: "the player finds re-entry

@@ -183,6 +183,37 @@ testRunner:addSuite("MapRouter", {
         t:assertEqual(reason, "no entry")
     end,
 
+    ["a resumed route finds the waypoint by id, else the nearest"] = function(t)
+        local waypoints = {
+            { id = "a", x = 0, y = 0 },
+            { id = "b", x = 10, y = 0 },
+            { id = "c", x = 20, y = 0 },
+        }
+        t:assertEqual(Router.resumeIndex(waypoints, { id = "c", x = 0, y = 0 }), 3, "the id wins over the position")
+        t:assertEqual(Router.resumeIndex(waypoints, { x = 11, y = 2 }), 2)
+        t:assertEqual(Router.resumeIndex(waypoints, { id = "gone", x = 19, y = 0 }), 3)
+        t:assertNil(Router.resumeIndex({}, { x = 0, y = 0 }))
+    end,
+
+    ["a resumed route prefers a waypoint on the same floor"] = function(t)
+        local waypoints = {
+            { id = "upstairs", x = 0, y = 0, z = 30 },
+            { id = "downstairs", x = 3, y = 0, z = 0 },
+        }
+        t:assertEqual(Router.resumeIndex(waypoints, { x = 0, y = 0, z = 1 }), 2)
+        t:assertEqual(Router.resumeIndex(waypoints, { x = 0, y = 0 }), 1, "no height known: only the plane counts")
+    end,
+
+    ["the remaining distance counts from the player over the waypoints left"] = function(t)
+        local waypoints = {
+            { id = "a", x = 0, y = 0 },
+            { id = "b", x = 10, y = 0 },
+            { id = "c", x = 20, y = 0 },
+        }
+        t:assertEqual(Router.remainingDistance(waypoints, 2, 10, 5), 15)
+        t:assertEqual(Router.remainingDistance(waypoints, 1, 0, 0), 20)
+    end,
+
     ["an unlinked destination ends with a straight last leg"] = function(t)
         local waypoints = graph({
             { id = "a", x = 0, y = 0, links = { "b" } },
@@ -293,5 +324,69 @@ testRunner:addSuite("MapRouter", {
         t:assertEqual(entry.waypoint.id, "shore", "no water entry: the nearest")
         t:assertTrue(noWater)
         t:assertNil(Router.preselectEntry({}, true))
+    end,
+
+    ["nearest by walk: the shorter walk wins over the nearer straight line"] = function(t)
+        -- A river between: "near" is 10 yd across it but 60 yd round by the bridge; "far" is 25 yd on this side.
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b", "bridge" } },
+            { id = "b", x = 25, y = 0, links = { "a" } },
+            { id = "bridge", x = 0, y = 30, links = { "a", "c" } },
+            { id = "c", x = 0, y = 10, links = { "bridge" } },
+        })
+        local near = { id = "near", x = -1, y = 10 }
+        local far = { id = "far", x = 26, y = 0 }
+        waypoints.near, waypoints.far = near, far
+        local wp, route = Router.nearestByWalk(waypoints, 0, 0, { near, far }, { entryId = "a", maxExitDistance = 2 })
+        t:assertEqual(wp and wp.id, "far")
+        -- the route comes along, as Router.route gives it: a, b, then the last leg to far
+        local ids = {}
+        for _, step in ipairs(route.waypoints) do
+            tinsert(ids, step.id)
+        end
+        t:assertEqual(table.concat(ids, " "), "a b far")
+        t:assertEqual(route.lastLeg, 1)
+        t:assertEqual(route.distance, 26)
+        local direct = Router.route(waypoints, 0, 0, "far", { entryId = "a", maxExitDistance = 2 })
+        t:assertEqual(route.distance, direct.distance, "the same as a search to it")
+    end,
+
+    ["nearest by walk: a linked target is reached on the network"] = function(t)
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b" } },
+            { id = "b", x = 10, y = 0, links = { "a", "c" } },
+            { id = "c", x = 20, y = 0, links = { "b" } },
+        })
+        local wp, route = Router.nearestByWalk(waypoints, 0, 0, { waypoints.c, waypoints.b }, { entryId = "a" })
+        t:assertEqual(wp.id, "b")
+        t:assertEqual(#route.waypoints, 2)
+        t:assertNil(route.lastLeg)
+        t:assertEqual(route.distance, 10)
+    end,
+
+    ["nearest by walk: a target without links of its own, linked into"] = function(t)
+        -- "spawn" is reached over b's one-way link (10 yd); "other" only over a last leg of 3 yd, weighted
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b", "c" } },
+            { id = "b", x = 10, y = 0, links = { "a", "spawn" } },
+            { id = "c", x = 0, y = 5, links = { "a" } },
+            { id = "spawn", x = 20, y = 0 },
+        })
+        local other = { id = "other", x = 0, y = 8 }
+        waypoints.other = other
+        t:assertEqual(Router.nearestByWalk(waypoints, 0, 0, { other, waypoints.spawn }, { entryId = "a" }).id, "spawn")
+    end,
+
+    ["nearest by walk: nothing reachable"] = function(t)
+        local waypoints = graph({
+            { id = "a", x = 0, y = 0, links = { "b" } },
+            { id = "b", x = 10, y = 0, links = { "a" } },
+        })
+        local lost = { id = "lost", x = 5000, y = 0 }
+        waypoints.lost = lost
+        local wp, reason = Router.nearestByWalk(waypoints, 0, 0, { lost }, { entryId = "a" })
+        t:assertNil(wp)
+        t:assertEqual(reason, "unreachable")
+        t:assertEqual(select(2, Router.nearestByWalk(waypoints, 0, 0, { lost }, { entryId = "x" })), "no entry")
     end,
 })

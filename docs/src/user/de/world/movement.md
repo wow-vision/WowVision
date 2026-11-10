@@ -6,7 +6,7 @@ Alles hier steht im WowVision-Menü (tippe /wv) unter Navigation. Die Routen- un
 
 | Menüeintrag | Was er enthält |
 |-------------|----------------|
-| Navigation | Drei Einstellungen: Automatisch zum Interaktionsziel bewegen (Auto-move to Interact Target), Automatisch zur Leiche navigieren (Automatically Navigate to Corpse) und Verbleibende Wegpunkte ansagen (Announce Remaining Waypoints, beschrieben auf der Seite [Navigation und Routen](navigation.md#was-du-hörst)). Die anderen Einträge unter Navigation (Karten, besuchte Orte, Signal und so weiter) werden auf der Seite [Navigation und Routen](navigation.md) beschrieben |
+| Navigation | Drei Einstellungen: Automatisch zum Interaktionsziel bewegen (Auto-move to Interact Target), Automatisch zur Leiche navigieren (Automatically Navigate to Corpse) und Verbleibende Wegpunkte ansagen (Announce Remaining Waypoints, beschrieben auf der Seite [Navigation und Routen](navigation.md#was-du-hörst)). Die anderen Einträge unter Navigation (Karten, besuchte Orte, Beacon und so weiter) werden auf der Seite [Navigation und Routen](navigation.md) beschrieben |
 | Navigation, Kompass | Alarme für Blickrichtung, Gebiet, drinnen/draußen, Fliegen, Schwimmen und Tauchen |
 | Navigation, Fallerkennung | Fallgeräusche und Ansage |
 | Navigation, Wanderkennung | Kollisionsgeräusche |
@@ -96,6 +96,7 @@ Worum es sich kümmert:
 - Es folgt deinen Bewegungsbefehlen, egal welche Tasten du zum Bewegen belegt hast. Automatisches Laufen zählt auch als Bewegung.
 - Es deckt auch Wege ab, die das Spiel für dich geht: wenn du die Interaktionstaste drückst und das Spiel dich zu einem NPC laufen lässt, oder wenn du Klicken-zum-Bewegen benutzt. Endet ein solcher Weg, bevor er sein Ziel erreicht (du bist an etwas hängen geblieben), wird der Ton Blockiert einmal gespielt.
 - Betäubt, festgewurzelt, in Furcht versetzt oder anderweitig die Kontrolle verloren zu haben wird nie als Wand gemeldet, und solange du auf einem Flugweg bist, wird nichts eingestuft.
+- Greifst du mit der Interaktionstaste an, läuft dein Charakter dem Gegner den ganzen Kampf über hinterher. Sobald du im Kampf bist, bleibt die Wanderkennung dabei still, solange dein automatischer Angriff läuft und du keine Bewegungstaste drückst. Auf dem Weg zum Gegner, bevor der Kampf beginnt, warnt sie bei einem Hindernis wie immer, und ebenso, wenn du eine Bewegungstaste drückst.
 - Beim Schwimmen wird deine Schwimmgeschwindigkeit zum Vergleich benutzt.
 - (Nur Retail und WoW: Forever) Im Kampf verbirgt das Spiel deine Bewegungsgeschwindigkeit, sodass nur ein völliger Stillstand bemerkt werden kann: Du hörst den Ton Blockiert, aber keine der langsameren Stufen.
 
@@ -132,7 +133,7 @@ Wenn du stirbst und deinen Geist freilässt, kann WowVision beginnen, dich zu de
 |-------------|----------|-------------|
 | Automatisch zur Leiche navigieren | An | Nachdem du deinen Geist freigelassen hast, beginnt sofort eine Route zu deiner Leiche |
 
-Das passiert: Du lässt deinen Geist frei; WowVision schlägt nach, wo deine Leiche ist, zuerst auf deiner aktuellen Karte und dann auf den größeren Karten darum herum (so wird eine Leiche gefunden, die im Gebiet neben dem Friedhof liegt, an dem du erwacht bist), und sagt "Leiche". Dann beginnt es eine Route dorthin, genau so, als hättest du die Leiche im Navigationsfenster ausgewählt. Wo WowNav-Routendaten verfügbar sind (WoW: Forever), wird eine Leiche, die über mehrere Ebenen liegt, zur niedrigsten erreichbaren Ebene geroutet. Findet sich keine Route, zeigt stattdessen ein Signal direkt auf die Leiche. Der Route wird wie jeder anderen gefolgt; siehe [Navigation und Routen](navigation.md), wie Routen und die Signaltöne funktionieren.
+Das passiert: Du lässt deinen Geist frei; WowVision schlägt nach, wo deine Leiche ist, zuerst auf deiner aktuellen Karte und dann auf den größeren Karten darum herum (so wird eine Leiche gefunden, die im Gebiet neben dem Friedhof liegt, an dem du erwacht bist), und sagt "Leiche". Dann beginnt es eine Route dorthin, genau so, als hättest du die Leiche im Navigationsfenster ausgewählt. Wo WowNav-Routendaten verfügbar sind (WoW: Forever), wird eine Leiche, die über mehrere Ebenen liegt, zur niedrigsten erreichbaren Ebene geroutet. Findet sich keine Route, zeigt stattdessen ein Beacon direkt auf die Leiche. Der Route wird wie jeder anderen gefolgt; siehe [Navigation und Routen](navigation.md), wie Routen und die Beacon-Töne funktionieren.
 
 Details:
 
@@ -172,6 +173,6 @@ Keine dieser Funktionen hat einen Befehl, aber wenn eine Bewegungstaste nach dem
 
 ## Verwandte Seiten
 
-- [Navigation und Routen](navigation.md): Routen, Wegpunkte, das Signal und das Drehen zu Wegpunkten.
+- [Navigation und Routen](navigation.md): Routen, Wegpunkte, das Beacon und das Drehen zu Wegpunkten.
 - [Kampf](combat.md): was im Kampf mit den Tasten von WowVision passiert.
 - [Alarme](../basics/alerts.md): Ausgaben, Töne und Stimmen.

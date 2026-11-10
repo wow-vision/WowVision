@@ -125,28 +125,28 @@ These versions have two bag views, which you pick in the game's bag menu. WowVis
 
 ### Combined bags
 
-All your bags are drawn as one big grid, and WowVision reads it the same way: the backpack first, then the other bags, no bag boundaries. The stops are:
+All your bags are drawn as one big grid, and WowVision reads it the same way: the backpack first, then the other bags, no bag boundaries. The window opens on the Bags stop. The stops are:
 
-1. Bags: the slots, in the shape you chose (a grid is ten slots wide, with the first row possibly shorter). In the list shape the slots are in slot order, backpack first.
-2. Bag Slots: a row with the bag slot buttons of the backpack and your four bags. Each reads "Bag Slot" and the bag's name. The reagent bag and, on WoW: Forever, the keyring are drawn by the game as their own frames even in combined view. They are not in this row. Each gets a stop of its own, with its bag slot first, as in the individual view below.
-3. Search: a text box. Tab into it and type, and slots that do not match read Filtered. Tab out to leave it.
-4. Bag Controls: Bag Menu, a dropdown with one submenu per bag (filters, clean up, switch bag view); Sort Bags; Money, which reads your gold, for example "Money, 12 Gold 5 Silver"; and Add Slots when the game offers it.
+1. Bag Controls: Bag Menu, a dropdown with one submenu per bag (filters, clean up, switch bag view); Sort Bags; Money, which reads your gold, for example "Money, 12 Gold 5 Silver"; and Add Slots when the game offers it.
+2. Search: a text box. Tab into it and type, and slots that do not match read Filtered. Tab out to leave it.
+3. Bags: the slots, in the shape you chose (a grid is ten slots wide, with the first row possibly shorter). In the list shape the slots are in slot order, backpack first.
+4. Bag Slots: a row with the bag slot buttons of the backpack and your four bags. Each reads "Bag Slot" and the bag's name. The reagent bag and, on WoW: Forever, the keyring are drawn by the game as their own frames even in combined view. They are not in this row. Each gets a stop of its own, with its bag slot first, as in the individual view below.
 
 A backpack of an account without an authenticator shows four extra slots that cannot hold anything. WowVision does not read these as slots. The Add Slots button is still in Bag Controls.
 
 Example: find your Hearthstone with the search.
 
 1. Open the bags with B. Press Ctrl+Tab if you are inside another window.
-2. Press Tab until you hear "Search".
+2. The window opens on Bags. Press Shift+Tab once to reach "Search".
 3. Type `hearth`. The slots that do not match now read Filtered.
-4. Press Tab back to the Bags stop and read slots with Down.
+4. Press Tab to the Bags stop and read slots with Down.
 
 ### Individual bags
 
 Each bag is its own window, as on Classic. Each open bag is a stop, announced by the bag's name. The backpack key alone opens just the backpack. The game's Open All Bags key (by default Shift together with the backpack key) opens everything.
 
 - The first entry is the bag slot: "Bag Slot" and the bag name. Both clicks on it say Close Bag, or Place Item while you hold a bag. The bag's own menu (filters, clean up, switch bag view) is in the slot's context menu, as Bag Menu.
-- Search, Sort Bags, Money and Add Slots belong to the backpack. They appear in a stop called Bag Controls after the bags.
+- Sort Bags, Money and Add Slots belong to the backpack. They appear in a stop called Bag Controls before the bags, followed by the Search stop. The window opens on the first bag.
 
 ## Retail and WoW: Forever bank
 

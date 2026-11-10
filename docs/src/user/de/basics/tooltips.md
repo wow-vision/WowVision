@@ -9,10 +9,12 @@ Fast alles in WoW hat einen Tooltip: Gegenstandswerte, Zauberbeschreibungen, Erk
 | Leertaste | Tooltip vorlesen | Liest den ganzen Tooltip des fokussierten Steuerelements vor, von der ersten bis zur letzten Zeile. |
 | Umschalt+Pfeil runter | Nächste Tooltipzeile | Geht zur nächsten Zeile des Tooltips und liest sie vor. |
 | Umschalt+Pfeil hoch | Vorherige Tooltipzeile | Geht zur vorherigen Zeile und liest sie vor. |
+| Strg+Umschalt+Pfeil runter | Nächster Tooltipblock | Springt an den Anfang des nächsten Blocks (ein Gegenstand, den du trägst, siehe [Vergleich mit dem, was du trägst](#vergleich-mit-dem-was-du-trägst)) und liest seine erste Zeile. |
+| Strg+Umschalt+Pfeil hoch | Vorheriger Tooltipblock | Springt an den Anfang des vorherigen Blocks und liest seine erste Zeile. |
 | Umschalt+Pfeil rechts | Tooltip rechts vorlesen | Liest nur die rechte Spalte der aktuellen Zeile vor. |
 | Umschalt+Pfeil links | Tooltip links vorlesen | Liest nur die linke Spalte der aktuellen Zeile vor. |
 
-Alle fünf kannst du im [Tastenbelegungs-Bildschirm](./keybindings.md) ändern. Drücke jederzeit Strg, um die Sprachausgabe zu stoppen, wenn dir ein langer Tooltip zu viel wird.
+Alle sieben kannst du im [Tastenbelegungs-Bildschirm](./keybindings.md) ändern. Drücke jederzeit Strg, um die Sprachausgabe zu stoppen, wenn dir ein langer Tooltip zu viel wird.
 
 ## So funktioniert das Lesen
 
@@ -41,6 +43,44 @@ Gehört der Tooltip zu einem Gegenstand, ergänzt WowVision zwei Zeilen, die das
 
 Geld im Tooltip wird mit seinen Münzen vorgelesen. Das Spiel zeigt Gold, Silber und Kupfer als kleine Münzbilder, die die Sprachausgabe weglassen würde. WowVision liest den Verkaufspreis und andere Beträge als „Verkaufspreis: 1 Gold, 23 Silber, 45 Kupfer“. Ein Gegenstand, der nur ein paar Münzen wert ist, klingt zum Beispiel so: „Verkaufspreis: 7 Kupfer“.
 
+## Pawns Aufwertungen
+
+Ist das Addon Pawn installiert und sagt, ein Gegenstand sei eine Aufwertung, hängt WowVision ans Ende des Tooltips eine Zeile pro Pawn-Skala, für die er eine ist: "Pawn: Jäger: Treffsicherheit, Aufwertung um 12 Prozent, gegenüber Rostiger Helm". "Große Aufwertung" ersetzt die Prozentzahl, wenn Pawn keine nennt (leerer Platz, riesiger Gewinn). Sieht Pawn keine Aufwertung, wird nichts gesagt. Diese Zeilen ersetzen die Aufwertungszeilen, die Pawn selbst in den Tooltip schreibt, damit du nicht jede Aufwertung doppelt hörst; Pawns übrige Zeilen bleiben. Die Leertaste liest sie zusammen mit dem Rest des Tooltips.
+
+Zum Ausschalten öffnest du das [WowVision-Menü](./menu-and-settings.md) mit Umschalt+F1, dann Benutzeroberfläche, Tooltip, Vergleichen, und entfernst den Haken bei Pawn-Zusammenfassung. Standardmäßig ist sie an.
+
+## Vergleich mit dem, was du trägst
+
+Zeigt der Tooltip einen Gegenstand, den du anlegen könntest, geht der Tooltip nach dem Gegenstand mit einem Vergleich mit dem weiter, was du trägst. Die Einstellung Mit angelegtem Gegenstand vergleichen, unter Benutzeroberfläche, Tooltip, Vergleichen im [WowVision-Menü](./menu-and-settings.md), wählt, welcher: Spiel (der Standard), WowVision oder Keine. Das Kästchen Aktiviert oben auf diesem Bildschirm schaltet den Vergleich und Pawns Zeilen zusammen ab.
+
+Die Leertaste liest nur den Gegenstand selbst. Drücke Umschalt+Pfeil runter über die letzte Zeile des Gegenstands hinaus, um in den Vergleich zu gehen, oder Strg+Umschalt+Pfeil runter, um direkt zum nächsten Block zu springen; Strg+Umschalt+Pfeil hoch springt einen Block zurück, bis zur ersten Zeile des Gegenstands.
+
+### Spiel
+
+Das ist der Vergleich, den ein sehender Spieler bekommt, wenn er Umschalt über einem Gegenstand hält (oder immer, mit der Spieloption „Gegenstände immer vergleichen“), und das Spiel entscheidet, womit verglichen wird:
+
+- Ein Block für jeden Gegenstand, den du dort trägst: zwei bei Ringen, Schmuckstücken und Einhandwaffen, beide Hände, wenn du eine Zweihandwaffe hältst.
+- Jeder Block beginnt mit der Überschrift des Spiels („Derzeit angelegt“ oder „Angelegt“), dann folgen die Zeilen des Gegenstands, den du trägst.
+- In WoW: Forever und Retail endet der erste Block mit den Werteänderungen: „Wenn Ihr diesen Gegenstand ersetzt, ergeben sich folgende Werteänderungen:“, dann eine Zeile je Wert, zum Beispiel „+12 Ausdauer“. In den Classic-Versionen hörst du, was das Spiel in sein Vergleichsfenster schreibt.
+
+Jeder Gegenstand, den du trägst, beginnt einen Block, und ebenso die Überschrift des Spiels über den Werteänderungen.
+
+Beispiel: Du stehst in deinen Taschen auf einem Paar Stiefel. Die Leertaste liest die Stiefel. Umschalt+Pfeil runter geht Zeile für Zeile durch die Stiefel, dann „Angelegt“, die Stiefel, die du trägst, und die Werteänderungen.
+
+(Die Überschriften und Werteänderungen kommen wörtlich aus dem Spielclient; die deutschen Texte hier sind sinngemäß.)
+
+### WowVision
+
+WowVisions eigener Vergleich sagt nur, was abweicht, in einem Block: "Verglichen mit dem angelegten Gegenstand: Rostiger Helm", dann der Unterschied der Gegenstandsstufe, dann jeder Wert, der abweicht: zuerst Rüstung und Schaden, dann die Hauptwerte, dann die übrigen nach Namen. Zum Beispiel "Gegenstandsstufe: 5 mehr", "Rüstung: 10 mehr", "Intelligenz: 4 weniger".
+
+- Ringe und Schmuckstücke werden mit beiden Plätzen verglichen ("Platz 1 von 2: ...").
+- Eine Einhandwaffe wird nur dann mit der Nebenhand verglichen, wenn dort eine Waffe liegt.
+- Eine Zweihandwaffe fügt "Nimmt auch die Nebenhand ab: ..." hinzu.
+- Ein leerer Platz sagt "Nichts angelegt auf diesem Platz".
+- Der Gegenstand, den du schon trägst, wird nicht mit sich selbst verglichen.
+
+Die Beträge werden ausgeschrieben ("5 mehr", "3 weniger") statt "+5" und "-3", die Sprachausgaben uneinheitlich lesen. Die Werte stammen vom Gegenstand selbst, mit Suffix und Boni, und zählen keine Edelsteine oder Verzauberungen mit.
+
 ## Gegenstandsqualität in Namen
 
 In Listen und auf Plätzen tragen Gegenstandsnamen die Qualität als die Farbe, in der ein sehender Spieler den Namen sieht, sodass du „Pelzstiefel, Weiß“ oder „Donnerzorn, Orange“ hörst. Das betrifft nur Namen. Der Tooltip liest immer den Qualitätsnamen („Verbreitet“, „Legendär“), egal was du unten einstellst.
@@ -62,7 +102,7 @@ Zum Ändern öffnest du das [WowVision-Menü](./menu-and-settings.md) mit Umscha
 
 Beispiel: Du findest, dass zu viele „Weiß“ und „Grau“ deine Taschenansage zumüllen. Schalte Weiß (Verbreitet) und Grau (Schlecht) aus. Die Namen lauten dann bei diesen „Leinenstoff“, während „Pelzstiefel, Grün“ seine Farbe behält.
 
-## Preise in Tooltips (nur The Burning Crusade)
+## Preise in Tooltips
 
 In The Burning Crusade können Gegenstands-Tooltips zusätzliche Preiszeilen enthalten, die wie jede andere Zeile gelesen werden:
 
@@ -73,6 +113,8 @@ In The Burning Crusade können Gegenstands-Tooltips zusätzliche Preiszeilen ent
 
 Diese Preise stammen aus der Preisdatenbank, die WowVision aufbaut, während du das Auktionshaus benutzt. Eine Zeile erscheint nur, wenn WowVision diesen Preis kennt: Ein Gegenstand, den du nie im Auktionshaus gesehen hast, bekommt keine Auktionszeilen, und einer, den du nie bei einem Händler gesehen hast, keine Zeile Händler-Kaufpreis. Das Kontrollkästchen Preise im Tooltip im Menü Auktionspreise (standardmäßig an) schaltet die zusätzlichen Zeilen aus oder ein. Im selben Menü gibt es Tage im Preisverlauf (21), Tage für den Mittelwert (7) und Automatischer Scan (aus), siehe [Auktionshaus](../windows/auction-house.md).
 
+In Retail und WoW: Forever enden Gegenstands-Tooltips mit Händlerpreis pro Stück, Auktion Minimum, Auktion Durchschnitt, Auktion Maximum und Händler-Kaufpreis, sobald du Vollständiger Scan im WowVision-Menü unter Fenster, dann Auktionshaus, eingeschaltet hast. Siehe [Auktionshaus](../windows/auction-house.md#vollständiger-scan-und-preise-in-tooltips-retail-und-wow-forever).
+
 ## Steuerelemente ohne Tooltip
 
 Nicht jedes Steuerelement hat einen Tooltip. Wo keiner existiert, bleibt die Leertaste dem Spiel überlassen, das heißt, dein Charakter springt, wenn du nicht gerade tippst. Die Umschalt+Pfeiltasten tun in diesem Fall nichts.
@@ -81,7 +123,7 @@ Nicht jedes Steuerelement hat einen Tooltip. Wo keiner existiert, bleibt die Lee
 
 - Ein Gegenstand, den das Spiel noch nicht geladen hat, kann zunächst einen leeren Tooltip haben. WowVision fragt erneut an, wenn du die Leertaste drückst; bis dahin sind die Informationen meist angekommen. Drücke die Leertaste noch einmal, falls du nichts gehört hast.
 - Die Tooltip-Tasten lesen, was zum fokussierten Steuerelement gehört. Ist kein Fenster offen, gibt es nichts zu lesen.
-- Wenn du auch das Addon Sku benutzt, lässt WowVision die vier Umschalt+Pfeiltasten für den Tooltip unbelegt, damit sich die beiden Addons nicht um sie streiten. Die Leertaste funktioniert weiterhin.
+- Wenn du auch das Addon Sku benutzt, lässt WowVision die Umschalt+Pfeiltasten und Strg+Umschalt+Pfeiltasten für den Tooltip unbelegt, damit sich die beiden Addons nicht um sie streiten. Die Leertaste funktioniert weiterhin.
 
 ## Diagnosebefehl
 

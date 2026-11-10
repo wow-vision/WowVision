@@ -90,8 +90,25 @@ local function getItemLabel(item)
     return label
 end
 
+-- The picked reward choice as the game shows it: the highlight frame sits on
+-- the button whose id is QuestInfoFrame.itemChoice. Nil while none is picked.
+local function chosenReward()
+    local choice = QuestInfoFrame ~= nil and QuestInfoFrame.itemChoice or 0
+    if choice == nil or choice <= 0 or QuestInfoItemHighlight == nil or not QuestInfoItemHighlight:IsShown() then
+        return nil
+    end
+    local rewards = QuestInfoRewardsFrame
+    for _, button in ipairs(rewards ~= nil and rewards.RewardButtons or {}) do
+        if button.type == "choice" and button:IsShown() and button:GetID() == choice then
+            return button
+        end
+    end
+    return nil
+end
+
 -- A vertical list of quest item buttons under a context, within the current
--- stop.
+-- stop. A reward choice reads "Selected" while it is the pick, live, so the
+-- click that picks it speaks it.
 local function itemList(builder, key, contextLabel, buttons, scrollFrame)
     if #buttons == 0 then
         return
@@ -105,6 +122,15 @@ local function itemList(builder, key, contextLabel, buttons, scrollFrame)
                 return getItemLabel(captured)
             end,
         })
+        if vtable ~= nil and captured.type == "choice" then
+            tinsert(vtable.announcements, {
+                text = function()
+                    return chosenReward() == captured and L["Selected"] or nil
+                end,
+                kind = graph.kinds.selected,
+                live = "focus",
+            })
+        end
         if scrollFrame ~= nil then
             nodes.attachScrollFrame(vtable, scrollFrame, captured)
         end
@@ -248,7 +274,17 @@ local function renderReward(builder)
     rewardsContent(builder, scrollFrame)
     builder:popContext()
 
-    actionButton(builder, QuestFrameCompleteQuestButton)
+    -- The complete button names the picked reward, so it is clear what
+    -- completing takes.
+    actionButton(builder, QuestFrameCompleteQuestButton, nil, function()
+        local text = QuestFrameCompleteQuestButton:GetText() or ""
+        local chosen = chosenReward()
+        local name = chosen ~= nil and getItemLabel(chosen) or nil
+        if name ~= nil then
+            return text .. ", " .. L["Selected"] .. ": " .. name
+        end
+        return text
+    end)
     actionButton(builder, QuestFrameCancelButton)
 end
 

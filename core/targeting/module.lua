@@ -72,16 +72,10 @@ hardTargetSpeak:addParameter({
     default = true,
 })
 
--- Whether you, your pet or a group member is on the unit's threat list:
--- in a group too, where "party1" is never you (utils.groupUnits). A secret
--- threat status is not nil, so it still means "on the list".
+-- Whether you, your pet or your group are fighting the unit, also when
+-- only the group is (utils.groupFighting).
 local function inCombatWith(unit)
-    for _, member in ipairs(WowVision.utils.groupUnits(IsInRaid(), IsInGroup())) do
-        if UnitExists(member) and UnitThreatSituation(member, unit) ~= nil then
-            return true
-        end
-    end
-    return false
+    return WowVision.utils.groupFighting(unit)
 end
 
 hardTargetChange:addOutput({
@@ -319,7 +313,7 @@ local function addSoftTarget(info)
             if value then
                 text = info.label .. " " .. L["Enabled"]
             else
-                text = info.label .. " " .. L["Disabled"]
+                text = info.label .. " " .. L["SettingDisabled"]
             end
             -- The switch is secure: pressed in combat it lands when combat ends.
             if writer.pending[info.cvar] ~= nil then
@@ -464,14 +458,16 @@ function module:applySoftTargeting()
     self:updateSoftTargetLock()
 end
 
--- Runs on every target change and death, in combat too: the lock variables
--- are not secure. Writes only when the wanted value changes.
+-- Runs on every target change and death, and when the target stops or
+-- starts being one the game set (watchLooseTarget), in combat too: the
+-- lock variables are not secure. Writes only when the wanted value changes.
 function module:updateSoftTargetLock()
     local withLocked, matchLocked = soft.lockValues(
         self.settings.softTargetLock,
         UnitExists("target"),
         UnitCanAttack("player", "target"),
-        UnitIsDead("target")
+        UnitIsDead("target"),
+        IsTargetLoose ~= nil and IsTargetLoose()
     )
     if withLocked == nil or withLocked == self.lockWanted then
         return
@@ -580,11 +576,24 @@ function module:updateSoftTarget(target, newGuid)
     end
 end
 
+-- Choosing the target the game set (Tab or a click on it, or attacking it
+-- where the game locks it then) keeps the same unit, so no target change
+-- event comes; the game has no event for the flag either. Read every tick,
+-- the lock follows when it flips.
+function module:watchLooseTarget()
+    local loose = IsTargetLoose ~= nil and IsTargetLoose()
+    if loose ~= self._targetLoose then
+        self._targetLoose = loose
+        self:updateSoftTargetLock()
+    end
+end
+
 function module:onEnable()
     -- Initialize cached target GUID (in case target exists at startup)
     self._cachedTargetGuid = UnitGUID("target")
     self:hasUpdate(function(self)
         self:updateHardTarget()
+        self:watchLooseTarget()
     end)
 end
 

@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/TargetResolver.lua at
--- 3684248), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Runtime attachment of targets to the network (schema 7, chapter 7 point 3). A target is bound to the attachment cell
 -- above its position; a target outside every cell is bound to the nearest cell within 30 yd and marked as an
@@ -165,17 +165,28 @@ function R:Resolve(nav, target, context)
                     return a.cell < b.cell
                 end)
                 for _, candidate in ipairs(candidates) do
-                    local bindings
+                    local bindings, pool
                     if context.route then
                         bindings = net.CellBindings(candidate.zone, candidate.cell, target.x, target.y, candidate.distance)
+                        pool = net.CertifiedBindings(candidate.zone, candidate.cell, target.x, target.y, candidate.distance)
                     else
                         bindings = { net.BindCell(candidate.zone, candidate.cell, target.x, target.y, candidate.distance) }
                     end
-                    -- the field-mask attachment first; no route to it (a source, a dead end): the other attachments of the cell
-                    for _, binding in ipairs(bindings) do
-                        local path, cost
-                        if context.route then tested = true; path, cost = context.route(binding.id) end
+                    -- the field-mask attachment first, with the other checked attachments of the cell in the cost comparison
+                    -- (the cheapest pair of start and target attachment wins); no route to it (a source, a dead end): the other
+                    -- attachments of the cell, one by one
+                    for index, binding in ipairs(bindings) do
+                        local path, cost, chosen
+                        if context.route then
+                            tested = true
+                            path, cost, chosen = context.route(binding.id, index == 1 and #pool > 1 and pool or nil)
+                        end
                         if not context.route or path then
+                            if chosen and chosen.id ~= binding.id then
+                                for _, member in ipairs(pool) do
+                                    if member.id == chosen.id then binding = member; break end
+                                end
+                            end
                             best, bestBinding, bestPath, bestCost = candidate, binding, path, cost
                             bands, zOutOfTolerance = (#stageBands > 1) and stageBands or nil, stage[2]
                             break

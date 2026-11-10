@@ -62,6 +62,8 @@ Tick Direct (press Enter on the checkbox) if you do not want a route. The entry 
 
 Direct is the first stop. To reach it, press Shift+Tab from the entry points.
 
+You do not need the checkbox for a single straight beacon: Backspace on a destination sets one at once, while Enter still routes. The checkbox is still useful with WowNav, because only with Direct on does the list also show places no route leads to.
+
 ### Searching for a destination
 
 Press Tab from the entry points to reach Search. The edit box takes your typing immediately, and what you have typed is read as you type. Type a fragment of a name, for example "auctioneer", and press Enter to apply it. WowVision reads back what you typed. The list below is filtered at once. Tab applies the text as well and moves on to the next stop; Escape closes the edit box without changing the search.
@@ -80,6 +82,7 @@ Press Tab again to reach Destinations. It is one long list, sorted by distance f
 | Up / Down | Previous / next destination. |
 | Home / End | First / last destination. |
 | Enter | Close the window and start the route (or the straight beacon, if Direct is on). |
+| Backspace | Close the window and set a straight beacon to the destination, without a route, whether Direct is on or not. |
 
 Each destination reads its name and its distance, then its position in the list. With WowNav, what the place is and where it is come after the distance, for example "Innkeeper Allison (Innkeeper), 85 yards, quest giver, vendor, innkeeper, Stormwind City, 1 / 342". A destination you reached in the last few minutes is announced with Visited first; see [Visited places](#visited-places). An empty list reads "Empty".
 
@@ -106,7 +109,7 @@ A waypoint counts as reached when you are within the arrival distance of it (see
 
 ### Beacon sounds
 
-All beacon sounds are one alert called Beacon in the Maps module (WowVision menu, Navigation, Maps, Beacon). The alert and each of its four sounds has its own Enabled switch and its own sound, so each cue can be turned off or changed on its own. See [Alerts](../basics/alerts.md) for how alerts work.
+All beacon sounds are one alert called Beacon in the Beacon and Routes module (WowVision menu, Navigation, Beacon and Routes, Beacon). The alert and each of its four sounds has its own Enabled switch and its own sound, so each cue can be turned off or changed on its own. See [Alerts](../basics/alerts.md) for how alerts work.
 
 | Sound | Default | When it plays |
 |-------|---------|---------------|
@@ -178,7 +181,7 @@ If you have strayed far from the route, press Ctrl+Shift+N. WowVision plans the 
 
 ### Reverse the route
 
-Halfway along a route you may remember that you have to go back. Press Ctrl+Shift+R. The route turns around: the waypoint the beacon leads to now becomes the start of a new route, and its destination is where the previous route started, the entry point you chose in the navigation window. You hear "Route reversed, back to" and the name of that place, then the summary of the new route. For example, on the way from Priestess Anetta to Marshal Dughan you press Ctrl+Shift+R and hear "Route reversed, back to Priestess Anetta". If the start has no name, you hear "back to the start of the previous route".
+Halfway along a route you may remember that you have to go back. Press Ctrl+Shift+R. The route turns around: the new route begins at the destination of the previous one, and its destination is where the previous route started, the entry point you chose in the navigation window. The waypoint the beacon was leading to stays active, so you walk back from where you are and do not go to the old destination first. You hear "Route reversed, back to" and the name of that place, then the summary of the new route with the waypoints and yards still ahead of you. For example, on the way from Priestess Anetta to Marshal Dughan you press Ctrl+Shift+R and hear "Route reversed, back to Priestess Anetta". If the start has no name, you hear "back to the start of the previous route".
 
 This works on classic routes and WowNav routes alike. Afterwards, Ctrl+Shift+N goes to that start again. Without a running route you hear "No route to reverse".
 
@@ -221,6 +224,19 @@ Two bindings, both unbound by default, lead you to the nearest unvisited destina
 
 Without a destination picked earlier you hear Choose a destination in the navigation window first. If every spawn is visited you hear "No unvisited" and the name, for example "No unvisited Peacebloom found".
 
+### Auto mode
+
+Auto mode does that chaining for you. In the navigation window, press Shift+F10 on a destination or an entry point and choose one of two entries:
+
+- Auto Direct: a straight beacon to the destination. Each time you arrive, the next straight beacon goes to the nearest unvisited destination with the same name.
+- Auto Route: a route to the destination. Each time you arrive, the next route goes to the unvisited destination of that name that is the shortest walk away. WowVision checks the nearest 8 by straight line and picks the one with the shortest walk, so a herb across a river does not win over one a little further away on your side. With WowNav this is planned in the background, and you may hear Calculating route first.
+
+You hear "Auto Direct" or "Auto Route" when it starts, then the usual words of each beacon or route. The first leg starts at the entry point you selected in the window, as Enter does. The chain ends when every spawn is visited (you hear "No unvisited" and the name), when any other guidance starts (another destination, a beacon, /beacon, Ctrl+Shift+R), or when you stop the guidance with Shift+F12. Ctrl+Shift+N starts the current leg again and keeps the chain.
+
+Ctrl+W and Ctrl+S step through the chain the way they step through a route. Past the end of the current leg, Ctrl+W goes to the next spawn: with Auto Direct at once, since a straight beacon has only one point, with Auto Route after the route's last waypoint. It skips a spawn you cannot reach or that is empty, and the chain does not offer it again. When a leg finds no route, Ctrl+W moves on the same way. Ctrl+S before the start of a leg goes back to the spawn before. After stepping back, the chain goes on through the spawns it already led to, then to new ones. Before the first one you hear Start of route.
+
+Auto mode needs visited places switched on, because they are what it skips. With the Visited Waypoints module off, both entries only say "Auto mode needs Visited Waypoints switched on".
+
 ## Straight beacons and the /beacon command
 
 You can set a beacon without the window. Type these commands in the chat box:
@@ -255,17 +271,17 @@ When a destination is not on the link network (most creatures and objects are no
 
 ## Settings
 
-Open the WowVision menu (/wv), then Navigation, then Maps. Settings are shared by all your characters unless you change that in the module's context menu; see [Menu and settings](../basics/menu-and-settings.md).
+Open the WowVision menu (/wv), then Navigation, then Beacon and Routes. Settings are shared by all your characters unless you change that in the module's context menu; see [Menu and settings](../basics/menu-and-settings.md).
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| Enabled | On | Turns the whole Maps module off, including the keys and /beacon. |
+| Enabled | On | Turns the whole Beacon and Routes module off: not only the beacon but also routes, the keys and /beacon. |
 | Arrival Radius | Medium Range | Which arrival distance is active. Alt+P changes it too. |
 | Short Range | 0.3 yards | The short arrival distance (0.1 to 20 yards). |
 | Medium Range | 1 yard | The medium arrival distance (0.1 to 20 yards). |
 | Long Range | 3 yards | The long arrival distance (0.1 to 20 yards). |
 | Announce Distance with Alt Gr | On | Whether Alt Gr and Ctrl+Alt speak the distance. The Announce Distance binding works either way. |
-| Beacon | (see above) | The beacon alert and its four sounds: Beacon Sound, Beacon Aligned, Beacon Off Course, Waypoint Reached. Each has Enabled and a sound choice. |
+| Beacon | (see above) | The beacon alert and its four sounds: Beacon Sound, Beacon Aligned, Beacon Off Course, Waypoint Reached. Each has Enabled and a sound choice; Beacon Sound also has Beacon Volume. |
 
 The Visited Waypoints module (under Navigation) has one setting:
 

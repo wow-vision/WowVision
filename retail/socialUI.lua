@@ -376,7 +376,9 @@ local function renderContacts(builder, frame, title)
     end
 
     if frame.ScrollBox ~= nil and frame.ScrollBox:IsShown() then
+        -- A fresh open lands on the list.
         builder:beginStop("list")
+        builder:setStartStop("list")
         nodes.scrollBoxList(builder, {
             scrollBox = frame.ScrollBox,
             key = "list",

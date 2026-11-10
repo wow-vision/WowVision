@@ -16,7 +16,7 @@ Es gibt vier Arten von Ausgaben.
 | Sprachausgabe | TTS-Alarm | Spricht Text mit deiner TTS-Stimme, zum Beispiel „Kampf begonnen“. |
 | Sound | Soundalarm (oder ein spezifischerer Name) | Spielt eine Sounddatei ab, zum Beispiel ein Klicken oder einen Glockenton. |
 | Aufgenommene Stimme | Stimmenalarm | Spielt eine Aufnahme aus einem [Stimmenpaket](./speech.md#aufgenommene-stimmenpakete) ab, zum Beispiel „Norden“ oder eine Zahl. |
-| Signal | Signalton | Ein Richtungston, der dir sagt, wo ein Wegpunkt liegt. Wird nur von der Navigation benutzt. |
+| Beacon | Beacon-Ton | Ein Richtungston, der dir sagt, wo ein Wegpunkt liegt. Wird nur von der Navigation benutzt. |
 
 Ein Alarm spricht nur, wenn der Alarm und die Ausgabe beide aktiviert sind. Schalte einen Alarm aus, um ihn ganz stummzuschalten; schalte eine Ausgabe aus, um die übrigen zu behalten.
 
@@ -40,12 +40,13 @@ Jeder Ausgabe-Bildschirm beginnt mit Aktiviert. Danach, je nach Art der Ausgabe:
 
 | Einstellung | Ausgabe | Was sie tut |
 |---|---|---|
-| Prioritätsnachricht (unterbricht) | TTS | Wenn an, wird die laufende Sprache gestoppt, bevor dieser Alarm spricht. Standardmäßig aus, außer bei Alarmen, die sofort zu hören sein müssen, wie der Alarm Zielwechsel und die Alarme für weiche Ziele. Nicht verfügbar beim Neuer Minikarten-Punkt, der von einer eigenen Spielstimme gesprochen wird. |
+| Prioritätsnachricht (unterbricht) | TTS | Wenn an, wird die laufende Sprache gestoppt, bevor dieser Alarm spricht. Standardmäßig aus, außer bei Alarmen, die sofort zu hören sein müssen, wie der Alarm Zielwechsel und die Alarme für Soft Targets. Nicht verfügbar beim Neuer Minikarten-Punkt, der von einer eigenen Spielstimme gesprochen wird. |
 | Stimme | TTS | Welche TTS-Stimme diesen Alarm spricht. Solange du keine auswählst, folgt sie deiner Einstellung Sprachstimme und zeigt den Namen dieser Stimme. |
 | Nachricht | TTS | Nur bei TTS-Ausgaben, die ihren Text von anderswo beziehen, wie Fehler ansagen und der TTS-Alarm einer Monitorregel. Alarme mit eigener Formulierung (Kampf begonnen, ein Gebietsname, eine Chatnachricht und so weiter) haben sie nicht. Tippst du hier Text ein, wird er jedes Mal statt des üblichen Texts gesprochen. Lass das Feld leer, um den üblichen Text zu hören. |
 | Sound | Sound | Ein Schalter, der den Sound-Browser öffnet. Er liest den Namen der aktuellen Datei. Siehe [Einen Sound auswählen](./menu-and-settings.md#einen-sound-auswählen). Manche Soundalarme haben einen festen Sound und nur das Kontrollkästchen Aktiviert. |
 | Stimmenpaket | Stimme | Wähle zwischen den aufgenommenen Stimmen Matthew und Joanna. |
-| Signalton | Signal | Ein Browser wie der Sound-Browser, für die Signaltöne. Beim Daraufgehen wird ein Beispiel abgespielt. |
+| Beacon-Ton | Beacon | Ein Browser wie der Sound-Browser, für die Beacon-Töne. Beim Daraufgehen wird ein Beispiel in der gewählten Beacon-Lautstärke abgespielt. |
+| Beacon-Lautstärke | Beacon | Wie laut die Beacon-Pings sind, 10 bis 100 in Zehnerschritten (Standard 100). Jede 10 unter 100 spielt die Pings eine Lautstärkestufe leiser; nahe und ferne Ziele klingen weiter verschieden. Um das Beacon stummzuschalten, schalte sein Aktiviert aus. |
 
 Beispiel: Den Namen deines Ziels von einer anderen Stimme sprechen lassen.
 
@@ -56,7 +57,7 @@ Beispiel: Den Namen deines Ziels von einer anderen Stimme sprechen lassen.
 
 Beispiel: Den Kompass auf TTS statt auf aufgenommene Stimme umstellen.
 
-1. Umschalt+F1, N (Navigation), Eingabe, dann K (bis du Kompass hörst; Karten kommt davor), Eingabe.
+1. Umschalt+F1, N (Navigation), Eingabe, dann K (bis du Kompass hörst), Eingabe.
 2. Öffne Kompassrichtung ansagen. Öffne Stimmenalarm und schalte Aktiviert aus. Gehe zurück und öffne TTS-Alarm, schalte Aktiviert ein.
 
 ## Die Alarme, Modul für Modul
@@ -86,9 +87,9 @@ Die Menüpfade beginnen bei der ersten Ebene des WowVision-Menüs. Der Zustand i
 | Tauch-Alarm | Navigation, Kompass | Du tauchst unter Wasser. Sagt „tauchen“. | TTS, Soundalarm (aus) |
 | Fallerkennung | Navigation, Fallerkennung | Du fällst. Die Ansage wird einmal gesprochen, wenn die Fallsounds beginnen. | Fallgeräusch (eine aufsteigende Reihe von Sounds; je länger der Fall, desto höher der Sound), Fallansage (TTS „Fallen“) |
 | Wanderkennung | Navigation, Wanderkennung | Du bewegst dich, aber etwas hält dich zurück. | Fünf Sounds für fünf Grade der Behinderung: Blockiert, Größtenteils blockiert, Behindert, Verlangsamt und Leicht verlangsamt. |
-| Signal | Navigation, Karten | Eine Route oder ein Signal ist aktiv. | Signalton (ein Richtungs-Ping, der schneller wird, wenn du dich dem Ziel zuwendest), Signal ausgerichtet (ein Klick, wenn du ihm zugewandt bist), Signal abseits des Kurses (wenn du dich abwendest), Wegpunkt erreicht (wenn du ankommst) |
+| Beacon | Navigation, Beacon und Routen | Eine Route oder ein Beacon ist aktiv. | Beacon-Ton (ein Richtungs-Ping, der schneller wird, wenn du dich dem Ziel zuwendest), Beacon ausgerichtet (ein Klick, wenn du ihm zugewandt bist), Beacon abseits des Kurses (wenn du dich abwendest), Wegpunkt erreicht (wenn du ankommst) |
 
-In Instanzen meldet das Spiel nicht, in welche Richtung du blickst, daher bleibt Kompassrichtung ansagen dort stumm, während die übrigen Kompassalarme weiter funktionieren. Die Einstellungen der Fallerkennung (Verzögerung (Millisekunden), Sprünge ignorieren) stehen auf dem Bildschirm des Moduls, siehe [Bewegung und Orientierung](../world/movement.md). Die Ankunftseinstellungen von Signal stehen unter [Navigation und Routen](../world/navigation.md).
+In Instanzen meldet das Spiel nicht, in welche Richtung du blickst, daher bleibt Kompassrichtung ansagen dort stumm, während die übrigen Kompassalarme weiter funktionieren. Die Einstellungen der Fallerkennung (Verzögerung (Millisekunden), Sprünge ignorieren) stehen auf dem Bildschirm des Moduls, siehe [Bewegung und Orientierung](../world/movement.md). Die Ankunftseinstellungen von Beacon stehen unter [Navigation und Routen](../world/navigation.md).
 
 ### Zielerfassung
 
@@ -97,7 +98,7 @@ In Instanzen meldet das Spiel nicht, in welche Richtung du blickst, daher bleibt
 | Zielwechsel | Zielerfassung, Festes Ziel | Du erfasst etwas als Ziel. Spricht die Angaben, die du unter Zielerfassung, Namen ausgewählt hast (standardmäßig Name, Stufe und Ähnliches), optional beginnend mit seiner Schlachtzugmarkierung. | TTS mit eingeschalteter Prioritätsnachricht (unterbricht) und der Einstellung Schlachtzugmarkierung bei festem Ziel ansagen (an); Ziel-im-Kampf-Sound (spielt einen Glockenton, wenn dein Ziel mit dir oder deiner Gruppe im Kampf ist) |
 | Lebensüberwachung | Zielerfassung, Festes Ziel | Die Gesundheit des Ziels überschreitet eine 5-Prozent-Stufe. Spricht die Stufe, zum Beispiel „75%“. Nicht auf Retail und WoW: Forever, wo das Spiel die Gesundheit im Kampf verbirgt; siehe [Zielerfassung](../world/targeting.md). | TTS, Stimmenalarm (aus; aufgenommene Zahlen) |
 | CC auf dem Ziel | Zielerfassung, Festes Ziel | Auf deinem Ziel liegt CC von irgendjemandem (betäubt, in Furcht versetzt, verwandelt und Ähnliches), oder du wechselst zu einem Ziel mit CC; und noch einmal, wenn es wieder frei ist oder wenn du von einem Ziel mit CC zu einem freien wechselst. Nicht verfügbar auf The Burning Crusade Anniversary. | Klang bei CC, Klang bei Ende des CC, TTS-Alarm (aus; spricht „CC“ oder „Frei“) |
-| Weiches Ziel Feind, Weiches Ziel Freund, Weiches Ziel Interaktion | Zielerfassung | Das weiche Ziel des Spiels dieser Art ändert sich. Spricht die Angaben, die du unter Zielerfassung, Namen ausgewählt hast, und spielt einen Sound. Der ganze Alarm ist standardmäßig aus. Schalte jeden Alarm mit Umschalt+I (Feind), Umschalt+P (Freund) und Umschalt+O (Interaktion) oder mit seinem Kontrollkästchen Aktiviert ein. Er enthält auch Winkel und Reichweite dieses weichen Ziels, siehe [Zielerfassung](../world/targeting.md). | TTS, Soundalarm |
+| Soft Target Feind, Soft Target Freund, Soft Target Interaktion | Zielerfassung | Das Soft Target des Spiels dieser Art ändert sich. Spricht die Angaben, die du unter Zielerfassung, Namen ausgewählt hast, und spielt einen Sound. Der ganze Alarm ist standardmäßig aus. Schalte jeden Alarm mit Umschalt+I (Feind), Umschalt+P (Freund) und Umschalt+O (Interaktion) oder mit seinem Kontrollkästchen Aktiviert ein. Er enthält auch Winkel und Reichweite dieses weichen Ziels, siehe [Zielerfassung](../world/targeting.md). | TTS, Soundalarm |
 | Reichweite geändert | Zielerfassung, Festes Ziel | Das obere Ende der Reichweite zu deinem Ziel ändert sich, oder du erfasst etwas Neues. Sagt die Zahl als Aufnahme. | Stimmenalarm |
 
 Siehe [Zielerfassung](../world/targeting.md) für die Einstellungen, die dazugehören.
@@ -128,6 +129,9 @@ Der Filter pro Fehler listet jede Meldung mit ihrem Zustand hinter dem Namen: �
 |---|---|---|---|
 | Neuer Minikarten-Punkt | Minikarten-Scanner | Beim Laufen kommt ein benannter Punkt auf die Minikarte. Spricht seinen Namen, seine Stufe, ob er drinnen liegt, und seine Art. Braucht Verfolgte Punkte beim Laufen ansagen (an). | TTS (gesprochen von der Spielstimme 0, außer du wählst eine andere Stimme), Soundalarm (aus) |
 | Questgebiet (Quest Area Alert) | Quests | Du betrittst das Gebiet einer Quest oder verlässt es. Sagt „Betrete Gebiet: “ oder „Verlasse Gebiet: “, gefolgt vom Questtitel. | TTS, Soundalarm (aus) |
+| Questfortschritt (Quest Progress Alert) | Quests | Das Spiel zeigt, dass ein Questzähler sich ändert. Sagt die Meldung des Spiels, etwa „Kobold Vermin getötet: 3/8“. | TTS, Soundalarm (an) |
+| Ziel erreicht (Objective Complete Alert) | Quests | Das Spiel zeigt ein erledigtes Ziel, als „… (Abgeschlossen)“ oder „Aufgabe abgeschlossen.“. Sagt die Meldung des Spiels. | TTS, Soundalarm (an) |
+| Quest abgeschlossen (Quest Complete Alert) | Quests | Alle Ziele einer Quest sind erledigt, gelesen aus deinem Questlog. Spielt statt des Tons für das Ziel; seine Sprachausgabe sagt den Questtitel und „Abgeschlossen“. | TTS (aus), Soundalarm (an) |
 | Gegenstand ausgewählt (Item Selected) | Fenster, Auktionshaus | Du wählst in der Durchsuchen-Liste eine Auktion aus. Sagt „Ausgewählt: “ und den Namen des Gegenstands. (Nur The Burning Crusade.) | TTS |
 
 Siehe [Minikarte](../world/minimap.md) und [Quests](../world/quests.md).

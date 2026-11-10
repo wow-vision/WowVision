@@ -24,7 +24,7 @@ You can reach the screen of a module that has settings of its own directly with 
 | /wv gsettings ui.tooltip.quality | UI, Tooltip, Quality |
 | /wv gsettings ui.combat | UI, Combat |
 | /wv gsettings navigation.compass | Navigation, Compass |
-| /wv gsettings navigation.maps | Navigation, Maps |
+| /wv gsettings navigation.maps | Navigation, Beacon and Routes |
 | /wv gsettings chat | Chat |
 | /wv gsettings targeting | Targeting |
 | /wv gsettings errors | Errors |
@@ -52,15 +52,15 @@ Because it is a list that owns the keyboard, you can press letters to jump: S fo
 
 | Entry | Game versions | What it holds | More |
 |---|---|---|---|
-| Auction Prices | The Burning Crusade | Price history and extra price lines on item tooltips. | [Tooltips](./tooltips.md#prices-in-tooltips-the-burning-crusade-only) |
+| Auction Prices | The Burning Crusade | Price history and extra price lines on item tooltips. | [Tooltips](./tooltips.md#prices-in-tooltips) |
 | Buffers | All | Your buffer groups and buffers, and the Invert Item Direction setting. | [Buffers](../information/buffers.md) |
 | Chat | All | One alert per chat tab, whisper tabs, chat box sounds. | [Chat](../windows/chat.md) |
 | Errors | All | How game error and info messages are spoken. | [Combat](../world/combat.md) |
 | Minimap Scanner | All | Minimap scan and the walking announcements. | [Minimap](../world/minimap.md) |
 | Monitors | All | Aura, cooldown and other monitors. | [Monitors](../information/monitors.md) |
-| Navigation | All | Atlas, Compass, Fall Detection, Follow, Maps, Pitch Lock, Visited Waypoints, Wall Detection and more. | [Movement](../world/movement.md), [Navigation](../world/navigation.md) |
-| Quests | All | Quest log tools, quest area alerts. | [Quests](../world/quests.md) |
-| Scanner | All | The scanner (F9). | [Scanner](../world/scanner.md) |
+| Navigation | All | Atlas, Beacon and Routes, Compass, Fall Detection, Follow, Pitch Lock, Visited Waypoints, Wall Detection and more. | [Movement](../world/movement.md), [Navigation](../world/navigation.md) |
+| Quests | All | Quest log tools, quest area and quest progress alerts. | [Quests](../world/quests.md) |
+| Scanner | All | The scanner (F9): scan radius, entries per category, and Scanner as Tree to choose between a tree and a menu. | [Scanner](../world/scanner.md) |
 | Speech | All | Voice, rate, volume and speech behaviour. | [Speech](./speech.md) |
 | Targeting | All | Target announcements, soft targeting, focus targets. | [Targeting](../world/targeting.md) |
 | UI | All | Window behaviour, bindings, combat, cursor, tooltips. | below |
@@ -79,7 +79,9 @@ Press U in the main menu, then Enter. It contains:
 | Tooltip, then Quality | | Which item quality colours are spoken, see [Tooltips](./tooltips.md#item-quality-in-names). |
 | Bindings | | The keybinding screen, see [Keybindings](./keybindings.md). |
 | Interrupt Speech on Window Close | Off | Cut off speech whenever a window closes. |
+| Sounds on Opening and Closing WowVision Menus | On | Play a short sound when a WowVision window opens and another when it closes: the WowVision menu, the Scanner, the navigation window, the action bars and chat. The game's own windows make their own sounds and get none from WowVision. |
 | Letter Navigation in Menus | On | Let letter keys jump to entries in menus. Turn it off if you need your letter keys to keep working while a menu is open. |
+| WowVision Sound Channel | Sound Effects | The game sound channel every WowVision sound plays on: alert sounds, voice packs, the beacon and the previews in the sound browsers. The entries are named like the volume sliders in the game's sound options, so that slider is then WowVision's volume. A channel you use for little else gives WowVision a volume of its own. Retail and WoW: Forever also offer Gameplay Sound Effects. |
 
 ### The Windows module
 

@@ -37,6 +37,30 @@ function BufferGroup:initialize(config)
     self.wrap = true
 end
 
+-- Moving between buffers or groups enters the one landed on: with Always Start
+-- at Top it goes to its first item before it is read.
+function BufferGroup:UIFocusDirection(direction)
+    local target = self:focusDirection(direction)
+    if target == nil then
+        return
+    end
+    -- the landing reads the first item: Alt-Down held on from here goes to the second
+    WowVision.buffers.takeNewRun()
+    if WowVision.buffers.startsAtTop() then
+        target:startAtTop()
+    end
+    WowVision:speak(target:getFocusString())
+end
+
+-- A group entered: the buffer it stands on starts at the top; the group keeps
+-- its place among its buffers.
+function BufferGroup:startAtTop()
+    local buffer = self:getFocus()
+    if buffer ~= nil then
+        buffer:startAtTop()
+    end
+end
+
 -- Convenience method to add a buffer
 function BufferGroup:addBuffer(buffer)
     local field = self.class:getField("items")

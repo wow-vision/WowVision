@@ -39,6 +39,8 @@ Auf WoW: Forever liefert Questie eine Version, die auf Classic-Era-Daten aufbaut
 
 In der Questliste bewegen Pfeil hoch und Pfeil runter zwischen Überschriften und Quests. Drücke Eingabe auf einer Quest, um sie auszuwählen, wodurch die Details gefüllt werden. Drücke Eingabe auf einer Überschrift, um sie ein- oder auszuklappen. Drücke die Tooltip-Taste, um den Tooltip der Quest zu hören; siehe [Tooltips](../basics/tooltips.md).
 
+Normalerweise steht der Fokus beim Öffnen auf der ausgewählten Quest. Schalte im WowVision-Menü unter Fenster, Questlog die Einstellung Immer oben beginnen ein, dann steht er beim Öffnen auf dem obersten Eintrag der Liste. Standardmäßig ist sie aus. Öffnet sich das Questlog in den Details einer Quest, bleibst du dort.
+
 ### The Burning Crusade
 
 (Nur The Burning Crusade.)
@@ -60,7 +62,7 @@ In der Questliste bewegen Pfeil hoch und Pfeil runter zwischen Überschriften un
 
 (Retail und WoW: Forever.) In diesen Versionen ist das Questlog Teil der Weltkarte. Die Taste öffnet ein Panel neben der Karte, und WowVision liest dieses Panel.
 
-- Die Liste zeigt Gebietsüberschriften und Quests. Eine Quest liest sich etwa "[12] Wolves Across the Border, Grün, ausgewählt, verfolgt". Das Farbwort (Grau, Grün, Gelb, Orange, Rot) ist die Schwierigkeitsfarbe des Spiels für deine Stufe, so wie ein sehender Spieler sie sieht. "ausgewählt" und "verfolgt" kommen dazu, wenn sie zutreffen. Zielzeilen in der Liste werden übersprungen, weil die Details denselben Text lesen.
+- Die Liste zeigt Gebietsüberschriften und Quests. Eine Quest liest sich etwa "[12] Wolves Across the Border, Grün, ausgewählt, verfolgt". Eine fertige Quest hat nach dem Titel "Abgeschlossen" ("[12] Wolves Across the Border, Abgeschlossen, Grün"), eine gescheiterte "Fehlgeschlagen", dort wo das Spiel sein Häkchen und die Zeile "Bereit zur Abgabe" oder sein Kennzeichen Fehlgeschlagen zeigt. Das Farbwort (Grau, Grün, Gelb, Orange, Rot) ist die Schwierigkeitsfarbe des Spiels für deine Stufe, so wie ein sehender Spieler sie sieht. "ausgewählt" und "verfolgt" kommen dazu, wenn sie zutreffen. Zielzeilen in der Liste werden übersprungen, weil die Details denselben Text lesen.
 - Die Gruppe Details enthält den Titel, die Beschreibung, den Zieltext, jedes aktuelle Ziel und eine einzeilige Zusammenfassung der Belohnungen.
 - Schaltflächen: abbrechen, verfolgen (sie liest "Nicht mehr verfolgen", wenn die Quest verfolgt wird), teilen und die Kartenschaltfläche. Ihre Beschriftungen stammen vom Spiel, und die Beschriftung wird nach dem Drücken der Schaltfläche noch einmal gesprochen.
 - Eine Belohnung wählst du hier nicht. Das geschieht, wenn du die Quest abgibst.
@@ -122,12 +124,22 @@ Der Alarm heißt Questgebiet (Quest Area Alert) und gehört zum Modul Quests. Wi
 | Soundalarm, Aktiviert | Aus | Spielt einen Ton statt oder neben der Sprache. |
 | Soundalarm, Sound | keiner | Welcher Ton gespielt wird. |
 
+## Alarme für den Questfortschritt
+
+Das Spiel zeigt den Questfortschritt als Meldung in der Bildschirmmitte. WowVision spricht diese Meldungen so, wie das Spiel sie formuliert, und spielt einen Ton für das, was passiert ist, mit drei eigenen Alarmen:
+
+- Questfortschritt (Quest Progress Alert): ein Zähler ändert sich, etwa "Kobold Vermin getötet: 3/8" oder "Leinenstoff: 2/6". Sein Ton ist success1, der Ton von Sku.
+- Ziel erreicht (Objective Complete Alert): ein Ziel ist erledigt, etwa "Erkundet die Mine (Abgeschlossen)", oder die Meldung "Aufgabe abgeschlossen." des Spiels, die kein Ziel nennt. Sein Ton ist objective_complete.
+- Quest abgeschlossen (Quest Complete Alert): alle Ziele einer Quest sind erledigt, du kannst sie abgeben. Sein Ton ist success2, der Ton von Sku, und er spielt statt des Tons für das Ziel. Das Spiel schickt dafür keine Meldung, deshalb liest WowVision es aus deinem Questlog. Seine Sprachausgabe, der Questtitel und "Abgeschlossen", startet ausgeschaltet, denn die Meldung des Spiels zum letzten Ziel hörst du schon.
+
+Die Meldung des Spiels wird sofort gesprochen. Ist ein Ziel erledigt, wartet sein Ton einen Moment, weniger als eine halbe Sekunde, um zu erfahren, ob damit die Quest fertig ist. Jeder Alarm hat TTS und Sound und lässt sich einzeln ausschalten. Sie arbeiten unabhängig vom Modul Fehler, auch wenn es ausgeschaltet ist, und diese Meldungen erscheinen nicht in seinem Filter pro Fehler. Hattest du eine dieser Meldungen dort stummgeschaltet oder Fehler ansagen ausgeschaltet, startet ihr Alarm ausgeschaltet. Siehe [Alarme](../basics/alerts.md).
+
 ## Quests und Questziele finden
 
 Der [Scanner](scanner.md) verwandelt Questdaten in Orte, zu denen du gehen kannst. Er ist der wichtigste Weg, mit WowVision Quests zu finden.
 
 - Quests, In der Nähe: Quests, die du in deiner Umgebung annehmen kannst, der nächste Questgeber zuerst.
-- Quests, Laufend: dein Log. Jede Quest, die die Datenquelle kennt, öffnet sich zu ihren Zielen, jedes Ziel zu den Kreaturen, Objekten und Gegenstandsquellen, um die es geht, und jede davon zu ihren Fundorten.
+- Quests, Laufend: dein Log, nach Zonen geordnet wie im Questlog, in jeder Zone die nächste Quest zuerst. Jede Quest, die die Datenquelle kennt, öffnet sich zu ihren Zielen, jedes Ziel zu den Kreaturen, Objekten und Gegenstandsquellen, um die es geht, und jede davon zu ihren Fundorten.
 - NPCs, Questgeber: dieselben Questgeber, nach NPC gruppiert.
 
 Eingabe auf einer Quest, einem Ziel, einem Ziel-NPC oder einem Fundort führt dich zu seinem Ort. Siehe [Navigation und Routen](navigation.md).
@@ -142,7 +154,9 @@ So werden Orte in den Listen beschrieben: Ein Fundort liest sich mit seinem Gebi
 |-------------|----------|-------------|
 | Stufenbereich für Quests in der Nähe | 5 | Die Liste In der Nähe blendet Quests aus, die um mehr als so viele Stufen unter deiner Stufe liegen. Von 0 bis 60. Stelle 60 ein, um jede Quest zu sehen, oder 0, um nur Quests auf deiner Stufe oder darüber zu sehen. |
 | Wiederholbare Quests einbeziehen | An | Ob wiederholbare und tägliche Quests in der Liste In der Nähe erscheinen. |
+| Quests nach Entfernung sortieren | An | Ob jede Zone der Liste Laufend nach Entfernung sortiert ist, die nächste zuerst, und zwar nach dem Ort, zu dem dich Eingabe auf der jeweiligen Quest führen würde (das nächste offene Ziel, oder die Abgabe, sobald eine Quest abgeschlossen ist). Quests ohne Ort, zu dem du gehen kannst, folgen in der Reihenfolge deines Questlogs. Schalte die Einstellung aus, um in jeder Zone die Reihenfolge des Questlogs zu behalten. |
 | Questgebiet | siehe oben | Ansagen beim Betreten oder Verlassen eines Zielgebiets. |
+| Questfortschritt, Ziel erreicht, Quest abgeschlossen | siehe oben | Ansagen zum Questfortschritt. |
 
 Die Liste In der Nähe lässt außerdem Quests weg, die du noch nicht annehmen kannst, wegen deiner Stufe oder einer fehlenden Vorquest.
 
@@ -150,7 +164,7 @@ Die Liste In der Nähe lässt außerdem Quests weg, die du noch nicht annehmen k
 
 1. Geh zu einem Questgeber. Das Spiel öffnet das Questfenster. Du hörst den Namen des NPCs, dann "Quests" mit "Verfügbare Quest: A Threat Within" oder die Details der einzelnen Quest.
 2. Drücke Pfeil runter, um Beschreibung und Ziele zu lesen. Drücke Tab, dann Eingabe auf Annehmen.
-3. Drücke F9, öffne Quests, dann Laufend. Die Quest ist aufgelistet, "A Threat Within, 0 von 1". Drücke Pfeil rechts, um das Ziel zu öffnen, und noch einmal Pfeil rechts, um zu sehen, was du töten sollst, dann drücke Eingabe auf einem Fundort, um dorthin geführt zu werden.
+3. Drücke F9, öffne Quests, dann Laufend, dann Wald von Elwynn. Die Quest ist aufgelistet, "A Threat Within, 0 von 1". Drücke Pfeil rechts, um das Ziel zu öffnen, und noch einmal Pfeil rechts, um zu sehen, was du töten sollst, dann drücke Eingabe auf einem Fundort, um dorthin geführt zu werden.
 4. Draußen hörst du "Betrete Gebiet: A Threat Within", wenn du das Zielgebiet erreichst.
 5. Ist das Ziel erledigt, liest sich die Quest als "Abgeschlossen". Drücke F9, öffne sie und drücke Eingabe auf der Abgabe. Sprich den NPC an, gehe mit Tab zu Quest abschließen, wähle eine Belohnung, wenn es eine Auswahl gibt, dann Eingabe.
 

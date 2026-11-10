@@ -72,6 +72,7 @@ Each destination reads its name, its distance, what it is and where it is, for e
 - A destination with no network point near it (see Target Radius Around the Network (Yards)) is left out. A place whose zone has not been prepared yet is offered unchecked, and checked when you choose it.
 - Extra information may come first, before the categories: "inexact +3.2 yards" (the place is not exactly on the network), "choose the floor" (the place is over several floors), "floor unknown", "no network point within the radius" or "water surface, diving depth 12 yards".
 - Places to get somewhere else have descriptive names: "Dungeon entrance: The Deadmines", "Portal to Orgrimmar", "Ship dock to Auberdine", "Zeppelin dock to Grom'gol", "Tram dock toward Ironforge", "Deeprun Tram entrance", "Elevator: Thunder Bluff", "Crossing to Westfall", "Dive here" and "Surface here". Where two places of a zone would sound the same, they get "(lower)", "(upper)", a height or a number added. The place words in these names come from the game client. On a German client the names are German.
+- Creatures and objects (NPCs, mobs, herbs, ores, mailboxes) are named in your game language when Questie knows them. The navigation data itself only has English and German names, so on any other client the name comes from Questie's database by the ID of the creature or object; where Questie does not know it, the English name stays. Titles written in parentheses, such as "(Innkeeper)", are translated too, so you can search for "aubergiste" or "cuisinier". Questie's own language has to be Auto, or the game's. English and German clients are not affected. The Names in Your Language setting turns this off.
 - Fishing spots are named after the water they cast into: "Fishing spot on the shore: Crystal Lake" or "Fishing spot on pier or quay: The Temple Gardens", with a number when several spots of a zone have the same name. Search for "fishing" or "fishing spot". See [Fishing spots](#fishing-spots).
 - A dungeon with several entrances names the wing: "Dungeon entrance: Scarlet Monastery, Graveyard".
 - The boarding points of docks are listed too: "On the ship", "On the zeppelin" and "At the vehicle", with the name of the dock as the extra words.
@@ -195,6 +196,7 @@ Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
 | Height Tolerance of a Floor (Yards) | 3 | The height band that counts as one floor (0 to 20). |
 | Step Back at Gates | On | When you drift sideways at a gate, the beacon goes back one waypoint ("One waypoint back"). |
 | Prepare Neighbouring Zones | On | Prepares your zone and the zones next to it in the background, so the first route there does not wait. |
+| Names in Your Language | On | Names creatures and objects in your game language from Questie's database where it knows them; see [Destinations](#destinations). Has no effect on English and German clients. |
 
 ## Examples
 

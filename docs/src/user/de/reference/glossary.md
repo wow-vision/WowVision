@@ -16,6 +16,8 @@ Ankunftsdistanz (Arrival distance) — Wie nah du an einen Wegpunkt herankommen 
 
 Ausgabe (Output) — Wie ein Alarm zugestellt wird: TTS-Alarm (TTS Alert, von der Text-zu-Sprache-Stimme gesprochen), Soundalarm (Sound Alert, eine Sounddatei), Stimmenalarm (Voice Alert, eine Aufnahme aus einem Stimmpaket). Siehe [Alarme](../basics/alerts.md).
 
+Beacon (Beacon) — Ein Sound, der in der Spielwelt an einem Wegpunkt oder Ziel platziert ist. Du hörst an Richtung und Tonhöhe, wo er ist, und gehst darauf zu. Siehe [Navigation und Routen](../world/navigation.md).
+
 Belegung (Binding) — Eine Aktion, die auf eine Taste gelegt werden kann, zum Beispiel Nächstes Pufferelement. Eine Belegung kann mehrere Tasten haben und in Retail und WoW: Forever auch Controller-Tasten. Siehe [Tastenbelegung](../basics/keybindings.md).
 
 Bereich (Scope) — Ob eine Einstellung pro Charakter oder accountweit gespeichert wird. Wird im WowVision-Menü über das Kontextmenü (Umschalt+F10) geändert. Siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).
@@ -26,7 +28,7 @@ Element (Element) — Eine Sache in einem Fenster, auf der du landen kannst: ein
 
 Fenstertasten (Window keys) — Die Tasten, die WowVision benutzt, solange eines seiner Fenster geöffnet ist: Pfeile, Tab, Eingabe, Rücktaste, Leertaste, Esc, Pos1, Ende und so weiter. Sie gehen ans Spiel zurück, wenn kein Fenster offen ist und im Kampf.
 
-Festes Ziel (Hard target) — Dein normales Ziel, gewählt per Klick, Tab-Zielwechsel oder Makro. Gegenstück zum weichen Ziel.
+Festes Ziel (Hard target) — Dein normales Ziel, gewählt per Klick, Tab-Zielwechsel oder Makro. Gegenstück zum Soft Target.
 
 Fokusziel (virtueller Fokus) (Focus target, virtual focus) — Eines von fünf Zielen, die WowVision unter einem Namen speichert (/focus1 bis /focus5) und die du mit einer Taste wieder erfassen kannst. Unabhängig vom eigenen Fokus des Spiels. Siehe [Zielerfassung](../world/targeting.md).
 
@@ -52,9 +54,9 @@ Regel (Rule) — Ein Teil eines Monitors: welchen Zauber oder welche Aura er beo
 
 Scanner (Scanner) — WowVisions Liste der Dinge um dich herum (Questgeber, Quests, Ziele, deine Leiche und mehr), geöffnet mit F9. Siehe [Scanner](../world/scanner.md).
 
-Signal (Beacon) — Ein Sound, der in der Spielwelt an einem Wegpunkt oder Ziel platziert ist. Du hörst an Richtung und Tonhöhe, wo er ist, und gehst darauf zu. Siehe [Navigation und Routen](../world/navigation.md).
-
 Sku (Sku) — Das ältere Barrierefreiheits-Addon für blinde WoW-Spieler. WowVision kann daneben laufen. Siehe [WowVision zusammen mit Sku verwenden](../getting-started/sku.md).
+
+Soft Target (Soft target) — Eine Einheit, die das Spiel für dich auswählt, ohne dass sie dein echtes Ziel ist: der Feind, Freund oder interaktive Gegenstand vor dir. Wird mit Umschalt+I, Umschalt+P und Umschalt+O ein- und ausgeschaltet. Siehe [Zielerfassung](../world/targeting.md).
 
 Stimmpaket (Voice pack) — Ein Satz aufgenommener Wörter und Zahlen, den WowVision statt der Text-zu-Sprache-Ausgabe abspielen kann, zum Beispiel für Himmelsrichtungen oder die Gegneranzahl. Siehe [Sprache und Ton](../basics/speech.md).
 
@@ -65,8 +67,6 @@ TTS (Text to speech) — Text zu Sprache: die synthetische Stimme, die die Ansag
 Unbelegt (Unbound) — Eine Belegung, die existiert, aber keine Taste hat, bis du ihr im Fenster für die Tastenbelegung eine gibst. Siehe [Tastenreferenz](keybindings.md).
 
 Wegpunkt (Waypoint) — Ein Punkt auf einer Route. WowVision führt dich von einem Wegpunkt zum nächsten. Siehe [Navigation und Routen](../world/navigation.md).
-
-Weiches Ziel (Soft target) — Eine Einheit, die das Spiel für dich auswählt, ohne dass sie dein echtes Ziel ist: der Feind, Freund oder interaktive Gegenstand vor dir. Wird mit Umschalt+I, Umschalt+P und Umschalt+O ein- und ausgeschaltet. Siehe [Zielerfassung](../world/targeting.md).
 
 WowNav (WowNav) — Der Routenplaner für WoW: Forever, mit eigenen Kartendaten, Schiffen, Zeppelinen, Straßenbahnen und Portalen. Siehe [WowNav](../world/wownav.md).
 
@@ -107,6 +107,10 @@ Die eigene Text-zu-Sprache-Funktion des Spiels für den Chat ist ebenfalls einge
 ### Etwas wird angesagt, das ich nicht hören will.
 
 Fast jede Ansage ist ein Alarm, den du ausschalten oder auf einen Sound umstellen kannst. Du findest ihn im Eintrag des Moduls im WowVision-Menü. Fehlermeldungen des Spiels lassen sich unter Fehler, Filter pro Fehler einzeln stummschalten. Siehe [Alarme](../basics/alerts.md) und [Kampf](../world/combat.md).
+
+### Ich hänge auf einer Route fest. Was kann ich tun?
+
+Spring, geh zur Seite, überspring den Wegpunkt mit Strg+W, geh mit Strg+S einen zurück, oder ändere die Ankunftsdistanz mit Alt+P. Steht der NPC, den du suchst, hinter einem Tresen, sprich ihn direkt an. Siehe [Fehlerbehebung](../getting-started/troubleshooting.md#ich-hänge-auf-einer-route-fest).
 
 ### Wo sehe ich jede Taste?
 

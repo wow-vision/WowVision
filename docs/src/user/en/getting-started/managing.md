@@ -11,7 +11,7 @@ WowVision keeps its data in the game's own saved variable files. The game writes
 | WowVisionGlobalDB | Most settings, alerts, key bindings, buffers and monitors by default | The whole account |
 | WowVisionDB | Settings you moved to "this character", plus your spell history | One file per character |
 | WowVisionDump | Diagnostic records: Lua errors, blocked-call records, the controller log, the minimap walking log, the quest probe report and similar | The whole account |
-| WowVisionPriceDB | The auction price database (TBC only) | The whole account |
+| WowVisionPriceDB | The auction price database (The Burning Crusade, Retail and WoW: Forever) | The whole account |
 
 The files are in the game's WTF folder, inside the version folder you installed to:
 

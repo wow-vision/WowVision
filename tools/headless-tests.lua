@@ -84,6 +84,7 @@ do
     end
 end
 loadAddonFile("camelot/wownav/text.lua")
+loadAddonFile("camelot/wownav/textTests.lua")
 loadAddonFile("camelot/wownav/catalog.lua")
 loadAddonFile("camelot/wownav/route.lua")
 loadAddonFile("camelot/wownav/dock.lua")
@@ -94,9 +95,12 @@ loadAddonFile("camelot/wownav/tests.lua")
 -- suite can play the game's side.
 do
     local hooks, eventFrame = {}, nil
-    local game = { moving = false, falling = false, now = 0 }
+    local game = { moving = false, falling = false, combat = false, now = 0 }
     function GetTime()
         return game.now
+    end
+    function UnitAffectingCombat(unit)
+        return unit == "player" and game.combat
     end
     function IsPlayerMoving()
         return game.moving
@@ -137,7 +141,8 @@ do
         for key in pairs(movement.flags) do
             movement.flags[key] = false
         end
-        game.moving, game.falling = false, false
+        game.moving, game.falling, game.combat = false, false, false
+        movement.attacking = false
     end
 
     WowVision.testing.testRunner:addSuite("Movement", {
@@ -202,6 +207,23 @@ do
             call("TurnLeftStop")
         end,
 
+        ["in combat, auto-attack with no key held is the game chasing the enemy"] = function(t)
+            reset()
+            t:assertFalse(movement:isChasing())
+            event("PLAYER_ENTER_COMBAT")
+            -- The walk up to the enemy, before the fight: obstacles count.
+            t:assertFalse(movement:isChasing())
+            game.combat = true
+            t:assertTrue(movement:isChasing())
+            -- A held key makes the movement yours again: walls still count.
+            call("MoveForwardStart")
+            t:assertFalse(movement:isChasing())
+            call("MoveForwardStop")
+            t:assertTrue(movement:isChasing())
+            event("PLAYER_LEAVE_COMBAT")
+            t:assertFalse(movement:isChasing())
+        end,
+
         ["a stale key flag does not count while the game says standing"] = function(t)
             reset()
             -- The Stop function never ran: the flag stays on.
@@ -219,12 +241,72 @@ loadAddonFile("core/navigation/maps/turnMath.lua")
 loadAddonFile("core/navigation/maps/turnTests.lua")
 loadAddonFile("core/quests/Adapter.lua")
 loadAddonFile("core/quests/tests.lua")
+loadAddonFile("core/quests/completion.lua")
+loadAddonFile("core/quests/completionTests.lua")
+-- The quest scanner over a stand-in quest module: the snapshot it builds
+-- from and the live log it reads while open (core/quests/scannerLiveTests.lua).
+do
+    local harness = { providers = {}, snapshot = {}, log = {} }
+    local savedBase = WowVision.base
+    local questModule = { L = setmetatable({}, {
+        __index = function(_, key)
+            return key
+        end,
+    }) }
+    -- the module's settings as the scanner reads them (Sort Quests by Proximity off: the log's order)
+    questModule.settings = { sortByProximity = false }
+    function questModule:inProgress()
+        return harness.snapshot
+    end
+    function questModule:targets()
+        return {}
+    end
+    function questModule:objectiveTargets()
+        return {}
+    end
+    function questModule:markerTarget()
+        return nil
+    end
+    function questModule:gameMarkerTarget()
+        return nil
+    end
+    function questModule:hasSource()
+        return true
+    end
+    function questModule:isReady()
+        return true
+    end
+    WowVision.base = {
+        quests = questModule,
+        scanner = {
+            registerProvider = function(_, provider)
+                harness.providers[provider.key] = provider
+            end,
+        },
+    }
+    -- module.lua only parses headless; the stand-in log answers instead, put
+    -- in place by each live test and taken out after it
+    harness.gameQuestEntry = function(questId)
+        return harness.log[questId]
+    end
+    loadAddonFile("core/quests/scanner.lua")
+    WowVision.quests._scannerLiveHarness = harness
+    loadAddonFile("core/quests/scannerLiveTests.lua")
+    WowVision.base = savedBase
+end
+loadAddonFile("core/quests/tooltip.lua")
+loadAddonFile("core/quests/tooltipTests.lua")
+loadAddonFile("core/quests/zones.lua")
+loadAddonFile("core/quests/zonesTests.lua")
 loadAddonFile("core/minimap/logic.lua")
 loadAddonFile("core/minimap/gatheringNames.lua")
 loadAddonFile("core/minimap/tests.lua")
 loadAddonFile("retail/groupHealth/logic.lua")
 loadAddonFile("retail/groupHealth/voices.lua")
 loadAddonFile("retail/groupHealth/tests.lua")
+loadAddonFile("retail/auction/prices.lua")
+loadAddonFile("retail/auction/ReplicateScanner.lua")
+loadAddonFile("retail/auction/tests.lua")
 loadAddonFile("core/colors/names.lua")
 loadAddonFile("core/colors/colors.lua")
 loadAddonFile("core/colors/tests.lua")
@@ -234,12 +316,21 @@ loadAddonFile("core/targeting/softTargeting.lua")
 loadAddonFile("core/targeting/softTargetingTests.lua")
 loadAddonFile("core/ui modules/enemyCount.lua")
 loadAddonFile("core/ui modules/enemyCountTests.lua")
+loadAddonFile("core/ui modules/gameDefaults.lua")
+loadAddonFile("core/ui modules/gameDefaultsTests.lua")
 loadAddonFile("core/db.lua")
 loadAddonFile("core/dbTests.lua")
 loadAddonFile("core/utils.lua")
 loadAddonFile("core/utilsTests.lua")
+loadAddonFile("core/scanner/nearest.lua")
+loadAddonFile("core/scanner/nearestTests.lua")
 loadAddonFile("core/secrets.lua")
 loadAddonFile("core/secretsTests.lua")
+loadAddonFile("camelot/petTraining.lua")
+loadAddonFile("camelot/petTrainingTests.lua")
+loadAddonFile("core/gameDB/itemQuality.lua")
+loadAddonFile("core/gameDB/itemCompare.lua")
+loadAddonFile("core/gameDB/itemCompareTests.lua")
 loadAddonFile("core/ui/input/heldKeys.lua")
 loadAddonFile("core/ui/input/heldKeysTests.lua")
 loadAddonFile("core/ui/input/padLogic.lua")
@@ -254,6 +345,8 @@ loadAddonFile("core/chat/links.lua")
 loadAddonFile("core/chat/linkTests.lua")
 loadAddonFile("core/chat/tabs.lua")
 loadAddonFile("core/chat/tabTests.lua")
+loadAddonFile("core/chat/echo.lua")
+loadAddonFile("core/chat/echoTests.lua")
 loadAddonFile("core/ClassTests.lua")
 loadAddonFile("core/ttsVoiceTests.lua")
 loadAddonFile("core/errors/utils.lua")
@@ -261,6 +354,9 @@ loadAddonFile("core/errors/tests.lua")
 
 -- The component registry and the systems above it, all on the class library.
 loadAddonFile("core/Registry.lua")
+loadAddonFile("core/ui/WindowManager.lua")
+loadAddonFile("core/ui/Window.lua")
+loadAddonFile("core/ui/windowTests.lua")
 loadAddonFile("core/templates/templates.lua")
 loadAddonFile("core/templates/tests.lua")
 loadAddonFile("core/components/components.lua")
@@ -268,6 +364,14 @@ loadAddonFile("core/components/RegistryType.lua")
 loadAddonFile("core/components/ClassRegistryType.lua")
 loadAddonFile("core/components/ComponentRegistry.lua")
 loadAddonFile("core/components/tests.lua")
+
+-- The tooltip reader's comparison blocks (the frames are the game's side).
+strtrim = strtrim or function(text)
+    return (text:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+loadAddonFile("core/ui/tooltip/TooltipReader.lua")
+loadAddonFile("core/ui/tooltip/Tooltip.lua")
+loadAddonFile("core/ui/tooltip/comparisonTests.lua")
 
 -- Object types read the game on demand: their spoken lines run here with
 -- stand-ins for the game functions they call.
@@ -287,6 +391,8 @@ loadAddonFile("core/objects/types/tests.lua")
 -- catches recursion/typo failures the parse check cannot.
 loadAddonFile("core/alerts/alerts.lua")
 loadAddonFile("core/alerts/outputs.lua")
+loadAddonFile("core/audio/channelTests.lua")
+loadAddonFile("core/audio/beaconVolumeTests.lua")
 
 -- The real Module, for what it does with the stores. Its frames, bindings
 -- and profiler are the game's side: stand-ins, in place only while Module.lua
@@ -505,6 +611,133 @@ WowVision.testing.testRunner:addSuite("AuraBufferFilters", {
 })
 
 WowVision.testing.testRunner:addSuite("BufferConstruction", {
+    ["Always Start at Top lands a switched-to buffer on its first item"] = function(t)
+        local spoken = {}
+        local savedSpeak, savedStarts = WowVision.speak, WowVision.buffers.startsAtTop
+        WowVision.speak = function(_, text)
+            spoken[#spoken + 1] = text
+        end
+        local function filled(label, lines)
+            local buffer = WowVision.buffers:create("Static", { label = label })
+            for _, line in ipairs(lines) do
+                buffer:add(WowVision.buffers.MessageItem:new({ data = line }))
+            end
+            return buffer
+        end
+        local root = WowVision.buffers.RootBufferGroup:new({})
+        local first = WowVision.buffers:create("Group", { label = "One" })
+        local second = WowVision.buffers:create("Group", { label = "Two" })
+        root:addBuffer(first)
+        root:addBuffer(second)
+        local a = filled("A", { "a1", "a2", "a3" })
+        local b = filled("B", { "b1", "b2", "b3" })
+        local c = filled("C", { "c1", "c2" })
+        first:addBuffer(a)
+        first:addBuffer(b)
+        second:addBuffer(c)
+        root:getFocus()
+        first:getFocus()
+
+        -- Off: a buffer keeps its place
+        WowVision.buffers.startsAtTop = function()
+            return false
+        end
+        a:focusDirection(1)
+        a:focusDirection(1)
+        first:UIFocusDirection(1)
+        first:UIFocusDirection(-1)
+        local keptOff = a:getFocus():getFocusString()
+
+        -- On: between buffers
+        WowVision.buffers.startsAtTop = function()
+            return true
+        end
+        b:focusIndex(2)
+        first:UIFocusDirection(1)
+        local onB = spoken[#spoken]
+        local bIndex = b.index
+
+        -- On: between groups, the group keeps its buffer
+        c:focusIndex(2)
+        root:UIFocusDirection(1)
+        local onC = spoken[#spoken]
+        local cIndex = c.index
+
+        WowVision.speak, WowVision.buffers.startsAtTop = savedSpeak, savedStarts
+        t:assertEqual(keptOff, "a2")
+        t:assertEqual(onB, "B b1")
+        t:assertEqual(bIndex, 1)
+        t:assertEqual(onC, "Two C c1")
+        t:assertEqual(cIndex, 1)
+        t:assertEqual(first.index, 2, "the group stays on its buffer")
+    end,
+
+    ["a run opens with its first buffer key and closes once when Alt is let go"] = function(t)
+        local buffers = WowVision.buffers
+        buffers.endRun()
+        local savedStarted, savedEnded = buffers.runStarted, buffers.runEnded
+        local log = {}
+        buffers.runStarted = function()
+            log[#log + 1] = "open"
+        end
+        buffers.runEnded = function()
+            log[#log + 1] = "close"
+        end
+        buffers.endRun() -- Alt or another modifier changing with no run: nothing
+        buffers.takeNewRun()
+        buffers.takeNewRun() -- Alt held: the run goes on
+        buffers.endRun()
+        buffers.endRun() -- another modifier changing after the close: nothing
+        buffers.takeNewRun()
+        buffers.endRun()
+        buffers.runStarted, buffers.runEnded = savedStarted, savedEnded
+        t:assertEqual(table.concat(log, ","), "open,close,open,close")
+    end,
+
+    ["Always Start at Top: Alt let go, the next Alt-Down lands on the first item again"] = function(t)
+        local spoken = {}
+        local savedSpeak = WowVision.speak
+        WowVision.speak = function(_, text)
+            spoken[#spoken + 1] = text
+        end
+        local buffers = WowVision.buffers
+        local buffer = buffers:create("Static", { label = "A" })
+        for _, line in ipairs({ "health", "mana", "xp" }) do
+            buffer:add(buffers.MessageItem:new({ data = line }))
+        end
+        local function press(direction)
+            buffer:UIMoveItem(direction, buffers.takeNewRun())
+            return spoken[#spoken]
+        end
+
+        buffers.endRun()
+        local first = press(1)
+        buffers.endRun()
+        local again = press(1)
+        local held = press(1)
+        local heldOn = press(1)
+        buffers.endRun()
+        local backward = press(-1)
+        buffers.endRun()
+        local restarted = press(1)
+
+        -- A switch reads the first item: the run goes on from there.
+        local group = buffers:create("Group", { label = "G" })
+        group:addBuffer(buffer)
+        buffers.endRun()
+        group:UIFocusDirection(1)
+        local afterSwitch = buffers.takeNewRun()
+
+        WowVision.speak = savedSpeak
+        t:assertEqual(first, "health")
+        t:assertEqual(again, "health")
+        t:assertEqual(held, "mana", "Alt held walks on")
+        t:assertEqual(heldOn, "xp")
+        t:assertEqual(backward, "mana", "a backward press moves on from where the buffer stands")
+        t:assertEqual(restarted, "health")
+        t:assertEqual(afterSwitch, false)
+    end,
+
     ["Retail and Forever offer no tracked buffer, and saved ones still load"] = function(t)
         local groupTypes = WowVision.buffers.groupTypes
         local saved = {}
@@ -1308,6 +1541,79 @@ WowVision.testing.testRunner:addSuite("ModuleSettings", {
     end,
 })
 
+-- The chat module's real hook, on a stand-in for the module frame around it.
+WowVision.testing.testRunner:addSuite("ChatEchoHistory", {
+    ["an addon message lands in the tab's history and is not spoken again"] = function(t)
+        local function noop() end
+        local chatModule = {
+            L = setmetatable({}, {
+                __index = function(_, key)
+                    return key
+                end,
+            }),
+            setLabel = noop,
+            addAlert = function()
+                return { addOutput = noop, parameters = { add = noop } }
+            end,
+            hasSettings = function()
+                return { add = noop, addRef = noop }
+            end,
+        }
+        local savedBase, savedDate = WowVision.base, date
+        WowVision.base = {
+            createModule = function()
+                return chatModule
+            end,
+        }
+        date = date or os.date
+        loadAddonFile("core/chat/module.lua")
+
+        local stored, fired = {}, 0
+        local frame = {
+            GetID = function()
+                return 1
+            end,
+            IsShown = function()
+                return true
+            end,
+        }
+        function frame:AddMessage(text)
+            chatModule.onMessage(self, text)
+        end
+        chatModule.frames = {
+            [1] = {
+                frame = frame,
+                store = {
+                    add = function(_, data)
+                        stored[#stored + 1] = data.message
+                    end,
+                },
+                alert = {
+                    enabled = true,
+                    parameters = {
+                        getFieldValue = function()
+                            return "always"
+                        end,
+                    },
+                    fire = function()
+                        fired = fired + 1
+                    end,
+                },
+            },
+        }
+
+        WowVision.chatEcho.send(frame, "Route started")
+        local firedAfterEcho = fired
+        frame:AddMessage("Someone says hello")
+        WowVision.base, date = savedBase, savedDate
+
+        t:assertEqual(stored[1], "WowVision: Route started")
+        t:assertEqual(firedAfterEcho, 0, "already spoken by notify")
+        t:assertEqual(stored[2], "Someone says hello")
+        t:assertEqual(fired, 1, "a normal line still speaks")
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("AlertConstruction", {
     ["an alert with an output constructs enabled"] = function(t)
         local alert = WowVision.alerts.Alert:new({ key = "smoke", label = "Smoke" })
@@ -1360,6 +1666,7 @@ WowVision.testing.testRunner:addSuite("AlertConstruction", {
         C_VoiceChat = nil
         WowVision.base = nil
     end,
+
 })
 
 loadAddonFile("core/graph/ControlId.lua")
@@ -1368,6 +1675,7 @@ loadAddonFile("core/graph/Announcer.lua")
 loadAddonFile("core/graph/KeyGraph.lua")
 loadAddonFile("core/graph/typeAhead.lua")
 loadAddonFile("core/graph/typeAheadTests.lua")
+loadAddonFile("core/graph/doublePress.lua")
 loadAddonFile("core/graph/Builder.lua")
 loadAddonFile("core/graph/ControlTypes.lua")
 loadAddonFile("core/graph/nodes.lua")
@@ -1377,9 +1685,86 @@ loadAddonFile("core/graph/scrollBox.lua")
 loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
+loadAddonFile("core/graph/doublePressTests.lua")
 loadAddonFile("core/graph/controlTests.lua")
+-- The graph host itself, with its frame stubbed (its announcer words saved and
+-- restored so the graph suites keep their own), then the scanner window on it.
+do
+    local announcer = WowVision.graph.announcer
+    local savedCreateFrame = CreateFrame
+    local savedPosition, savedExpanded = announcer.positionText, announcer.expandedStateText
+    CreateFrame = function()
+        return { RegisterEvent = function() end, SetScript = function() end }
+    end
+    loadAddonFile("core/graph/Screen.lua")
+    loadAddonFile("core/graph/Host.lua")
+    CreateFrame = savedCreateFrame
+    announcer.positionText, announcer.expandedStateText = savedPosition, savedExpanded
+    WowVision.graphHost = nil
+end
+loadAddonFile("core/scanner/menuTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
+
+-- Native quest source and the scanner's quest categories: the adapter and
+-- the provider load against stand-ins for the quest module and the scanner;
+-- the suite installs the game's map and quest log APIs per test and points
+-- the stand-in module at its own source.
+do
+    local savedBase = WowVision.base
+    local harness = { providers = {}, source = nil }
+    local questModule = { L = WowVision:getLocale() }
+    questModule.settings = { sortByProximity = false }
+    function questModule:hasSource()
+        return true
+    end
+    function questModule:isReady()
+        return true
+    end
+    function questModule:inProgress()
+        return harness.source:inProgress()
+    end
+    function questModule:targets(questId, phase)
+        return harness.source:targets(questId, phase)
+    end
+    function questModule:objectiveTargets(questId, index)
+        return harness.source:objectiveTargets(questId, index)
+    end
+    function questModule:quest(questId)
+        return harness.source:quest(questId)
+    end
+    function questModule:placeName()
+        return nil
+    end
+    -- the scanner's last resorts; like the real module, nil when the source
+    -- has no such lookup (the native source has neither)
+    function questModule:markerTarget(questId, index)
+        if harness.source.markerTarget == nil then
+            return nil
+        end
+        return harness.source:markerTarget(questId, index)
+    end
+    function questModule:gameMarkerTarget(questId)
+        if harness.source.gameMarkerTarget == nil then
+            return nil
+        end
+        return harness.source:gameMarkerTarget(questId)
+    end
+    WowVision.base = {
+        quests = questModule,
+        scanner = {
+            registerProvider = function(_, provider)
+                harness.providers[provider.key] = provider
+            end,
+        },
+    }
+    loadAddonFile("core/quests/Adapter.lua")
+    loadAddonFile("core/quests/native.lua")
+    loadAddonFile("core/quests/scanner.lua")
+    WowVision.quests._nativeTestHarness = harness
+    loadAddonFile("core/quests/nativeTests.lua")
+    WowVision.base = savedBase
+end
 
 -- Files that need the game client to run but should at least parse cleanly.
 local parseOnly = {
@@ -1400,7 +1785,9 @@ local parseOnly = {
     "core/ui/WindowManager.lua",
     "core/windows/GameMenu.lua",
     "core/errors/module.lua",
+    "core/quests/module.lua",
     "core/ui modules/graphBindings.lua",
+    "core/ui modules/gameDefaultsMenu.lua",
     "core/buffers/module.lua",
     "core/windows/options/ui.lua",
     "core/windows/options/Module.lua",
@@ -1459,6 +1846,7 @@ local parseOnly = {
     "core/navigation/maps/module.lua",
     "core/navigation/maps/ui.lua",
     "core/navigation/visited.lua",
+    "camelot/wownav/module.lua",
     "core/navigation/corpse.lua",
     "core/navigation/targetRoute.lua",
     "core/windows/Macros.lua",
@@ -1484,8 +1872,10 @@ local parseOnly = {
     "core/chat/module.lua",
     "core/chat/ui.lua",
     "core/ui/tooltip/types/HyperlinkTooltip.lua",
+    "core/ui/tooltip/types/LinesTooltip.lua",
     "core/ui/tooltip/types/AuraTooltip.lua",
     "mists/auction.lua",
+    "retail/auction/module.lua",
     "tbc/QuestLog.lua",
     "tbc/socketing.lua",
     "tbc/spellbook.lua",

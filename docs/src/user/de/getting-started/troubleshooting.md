@@ -80,7 +80,7 @@ Du hast Sku geladen. Ist Sku geladen, überlässt WowVision bewusst eine Liste v
 
 Um die WowVision-Version dieses Fensters oder dieser Taste zu bekommen, schalte Sku aus:
 
-- Tippe /disableaddon sku. Das schaltet Sku und seine Audio- und Signal-Hilfs-Addons aus und lädt die Oberfläche neu. /enableaddon sku schaltet sie wieder ein.
+- Tippe /disableaddon sku. Das schaltet Sku und seine Audio- und Beacon-Hilfs-Addons aus und lädt die Oberfläche neu. /enableaddon sku schaltet sie wieder ein.
 - Diese beiden Befehle stehen nicht zur Verfügung, wenn das Addon BlindSlash geladen ist. Deaktiviere Sku in dem Fall stattdessen in der AddOns-Liste des Spiels.
 - Die Änderung braucht ein /reload oder einen neuen Login, um zu wirken; /disableaddon lädt für dich neu.
 
@@ -118,6 +118,20 @@ Die weiche Zielerfassung ändert Konsolenvariablen des Spiels, und manche davon 
 ## Der Controller tut nichts
 
 Die Controller-Unterstützung gibt es für Retail und WoW: Forever. In den Spieloptionen unter Gamepad müssen Gamepad aktivieren (Enable Gamepad) und Gamepad-Oberfläche aktivieren (Enable Gamepad UI) beide an sein. Im Kampf gibt WowVision die Fenstertasten an das Spiel zurück. Alles Weitere steht unter [Controller](../controller.md), auch wie du mit /wv padlog für eine Fehlermeldung ein frisches Protokoll beginnst.
+
+## Ich hänge auf einer Route fest
+
+Das Beacon führt dich an eine Stelle, an der du nicht weiterkommst, oder ein Wegpunkt gilt nie als erreicht. Probiere Folgendes, eins nach dem anderen:
+
+- Spring nach vorn. Oft hält dich eine kleine Kante, eine Stufe oder eine Wurzel auf, und ein Sprung bringt dich darüber.
+- Geh ein paar Schritte nach links oder rechts und dreh dich dann wieder zum Wegpunkt. Die direkte Linie kann in einen Pfosten, eine Ecke oder eine Kiste laufen.
+- Überspring den Wegpunkt: Strg+W verschiebt das Beacon zum nächsten Wegpunkt.
+- Geh einen Wegpunkt zurück: Strg+S verschiebt das Beacon zum vorherigen Wegpunkt. Lauf zu ihm und versuch das Stück noch einmal.
+- Ändere die Ankunftsdistanz mit Alt+P. Eine kürzere Distanz führt dich genauer durch eine Tür oder einen engen Durchgang. Eine weitere Distanz lässt einen Wegpunkt früher als erreicht gelten. Das hilft, wenn du nicht genau auf seiner Stelle stehen kannst.
+- Sprich den NPC an, den du suchst. Manchmal steht er direkt vor dir, aber ein Tresen oder ein Tisch ist dazwischen, wie bei der Bank in Sturmwind. Den letzten Wegpunkt erreichst du dort nie. Nimm den NPC ins Ziel und drück deine Interaktionstaste; das Spiel führt dich so nah heran wie möglich und öffnet das Fenster.
+- Auf einer WowNav-Route drück die Taste, die du auf Neue WowNav-Route um eine versperrte Stelle gelegt hast. Sie sucht einen Weg um die Stelle, an der du festhängst. Siehe [WowNav](../world/wownav.md#eine-versperrte-stelle).
+
+Nächster Wegpunkt, Vorheriger Wegpunkt und Ankunftsdistanz wechseln kannst du im Fenster für die Tastenbelegung auf andere Tasten legen: WowVision-Menü, Benutzeroberfläche, Tastenbelegung. Die Tasten für Routen stehen unter [Navigation](../world/navigation.md#nächster-und-vorheriger-wegpunkt).
 
 ## Einen Fehler melden
 

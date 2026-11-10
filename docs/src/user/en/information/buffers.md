@@ -357,6 +357,8 @@ The Buffers screen of the WowVision menu has:
 | Enabled | On | Turns the buffer feature on or off (the Alt keys stop working while it is off) |
 | Buffers | one group | The list of groups |
 | Invert Item Direction | Off | Swaps Alt+Up and Alt+Down so that Alt+Up moves toward the newest item |
+| Always Start at Top | Off | The first Alt+Down after you let go of Alt goes to the first item. While you hold Alt, each Down moves one item further. When you switch to a buffer or group, you also land on its first item. Alt+Up moves on from where you last were. With Invert Item Direction the two arrows are swapped |
+| Sounds When Opening and Closing | On | Plays one sound when the first Alt+arrow key takes you into the buffers, and another when you let go of Alt |
 
 Settings of the things you add (group, buffer, item) are described in the sections above. There are no alerts for buffers; nothing is spoken until you press a key.
 

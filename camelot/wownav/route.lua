@@ -133,20 +133,40 @@ end
 
 -- Route from a start attachment; when it finds no way, the other start attachments of the cell and of the cells next
 -- to it are tried before "no network path" (his 4.41, from a game test on a slope). Runs inside a job.
+-- Cost comparison (his K): with a position, a start that is a checked attachment of the start cell is compared with the
+-- other checked attachments of that cell; endPool (optional) does the same for the target side. The pair with the lowest
+-- approach + network + approach cost wins; usedStartId and result.targetBinding name it. Unchecked attachments and those of
+-- neighbouring cells only serve as alternatives when no route exists.
 -- Returns path, edges, result, usedStartId | nil, reason.
-function Route:routeFromStart(startId, endId, footOnly, x, y)
+function Route:routeFromStart(startId, endId, footOnly, x, y, endPool)
     local N = self.N
-    local result, reason = N.RouteIds(startId, endId, self.penalties, footOnly)
+    local options, startPool
+    if x then
+        options = self:startOptions()
+        if not options.swimming then
+            local primary = N.Bind(x, y, self:estimatedHeight(), options)
+            if primary then
+                local pool = N.CertifiedBindings(primary.zone, primary.cell, x, y, primary.cellDistance)
+                for _, member in ipairs(pool) do
+                    if member.id == startId then
+                        startPool = pool
+                        break
+                    end
+                end
+            end
+        end
+    end
+    local result, reason = N.RouteIds(startId, endId, self.penalties, footOnly, startPool, endPool)
     if result or not x then
         if result then
-            return result.path, result.edges, result, startId
+            return result.path, result.edges, result, result.startBinding and result.startBinding.id or startId
         end
         return nil, reason
     end
-    local list = N.StartBindings(x, y, self:estimatedHeight(), self:startOptions())
+    local list = N.StartBindings(x, y, self:estimatedHeight(), options)
     for _, binding in ipairs(list or {}) do
         if binding.id ~= startId then
-            local alternative = N.RouteIds(binding.id, endId, self.penalties, footOnly)
+            local alternative = N.RouteIds(binding.id, endId, self.penalties, footOnly, nil, endPool)
             if alternative then
                 return alternative.path, alternative.edges, alternative, binding.id
             end
@@ -503,6 +523,27 @@ function Route:dropToEnd()
     return true
 end
 
+-- A reversed route (Ctrl-Shift-R) goes on at the waypoint its predecessor led to: point = { id, x, y, z }, the id only
+-- for a real network point (a virtual one's id may have been given away). The way back need not hold that waypoint
+-- (other steering targets, one-way links), then its nearest one takes over. Main thread, after Route:begin.
+function Route:resumeAt(point)
+    local N = self.N
+    local waypoints = {}
+    for i, id in ipairs(self.path or {}) do
+        local x, y, z = N.Position(id)
+        waypoints[i] = { id = id, x = x, y = y, z = z }
+    end
+    local index = WowVision.Router.resumeIndex(waypoints, point)
+    if index == nil then
+        return nil
+    end
+    self.pathIndex = index
+    self:setRouteState(self.path[index - 1], self.path[index])
+    self:resetApproach()
+    self:setHeightAnchor(waypoints[index].z)
+    return index
+end
+
 -- Makes a plan the running route (main thread). source/result: the target and its resolution.
 function Route:begin(plan, source, result, name)
     local N = self.N
@@ -553,13 +594,15 @@ function Route:targetContext(startOverride, footOnly)
         return nil
     end
     local context = { startNodeId = startId, footOnly = footOnly }
-    context.route = function(endId)
-        local path, _, result, used = self:routeFromStart(context.startNodeId, endId, footOnly, px, py)
+    -- endPool (optional): the checked attachments of the target cell; the third result is the target attachment of the
+    -- cheapest pair
+    context.route = function(endId, endPool)
+        local path, _, result, used = self:routeFromStart(context.startNodeId, endId, footOnly, px, py, endPool)
         if not path then
             return nil
         end
         context.startNodeId = used
-        return path, result.cost
+        return path, result.cost, result.targetBinding
     end
     return context
 end

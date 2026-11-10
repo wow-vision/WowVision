@@ -96,6 +96,7 @@ Things it takes care of:
 - It follows your movement commands, no matter which keys you have bound for moving. Autorun counts as movement too.
 - It also covers walks that the game makes for you: when you press the interact key and the game walks you to an NPC, or you use click to move. If such a walk ends before it reaches its goal (you got stuck on something), the Blocked sound plays once.
 - Being stunned, rooted, feared or otherwise out of control is never reported as a wall, and nothing is graded while you are on a flight path.
+- When you attack with the interact key, your character follows the enemy for the whole fight. Once you are in combat, wall detection stays quiet while your auto-attack is on and you press no movement key. On the way to the enemy, before the fight begins, it warns about an obstacle as usual, and so it does when you press a movement key.
 - While swimming, your swimming speed is used for comparison.
 - (Retail and WoW: Forever only) In combat the game hides your movement speed, so only a complete standstill can be noticed: you hear the Blocked sound but none of the slower grades.
 

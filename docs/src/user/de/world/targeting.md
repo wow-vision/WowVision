@@ -10,9 +10,9 @@ Hinweis: Die Beispiele unten zeigen, was du auf einem deutschen Client hörst. W
 
 | Taste | Name der Belegung | Was sie tut |
 |-------|-------------------|-------------|
-| Umschalt+I | Weiches Ziel Feind (Soft Target Enemy) | Schaltet die weiche Zielerfassung für Feinde ein oder aus |
-| Umschalt+P | Weiches Ziel Freund (Soft Target Friend) | Schaltet die weiche Zielerfassung für Freunde ein oder aus |
-| Umschalt+O | Weiches Ziel Interaktion (Soft Target Interact) | Schaltet die weiche Zielerfassung für Interaktion ein oder aus |
+| Umschalt+I | Soft Target Feind (Soft Target Enemy) | Schaltet die weiche Zielerfassung für Feinde ein oder aus |
+| Umschalt+P | Soft Target Freund (Soft Target Friend) | Schaltet die weiche Zielerfassung für Freunde ein oder aus |
+| Umschalt+O | Soft Target Interaktion (Soft Target Interact) | Schaltet die weiche Zielerfassung für Interaktion ein oder aus |
 | Alt+T | Zielmenü öffnen (Open Target Menu) | Öffnet das Menü deines aktuellen Ziels |
 | standardmäßig unbelegt | Ziel des Ziels (Target of Target) | Macht das Ziel deines Ziels zu deinem Ziel |
 | standardmäßig unbelegt | Zielfokus 1 bis Zielfokus 5 (Target Focus 1 bis 5) | Erfasst die Einheit, die du in diesem virtuellen Fokusplatz gespeichert hast |
@@ -142,7 +142,7 @@ Zielwechsel (Target Change) ist die oben beschriebene Ansage.
 | Aktiviert (Alarm) | An | Schaltet den ganzen Alarm Zielwechsel ein oder aus |
 | TTS-Alarm | An | Spricht das Ziel. Seine Einstellung Prioritätsnachricht (unterbricht) ist standardmäßig an, und mit Stimme kannst du eine Stimme nur für diesen Alarm wählen |
 | Schlachtzugmarkierung bei festem Ziel ansagen | An | Stellt die Schlachtzugmarkierung vor die Beschreibung des Ziels |
-| Ziel-im-Kampf-Sound | An | Spielt den Ton, wenn das neue Ziel im Kampf mit dir oder deiner Gruppe ist; mit seiner Einstellung Sound kannst du einen anderen Ton wählen |
+| Ziel-im-Kampf-Sound | An | Spielt den Ton, wenn das neue Ziel im Kampf mit dir oder deiner Gruppe ist, auch wenn nur deine Gruppe es bekämpft und du noch nicht mitkämpfst; mit seiner Einstellung Sound kannst du einen anderen Ton wählen |
 
 (Classic Era, The Burning Crusade und Mists of Pandaria) Die Lebensüberwachung (Health Monitor) liest die Gesundheit deines Ziels in Fünf-Prozent-Schritten vor, wenn sie sinkt (oder steigt).
 
@@ -181,42 +181,42 @@ Die weiche Zielerfassung ist eine Spielfunktion, die für dich eine Einheit ausw
 
 Es gibt drei Arten:
 
-- Weiches Ziel Feind (Umschalt+I): der Feind, den das Spiel vor dir auswählen würde.
-- Weiches Ziel Freund (Umschalt+P): die freundliche Einheit vor dir.
-- Weiches Ziel Interaktion (Umschalt+O): das nächste Ding, mit dem du interagieren kannst.
+- Soft Target Feind (Umschalt+I): der Feind, den das Spiel vor dir auswählen würde.
+- Soft Target Freund (Umschalt+P): die freundliche Einheit vor dir.
+- Soft Target Interaktion (Umschalt+O): das nächste Ding, mit dem du interagieren kannst.
 
 Alle drei sind standardmäßig aus.
 
 ### Ein- und Ausschalten
 
-Drücke die Taste. WowVision schaltet die Einstellung um und sagt zum Beispiel "Weiches Ziel Feind Aktiviert" oder "Weiches Ziel Feind Deaktiviert". Die Taste verhält sich genau wie der Schalter Aktiviert des passenden Alarms im Menü. Beides schaltet die eigene weiche Zielerfassung des Spiels ein (für Tastatur und Gamepad) oder aus.
+Drücke die Taste. WowVision schaltet die Einstellung um und sagt zum Beispiel "Soft Target Feind Aktiviert" oder "Soft Target Feind Deaktiviert". Die Taste verhält sich genau wie der Schalter Aktiviert des passenden Alarms im Menü. Beides schaltet die eigene weiche Zielerfassung des Spiels ein (für Tastatur und Gamepad) oder aus.
 
-Das Spiel erlaubt es nicht, diese Schalter im Kampf zu ändern. Drückst du die Taste in einem Kampf, sagt WowVision zum Beispiel "Weiches Ziel Feind Aktiviert, nach dem Kampf", und die Änderung wird in dem Moment übernommen, in dem der Kampf endet.
+Das Spiel erlaubt es nicht, diese Schalter im Kampf zu ändern. Drückst du die Taste in einem Kampf, sagt WowVision zum Beispiel "Soft Target Feind Aktiviert, nach dem Kampf", und die Änderung wird in dem Moment übernommen, in dem der Kampf endet.
 
 Hast du die Interaktionstaste in den eigenen Optionen des Spiels eingeschaltet, schaltet WowVision sie beim Einloggen nicht wieder aus; es schaltet nur die Arten ein, die du in WowVision aktiviert hast.
 
 ### Was du hörst
 
-Solange eine Art der weichen Zielerfassung an ist, sagt WowVision jedes neue weiche Ziel dieser Art mit den Angaben an, die du unter Namen ausgewählt hast (siehe [Was angesagt wird: Namen](#was-angesagt-wird-namen)), dazu einen kurzen Ton, der für Feind, Freund und Interaktion verschieden ist. Dinge, die keine Einheiten sind, etwa ein Briefkasten, sprechen ihren Tooltip-Text, mindestens aber ihren Namen. Wenn das weiche Ziel verschwindet, wird nichts gesagt.
+Solange eine Art der weichen Zielerfassung an ist, sagt WowVision jedes neue Soft Target dieser Art mit den Angaben an, die du unter Namen ausgewählt hast (siehe [Was angesagt wird: Namen](#was-angesagt-wird-namen)), dazu einen kurzen Ton, der für Feind, Freund und Interaktion verschieden ist. Dinge, die keine Einheiten sind, etwa ein Briefkasten, sprechen ihren Tooltip-Text, mindestens aber ihren Namen. Wenn das weiche Ziel verschwindet, wird nichts gesagt.
 
-Jede Art ist ein Alarm im Menü Zielerfassung mit dem Namen Weiches Ziel Feind, Weiches Ziel Freund und Weiches Ziel Interaktion. Der Alarm ist standardmäßig aus; seine Einstellung Aktiviert ist das, was die Taste umschaltet. Darunter findest du TTS-Alarm (gesprochen, standardmäßig unterbrechend) und Soundalarm, beide sind standardmäßig an, sobald der Alarm an ist. Mit der Einstellung Sound der Soundausgabe kannst du einen anderen Ton wählen.
+Jede Art ist ein Alarm im Menü Zielerfassung mit dem Namen Soft Target Feind, Soft Target Freund und Soft Target Interaktion. Der Alarm ist standardmäßig aus; seine Einstellung Aktiviert ist das, was die Taste umschaltet. Darunter findest du TTS-Alarm (gesprochen, standardmäßig unterbrechend) und Soundalarm, beide sind standardmäßig an, sobald der Alarm an ist. Mit der Einstellung Sound der Soundausgabe kannst du einen anderen Ton wählen.
 
 ### Winkel und Reichweite
 
-Jede Art der weichen Zielerfassung hat zwei weitere Einstellungen, in ihrem Alarm im Menü Zielerfassung: Öffne Weiches Ziel Feind, Weiches Ziel Freund oder Weiches Ziel Interaktion, um sie zu finden. Standard sind der breiteste Winkel und die größte Reichweite, weil die eigenen Werte des Spiels für Spieler gemacht sind, die sehen, was vor ihnen ist. WowVision schreibt sie nur für eine Art, die du eingeschaltet hast; für jede Art, die du nicht benutzt, bleiben die Werte des Spiels bestehen. Spielstandard oder eine Reichweite von 0 stellt den eigenen Wert des Spiels wieder her.
+Jede Art der weichen Zielerfassung hat zwei weitere Einstellungen, in ihrem Alarm im Menü Zielerfassung: Öffne Soft Target Feind, Soft Target Freund oder Soft Target Interaktion, um sie zu finden. Standard sind der breiteste Winkel und die größte Reichweite, weil die eigenen Werte des Spiels für Spieler gemacht sind, die sehen, was vor ihnen ist. WowVision schreibt sie nur für eine Art, die du eingeschaltet hast; für jede Art, die du nicht benutzt, bleiben die Werte des Spiels bestehen. Spielstandard oder eine Reichweite von 0 stellt den eigenen Wert des Spiels wieder her.
 
 | Einstellung | Standard | Was sie tut |
 |-------------|----------|-------------|
-| Weiches Ziel Feind: Winkel (Soft Target Enemy Arc) | 180 Grad vor dir | Wie breit der Kegel vor dir ist, in dem die weiche Feind-Erfassung sucht. Auswahl: Spielstandard, Direkt vor dir, 15 Grad vor dir, 180 Grad vor dir |
-| Weiches Ziel Feind: Reichweite (Soft Target Enemy Range) | 60 | Maximale Entfernung in Yards, 0 bis 60. 0 bedeutet die eigene Reichweite des Spiels |
-| Weiches Ziel Freund: Winkel | 180 Grad vor dir | Dieselbe Auswahl, für Freunde |
-| Weiches Ziel Freund: Reichweite | 60 | 0 bis 60 Yards, 0 bedeutet die eigene Reichweite des Spiels |
-| Weiches Ziel Interaktion: Winkel | 180 Grad vor dir | Dieselbe Auswahl, für Interaktionsziele |
-| Weiches Ziel Interaktion: Reichweite | 20 | 0 bis 20 Yards, 0 bedeutet die eigene Reichweite des Spiels. Die Obergrenze ist niedriger, weil eine große Interaktionsreichweite Monster hinter Mauern und Gebäuden erfasst |
+| Soft Target Feind: Winkel (Soft Target Enemy Arc) | 180 Grad vor dir | Wie breit der Kegel vor dir ist, in dem die weiche Feind-Erfassung sucht. Auswahl: Spielstandard, Direkt vor dir, 15 Grad vor dir, 180 Grad vor dir |
+| Soft Target Feind: Reichweite (Soft Target Enemy Range) | 60 | Maximale Entfernung in Yards, 0 bis 60. 0 bedeutet die eigene Reichweite des Spiels |
+| Soft Target Freund: Winkel | 180 Grad vor dir | Dieselbe Auswahl, für Freunde |
+| Soft Target Freund: Reichweite | 60 | 0 bis 60 Yards, 0 bedeutet die eigene Reichweite des Spiels |
+| Soft Target Interaktion: Winkel | 180 Grad vor dir | Dieselbe Auswahl, für Interaktionsziele |
+| Soft Target Interaktion: Reichweite | 20 | 0 bis 20 Yards, 0 bedeutet die eigene Reichweite des Spiels. Die Obergrenze ist niedriger, weil eine große Interaktionsreichweite Monster hinter Mauern und Gebäuden erfasst |
 
 ### Weiche Zielerfassung bei festem Ziel
 
-Das Spiel hat eine zusätzliche Regel dafür, was die weiche Zielerfassung tut, solange du bereits ein echtes Ziel hast. WowVision bietet sie als eine einzige Auswahl an, Weiches Ziel bei festem Ziel (Soft Targeting With a Hard Target; Standard Spielstandard):
+Das Spiel hat eine zusätzliche Regel dafür, was die weiche Zielerfassung tut, solange du bereits ein echtes Ziel hast. WowVision bietet sie als eine einzige Auswahl an, Soft Target bei festem Ziel (Soft Targeting With a Hard Target; Standard Spielstandard):
 
 | Auswahl | Was passiert |
 |---------|--------------|
@@ -225,16 +225,16 @@ Das Spiel hat eine zusätzliche Regel dafür, was die weiche Zielerfassung tut, 
 | Nur ohne festes Ziel | Jedes echte Ziel schaltet die weiche Zielerfassung aus |
 | Immer | Die weiche Zielerfassung arbeitet, was auch immer du im Ziel hast |
 
-Der Modus folgt jedem Zielwechsel und auch dem Tod deines Ziels, und er funktioniert ebenfalls im Kampf.
+Der Modus folgt jedem Zielwechsel und auch dem Tod deines Ziels, und er funktioniert ebenfalls im Kampf. Ein Ziel, das das Spiel von selbst aus deinem weichen Ziel setzt (Soft Target wird festes Ziel, im Spielstandard für Feinde an), ist hier kein echtes Ziel, auch während du es bekämpfst: Die weiche Zielerfassung arbeitet damit weiter. Nur ein Ziel, das du selbst wählst, mit Tab oder einem Klick, zählt. Mit dem Spielstandard treten die beiden Modi „Nur ohne“ also nur für Feinde zurück, die du selbst ins Ziel nimmst.
 
-Weiches Ziel wird festes Ziel (Make Soft Target the Hard Target; Standard Spielstandard) lässt das Spiel dein echtes Ziel zum weichen machen. Auswahl: Spielstandard, Aus, Feinde, Freunde. Wie die Ein/Aus-Schalter wird auch diese Einstellung bis zum Ende des Kampfes zurückgehalten, wenn du sie während eines Kampfes änderst.
+Soft Target wird festes Ziel (Make Soft Target the Hard Target; Standard Spielstandard) lässt das Spiel dein echtes Ziel zum weichen machen. Auswahl: Spielstandard, Aus, Feinde, Freunde. Wie die Ein/Aus-Schalter wird auch diese Einstellung bis zum Ende des Kampfes zurückgehalten, wenn du sie während eines Kampfes änderst.
 
 ### Beispiel: Leichen plündern und trotzdem mit dem interagieren, was neben deinem Ziel steht
 
-1. Drücke Umschalt+O, um die weiche Interaktion einzuschalten. Du hörst "Weiches Ziel Interaktion Aktiviert".
-2. Stelle im Menü Zielerfassung die Einstellung Weiches Ziel bei festem Ziel auf Nur ohne angreifbares festes Ziel.
+1. Drücke Umschalt+O, um die weiche Interaktion einzuschalten. Du hörst "Soft Target Interaktion Aktiviert".
+2. Stelle im Menü Zielerfassung die Einstellung Soft Target bei festem Ziel auf Nur ohne angreifbares festes Ziel.
 3. Töte ein Monster und gehe zu seiner Leiche. WowVision sagt dir, was das weiche Interaktionsziel ist, sobald es wechselt.
-4. Drücke die Interaktionstaste des Spiels. Solange das tote Monster dein Ziel ist, bleibt die weiche Zielerfassung aktiv, die Taste plündert also die Leiche. Hättest du stattdessen einen lebenden Feind neben der Leiche im Ziel, würde die weiche Zielerfassung beiseitetreten, und die Interaktionstaste würde auf diesen Feind wirken.
+4. Drücke die Interaktionstaste des Spiels. Solange das tote Monster dein Ziel ist, bleibt die weiche Zielerfassung aktiv, die Taste plündert also die Leiche. Hättest du stattdessen selbst (Tab oder ein Klick) einen lebenden Feind neben der Leiche ins Ziel genommen, würde die weiche Zielerfassung beiseitetreten, und die Interaktionstaste würde auf diesen Feind wirken.
 
 ### Die Werte prüfen: /wv soft
 

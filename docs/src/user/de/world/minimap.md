@@ -69,9 +69,9 @@ Wird der Questgeber nur wegen der Aufspür-Option für "Quests niedriger Stufe" 
 
 ### Echte Namen bei der Ankunft
 
-Auf den neueren Clients zeigen manche NPCs ihren Titel als Namen auf der Minikarte, zum Beispiel "Kürschnerlehrer" statt des Namens der Person. Kommst du bei einem gesehenen NPC an, indem du einem Signal aus dem Scanner folgst, sieht WowVision sich die NPCs um dich herum an und nennt, falls einer diesen Titel trägt, seinen echten Namen gefolgt vom Namen, den die Minikarte zeigte, zum Beispiel "Olivia Burnside, Kürschnerlehrer". Der echte Name wird für die Sitzung gemerkt, und Eingabe auf demselben Eintrag spricht ihn später bei der Ankunft erneut.
+Auf den neueren Clients zeigen manche NPCs ihren Titel als Namen auf der Minikarte, zum Beispiel "Kürschnerlehrer" statt des Namens der Person. Kommst du bei einem gesehenen NPC an, indem du einem Beacon aus dem Scanner folgst, sieht WowVision sich die NPCs um dich herum an und nennt, falls einer diesen Titel trägt, seinen echten Namen gefolgt vom Namen, den die Minikarte zeigte, zum Beispiel "Olivia Burnside, Kürschnerlehrer". Der echte Name wird für die Sitzung gemerkt, und Eingabe auf demselben Eintrag spricht ihn später bei der Ankunft erneut.
 
-Das funktioniert nur für NPCs, die das Spiel WowVision lesen lässt: dein Ziel, dein weiches Ziel und NPCs mit Namensplakette. Das Spiel verbirgt die Namensplaketten freundlicher NPCs standardmäßig. Braucht der Scanner sie, sagt er es dir einmal: "Freundliche NPC-Namensplaketten einschalten, um NPC-Namen zu lernen". Schalte die Option des Spiels für Namensplaketten freundlicher NPCs ein, wenn du echte Namen willst.
+Das funktioniert nur für NPCs, die das Spiel WowVision lesen lässt: dein Ziel, dein Soft Target und NPCs mit Namensplakette. Das Spiel verbirgt die Namensplaketten freundlicher NPCs standardmäßig. Braucht der Scanner sie, sagt er es dir einmal: "Freundliche NPC-Namensplaketten einschalten, um NPC-Namen zu lernen". Schalte die Option des Spiels für Namensplaketten freundlicher NPCs ein, wenn du echte Namen willst.
 
 ### Sammelpunkte
 

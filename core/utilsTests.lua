@@ -33,6 +33,162 @@ testRunner:addSuite("GroupUnits", {
     end,
 })
 
+-- The game reads for utils.groupFighting: a party of you and party1 (with
+-- partypet1) fighting "target", each read overridable.
+local function fight(overrides)
+    local exists = { player = true, party1 = true, partypet1 = true, target = true }
+    local api = {
+        IsInRaid = function()
+            return false
+        end,
+        IsInGroup = function()
+            return true
+        end,
+        UnitExists = function(unit)
+            return exists[unit] == true
+        end,
+        UnitThreatSituation = function()
+            return nil
+        end,
+        UnitIsUnit = function(a, b)
+            return a == b
+        end,
+        UnitAffectingCombat = function()
+            return false
+        end,
+        UnitCanAttack = function()
+            return true
+        end,
+        UnitIsTapDenied = function()
+            return false
+        end,
+    }
+    for key, value in pairs(overrides or {}) do
+        api[key] = value
+    end
+    api.exists = exists
+    return api
+end
+
+testRunner:addSuite("GroupFighting", {
+    ["a mob nobody fights is no fight"] = function(t)
+        t:assertFalse(utils.groupFighting("target", fight()))
+    end,
+
+    ["you on its threat list is a fight"] = function(t)
+        t:assertTrue(utils.groupFighting("target", fight({
+            UnitThreatSituation = function(member)
+                return member == "player" and 1 or nil
+            end,
+        })))
+    end,
+
+    ["a group member's pet on its threat list is a fight"] = function(t)
+        t:assertTrue(utils.groupFighting("target", fight({
+            UnitThreatSituation = function(member)
+                return member == "partypet1" and 0 or nil
+            end,
+        })))
+    end,
+
+    ["it attacking a group member is a fight, before any threat is known"] = function(t)
+        local api = fight({
+            UnitIsUnit = function(a, b)
+                return a == "targettarget" and b == "party1"
+            end,
+        })
+        api.exists.targettarget = true
+        t:assertTrue(utils.groupFighting("target", api))
+    end,
+
+    ["in a group: in combat and tapped by nobody else is the group's fight"] = function(t)
+        t:assertTrue(utils.groupFighting("target", fight({
+            UnitAffectingCombat = function(unit)
+                return unit == "target"
+            end,
+        })))
+    end,
+
+    ["in combat but tapped by someone else is not ours"] = function(t)
+        t:assertFalse(utils.groupFighting("target", fight({
+            UnitAffectingCombat = function()
+                return true
+            end,
+            UnitIsTapDenied = function()
+                return true
+            end,
+        })))
+    end,
+
+    ["alone, a mob in combat with a stranger is not yours"] = function(t)
+        t:assertFalse(utils.groupFighting("target", fight({
+            IsInGroup = function()
+                return false
+            end,
+            UnitAffectingCombat = function()
+                return true
+            end,
+        })))
+    end,
+
+    ["a friendly unit in combat is not a fight to announce"] = function(t)
+        t:assertFalse(utils.groupFighting("target", fight({
+            UnitAffectingCombat = function()
+                return true
+            end,
+            UnitCanAttack = function()
+                return false
+            end,
+        })))
+    end,
+
+    ["targeting yourself is no fight, though your target's target is you"] = function(t)
+        local api = fight({
+            UnitIsUnit = function(a, b)
+                return a == "targettarget" and b == "player"
+            end,
+            UnitCanAttack = function()
+                return false
+            end,
+        })
+        api.exists.targettarget = true
+        t:assertFalse(utils.groupFighting("target", api))
+    end,
+
+    ["a group member who targets you is no fight"] = function(t)
+        local api = fight({
+            UnitIsUnit = function(a, b)
+                return a == "targettarget" and b == "player"
+            end,
+            UnitThreatSituation = function()
+                return 0
+            end,
+            UnitAffectingCombat = function()
+                return true
+            end,
+            UnitCanAttack = function()
+                return false
+            end,
+        })
+        api.exists.targettarget = true
+        t:assertFalse(utils.groupFighting("target", api))
+    end,
+
+    ["a read that fails counts as no"] = function(t)
+        t:assertFalse(utils.groupFighting("target", fight({
+            UnitAffectingCombat = function()
+                error("hidden")
+            end,
+        })))
+    end,
+
+    ["no target, no fight"] = function(t)
+        local api = fight()
+        api.exists.target = nil
+        t:assertFalse(utils.groupFighting("target", api))
+    end,
+})
+
 -- A stand-in for C_CurrencyInfo.GetCoinText.
 local function coins(copper)
     local parts = {}

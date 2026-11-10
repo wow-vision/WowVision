@@ -66,6 +66,75 @@ function utils.groupUnits(inRaid, inGroup)
     return SOLO_UNITS
 end
 
+-- Whether you or your group (pets included) are fighting a unit, for the
+-- "Target in Combat" sound. Only a unit you can attack counts: yourself, a
+-- group member or another friendly unit is never a fight, even when its
+-- target is one of you. Then three signs, any one is enough:
+--   1. a group unit is on its threat list (UnitThreatSituation not nil; a
+--      secret answer is not nil either, so it counts);
+--   2. it targets a group unit (its "target" unit is one of them);
+--   3. in a group: it is in combat, attackable and not tapped by anyone
+--      else (UnitIsTapDenied false), so the fight is your group's.
+-- The threat list of a mob you have not hit yet reaches the client only
+-- after you target it, so on a target change sign 1 misses a fight only
+-- your group is in; signs 2 and 3 are known at once. A secret answer to
+-- signs 2 and 3 (Forever and Retail hide identities in combat) counts as
+-- no, and so does a secret answer to whether you can attack it. api: the game reads (tests pass fakes), the globals by default.
+local function plainTrue(value)
+    if issecretvalue ~= nil and issecretvalue(value) then
+        return false
+    end
+    return value == true or value == 1
+end
+
+function utils.groupFighting(unit, api)
+    api = api or _G
+    local function read(name, ...)
+        local fn = api[name]
+        if fn == nil then
+            return nil
+        end
+        local ok, result = pcall(fn, ...)
+        if not ok then
+            return nil
+        end
+        return result
+    end
+    local inRaid = plainTrue(read("IsInRaid"))
+    local inGroup = plainTrue(read("IsInGroup"))
+    local members = utils.groupUnits(inRaid, inGroup)
+    if not plainTrue(read("UnitExists", unit)) or not plainTrue(read("UnitCanAttack", "player", unit)) then
+        return false
+    end
+    local existing = {}
+    for _, member in ipairs(members) do
+        if plainTrue(read("UnitExists", member)) then
+            tinsert(existing, member)
+            if read("UnitThreatSituation", member, unit) ~= nil then
+                return true
+            end
+        end
+    end
+    local victim = unit .. "target"
+    if plainTrue(read("UnitExists", victim)) then
+        for _, member in ipairs(existing) do
+            if plainTrue(read("UnitIsUnit", victim, member)) then
+                return true
+            end
+        end
+    end
+    if inGroup or inRaid then
+        local tapDenied = read("UnitIsTapDenied", unit)
+        if plainTrue(read("UnitAffectingCombat", unit))
+            and tapDenied ~= nil
+            and not (issecretvalue ~= nil and issecretvalue(tapDenied))
+            and not tapDenied then
+            return true
+        end
+    end
+    return false
+end
+
 -- Money in tooltip text. The game writes coins as an amount followed by a
 -- coin texture ("12 |T...UI-GoldIcon...|t 5 |T...UI-SilverIcon...|t"), and
 -- speech drops the textures, leaving bare numbers. Some lines carry only a
