@@ -36,6 +36,7 @@
 * Auction house: the scan result and the full scan cooldown times are now fully translated.
 
 ### Modern
+* Minimap scanner (WoW: Forever): works again. Since the game update of 7 November (build 1.60.1.70862) the scan said "Nothing new nearby" and walking announced nothing, because the game function it asked (Minimap:UpdateMouseoverAtPoint) does nothing any more. The scanner now moves the minimap under the resting cursor and reads what the game names there, the way Sku does. A scan takes up to about six seconds when much is new. Walking announcements tell several dots of one name apart (mailboxes, herbs) and stay quiet when you only step into or out of a building or a covered street. Quest titles from your quest log are no longer listed as quest givers. While the scanner reads the minimap, it takes no clicks and shows no tooltip, and nothing starts while you place a spell on the ground.
 * Auction house: a Full Scan records the prices of the whole auction house. It is off by default; turn on Full Scan under Windows, Auction House, and the button is the last stop on the Buy tab. The game allows one scan every 15 minutes.
 * Item tooltips: with Full Scan on, tooltips end with the minimum, average and maximum auction price over up to 30 days, the vendor price per item, and what a vendor charges. The Tooltip Prices checkbox turns the lines off.
 * Trainer: Train works as soon as the window opens, and pressing it again and again learns everything in turn.
