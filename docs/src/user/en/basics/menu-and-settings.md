@@ -8,6 +8,8 @@ The WowVision menu is where you configure the addon: speech, alerts, navigation,
 |---|---|
 | Shift+F1 | Opens the menu (the WowVision Menu binding). |
 | /wv | Opens the menu. Typing /wv followed by something WowVision does not know also opens it. |
+| Right Arrow | Opens the next level, when the entry has one. |
+| Left Arrow | Goes back one level. On the first level nothing happens and the menu stays open. |
 | Escape | Goes back one level. On the first level, closes the menu. |
 | /wv close | Force-closes all WowVision windows. |
 

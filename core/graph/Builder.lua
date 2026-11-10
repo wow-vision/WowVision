@@ -351,6 +351,113 @@ function Builder:_makeNode(id, vtable)
     return node
 end
 
+-- ---- list filter (letters typed quickly, Host.lua) ----
+
+-- The "Filter: text" line a filtered list starts with: focus lands on it, the matches follow below it.
+graph.LIST_FILTER_ID = ControlId.structural("listFilter:header")
+
+local function matchesFilter(label, text)
+    local ok, found = pcall(function()
+        return graph.typeAhead.contains(graph.typeAhead.matcher(text)(label), text)
+    end)
+    return ok and found
+end
+
+local function rowMatches(row, filter)
+    if filter.rowList then
+        return matchesFilter(graph.KeyGraph.rowLabelOf(row.items[1]), filter.text)
+    end
+    for _, node in ipairs(row.items) do
+        if matchesFilter(graph.KeyGraph.labelOf(node), filter.text) then
+            return true
+        end
+    end
+    return false
+end
+
+local function underDropped(node, dropped)
+    local n = node
+    while n ~= nil do
+        if dropped[n] then
+            return true
+        end
+        n = n.parent
+    end
+    return false
+end
+
+-- Run before the edges are wired, so a filtered list navigates as if the other entries were never declared. The list
+-- is the rows of the filter's stop; in a tree, those under the filter's parent, a dropped group taking its children
+-- along. filter (Screen.listFilter): { text, stopKey, tree, parentKey, rowList }; the build leaves on it matches, the
+-- number of entries kept, and firstId, the list's first entry; stale when the list is gone.
+function Builder:_applyListFilter()
+    local filter = self.listFilter
+    if filter == nil then
+        return
+    end
+    local dropped, rows, firstRow = {}, {}, nil
+    local matches = 0
+    for _, row in ipairs(self.rows) do
+        local head = row.items[1]
+        local parentKey = head.parent ~= nil and head.parent.id.key or nil
+        local inList = row.stopKey == filter.stopKey and (not filter.tree or parentKey == filter.parentKey)
+        if underDropped(head, dropped) then
+            for _, node in ipairs(row.items) do
+                dropped[node] = true
+            end
+        elseif not inList then
+            tinsert(rows, row)
+        else
+            if firstRow == nil then
+                firstRow = row
+                filter.firstId = head.id
+                filter.headerRow = { items = {}, stopKey = row.stopKey }
+                tinsert(rows, filter.headerRow)
+            end
+            if rowMatches(row, filter) then
+                matches = matches + 1
+                tinsert(rows, row)
+            else
+                for _, node in ipairs(row.items) do
+                    dropped[node] = true
+                end
+            end
+        end
+    end
+    if firstRow == nil then
+        filter.stale = true
+        return
+    end
+    filter.matches = matches
+
+    local first = firstRow.items[1]
+    local header = {
+        id = graph.LIST_FILTER_ID,
+        vtable = graph.nodes.text({
+            label = WowVision:getLocale()["Filter"] .. ": " .. filter.text,
+        }),
+        transitions = {},
+        parent = first.parent,
+        stopKey = first.stopKey,
+        menuRow = true,
+    }
+    filter.headerRow.items[1] = header
+    self.rowOf[header] = filter.headerRow
+    filter.headerRow = nil
+
+    local declared = {}
+    for _, node in ipairs(self.declared) do
+        if node == first then
+            tinsert(declared, header)
+        end
+        if not underDropped(node, dropped) then
+            tinsert(declared, node)
+        end
+    end
+    self.declared = declared
+    self.rows = rows
+end
+
 -- ---- build ----
 
 -- Finalize into a render, or nil when nothing was declared (treat as closed).
@@ -363,6 +470,12 @@ function Builder:build()
     if self.rawCount == 0 and #self.rows == 0 then
         return nil
     end
+    for _, row in ipairs(self.rows) do
+        for _, node in ipairs(row.items) do
+            node.menuRow = true
+        end
+    end
+    self:_applyListFilter()
 
     local render = graph.newRender()
     for _, node in ipairs(self.declared) do

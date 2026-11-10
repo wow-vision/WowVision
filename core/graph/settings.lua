@@ -223,6 +223,7 @@ end
 settings.registerFieldControl("Category", function(field, owner)
     return nodes.button({
         label = field:getLabel(),
+        opensLevel = true,
         onActivate = function()
             local host = WowVision.graphHost
             local stack = host:focusedStack()
@@ -248,6 +249,7 @@ settings.registerFieldControl("Category", function(field, owner)
                             withAlertScope(
                                 nodes.button({
                                     label = ref.target.label,
+                                    opensLevel = true,
                                     onActivate = function()
                                         pushChildScreen(ref.target)
                                     end,
@@ -282,6 +284,7 @@ function settings.renderInto(builder, infoFrame)
             withAlertScope(
                 nodes.button({
                     label = target.label,
+                    opensLevel = true,
                     onActivate = function()
                         pushChildScreen(target)
                     end,
@@ -398,6 +401,7 @@ local function pushComponentList(field, owner)
                 label = function()
                     return instanceLabel(captured)
                 end,
+                opensLevel = true,
                 onActivate = function()
                     pushComponentEditor(field, owner, captured)
                 end,
@@ -436,6 +440,7 @@ settings.registerFieldControl("ComponentArray", function(field, owner)
         label = function()
             return (field:getLabel() or field.key) .. " (" .. field:getLength(owner) .. ")"
         end,
+        opensLevel = true,
         onActivate = function()
             pushComponentList(field, owner)
         end,
@@ -492,6 +497,7 @@ function settings.renderModuleInto(builder, module)
     for _, submodule in ipairs(submodules) do
         local vtable = nodes.button({
             label = submodule:getLabel() or tostring(submodule.key),
+            opensLevel = true,
             onActivate = function()
                 pushModuleScreen(submodule)
             end,
@@ -526,6 +532,7 @@ function settings.renderModuleInto(builder, module)
                 withAlertScope(
                     nodes.button({
                         label = target.label,
+                        opensLevel = true,
                         onActivate = function()
                             pushChildScreen(target)
                         end,

@@ -82,6 +82,7 @@ local function spellControl(field, owner, picks, emptyText)
     return nodes.button({
         label = field:getLabel(),
         value = valueText,
+        opensLevel = true,
         onActivate = function()
             settings.pushScreen("spell:" .. field.key, function(builder)
                 builder:pushContext("spell", field:getLabel() or field.key)
@@ -157,6 +158,7 @@ end)
 settings.registerFieldControl("Alert", function(field, owner)
     return nodes.button({
         label = field:getLabel(),
+        opensLevel = true,
         onActivate = function()
             local alert = field:getAlert(owner)
             settings.pushScreen("alert:" .. field.key, function(builder)
@@ -173,6 +175,7 @@ settings.registerFieldControl("Template", function(field, owner)
     return nodes.button({
         label = field:getLabel(),
         value = valueText,
+        opensLevel = true,
         onActivate = function()
             settings.pushScreen("template:" .. field.key, function(builder)
                 builder:pushContext("template", field:getLabel() or field.key)
@@ -237,6 +240,7 @@ settings.registerFieldControl("Object", function(field, owner)
     return nodes.button({
         label = field:getLabel(),
         value = valueText,
+        opensLevel = true,
         onActivate = function()
             settings.pushScreen("object:" .. field.key, function(builder)
                 builder:pushContext("object", field:getLabel() or field.key)
@@ -354,6 +358,7 @@ settings.registerFieldControl("TrackingConfig", function(field, owner)
     return nodes.button({
         label = field:getLabel(),
         value = valueText,
+        opensLevel = true,
         onActivate = function()
             settings.pushScreen("tracking:" .. field.key, function(builder)
                 builder:pushContext("tracking", field:getLabel() or field.key)
@@ -411,6 +416,7 @@ local function pushBrowse(field, owner, directory, segments)
                 ControlId.structural("dir:" .. tostring(captured.key)),
                 nodes.button({
                     label = directoryLabel(captured),
+                    opensLevel = true,
                     onActivate = function()
                         local deeper = {}
                         for _, segment in ipairs(segments) do
@@ -465,6 +471,7 @@ settings.registerFieldControl("DataBrowse", function(field, owner)
     return nodes.button({
         label = field:getLabel(),
         value = valueTextOf(owner, field),
+        opensLevel = true,
         onActivate = function()
             local directory = field:getDirectory(owner)
             if directory ~= nil then
@@ -481,6 +488,7 @@ settings.registerFieldControl("Array", function(field, owner)
         label = function()
             return (field:getLabel() or field.key) .. " (" .. field:getLength(owner) .. ")"
         end,
+        opensLevel = true,
         onActivate = function()
             settings.pushScreen("array:" .. field.key, function(builder)
                 builder:pushContext("array", field:getLabel() or field.key)

@@ -385,4 +385,17 @@ module:registerBindings({
             WowVision.graph.settings.openMenu()
         end,
     },
+    -- Closes every WowVision window and every window of the game at once.
+    {
+        type = "Function",
+        key = "wowvision/closeAll",
+        label = L["Close All Windows"],
+        inputs = { "SHIFT-ESCAPE" },
+        interruptSpeech = true,
+        func = function()
+            if WowVision.UIHost:closeAllWindows() then
+                WowVision:notify(L["All windows closed"])
+            end
+        end,
+    },
 })

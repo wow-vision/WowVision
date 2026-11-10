@@ -49,18 +49,24 @@ local NAV_KEYMAPS = {
     "contextMenu",
 }
 
--- Letter navigation (typeAhead.lua): only where the focused stack or screen opts in with letterNavigation (the
--- WowVision menu, context and dropdown menus -- lists that own the keyboard; never a window the player walks or
--- fights with open, such as F10). While engaged the letters do nothing in the game, so they wait for every letter
--- key to be up and release with the navigation keys (combat, all stacks closed). Plain letters only, and the
--- umlauts of a German keyboard as Sku binds them; an edit box with the keyboard gets its letters as before.
+-- Letter navigation (typeAhead.lua): where the focused stack or screen opts in with letterNavigation (the WowVision
+-- menu, context and dropdown menus -- lists that own the keyboard) and in a window whose own switch is on (Letter
+-- Navigation in its menu, off by default: Module:addWindowLetterSetting). While engaged the letters do nothing in the
+-- game, so they wait for every letter key to be up and release with the navigation keys (combat, all stacks closed).
+-- Plain letters only, and the umlauts of a German keyboard as Sku binds them; an edit box with the keyboard gets its
+-- letters as before.
 local LETTER_KEYS = {}
 for code = string.byte("A"), string.byte("Z") do
     tinsert(LETTER_KEYS, string.char(code))
 end
+local UMLAUT_KEYS = {}
 for _, key in ipairs({ "Ä", "Ö", "Ü", "ä", "ö", "ü", "ß" }) do
     tinsert(LETTER_KEYS, key)
+    UMLAUT_KEYS[key] = true
 end
+
+-- An umlaut can reach the list twice for one press (its key binding and the typed character): the second is dropped.
+local UMLAUT_ONCE = 0.05
 
 function GraphHost:initialize()
     self.stacks = {}
@@ -128,6 +134,8 @@ function GraphHost:close(stack)
 end
 
 function GraphHost:push(stack, config)
+    -- going one level deeper ends a filter, as in Sku's menu
+    self:clearListFilter(stack.screens[#stack.screens], false)
     local screen = graph.Screen:new(config)
     tinsert(stack.screens, screen)
     screen:resetAnnouncement()
@@ -369,10 +377,26 @@ end
 function GraphHost:_nodeBindingSpecs(node)
     local specs = {}
     local has = {}
+    local screen = self:focusedScreen()
+    local filtering = screen ~= nil and screen.listFilter ~= nil
+    -- While a list is filtered Backspace takes the filter away, as in Sku's menu, and picking an entry ends it.
+    if filtering then
+        has.rightClick = true
+        tinsert(specs, {
+            binding = "rightClick",
+            type = "Function",
+            interruptSpeech = true,
+            func = function()
+                self:clearListFilter(screen, true)
+            end,
+        })
+    end
     if node.vtable.bindings ~= nil then
         for _, spec in ipairs(node.vtable.bindings) do
-            tinsert(specs, spec)
-            has[spec.binding] = true
+            if not (filtering and spec.binding == "rightClick") then
+                tinsert(specs, filtering and spec.binding == "leftClick" and self:_endsFilter(screen, spec) or spec)
+                has[spec.binding] = true
+            end
         end
     end
     if node.vtable.onActivate ~= nil and not has.leftClick then
@@ -406,6 +430,22 @@ function GraphHost:_nodeBindingSpecs(node)
         })
     end
     return specs
+end
+
+-- A copy of an activation spec that also ends the screen's filter, after its own action (a secure click stays secure).
+function GraphHost:_endsFilter(screen, spec)
+    local copy = {}
+    for key, value in pairs(spec) do
+        copy[key] = value
+    end
+    local own = spec.postClick
+    copy.postClick = function()
+        if own ~= nil then
+            own()
+        end
+        self:clearListFilter(screen, false)
+    end
+    return copy
 end
 
 function GraphHost:_engageNodeBindings(node, specs)
@@ -509,15 +549,19 @@ function GraphHost:_syncCloseKey()
     end
 end
 
--- Whether the focused list takes letters: its stack or screen opts in, and the setting (UI module) is on.
+-- Whether the focused list takes letters: its window's own switch is on, or its stack or screen opts in and the
+-- setting for menus (UI module) is on.
 function GraphHost:_wantsLetters()
-    local ui = WowVision.base ~= nil and WowVision.base.ui or nil
-    if ui == nil or ui.settings == nil or ui.settings.letterNavigation == false then
-        return false
-    end
     local stack = self:focusedStack()
     local screen = self:focusedScreen()
     if stack == nil or screen == nil then
+        return false
+    end
+    if stack.config ~= nil and stack.config.windowLetters ~= nil and stack.config.windowLetters() then
+        return true
+    end
+    local ui = WowVision.base ~= nil and WowVision.base.ui or nil
+    if ui == nil or ui.settings == nil or ui.settings.letterNavigation == false then
         return false
     end
     return (stack.config ~= nil and stack.config.letterNavigation == true)
@@ -541,6 +585,7 @@ function GraphHost:_syncLetterKeys()
                 end,
             }))
         end
+        self:_umlautListener():Show()
         self:_logKeys("took the letter keys")
     elseif not wants and #self._letterHandles > 0 then
         self:_releaseLetterKeys()
@@ -555,10 +600,46 @@ function GraphHost:_releaseLetterKeys()
         handle:release()
     end
     self._letterHandles = {}
+    if self._umlautFrame ~= nil then
+        self._umlautFrame:Hide()
+    end
+end
+
+-- A key binding on an umlaut does not reach the list on every client and keyboard, so while the letters are taken a
+-- frame also listens for the typed character. It lets every key through to the game's bindings; shown only with the
+-- letter keys, and created here, out of combat.
+function GraphHost:_umlautListener()
+    if self._umlautFrame == nil then
+        local frame = CreateFrame("Frame")
+        frame:Hide()
+        frame:EnableKeyboard(true)
+        frame:SetPropagateKeyboardInput(true)
+        local function typed(_, key)
+            if UMLAUT_KEYS[key] and not IsControlKeyDown() and not IsAltKeyDown() and GetCurrentKeyBoardFocus() == nil then
+                self:_logKeys("heard the umlaut " .. key)
+                self:onLetter(key)
+            end
+        end
+        frame:SetScript("OnChar", typed)
+        frame:SetScript("OnKeyDown", typed)
+        self._umlautFrame = frame
+    end
+    return self._umlautFrame
+end
+
+-- Whether this press of an umlaut was already handled (see UMLAUT_ONCE).
+function GraphHost:_umlautRepeated(letter)
+    local umlaut, now = graph.typeAhead.typed(letter), GetTime()
+    local repeated = self._lastUmlaut == umlaut and now - self._lastUmlautAt < UMLAUT_ONCE
+    self._lastUmlaut, self._lastUmlautAt = umlaut, now
+    return repeated
 end
 
 -- A letter in a list that takes letters: stop speech first, as for the navigation keys.
 function GraphHost:onLetter(letter)
+    if UMLAUT_KEYS[letter] and self:_umlautRepeated(letter) then
+        return
+    end
     graph.doublePress.reset(self._doublePressState)
     local stopped = WowVision.base.speech:uiStop()
     if stopped and (WowVision.consts.UI_DELAY or 0) > 0 then
@@ -570,15 +651,38 @@ function GraphHost:onLetter(letter)
     end
 end
 
--- The next entry of the focused list starting with the typed text (one letter cycles; letters typed quickly search
--- as one text). The only match being the focused entry reads it again; no match says so, like Sku's menu.
+-- One letter goes to the next entry of the focused list starting with it, repeated it cycles. Different letters typed
+-- quickly filter the list, as in Sku's menu, and from then on every letter adds to the filter however slowly it comes;
+-- a list that cannot be filtered searches for the typed start. The only match being the focused entry reads it again;
+-- no match says so, like Sku's menu.
 function GraphHost:_typeLetter(letter)
     local screen = self:focusedScreen()
     if screen == nil then
         return
     end
+    if screen.listFilter ~= nil then
+        self:_filterList(screen, screen.listFilter, screen.listFilter.text .. graph.typeAhead.typed(letter))
+        return
+    end
+    local rowList = screen.config ~= nil and screen.config.rowList == true
     local text, cycle = graph.typeAhead.feed(self._typeAheadState, letter, GetTime())
-    local move = screen.keyGraph:moveToText(text, cycle, screen.config ~= nil and screen.config.rowList == true)
+    local cursor = self:_focusedCursor(screen)
+    if cursor ~= nil then
+        if cycle or cursor.show == nil then
+            self:_cursorJump(cursor, text, cycle)
+        else
+            self:_filterList(screen, { cursor = cursor }, text)
+        end
+        return
+    end
+    if not cycle then
+        local scope = screen.keyGraph:filterScope(rowList)
+        if scope ~= nil then
+            self:_filterList(screen, scope, text)
+            return
+        end
+    end
+    local move = screen.keyGraph:moveToText(text, cycle, rowList)
     if move.moved then
         self:_announceMove(screen, move)
     elseif move.found then
@@ -587,6 +691,95 @@ function GraphHost:_typeLetter(letter)
         end
     else
         self:_speak(WowVision:getLocale()["No results"])
+    end
+end
+
+-- A list living behind one node (the destinations in F10, the chat lines): the node walks it with bindings of its own,
+-- so the graph sees a single entry and the list has to answer for itself. vtable.listCursor:
+--   labels()  -> the name of every entry of the whole list
+--   index()   -> the position shown now
+--   go(i)     moves to entry i of the whole list and reads it
+--   show(matches, text)  shows only these entries of the whole list (a list of indices) under a Filter line at
+--             position 1; show(nil) shows the whole list again, staying on the entry. Absent: letters only jump.
+function GraphHost:_focusedCursor(screen)
+    if not screen.keyGraph:rerender() then
+        return nil
+    end
+    local node = screen.keyGraph:currentNode()
+    return node ~= nil and node.vtable.listCursor or nil
+end
+
+local function cursorLabels(cursor, text)
+    local matchText, labels = graph.typeAhead.matcher(text), {}
+    for i, label in ipairs(cursor.labels()) do
+        labels[i] = matchText(label)
+    end
+    return labels
+end
+
+function GraphHost:_cursorJump(cursor, text, cycle)
+    local index = graph.typeAhead.find(cursorLabels(cursor, text), cursor.index(), text, cycle)
+    if index == nil then
+        self:_speak(WowVision:getLocale()["No results"])
+    else
+        cursor.go(index)
+    end
+end
+
+-- Filter the list to the entries containing text and land on the "Filter: text" line above them.
+function GraphHost:_filterList(screen, filter, text)
+    filter.text = text
+    screen.listFilter = filter
+    self._bindingsDirty = true
+    if filter.cursor ~= nil then
+        local matches = {}
+        for i, label in ipairs(cursorLabels(filter.cursor, text)) do
+            if graph.typeAhead.contains(label, text) then
+                tinsert(matches, i)
+            end
+        end
+        filter.matches = #matches
+        filter.cursor.show(matches, text)
+    else
+        screen.state.nextSuggestedMove = graph.LIST_FILTER_ID
+    end
+    if not screen.keyGraph:rerender() then
+        return
+    end
+    local node = screen.keyGraph:currentNode()
+    local spoken = announcer.leafText(node)
+    if filter.matches == 0 then
+        spoken = spoken .. ". " .. WowVision:getLocale()["No results"]
+    end
+    self:_speak(spoken)
+    screen._lastSpokenKey = node.id
+    screen._lastSpokenNode = node
+    screen._liveKey = nil
+end
+
+-- Back to the whole list, focus staying on the entry it was on (from the Filter line: the list's first entry).
+-- announce says so: Backspace and the left arrow; going on to an entry just ends the filter.
+function GraphHost:clearListFilter(screen, announce)
+    local filter = screen.listFilter
+    if filter == nil then
+        return
+    end
+    screen.listFilter = nil
+    self._typeAheadState = graph.typeAhead.newState()
+    self._bindingsDirty = true
+    if filter.cursor ~= nil then
+        filter.cursor.show(nil)
+    end
+    local current = screen.state.curKey
+    if current ~= nil and current.key == graph.LIST_FILTER_ID.key then
+        screen.state.nextSuggestedMove = filter.firstId
+    end
+    if announce and screen.keyGraph:rerender() then
+        local node = screen.keyGraph:currentNode()
+        self:_speak(WowVision:getLocale()["Filter removed"] .. ". " .. (announcer.leafText(node) or ""))
+        screen._lastSpokenKey = node.id
+        screen._lastSpokenNode = node
+        screen._liveKey = nil
     end
 end
 
@@ -641,10 +834,12 @@ function GraphHost:_dispatchKey(key, at)
     end
 end
 
--- Arrows: a focused slider adjusts on left/right before any navigation;
--- edge-wired movement next; at an edge, a node's own onRight/onLeft (a menu
--- entry opening its level, or going back), then tree semantics; a bump
--- with nothing to do re-reads the current node for orientation. The same
+-- Arrows: in a filtered list left takes the filter away and right into a group
+-- ends it; a focused slider adjusts on left/right before any navigation;
+-- edge-wired movement next; at an edge, a node's own onRight/onLeft (a Scanner
+-- entry opening its level, or going back), then right opens the entry's next
+-- level, left/right get tree semantics, and left goes back one level; a bump
+-- with nothing to do stays silent. The same
 -- arrow pressed twice quickly skips empty slots (doublePress.lua).
 function GraphHost:_arrow(screen, dir, at)
     local kg = screen.keyGraph
@@ -653,6 +848,15 @@ function GraphHost:_arrow(screen, dir, at)
         return
     end
     local double = graph.doublePress.press(self._doublePressState, dir, at or GetTime(), screen, node.id.key)
+
+    if screen.listFilter ~= nil then
+        if dir == "left" then
+            self:clearListFilter(screen, true)
+            return
+        elseif dir == "right" and node.expandable then
+            self:clearListFilter(screen, false)
+        end
+    end
 
     if dir == "left" or dir == "right" then
         if self:_adjustFocused(screen, dir == "right" and 1 or -1) then
@@ -681,6 +885,11 @@ function GraphHost:_arrow(screen, dir, at)
         return
     end
 
+    if dir == "right" and node.vtable.opensLevel then
+        self:_activateFocused()
+        return
+    end
+
     if dir == "left" or dir == "right" then
         local result = dir == "right" and kg:treeRight() or kg:treeLeft()
         if result.kind == "expanded" or result.kind == "collapsed" then
@@ -693,6 +902,13 @@ function GraphHost:_arrow(screen, dir, at)
             self:_announceMove(screen, result.move)
             return
         elseif result.kind == "leaf" then
+            if dir == "left" then
+                self:_levelBack(screen, node)
+            end
+            return
+        end
+        if dir == "left" then
+            self:_levelBack(screen, node)
             return
         end
     end
@@ -707,7 +923,24 @@ function GraphHost:_skipsEmptySlots()
     return ui == nil or ui.settings == nil or ui.settings.skipEmptySlots ~= false
 end
 
+-- The left arrow: one level back, never out of the menu. Only from a pushed screen; the first level of a context menu
+-- stays (it would leave the menu), a yes/no question stays, and in a row left only walks the row.
+function GraphHost:_levelBack(screen, node)
+    local stack = self:focusedStack()
+    if stack == nil or #stack.screens <= 1 or screen.config == nil or screen.config.noLevelBack then
+        return
+    end
+    if node.transitions.left ~= nil or node.transitions.right ~= nil then
+        return
+    end
+    if screen.config._contextMenu and not stack.screens[#stack.screens - 1].config._contextMenu then
+        return
+    end
+    self:pop(stack)
+end
+
 function GraphHost:_tab(screen, key)
+    self:clearListFilter(screen, false) -- a filter belongs to the list focus is leaving
     local kg = screen.keyGraph
     local move = kg:move(key)
     if move.moved then
@@ -807,8 +1040,14 @@ function GraphHost:_activateFocused()
     if screen == nil then
         return
     end
+    -- the Filter line of a list behind one node is no entry to pick
+    local filter = screen.listFilter
+    if filter ~= nil and filter.cursor ~= nil and filter.cursor.index() == 1 then
+        return
+    end
     screen.keyGraph:activate()
     self:_speakStateText(screen)
+    self:clearListFilter(screen, false)
 end
 
 function GraphHost:_secondaryFocused()

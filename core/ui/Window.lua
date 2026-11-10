@@ -59,6 +59,7 @@ Window:addFields({
     { key = "innate", default = false },
     { key = "conflictingAddons" },
     { key = "graphScreen" }, -- graph-framework screen config
+    { key = "letterSettings" }, -- the module whose menu has this window's Letter Navigation switch (default: its own)
 })
 
 -- Whether this window type needs to be polled each frame
@@ -132,6 +133,12 @@ function Window:openGraph(manager)
             window:requestClose()
         end
     end
+    local letterOwner = self._letterOwner
+    if letterOwner ~= nil then
+        config.windowLetters = function()
+            return letterOwner:windowLettersOn()
+        end
+    end
     local instance = {
         ref = self,
         name = self.name,
@@ -147,6 +154,9 @@ end
 function Window:requestClose()
     local frame = self.getFrame and self:getFrame() or nil
     if frame ~= nil then
+        if InCombatLockdown() and frame:IsProtected() then
+            return
+        end
         if HideUIPanel ~= nil then
             HideUIPanel(frame)
         else

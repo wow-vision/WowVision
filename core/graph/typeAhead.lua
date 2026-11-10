@@ -2,16 +2,18 @@ local graph = WowVision.graph
 
 -- Letter navigation (type-ahead) in lists that own the keyboard (the WowVision menu, context and dropdown menus; see
 -- Host.lua): a letter moves focus to the next entry of the current list whose label starts with it, the same letter
--- again to the one after, wrapping at the end. Letters typed within TIMEOUT of each other are one search text
--- ("go" finds "Goldshire"), as Sku's menu does; the same letter repeated keeps cycling. Pure Lua: the headless suite
--- tests it.
+-- again to the one after, wrapping at the end; the same letter repeated keeps cycling. Two different letters within
+-- TIMEOUT of each other filter the list, as Sku's menu does (Host.lua, Builder:_applyListFilter): only the entries
+-- containing the text stay, under a "Filter: text" line, and further letters add to it. A list that cannot be filtered
+-- (a row, raw nodes) searches for the typed start instead ("go" finds "Goldshire"). Pure Lua: the headless suite tests
+-- it.
 local typeAhead = {}
 graph.typeAhead = typeAhead
 
 typeAhead.TIMEOUT = 0.5   -- seconds between two letters of one search text
 
--- Accented letters folded to their base letter, so "u" finds "Übersicht" (no umlaut key is needed) and an umlaut key
--- finds the same entries. UTF-8, lower and upper case.
+-- Accented letters folded to their base letter, so "u" finds "Übersicht" (no umlaut key is needed). A typed umlaut
+-- stays what it is and finds that umlaut only (typed, matcher). UTF-8, lower and upper case.
 local FOLD = {
     ["ä"] = "a", ["Ä"] = "a", ["à"] = "a", ["À"] = "a", ["á"] = "a", ["Á"] = "a", ["â"] = "a", ["Â"] = "a",
     ["ã"] = "a", ["Ã"] = "a", ["å"] = "a", ["Å"] = "a", ["æ"] = "ae", ["Æ"] = "ae",
@@ -34,18 +36,42 @@ function typeAhead.fold(text)
     return text:lower()
 end
 
--- What a label is matched by: the spoken text without the game's escape codes (colours |cAARRGGBB..|r, textures
--- |T..|t, atlases |A..|a, line breaks |n), folded, from its first letter on (leading punctuation, numbers and
--- spaces do not count).
-function typeAhead.matchText(label)
+local UMLAUTS = { ["Ä"] = "ä", ["Ö"] = "ö", ["Ü"] = "ü", ["ä"] = "ä", ["ö"] = "ö", ["ü"] = "ü", ["ß"] = "ß" }
+
+-- Lower case that keeps the umlauts and ß, other accents folded: the text a player types.
+function typeAhead.typed(text)
+    text = text:gsub("[\192-\244][\128-\191]*", function(char)
+        return UMLAUTS[char] or FOLD[char] or char
+    end)
+    return (text:gsub("[A-Z]", string.lower))
+end
+
+local function labelText(label, normal)
     if type(label) ~= "string" then
         return ""
     end
     local text = label:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("|A.-|a", "")
         :gsub("|n", " ")
-    text = typeAhead.fold(text)
+    text = normal(text)
     local start = text:find("[%a\128-\255]")
     return start ~= nil and text:sub(start) or ""
+end
+
+-- What a label is matched by: the spoken text without the game's escape codes (colours |cAARRGGBB..|r, textures
+-- |T..|t, atlases |A..|a, line breaks |n), folded, from its first letter on (leading punctuation, numbers and
+-- spaces do not count).
+function typeAhead.matchText(label)
+    return labelText(label, typeAhead.fold)
+end
+
+-- The same with the umlauts kept: what a typed text containing an umlaut is compared with.
+function typeAhead.exactText(label)
+    return labelText(label, typeAhead.typed)
+end
+
+-- How labels are read for a typed text: "u" finds U and Ü, "ü" only Ü.
+function typeAhead.matcher(text)
+    return text:find("[\128-\255]") ~= nil and typeAhead.exactText or typeAhead.matchText
 end
 
 -- The typed search: feed(state, letter, now) returns the text to search for. A letter after a pause starts a new
@@ -57,7 +83,7 @@ function typeAhead.newState()
 end
 
 function typeAhead.feed(state, letter, now)
-    letter = typeAhead.fold(letter)
+    letter = typeAhead.typed(letter)
     if state.at ~= nil and now - state.at < typeAhead.TIMEOUT and state.text ~= "" then
         state.text = state.text .. letter
     else
@@ -65,10 +91,15 @@ function typeAhead.feed(state, letter, now)
     end
     state.at = now
     local first = state.text:sub(1, #letter)
-    if state.text == first:rep(#state.text / #letter) then
+    if state.text == first:rep(math.floor(#state.text / #letter)) then
         return letter, true
     end
     return state.text, false
+end
+
+-- Whether a filter text occurs anywhere in a label (a match text, see matchText): how a filtered list keeps an entry.
+function typeAhead.contains(label, text)
+    return text ~= "" and label:find(text, 1, true) ~= nil
 end
 
 -- The entry to go to: index into labels (match texts, see matchText), searching from the entry after current

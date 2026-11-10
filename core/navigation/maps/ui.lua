@@ -108,7 +108,7 @@ end
 -- hits (its own search, nearest first). Cached until the search changes --
 -- the full-continent sort runs once, not per tick. An engine that cut its
 -- hits leaves a notice that the next spoken entry starts with.
-local function destinations(screen)
+local function allDestinations(screen)
     if screen._destinations ~= nil then
         return screen._destinations
     end
@@ -148,6 +148,11 @@ local function destinations(screen)
     end
     screen._destinations = found
     return found
+end
+
+-- What the cursor walks: the whole list, or while letters filter it a Filter line and the matches (listCursor).
+local function destinations(screen)
+    return screen._filterRows or allDestinations(screen)
 end
 
 -- The entry point the player selected (or the preselected one), nil without any.
@@ -201,6 +206,9 @@ local function destinationCursor(screen)
     -- in the last minutes says so first (navigation/visited.lua)
     local visited = WowVision.base.navigation.visited
     local function labelOf(entry)
+        if entry.filterLine ~= nil then
+            return entry.filterLine
+        end
         local text = string.format("%s, %d %s", entry.waypoint.n, entry.distance, L["yards"])
         if entry.waypoint.detail ~= nil then
             text = text .. ", " .. entry.waypoint.detail
@@ -248,7 +256,7 @@ local function destinationCursor(screen)
     local function go(direct)
         local list, index = clampedIndex()
         local entry = list[index]
-        if entry == nil then
+        if entry == nil or entry.filterLine ~= nil then
             return
         end
         WowVision.UIHost:closeWindow("atlas")
@@ -308,6 +316,45 @@ local function destinationCursor(screen)
                 kind = kinds.position,
                 live = false,
             },
+        },
+        listCursor = {
+            labels = function()
+                local names = {}
+                for i, entry in ipairs(allDestinations(screen)) do
+                    names[i] = entry.waypoint.n
+                end
+                return names
+            end,
+            index = function()
+                local _, index = clampedIndex()
+                return index
+            end,
+            go = function(index)
+                screen._destIndex = index
+                speak()
+            end,
+            show = function(matches, text)
+                local all = allDestinations(screen)
+                if matches == nil then
+                    local list, index = clampedIndex()
+                    local entry = list[index]
+                    screen._filterRows = nil
+                    screen._destIndex = 1
+                    for i, row in ipairs(all) do
+                        if row == entry then
+                            screen._destIndex = i
+                            break
+                        end
+                    end
+                    return
+                end
+                local rows = { { filterLine = L["Filter"] .. ": " .. text } }
+                for _, index in ipairs(matches) do
+                    tinsert(rows, all[index])
+                end
+                screen._filterRows = rows
+                screen._destIndex = 1
+            end,
         },
         onActivate = function()
             go(screen._direct)
@@ -414,6 +461,7 @@ local function render(builder, screen)
         end,
         set = function(value)
             screen._direct = value == true
+            WowVision.graphHost:clearListFilter(screen, false)
             -- an engine's list depends on the mode (its reachability check)
             if screen._engine ~= nil then
                 screen._destinations = nil
@@ -435,6 +483,7 @@ local function render(builder, screen)
                 return screen._search
             end,
             set = function(value)
+                WowVision.graphHost:clearListFilter(screen, false)
                 screen._search = value or ""
                 screen._destinations = nil
                 screen._destIndex = 1
@@ -453,6 +502,7 @@ end
 module:registerWindow({
     type = "ManualWindow",
     name = "atlas",
+    letterSettings = WowVision.base.navigation,
     graphScreen = { render = render, captureClose = true },
 })
 

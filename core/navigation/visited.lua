@@ -175,6 +175,7 @@ function module:startAuto(wp, mode, start)
     self.auto = auto
     logLine(string.format("start %s %s", mode, tostring(wp.n)))
     WowVision:notify(mode == "route" and L["Auto Route"] or L["Auto Direct"])
+    maps:closeWindowsForGuidance(true)
     return lead(function()
         return maps:goToDestination(wp, mode == "direct", start)
     end)

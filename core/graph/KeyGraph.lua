@@ -728,6 +728,31 @@ local function rowLabelOf(head)
     return labelOf(head)
 end
 
+KeyGraph.labelOf = labelOf
+KeyGraph.rowLabelOf = rowLabelOf
+
+-- What a list filter on the focused entry's list covers (Builder:_applyListFilter), or nil where a list cannot be
+-- filtered: a horizontal row, raw nodes. rowList: as for moveToText.
+function KeyGraph:filterScope(rowList)
+    if not self:rerender() then
+        return nil
+    end
+    local node = self:currentNode()
+    if node == nil or node.menuRow ~= true then
+        return nil
+    end
+    if KeyGraph.inTree(node) then
+        return { stopKey = node.stopKey, tree = true, parentKey = node.parent ~= nil and node.parent.id.key or nil }
+    end
+    if rowList then
+        return { stopKey = node.stopKey, rowList = true }
+    end
+    if node.transitions.left ~= nil or node.transitions.right ~= nil then
+        return nil
+    end
+    return { stopKey = node.stopKey }
+end
+
 -- Focus the entry of the current list that starts with text (cycle: the next one after the focused entry; else the
 -- focused entry counts). A move result like move(); found is false when no entry starts with text. rowList: the
 -- screen is a list of rows (config.rowList), searched by row (rowLabelOf), landing on a row's first node.
@@ -743,15 +768,16 @@ function KeyGraph:moveToText(text, cycle, rowList)
         return result
     end
     local list, labels, current = nil, {}, nil
+    local matchText = graph.typeAhead.matcher(text)
     if rowList and not KeyGraph.inTree(node) then
         list, current = self:rowHeads(node)
         for i, n in ipairs(list) do
-            labels[i] = graph.typeAhead.matchText(rowLabelOf(n))
+            labels[i] = matchText(rowLabelOf(n))
         end
     else
         list = self:listNodes(node)
         for i, n in ipairs(list) do
-            labels[i] = graph.typeAhead.matchText(labelOf(n))
+            labels[i] = matchText(labelOf(n))
             if n == node then
                 current = i
             end

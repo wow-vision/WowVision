@@ -69,6 +69,7 @@ local function entryNode(entry, index)
         return {
             controlType = graph.controlTypes.dropdown,
             announcements = { { text = entry.label, kind = kinds.label } },
+            opensLevel = true,
             onActivate = function()
                 contextMenu.pushEntries(entry.label, entry.submenu)
             end,
