@@ -1048,9 +1048,15 @@ function module:walkLocate(task, state, cursorX, cursorY, names, dots, verify)
     for _, name in ipairs(names) do
         local check = verify[name] and { px = px, py = py, radius = self.outdoorRadius } or nil
         local result = self.walk:placed(name, found[name] or {}, continent, check)
-        local parts = {}
+        -- World points too, to compare one standing NPC's place across
+        -- view radius modes (2026-11-10 Stormwind: places from the
+        -- 233-yard mode matched none from the 150-yard mode).
+        local parts, world = {}, {}
         for _, dot in ipairs(result.placed) do
             tinsert(parts, fromPlayer(px, py, dot.wx, dot.wy))
+        end
+        for _, place in ipairs(found[name] or {}) do
+            tinsert(world, string.format("%.1f %.1f", place.wx, place.wy))
         end
         local line = "placed " .. name .. ": " .. (#parts > 0 and table.concat(parts, ", ") or "none")
         if result.refreshed > 0 then
@@ -1065,6 +1071,13 @@ function module:walkLocate(task, state, cursorX, cursorY, names, dots, verify)
         if check ~= nil then
             line = line .. string.format("; back in view: %d new, %d gone", result.new, result.dropped)
         end
+        line = line .. string.format(
+            "; found at world %s; player %.1f %.1f, radius %s",
+            #world > 0 and table.concat(world, ", ") or "none",
+            px,
+            py,
+            tostring(task.stats.viewRadius)
+        )
         walkNote(line)
         if result.new > 0 then
             self:announceDot(name, dots)
