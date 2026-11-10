@@ -354,7 +354,9 @@ end
 -- questions 14.0 s; half size 340 questions 5.7 s, 12 dots within 2.3
 -- yards of full size (mean 1.3), the 13th an arrow at the rim; third
 -- size 4.4 s, up to 4 yards off.
--- opts: { scale, step, halvings }; all offsets in full-size units.
+-- opts: { scale, step, halvings, reader? }; all offsets in full-size
+-- units. reader: a function () -> ask(ox, oy), instead of the plain
+-- Engine.pointReader (the walking check corrects for walking).
 local SWEEP = { scale = 0.5, step = 16, halvings = 3 }
 
 local function sweepPositions(task, work, radius, opts)
@@ -366,7 +368,7 @@ local function sweepPositions(task, work, radius, opts)
         expected[item.name] = true
         counts[item.name] = task.allOnCounts ~= nil and task.allOnCounts[item.name] or item.count
     end
-    local read = Engine.pointReader(task.state, task.cursorX, task.cursorY, opts.scale)
+    local read = opts.reader ~= nil and opts.reader() or Engine.pointReader(task.state, task.cursorX, task.cursorY, opts.scale)
     -- Every question goes through here; each one is a frame.
     local function ask(ox, oy)
         stats.questions = stats.questions + 1
@@ -866,6 +868,23 @@ module.outdoorRadius = Scan.Walk.RADIUS
 
 -- A walking read: into the memory, the new names spoken. Returns the
 -- names whose new dots want a place.
+-- "Olivia Burnside, above, Banker": a new dot of the walking check.
+function module:announceDot(name, dots)
+    local text = name
+    local level = nameLevel(dots, name)
+    if level ~= nil then
+        text = text .. ", " .. L[level]
+    end
+    if nameIndoors(dots, name) then
+        text = text .. ", " .. L["indoors"]
+    end
+    local kind = self.kinds[name]
+    if kind ~= nil then
+        text = text .. ", " .. kind
+    end
+    dotAlert:fire({ text = text })
+end
+
 function module:walkJudge(dots, indoors)
     local counts = Scan.counts(dots)
     local text = readText(dots)
@@ -888,7 +907,7 @@ function module:walkJudge(dots, indoors)
         self.walk.nameOnly[name] = true
     end
     local px, py, _, continent = UnitPosition("player")
-    local events, locate = self.walk:update({
+    local events, locate, verify = self.walk:update({
         counts = counts,
         now = GetTime(),
         indoors = indoors,
@@ -900,22 +919,10 @@ function module:walkJudge(dots, indoors)
     for _, e in ipairs(events) do
         walkNote(eventText(e))
         if e.kind == "new" then
-            local text = e.name
-            local level = nameLevel(dots, e.name)
-            if level ~= nil then
-                text = text .. ", " .. L[level]
-            end
-            if nameIndoors(dots, e.name) then
-                text = text .. ", " .. L["indoors"]
-            end
-            local kind = self.kinds[e.name]
-            if kind ~= nil then
-                text = text .. ", " .. kind
-            end
-            dotAlert:fire({ text = text })
+            self:announceDot(e.name, dots)
         end
     end
-    return locate
+    return locate, verify
 end
 
 -- "231 yd north-west": a world point seen from the player (walk log).
@@ -928,72 +935,71 @@ local function fromPlayer(px, py, wx, wy)
     return string.format("%.0f yd %s", math.sqrt(north * north + east * east), word)
 end
 
--- The walking check's coarse sweep: a third-size minimap every 24 units
--- (in /wv mscan sku, 2026-11-10, a third-size sweep took 4.8 s with its
--- edge halvings and lay within 4.6 yards of full size; this one skips
--- the halvings). Each answer becomes a world point with the player's
--- position and facing of its frame; Scan.placeHits groups them by name.
+-- The walking check's sweep: the scan's own (sweepPositions) on a
+-- third-size minimap every 24 units with two halvings. Without halvings
+-- each dot answered in one cell only and its place was that cell's middle,
+-- up to 18 yards off in Stormwind (/wv mscan sku, 2026-11-10 03:00); with
+-- three, third size lay within 2.3 yards of full size. The player walks
+-- meanwhile: every question is asked where its point of the world lies
+-- now (the offsets are taken at the sweep's start, then moved by the
+-- player's walk and turn since), so the dots stand still for the sweep.
 -- The places only tell dots apart (Walk.MATCH), they are never spoken.
-local SWEEP_WALK = { scale = 1 / 3, step = 24 }
+local SWEEP_WALK = { scale = 1 / 3, step = 24, halvings = 2 }
 -- Rough places further out than this share of the view radius are pulled
 -- in to it (see walkPositions): inside the rim, in the walking memory's
 -- band (Walk.INNER), where a dot may or may not show.
 local RIM_PLACE = 0.97
 
--- Inside a running task: names -> list of { wx, wy }, and the continent.
--- counts: name -> dots the shrunk read named.
-function module:walkPositions(task, state, cursorX, cursorY, names, counts)
-    local wanted = {}
-    for _, name in ipairs(names) do
-        wanted[name] = {}
-    end
+-- Inside a running task: name -> list of { wx, wy } for the work items
+-- ({ name, count }), and the continent.
+function module:walkPositions(task, state, cursorX, cursorY, work)
     local radius = state.width / 2
     local viewRadius = C_Minimap.GetViewRadius()
     task.stats.viewRadius = viewRadius
     local yardsPerUnit = viewRadius / radius
     local rotating = GetCVar("rotateMinimap") == "1"
-    local read = Engine.pointReader(state, cursorX, cursorY, SWEEP_WALK.scale)
-    local step = SWEEP_WALK.step
-    local continent = nil
-    for _, cell in ipairs(Scan.sweepCells(radius + 10 / SWEEP_WALK.scale, step)) do
-        local ox, oy = cell[1] * step, cell[2] * step
-        local dots = read(ox, oy)
-        task.stats.questions = task.stats.questions + 1
-        local px, py, _, c = UnitPosition("player")
-        if px ~= nil then
-            continent = continent or c
-            local facing = rotating and (GetPlayerFacing() or 0) or 0
-            local north, west = Scan.offsetToWorld(ox, oy, yardsPerUnit, facing)
-            for name, n in pairs(Scan.counts(dots)) do
-                if wanted[name] ~= nil then
-                    tinsert(wanted[name], { x = px + north, y = py + west, n = n })
-                end
-            end
-        end
+    local startX, startY, _, continent = UnitPosition("player")
+    if startX == nil then
+        return {}, nil
     end
-    -- Answers of one dot lie a cell apart: link them a cell and a half
-    -- apart in yards.
-    local link = step * yardsPerUnit * 1.5
+    local startFacing = rotating and (GetPlayerFacing() or 0) or 0
+    task.state, task.cursorX, task.cursorY = state, cursorX, cursorY
+    local opts = {
+        scale = SWEEP_WALK.scale,
+        step = SWEEP_WALK.step,
+        halvings = SWEEP_WALK.halvings,
+        reader = function()
+            local read = Engine.pointReader(state, cursorX, cursorY, SWEEP_WALK.scale)
+            return function(ox, oy)
+                local px, py = UnitPosition("player")
+                if px == nil then
+                    return read(ox, oy)
+                end
+                local north, west = Scan.offsetToWorld(ox, oy, yardsPerUnit, startFacing)
+                local facing = rotating and (GetPlayerFacing() or 0) or 0
+                return read(Scan.worldToOffset(startX + north - px, startY + west - py, yardsPerUnit, facing))
+            end
+        end,
+    }
+    local offsets = sweepPositions(task, work, radius, opts) or {}
     -- A dot at the rim answers mostly from cells beyond it, so its middle
-    -- lands too far out (2026-11-10 Stormwind: mailboxes "placed" at 196
-    -- yards, the sweep's outer ring, with 150 in view; the walking memory
-    -- then took them for new). No dot shows beyond the view radius: such a
+    -- can land too far out. No dot shows beyond the view radius: such a
     -- place is pulled in to just inside it, in its direction from the
     -- player.
     local rim = viewRadius * RIM_PLACE
     local px, py = UnitPosition("player")
+    px, py = px or startX, py or startY
     local found = {}
-    for name, hits in pairs(wanted) do
+    for name, list in pairs(offsets) do
         found[name] = {}
-        for _, place in ipairs(Scan.placeHits(hits, counts[name], link)) do
-            local wx, wy = place.x, place.y
-            if px ~= nil then
-                local dx, dy = wx - px, wy - py
-                local d = math.sqrt(dx * dx + dy * dy)
-                if d > rim then
-                    wx, wy = px + dx * rim / d, py + dy * rim / d
-                    task.stats.pulledIn = (task.stats.pulledIn or 0) + 1
-                end
+        for _, offset in ipairs(list) do
+            local north, west = Scan.offsetToWorld(offset[1], offset[2], yardsPerUnit, startFacing)
+            local wx, wy = startX + north, startY + west
+            local dx, dy = wx - px, wy - py
+            local d = math.sqrt(dx * dx + dy * dy)
+            if d > rim then
+                wx, wy = px + dx * rim / d, py + dy * rim / d
+                task.stats.pulledIn = (task.stats.pulledIn or 0) + 1
             end
             tinsert(found[name], { wx = wx, wy = wy })
         end
@@ -1001,15 +1007,21 @@ function module:walkPositions(task, state, cursorX, cursorY, names, counts)
     return found, continent
 end
 
--- Inside the walking check: rough places for the names with new dots,
--- while the player walks on.
-function module:walkLocate(task, state, cursorX, cursorY, names, counts)
+-- Inside the walking check: places for the names with new dots or back in
+-- view (verify), while the player walks on. dots: the read, for the
+-- announcement of a dot the place shows to be new.
+function module:walkLocate(task, state, cursorX, cursorY, names, dots, verify)
     task.locating = true
     task.cursorX, task.cursorY = cursorX, cursorY
-    task.stats = { questions = 0 }
+    task.stats = { questions = 0, dots = 0, merged = 0 }
+    local counts = Scan.counts(dots)
+    local work = {}
+    for _, name in ipairs(names) do
+        tinsert(work, { name = name, count = counts[name] })
+    end
     local startX, startY = UnitPosition("player")
     local started = GetTime()
-    local found, continent = self:walkPositions(task, state, cursorX, cursorY, names, counts)
+    local found, continent = self:walkPositions(task, state, cursorX, cursorY, work)
     local px, py = UnitPosition("player")
     if px == nil or startX == nil then
         return
@@ -1028,7 +1040,8 @@ function module:walkLocate(task, state, cursorX, cursorY, names, counts)
         )
     )
     for _, name in ipairs(names) do
-        local result = self.walk:placed(name, found[name] or {}, continent)
+        local check = verify[name] and { px = px, py = py, radius = self.outdoorRadius } or nil
+        local result = self.walk:placed(name, found[name] or {}, continent, check)
         local parts = {}
         for _, dot in ipairs(result.placed) do
             tinsert(parts, fromPlayer(px, py, dot.wx, dot.wy))
@@ -1043,7 +1056,13 @@ function module:walkLocate(task, state, cursorX, cursorY, names, counts)
         if result.extra > 0 then
             line = line .. string.format("; %d more found than new", result.extra)
         end
+        if check ~= nil then
+            line = line .. string.format("; back in view: %d new, %d gone", result.new, result.dropped)
+        end
         walkNote(line)
+        if result.new > 0 then
+            self:announceDot(name, dots)
+        end
     end
 end
 
@@ -1076,9 +1095,9 @@ function module:walkCheck()
                 module.outdoorRadius = radius
             end
         end
-        local locate = module:walkJudge(dots, indoors)
+        local locate, verify = module:walkJudge(dots, indoors)
         if #locate > 0 then
-            module:walkLocate(task, state, x, y, locate, Scan.counts(dots))
+            module:walkLocate(task, state, x, y, locate, dots, verify)
         end
     end
     task.check = function()
@@ -1755,13 +1774,8 @@ function module:skuTest()
             local started = GetTime()
             local spots = {}
             if v.walk then
-                local names, counts = {}, {}
-                for _, item in ipairs(work) do
-                    tinsert(names, item.name)
-                    counts[item.name] = item.count
-                end
                 local px, py = UnitPosition("player")
-                local found = module:walkPositions(task, state, x, y, names, counts)
+                local found = module:walkPositions(task, state, x, y, work)
                 for name, list in pairs(found) do
                     for _, place in ipairs(list) do
                         tinsert(spots, { name = name, north = place.wx - px, east = -(place.wy - py) })
@@ -1829,7 +1843,7 @@ function module:skuTest()
                 v.label,
                 v.scale or SWEEP_WALK.scale,
                 v.step or SWEEP_WALK.step,
-                v.halvings or 0,
+                v.halvings or SWEEP_WALK.halvings,
                 task.stats.questions,
                 seconds,
                 #spots,

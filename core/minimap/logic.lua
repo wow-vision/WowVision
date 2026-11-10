@@ -263,6 +263,13 @@ function Scan.offsetToWorld(ox, oy, yardsPerUnit, facing)
     return north, west
 end
 
+-- The other way: yards north and west of the player -> minimap offset.
+function Scan.worldToOffset(north, west, yardsPerUnit, facing)
+    local a = facing or 0
+    local n, w = north / yardsPerUnit, west / yardsPerUnit
+    return n * math.sin(a) - w * math.cos(a), n * math.cos(a) + w * math.sin(a)
+end
+
 -- ---- the sweep ----
 -- One pass asks every grid cell (the engine moves the minimap so each
 -- lies under the cursor, a frame each); a dot answers over a patch
@@ -420,104 +427,6 @@ function Scan.dotsByCount(components, count, singleSize)
         left = left - 1
     end
     return ks
-end
-
--- ---- rough places while walking ----
--- The walking check places dots only to tell them apart (Walk.MATCH), so
--- a coarse sweep is enough. Each answer is turned into a world point with
--- the player's position of its own frame (the minimap is centred on the
--- player), so walking during the sweep smears nothing. hits: list of
--- { x, y, n } world points of one name (n: its dots in that answer).
--- Points within link yards of each other form a group (one dot answers
--- over several cells); count (the shrunk read's) decides the dots per
--- group as in dotsByCount; a group of k > 1 dots is split by a k-means.
--- Returns positions { x, y }.
-local function kMeans(points, k)
-    local first = points[1]
-    for _, p in ipairs(points) do
-        if p.x < first.x or (p.x == first.x and p.y < first.y) then
-            first = p
-        end
-    end
-    local centres = { { x = first.x, y = first.y } }
-    while #centres < k do
-        local best, bestD = nil, -1
-        for _, p in ipairs(points) do
-            local nearest = math.huge
-            for _, c in ipairs(centres) do
-                nearest = math.min(nearest, (p.x - c.x) ^ 2 + (p.y - c.y) ^ 2)
-            end
-            if nearest > bestD then
-                best, bestD = p, nearest
-            end
-        end
-        tinsert(centres, { x = best.x, y = best.y })
-    end
-    for _ = 1, 8 do
-        local sums = {}
-        for i = 1, k do
-            sums[i] = { x = 0, y = 0, w = 0 }
-        end
-        for _, p in ipairs(points) do
-            local home, homeD = 1, math.huge
-            for i, c in ipairs(centres) do
-                local d = (p.x - c.x) ^ 2 + (p.y - c.y) ^ 2
-                if d < homeD then
-                    home, homeD = i, d
-                end
-            end
-            local s = sums[home]
-            s.x, s.y, s.w = s.x + p.x * p.n, s.y + p.y * p.n, s.w + p.n
-        end
-        for i, s in ipairs(sums) do
-            if s.w > 0 then
-                centres[i] = { x = s.x / s.w, y = s.y / s.w }
-            end
-        end
-    end
-    return centres
-end
-
-function Scan.placeHits(hits, count, link)
-    local groups, done = {}, {}
-    local linkSq = link * link
-    for i, start in ipairs(hits) do
-        if not done[i] then
-            done[i] = true
-            local group = { points = { start }, size = 1, maxN = start.n }
-            local queue = { start }
-            while #queue > 0 do
-                local p = tremove(queue)
-                for j, q in ipairs(hits) do
-                    if not done[j] and (p.x - q.x) ^ 2 + (p.y - q.y) ^ 2 <= linkSq then
-                        done[j] = true
-                        tinsert(group.points, q)
-                        tinsert(queue, q)
-                        group.size = group.size + 1
-                        group.maxN = math.max(group.maxN, q.n)
-                    end
-                end
-            end
-            tinsert(groups, group)
-        end
-    end
-    local out = {}
-    local ks = Scan.dotsByCount(groups, count, nil)
-    for i, group in ipairs(groups) do
-        local k = ks[i]
-        if k == 1 then
-            local sx, sy, w = 0, 0, 0
-            for _, p in ipairs(group.points) do
-                sx, sy, w = sx + p.x * p.n, sy + p.y * p.n, w + p.n
-            end
-            tinsert(out, { x = sx / w, y = sy / w })
-        elseif k > 1 then
-            for _, c in ipairs(kMeans(group.points, k)) do
-                tinsert(out, c)
-            end
-        end
-    end
-    return out
 end
 
 -- Centres (offsets) of k dots merged in one group: a k-means over its
@@ -978,8 +887,9 @@ end
 -- read: { counts = name -> dots read, now = seconds, indoors, px, py,
 -- continent (player; nil: every dot judged by the name rule), radius
 -- (outdoor view radius) }.
--- Returns events in name order, each { kind, name, ... }, and the names
--- whose new dots want a place (Walk:placed):
+-- Returns events in name order, each { kind, name, ... }, the names
+-- whose dots want a place (Walk:placed), and the set of those among them
+-- that came back (verify: the place says whether it is the same dot):
 -- - new: count, remembered (dots that could be in view); the one to speak
 -- - fewer: count, remembered (dots that should be in view)
 -- - back: missing (clock seconds); they showed again in time, silent
@@ -990,7 +900,7 @@ end
 -- - indoors / outdoors: the clock stopped or runs again
 -- - jump: distance (nil: another continent); no follow check this read
 function Walk:update(read)
-    local events, locate = {}, {}
+    local events, locate, verify = {}, {}, {}
     local dt = 0
     if self.lastAt ~= nil and not read.indoors and not self.lastIndoors then
         dt = math.max(0, math.min(read.now - self.lastAt, Walk.MAX_GAP))
@@ -1101,21 +1011,32 @@ function Walk:update(read)
         elseif rec.short then
             tinsert(events, { kind = "back", name = name, missing = rec.missing })
             rec.short, rec.missing = false, 0
+            -- The count alone cannot tell the dot that left from another
+            -- one of the name coming into view (2026-11-10 Stormwind: a
+            -- new mailbox counted as one back and was never said).
+            if read.px ~= nil and not self.nameOnly[name] then
+                verify[name] = true
+                tinsert(locate, name)
+            end
         end
         if #rec.dots == 0 then
             self.names[name] = nil
         end
     end
-    return events, locate
+    return events, locate, verify
 end
 
 -- Where the dots of a name are, found by the sweep: positions { wx, wy }
 -- of every dot of it in view. A placed dot takes the nearest within MATCH
 -- (it may have walked); the rest go to unplaced dots, new ones first.
 -- Returns { placed = dots just placed, refreshed, extra (positions left
--- over), unplaced (dots still without a place) }.
-function Walk:placed(name, positions, continent)
-    local result = { placed = {}, refreshed = 0, extra = 0, unplaced = 0 }
+-- over), unplaced (dots still without a place), new, dropped }.
+-- check { px, py, radius } (a name back in view, Walk:update's verify):
+-- a position no remembered dot matches is a new dot, placed and counted
+-- in new (the caller announces it); a placed dot in view that matched no
+-- position is gone (dropped).
+function Walk:placed(name, positions, continent, check)
+    local result = { placed = {}, refreshed = 0, extra = 0, unplaced = 0, new = 0, dropped = 0 }
     local rec = self.names[name]
     if rec == nil or self.nameOnly[name] then
         return result
@@ -1133,6 +1054,7 @@ function Walk:placed(name, positions, continent)
             if best ~= nil then
                 used[best] = true
                 dot.wx, dot.wy = positions[best].wx, positions[best].wy
+                dot.matched = true
                 result.refreshed = result.refreshed + 1
             end
         end
@@ -1157,8 +1079,36 @@ function Walk:placed(name, positions, continent)
         else
             used[nextPos] = true
             dot.wx, dot.wy, dot.continent, dot.fresh = pos.wx, pos.wy, continent, nil
+            dot.justPlaced = true
             tinsert(result.placed, dot)
         end
+    end
+    if check ~= nil then
+        local inside = (check.radius or Walk.RADIUS) - Walk.INNER
+        local kept = {}
+        for _, dot in ipairs(rec.dots) do
+            local inView = dot.wx ~= nil
+                and dot.continent == continent
+                and distanceSq(dot.wx, dot.wy, check.px, check.py) <= inside * inside
+            if inView and not dot.matched and not dot.justPlaced then
+                result.dropped = result.dropped + 1
+            else
+                tinsert(kept, dot)
+            end
+        end
+        rec.dots = kept
+        for i, pos in ipairs(positions) do
+            if not used[i] then
+                used[i] = true
+                local dot = { wx = pos.wx, wy = pos.wy, continent = continent }
+                tinsert(rec.dots, dot)
+                tinsert(result.placed, dot)
+                result.new = result.new + 1
+            end
+        end
+    end
+    for _, dot in ipairs(rec.dots) do
+        dot.matched, dot.justPlaced = nil, nil
     end
     for i = 1, #positions do
         if not used[i] then

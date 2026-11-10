@@ -455,52 +455,12 @@ testRunner:addSuite("MinimapSweep", {
         t:assertEqual(ks[2], 1)
     end,
 
-    ["rough places: hits of two dots far apart give two places"] = function(t)
-        local hits = {}
-        for _, c in ipairs({ { 100, 50 }, { 300, -20 } }) do
-            for dx = -20, 20, 20 do
-                for dy = -20, 20, 20 do
-                    tinsert(hits, { x = c[1] + dx, y = c[2] + dy, n = 1 })
-                end
-            end
+    ["world to offset undoes offset to world, also turned"] = function(t)
+        for _, facing in ipairs({ 0, 1, 2.5 }) do
+            local north, west = Scan.offsetToWorld(12, -30, 2.35, facing)
+            local ox, oy = Scan.worldToOffset(north, west, 2.35, facing)
+            t:assertTrue(math.abs(ox - 12) < 1e-9 and math.abs(oy + 30) < 1e-9)
         end
-        local places = Scan.placeHits(hits, 2, 30)
-        t:assertEqual(#places, 2)
-        table.sort(places, function(a, b)
-            return a.x < b.x
-        end)
-        t:assertTrue(math.abs(places[1].x - 100) < 1 and math.abs(places[1].y - 50) < 1)
-        t:assertTrue(math.abs(places[2].x - 300) < 1 and math.abs(places[2].y + 20) < 1)
-    end,
-
-    ["rough places: two touching dots in one group split by the count"] = function(t)
-        local hits = {}
-        for _, c in ipairs({ { 0, 0 }, { 50, 0 } }) do
-            for dx = -20, 20, 20 do
-                for dy = -20, 20, 20 do
-                    tinsert(hits, { x = c[1] + dx, y = c[2] + dy, n = 1 })
-                end
-            end
-        end
-        local places = Scan.placeHits(hits, 2, 30)
-        t:assertEqual(#places, 2)
-        table.sort(places, function(a, b)
-            return a.x < b.x
-        end)
-        t:assertTrue(math.abs(places[1].x - 0) < 6 and math.abs(places[2].x - 50) < 6)
-    end,
-
-    ["rough places: a sliver beside one dot is not a second place"] = function(t)
-        local hits = {}
-        for dx = -20, 20, 20 do
-            for dy = -20, 20, 20 do
-                tinsert(hits, { x = dx, y = dy, n = 1 })
-            end
-        end
-        tinsert(hits, { x = 200, y = 200, n = 1 })
-        local places = Scan.placeHits(hits, 1, 30)
-        t:assertEqual(#places, 1)
-        t:assertTrue(math.abs(places[1].x) < 1 and math.abs(places[1].y) < 1)
     end,
 
     ["the middle row and a column span the patch"] = function(t)
@@ -596,6 +556,34 @@ testRunner:addSuite("MinimapSweep", {
         -- Past range plus margin: left; back in view: new.
         t:assertEqual(kinds(at(260, {}, 61)), "left Mailbox")
         t:assertEqual(kinds(at(230, { Mailbox = 1 }, 61.5)), "new Mailbox")
+    end,
+
+    ["walking, back in view: another place is a new dot, the old one gone"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 150 })
+        walk:placed("Mailbox", { { wx = 50, wy = 0 } }, 0)
+        t:assertEqual(kinds(walk:update({ counts = {}, now = 0.5, px = 10, py = 0, continent = 0, radius = 150 })), "fewer Mailbox")
+        local events, locate, verify = walk:update({ counts = { Mailbox = 1 }, now = 5, px = 20, py = 0, continent = 0, radius = 150 })
+        t:assertEqual(kinds(events), "back Mailbox")
+        t:assertEqual(table.concat(locate, ","), "Mailbox")
+        t:assertTrue(verify.Mailbox)
+        -- The one in view stands 90 yards from the remembered one.
+        local result = walk:placed("Mailbox", { { wx = -40, wy = 60 } }, 0, { px = 20, py = 0, radius = 150 })
+        t:assertEqual(result.new, 1)
+        t:assertEqual(result.dropped, 1)
+        t:assertEqual(#walk.names.Mailbox.dots, 1)
+    end,
+
+    ["walking, back in view: the same place is the same dot, silent"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 150 })
+        walk:placed("Mailbox", { { wx = 50, wy = 0 } }, 0)
+        walk:update({ counts = {}, now = 0.5, px = 10, py = 0, continent = 0, radius = 150 })
+        walk:update({ counts = { Mailbox = 1 }, now = 3, px = 20, py = 0, continent = 0, radius = 150 })
+        local result = walk:placed("Mailbox", { { wx = 58, wy = 6 } }, 0, { px = 20, py = 0, radius = 150 })
+        t:assertEqual(result.new, 0)
+        t:assertEqual(result.dropped, 0)
+        t:assertEqual(result.refreshed, 1)
     end,
 
     ["walking, placed: a building changes nothing"] = function(t)
