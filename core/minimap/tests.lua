@@ -424,6 +424,37 @@ testRunner:addSuite("MinimapSweep", {
         t:assertEqual(Scan.dotsInComponent(big, single), 2)
     end,
 
+    ["the read's count decides the dots: one group each"] = function(t)
+        local comps = Scan.components(sweep({ { 30, 20 }, { -40, -10 } }, 9.4, 8, 110))
+        t:assertEqual(#comps, 2)
+        local ks = Scan.dotsByCount(comps, 2, Scan.singleSize(comps))
+        t:assertEqual(ks[1], 1)
+        t:assertEqual(ks[2], 1)
+    end,
+
+    ["the read's count: one dot, a second small group holds none"] = function(t)
+        local comps = Scan.components(sweep({ { 30, 20 }, { -40, -10 } }, 9.4, 8, 110))
+        -- Make the second group a sliver.
+        local small = comps[1].size < comps[2].size and 1 or 2
+        comps[small].size = 1
+        local ks = Scan.dotsByCount(comps, 1, nil)
+        t:assertEqual(ks[small], 0)
+        t:assertEqual(ks[3 - small], 1)
+    end,
+
+    ["the read's count: two touching dots in one group are two"] = function(t)
+        local comps = Scan.components(sweep({ { 0, 30 }, { 18, 30 } }, 9.4, 8, 110))
+        t:assertEqual(#comps, 1)
+        t:assertEqual(Scan.dotsByCount(comps, 2, nil)[1], 2)
+    end,
+
+    ["without a count the size estimate stays"] = function(t)
+        local comps = Scan.components(sweep({ { 30, 20 }, { -40, -10 } }, 9.4, 2, 110))
+        local ks = Scan.dotsByCount(comps, nil, Scan.singleSize(comps))
+        t:assertEqual(ks[1], 1)
+        t:assertEqual(ks[2], 1)
+    end,
+
     ["the middle row and a column span the patch"] = function(t)
         local comp = Scan.components(sweep({ { 10, -6 } }, 9.4, 2, 110))[1]
         local iy, minX, maxX = Scan.middleRow(comp)

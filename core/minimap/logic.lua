@@ -371,6 +371,57 @@ function Scan.dotsInComponent(comp, singleSize)
     return math.max(k, 1)
 end
 
+-- How many dots each group of one name holds when the shrunk read said how
+-- many there are (count: the read names each dot once). Every group holds
+-- at least the dots answering at once (maxN); more groups than dots: the
+-- largest keep theirs, the rest hold none (a sliver at the rim); fewer:
+-- the extra dots go one at a time to the group largest per dot. Without
+-- a count, the size estimate (dotsInComponent). Returns ks by index.
+-- (2026-11-10 Stormwind: the size estimate split 2 mailboxes into 4.)
+function Scan.dotsByCount(components, count, singleSize)
+    local ks = {}
+    if count == nil or count < 1 then
+        for i, comp in ipairs(components) do
+            ks[i] = Scan.dotsInComponent(comp, singleSize)
+        end
+        return ks
+    end
+    local order = {}
+    for i = 1, #components do
+        order[i] = i
+        ks[i] = 0
+    end
+    table.sort(order, function(a, b)
+        return components[a].size > components[b].size
+    end)
+    local left = count
+    for _, i in ipairs(order) do
+        if left <= 0 then
+            break
+        end
+        local k = math.min(math.max(components[i].maxN or 1, 1), left)
+        ks[i] = k
+        left = left - k
+    end
+    while left > 0 and #order > 0 do
+        local best, bestShare = nil, -1
+        for _, i in ipairs(order) do
+            if ks[i] > 0 then
+                local share = components[i].size / ks[i]
+                if share > bestShare then
+                    best, bestShare = i, share
+                end
+            end
+        end
+        if best == nil then
+            break
+        end
+        ks[best] = ks[best] + 1
+        left = left - 1
+    end
+    return ks
+end
+
 -- Centres (offsets) of k dots merged in one group: a k-means over its
 -- cells weighted by how many dots answered there, started from cells far
 -- apart. Good to a few yards; only used where dots of one name touch.

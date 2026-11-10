@@ -164,8 +164,6 @@ module.spellLabels = {}
 
 local CATEGORY_LABELS = {
     questGiver = L["Quest Givers"],
-    questArea = L["Quest Areas"],
-    questDirection = L["Quest Directions"],
     vendor = L["Vendors"],
     repair = L["Repair"],
     trainer = L["Trainers"],
@@ -187,16 +185,14 @@ function module:categoryLabel(category)
 end
 
 -- A quest of the log shows on the minimap under its title: its area as a
--- dot or patch inside the minimap, or, when the area is further away, an
--- arrow at the rim pointing at it (2026-11-10 Stormwind: "Bingles'
--- verschwundene Werkzeuge", a Loch Modan quest, at 126 of 150 yards).
--- Told apart by the offset: this far out of the view radius it is the
--- arrow.
-local QUEST_RIM = 0.75
--- name -> { wx, wy, continent }: the rim point of a quest direction, so
--- the direction can be told from where the player stands later.
-module.questDirections = {}
-
+-- patch inside the minimap, or an arrow at the rim toward an area further
+-- away (2026-11-10 Stormwind: "Bingles' verschwundene Werkzeuge", a Loch
+-- Modan quest beyond a mountain, at 126 of 150 yards). The quest system
+-- already has both from the game: the quest's map points with distance
+-- (Quests > In Progress) and entering or leaving its area (Quest Area
+-- Alert, PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED). So the scanner leaves
+-- these names out: no quest giver, no place, no announcement. (Arrows at
+-- the rim were already names only for towns, 2026-09-24.)
 local function questLogTitles()
     local titles = {}
     if C_QuestLog == nil or C_QuestLog.GetNumQuestLogEntries == nil or C_QuestLog.GetInfo == nil then
@@ -211,28 +207,16 @@ local function questLogTitles()
     return titles
 end
 
--- The scan sorts every name it cannot explain otherwise as a quest giver;
--- a name that is a quest title in the log is that quest's area or
--- direction instead. Directions no longer on the minimap are forgotten
--- (not indoors: there it shows only the building).
-function module:sortQuestAreas(classified, indoors)
+-- The names that are quest titles of the log, left out (see above).
+function module:withoutQuestTitles(list)
     local titles = questLogTitles()
-    local present = {}
-    for _, item in ipairs(classified) do
-        if item.category == "questGiver" and titles[item.name] then
-            item.category = "questArea"
-            item.flag = nil
-            self.kinds[item.name] = L["quest area"]
-            present[item.name] = true
+    local out = {}
+    for _, item in ipairs(list) do
+        if not titles[item.name] then
+            tinsert(out, item)
         end
     end
-    if not indoors then
-        for name in pairs(self.questDirections) do
-            if not present[name] then
-                self.questDirections[name] = nil
-            end
-        end
-    end
+    return out
 end
 
 local function speak(text)
@@ -351,22 +335,22 @@ end
 -- Each question takes a frame (the minimap moved under the cursor). At
 -- full size a dot answers over about 16 to 24 units (2 to 9 cells of 8,
 -- measured 2026-11-10, 476 cells in 8 s at 60 frames a second). The dots
--- keep their size when the minimap shrinks, so on a half-size minimap a
--- dot answers over twice as many full-size units: cells of 16 are as safe
--- there, a quarter of the questions. The middle between a dot's edges
--- stays the dot at any size, so the halvings keep the precision (three
--- halvings of 16 units: 2 units). Two dots of one name closer than about
--- 38 units touch on the half-size minimap and are split by size.
+-- keep their size when the minimap shrinks, so a smaller minimap would
+-- need fewer cells; measured 2026-11-10 in Stormwind (/wv mscan sku) the
+-- half-size sweep put only 8 of 22 dots within 10 yards of the full-size
+-- one, so the scan stays at full size. How many dots a name has comes
+-- from the shrunk read (the work item's count), not from patch sizes.
 -- opts: { scale, step, halvings }; all offsets in full-size units.
-local SWEEP = { scale = 0.5, step = 16, halvings = 3 }
+local SWEEP = { scale = 1, step = 8, halvings = 4 }
 
 local function sweepPositions(task, work, radius, opts)
     opts = opts or SWEEP
     local SWEEP_STEP, EDGE_HALVINGS = opts.step, opts.halvings
     local stats = task.stats
-    local expected = {}
+    local expected, counts = {}, {}
     for _, item in ipairs(work) do
         expected[item.name] = true
+        counts[item.name] = item.count
     end
     local read = Engine.pointReader(task.state, task.cursorX, task.cursorY, opts.scale)
     -- Every question goes through here; each one is a frame.
@@ -468,12 +452,13 @@ local function sweepPositions(task, work, radius, opts)
     local found, measured, halves = {}, {}, {}
     for name, list in pairs(components) do
         found[name] = {}
-        for _, comp in ipairs(list) do
+        local ks = Scan.dotsByCount(list, counts[name], singleSize)
+        for index, comp in ipairs(list) do
             local grey = false
             for _, c in ipairs(comp.cells) do
                 grey = grey or c.grey == true
             end
-            local k = Scan.dotsInComponent(comp, singleSize)
+            local k = ks[index]
             local e = k == 1 and edges(name, comp) or nil
             if e ~= nil then
                 tinsert(halves, (e.right - e.left) / 2)
@@ -488,7 +473,7 @@ local function sweepPositions(task, work, radius, opts)
                     (comp.minY + comp.maxY) / 2 * SWEEP_STEP,
                     otherLevel = grey,
                 })
-            else
+            elseif k > 1 then
                 stats.merged = stats.merged + k
                 for _, centre in ipairs(Scan.splitComponent(comp, k, SWEEP_STEP)) do
                     tinsert(found[name], { centre[1], centre[2], otherLevel = grey })
@@ -575,17 +560,11 @@ function module:scanBody(task)
     -- Indoors the minimap shows only this building: what it cannot see
     -- outside is not gone, and everything it does see is indoors.
     local indoors = IsIndoors ~= nil and IsIndoors() or false
-    self:sortQuestAreas(classified, indoors)
+    classified = self:withoutQuestTitles(classified)
 
     local store = self.store
     local dropped = store:dropMissing(Scan.presentByCategory(classified), px, py, continent, viewRadius * 0.9, indoors)
-    local work = {}
-    for _, item in ipairs(Scan.missingWork(classified, store, px, py, continent, viewRadius)) do
-        -- A known direction is not swept again.
-        if not (item.category == "questArea" and self.questDirections[item.name] ~= nil) then
-            tinsert(work, item)
-        end
-    end
+    local work = Scan.missingWork(classified, store, px, py, continent, viewRadius)
     local counts, order = {}, {}
     local function count(category)
         if counts[category] == nil then
@@ -627,30 +606,21 @@ function module:scanBody(task)
                 local north, west = Scan.offsetToWorld(offset[1], offset[2], yardsPerUnit, facing)
                 local wx, wy = px + north, py + west
                 local x, y = mapPosition(mapId, continent, wx, wy)
-                if item.category == "questArea" and math.sqrt(north * north + west * west) >= viewRadius * QUEST_RIM then
-                    -- The arrow at the rim toward a quest's area further
-                    -- away: a direction, not a place.
-                    if self.questDirections[item.name] == nil then
-                        count("questDirection")
-                    end
-                    self.questDirections[item.name] = { wx = wx, wy = wy, continent = continent }
-                else
-                    local _, isNew = store:upsert({
-                        name = item.name,
-                        category = item.category,
-                        subtitle = item.subtitle,
-                        flag = item.flag,
-                        indoors = indoors or offset.otherLevel == true,
-                        wx = wx,
-                        wy = wy,
-                        continent = continent,
-                        mapId = mapId,
-                        x = x,
-                        y = y,
-                    }, MATCH_RADIUS)
-                    if isNew then
-                        count(item.category)
-                    end
+                local _, isNew = store:upsert({
+                    name = item.name,
+                    category = item.category,
+                    subtitle = item.subtitle,
+                    flag = item.flag,
+                    indoors = indoors or offset.otherLevel == true,
+                    wx = wx,
+                    wy = wy,
+                    continent = continent,
+                    mapId = mapId,
+                    x = x,
+                    y = y,
+                }, MATCH_RADIUS)
+                if isNew then
+                    count(item.category)
                 end
             end
         end
@@ -950,7 +920,7 @@ function module:walkCheck()
         end)
         Minimap:SetZoom(0)
         Engine.shrink(x, y)
-        local dots = Engine.readFirst(6)
+        local dots = module:withoutQuestTitles(Engine.readFirst(6))
         local indoors = IsIndoors ~= nil and IsIndoors() or false
         if not indoors then
             local radius = C_Minimap.GetViewRadius()
@@ -1589,10 +1559,11 @@ function module:skuTest()
         add(readText("Fast read, shrunk", fastRead))
         local work, named = {}, {}
         for _, dot in ipairs(Engine.readFirst(10)) do
-            if not named[dot.name] then
-                named[dot.name] = true
-                tinsert(work, { name = dot.name })
+            if named[dot.name] == nil then
+                named[dot.name] = { name = dot.name, count = 0 }
+                tinsert(work, named[dot.name])
             end
+            named[dot.name].count = named[dot.name].count + 1
         end
 
         -- The scanner's sweep at several minimap sizes on the same spot:
