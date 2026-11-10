@@ -509,6 +509,20 @@ testRunner:addSuite("TargetNames", {
         t:assertEqual(reveal(text), "Hogger, Level 11 Elite")
     end),
 
+    ["a quest objective whose finished flag is secret is read, never compared"] = withSecrets(function(t)
+        local mob = {
+            attackable = true,
+            name = "Defias Pillager",
+            lines = {
+                { type = 2, text = "Defias Pillager" },
+                { type = 8, text = secret("Defias Pillager slain: 3/10"), completed = secret(false) },
+                { type = 8, text = "Done already: 1/1", completed = true },
+            },
+        }
+        local text = targetNames.compose(fakeApi({ target = mob }), "target", "inCombat", only("mob", { "name", "questProgress" }))
+        t:assertEqual(reveal(text), "Defias Pillager, Defias Pillager slain: 3/10")
+    end),
+
     ["a secret answer to a yes-or-no question is skipped"] = withSecrets(function(t)
         local unit = { player = true, name = "Broesel", afk = secret(true), dnd = secret(false) }
         local text =

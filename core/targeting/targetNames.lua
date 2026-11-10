@@ -575,14 +575,17 @@ PARTS.quest = {
 }
 
 -- The quest objectives the tooltip lists for this unit ("Kobold Vermin
--- slain: 3/10"), finished ones left out.
+-- slain: 3/10"), finished ones left out. In a dungeon the game hides
+-- whether an objective is finished (a secret, which cannot be compared):
+-- such an objective is read, its count says how far it is.
 PARTS.questProgress = {
     label = L["Quest Progress"],
     requires = { "tooltipLines" },
     read = function(ctx)
         local list = {}
         for index, line in ipairs(ctx:tooltipLines()) do
-            if line.type == LINE_QUEST_OBJECTIVE and line.completed ~= true then
+            local finished = not isSecret(line.completed) and line.completed == true
+            if line.type == LINE_QUEST_OBJECTIVE and not finished then
                 tinsert(list, token("questProgress:" .. index, line.text))
             end
         end
@@ -897,7 +900,7 @@ function targetNames.report(api, unit, names)
         tinsert(
             lines,
             "tooltip line " .. index .. " type " .. tostring(line.type) .. ": " .. plain(line.text)
-                .. (line.completed and " (completed)" or "")
+                .. (isSecret(line.completed) and " (completed: secret)" or line.completed and " (completed)" or "")
         )
     end
     local text = targetNames.compose(api, unit, stateKey, stateTable)
