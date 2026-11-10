@@ -1,3 +1,8 @@
+### Summary
+The minimap scanner works again on WoW: Forever after the game update of 7 November. Also new: a Scanner you can use as a menu, quest sounds while you walk, letter filters in lists, tooltips that compare gear and show auction prices, rebuilt WowNav data for the capital cities, and many fixes.
+
+The full manual is online, in English and German: [WowVision documentation](https://wow-vision.github.io/WowVision/).
+
 ### All Versions
 * Scanner: switch off the new Scanner as Tree setting (Scanner menu, on by default) to use the scanner as a menu like the WowVision menu: Enter or Right goes one level deeper, Left or Escape goes back, letters jump to entries.
 * Scanner: Shift+Down on a quest in Nearby or In Progress reads a full tooltip: the level with the quest colour, the kind of quest, the giver or your progress per objective, and the quest text.
