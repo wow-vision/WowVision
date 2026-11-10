@@ -335,13 +335,16 @@ end
 -- Each question takes a frame (the minimap moved under the cursor). At
 -- full size a dot answers over about 16 to 24 units (2 to 9 cells of 8,
 -- measured 2026-11-10, 476 cells in 8 s at 60 frames a second). The dots
--- keep their size when the minimap shrinks, so a smaller minimap would
--- need fewer cells; measured 2026-11-10 in Stormwind (/wv mscan sku) the
--- half-size sweep put only 8 of 22 dots within 10 yards of the full-size
--- one, so the scan stays at full size. How many dots a name has comes
--- from the shrunk read (the work item's count), not from patch sizes.
+-- keep their size when the minimap shrinks, so on a half-size minimap a
+-- dot answers over twice as many full-size units and cells of 16 are as
+-- safe. How many dots a name has comes from the shrunk read (the work
+-- item's count), not from patch sizes. Measured 2026-11-10 01:51 in
+-- Stormwind (/wv mscan sku, 13 dots, no two of one name): full size 840
+-- questions 14.0 s; half size 340 questions 5.7 s, 12 dots within 2.3
+-- yards of full size (mean 1.3), the 13th an arrow at the rim; third
+-- size 4.4 s, up to 4 yards off.
 -- opts: { scale, step, halvings }; all offsets in full-size units.
-local SWEEP = { scale = 1, step = 8, halvings = 4 }
+local SWEEP = { scale = 0.5, step = 16, halvings = 3 }
 
 local function sweepPositions(task, work, radius, opts)
     opts = opts or SWEEP
