@@ -424,6 +424,45 @@ testRunner:addSuite("MinimapSweep", {
         t:assertEqual(Scan.dotsInComponent(big, single), 2)
     end,
 
+    ["the read's count decides the dots: one group each"] = function(t)
+        local comps = Scan.components(sweep({ { 30, 20 }, { -40, -10 } }, 9.4, 8, 110))
+        t:assertEqual(#comps, 2)
+        local ks = Scan.dotsByCount(comps, 2, Scan.singleSize(comps))
+        t:assertEqual(ks[1], 1)
+        t:assertEqual(ks[2], 1)
+    end,
+
+    ["the read's count: one dot, a second small group holds none"] = function(t)
+        local comps = Scan.components(sweep({ { 30, 20 }, { -40, -10 } }, 9.4, 8, 110))
+        -- Make the second group a sliver.
+        local small = comps[1].size < comps[2].size and 1 or 2
+        comps[small].size = 1
+        local ks = Scan.dotsByCount(comps, 1, nil)
+        t:assertEqual(ks[small], 0)
+        t:assertEqual(ks[3 - small], 1)
+    end,
+
+    ["the read's count: two touching dots in one group are two"] = function(t)
+        local comps = Scan.components(sweep({ { 0, 30 }, { 18, 30 } }, 9.4, 8, 110))
+        t:assertEqual(#comps, 1)
+        t:assertEqual(Scan.dotsByCount(comps, 2, nil)[1], 2)
+    end,
+
+    ["without a count the size estimate stays"] = function(t)
+        local comps = Scan.components(sweep({ { 30, 20 }, { -40, -10 } }, 9.4, 2, 110))
+        local ks = Scan.dotsByCount(comps, nil, Scan.singleSize(comps))
+        t:assertEqual(ks[1], 1)
+        t:assertEqual(ks[2], 1)
+    end,
+
+    ["world to offset undoes offset to world, also turned"] = function(t)
+        for _, facing in ipairs({ 0, 1, 2.5 }) do
+            local north, west = Scan.offsetToWorld(12, -30, 2.35, facing)
+            local ox, oy = Scan.worldToOffset(north, west, 2.35, facing)
+            t:assertTrue(math.abs(ox - 12) < 1e-9 and math.abs(oy + 30) < 1e-9)
+        end
+    end,
+
     ["the middle row and a column span the patch"] = function(t)
         local comp = Scan.components(sweep({ { 10, -6 } }, 9.4, 2, 110))[1]
         local iy, minX, maxX = Scan.middleRow(comp)
@@ -517,6 +556,113 @@ testRunner:addSuite("MinimapSweep", {
         -- Past range plus margin: left; back in view: new.
         t:assertEqual(kinds(at(260, {}, 61)), "left Mailbox")
         t:assertEqual(kinds(at(230, { Mailbox = 1 }, 61.5)), "new Mailbox")
+    end,
+
+    ["walking, back in view: another place is a new dot, the old one gone"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 150 })
+        walk:placed("Mailbox", { { wx = 50, wy = 0 } }, 0)
+        t:assertEqual(kinds(walk:update({ counts = {}, now = 0.5, px = 10, py = 0, continent = 0, radius = 150 })), "fewer Mailbox")
+        local events, locate, verify = walk:update({ counts = { Mailbox = 1 }, now = 5, px = 20, py = 0, continent = 0, radius = 150 })
+        t:assertEqual(kinds(events), "back Mailbox")
+        t:assertEqual(table.concat(locate, ","), "Mailbox")
+        t:assertTrue(verify.Mailbox)
+        -- The one in view stands 90 yards from the remembered one.
+        local result = walk:placed("Mailbox", { { wx = -40, wy = 60 } }, 0, { px = 20, py = 0, radius = 150 })
+        t:assertEqual(result.new, 1)
+        t:assertEqual(result.dropped, 1)
+        t:assertEqual(#walk.names.Mailbox.dots, 1)
+    end,
+
+    ["walking, back in view: the same place is the same dot, silent"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 150 })
+        walk:placed("Mailbox", { { wx = 50, wy = 0 } }, 0)
+        walk:update({ counts = {}, now = 0.5, px = 10, py = 0, continent = 0, radius = 150 })
+        walk:update({ counts = { Mailbox = 1 }, now = 3, px = 20, py = 0, continent = 0, radius = 150 })
+        local result = walk:placed("Mailbox", { { wx = 58, wy = 6 } }, 0, { px = 20, py = 0, radius = 150 })
+        t:assertEqual(result.new, 0)
+        t:assertEqual(result.dropped, 0)
+        t:assertEqual(result.refreshed, 1)
+    end,
+
+    ["walking, placed: the view radius shrinking and growing changes nothing"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:placed("Mailbox", { { wx = 200, wy = 0 } }, 0)
+        walk:update({ counts = { Mailbox = 1 }, now = 0.5, px = 0, py = 0, continent = 0, radius = 233 })
+        -- The radius drops to 150: the mailbox at 200 yards no longer shows.
+        local events = walk:update({ counts = {}, now = 1, px = 5, py = 0, continent = 0, radius = 150 })
+        t:assertEqual(kinds(events), "")
+        -- Back to 233 a little later: the same mailbox, nothing said.
+        events = walk:update({ counts = { Mailbox = 1 }, now = 20, px = 10, py = 0, continent = 0, radius = 233 })
+        t:assertEqual(kinds(events), "")
+        t:assertEqual(#walk.names.Mailbox.dots, 1)
+    end,
+
+    ["walking, back in view: a far place matches with the larger allowance"] = function(t)
+        t:assertEqual(Scan.Walk.matchFor(0), 25)
+        t:assertEqual(Scan.Walk.matchFor(100), 50)
+        t:assertEqual(Scan.Walk.matchFor(400), 60)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:placed("Mailbox", { { wx = 180, wy = 0 } }, 0)
+        walk:update({ counts = {}, now = 0.5, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:update({ counts = { Mailbox = 1 }, now = 3, px = 0, py = 0, continent = 0, radius = 233 })
+        -- Found again 40 yards off, 210 yards out: the same mailbox.
+        local result = walk:placed(
+            "Mailbox",
+            { { wx = 210, wy = 25, match = Scan.Walk.matchFor(211) } },
+            0,
+            { px = 0, py = 0, radius = 233 }
+        )
+        t:assertEqual(result.new, 0)
+        t:assertEqual(result.refreshed, 1)
+    end,
+
+    ["walking, placed: the closest pairs match first"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 2 }, now = 0, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:placed("Mailbox", { { wx = 0, wy = 0 }, { wx = 50, wy = 0 } }, 0)
+        -- Dot by dot, the one at 0 would take the place at 28 (its
+        -- nearest) and leave the one at 50 without.
+        local result = walk:placed("Mailbox", { { wx = 28, wy = 0, match = 32 }, { wx = -30, wy = 0, match = 32 } }, 0)
+        t:assertEqual(result.refreshed, 2)
+        t:assertEqual(result.extra, 0)
+    end,
+
+    ["walking, back after the minimap showed only the building: no place check"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:placed("Mailbox", { { wx = 100, wy = 0 } }, 0)
+        walk:update({ counts = { Mailbox = 1 }, now = 0.5, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:update({ counts = {}, now = 1, px = 5, py = 0, continent = 0, radius = 233, indoors = true })
+        local events, locate, verify = walk:update({ counts = { Mailbox = 1 }, now = 9, px = 10, py = 0, continent = 0, radius = 233 })
+        t:assertEqual(kinds(events), "outdoors,back Mailbox")
+        t:assertEqual(#locate, 0)
+        t:assertNil(verify.Mailbox)
+    end,
+
+    ["walking, back in view: an empty sweep drops nothing"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 150 })
+        walk:placed("Mailbox", { { wx = 50, wy = 0 } }, 0)
+        walk:update({ counts = {}, now = 0.5, px = 10, py = 0, continent = 0, radius = 150 })
+        walk:update({ counts = { Mailbox = 1 }, now = 3, px = 20, py = 0, continent = 0, radius = 150 })
+        local result = walk:placed("Mailbox", {}, 0, { px = 20, py = 0, radius = 150 })
+        t:assertEqual(result.dropped, 0)
+        t:assertEqual(#walk.names.Mailbox.dots, 1)
+    end,
+
+    ["walking, back while the minimap shows only the building: no place check"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:placed("Mailbox", { { wx = 100, wy = 0 } }, 0)
+        walk:update({ counts = { Mailbox = 1 }, now = 0.5, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:update({ counts = {}, now = 1, px = 5, py = 0, continent = 0, radius = 233 })
+        local _, locate, verify = walk:update({ counts = { Mailbox = 1 }, now = 3, px = 10, py = 0, continent = 0, radius = 233, indoors = true })
+        t:assertEqual(#locate, 0)
+        t:assertNil(verify.Mailbox)
     end,
 
     ["walking, placed: a building changes nothing"] = function(t)

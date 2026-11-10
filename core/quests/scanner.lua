@@ -606,8 +606,44 @@ local function seenTargets(roleKey, radius)
     return WowVision.quests.seen:npcs(roleKey, radius)
 end
 
--- Database targets plus seen ones, nearest first. A seen NPC whose name
--- the database already lists is left out: the database wins.
+-- Yards: a seen entry this close to a database spawn of its category is
+-- the same thing, the database wins.
+local SEEN_MATCH_YARDS = 15
+-- Categories of objects: the same name stands in many places (every
+-- mailbox), so only the place matches, never the name alone.
+local PLACE_ONLY = { mailboxes = true }
+
+local function nearSpawn(target, seen)
+    local spot = seen.nearest
+    if spot == nil then
+        return false
+    end
+    for _, spawn in ipairs(target.spawns or {}) do
+        if spawn.continent == spot.continent and spawn.wx ~= nil then
+            local dx, dy = spawn.wx - spot.wx, spawn.wy - spot.wy
+            if dx * dx + dy * dy <= SEEN_MATCH_YARDS * SEEN_MATCH_YARDS then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function nearAnySpawn(targets, seen)
+    for _, target in ipairs(targets) do
+        if nearSpawn(target, seen) then
+            return true
+        end
+    end
+    return false
+end
+
+-- Database targets plus seen ones, nearest first. A seen NPC is left out
+-- when the database lists its name (one NPC, one name). A seen object of
+-- a PLACE_ONLY category is left out when a database one stands within
+-- SEEN_MATCH_YARDS (the names can differ: Questie's German data calls
+-- three mailboxes "Mailbox", the minimap "Briefkasten"); NPCs are not
+-- matched by place, neighbours in a town would hide each other.
 local function withSeen(targets, roleKey, ctx)
     local seen = seenTargets(roleKey, ctx.radius)
     if #seen == 0 then
@@ -615,13 +651,14 @@ local function withSeen(targets, roleKey, ctx)
     end
     local out, names = {}, {}
     for _, target in ipairs(targets) do
-        if target.name ~= nil then
+        if target.name ~= nil and not PLACE_ONLY[roleKey] then
             names[target.name] = true
         end
         tinsert(out, target)
     end
     for _, target in ipairs(seen) do
-        if not names[target.name] then
+        local known = names[target.name] == true or (PLACE_ONLY[roleKey] and nearAnySpawn(targets, target))
+        if not known then
             tinsert(out, target)
         end
     end

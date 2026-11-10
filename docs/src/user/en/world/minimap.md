@@ -14,13 +14,15 @@ The minimap only shows what your character can currently see on it. The scanner 
 - Points of interest. The towns and landmarks the minimap draws as arrows, such as Goldshire or Stormwind. These are only names with no position, because the game draws those arrows at a fixed distance in the direction of the place.
 - Other tracking. If you have a different tracking ability on, for example Track Beasts or Track Humanoids, its dots cannot be sorted by name. They are listed as Unsorted, in the Gathering category of the Scanner. While such a tracking ability is on, the scanner also cannot tell those dots from quest givers, so quest givers without a special tracking type land in Unsorted too.
 
-The scanner sees dots out to the minimap's range: about 233 yards outdoors and 150 yards indoors. Indoors the minimap shows only the building you are in, so an indoor scan only knows that building.
+The scanner sees dots out to the minimap's range: about 233 yards outdoors and 150 yards indoors. Indoors the minimap shows only the building you are in, so an indoor scan only knows that building. The game switches the minimap to its indoor view not only in houses but also in some covered streets, for example parts of Stormwind; WowVision notices that and treats it as indoors.
+
+Names that are titles of quests in your quest log are left out. The minimap draws them as the quest's area or as an arrow at its edge pointing towards it; WowVision already has those quests with their real places under Quests, In Progress in the [Scanner](scanner.md).
 
 ## Scanning: Ctrl+Shift+F
 
 Press Ctrl+Shift+F (Scan Minimap) to scan once. The binding can be changed in the keybinding window; see [Keybindings](../basics/keybindings.md). You can also type `/wv mscan`.
 
-You will hear "Scanning minimap" and, after a second or two, the result, for example:
+You will hear "Scanning minimap" and the result, after a second or two when nothing is new, and up to about six seconds when there is a lot new to place. For example:
 
 - "Scan done, 4 new: 1 Points of Interest, 1 Innkeepers, 2 Quest Givers"
 - "Nothing new nearby"
@@ -36,10 +38,11 @@ A scan temporarily takes over the minimap and the mouse cursor, so a few things 
 - No mouselook. "Stop mouselook to scan" if you are steering with the mouse.
 - Close every window. The mouse cursor must rest over the game world, not over a window. By default the scan moves the cursor to the middle of the screen itself (see Centre Mouse Cursor Before Scanning), so any window open at the screen centre blocks it. The message names the window in the way: "Scan canceled, window: " followed by the window's name. Close the window with Escape and scan again.
 - Be somewhere with a position. "No position here" appears in places the game cannot locate you, for example some instances.
+- Nothing on the cursor. While a spell waits to be placed on the ground, something is held on the cursor or a mouse button is down, the scan does not start: "Scan canceled, targeting" or "Scan canceled, mouse".
 
 Once a scan runs, do not move, turn, use the mouse or enter combat until it ends. Any of these stops it with "Scan canceled, moved", "Scan canceled, turned", "Scan canceled, mouse", "Scan canceled, mouselook" or "Scan canceled, combat". ("Turned" can only happen if the game's Rotate Minimap option is on.) Nothing half-measured is kept, so just scan again. If you press the key during a running scan you hear "Scan already running".
 
-While it runs, the scan briefly switches your tracking types on and off and shrinks the minimap, then puts everything back. Quest-area announcements are silenced until it is done. If a tracking type did not come back, WowVision tells you: "Tracking not restored" followed by its name. Switch it on again in the [Scanner](scanner.md) under Tracking.
+While it runs, the scan briefly switches your tracking types on and off and moves and shrinks the minimap, then puts everything back. Meanwhile the minimap takes no clicks (a click would ping the spot for your group) and its tooltip stays hidden. Quest-area announcements are silenced until it is done. If a tracking type did not come back, WowVision tells you: "Tracking not restored" followed by its name. Switch it on again in the [Scanner](scanner.md) under Tracking.
 
 If something goes wrong inside the scan, you hear "Minimap scan failed".
 
@@ -158,7 +161,8 @@ You only need these for bug reports.
 | `/wv mscan clear` | Forgets every seen entry and the walking memory. You hear "Seen entries cleared". |
 | `/wv mscan log` | Shows how the last scan went and the log of the walking announcements. The log is also saved in the saved variables file after `/reload`. |
 | `/wv mscan walk` | Shows what the walking check currently remembers. |
-| `/wv mscan raw` | Takes one unprocessed reading of the minimap for debugging, for the day the game changes the way dots are named. |
+| `/wv mscan raw` | Takes one unprocessed reading of the minimap for debugging, for the day the game changes the way dots are named. After /reload the result is in the file `WTF\Account\<account>\SavedVariables\WowVision.lua` (WowVisionDump, minimapRaw), which you can send instead of copying the window. |
+| `/wv mscan sku` | Measures the scanner's ways of reading the minimap on the spot where you stand (takes about half a minute; stand still): the view radius, one read of the shrunk minimap, and the scan's and the walking check's searches, each compared with a slow full-size one. The result opens in a window and is saved as WowVisionDump, minimapSku. |
 
 ## Related pages
 
