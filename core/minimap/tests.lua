@@ -620,6 +620,29 @@ testRunner:addSuite("MinimapSweep", {
         t:assertEqual(result.refreshed, 1)
     end,
 
+    ["walking, placed: the closest pairs match first"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 2 }, now = 0, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:placed("Mailbox", { { wx = 0, wy = 0 }, { wx = 50, wy = 0 } }, 0)
+        -- Dot by dot, the one at 0 would take the place at 28 (its
+        -- nearest) and leave the one at 50 without.
+        local result = walk:placed("Mailbox", { { wx = 28, wy = 0, match = 32 }, { wx = -30, wy = 0, match = 32 } }, 0)
+        t:assertEqual(result.refreshed, 2)
+        t:assertEqual(result.extra, 0)
+    end,
+
+    ["walking, back after the minimap showed only the building: no place check"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:placed("Mailbox", { { wx = 100, wy = 0 } }, 0)
+        walk:update({ counts = { Mailbox = 1 }, now = 0.5, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:update({ counts = {}, now = 1, px = 5, py = 0, continent = 0, radius = 233, indoors = true })
+        local events, locate, verify = walk:update({ counts = { Mailbox = 1 }, now = 9, px = 10, py = 0, continent = 0, radius = 233 })
+        t:assertEqual(kinds(events), "outdoors,back Mailbox")
+        t:assertEqual(#locate, 0)
+        t:assertNil(verify.Mailbox)
+    end,
+
     ["walking, placed: a building changes nothing"] = function(t)
         local walk = Scan.Walk.new()
         walk:update({ counts = { Mailbox = 1 }, now = 0, px = 100, py = 0, continent = 0 })

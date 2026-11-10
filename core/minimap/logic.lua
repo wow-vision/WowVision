@@ -999,7 +999,7 @@ function Walk:update(read)
                 tinsert(rec.dots, { fresh = true })
             end
             tinsert(events, { kind = "new", name = name, count = count, remembered = canShow })
-            rec.short, rec.missing = false, 0
+            rec.short, rec.missing, rec.hiddenIndoors = false, 0, nil
             if read.px ~= nil and not self.nameOnly[name] then
                 tinsert(locate, name)
             end
@@ -1007,6 +1007,9 @@ function Walk:update(read)
             if not rec.short then
                 rec.short = true
                 tinsert(events, { kind = "fewer", name = name, count = count, remembered = inView })
+            end
+            if read.indoors then
+                rec.hiddenIndoors = true
             end
             rec.missing = rec.missing + dt
             if rec.missing >= Walk.GONE_AFTER then
@@ -1034,11 +1037,14 @@ function Walk:update(read)
             rec.short, rec.missing = false, 0
             -- The count alone cannot tell the dot that left from another
             -- one of the name coming into view (2026-11-10 Stormwind: a
-            -- new mailbox counted as one back and was never said).
-            if read.px ~= nil and not self.nameOnly[name] then
+            -- new mailbox counted as one back and was never said). Not
+            -- when it went missing indoors: the minimap showed only the
+            -- building, the dots outside were hidden, not gone.
+            if read.px ~= nil and not self.nameOnly[name] and not rec.hiddenIndoors then
                 verify[name] = true
                 tinsert(locate, name)
             end
+            rec.hiddenIndoors = nil
         end
         if #rec.dots == 0 then
             self.names[name] = nil
@@ -1064,23 +1070,33 @@ function Walk:placed(name, positions, continent, check)
     if rec == nil or self.nameOnly[name] then
         return result
     end
-    local used = {}
-    for _, dot in ipairs(rec.dots) do
+    -- Every pair of a placed dot and a position within the position's
+    -- match, the closest pairs first: dot by dot, a dot could take the
+    -- position of its neighbour and leave the neighbour without one
+    -- (2026-11-10 Stormwind: three mailboxes 37 to 70 yards apart).
+    local pairs_ = {}
+    for di, dot in ipairs(rec.dots) do
         if dot.wx ~= nil and dot.continent == continent then
-            local best, bestD = nil, math.huge
             for i, pos in ipairs(positions) do
                 local d = distanceSq(dot.wx, dot.wy, pos.wx, pos.wy)
                 local match = pos.match or Walk.MATCH
-                if not used[i] and d <= match * match and d < bestD then
-                    best, bestD = i, d
+                if d <= match * match then
+                    tinsert(pairs_, { dot = di, pos = i, d = d })
                 end
             end
-            if best ~= nil then
-                used[best] = true
-                dot.wx, dot.wy = positions[best].wx, positions[best].wy
-                dot.matched = true
-                result.refreshed = result.refreshed + 1
-            end
+        end
+    end
+    table.sort(pairs_, function(a, b)
+        return a.d < b.d
+    end)
+    local used, taken = {}, {}
+    for _, p in ipairs(pairs_) do
+        if not used[p.pos] and not taken[p.dot] then
+            used[p.pos], taken[p.dot] = true, true
+            local dot = rec.dots[p.dot]
+            dot.wx, dot.wy = positions[p.pos].wx, positions[p.pos].wy
+            dot.matched = true
+            result.refreshed = result.refreshed + 1
         end
     end
     local loose = {}

@@ -574,8 +574,9 @@ function module:scanBody(task)
     end
     local classified, places = Scan.splitCategory(sortingPasses(task, filters, spells), "poi")
     -- Indoors the minimap shows only this building: what it cannot see
-    -- outside is not gone, and everything it does see is indoors.
-    local indoors = IsIndoors ~= nil and IsIndoors() or false
+    -- outside is not gone, and everything it does see is indoors. Its
+    -- indoor scale counts too (Engine.minimapIndoors).
+    local indoors = (IsIndoors ~= nil and IsIndoors()) or Engine.minimapIndoors()
     classified = self:withoutQuestTitles(classified)
 
     local store = self.store
@@ -936,17 +937,19 @@ local function fromPlayer(px, py, wx, wy)
 end
 
 -- The walking check's sweep: the scan's own (sweepPositions) on a
--- third-size minimap every 24 units with two halvings. Without halvings
--- each dot answered in one cell only and its place was that cell's middle,
--- up to 18 yards off in Stormwind (/wv mscan sku, 2026-11-10 03:00); with
--- three, third size lay within 2.3 yards of full size. The player walks
+-- half-size minimap every 16 units with two halvings. Without halvings
+-- each dot answered in one cell only (third size: up to 18 yards off in
+-- Stormwind, /wv mscan sku 2026-11-10 03:00); at third size with them,
+-- nine mailboxes 100 to 230 yards out still came out 30 to 90 yards apart
+-- in two sweeps (several dots of one name overlap there and are split by
+-- count). Half size overlaps over half the distance. The player walks
 -- meanwhile: every question is asked where its point of the world lies
 -- now (the offsets are taken at the sweep's start, then moved by the
 -- player's walk and turn since, and scaled by the view radius of that
 -- frame: it jumps between 150 and 233 yards in Stormwind), so the dots
 -- stand still for the sweep.
 -- The places only tell dots apart (Walk.MATCH), they are never spoken.
-local SWEEP_WALK = { scale = 1 / 3, step = 24, halvings = 2 }
+local SWEEP_WALK = { scale = 0.5, step = 16, halvings = 2 }
 -- Rough places further out than this share of the view radius are pulled
 -- in to it (see walkPositions): inside the rim, in the walking memory's
 -- band (Walk.INNER), where a dot may or may not show.
@@ -1108,7 +1111,7 @@ function module:walkCheck()
         Minimap:SetZoom(0)
         Engine.shrink(x, y)
         local dots = module:withoutQuestTitles(Engine.readFirst(6))
-        local indoors = IsIndoors ~= nil and IsIndoors() or false
+        local indoors = (IsIndoors ~= nil and IsIndoors()) or Engine.minimapIndoors()
         if not indoors then
             local radius = C_Minimap.GetViewRadius()
             if type(radius) == "number" and not WowVision.isSecret(radius) and radius > 0 then

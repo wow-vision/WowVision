@@ -302,6 +302,20 @@ function Engine.pointReader(state, cursorX, cursorY, scale)
     end
 end
 
+-- The minimap has an indoor scale besides the outdoor one; the game
+-- switches between them going in and out of buildings (MINIMAP_UPDATE_ZOOM;
+-- Warcraft Wiki), and indoors it shows only that building. IsIndoors()
+-- does not tell (it is about mounting): large parts of Stormwind read
+-- outdoors there while the minimap is in its indoor scale (2026-11-10: at
+-- zoom 0 the view radius is 233.3 yards outdoors, 150 in that scale).
+-- Inside a scan or walking check (zoom 0): true in the indoor scale.
+local OUTDOOR_RADIUS = 233
+
+function Engine.minimapIndoors()
+    local radius = C_Minimap.GetViewRadius()
+    return type(radius) == "number" and not WowVision.isSecret(radius) and radius < OUTDOOR_RADIUS * 0.8
+end
+
 -- Why the cursor is busy for the player, or nil: a spell waiting to be
 -- placed (ground targeting), something held on the cursor, a mouse button
 -- down. No minimap goes under the cursor then.
