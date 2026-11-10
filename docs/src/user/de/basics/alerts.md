@@ -132,6 +132,9 @@ Der Filter pro Fehler listet jede Meldung mit ihrem Zustand hinter dem Namen: �
 | Questfortschritt (Quest Progress Alert) | Quests | Das Spiel zeigt, dass ein Questzähler sich ändert. Sagt die Meldung des Spiels, etwa „Kobold Vermin getötet: 3/8“. | TTS, Soundalarm (an) |
 | Ziel erreicht (Objective Complete Alert) | Quests | Das Spiel zeigt ein erledigtes Ziel, als „… (Abgeschlossen)“ oder „Aufgabe abgeschlossen.“. Sagt die Meldung des Spiels. | TTS, Soundalarm (an) |
 | Quest abgeschlossen (Quest Complete Alert) | Quests | Alle Ziele einer Quest sind erledigt, gelesen aus deinem Questlog. Spielt statt des Tons für das Ziel; seine Sprachausgabe sagt den Questtitel und „Abgeschlossen“. | TTS (aus), Soundalarm (an) |
+| Ton für annehmbare Quests (Available Quest Sound) | Quests, In der Nähe | Der Questgeber einer Quest, die du annehmen kannst, ist in deiner Nähe. Spielt einen Ping aus seiner Richtung und sagt zum Beispiel „Quest verfügbar: A Threat Within, 30 yards“. Braucht Questie. | Beacon-Ton (an), TTS-Alarm (aus) |
+| Ton für abgebbare Quests (Turn-In Quest Sound) | Quests, In der Nähe | Für eine abgeschlossene Quest in deinem Log ist die Person zum Abgeben in deiner Nähe. Spielt einen Ping aus ihrer Richtung und sagt „Quest abgeben: “ und die Quest. Braucht Questie. | Beacon-Ton (an), TTS-Alarm (aus) |
+| Ton für Questziele (Quest Objective Sound) | Quests, In der Nähe | Eine Quest in deinem Log hat ein offenes Ziel in deiner Nähe. Spielt einen Ping aus seiner Richtung und sagt „Questziel: “ und die Quest. Braucht Questie. | Beacon-Ton (an), TTS-Alarm (aus) |
 | Gegenstand ausgewählt (Item Selected) | Fenster, Auktionshaus | Du wählst in der Durchsuchen-Liste eine Auktion aus. Sagt „Ausgewählt: “ und den Namen des Gegenstands. (Nur The Burning Crusade.) | TTS |
 
 Siehe [Minikarte](../world/minimap.md) und [Quests](../world/quests.md).
