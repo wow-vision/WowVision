@@ -506,7 +506,6 @@ function module:scanBody(task)
     local mapId = C_Map.GetBestMapForUnit("player")
     Minimap:SetZoom(0)
     Engine.shrink(task.cursorX, task.cursorY)
-    Engine.softCursor()
     Engine.wait()
     local viewRadius = C_Minimap.GetViewRadius()
 
@@ -878,9 +877,7 @@ function module:walkCheck()
         end)
         Minimap:SetZoom(0)
         Engine.shrink(x, y)
-        Engine.softCursor()
-        Engine.wait(2)
-        local dots = Engine.readDots()
+        local dots = Engine.readFirst(6)
         local indoors = IsIndoors ~= nil and IsIndoors() or false
         if not indoors then
             local radius = C_Minimap.GetViewRadius()
@@ -1267,13 +1264,13 @@ function module:rawRead()
         end)
         Minimap:SetZoom(0)
         Engine.shrink(x, y)
-        Engine.softCursor()
         -- Half a second of reads; every read that differs from the one
         -- before is kept, so late dots show up.
         task.reads = {}
         local function readFrames(title)
             local lastSig = nil
             for frame = 1, RAW_READ_FRAMES do
+                Engine.nudge()
                 Engine.wait()
                 local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
                 data = ok and data or nil
@@ -1295,13 +1292,12 @@ function module:rawRead()
             return ok and tostring(value) or "error"
         end
         task.facts = string.format(
-            "Mouse over the minimap %s, minimap mouse enabled %s, using mouse %s, cursor visible %s, hybrid minimap %s, soft cursor mode %s",
+            "Mouse over the minimap %s, minimap mouse enabled %s, using mouse %s, cursor visible %s, hybrid minimap %s",
             tostring(Minimap:IsMouseOver()),
             tostring(Minimap:IsMouseEnabled()),
             flag(IsUsingMouse),
             flag(IsCursorVisible),
-            flag(C_Minimap.ShouldUseHybridMinimap),
-            Minimap.SetUsingSoftCursor ~= nil and "on" or "not on this client"
+            flag(C_Minimap.ShouldUseHybridMinimap)
         )
         -- What lies over the shrunk minimap under the cursor: other
         -- addons' minimap icons (Questie's, for one) gather there.
@@ -1535,8 +1531,89 @@ function module:skuTest()
         Minimap:SetZoom(0)
         add(string.format("Cursor resting at %.0f %.0f; hidden minimap children: %d; view radius %s yd", x, y, #hidden, tostring(C_Minimap.GetViewRadius())))
 
+        -- Timelines: names per frame after the shrunk minimap arrives
+        -- under the cursor. The rebuilt scanner (soft cursor on, one read
+        -- after two frames) heard nothing in game on 2026-11-10 while this
+        -- test's first read (soft cursor off, up to ten frames) named 12.
+        local function namesNow()
+            local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
+            return #Scan.parseMouseover(ok and data or nil, WowVision.isSecret)
+        end
+        local function timeline(label, softOn, nudge)
+            Engine.restoreFrame(state)
+            Minimap:SetZoom(0)
+            Engine.wait(5)
+            if softOn and Minimap.SetUsingSoftCursor ~= nil then
+                pcall(Minimap.SetUsingSoftCursor, Minimap, true)
+            end
+            Engine.shrink(x, y)
+            local counts = {}
+            for frame = 1, SKU_READ_FRAMES do
+                if nudge then
+                    Engine.nudge()
+                end
+                Engine.wait()
+                counts[frame] = namesNow()
+            end
+            if Minimap.SetUsingSoftCursor ~= nil then
+                pcall(Minimap.SetUsingSoftCursor, Minimap, false)
+            end
+            add(label .. ": names per frame " .. table.concat(counts, " "))
+        end
+        timeline("Timeline, soft cursor off, map still", false, false)
+        timeline("Timeline, soft cursor on, map still", true, false)
+        timeline("Timeline, soft cursor off, nudged each frame", false, true)
+
+        -- A tracking filter switched while the shrunk minimap stays put:
+        -- does the read follow without anything moving? Off, then on
+        -- again; five frames still, then five nudged, each way.
+        local filter = nil
+        for _, t in ipairs(state.tracking) do
+            if not t.isSpell and t.active then
+                filter = t
+                break
+            end
+        end
+        if filter == nil then
+            add("Filter switch: no tracking filter on to switch")
+        else
+            Engine.onCleanup(function()
+                Engine.restoreTracking(state, false)
+            end)
+            local quests = WowVision.base.quests
+            quests:muteAreaAlerts(true)
+            Engine.onCleanup(function()
+                quests:muteAreaAlerts(false)
+            end)
+            local function afterSwitch(on)
+                C_Minimap.SetTracking(filter.index, on)
+                local still, moved = {}, {}
+                for frame = 1, 5 do
+                    Engine.wait()
+                    still[frame] = namesNow()
+                end
+                for frame = 1, 5 do
+                    Engine.nudge()
+                    Engine.wait()
+                    moved[frame] = namesNow()
+                end
+                add(string.format(
+                    "Filter %s switched %s: names per frame, map still %s; nudged %s",
+                    filter.name,
+                    on and "on" or "off",
+                    table.concat(still, " "),
+                    table.concat(moved, " ")
+                ))
+            end
+            afterSwitch(false)
+            afterSwitch(true)
+        end
+
         -- A, fast scan: shrunk under the resting cursor (Sku's way; the
         -- first run, 2026-11-10, named the same in all four setups).
+        Engine.restoreFrame(state)
+        Minimap:SetZoom(0)
+        Engine.wait(5)
         Engine.shrink(x, y)
         Engine.wait(3)
         local fastRead = naturalRead(SKU_READ_FRAMES)

@@ -213,21 +213,38 @@ function Engine.shrink(cursorX, cursorY)
     Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cursorX / scale, cursorY / scale)
 end
 
--- Forever's minimap (the build of 2026-10-16 on) names the dots under the
--- cursor only in its soft cursor mode, a software-driven pointer (the
--- gamepad UI's), which is what a parked cursor under a moved minimap is;
--- the hardware cursor's own mouseover came back empty on that build while
--- this mode answered at once (measured next to Coldridge Valley's quest
--- givers). Switched on after the minimap is placed, off at the task's end;
--- clients without the method (Retail, classic) are unchanged.
-function Engine.softCursor()
-    if Minimap.SetUsingSoftCursor == nil then
+-- The game works out the cursor's minimap mouseover when something moves
+-- under it. Each shrunk read shifts the minimap by one unit, back and
+-- forth (it stays under the cursor), so a switched tracking filter or a
+-- dot that came into range is named. The soft cursor mode the scan used
+-- since 2026-10-16 is gone: since build 70862 the read that named dots
+-- (/wv mscan sku, 2026-11-10) had it off.
+local nudged = false
+
+function Engine.nudge()
+    local point, relativeTo, relativePoint, x, y = Minimap:GetPoint(1)
+    if point == nil then
         return
     end
-    Engine.onCleanup(function()
-        pcall(Minimap.SetUsingSoftCursor, Minimap, false)
-    end)
-    pcall(Minimap.SetUsingSoftCursor, Minimap, true)
+    nudged = not nudged
+    Minimap:ClearAllPoints()
+    Minimap:SetPoint(point, relativeTo, relativePoint, x + (nudged and 1 or -1), y)
+end
+
+-- Inside a running task, the shrunk minimap under the cursor: up to
+-- maxFrames frames, each nudged, until a read names something; the last
+-- read (empty when nothing is in range).
+function Engine.readFirst(maxFrames)
+    local dots = {}
+    for _ = 1, maxFrames or 6 do
+        Engine.nudge()
+        Engine.wait()
+        dots = readMouseover()
+        if #dots > 0 then
+            return dots
+        end
+    end
+    return dots
 end
 
 -- Full size, centred on the cursor.
@@ -356,16 +373,18 @@ function Engine.wait(frames)
     end
 end
 
--- Inside a running task: read each frame until two reads in a row agree
--- (the dots settle one or two frames after a tracking switch), at most
--- maxFrames frames.
+-- Inside a running task: read each frame (nudged) until two reads in a
+-- row agree and name something (the dots settle one or two frames after a
+-- tracking switch; two empty reads in a row are not trusted, the names
+-- can come a few frames late), at most maxFrames frames.
 function Engine.readSettled(maxFrames)
     local last, lastSig = nil, nil
     for frame = 1, maxFrames or 6 do
+        Engine.nudge()
         Engine.wait()
         local dots = Engine.readDots()
         local sig = Scan.signature(dots)
-        if frame >= 2 and sig == lastSig then
+        if frame >= 2 and sig == lastSig and #dots > 0 then
             return dots
         end
         last, lastSig = dots, sig
