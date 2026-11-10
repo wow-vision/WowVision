@@ -79,7 +79,8 @@ end
 -- levels in all, as the two lowest and the two highest steps share one);
 -- measured (the voice's peak pitch line per copy, { a, b } = a + b *
 -- absmiddle semitones, for the tests); fallback (true for the profile of
--- voices without one). The profile gets its pitch per step (scale) and the
+-- voices without one); endPause (true: the LOW copy ends in
+-- GroupHealth.END_PAUSE, and the levels were measured so). The profile gets its pitch per step (scale) and the
 -- first step of the HIGH copy (highFrom).
 function VoiceProfiles:register(info)
     checkLevels(info, "low")
@@ -209,6 +210,27 @@ function GroupHealth.ratePoints(low, high, rate)
         tinsert(points, { high, fast })
     end
     return points
+end
+
+-- The end of the LOW copy. The silent HIGH copy right behind it cuts the
+-- audible number off: the volume drops to 0 where the next word starts,
+-- while the number is still sounding (Hedda: 60 ms heard instead of 88, at
+-- nearly full loudness, no fade). A short pause after the number lets it
+-- end as it would alone. Measured offline through SAPI, 2026-11-10, on
+-- Hedda, Zira and Katja: 5 ms gives the whole number with its natural fade
+-- and the shortest announcement (about 0.05 s longer than without the
+-- pause; 1 or 2 ms make SAPI add a longer pause of its own, about 0.1 s);
+-- 10 and 20 ms sound the same as 5. A comma, a dash or a quieter instead
+-- of a silent HIGH copy did not help.
+-- The pause takes part of the LOW copy's rise away (the number now ends a
+-- phrase): Hedda keeps a scale of 14 semitones, Katja one of 12.5, but
+-- Zira's two copies end up 1.3 semitones apart, too close for a scale. So
+-- the pause is a profile's choice (endPause), measured with it.
+GroupHealth.END_PAUSE = '<silence msec="5"/>'
+
+-- The end of a profile's LOW copy: the pause, or nothing.
+function GroupHealth.lowEnd(profile)
+    return profile.endPause and GroupHealth.END_PAUSE or ""
 end
 
 -- A cache key for a point list, so equal gates share one curve object.

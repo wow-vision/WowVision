@@ -185,7 +185,8 @@ def main(keys):
     results = {}
     for key in keys:
         entry = manifest[key]
-        print(f"== {entry['name']}  (key \"{key}\", rate {entry['rate']}, rendered {entry['date']})")
+        pause = ", end pause" if entry.get("endPause") else ""
+        print(f"== {entry['name']}  (key \"{key}\", rate {entry['rate']}{pause}, rendered {entry['date']})")
         try:
             ref, lines = measure(entry["file"])
         except NoSound as reason:
@@ -217,6 +218,8 @@ def main(keys):
                 print("voices:register({")
                 print(f'    key = "{lua_key(key)}",')
                 print(f'    match = "{key}",')
+                if entry.get("endPause"):
+                    print("    endPause = true,")
                 print(f"    low = {lua_list(profile['low'])},")
                 print(f"    high = {lua_list(profile['high'])},")
                 print(f"    measured = {{ low = {{ {low['a']:.2f}, {low['b']:.3f} }}, high = {{ {high['a']:.2f}, {high['b']:.3f} }} }},")

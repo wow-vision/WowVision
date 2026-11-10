@@ -41,6 +41,13 @@ testRunner:addSuite("GroupHealth", {
         end
     end,
 
+    ["voices: the LOW copy ends in the pause only where the profile was measured with it"] = function(t)
+        local voices = GroupHealth.voices
+        t:assertEqual(GroupHealth.lowEnd(voices:get("hedda")), GroupHealth.END_PAUSE)
+        t:assertEqual(GroupHealth.lowEnd(voices:get("katja")), GroupHealth.END_PAUSE)
+        t:assertEqual(GroupHealth.lowEnd(voices:get("zira")), "")
+    end,
+
     ["voices: registration refuses a profile that cannot work"] = function(t)
         local voices = GroupHealth.VoiceProfiles:new()
         local good = { 10, 8, 5, 3, 0, -2, -5, -7, -10 }

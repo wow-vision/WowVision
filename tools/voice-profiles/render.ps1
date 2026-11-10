@@ -20,7 +20,9 @@
 # monitor's default rate 7, three ways (retail/groupHealth/logic.lua,
 # GroupHealth.segment and module:announce):
 #   plain  the number alone (the reference: absmiddle 0 is 0 semitones)
-#   low    the LOW copy: the number spoken, then a silent copy at rate 10
+#   low    the LOW copy: the number spoken, then a silent copy at rate 10;
+#          with -EndPause the number ends in a 5 ms pause first
+#          (GroupHealth.END_PAUSE, a profile's endPause)
 #   high   the HIGH copy: a silent copy at rate 10, then the number spoken
 # (the silent copy is sped up as the monitor does it; measured 2026-11-02,
 # that moves the audible copy's pitch by less than 0.15 semitones at the
@@ -31,7 +33,8 @@ param(
     [string]$Voice,
     [switch]$List,
     [string]$Out = (Join-Path $PSScriptRoot "render"),
-    [int]$Rate = 7
+    [int]$Rate = 7,
+    [switch]$EndPause
 )
 
 $ErrorActionPreference = "Stop"
@@ -94,6 +97,7 @@ if (Test-Path $manifestPath) {
 }
 
 $speaker = New-Object -ComObject SAPI.SpVoice
+$lowEnd = if ($EndPause) { '<silence msec="5"/>' } else { "" }
 $format = New-Object -ComObject SAPI.SpAudioFormat
 $format.Type = 22 # 22 kHz, 16 bit, mono
 
@@ -113,7 +117,7 @@ foreach ($c in $chosen) {
     foreach ($p in -10..10) {
         $texts = @{
             plain = (Segment 100 $p "3")
-            low = (Segment 100 $p "3") + (Segment 0 $p "3" 10)
+            low = (Segment 100 $p "3$lowEnd") + (Segment 0 $p "3" 10)
             high = (Segment 0 $p "3" 10) + (Segment 100 $p "3")
         }
         foreach ($kind in $texts.Keys) {
@@ -130,6 +134,7 @@ foreach ($c in $chosen) {
         name = $c.Voice.Name
         list = $c.Voice.List
         rate = $Rate
+        endPause = [bool]$EndPause
         date = (Get-Date -Format "yyyy-MM-dd")
     }
 }

@@ -14,18 +14,23 @@ local GroupHealth = WowVision.groupHealth
 -- match: part of the game's voice name, lowercase; the longest match wins.
 local voices = GroupHealth.voices
 
--- Chosen by ear in game, 2026-10-03. Also used by the OneCore Hedda, which
--- renders the very same sound, and by every voice without a profile.
+-- Measured 2026-11-10 with the pause after the LOW copy (logic.lua,
+-- END_PAUSE); before it, chosen by ear in game 2026-10-03 without the pause.
+-- Also used by the OneCore Hedda, which renders the very same sound, and by
+-- every voice without a profile.
 voices:register({
     key = "hedda",
     match = "hedda",
     fallback = true,
-    low = { 10, 8, 5, 3, 0, -2, -5, -7, -10 },
-    high = { -3, -6, -8, -10 },
-    measured = { low = { 5.28, 0.497 }, high = { 0.06, 0.506 } },
+    endPause = true,
+    low = { 10, 8, 6, 4, 2, 0, -2, -4, -6 },
+    high = { -1, -4, -7, -10 },
+    measured = { low = { 3.69, 0.502 }, high = { -0.33, 0.502 } },
 })
 
--- Chosen by ear in game, 2026-10-03.
+-- Chosen by ear in game, 2026-10-03. Without the pause: with it, her HIGH
+-- copy sits only 1.3 semitones below her LOW copy, too close for a scale
+-- (measured 2026-11-10), so her numbers below 67 percent stay clipped.
 voices:register({
     key = "zira",
     match = "zira",
@@ -34,15 +39,16 @@ voices:register({
     measured = { low = { 7.69, 0.51 }, high = { 1.98, 0.506 } },
 })
 
--- Measured 2026-10-03. Her HIGH copy sits only about 3.3 semitones below
--- her LOW copy (Hedda 5.1, Zira 5.7), so the LOW copy carries ten levels
--- and the HIGH copy speaks from 73 percent.
+-- Measured 2026-11-10 with the pause after the LOW copy. Her HIGH copy sits
+-- only about 2.5 semitones below her LOW copy (Hedda 4.0), so the LOW copy
+-- carries eleven levels and the HIGH copy speaks from 80 percent.
 voices:register({
     key = "katja",
     match = "katja",
-    low = { 10, 8, 5, 3, 0, -2, -4, -6, -8, -10 },
-    high = { -6, -8, -10 },
-    measured = { low = { 3.07, 0.506 }, high = { -0.21, 0.507 } },
+    endPause = true,
+    low = { 10, 8, 6, 4, 2, 0, -2, -4, -6, -8, -10 },
+    high = { -8, -10 },
+    measured = { low = { 2.21, 0.502 }, high = { -0.25, 0.502 } },
 })
 
 -- Measured and left without a profile (they get Hedda's):
