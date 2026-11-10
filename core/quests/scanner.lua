@@ -606,8 +606,34 @@ local function seenTargets(roleKey, radius)
     return WowVision.quests.seen:npcs(roleKey, radius)
 end
 
--- Database targets plus seen ones, nearest first. A seen NPC whose name
--- the database already lists is left out: the database wins.
+-- Yards: a seen entry this close to a database spawn of its category is
+-- the same thing, the database wins.
+local SEEN_MATCH_YARDS = 15
+-- Categories of objects: the same name stands in many places (every
+-- mailbox), so only the place matches, never the name alone.
+local PLACE_ONLY = { mailboxes = true }
+
+local function nearSpawn(target, seen)
+    local spot = seen.nearest
+    if spot == nil then
+        return false
+    end
+    for _, spawn in ipairs(target.spawns or {}) do
+        if spawn.continent == spot.continent and spawn.wx ~= nil then
+            local dx, dy = spawn.wx - spot.wx, spawn.wy - spot.wy
+            if dx * dx + dy * dy <= SEEN_MATCH_YARDS * SEEN_MATCH_YARDS then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Database targets plus seen ones, nearest first. A seen entry is left
+-- out when a database target of the category stands within
+-- SEEN_MATCH_YARDS of it (the names can differ: Questie's German data
+-- calls three mailboxes "Mailbox", the minimap "Briefkasten"); for NPCs
+-- also when the database lists the name at all (one NPC, one name).
 local function withSeen(targets, roleKey, ctx)
     local seen = seenTargets(roleKey, ctx.radius)
     if #seen == 0 then
@@ -615,13 +641,20 @@ local function withSeen(targets, roleKey, ctx)
     end
     local out, names = {}, {}
     for _, target in ipairs(targets) do
-        if target.name ~= nil then
+        if target.name ~= nil and not PLACE_ONLY[roleKey] then
             names[target.name] = true
         end
         tinsert(out, target)
     end
     for _, target in ipairs(seen) do
-        if not names[target.name] then
+        local known = names[target.name] == true
+        for i = 1, #targets do
+            if known then
+                break
+            end
+            known = nearSpawn(targets[i], target)
+        end
+        if not known then
             tinsert(out, target)
         end
     end

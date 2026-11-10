@@ -262,14 +262,20 @@ end
 -- point's dots the next frame (several moves in one frame read the last
 -- frame's names, measured 2026-11-10).
 
--- Inside a running task, the full-size minimap centred on the cursor
--- (Engine.fullSize): a reader offset (units from its centre) -> dots
--- there. Each question takes one frame.
-function Engine.pointReader()
-    local cx, cy = Minimap:GetCenter()
+-- Inside a running task: the minimap at scale times its captured size
+-- (state), a reader offset (full-size units from its centre) -> dots
+-- there, the point laid under the cursor (cursorX, cursorY as
+-- GetCursorPosition gave them). The dots keep their size at any scale.
+-- Each question takes one frame.
+function Engine.pointReader(state, cursorX, cursorY, scale)
+    scale = scale or 1
+    Engine.clearWay()
+    local s = Minimap:GetEffectiveScale()
+    local cx, cy = cursorX / s, cursorY / s
+    Minimap:SetSize(state.width * scale, state.height * scale)
     return function(ox, oy)
         Minimap:ClearAllPoints()
-        Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cx - ox, cy - oy)
+        Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cx - ox * scale, cy - oy * scale)
         Engine.wait()
         return readMouseover()
     end

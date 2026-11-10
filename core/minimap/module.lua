@@ -164,6 +164,8 @@ module.spellLabels = {}
 
 local CATEGORY_LABELS = {
     questGiver = L["Quest Givers"],
+    questArea = L["Quest Areas"],
+    questDirection = L["Quest Directions"],
     vendor = L["Vendors"],
     repair = L["Repair"],
     trainer = L["Trainers"],
@@ -182,6 +184,55 @@ local CATEGORY_LABELS = {
 
 function module:categoryLabel(category)
     return CATEGORY_LABELS[category] or self.spellLabels[category] or category
+end
+
+-- A quest of the log shows on the minimap under its title: its area as a
+-- dot or patch inside the minimap, or, when the area is further away, an
+-- arrow at the rim pointing at it (2026-11-10 Stormwind: "Bingles'
+-- verschwundene Werkzeuge", a Loch Modan quest, at 126 of 150 yards).
+-- Told apart by the offset: this far out of the view radius it is the
+-- arrow.
+local QUEST_RIM = 0.75
+-- name -> { wx, wy, continent }: the rim point of a quest direction, so
+-- the direction can be told from where the player stands later.
+module.questDirections = {}
+
+local function questLogTitles()
+    local titles = {}
+    if C_QuestLog == nil or C_QuestLog.GetNumQuestLogEntries == nil or C_QuestLog.GetInfo == nil then
+        return titles
+    end
+    for i = 1, C_QuestLog.GetNumQuestLogEntries() or 0 do
+        local info = C_QuestLog.GetInfo(i)
+        if info ~= nil and not info.isHeader and type(info.title) == "string" then
+            titles[info.title] = true
+        end
+    end
+    return titles
+end
+
+-- The scan sorts every name it cannot explain otherwise as a quest giver;
+-- a name that is a quest title in the log is that quest's area or
+-- direction instead. Directions no longer on the minimap are forgotten
+-- (not indoors: there it shows only the building).
+function module:sortQuestAreas(classified, indoors)
+    local titles = questLogTitles()
+    local present = {}
+    for _, item in ipairs(classified) do
+        if item.category == "questGiver" and titles[item.name] then
+            item.category = "questArea"
+            item.flag = nil
+            self.kinds[item.name] = L["quest area"]
+            present[item.name] = true
+        end
+    end
+    if not indoors then
+        for name in pairs(self.questDirections) do
+            if not present[name] then
+                self.questDirections[name] = nil
+            end
+        end
+    end
 end
 
 local function speak(text)
@@ -297,20 +348,27 @@ end
 -- otherLevel when its name read grey. Nil when it named none of the
 -- work's names.
 --
--- Each question takes a frame (the minimap moved under the cursor), so
--- the cells are 8 units: a dot answers over about 16 to 24 units, 2 to 9
--- cells (measured 2026-11-10, 476 cells in 8 s at 60 frames a second),
--- and four halvings bring an edge to half a unit.
-local SWEEP_STEP = 8
-local EDGE_HALVINGS = 4
+-- Each question takes a frame (the minimap moved under the cursor). At
+-- full size a dot answers over about 16 to 24 units (2 to 9 cells of 8,
+-- measured 2026-11-10, 476 cells in 8 s at 60 frames a second). The dots
+-- keep their size when the minimap shrinks, so on a half-size minimap a
+-- dot answers over twice as many full-size units: cells of 16 are as safe
+-- there, a quarter of the questions. The middle between a dot's edges
+-- stays the dot at any size, so the halvings keep the precision (three
+-- halvings of 16 units: 2 units). Two dots of one name closer than about
+-- 38 units touch on the half-size minimap and are split by size.
+-- opts: { scale, step, halvings }; all offsets in full-size units.
+local SWEEP = { scale = 0.5, step = 16, halvings = 3 }
 
-local function sweepPositions(task, work, radius)
+local function sweepPositions(task, work, radius, opts)
+    opts = opts or SWEEP
+    local SWEEP_STEP, EDGE_HALVINGS = opts.step, opts.halvings
     local stats = task.stats
     local expected = {}
     for _, item in ipairs(work) do
         expected[item.name] = true
     end
-    local read = Engine.pointReader()
+    local read = Engine.pointReader(task.state, task.cursorX, task.cursorY, opts.scale)
     -- Every question goes through here; each one is a frame.
     local function ask(ox, oy)
         stats.questions = stats.questions + 1
@@ -514,14 +572,28 @@ function module:scanBody(task)
         tinsert(t.isSpell and spells or filters, t)
     end
     local classified, places = Scan.splitCategory(sortingPasses(task, filters, spells), "poi")
-
     -- Indoors the minimap shows only this building: what it cannot see
     -- outside is not gone, and everything it does see is indoors.
     local indoors = IsIndoors ~= nil and IsIndoors() or false
+    self:sortQuestAreas(classified, indoors)
+
     local store = self.store
     local dropped = store:dropMissing(Scan.presentByCategory(classified), px, py, continent, viewRadius * 0.9, indoors)
-    local work = Scan.missingWork(classified, store, px, py, continent, viewRadius)
+    local work = {}
+    for _, item in ipairs(Scan.missingWork(classified, store, px, py, continent, viewRadius)) do
+        -- A known direction is not swept again.
+        if not (item.category == "questArea" and self.questDirections[item.name] ~= nil) then
+            tinsert(work, item)
+        end
+    end
     local counts, order = {}, {}
+    local function count(category)
+        if counts[category] == nil then
+            counts[category] = 0
+            tinsert(order, category)
+        end
+        counts[category] = counts[category] + 1
+    end
     -- Indoors the minimap shows only this building; keep the last list.
     if not indoors then
         local known = {}
@@ -530,11 +602,7 @@ function module:scanBody(task)
         end
         for _, name in ipairs(places) do
             if not known[name] then
-                if counts.poi == nil then
-                    counts.poi = 0
-                    tinsert(order, "poi")
-                end
-                counts.poi = counts.poi + 1
+                count("poi")
             end
         end
         self.places = places
@@ -548,7 +616,7 @@ function module:scanBody(task)
         local radius = state.width / 2
         local yardsPerUnit = viewRadius / radius
         local facing = task.rotating and task.facing or 0
-        task.stats.method = "sweep"
+        task.stats.method = string.format("sweep at size %.2f, step %d, %d halvings", SWEEP.scale, SWEEP.step, SWEEP.halvings)
         local found = sweepPositions(task, work, radius)
         if found == nil then
             task.stats.method = "sweep, named none of the new names"
@@ -559,25 +627,30 @@ function module:scanBody(task)
                 local north, west = Scan.offsetToWorld(offset[1], offset[2], yardsPerUnit, facing)
                 local wx, wy = px + north, py + west
                 local x, y = mapPosition(mapId, continent, wx, wy)
-                local _, isNew = store:upsert({
-                    name = item.name,
-                    category = item.category,
-                    subtitle = item.subtitle,
-                    flag = item.flag,
-                    indoors = indoors or offset.otherLevel == true,
-                    wx = wx,
-                    wy = wy,
-                    continent = continent,
-                    mapId = mapId,
-                    x = x,
-                    y = y,
-                }, MATCH_RADIUS)
-                if isNew then
-                    if counts[item.category] == nil then
-                        counts[item.category] = 0
-                        tinsert(order, item.category)
+                if item.category == "questArea" and math.sqrt(north * north + west * west) >= viewRadius * QUEST_RIM then
+                    -- The arrow at the rim toward a quest's area further
+                    -- away: a direction, not a place.
+                    if self.questDirections[item.name] == nil then
+                        count("questDirection")
                     end
-                    counts[item.category] = counts[item.category] + 1
+                    self.questDirections[item.name] = { wx = wx, wy = wy, continent = continent }
+                else
+                    local _, isNew = store:upsert({
+                        name = item.name,
+                        category = item.category,
+                        subtitle = item.subtitle,
+                        flag = item.flag,
+                        indoors = indoors or offset.otherLevel == true,
+                        wx = wx,
+                        wy = wy,
+                        continent = continent,
+                        mapId = mapId,
+                        x = x,
+                        y = y,
+                    }, MATCH_RADIUS)
+                    if isNew then
+                        count(item.category)
+                    end
                 end
             end
         end
@@ -1379,17 +1452,15 @@ end
 -- /wv mscan sku: Sku's own ways, read only as the game sends them (no
 -- UpdateMouseoverAtPoint anywhere). The raw read's setups asked through
 -- UpdateMouseoverAtPoint, a no-op since build 70862, so they never tested
--- these (2026-11-10). The minimap moved under the resting cursor: Sku's
--- fast scan (shrunk), the reach of one read by minimap size, and Sku's
--- grid scan (full size, stepped; gives positions) timed with 0, 1 and 2
--- frames after each move. (SetCursorPosition moves the real cursor only
--- on a controller press: no use for keyboard players.) As in Sku the
+-- these (2026-11-10). Now: Sku's fast read (the minimap shrunk under the
+-- resting cursor), then the scanner's sweep at full, half and third size
+-- on the same spot, timed, each compared with the full-size one. (Earlier
+-- runs measured: 1 frame a point, names from the second frame after the
+-- minimap arrives, filters switch without a nudge.) As in Sku the
 -- minimap cluster goes on top and the minimap's mouse-taking children
 -- (Questie's icons) are hidden while it runs. Saved to
 -- WowVisionDump.minimapSku.
 local SKU_READ_FRAMES = 10
-local SKU_GRID_STEP = 8
-local SKU_CLUSTER = 20
 
 -- The game's GameTooltip lines, the channel Sku reads.
 local function gameTooltipLines()
@@ -1459,27 +1530,6 @@ local function readText(label, read)
     )
 end
 
--- Hits of one name within SKU_CLUSTER units are one dot (Sku's boxes).
-local function clusterHits(hits)
-    local clusters = {}
-    for _, hit in ipairs(hits) do
-        local home = nil
-        for _, c in ipairs(clusters) do
-            if math.abs(c.x - hit.x) < SKU_CLUSTER and math.abs(c.y - hit.y) < SKU_CLUSTER then
-                home = c
-                break
-            end
-        end
-        if home == nil then
-            home = { sumX = 0, sumY = 0, n = 0 }
-            tinsert(clusters, home)
-        end
-        home.sumX, home.sumY, home.n = home.sumX + hit.x, home.sumY + hit.y, home.n + 1
-        home.x, home.y = home.sumX / home.n, home.sumY / home.n
-    end
-    return clusters
-end
-
 function module:skuTest()
     if self.task ~= nil or self.walkTask ~= nil then
         speak(L["Scan already running"])
@@ -1531,184 +1581,118 @@ function module:skuTest()
         Minimap:SetZoom(0)
         add(string.format("Cursor resting at %.0f %.0f; hidden minimap children: %d; view radius %s yd", x, y, #hidden, tostring(C_Minimap.GetViewRadius())))
 
-        -- Timelines: names per frame after the shrunk minimap arrives
-        -- under the cursor. The rebuilt scanner (soft cursor on, one read
-        -- after two frames) heard nothing in game on 2026-11-10 while this
-        -- test's first read (soft cursor off, up to ten frames) named 12.
-        local function namesNow()
-            local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
-            return #Scan.parseMouseover(ok and data or nil, WowVision.isSecret)
-        end
-        local function timeline(label, softOn, nudge)
-            Engine.restoreFrame(state)
-            Minimap:SetZoom(0)
-            Engine.wait(5)
-            if softOn and Minimap.SetUsingSoftCursor ~= nil then
-                pcall(Minimap.SetUsingSoftCursor, Minimap, true)
-            end
-            Engine.shrink(x, y)
-            local counts = {}
-            for frame = 1, SKU_READ_FRAMES do
-                if nudge then
-                    Engine.nudge()
-                end
-                Engine.wait()
-                counts[frame] = namesNow()
-            end
-            if Minimap.SetUsingSoftCursor ~= nil then
-                pcall(Minimap.SetUsingSoftCursor, Minimap, false)
-            end
-            add(label .. ": names per frame " .. table.concat(counts, " "))
-        end
-        timeline("Timeline, soft cursor off, map still", false, false)
-        timeline("Timeline, soft cursor on, map still", true, false)
-        timeline("Timeline, soft cursor off, nudged each frame", false, true)
-
-        -- A tracking filter switched while the shrunk minimap stays put:
-        -- does the read follow without anything moving? Off, then on
-        -- again; five frames still, then five nudged, each way.
-        local filter = nil
-        for _, t in ipairs(state.tracking) do
-            if not t.isSpell and t.active then
-                filter = t
-                break
-            end
-        end
-        if filter == nil then
-            add("Filter switch: no tracking filter on to switch")
-        else
-            Engine.onCleanup(function()
-                Engine.restoreTracking(state, false)
-            end)
-            local quests = WowVision.base.quests
-            quests:muteAreaAlerts(true)
-            Engine.onCleanup(function()
-                quests:muteAreaAlerts(false)
-            end)
-            local function afterSwitch(on)
-                C_Minimap.SetTracking(filter.index, on)
-                local still, moved = {}, {}
-                for frame = 1, 5 do
-                    Engine.wait()
-                    still[frame] = namesNow()
-                end
-                for frame = 1, 5 do
-                    Engine.nudge()
-                    Engine.wait()
-                    moved[frame] = namesNow()
-                end
-                add(string.format(
-                    "Filter %s switched %s: names per frame, map still %s; nudged %s",
-                    filter.name,
-                    on and "on" or "off",
-                    table.concat(still, " "),
-                    table.concat(moved, " ")
-                ))
-            end
-            afterSwitch(false)
-            afterSwitch(true)
-        end
-
-        -- A, fast scan: shrunk under the resting cursor (Sku's way; the
-        -- first run, 2026-11-10, named the same in all four setups).
-        Engine.restoreFrame(state)
-        Minimap:SetZoom(0)
-        Engine.wait(5)
+        -- The fast read (Sku's way): every name in range, the work for the
+        -- sweeps below.
         Engine.shrink(x, y)
         Engine.wait(3)
         local fastRead = naturalRead(SKU_READ_FRAMES)
-        task.fastNames = fastRead.dots
-        add(readText("A fast, shrunk, hidden, soft cursor off (Sku's way)", fastRead))
-
-        local scale = Minimap:GetEffectiveScale()
-        local radius = state.width / 2
-        local viewRadius = C_Minimap.GetViewRadius() or 0
-        Minimap:SetAlpha(1)
-
-        -- Reach: the minimap at several sizes, centred under the cursor.
-        -- The dots keep their size while the map shrinks, so how many
-        -- names one read gives at each size tells how far around the
-        -- cursor a read reaches (halving the map instead of stepping).
-        for _, size in ipairs({ 15, 30, 60, 120, state.width }) do
-            Minimap:SetSize(size, size)
-            Minimap:ClearAllPoints()
-            Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale, y / scale)
-            Engine.wait(3)
-            local read = naturalRead(4)
-            add(string.format("Reach, size %.0f (full %.0f): %d names: %s", size, state.width, read.dots, read.names))
+        add(readText("Fast read, shrunk", fastRead))
+        local work, named = {}, {}
+        for _, dot in ipairs(Engine.readFirst(10)) do
+            if not named[dot.name] then
+                named[dot.name] = true
+                tinsert(work, { name = dot.name })
+            end
         end
-        Minimap:SetSize(state.width, state.height)
 
-        -- A, grid scan: full size, the point (ox, oy) of the minimap laid
-        -- under the cursor step by step; waits = frames given after each
-        -- move (0: several moves in one frame, a frame handed back every
-        -- 20 points), timed.
-        local function grid(waits)
-            local hits, order, asked = {}, {}, 0
-            local started, frames = GetTime(), 0
-            for oy = -radius, radius, SKU_GRID_STEP do
-                for ox = -radius, radius, SKU_GRID_STEP do
-                    if ox * ox + oy * oy <= radius * radius then
-                        Minimap:ClearAllPoints()
-                        Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale - ox, y / scale - oy)
-                        asked = asked + 1
-                        if waits > 0 then
-                            Engine.wait(waits)
-                            frames = frames + waits
-                        elseif asked % 20 == 0 then
-                            Engine.wait()
-                            frames = frames + 1
-                        end
-                        local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
-                        for _, dot in ipairs(Scan.parseMouseover(ok and data or nil, WowVision.isSecret)) do
-                            if hits[dot.name] == nil then
-                                hits[dot.name] = {}
-                                tinsert(order, dot.name)
-                            end
-                            tinsert(hits[dot.name], { x = ox, y = oy })
+        -- The scanner's sweep at several minimap sizes on the same spot:
+        -- the first (full size, step 8, the sweep of 2026-11-10 morning)
+        -- is the reference; the others report how far their dots lie
+        -- from its dots of the same name.
+        task.cursorX, task.cursorY = x, y
+        local radius = state.width / 2
+        local yardsPerUnit = (C_Minimap.GetViewRadius() or 0) / radius
+        local facing = GetCVar("rotateMinimap") == "1" and (GetPlayerFacing() or 0) or 0
+        local variants = {
+            { label = "reference, full size", scale = 1, step = 8, halvings = 4 },
+            { label = "half size (the scanner now)", scale = 0.5, step = 16, halvings = 3 },
+            { label = "third size", scale = 1 / 3, step = 24, halvings = 3 },
+        }
+        local reference = nil
+        task.sweeps = {}
+        for _, v in ipairs(variants) do
+            task.stats = { questions = 0, frames = 0, dots = 0, merged = 0 }
+            local started = GetTime()
+            local found = sweepPositions(task, work, radius, v) or {}
+            local seconds = GetTime() - started
+            local spots = {}
+            for name, list in pairs(found) do
+                for _, offset in ipairs(list) do
+                    local north, west = Scan.offsetToWorld(offset[1], offset[2], yardsPerUnit, facing)
+                    tinsert(spots, { name = name, north = north, east = -west })
+                end
+            end
+            table.sort(spots, function(p, q)
+                return p.name < q.name or (p.name == q.name and p.north < q.north)
+            end)
+            local function nearest(spot, list)
+                local best = nil
+                for _, other in ipairs(list) do
+                    if other.name == spot.name then
+                        local d = math.sqrt((other.north - spot.north) ^ 2 + (other.east - spot.east) ^ 2)
+                        if best == nil or d < best then
+                            best = d
                         end
                     end
                 end
+                return best
             end
-            local places = 0
-            local placeLines = {}
-            for _, name in ipairs(order) do
-                for _, c in ipairs(clusterHits(hits[name])) do
-                    places = places + 1
-                    local east = radius > 0 and c.x / radius * viewRadius or 0
-                    local north = radius > 0 and c.y / radius * viewRadius or 0
-                    tinsert(placeLines, string.format(
-                        "  %s: %d hits, %.0f yd %s, %.0f yd %s, %.0f yd away",
-                        name,
-                        c.n,
-                        math.abs(north),
-                        north >= 0 and "north" or "south",
-                        math.abs(east),
-                        east >= 0 and "east" or "west",
-                        math.sqrt(east * east + north * north)
-                    ))
+            local compare = ""
+            if reference ~= nil then
+                local sum, max, matched, extra, missing = 0, 0, 0, 0, 0
+                for _, spot in ipairs(spots) do
+                    local d = nearest(spot, reference)
+                    spot.off = d
+                    if d == nil or d > 10 then
+                        extra = extra + 1
+                    else
+                        matched = matched + 1
+                        sum = sum + d
+                        max = math.max(max, d)
+                    end
                 end
+                for _, spot in ipairs(reference) do
+                    local d = nearest(spot, spots)
+                    if d == nil or d > 10 then
+                        missing = missing + 1
+                    end
+                end
+                compare = string.format(
+                    "; against the reference: %d within 10 yd (mean %.1f yd, max %.1f yd), %d extra, %d missing",
+                    matched,
+                    matched > 0 and sum / matched or 0,
+                    max,
+                    extra,
+                    missing
+                )
+                tinsert(task.sweeps, { label = v.label, seconds = seconds, missing = missing, extra = extra, max = max })
+            else
+                tinsert(task.sweeps, { label = v.label, seconds = seconds, missing = 0, extra = 0, max = 0 })
             end
             add(string.format(
-                "A grid, wait %d frames, step %d, %d points, radius %.0f units: %d names, %d places, %d frames, %.1f s, framerate %.0f",
-                waits,
-                SKU_GRID_STEP,
-                asked,
-                radius,
-                #order,
-                places,
-                frames,
-                GetTime() - started,
-                GetFramerate() or 0
+                "Sweep %s (size %.2f, step %d, %d halvings): %d questions, %.1f s, %d dots, %d split from touching dots%s",
+                v.label,
+                v.scale,
+                v.step,
+                v.halvings,
+                task.stats.questions,
+                seconds,
+                #spots,
+                task.stats.merged,
+                compare
             ))
-            for _, line in ipairs(placeLines) do
-                add(line)
+            for _, spot in ipairs(spots) do
+                add(string.format(
+                    "  %s: %.0f yd %s, %.0f yd %s%s",
+                    spot.name,
+                    math.abs(spot.north),
+                    spot.north >= 0 and "north" or "south",
+                    math.abs(spot.east),
+                    spot.east >= 0 and "east" or "west",
+                    spot.off ~= nil and string.format(", %.1f yd from the reference", spot.off) or ""
+                ))
             end
-            return places
-        end
-        task.gridPlaces = {}
-        for _, waits in ipairs({ 0, 1, 2 }) do
-            task.gridPlaces[waits] = grid(waits)
+            reference = reference or spots
         end
     end
     task.check = function()
@@ -1736,14 +1720,11 @@ function module:skuTest()
         WowVisionDump = WowVisionDump or {}
         WowVisionDump.minimapSku = { date("%Y-%m-%d %H:%M:%S"), unpack(lines) }
         WowVision.testing.showResults(table.concat(lines, "\n"))
-        local grids = task.gridPlaces or {}
-        speak(string.format(
-            "Sku test done. Fast scan %d names, grid places: wait 0 frames %d, 1 frame %d, 2 frames %d",
-            task.fastNames or 0,
-            grids[0] or 0,
-            grids[1] or 0,
-            grids[2] or 0
-        ))
+        local parts = {}
+        for _, sw in ipairs(task.sweeps or {}) do
+            tinsert(parts, string.format("%s %.0f seconds, %d missing, %d extra", sw.label, sw.seconds, sw.missing, sw.extra))
+        end
+        speak("Sku test done. " .. table.concat(parts, "; "))
     end
     Engine.run(task)
 end
