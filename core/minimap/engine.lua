@@ -18,8 +18,10 @@ local Scan = WowVision.minimapScan
 --   gives the last frame's names).
 -- Tracking types switched one at a time sort the names (see logic.lua).
 --
--- Everything the scan changes (points, size, alpha, zoom, tracking) is
--- captured first and restored at the end, on abort and on error. The
+-- Everything the scan changes (points, size, alpha, zoom, tracking, the
+-- minimap cluster's strata and level, hidden minimap children, the
+-- cursor CVars) is captured first and restored at the end, on abort and
+-- on error. The
 -- minimap is not a protected frame; the scanner still keeps out of
 -- combat.
 
@@ -179,10 +181,10 @@ end
 -- of every other frame and the minimap's own mouse-taking children
 -- (other addons' icons, Questie's for one) hidden, so the cursor meets
 -- the minimap itself (2026-11-09 a Questie icon held the mouse focus).
--- Both come back when the task ends.
+-- Both come back when the task ends. Returns how many children it hid.
 function Engine.clearWay()
     if current.wayCleared then
-        return
+        return current.hiddenChildren
     end
     current.wayCleared = true
     local strata, level = MinimapCluster:GetFrameStrata(), MinimapCluster:GetFrameLevel()
@@ -202,6 +204,8 @@ function Engine.clearWay()
             child:Hide()
         end
     end
+    current.hiddenChildren = #hidden
+    return #hidden
 end
 
 function Engine.shrink(cursorX, cursorY)
@@ -247,15 +251,6 @@ function Engine.readFirst(maxFrames)
     return dots
 end
 
--- Full size, centred on the cursor.
-function Engine.fullSize(state, cursorX, cursorY)
-    Engine.clearWay()
-    local scale = Minimap:GetEffectiveScale()
-    Minimap:SetSize(state.width, state.height)
-    Minimap:ClearAllPoints()
-    Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cursorX / scale, cursorY / scale)
-end
-
 -- ---- asking at a point ----
 -- The game works out what lies under the cursor once a frame: the
 -- minimap moved so a point lies under the resting cursor names that
@@ -266,13 +261,17 @@ end
 -- (state), a reader offset (full-size units from its centre) -> dots
 -- there, the point laid under the cursor (cursorX, cursorY as
 -- GetCursorPosition gave them). The dots keep their size at any scale.
--- Each question takes one frame.
+-- Each question takes one frame; two frames first for the new size (the
+-- first frame after the minimap arrives reads empty).
 function Engine.pointReader(state, cursorX, cursorY, scale)
     scale = scale or 1
     Engine.clearWay()
     local s = Minimap:GetEffectiveScale()
     local cx, cy = cursorX / s, cursorY / s
     Minimap:SetSize(state.width * scale, state.height * scale)
+    Minimap:ClearAllPoints()
+    Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cx, cy)
+    Engine.wait(2)
     return function(ox, oy)
         Minimap:ClearAllPoints()
         Minimap:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cx - ox * scale, cy - oy * scale)
@@ -409,17 +408,13 @@ local CENTRE_CVARS = {
     CursorStickyCentering = "1",
 }
 
--- Inside a running task. yPos (0 to 1, the CVar's own scale) moves the
--- landing height; the raw read's jump test uses it, the scan never does.
-function Engine.centreCursor(yPos)
+-- Inside a running task.
+function Engine.centreCursor()
     if MouselookStart == nil or IsMouselooking == nil or IsMouselooking() then
         return
     end
     local saved = {}
     for name, value in pairs(CENTRE_CVARS) do
-        if name == "CursorCenteredYPos" and yPos ~= nil then
-            value = tostring(yPos)
-        end
         local ok, current = pcall(GetCVar, name)
         if ok and current ~= nil then
             saved[name] = current

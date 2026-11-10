@@ -629,11 +629,12 @@ local function nearSpawn(target, seen)
     return false
 end
 
--- Database targets plus seen ones, nearest first. A seen entry is left
--- out when a database target of the category stands within
--- SEEN_MATCH_YARDS of it (the names can differ: Questie's German data
--- calls three mailboxes "Mailbox", the minimap "Briefkasten"); for NPCs
--- also when the database lists the name at all (one NPC, one name).
+-- Database targets plus seen ones, nearest first. A seen NPC is left out
+-- when the database lists its name (one NPC, one name). A seen object of
+-- a PLACE_ONLY category is left out when a database one stands within
+-- SEEN_MATCH_YARDS (the names can differ: Questie's German data calls
+-- three mailboxes "Mailbox", the minimap "Briefkasten"); NPCs are not
+-- matched by place, neighbours in a town would hide each other.
 local function withSeen(targets, roleKey, ctx)
     local seen = seenTargets(roleKey, ctx.radius)
     if #seen == 0 then
@@ -648,11 +649,13 @@ local function withSeen(targets, roleKey, ctx)
     end
     for _, target in ipairs(seen) do
         local known = names[target.name] == true
-        for i = 1, #targets do
-            if known then
-                break
+        if PLACE_ONLY[roleKey] then
+            for i = 1, #targets do
+                if known then
+                    break
+                end
+                known = nearSpawn(targets[i], target)
             end
-            known = nearSpawn(targets[i], target)
         end
         if not known then
             tinsert(out, target)

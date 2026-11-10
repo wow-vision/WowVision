@@ -13,9 +13,9 @@ local settings = module:hasSettings()
 -- - The scan (Ctrl+Shift+F, standing still): sorting passes on the
 --   shrunk minimap first: every tracking type at once, then one at a
 --   time when that showed anything (well under two seconds); when that
---   finds nothing new it stops there. Otherwise the sweep asks the
---   full-size minimap every 8 units, moving it under the cursor (one
---   frame a point, about ten seconds), and finds each new dot's edges by
+--   finds nothing new it stops there. Otherwise the sweep asks a
+--   half-size minimap every 16 units, moving it under the cursor (one
+--   frame a point, about six seconds), and finds each new dot's edges by
 --   halving.
 --   Moving, turning, the mouse moving, mouselook and combat abort it;
 --   everything half-measured is dropped.
@@ -200,7 +200,7 @@ local function questLogTitles()
     end
     for i = 1, C_QuestLog.GetNumQuestLogEntries() or 0 do
         local info = C_QuestLog.GetInfo(i)
-        if info ~= nil and not info.isHeader and type(info.title) == "string" then
+        if info ~= nil and not info.isHeader and type(info.title) == "string" and not WowVision.isSecret(info.title) then
             titles[info.title] = true
         end
     end
@@ -288,7 +288,11 @@ local function sortingPasses(task, filters, spells)
     -- group of filters shows exactly its single passes' names).
     local sortable, everyOn = sortableFilters(filters)
     setFilters(filters, everyOn)
-    task.stats.anyFiltered = Scan.hasExtras(passes.baseline, Engine.readSettled())
+    local allOn = Engine.readSettled()
+    -- How many dots each name has with every filter on, the sweep's own
+    -- setup (one name can stand in several classified entries).
+    task.allOnCounts = Scan.counts(allOn)
+    task.stats.anyFiltered = Scan.hasExtras(passes.baseline, allOn)
     if task.stats.anyFiltered then
         for _, t in ipairs(sortable) do
             setFilters(filters, { [t.index] = true })
@@ -337,8 +341,9 @@ end
 -- measured 2026-11-10, 476 cells in 8 s at 60 frames a second). The dots
 -- keep their size when the minimap shrinks, so on a half-size minimap a
 -- dot answers over twice as many full-size units and cells of 16 are as
--- safe. How many dots a name has comes from the shrunk read (the work
--- item's count), not from patch sizes. Measured 2026-11-10 01:51 in
+-- safe. How many dots a name has comes from the shrunk read (the scan's
+-- every-filter-on read, else the work item's count), not from patch
+-- sizes. Measured 2026-11-10 01:51 in
 -- Stormwind (/wv mscan sku, 13 dots, no two of one name): full size 840
 -- questions 14.0 s; half size 340 questions 5.7 s, 12 dots within 2.3
 -- yards of full size (mean 1.3), the 13th an arrow at the rim; third
@@ -353,13 +358,12 @@ local function sweepPositions(task, work, radius, opts)
     local expected, counts = {}, {}
     for _, item in ipairs(work) do
         expected[item.name] = true
-        counts[item.name] = item.count
+        counts[item.name] = task.allOnCounts ~= nil and task.allOnCounts[item.name] or item.count
     end
     local read = Engine.pointReader(task.state, task.cursorX, task.cursorY, opts.scale)
     -- Every question goes through here; each one is a frame.
     local function ask(ox, oy)
         stats.questions = stats.questions + 1
-        stats.frames = stats.frames + 1
         return read(ox, oy)
     end
     local function has(dots, name)
@@ -371,9 +375,10 @@ local function sweepPositions(task, work, radius, opts)
         return false
     end
 
-    -- The pass: a margin of a dot's reach past the rim, for dots there.
+    -- The pass: a margin of a dot's reach past the rim, for dots there
+    -- (in full-size units the reach grows as the minimap shrinks).
     local hits, any = {}, false
-    for _, cell in ipairs(Scan.sweepCells(radius + 10, SWEEP_STEP)) do
+    for _, cell in ipairs(Scan.sweepCells(radius + 10 / opts.scale, SWEEP_STEP)) do
         local dots = ask(cell[1] * SWEEP_STEP, cell[2] * SWEEP_STEP)
         for _, dot in ipairs(dots) do
             if expected[dot.name] then
@@ -593,8 +598,6 @@ function module:scanBody(task)
         -- Every kind on, so every name answers in the sweep.
         local _, on = sortableFilters(filters)
         setFilters(filters, on)
-        Engine.fullSize(state, task.cursorX, task.cursorY)
-        Engine.wait(2)
         local radius = state.width / 2
         local yardsPerUnit = viewRadius / radius
         local facing = task.rotating and task.facing or 0
@@ -664,13 +667,11 @@ function module:scan()
         return
     end
     local task = {
-        -- What the scan did, for /wv mscan stats.
+        -- What the scan did, for /wv mscan log.
         stats = {
             started = GetTime(),
             method = "none (nothing new to place)",
             questions = 0,
-            frames = 0,
-            ms = 0,
             dots = 0,
             merged = 0,
         },
@@ -936,10 +937,6 @@ function module:walkCheck()
         -- walking player.
         local locate = module:walkJudge(dots, indoors)
         if #locate > 0 then
-            local _, _, _, continent = UnitPosition("player")
-            for _, name in ipairs(locate) do
-                module.walk:placed(name, {}, continent)
-            end
             walkNote("not placed while walking, name rule: " .. table.concat(locate, ", "))
         end
     end
@@ -1264,9 +1261,23 @@ end
 
 local RAW_READ_FRAMES = 30
 
+-- The frames under the cursor, by name.
+local function mouseFocusText()
+    local foci = {}
+    for _, focus in ipairs(GetMouseFoci ~= nil and GetMouseFoci() or {}) do
+        local ok, name = pcall(function()
+            return focus.GetDebugName ~= nil and focus:GetDebugName() or focus:GetName()
+        end)
+        tinsert(foci, ok and name ~= nil and name ~= "" and tostring(name) or "unnamed frame")
+    end
+    return #foci > 0 and table.concat(foci, ", ") or "none"
+end
+
+
 -- /wv mscan raw: reads of the shrunk minimap exactly as the game sends
--- them (each line's colour, escapes visible), asked the way the scan and
--- the walking check ask (Engine.readDots), then every tracking type. For
+-- them (each line's colour, escapes visible), read the way the scan and
+-- the walking check read (nudged, the cursor's own mouseover), then every
+-- tracking type. For
 -- the day the tooltip layout changes and the scanner reads nothing. The
 -- last read is also kept in WowVisionDump (key minimapRaw), so a player
 -- can send the SavedVariables file instead of copying the window.
@@ -1295,20 +1306,22 @@ function module:rawRead()
         task.overWorld = Engine.cursorOverWorld()
         local state = Engine.capture()
         task.state = state
+        -- Switching filters reads as leaving and entering quest areas, as
+        -- in the scan; registered first, so it lifts last (cleanups run
+        -- newest first), after the tracking is back.
+        local quests = WowVision.base.quests
+        quests:muteAreaAlerts(true)
+        Engine.onCleanup(function()
+            quests:muteAreaAlerts(false)
+        end)
         Engine.onCleanup(function()
             Engine.restoreFrame(state)
         end)
         Engine.onCleanup(function()
             Engine.restoreTracking(state, false)
         end)
-        -- Switching filters reads as leaving and entering quest areas, as
-        -- in the scan.
-        local quests = WowVision.base.quests
-        quests:muteAreaAlerts(true)
-        Engine.onCleanup(function()
-            quests:muteAreaAlerts(false)
-        end)
         Minimap:SetZoom(0)
+        task.hiddenChildren = Engine.clearWay()
         Engine.shrink(x, y)
         -- Half a second of reads; every read that differs from the one
         -- before is kept, so late dots show up.
@@ -1346,24 +1359,12 @@ function module:rawRead()
             flag(C_Minimap.ShouldUseHybridMinimap)
         )
         -- What lies over the shrunk minimap under the cursor: other
-        -- addons' minimap icons (Questie's, for one) gather there.
-        local foci = {}
-        for _, focus in ipairs(GetMouseFoci ~= nil and GetMouseFoci() or {}) do
-            local ok, name = pcall(function()
-                return focus.GetDebugName ~= nil and focus:GetDebugName() or focus:GetName()
-            end)
-            tinsert(foci, ok and name ~= nil and name ~= "" and tostring(name) or "unnamed frame")
-        end
-        local icons = 0
-        for _, child in ipairs({ Minimap:GetChildren() }) do
-            if child:IsShown() and child:IsMouseEnabled() then
-                icons = icons + 1
-            end
-        end
+        -- addons' minimap icons (Questie's, for one) gather there and are
+        -- hidden for the read (Engine.clearWay).
         task.mouse = string.format(
-            "Mouse focus: %s; shown minimap children taking the mouse: %d",
-            #foci > 0 and table.concat(foci, ", ") or "none",
-            icons
+            "Mouse focus: %s; minimap children hidden for the read: %d",
+            mouseFocusText(),
+            task.hiddenChildren
         )
         -- The scan's baseline: every tracking filter off, spells as they
         -- are (town arrows, vendors and the like gone).
@@ -1423,9 +1424,9 @@ function module:rawRead()
 end
 
 -- /wv mscan sku: Sku's own ways, read only as the game sends them (no
--- UpdateMouseoverAtPoint anywhere). The raw read's setups asked through
--- UpdateMouseoverAtPoint, a no-op since build 70862, so they never tested
--- these (2026-11-10). Now: Sku's fast read (the minimap shrunk under the
+-- UpdateMouseoverAtPoint anywhere; the raw read's old setups of
+-- 2026-11-07 asked through it, a no-op since build 70862, so they never
+-- tested these). Now: Sku's fast read (the minimap shrunk under the
 -- resting cursor), then the scanner's sweep at full, half and third size
 -- on the same spot, timed, each compared with the full-size one. (Earlier
 -- runs measured: 1 frame a point, names from the second frame after the
@@ -1451,17 +1452,6 @@ local function gameTooltipLines()
         end
     end
     return lines
-end
-
-local function mouseFocusText()
-    local foci = {}
-    for _, focus in ipairs(GetMouseFoci ~= nil and GetMouseFoci() or {}) do
-        local ok, name = pcall(function()
-            return focus.GetDebugName ~= nil and focus:GetDebugName() or focus:GetName()
-        end)
-        tinsert(foci, ok and name ~= nil and name ~= "" and tostring(name) or "unnamed frame")
-    end
-    return #foci > 0 and table.concat(foci, ", ") or "none"
 end
 
 -- Inside a running task: frames of the cursor's own reads, the fullest
@@ -1527,32 +1517,15 @@ function module:skuTest()
         Engine.centreCursor()
         Engine.wait(10)
         local x, y = GetCursorPosition()
+        task.cursorX, task.cursorY = x, y
         local state = Engine.capture()
         task.state = state
         Engine.onCleanup(function()
             Engine.restoreFrame(state)
         end)
-        local strata, level = MinimapCluster:GetFrameStrata(), MinimapCluster:GetFrameLevel()
-        Engine.onCleanup(function()
-            pcall(MinimapCluster.SetFrameStrata, MinimapCluster, strata)
-            pcall(MinimapCluster.SetFrameLevel, MinimapCluster, level)
-        end)
-        MinimapCluster:SetFrameStrata("HIGH")
-        MinimapCluster:SetFrameLevel(9002)
-        local hidden = {}
-        for _, child in ipairs({ Minimap:GetChildren() }) do
-            if child:IsShown() and child:IsMouseEnabled() then
-                tinsert(hidden, child)
-                child:Hide()
-            end
-        end
-        Engine.onCleanup(function()
-            for _, child in ipairs(hidden) do
-                pcall(child.Show, child)
-            end
-        end)
+        local hidden = Engine.clearWay()
         Minimap:SetZoom(0)
-        add(string.format("Cursor resting at %.0f %.0f; hidden minimap children: %d; view radius %s yd", x, y, #hidden, tostring(C_Minimap.GetViewRadius())))
+        add(string.format("Cursor resting at %.0f %.0f; hidden minimap children: %d; view radius %s yd", x, y, hidden, tostring(C_Minimap.GetViewRadius())))
 
         -- The fast read (Sku's way): every name in range, the work for the
         -- sweeps below.
@@ -1573,7 +1546,6 @@ function module:skuTest()
         -- the first (full size, step 8, the sweep of 2026-11-10 morning)
         -- is the reference; the others report how far their dots lie
         -- from its dots of the same name.
-        task.cursorX, task.cursorY = x, y
         local radius = state.width / 2
         local yardsPerUnit = (C_Minimap.GetViewRadius() or 0) / radius
         local facing = GetCVar("rotateMinimap") == "1" and (GetPlayerFacing() or 0) or 0
@@ -1585,7 +1557,7 @@ function module:skuTest()
         local reference = nil
         task.sweeps = {}
         for _, v in ipairs(variants) do
-            task.stats = { questions = 0, frames = 0, dots = 0, merged = 0 }
+            task.stats = { questions = 0, dots = 0, merged = 0 }
             local started = GetTime()
             local found = sweepPositions(task, work, radius, v) or {}
             local seconds = GetTime() - started
@@ -1669,8 +1641,25 @@ function module:skuTest()
             reference = reference or spots
         end
     end
+    -- As the scan: moving, mouselook or the mouse would make the numbers
+    -- junk.
     task.check = function()
-        return InCombatLockdown() and "combat" or nil
+        if InCombatLockdown() then
+            return canceled(L["combat"])
+        end
+        if moving() then
+            return canceled(L["moved"])
+        end
+        if task.cursorX ~= nil then
+            if IsMouselooking ~= nil and IsMouselooking() then
+                return canceled(L["mouselook"])
+            end
+            local cx, cy = GetCursorPosition()
+            if math.abs(cx - task.cursorX) > 2 or math.abs(cy - task.cursorY) > 2 then
+                return canceled(L["mouse"])
+            end
+        end
+        return nil
     end
     task.finish = function(ok, reason, err)
         self.task = nil
@@ -1731,7 +1720,7 @@ local COMMANDS = {
 module:registerCommand({
     name = "mscan",
     scope = "WowVision",
-    description = "Minimap scanner: scan now; 'list' shows every seen entry, 'clear' forgets them and the walking memory, 'log' shows how the last scan and the walking check went, 'walk' what the walking check remembers, 'raw' one unparsed minimap read",
+    description = "Minimap scanner: scan now; 'list' shows every seen entry, 'clear' forgets them and the walking memory, 'log' shows how the last scan and the walking check went, 'walk' what the walking check remembers, 'raw' one unparsed minimap read, 'sku' the sweep test (full, half and third size compared)",
     func = function(args)
         local word = (args or ""):lower():match("^%s*(%S+)")
         local command = word ~= nil and COMMANDS[word] or nil
