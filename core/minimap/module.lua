@@ -1006,8 +1006,9 @@ function module:walkPositions(task, state, cursorX, cursorY, work)
             if d > rim then
                 wx, wy = px + dx * rim / d, py + dy * rim / d
                 task.stats.pulledIn = (task.stats.pulledIn or 0) + 1
+                d = rim
             end
-            tinsert(found[name], { wx = wx, wy = wy })
+            tinsert(found[name], { wx = wx, wy = wy, match = Scan.Walk.matchFor(d) })
         end
     end
     return found, continent

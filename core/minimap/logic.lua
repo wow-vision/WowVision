@@ -864,6 +864,20 @@ Walk.INNER = 10
 Walk.RADIUS = 233
 -- Yards: a found dot this close to a placed one of its name is that one.
 Walk.MATCH = 25
+-- A far place is less sure: several dots of one name far out overlap on
+-- the walking check's third-size minimap and are split by count (walk
+-- 2026-11-10 03:21 Stormwind: one mailbox 100 to 230 yards out came out
+-- 30 to 90 yards apart in two sweeps; standing NPCs near by, 5 to 12).
+-- The match grows by this share of the place's distance from the player,
+-- up to MATCH_MAX (the mailboxes there stood 70 yards apart and more).
+Walk.MATCH_GROWTH = 0.25
+Walk.MATCH_MAX = 60
+
+-- Yards within which a found place is a remembered dot, for a place this
+-- far from the player.
+function Walk.matchFor(distance)
+    return math.min(Walk.MATCH + (distance or 0) * Walk.MATCH_GROWTH, Walk.MATCH_MAX)
+end
 -- Yards between two reads that mean a hearthstone, portal or loading
 -- screen, not walking.
 Walk.JUMP = 60
@@ -1033,9 +1047,11 @@ function Walk:update(read)
     return events, locate, verify
 end
 
--- Where the dots of a name are, found by the sweep: positions { wx, wy }
--- of every dot of it in view. A placed dot takes the nearest within MATCH
--- (it may have walked); the rest go to unplaced dots, new ones first.
+-- Where the dots of a name are, found by the sweep: positions { wx, wy,
+-- match? } of every dot of it in view. A placed dot takes the nearest
+-- within the position's match (Walk.matchFor its distance; MATCH without
+-- one; the dot may have walked); the rest go to unplaced dots, new ones
+-- first.
 -- Returns { placed = dots just placed, refreshed, extra (positions left
 -- over), unplaced (dots still without a place), new, dropped }.
 -- check { px, py, radius } (a name back in view, Walk:update's verify):
@@ -1051,10 +1067,11 @@ function Walk:placed(name, positions, continent, check)
     local used = {}
     for _, dot in ipairs(rec.dots) do
         if dot.wx ~= nil and dot.continent == continent then
-            local best, bestD = nil, Walk.MATCH * Walk.MATCH
+            local best, bestD = nil, math.huge
             for i, pos in ipairs(positions) do
                 local d = distanceSq(dot.wx, dot.wy, pos.wx, pos.wy)
-                if not used[i] and d <= bestD then
+                local match = pos.match or Walk.MATCH
+                if not used[i] and d <= match * match and d < bestD then
                     best, bestD = i, d
                 end
             end

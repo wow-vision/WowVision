@@ -600,6 +600,26 @@ testRunner:addSuite("MinimapSweep", {
         t:assertEqual(#walk.names.Mailbox.dots, 1)
     end,
 
+    ["walking, back in view: a far place matches with the larger allowance"] = function(t)
+        t:assertEqual(Scan.Walk.matchFor(0), 25)
+        t:assertEqual(Scan.Walk.matchFor(100), 50)
+        t:assertEqual(Scan.Walk.matchFor(400), 60)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:placed("Mailbox", { { wx = 180, wy = 0 } }, 0)
+        walk:update({ counts = {}, now = 0.5, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:update({ counts = { Mailbox = 1 }, now = 3, px = 0, py = 0, continent = 0, radius = 233 })
+        -- Found again 40 yards off, 210 yards out: the same mailbox.
+        local result = walk:placed(
+            "Mailbox",
+            { { wx = 210, wy = 25, match = Scan.Walk.matchFor(211) } },
+            0,
+            { px = 0, py = 0, radius = 233 }
+        )
+        t:assertEqual(result.new, 0)
+        t:assertEqual(result.refreshed, 1)
+    end,
+
     ["walking, placed: a building changes nothing"] = function(t)
         local walk = Scan.Walk.new()
         walk:update({ counts = { Mailbox = 1 }, now = 0, px = 100, py = 0, continent = 0 })
