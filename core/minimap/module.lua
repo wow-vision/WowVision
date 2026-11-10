@@ -22,8 +22,9 @@ local settings = module:hasSettings()
 -- - The walking check (a setting): twice a second while moving, one read
 --   of the shrunk minimap with the player's own tracking; a name that
 --   comes into range is announced once, with its kind when a scan
---   already sorted it. A new dot is not placed while walking (a sweep
---   takes seconds and the minimap slides meanwhile; the scan places it);
+--   already sorted it. A new dot gets a rough place while walking on (a
+--   coarse sweep, each answer turned into a world point with that frame's
+--   player position), only to tell the dots of one name apart;
 --   its name is said again only after the player walked out of its range
 --   (Scan.Walk). Dots without a place fall back to 30 seconds out of
 --   view while walking outdoors.
@@ -226,6 +227,11 @@ end
 -- "Scan canceled, moved": the reason in one word.
 local function canceled(reason)
     return L["Scan canceled"] .. ", " .. reason
+end
+
+-- The cancel word for Engine.cursorBusy's reasons.
+local function busyWord(reason)
+    return reason == "targeting" and L["targeting"] or L["mouse"]
 end
 
 -- Speed is a secret value in combat on the modern engine; comparing it
@@ -662,6 +668,11 @@ function module:scan()
         speak(L["Stop mouselook to scan"])
         return
     end
+    local busy = Engine.cursorBusy()
+    if busy ~= nil then
+        speak(canceled(busyWord(busy)))
+        return
+    end
     if UnitPosition("player") == nil or C_Map.GetBestMapForUnit("player") == nil then
         speak(L["No position here"])
         return
@@ -687,6 +698,10 @@ function module:scan()
         end
         if moving() then
             return canceled(L["moved"])
+        end
+        local busy = Engine.cursorBusy()
+        if busy ~= nil then
+            return canceled(busyWord(busy))
         end
         if task.cursorX ~= nil then
             if IsMouselooking ~= nil and IsMouselooking() then
@@ -903,6 +918,109 @@ function module:walkJudge(dots, indoors)
     return locate
 end
 
+-- "231 yd north-west": a world point seen from the player (walk log).
+local COMPASS = { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" }
+
+local function fromPlayer(px, py, wx, wy)
+    local north, east = wx - px, -(wy - py)
+    local angle = math.deg(math.atan2(east, north)) % 360
+    local word = COMPASS[math.floor(angle / 45 + 0.5) % 8 + 1]
+    return string.format("%.0f yd %s", math.sqrt(north * north + east * east), word)
+end
+
+-- The walking check's coarse sweep: a third-size minimap every 24 units
+-- (in /wv mscan sku, 2026-11-10, a third-size sweep took 4.8 s with its
+-- edge halvings and lay within 4.6 yards of full size; this one skips
+-- the halvings). Each answer becomes a world point with the player's
+-- position and facing of its frame; Scan.placeHits groups them by name.
+-- The places only tell dots apart (Walk.MATCH), they are never spoken.
+local SWEEP_WALK = { scale = 1 / 3, step = 24 }
+
+-- Inside a running task: names -> list of { wx, wy }, and the continent.
+-- counts: name -> dots the shrunk read named.
+function module:walkPositions(task, state, cursorX, cursorY, names, counts)
+    local wanted = {}
+    for _, name in ipairs(names) do
+        wanted[name] = {}
+    end
+    local radius = state.width / 2
+    local viewRadius = C_Minimap.GetViewRadius()
+    local yardsPerUnit = viewRadius / radius
+    local rotating = GetCVar("rotateMinimap") == "1"
+    local read = Engine.pointReader(state, cursorX, cursorY, SWEEP_WALK.scale)
+    local step = SWEEP_WALK.step
+    local continent = nil
+    for _, cell in ipairs(Scan.sweepCells(radius + 10 / SWEEP_WALK.scale, step)) do
+        local ox, oy = cell[1] * step, cell[2] * step
+        local dots = read(ox, oy)
+        task.stats.questions = task.stats.questions + 1
+        local px, py, _, c = UnitPosition("player")
+        if px ~= nil then
+            continent = continent or c
+            local facing = rotating and (GetPlayerFacing() or 0) or 0
+            local north, west = Scan.offsetToWorld(ox, oy, yardsPerUnit, facing)
+            for name, n in pairs(Scan.counts(dots)) do
+                if wanted[name] ~= nil then
+                    tinsert(wanted[name], { x = px + north, y = py + west, n = n })
+                end
+            end
+        end
+    end
+    -- Answers of one dot lie a cell apart: link them a cell and a half
+    -- apart in yards.
+    local link = step * yardsPerUnit * 1.5
+    local found = {}
+    for name, hits in pairs(wanted) do
+        found[name] = {}
+        for _, place in ipairs(Scan.placeHits(hits, counts[name], link)) do
+            tinsert(found[name], { wx = place.x, wy = place.y })
+        end
+    end
+    return found, continent
+end
+
+-- Inside the walking check: rough places for the names with new dots,
+-- while the player walks on.
+function module:walkLocate(task, state, cursorX, cursorY, names, counts)
+    task.locating = true
+    task.cursorX, task.cursorY = cursorX, cursorY
+    task.stats = { questions = 0 }
+    local startX, startY = UnitPosition("player")
+    local started = GetTime()
+    local found, continent = self:walkPositions(task, state, cursorX, cursorY, names, counts)
+    local px, py = UnitPosition("player")
+    if px == nil or startX == nil then
+        return
+    end
+    walkNote(
+        string.format(
+            "located %s: %d questions, %.2f s, walked %.0f yd meanwhile",
+            table.concat(names, ", "),
+            task.stats.questions,
+            GetTime() - started,
+            math.sqrt((px - startX) ^ 2 + (py - startY) ^ 2)
+        )
+    )
+    for _, name in ipairs(names) do
+        local result = self.walk:placed(name, found[name] or {}, continent)
+        local parts = {}
+        for _, dot in ipairs(result.placed) do
+            tinsert(parts, fromPlayer(px, py, dot.wx, dot.wy))
+        end
+        local line = "placed " .. name .. ": " .. (#parts > 0 and table.concat(parts, ", ") or "none")
+        if result.refreshed > 0 then
+            line = line .. string.format("; %d known found again", result.refreshed)
+        end
+        if result.unplaced > 0 then
+            line = line .. string.format("; %d not found, name rule for them", result.unplaced)
+        end
+        if result.extra > 0 then
+            line = line .. string.format("; %d more found than new", result.extra)
+        end
+        walkNote(line)
+    end
+end
+
 function module:walkCheck()
     local task = {}
     self.walkTask = task
@@ -932,24 +1050,38 @@ function module:walkCheck()
                 module.outdoorRadius = radius
             end
         end
-        -- New dots stay on the name rule: since build 70862 a sweep asks
-        -- one point a frame, seconds while the minimap slides under a
-        -- walking player.
         local locate = module:walkJudge(dots, indoors)
         if #locate > 0 then
-            walkNote("not placed while walking, name rule: " .. table.concat(locate, ", "))
+            module:walkLocate(task, state, x, y, locate, Scan.counts(dots))
         end
     end
     task.check = function()
         if InCombatLockdown() then
             return "combat"
         end
+        local busy = Engine.cursorBusy()
+        if busy ~= nil then
+            return "cursor busy (" .. busy .. ")"
+        end
+        if task.locating then
+            -- The sweep asks points of the minimap under the resting cursor.
+            if IsMouselooking ~= nil and IsMouselooking() then
+                return "mouselook"
+            end
+            local cx, cy = GetCursorPosition()
+            if math.abs(cx - task.cursorX) > 2 or math.abs(cy - task.cursorY) > 2 then
+                return "mouse"
+            end
+        end
         return nil
     end
     task.finish = function(ok, reason, err)
         self.walkTask = nil
         if not ok then
-            walkNote("check stopped: " .. tostring(reason or "error"))
+            walkNote(
+                (task.locating and "locating stopped, new dots stay on the name rule: " or "check stopped: ")
+                    .. tostring(reason or "error")
+            )
             if err ~= nil then
                 geterrorhandler()(err)
             end
@@ -984,6 +1116,11 @@ function module:walkTick()
     end
     if IsMouselooking ~= nil and IsMouselooking() then
         walkNote("skip: mouselook")
+        return
+    end
+    local busy = Engine.cursorBusy()
+    if busy ~= nil then
+        walkNote("skip: cursor busy (" .. busy .. ")")
         return
     end
     local ok, err = pcall(self.walkCheck, self)
@@ -1379,7 +1516,11 @@ function module:rawRead()
         Engine.restoreTracking(state, false)
     end
     task.check = function()
-        return InCombatLockdown() and "combat" or nil
+        if InCombatLockdown() then
+            return "combat"
+        end
+        local busy = Engine.cursorBusy()
+        return busy ~= nil and canceled(busyWord(busy)) or nil
     end
     task.finish = function(ok, reason, err)
         self.task = nil
@@ -1553,21 +1694,45 @@ function module:skuTest()
             { label = "reference, full size", scale = 1, step = 8, halvings = 4 },
             { label = "half size (the scanner now)", scale = 0.5, step = 16, halvings = 3 },
             { label = "third size", scale = 1 / 3, step = 24, halvings = 3 },
+            { label = "walking check's coarse sweep", walk = true },
         }
         local reference = nil
         task.sweeps = {}
         for _, v in ipairs(variants) do
             task.stats = { questions = 0, dots = 0, merged = 0 }
+            if v.walk then
+                -- The walking sweep starts from the shrunk minimap, as in
+                -- the walking check.
+                Engine.restoreFrame(state)
+                Minimap:SetZoom(0)
+                Engine.shrink(x, y)
+                Engine.wait(2)
+            end
             local started = GetTime()
-            local found = sweepPositions(task, work, radius, v) or {}
-            local seconds = GetTime() - started
             local spots = {}
-            for name, list in pairs(found) do
-                for _, offset in ipairs(list) do
-                    local north, west = Scan.offsetToWorld(offset[1], offset[2], yardsPerUnit, facing)
-                    tinsert(spots, { name = name, north = north, east = -west })
+            if v.walk then
+                local names, counts = {}, {}
+                for _, item in ipairs(work) do
+                    tinsert(names, item.name)
+                    counts[item.name] = item.count
+                end
+                local px, py = UnitPosition("player")
+                local found = module:walkPositions(task, state, x, y, names, counts)
+                for name, list in pairs(found) do
+                    for _, place in ipairs(list) do
+                        tinsert(spots, { name = name, north = place.wx - px, east = -(place.wy - py) })
+                    end
+                end
+            else
+                local found = sweepPositions(task, work, radius, v) or {}
+                for name, list in pairs(found) do
+                    for _, offset in ipairs(list) do
+                        local north, west = Scan.offsetToWorld(offset[1], offset[2], yardsPerUnit, facing)
+                        tinsert(spots, { name = name, north = north, east = -west })
+                    end
                 end
             end
+            local seconds = GetTime() - started
             table.sort(spots, function(p, q)
                 return p.name < q.name or (p.name == q.name and p.north < q.north)
             end)
@@ -1618,9 +1783,9 @@ function module:skuTest()
             add(string.format(
                 "Sweep %s (size %.2f, step %d, %d halvings): %d questions, %.1f s, %d dots, %d split from touching dots%s",
                 v.label,
-                v.scale,
-                v.step,
-                v.halvings,
+                v.scale or SWEEP_WALK.scale,
+                v.step or SWEEP_WALK.step,
+                v.halvings or 0,
                 task.stats.questions,
                 seconds,
                 #spots,

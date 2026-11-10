@@ -182,20 +182,42 @@ end
 -- (other addons' icons, Questie's for one) hidden, so the cursor meets
 -- the minimap itself (2026-11-09 a Questie icon held the mouse focus).
 -- Both come back when the task ends. Returns how many children it hid.
+-- Lying on top under the cursor, the minimap would take a click meant for
+-- the world: Blizzard's OnClick pings the spot for the group, and a
+-- ground spell placed in that moment would miss. So it takes no clicks
+-- (the mouseover, which the reads need, stays). And the game shows its
+-- minimap tooltip at the cursor while the minimap lies there (measured
+-- 2026-11-10): invisible until a tenth of a second after the task, when
+-- the minimap has left the cursor and Blizzard's OnLeave has hidden it.
+local tooltipHolds = 0
+
 function Engine.clearWay()
     if current.wayCleared then
         return current.hiddenChildren
     end
     current.wayCleared = true
     local strata, level = MinimapCluster:GetFrameStrata(), MinimapCluster:GetFrameLevel()
+    local clicks = Minimap.IsMouseClickEnabled ~= nil and Minimap:IsMouseClickEnabled() or nil
     local hidden = {}
+    tooltipHolds = tooltipHolds + 1
     Engine.onCleanup(function()
         for _, child in ipairs(hidden) do
             pcall(child.Show, child)
         end
         pcall(MinimapCluster.SetFrameStrata, MinimapCluster, strata)
         pcall(MinimapCluster.SetFrameLevel, MinimapCluster, level)
+        if clicks ~= nil then
+            pcall(Minimap.SetMouseClickEnabled, Minimap, clicks)
+        end
+        C_Timer.After(0.1, function()
+            tooltipHolds = tooltipHolds - 1
+            if tooltipHolds == 0 then
+                GameTooltip:SetAlpha(1)
+            end
+        end)
     end)
+    GameTooltip:SetAlpha(0)
+    pcall(Minimap.SetMouseClickEnabled, Minimap, false)
     MinimapCluster:SetFrameStrata("HIGH")
     MinimapCluster:SetFrameLevel(9002)
     for _, child in ipairs({ Minimap:GetChildren() }) do
@@ -278,6 +300,22 @@ function Engine.pointReader(state, cursorX, cursorY, scale)
         Engine.wait()
         return readMouseover()
     end
+end
+
+-- Why the cursor is busy for the player, or nil: a spell waiting to be
+-- placed (ground targeting), something held on the cursor, a mouse button
+-- down. No minimap goes under the cursor then.
+function Engine.cursorBusy()
+    if SpellIsTargeting ~= nil and SpellIsTargeting() then
+        return "targeting"
+    end
+    if GetCursorInfo ~= nil and GetCursorInfo() ~= nil then
+        return "holding"
+    end
+    if IsMouseButtonDown ~= nil and IsMouseButtonDown() then
+        return "button"
+    end
+    return nil
 end
 
 -- True when the cursor rests over the game world (nothing else would let

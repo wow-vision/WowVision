@@ -455,6 +455,54 @@ testRunner:addSuite("MinimapSweep", {
         t:assertEqual(ks[2], 1)
     end,
 
+    ["rough places: hits of two dots far apart give two places"] = function(t)
+        local hits = {}
+        for _, c in ipairs({ { 100, 50 }, { 300, -20 } }) do
+            for dx = -20, 20, 20 do
+                for dy = -20, 20, 20 do
+                    tinsert(hits, { x = c[1] + dx, y = c[2] + dy, n = 1 })
+                end
+            end
+        end
+        local places = Scan.placeHits(hits, 2, 30)
+        t:assertEqual(#places, 2)
+        table.sort(places, function(a, b)
+            return a.x < b.x
+        end)
+        t:assertTrue(math.abs(places[1].x - 100) < 1 and math.abs(places[1].y - 50) < 1)
+        t:assertTrue(math.abs(places[2].x - 300) < 1 and math.abs(places[2].y + 20) < 1)
+    end,
+
+    ["rough places: two touching dots in one group split by the count"] = function(t)
+        local hits = {}
+        for _, c in ipairs({ { 0, 0 }, { 50, 0 } }) do
+            for dx = -20, 20, 20 do
+                for dy = -20, 20, 20 do
+                    tinsert(hits, { x = c[1] + dx, y = c[2] + dy, n = 1 })
+                end
+            end
+        end
+        local places = Scan.placeHits(hits, 2, 30)
+        t:assertEqual(#places, 2)
+        table.sort(places, function(a, b)
+            return a.x < b.x
+        end)
+        t:assertTrue(math.abs(places[1].x - 0) < 6 and math.abs(places[2].x - 50) < 6)
+    end,
+
+    ["rough places: a sliver beside one dot is not a second place"] = function(t)
+        local hits = {}
+        for dx = -20, 20, 20 do
+            for dy = -20, 20, 20 do
+                tinsert(hits, { x = dx, y = dy, n = 1 })
+            end
+        end
+        tinsert(hits, { x = 200, y = 200, n = 1 })
+        local places = Scan.placeHits(hits, 1, 30)
+        t:assertEqual(#places, 1)
+        t:assertTrue(math.abs(places[1].x) < 1 and math.abs(places[1].y) < 1)
+    end,
+
     ["the middle row and a column span the patch"] = function(t)
         local comp = Scan.components(sweep({ { 10, -6 } }, 9.4, 2, 110))[1]
         local iy, minX, maxX = Scan.middleRow(comp)

@@ -422,6 +422,104 @@ function Scan.dotsByCount(components, count, singleSize)
     return ks
 end
 
+-- ---- rough places while walking ----
+-- The walking check places dots only to tell them apart (Walk.MATCH), so
+-- a coarse sweep is enough. Each answer is turned into a world point with
+-- the player's position of its own frame (the minimap is centred on the
+-- player), so walking during the sweep smears nothing. hits: list of
+-- { x, y, n } world points of one name (n: its dots in that answer).
+-- Points within link yards of each other form a group (one dot answers
+-- over several cells); count (the shrunk read's) decides the dots per
+-- group as in dotsByCount; a group of k > 1 dots is split by a k-means.
+-- Returns positions { x, y }.
+local function kMeans(points, k)
+    local first = points[1]
+    for _, p in ipairs(points) do
+        if p.x < first.x or (p.x == first.x and p.y < first.y) then
+            first = p
+        end
+    end
+    local centres = { { x = first.x, y = first.y } }
+    while #centres < k do
+        local best, bestD = nil, -1
+        for _, p in ipairs(points) do
+            local nearest = math.huge
+            for _, c in ipairs(centres) do
+                nearest = math.min(nearest, (p.x - c.x) ^ 2 + (p.y - c.y) ^ 2)
+            end
+            if nearest > bestD then
+                best, bestD = p, nearest
+            end
+        end
+        tinsert(centres, { x = best.x, y = best.y })
+    end
+    for _ = 1, 8 do
+        local sums = {}
+        for i = 1, k do
+            sums[i] = { x = 0, y = 0, w = 0 }
+        end
+        for _, p in ipairs(points) do
+            local home, homeD = 1, math.huge
+            for i, c in ipairs(centres) do
+                local d = (p.x - c.x) ^ 2 + (p.y - c.y) ^ 2
+                if d < homeD then
+                    home, homeD = i, d
+                end
+            end
+            local s = sums[home]
+            s.x, s.y, s.w = s.x + p.x * p.n, s.y + p.y * p.n, s.w + p.n
+        end
+        for i, s in ipairs(sums) do
+            if s.w > 0 then
+                centres[i] = { x = s.x / s.w, y = s.y / s.w }
+            end
+        end
+    end
+    return centres
+end
+
+function Scan.placeHits(hits, count, link)
+    local groups, done = {}, {}
+    local linkSq = link * link
+    for i, start in ipairs(hits) do
+        if not done[i] then
+            done[i] = true
+            local group = { points = { start }, size = 1, maxN = start.n }
+            local queue = { start }
+            while #queue > 0 do
+                local p = tremove(queue)
+                for j, q in ipairs(hits) do
+                    if not done[j] and (p.x - q.x) ^ 2 + (p.y - q.y) ^ 2 <= linkSq then
+                        done[j] = true
+                        tinsert(group.points, q)
+                        tinsert(queue, q)
+                        group.size = group.size + 1
+                        group.maxN = math.max(group.maxN, q.n)
+                    end
+                end
+            end
+            tinsert(groups, group)
+        end
+    end
+    local out = {}
+    local ks = Scan.dotsByCount(groups, count, nil)
+    for i, group in ipairs(groups) do
+        local k = ks[i]
+        if k == 1 then
+            local sx, sy, w = 0, 0, 0
+            for _, p in ipairs(group.points) do
+                sx, sy, w = sx + p.x * p.n, sy + p.y * p.n, w + p.n
+            end
+            tinsert(out, { x = sx / w, y = sy / w })
+        elseif k > 1 then
+            for _, c in ipairs(kMeans(group.points, k)) do
+                tinsert(out, c)
+            end
+        end
+    end
+    return out
+end
+
 -- Centres (offsets) of k dots merged in one group: a k-means over its
 -- cells weighted by how many dots answered there, started from cells far
 -- apart. Good to a few yards; only used where dots of one name touch.
