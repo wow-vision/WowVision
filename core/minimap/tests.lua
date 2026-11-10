@@ -586,6 +586,20 @@ testRunner:addSuite("MinimapSweep", {
         t:assertEqual(result.refreshed, 1)
     end,
 
+    ["walking, placed: the view radius shrinking and growing changes nothing"] = function(t)
+        local walk = Scan.Walk.new()
+        walk:update({ counts = { Mailbox = 1 }, now = 0, px = 0, py = 0, continent = 0, radius = 233 })
+        walk:placed("Mailbox", { { wx = 200, wy = 0 } }, 0)
+        walk:update({ counts = { Mailbox = 1 }, now = 0.5, px = 0, py = 0, continent = 0, radius = 233 })
+        -- The radius drops to 150: the mailbox at 200 yards no longer shows.
+        local events = walk:update({ counts = {}, now = 1, px = 5, py = 0, continent = 0, radius = 150 })
+        t:assertEqual(kinds(events), "")
+        -- Back to 233 a little later: the same mailbox, nothing said.
+        events = walk:update({ counts = { Mailbox = 1 }, now = 20, px = 10, py = 0, continent = 0, radius = 233 })
+        t:assertEqual(kinds(events), "")
+        t:assertEqual(#walk.names.Mailbox.dots, 1)
+    end,
+
     ["walking, placed: a building changes nothing"] = function(t)
         local walk = Scan.Walk.new()
         walk:update({ counts = { Mailbox = 1 }, now = 0, px = 100, py = 0, continent = 0 })

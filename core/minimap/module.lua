@@ -942,7 +942,9 @@ end
 -- three, third size lay within 2.3 yards of full size. The player walks
 -- meanwhile: every question is asked where its point of the world lies
 -- now (the offsets are taken at the sweep's start, then moved by the
--- player's walk and turn since), so the dots stand still for the sweep.
+-- player's walk and turn since, and scaled by the view radius of that
+-- frame: it jumps between 150 and 233 yards in Stormwind), so the dots
+-- stand still for the sweep.
 -- The places only tell dots apart (Walk.MATCH), they are never spoken.
 local SWEEP_WALK = { scale = 1 / 3, step = 24, halvings = 2 }
 -- Rough places further out than this share of the view radius are pulled
@@ -977,7 +979,11 @@ function module:walkPositions(task, state, cursorX, cursorY, work)
                 end
                 local north, west = Scan.offsetToWorld(ox, oy, yardsPerUnit, startFacing)
                 local facing = rotating and (GetPlayerFacing() or 0) or 0
-                return read(Scan.worldToOffset(startX + north - px, startY + west - py, yardsPerUnit, facing))
+                local nowRadius = C_Minimap.GetViewRadius()
+                if nowRadius ~= viewRadius then
+                    task.stats.radiusChanged = nowRadius
+                end
+                return read(Scan.worldToOffset(startX + north - px, startY + west - py, nowRadius / radius, facing))
             end
         end,
     }
@@ -985,8 +991,8 @@ function module:walkPositions(task, state, cursorX, cursorY, work)
     -- A dot at the rim answers mostly from cells beyond it, so its middle
     -- can land too far out. No dot shows beyond the view radius: such a
     -- place is pulled in to just inside it, in its direction from the
-    -- player.
-    local rim = viewRadius * RIM_PLACE
+    -- player (the larger radius, when it changed during the sweep).
+    local rim = math.max(viewRadius, task.stats.radiusChanged or 0) * RIM_PLACE
     local px, py = UnitPosition("player")
     px, py = px or startX, py or startY
     local found = {}
@@ -1028,7 +1034,7 @@ function module:walkLocate(task, state, cursorX, cursorY, names, dots, verify)
     end
     walkNote(
         string.format(
-            "located %s: %d questions, %.2f s, walked %.0f yd meanwhile%s; view radius %s at the start, %s now, the walking memory's %s",
+            "located %s: %d questions, %.2f s, walked %.0f yd meanwhile%s; view radius %s at the start, %s now (each question scaled by its own), the walking memory's %s",
             table.concat(names, ", "),
             task.stats.questions,
             GetTime() - started,

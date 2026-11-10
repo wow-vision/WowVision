@@ -844,6 +844,12 @@ end
 --   cursor stop the reads; time indoors does not count either.
 -- - A placed dot in view that stays missing that long is gone as well (a
 --   herb picked).
+-- - The view radius changes on the way (2026-11-10 Stormwind: 150 and
+--   233 yards a few steps apart). Each placed dot keeps the largest radius
+--   it was judged with (reach); it is out of range only past its reach
+--   plus MARGIN, and beyond the current radius it may or may not show. So
+--   a smaller radius does not forget it and a larger one again does not
+--   announce it again.
 
 local Walk = {}
 Walk.__index = Walk
@@ -939,7 +945,8 @@ function Walk:update(read)
                 dot.distance = dot.continent == read.continent
                         and math.sqrt(distanceSq(dot.wx, dot.wy, read.px, read.py))
                     or math.huge
-                if dot.distance > radius + Walk.MARGIN then
+                dot.reach = math.max(dot.reach or radius, radius)
+                if dot.distance > dot.reach + Walk.MARGIN then
                     tinsert(far, dot)
                 elseif dot.distance > radius - Walk.INNER then
                     tinsert(band, dot)
