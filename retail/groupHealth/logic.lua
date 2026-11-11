@@ -37,8 +37,11 @@ GroupHealth.MAX_RAID_GROUPS = 8
 -- - The voice's own melody comes on top. A number that ends the sentence
 --   falls; a number followed by anything, even a silent word, rises: the
 --   same absmiddle sounds about 4 semitones higher on Hedda, 6.5 on Zira.
---   Punctuation and "?" change nothing on Hedda; <emph> replaces the pitch
---   instead of adding to it.
+--   Punctuation and "?" as the last word change nothing on Hedda; <emph>
+--   replaces the pitch instead of adding to it. A "?" or "!" with any word
+--   after it (2026-11-11) makes the number end a sentence: the falling
+--   form, 3 to 4 semitones lower, no deeper than the HIGH copy already
+--   goes, so it adds no range.
 -- So every announcement carries the number twice, each behind a volume
 -- gate: the LOW copy first (rising: the urgent part of the scale), the
 -- HIGH copy last (falling: the healthy part). The HIGH copy starts about
@@ -223,7 +226,10 @@ end
 -- and the shortest announcement (about 0.05 s longer than without the
 -- pause; 1 or 2 ms make SAPI add a longer pause of its own, about 0.1 s);
 -- 10 and 20 ms sound the same as 5. A comma, a dash or a quieter instead
--- of a silent HIGH copy did not help.
+-- of a silent HIGH copy did not help. A comma instead of the pause
+-- (2026-11-11) keeps the whole number and sits 0.7 semitones higher, but
+-- SAPI adds about 0.22 s after it (and 0.08 s before a HIGH number behind
+-- a silent comma copy), and by ear it made no difference.
 -- The pause takes part of the LOW copy's rise away (the number now ends a
 -- phrase): Hedda keeps a scale of 14 semitones, Katja one of 12.5, but
 -- Zira's two copies end up 1.3 semitones apart, too close for a scale. So
