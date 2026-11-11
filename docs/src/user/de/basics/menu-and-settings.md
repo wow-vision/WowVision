@@ -25,7 +25,7 @@ Den Bildschirm eines Moduls mit eigenen Einstellungen erreichst du direkt mit /w
 | /wv gsettings ui | Benutzeroberfläche |
 | /wv gsettings ui.tooltip.quality | Benutzeroberfläche, Tooltip, Qualität |
 | /wv gsettings ui.combat | Benutzeroberfläche, Kampf |
-| /wv gsettings navigation.compass | Navigation, Kompass |
+| /wv gsettings navigation.compass | Navigation, Umwelt-Alarme |
 | /wv gsettings navigation.maps | Navigation, Beacon und Routen |
 | /wv gsettings chat | Chat |
 | /wv gsettings targeting | Zielerfassung |
@@ -63,7 +63,7 @@ Die Einträge stehen in der alphabetischen Reihenfolge, in der du sie auf einem 
 | Fenster (Windows) | Alle | Ein Eintrag pro Spielfenster, das WowVision zugänglich macht. | [Spielfenster](../windows/overview.md) |
 | Minikarten-Scanner (Minimap Scanner) | Alle | Minikarten-Scan und die Ansagen beim Laufen. | [Minikarte](../world/minimap.md) |
 | Monitor (Monitors) | Alle | Aura-, Abklingzeit- und andere Monitore. | [Monitore](../information/monitors.md) |
-| Navigation | Alle | Atlas, Beacon und Routen, Kompass, Fallerkennung, Folgen, Neigungssperre, Besuchte Wegpunkte, Wanderkennung und mehr. | [Bewegung und Orientierung](../world/movement.md), [Navigation und Routen](../world/navigation.md) |
+| Navigation | Alle | Atlas, Beacon und Routen, Umwelt-Alarme, Fallerkennung, Folgen, Neigungssperre, Besuchte Wegpunkte, Wanderkennung und mehr. | [Bewegung und Orientierung](../world/movement.md), [Navigation und Routen](../world/navigation.md) |
 | Puffer (Buffers) | Alle | Deine Puffergruppen und Puffer und die Einstellung Elementrichtung umkehren. | [Puffer](../information/buffers.md) |
 | Quests | Alle | Werkzeuge für das Questlog, Alarme für Questgebiete. | [Quests](../world/quests.md) |
 | Scanner | Alle | Der Scanner (F9): Scan-Radius, Einträge pro Kategorie und Scanner als Baum, um zwischen Baum und Menü zu wählen. | [Scanner](../world/scanner.md) |

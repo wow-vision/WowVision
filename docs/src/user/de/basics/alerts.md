@@ -28,7 +28,7 @@ Die Einstellungen von Alarmen sind accountweit: Änderst du einen Alarm bei eine
 
 Alarme stehen unten auf dem Bildschirm des Moduls, zu dem sie gehören, nach dessen Einstellungen, jeweils als Schalter. (Das Modul Chat listet die Alarme seiner Reiter direkt nach Aktiviert, und Zielerfassung hält die drei Zielalarme innerhalb von Festes Ziel.)
 
-1. Öffne das WowVision-Menü mit Umschalt+F1 und gehe in das Modul, zum Beispiel Navigation, dann Kompass.
+1. Öffne das WowVision-Menü mit Umschalt+F1 und gehe in das Modul, zum Beispiel Navigation, dann Umwelt-Alarme.
 2. Gehe nach unten zum Alarm, zum Beispiel Gebietsänderungs-Alarm, und drücke Eingabe.
 3. Der Bildschirm des Alarms öffnet sich mit einem Kontrollkästchen Aktiviert oben, gefolgt von einem Schalter pro Ausgabe. Alarme mit einer eigenen Einstellung (wie Nachrichten sprechen beim Chat) zeigen sie hier ebenfalls.
 4. Drücke Eingabe auf einer Ausgabe, zum Beispiel Soundalarm, um ihre Einstellungen zu öffnen.
@@ -57,7 +57,7 @@ Beispiel: Den Namen deines Ziels von einer anderen Stimme sprechen lassen.
 
 Beispiel: Den Kompass auf TTS statt auf aufgenommene Stimme umstellen.
 
-1. Umschalt+F1, N (Navigation), Eingabe, dann K (bis du Kompass hörst), Eingabe.
+1. Umschalt+F1, N (Navigation), Eingabe, dann U (bis du Umwelt-Alarme hörst), Eingabe.
 2. Öffne Kompassrichtung ansagen. Öffne Stimmenalarm und schalte Aktiviert aus. Gehe zurück und öffne TTS-Alarm, schalte Aktiviert ein.
 
 ## Die Alarme, Modul für Modul
@@ -76,20 +76,21 @@ Die Menüpfade beginnen bei der ersten Ebene des WowVision-Menüs. Der Zustand i
 
 | Alarm | Menüpfad | Wann er auslöst | Ausgaben |
 |---|---|---|---|
-| Kompassrichtung ansagen | Navigation, Kompass | Die Richtung, in die du blickst, ändert sich (Norden, Nordosten, Osten und so weiter). | Stimmenalarm (an; aufgenommene Richtungen), TTS-Alarm (aus) |
-| Gebietsänderungs-Alarm | Navigation, Kompass | Du betrittst ein neues Gebiet. Spricht den Namen des Gebiets. | TTS, Soundalarm (aus) |
-| Untergebietsänderungs-Alarm | Navigation, Kompass | Du betrittst ein neues Untergebiet, etwa ein Stadtviertel oder eine Höhle. Spricht seinen Namen. | TTS, Soundalarm (aus) |
-| Draußen-Alarm | Navigation, Kompass | Du trittst ins Freie. Sagt „draußen“. | TTS, Soundalarm (aus) |
-| Drinnen-Alarm | Navigation, Kompass | Du gehst nach drinnen. Sagt „drinnen“. | TTS, Soundalarm (aus) |
-| Flug-gestartet-Alarm | Navigation, Kompass | Du hebst auf einem Flugreittier ab. Sagt „fliegen“. | TTS, Soundalarm (aus) |
-| Flug-beendet-Alarm | Navigation, Kompass | Du landest. Sagt „Flug beendet“. | TTS, Soundalarm (aus) |
-| Schwimm-Alarm | Navigation, Kompass | Du gehst ins Wasser. Sagt „schwimmen“. | TTS, Soundalarm (aus) |
-| Tauch-Alarm | Navigation, Kompass | Du tauchst unter Wasser. Sagt „tauchen“. | TTS, Soundalarm (aus) |
+| Kompassrichtung ansagen | Navigation, Umwelt-Alarme | Die Richtung, in die du blickst, ändert sich (Norden, Nordosten, Osten und so weiter). | Stimmenalarm (an; aufgenommene Richtungen), TTS-Alarm (aus) |
+| Gebietsänderungs-Alarm | Navigation, Umwelt-Alarme | Du betrittst ein neues Gebiet. Spricht den Namen des Gebiets. | TTS, Soundalarm (aus) |
+| Untergebietsänderungs-Alarm | Navigation, Umwelt-Alarme | Du betrittst ein neues Untergebiet, etwa ein Stadtviertel oder eine Höhle. Spricht seinen Namen. | TTS, Soundalarm (aus) |
+| Draußen-Alarm | Navigation, Umwelt-Alarme | Du trittst ins Freie. Sagt „draußen“. | TTS, Soundalarm (aus) |
+| Drinnen-Alarm | Navigation, Umwelt-Alarme | Du gehst nach drinnen. Sagt „drinnen“. | TTS, Soundalarm (aus) |
+| Flug-gestartet-Alarm | Navigation, Umwelt-Alarme | Du hebst auf einem Flugreittier ab. Sagt „fliegen“. | TTS, Soundalarm (aus) |
+| Flug-beendet-Alarm | Navigation, Umwelt-Alarme | Du landest. Sagt „Flug beendet“. | TTS, Soundalarm (aus) |
+| Schwimm-Alarm | Navigation, Umwelt-Alarme | Du gehst ins Wasser. Sagt „schwimmen“. | TTS, Soundalarm (aus) |
+| Tauch-Alarm | Navigation, Umwelt-Alarme | Du tauchst unter Wasser. Sagt „tauchen“. | TTS, Soundalarm (aus) |
+| Atem-Alarm | Navigation, Umwelt-Alarme | Eine Atem-, Erschöpfungs- oder Totstellen-Leiste sinkt um einen Schritt (Atem-Schritt, standardmäßig 10 Prozent). Sagt den Namen der Leiste und die Prozent, „Atem 80“. | TTS (Spielstimme), Stimmenalarm (aus), Soundalarm (aus) |
 | Fallerkennung | Navigation, Fallerkennung | Du fällst. Die Ansage wird einmal gesprochen, wenn die Fallsounds beginnen. | Fallgeräusch (eine aufsteigende Reihe von Sounds; je länger der Fall, desto höher der Sound), Fallansage (TTS „Fallen“) |
 | Wanderkennung | Navigation, Wanderkennung | Du bewegst dich, aber etwas hält dich zurück. | Fünf Sounds für fünf Grade der Behinderung: Blockiert, Größtenteils blockiert, Behindert, Verlangsamt und Leicht verlangsamt. |
 | Beacon | Navigation, Beacon und Routen | Eine Route oder ein Beacon ist aktiv. | Beacon-Ton (ein Richtungs-Ping, der schneller wird, wenn du dich dem Ziel zuwendest), Beacon ausgerichtet (ein Klick, wenn du ihm zugewandt bist), Beacon abseits des Kurses (wenn du dich abwendest), Wegpunkt erreicht (wenn du ankommst) |
 
-In Instanzen meldet das Spiel nicht, in welche Richtung du blickst, daher bleibt Kompassrichtung ansagen dort stumm, während die übrigen Kompassalarme weiter funktionieren. Die Einstellungen der Fallerkennung (Verzögerung (Millisekunden), Sprünge ignorieren) stehen auf dem Bildschirm des Moduls, siehe [Bewegung und Orientierung](../world/movement.md). Die Ankunftseinstellungen von Beacon stehen unter [Navigation und Routen](../world/navigation.md).
+In Instanzen meldet das Spiel nicht, in welche Richtung du blickst, daher bleibt Kompassrichtung ansagen dort stumm, während die übrigen Umwelt-Alarme weiter funktionieren. Die Einstellungen der Fallerkennung (Verzögerung (Millisekunden), Sprünge ignorieren) stehen auf dem Bildschirm des Moduls, siehe [Bewegung und Orientierung](../world/movement.md). Die Ankunftseinstellungen von Beacon stehen unter [Navigation und Routen](../world/navigation.md).
 
 ### Zielerfassung
 

@@ -1,6 +1,8 @@
 local module = WowVision.base.navigation:createModule("compass")
 local L = module.L
-module:setLabel(L["Compass"])
+-- Named for what it holds: facing, zone, indoors, flying, water and breath
+-- alerts. The key stays "compass" so saved settings carry over.
+module:setLabel(L["Environmental Alerts"])
 local pi = math.pi
 local breathSteps = WowVision.breathSteps
 local settings = module:hasSettings()
