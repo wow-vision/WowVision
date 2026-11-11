@@ -30,6 +30,7 @@ The Compass module watches your character and speaks when something about your s
 | Flying Ended Alert | You land | TTS Alert on, Sound Alert off |
 | Swimming Alert | You enter the water | TTS Alert on, Sound Alert off |
 | Diving Alert | Your character goes under the surface | TTS Alert on, Sound Alert off |
+| Breath Alert | A breath, fatigue or feign death bar runs down by one step | TTS Alert on, Voice Alert off, Sound Alert off |
 
 ### Compass direction
 
@@ -46,6 +47,12 @@ Inside some instances the game does not tell addons which way you face; the comp
 ### Indoors, outdoors, flying, swimming, diving
 
 You hear "outdoors" or "indoors" when the game decides that you changed from one to the other, "flying" when you take off on a flying mount, "flying ended" when you land, "swimming" when you enter water, and "diving" when you go under the surface. Walking back out of water does not say anything.
+
+### Breath and fatigue
+
+Under water the game shows a breath bar that runs down while you hold your breath. Swim too far out into deep water and a fatigue bar appears. Hunters see a bar while they feign death. Breath Alert speaks the bar's name and how full it is, one line per step down: "Breath 90", "Breath 80", and so on to "Breath 0", when you start to drown. Nothing is said while the bar fills up again after you surface; dive again and the steps count down from wherever the bar is.
+
+The steps are 10 percent by default. Change them with Breath Step (5, 10, 20 or 25 percent) on the Compass screen. The game shows only the bar, not the seconds left, so WowVision says the percent too. Breath Alert speaks with a game voice, so movement keys do not cut it off.
 
 ### Changing these
 

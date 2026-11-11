@@ -30,6 +30,7 @@ Das Modul Kompass beobachtet deinen Charakter und spricht, wenn sich etwas an de
 | Flug-beendet-Alarm (Flying Ended Alert) | Du landest | TTS-Alarm an, Soundalarm aus |
 | Schwimm-Alarm (Swimming Alert) | Du gehst ins Wasser | TTS-Alarm an, Soundalarm aus |
 | Tauch-Alarm (Diving Alert) | Dein Charakter taucht unter die Oberfläche | TTS-Alarm an, Soundalarm aus |
+| Atem-Alarm (Breath Alert) | Eine Atem-, Erschöpfungs- oder Totstellen-Leiste sinkt um einen Schritt | TTS-Alarm an, Stimmenalarm aus, Soundalarm aus |
 
 ### Kompassrichtung
 
@@ -46,6 +47,12 @@ Der "Gebietsänderungs-Alarm" spricht den Gebietsnamen, wenn du in ein neues Geb
 ### Drinnen, draußen, Fliegen, Schwimmen, Tauchen
 
 Du hörst "draußen" oder "drinnen", wenn das Spiel entscheidet, dass du von einem zum anderen gewechselt hast, "fliegen", wenn du auf einem Flugreittier abhebst, "Flug beendet", wenn du landest, "schwimmen", wenn du ins Wasser gehst, und "tauchen", wenn du unter die Oberfläche gehst. Wenn du wieder aus dem Wasser läufst, wird nichts gesagt.
+
+### Atem und Erschöpfung
+
+Unter Wasser zeigt das Spiel eine Atemleiste, die sinkt, solange du die Luft anhältst. Schwimmst du zu weit ins tiefe Wasser hinaus, erscheint eine Erschöpfungsleiste. Jäger sehen eine Leiste, während sie sich tot stellen. Der Atem-Alarm sagt den Namen der Leiste und wie voll sie ist, eine Zeile pro Schritt nach unten: "Atem 90", "Atem 80" und so weiter bis "Atem 0", wenn du zu ertrinken beginnst. Während sich die Leiste nach dem Auftauchen wieder füllt, wird nichts gesagt; tauchst du wieder ab, zählen die Schritte von dort herunter, wo die Leiste gerade steht.
+
+Die Schritte sind standardmäßig 10 Prozent. Ändere sie mit Atem-Schritt (5, 10, 20 oder 25 Prozent) im Kompass-Bildschirm. Das Spiel zeigt nur die Leiste, nicht die verbleibenden Sekunden, darum sagt WowVision ebenfalls Prozent. Der Atem-Alarm spricht mit einer Spielstimme, damit Bewegungstasten ihn nicht abschneiden.
 
 ### Das ändern
 

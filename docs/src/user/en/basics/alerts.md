@@ -85,6 +85,7 @@ Menu paths read from the first level of the WowVision menu. The state in bracket
 | Flying Ended Alert | Navigation, Compass | You land. Says "flying ended". | TTS, Sound Alert (off) |
 | Swimming Alert | Navigation, Compass | You enter water. Says "swimming". | TTS, Sound Alert (off) |
 | Diving Alert | Navigation, Compass | You go under water. Says "diving". | TTS, Sound Alert (off) |
+| Breath Alert | Navigation, Compass | A breath, fatigue or feign death bar runs down by one step (Breath Step, default 10 percent). Says the bar's name and percent, "Breath 80". | TTS (game voice), Voice Alert (off), Sound Alert (off) |
 | Fall Detection | Navigation, Fall Detection | You fall. The announcement is said once when the falling sounds start. | Falling Sound (a rising series of sounds; the longer the fall, the higher the sound), Falling Announcement (TTS "Falling") |
 | Wall Detection | Navigation, Wall Detection | You are moving but something holds you back. | Five sounds for five degrees of blocking: Blocked, Mostly Blocked, Impeded, Slowed and Slightly Slowed. |
 | Beacon | Navigation, Beacon and Routes | A route or beacon is active. | Beacon Sound (a directional ping that speeds up as you turn towards the target), Beacon Aligned (a click when you face it), Beacon Off Course (when you turn away), Waypoint Reached (when you arrive) |
