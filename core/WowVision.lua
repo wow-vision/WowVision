@@ -154,21 +154,25 @@ function WowVision:OnDisable()
     self.base:disable()
 end
 
+-- The three parts run on their own: an error in one is reported through the
+-- game's error handler and the others still run, so a failing object or
+-- module update can never leave the menus dead (Module.runAllUpdates does
+-- the same per module).
 function WowVision:OnUpdate()
     self:adoptGlobalStoreIfReplaced("late load")
     local profiler = self.profiler
     profiler:beginFrame()
 
     profiler:start("objects")
-    WowVision.objects:update()
+    xpcall(WowVision.objects.update, geterrorhandler(), WowVision.objects)
     profiler:stop("objects")
 
     profiler:start("modules")
-    WowVision.Module.runAllUpdates()
+    xpcall(WowVision.Module.runAllUpdates, geterrorhandler())
     profiler:stop("modules")
 
     profiler:start("uihost")
-    self.UIHost:update()
+    xpcall(self.UIHost.update, geterrorhandler(), self.UIHost)
     profiler:stop("uihost")
 
     profiler:endFrame()

@@ -438,6 +438,7 @@ do
         withStandIns(initialize, self, key)
     end
     loadAddonFile("core/module/alertScopeTests.lua")
+    loadAddonFile("core/module/updateTests.lua")
 end
 
 -- The buffer family on the new class system: construction and db round trip.

@@ -564,7 +564,12 @@ function Module.rebuildAllUpdateHandlers()
 end
 
 -- Run all registered update handlers (called from WowVision:OnUpdate)
--- Each module's profiler automatically times its update when profiling is enabled
+-- Each module's profiler automatically times its update when profiling is enabled.
+-- Each handler runs on its own: one that throws is reported through the
+-- game's error handler (BugGrabber and the error list see it, stack and all,
+-- as before) and the rest of the frame goes on. Without this, one module's
+-- error ended the whole frame and the menus never updated (2026-11-11: a
+-- range check failing every frame in a dungeon left a quest window dead).
 function Module.runAllUpdates()
     if updateHandlersDirty then
         Module.rebuildAllUpdateHandlers()
@@ -573,10 +578,10 @@ function Module.runAllUpdates()
         local profiler = handler.module.profiler
         if profiler.enabled then
             profiler:start("update")
-            handler.func(handler.module)
+            xpcall(handler.func, geterrorhandler(), handler.module)
             profiler:stop("update")
         else
-            handler.func(handler.module)
+            xpcall(handler.func, geterrorhandler(), handler.module)
         end
     end
 end

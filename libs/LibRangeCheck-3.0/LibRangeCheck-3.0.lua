@@ -40,7 +40,11 @@ License: MIT
 -- @class file
 -- @name LibRangeCheck-3.0
 local MAJOR_VERSION = "LibRangeCheck-3.0"
-local MINOR_VERSION = 31
+-- WowVision: raised from 31 to 99. Other addons (TellMeWhen and more) embed
+-- an unpatched 31 and load first, so our patched copy was dropped and a
+-- secret target GUID in a dungeon threw every frame. With 99 ours wins and
+-- serves them too; merge upstream fixes by hand from now on.
+local MINOR_VERSION = 99
 
 ---@class lib
 local lib, oldminor = LibStub:NewLibrary(MAJOR_VERSION, MINOR_VERSION)
