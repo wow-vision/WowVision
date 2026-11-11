@@ -27,7 +27,10 @@ local function run()
         WowVision.Module.runAllUpdates()
     end)
     WowVision.base, geterrorhandler = savedBase, savedHandler
-    WowVision.Module.rebuildAllUpdateHandlers()
+    -- leave the handler list as the real tree has it (no tree: nothing to run)
+    if savedBase ~= nil then
+        WowVision.Module.rebuildAllUpdateHandlers()
+    end
     return ok, err, ran, reported
 end
 
