@@ -48,6 +48,7 @@ The General buffer also gains a few new lines (free bag slots, durability, mail,
 The UI menu has a button, Apply Recommended Game Settings. It is only a suggestion: nothing changes unless you press it, and every setting stays yours to change afterward in the game options. It sets:
 
 - Auto loot on, and all action bars shown.
+- Offscreen nameplates on: an enemy behind you or beside you gets its nameplate at once, so the enemy count says it right away.
 - The game's Audio Assist on, saying your health, your target's health and your resource every 20 percent (the health as the number alone), and when you are targeted (without the attacker's name). Combat start and end, target name and your debuffs are switched off.
 
 Key bindings, camera, soft targeting and sound volumes are not touched. The button does nothing in combat. After a change the interface reloads, then WowVision says what changed and prints the same to your chat window. Resource and "targeted" are kept per specialization by the game; press the button again after switching specialization.
