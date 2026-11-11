@@ -51,10 +51,7 @@ function module.itemSlotNode(itemButton, label, clickLabels, isEmpty)
         func = function()
             WowVision.cursor = WowVision.cursor or {}
             WowVision.cursor.pickupIsActionBar = false
-            local script = itemButton:GetScript("OnDragStart")
-            if script ~= nil then
-                script(itemButton)
-            end
+            nodes.runDrag(itemButton)
         end,
     })
     return vtable
