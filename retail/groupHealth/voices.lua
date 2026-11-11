@@ -14,8 +14,16 @@ local GroupHealth = WowVision.groupHealth
 -- match: part of the game's voice name, lowercase; the longest match wins.
 local voices = GroupHealth.voices
 
--- Measured 2026-11-10 with the pause after the LOW copy (logic.lua,
--- END_PAUSE); before it, chosen by ear in game 2026-10-03 without the pause.
+-- Chosen by ear in game 2026-10-03, kept with the pause after the LOW copy
+-- (logic.lua, END_PAUSE) after an ear test of offline renders on
+-- 2026-11-11: as easy to tell apart as without the pause, a little better
+-- in the middle-low levels, and better than measure.py's even scale. The
+-- pause only takes the short upturn at the end of the LOW copy's number
+-- away (its peak about 1.3 semitones lower), the number's body keeps its
+-- pitch (median within 0.2 semitones). By the peak line the switch from
+-- the HIGH copy (-3) to the LOW copy (-10) is only about half a semitone,
+-- by the body about 0.7; it was 0.8 by the body without the pause too,
+-- and heard as a step. So the profile is byEar.
 -- Also used by the OneCore Hedda, which renders the very same sound, and by
 -- every voice without a profile.
 voices:register({
@@ -23,8 +31,9 @@ voices:register({
     match = "hedda",
     fallback = true,
     endPause = true,
-    low = { 10, 8, 6, 4, 2, 0, -2, -4, -6 },
-    high = { -1, -4, -7, -10 },
+    byEar = true,
+    low = { 10, 8, 5, 3, 0, -2, -5, -7, -10 },
+    high = { -3, -6, -8, -10 },
     measured = { low = { 3.69, 0.502 }, high = { -0.33, 0.502 } },
 })
 

@@ -131,8 +131,10 @@ Zira without the pause: LOW about +7.5 + 0.51 x absmiddle, HIGH about
 ## Measured voices
 
 - Microsoft Hedda Desktop (the fallback): chosen by ear in game on
-  2026-10-03 (the method was built on it); since 2026-11-10 the profile
-  measure.py designs with the end pause.
+  2026-10-03 (the method was built on it), kept with the end pause after
+  an ear test on 2026-11-11 (`byEar = true`: measure.py's even scale with
+  the pause sounded no better, and the peak line makes the switch between
+  the copies look smaller than it is heard).
 - Microsoft Zira Desktop: chosen by ear in game on 2026-10-03, without
   the end pause (rejected with it).
 - Microsoft Hedda (OneCore): the same sound as Hedda Desktop, byte for

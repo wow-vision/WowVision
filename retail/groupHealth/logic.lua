@@ -80,7 +80,9 @@ end
 -- measured (the voice's peak pitch line per copy, { a, b } = a + b *
 -- absmiddle semitones, for the tests); fallback (true for the profile of
 -- voices without one); endPause (true: the LOW copy ends in
--- GroupHealth.END_PAUSE, and the levels were measured so). The profile gets its pitch per step (scale) and the
+-- GroupHealth.END_PAUSE, and the levels were measured so); byEar (true:
+-- the levels were chosen by ear in game, the ear test overrides the
+-- measured minimum fall between levels). The profile gets its pitch per step (scale) and the
 -- first step of the HIGH copy (highFrom).
 function VoiceProfiles:register(info)
     checkLevels(info, "low")
