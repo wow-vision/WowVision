@@ -90,6 +90,8 @@ See [Chat](../windows/chat.md).
 | Action | Default key | Notes |
 |---|---|---|
 | Turn to Waypoint | I | Faces the current waypoint of your route |
+| Turn to Target | Ctrl+I | Faces your target, found by its nameplate. See [Navigation](../world/navigation.md#turn-to-target-and-focus-ctrli-ctrlu) |
+| Turn to Focus | Ctrl+U | The same for your focus, for example an escort NPC you follow |
 | Next Waypoint | Ctrl+W | Skip ahead to the next waypoint. You hear how many waypoints remain, for example "12 remaining" |
 | Previous Waypoint | Ctrl+S | Go back to the previous waypoint, with the same count |
 | Start the Route Again From Here | Ctrl+Shift+N | Plans the route to your last destination again, starting from where you stand. You hear "No route to start again" if you have not chosen a destination yet |

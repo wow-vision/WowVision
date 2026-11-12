@@ -36,6 +36,9 @@ local pitchLock = WowVision.pitchLock
 -- A press while a turn runs is ignored (the running turn aims at a fresh
 -- bearing anyway). Manual turn keys abort. Turning on the move is allowed:
 -- the aim leads to where the player will be when the turn lands.
+--
+-- module:turnByAngle runs the same sweep for other callers (turn to unit,
+-- turnToUnit.lua), with options that turn to waypoint does not use.
 
 local TOLERANCE = 3 -- degrees: already facing it, do nothing
 local SETTLE_MIN_FRAMES = 2
@@ -77,12 +80,14 @@ local function addLog(line)
     end
 end
 
--- how: "landed" (the pulse landed), "aborted" (the player turned) or "watchdog".
+-- how: "landed", "aborted" (the player turned) or "watchdog".
 local function release(turn, how)
     if current == turn then
         current = nil
         turnFrame:SetScript("OnUpdate", nil)
-        camera.endGamepadTurn()
+        if turn.freeLookOff then
+            camera.endGamepadTurn()
+        end
         if turn.onDone ~= nil then
             turn.onDone(how)
         end
@@ -96,11 +101,6 @@ local function stopSweep(turn)
         camera.transfer()
     end
     turn.stopFrame = turn.sweep.frames
-    if turn.cameraOnly then
-        -- No pulse to wait for: release in the next frame, so a caller can
-        -- go on before the camera follow style starts to swing it back.
-        turn.settleFrames = 1
-    end
     turn.framesSinceStop = 0
     turn.landX, turn.landY = UnitPosition("player")
     if not turn.cameraOnly then
@@ -155,8 +155,7 @@ local function onUpdate()
     if turn.stopFrame ~= nil then
         turn.framesSinceStop = turn.framesSinceStop + 1
         if turn.framesSinceStop >= turn.settleFrames then
-            -- (a turn its caller stops has no planned angle to measure)
-            if not turn.cameraOnly and turn.onFrame == nil then
+            if not turn.cameraOnly then
                 measure(turn)
             end
             release(turn, "landed")
@@ -174,17 +173,9 @@ local function onUpdate()
     if #turn.frameMs < 24 then
         tinsert(turn.frameMs, string.format("%.0f", delta * 1000))
     end
-    -- The degrees the camera has moved so far; the caller may stop here.
-    if turn.onFrame ~= nil then
-        local stop = turn.onFrame(turn.sweep.committed * turn.speed + turn.startStep)
-        if stop then
-            if stop == "quiet" then
-                -- Stop without handing the camera to the character.
-                turn.cameraOnly = true
-            end
-            stopSweep(turn)
-            return
-        end
+    if turn.onFrame ~= nil and turn.onFrame(turn.sweep.committed * turn.speed + turn.startStep) then
+        stopSweep(turn)
+        return
     end
     local action, fraction = turn.sweep:frame(delta)
     if action == "stop" then
@@ -194,6 +185,101 @@ local function onUpdate()
     end
 end
 
+-- Start the sweep for a turn of relative degrees (positive = right); turn
+-- holds the caller's fields (turnToPoint's aim point and lead, or
+-- turnByAngle's options).
+local function startTurn(relative, frameTime, turn)
+    if turn.lateStart and not turn.primed then
+        -- A sweep started outside a key press first jumps by the distance it
+        -- would have covered meanwhile (warcraft.wiki.gg, API_MoveViewLeftStart).
+        -- Speed 0 first and the real start a frame later, as the wiki says,
+        -- and it moves exactly one frame step more than it counts (in game,
+        -- 2026-11-12); the sweep below takes that step off.
+        turn.primed = true
+        current = turn
+        MoveViewLeftStart(0)
+        MoveViewRightStart(0)
+        C_Timer.After(0, function()
+            if current == turn then
+                current = nil
+                startTurn(relative, turnMath.frameTime(GetFramerate()), turn)
+            end
+        end)
+        return true
+    end
+    local target = math.abs(relative)
+    local sweepSpeed, steps = turnMath.plan(target, frameTime)
+    if turn.fixedSpeed ~= nil then
+        -- A search sweep: a steady speed instead of the fewest frames (steps
+        -- then only sizes the watchdog).
+        sweepSpeed = turn.fixedSpeed
+        steps = math.max(1, math.ceil(target / (sweepSpeed * frameTime) - 1e-9))
+    end
+    local cvar = math.min(sweepSpeed, turnMath.CVAR_MAX)
+    -- The primed start's extra step: not swept, but reported to onFrame.
+    turn.startStep = 0
+    if turn.lateStart then
+        turn.startStep = math.min(sweepSpeed * frameTime, target)
+    end
+    turn.target = target
+    turn.direction = relative > 0 and 1 or -1
+    turn.speed = sweepSpeed
+    turn.steps = steps
+    turn.cvar = cvar
+    turn.frameTime = frameTime
+    turn.settleFrames = math.max(SETTLE_MIN_FRAMES, math.ceil(SETTLE_MIN_TIME / frameTime - 1e-9))
+    if turn.cameraOnly then
+        -- No pulse to wait for: release in the next frame.
+        turn.settleFrames = 1
+    end
+    turn.sweep = turnMath.newSweep(target - turn.startStep, sweepSpeed, steps)
+    -- nil where the game hides the facing; measure() then logs nothing
+    turn.startFacing = GetPlayerFacing()
+    turn.lastTime = GetTime()
+    turn.frameMs = {}
+    turn.lead = turn.lead or 0
+    turn.moving = turn.moving or 0
+    current = turn
+
+    pitchLock.noteTurn()
+    stopCamera()
+    if not turn.cameraOnly then
+        if not turn.keepCamera then
+            camera.align()
+        end
+        -- With the gamepad, free look is off for the turn (camera.lua). Only now,
+        -- with the camera straight behind the character: free look going off
+        -- hands any camera offset to the character, and pressing the stick
+        -- nudges the camera. (False when a caller holds it off already.)
+        turn.freeLookOff = camera.beginGamepadTurn()
+    end
+    if savedYawSpeed == nil then
+        savedYawSpeed = GetCVar("cameraYawMoveSpeed")
+    end
+    SetCVar("cameraYawMoveSpeed", cvar)
+    if turn.direction > 0 then
+        CAMERA_RIGHT_START(sweepSpeed / cvar)
+    else
+        CAMERA_LEFT_START(sweepSpeed / cvar)
+    end
+    turnFrame:SetScript("OnUpdate", onUpdate)
+
+    -- Watchdog: if the frame counter never runs (an error in it), the
+    -- camera must not keep spinning nor the speed stay changed.
+    C_Timer.After((steps + 1 + turn.settleFrames) * frameTime * 4 + 1, function()
+        if current ~= turn then
+            return
+        end
+        if turn.stopFrame == nil then
+            stopCamera()
+        end
+        restoreYawSpeed()
+        addLog("watchdog stopped a turn")
+        release(turn, "watchdog")
+    end)
+    return true
+end
+
 -- Without a beacon the turn key asks this for a facing to turn to instead (radians, as
 -- GetPlayerFacing; nil: nothing here). WowNav routes set it at a tram, ship or zeppelin dock (the
 -- boarding point, or the noted dock near it) and at a fishing spot (its water).
@@ -201,8 +287,6 @@ module.facingWithoutWaypoint = nil
 
 -- Far enough that the lead of a moving player does not bend the bearing to it.
 local FACING_REACH = 10000
-
-local startTurn
 
 -- Turn to face the world point (x, y), aiming where it lies when the turn lands.
 local function turnToPoint(x, y)
@@ -246,103 +330,6 @@ local function turnToPoint(x, y)
     })
 end
 
--- Start the sweep for a turn of relative degrees (positive = right). turn
--- holds the caller's extras (aim point, lead, label, onDone).
-startTurn = function(relative, frameTime, turn)
-    if turn.lateStart and not turn.primed then
-        -- A start that is not a key press (a timer, an OnUpdate) first
-        -- jumps by the distance the camera would have covered meanwhile
-        -- (warcraft.wiki.gg, API_MoveViewLeftStart); in game a turn of 90
-        -- from a timer landed at -53 and +44. Speed 0 first and the real
-        -- start a frame later (the wiki's workaround) make it land one
-        -- frame step further each time (113 and 112), which the sweep
-        -- below takes off (/wv sweeptest, 2026-11-12).
-        turn.primed = true
-        current = turn
-        MoveViewLeftStart(0)
-        MoveViewRightStart(0)
-        C_Timer.After(0, function()
-            if current == turn then
-                current = nil
-                startTurn(relative, turnMath.frameTime(GetFramerate()), turn)
-            end
-        end)
-        return true
-    end
-    local target = math.abs(relative)
-    local sweepSpeed, steps = turnMath.plan(target, frameTime)
-    if turn.fixedSpeed ~= nil then
-        -- A search sweep: a steady speed instead of the fewest frames.
-        sweepSpeed = turn.fixedSpeed
-        steps = math.max(1, math.ceil(target / (sweepSpeed * frameTime) - 1e-9))
-    end
-    local cvar = math.min(sweepSpeed, turnMath.CVAR_MAX)
-    -- A primed late start moves one frame step more than the sweep counts.
-    local sweepTarget = target
-    if turn.lateStart then
-        sweepTarget = math.max(target - sweepSpeed * frameTime, target * 0.05)
-    end
-    -- The camera's move the sweep does not count (onFrame reports it too).
-    turn.startStep = target - sweepTarget
-    for key, value in pairs({
-        target = target,
-        direction = relative > 0 and 1 or -1,
-        speed = sweepSpeed,
-        steps = steps,
-        cvar = cvar,
-        frameTime = frameTime,
-        settleFrames = math.max(SETTLE_MIN_FRAMES, math.ceil(SETTLE_MIN_TIME / frameTime - 1e-9)),
-        sweep = turnMath.newSweep(sweepTarget, sweepSpeed, steps),
-        -- nil where the game hides the facing; measure() then logs nothing
-        startFacing = GetPlayerFacing(),
-        lastTime = GetTime(),
-        frameMs = {},
-    }) do
-        turn[key] = value
-    end
-    turn.lead = turn.lead or 0
-    turn.moving = turn.moving or 0
-    current = turn
-
-    pitchLock.noteTurn()
-    stopCamera()
-    if not turn.cameraOnly then
-        if not turn.keepCamera then
-            camera.align()
-        end
-        -- With the gamepad, free look is off for the turn (camera.lua). Only now,
-        -- with the camera straight behind the character: free look going off
-        -- hands any camera offset to the character, and pressing the stick
-        -- nudges the camera.
-        camera.beginGamepadTurn()
-    end
-    if savedYawSpeed == nil then
-        savedYawSpeed = GetCVar("cameraYawMoveSpeed")
-    end
-    SetCVar("cameraYawMoveSpeed", cvar)
-    if turn.direction > 0 then
-        CAMERA_RIGHT_START(sweepSpeed / cvar)
-    else
-        CAMERA_LEFT_START(sweepSpeed / cvar)
-    end
-    turnFrame:SetScript("OnUpdate", onUpdate)
-
-    -- Watchdog: if the frame counter never runs (an error in it), the
-    -- camera must not keep spinning nor the speed stay changed.
-    C_Timer.After((steps + 1 + turn.settleFrames) * frameTime * 4 + 1, function()
-        if current ~= turn then
-            return
-        end
-        if turn.stopFrame == nil then
-            stopCamera()
-        end
-        restoreYawSpeed()
-        addLog("watchdog stopped a turn")
-        release(turn, "watchdog")
-    end)
-    return true
-end
-
 -- Turn to the active route's current waypoint; with no beacon to facingWithoutWaypoint's facing.
 function module:turnToWaypoint()
     local waypoint = self.path ~= nil and self.path.currentWaypoint or nil
@@ -357,33 +344,38 @@ function module:turnToWaypoint()
     return turnToPoint(waypoint.x, waypoint.y)
 end
 
--- Turn to face the world point (x, y), as a route waypoint is turned to.
-function module:turnToPoint(x, y)
-    return turnToPoint(x, y)
+-- Turn to a facing (radians, as GetPlayerFacing), with the same sweep.
+function module:turnToFacing(facing)
+    local px, py = UnitPosition("player")
+    if px == nil then
+        WowVision:notify(L["Turning is not available here"])
+        return false
+    end
+    return turnToPoint(px + math.cos(facing) * FACING_REACH, py + math.sin(facing) * FACING_REACH)
 end
 
--- Turn by relative degrees (positive = right) with the same sweep. Needs
--- neither the player's position nor facing, so it also runs where the game
--- hides them (Retail and WoW: Forever instances). options:
---   label       prefix for the turn log
---   onDone(how) runs when the turn ends: "landed", "aborted" (the player
---               turned) or "watchdog"
---   cameraOnly  sweep the camera from where it is and leave the character
---               alone (no snap behind it, no pulse); module:faceCamera()
---               hands the result over later
---   keepCamera  no snap behind the character at the start (the caller
---               placed the camera); the stop still hands it over
---   lateStart   the call is not a key press (a timer, an OnUpdate): prime
---               the camera with speed 0 and start a frame later, the extra
---               frame step taken off (see startTurn)
---   fixedSpeed  degrees per second, for a search sweep
---   onFrame(moved) runs every frame before the step with the degrees the
---               camera has moved so far (a primed start's extra frame
---               included); returning true stops the sweep
---               there, "quiet" stops it without handing the camera to the
---               character (both still end with onDone("landed"))
--- Returns false while another turn runs, "facing" (nothing to do, onDone is
--- not called) within the tolerance, true when the turn started.
+-- True while a turn runs (a new one would be refused).
+function module:isTurning()
+    return current ~= nil
+end
+
+-- The same sweep by relative degrees (positive = right), for callers that
+-- find the angle themselves (turnToUnit.lua). Needs neither the player's
+-- position nor facing. options (all optional):
+--   label        prefix for the turn log
+--   onDone(how)  when the turn ends: "landed", "aborted" or "watchdog"
+--   cameraOnly   sweep the camera from where it is and leave the character
+--                alone: no snap, no free-look change, no pulse; released
+--                the frame after the stop
+--   keepCamera   no snap at the start (the caller placed the camera); the
+--                stop still pulses
+--   lateStart    the call comes from a timer or an OnUpdate, not a key
+--                press: primed (see startTurn)
+--   fixedSpeed   degrees per second, for a search sweep
+--   onFrame(moved) every frame before the step, with the degrees the camera
+--                has turned so far; true stops the sweep there
+-- Returns false while another turn runs, "facing" within the tolerance
+-- (nothing turns, onDone is not called), true when the turn started.
 function module:turnByAngle(relative, options)
     if current ~= nil then
         return false
@@ -396,36 +388,6 @@ function module:turnByAngle(relative, options)
         turn[key] = value
     end
     return startTurn(relative, turnMath.frameTime(GetFramerate()), turn)
-end
-
--- Turn the character to where the camera looks: the pulse that ends a turn,
--- for camera-only sweeps. With the gamepad, free look goes off for it.
-function module:faceCamera()
-    if current ~= nil then
-        return false
-    end
-    pitchLock.noteTurn()
-    local gamepad = camera.beginGamepadTurn()
-    camera.transfer()
-    pitchLock.afterTurn()
-    if gamepad then
-        C_Timer.After(0.1, function()
-            if current == nil then
-                camera.endGamepadTurn()
-            end
-        end)
-    end
-    return true
-end
-
--- Turn to a facing (radians, as GetPlayerFacing), with the same sweep.
-function module:turnToFacing(facing)
-    local px, py = UnitPosition("player")
-    if px == nil then
-        WowVision:notify(L["Turning is not available here"])
-        return false
-    end
-    return turnToPoint(px + math.cos(facing) * FACING_REACH, py + math.sin(facing) * FACING_REACH)
 end
 
 -- Copyable diagnostics: one line per turn, also printed to chat.
