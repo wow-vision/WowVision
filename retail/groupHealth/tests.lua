@@ -36,18 +36,16 @@ testRunner:addSuite("GroupHealth", {
             end
             for i = 2, #heard do
                 local fall = heard[i - 1] - heard[i]
-                -- A scale chosen by ear may have a smaller measured fall; it still falls.
-                local least = profile.byEar and 0 or 0.95
-                t:assertTrue(fall > least, key .. ": level " .. i .. " falls only " .. fall)
+                t:assertTrue(fall >= 0.95, key .. ": level " .. i .. " falls only " .. fall)
             end
         end
     end,
 
     ["voices: the LOW copy ends in the pause only where the profile was measured with it"] = function(t)
         local voices = GroupHealth.voices
-        t:assertEqual(GroupHealth.lowEnd(voices:get("hedda")), GroupHealth.END_PAUSE)
-        t:assertEqual(GroupHealth.lowEnd(voices:get("katja")), GroupHealth.END_PAUSE)
-        t:assertEqual(GroupHealth.lowEnd(voices:get("zira")), "")
+        t:assertEqual(voices:get("hedda").lowEnd, GroupHealth.END_PAUSE)
+        t:assertEqual(voices:get("katja").lowEnd, GroupHealth.END_PAUSE)
+        t:assertEqual(voices:get("zira").lowEnd, "")
     end,
 
     ["voices: registration refuses a profile that cannot work"] = function(t)

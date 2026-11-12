@@ -192,7 +192,8 @@ def main(keys):
         except NoSound as reason:
             print(f"   REJECTED, no profile: {reason}")
             print()
-            results[key] = dict(voice=entry["name"], rate=entry["rate"], rejected=[str(reason)])
+            results[key] = dict(voice=entry["name"], rate=entry["rate"], endPause=bool(entry.get("endPause")),
+                                rejected=[str(reason)])
             continue
         low, high = lines["low"], lines["high"]
         print(f"   plain number at absmiddle 0: {ref:.0f} Hz")
@@ -200,7 +201,8 @@ def main(keys):
             print(f"   {kind.upper():4s} copy peak: {line['a']:+.2f} {line['b']:+.3f} x absmiddle semitones, {line['off']} of 21 points over a semitone off")
         print(f"   HIGH copy below LOW copy by {low['a'] - high['a']:.2f} semitones")
         found = problems(lines)
-        result = dict(voice=entry["name"], rate=entry["rate"], ref_hz=round(ref, 1), lines=lines)
+        result = dict(voice=entry["name"], rate=entry["rate"], endPause=bool(entry.get("endPause")),
+                      ref_hz=round(ref, 1), lines=lines)
         if found:
             print("   REJECTED, no profile: " + "; ".join(found))
             print("   (the pitch is not steady enough for steps to be heard; the monitor gives this voice Hedda's scale)")
@@ -211,6 +213,9 @@ def main(keys):
                 smallest = "none possible" if profile is None else f"{min(profile['falls']):.2f}"
                 print(f"   REJECTED, no profile: no scale with every fall {MIN_FALL} semitones or more (smallest {smallest})")
                 result["rejected"] = ["range too small"]
+                if entry.get("endPause"):
+                    print("   (rendered with -EndPause, which brings the copies closer: render this voice again")
+                    print("   without -EndPause and measure it once more; a profile without endPause may fit)")
             else:
                 print(f"   scale falls {min(profile['falls']):.2f} to {max(profile['falls']):.2f} semitones, "
                       f"{profile['heard'][0] - profile['heard'][-1]:.1f} in all, HIGH copy from {profile['switch']} percent")

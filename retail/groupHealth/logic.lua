@@ -45,7 +45,8 @@ GroupHealth.MAX_RAID_GROUPS = 8
 -- So every announcement carries the number twice, each behind a volume
 -- gate: the LOW copy first (rising: the urgent part of the scale), the
 -- HIGH copy last (falling: the healthy part). The HIGH copy starts about
--- 0.15 seconds after the LOW one would have. 13 levels, about 1 to 1.5
+-- 0.15 seconds after the LOW one would have, 0.2 with the pause after the
+-- LOW copy (END_PAUSE). 13 levels, about 1 to 1.5
 -- semitones apart: the two lowest and the two highest 7 percent steps
 -- share a level.
 --
@@ -83,10 +84,9 @@ end
 -- measured (the voice's peak pitch line per copy, { a, b } = a + b *
 -- absmiddle semitones, for the tests); fallback (true for the profile of
 -- voices without one); endPause (true: the LOW copy ends in
--- GroupHealth.END_PAUSE, and the levels were measured so); byEar (true:
--- the levels were chosen by ear in game, the ear test overrides the
--- measured minimum fall between levels). The profile gets its pitch per step (scale) and the
--- first step of the HIGH copy (highFrom).
+-- GroupHealth.END_PAUSE; `measured` was then rendered with it). The
+-- profile gets its pitch per step (scale), the first step of the HIGH copy
+-- (highFrom) and the end of its LOW copy (lowEnd).
 function VoiceProfiles:register(info)
     checkLevels(info, "low")
     checkLevels(info, "high")
@@ -106,6 +106,7 @@ function VoiceProfiles:register(info)
     tinsert(scale, info.high[#info.high])
     info.scale = scale
     info.highFrom = #info.low + 2
+    info.lowEnd = info.endPause and GroupHealth.END_PAUSE or ""
     self.profiles[info.key] = info
     if info.fallback then
         self.fallback = info
@@ -230,16 +231,15 @@ end
 -- (2026-11-11) keeps the whole number and sits 0.7 semitones higher, but
 -- SAPI adds about 0.22 s after it (and 0.08 s before a HIGH number behind
 -- a silent comma copy), and by ear it made no difference.
--- The pause takes part of the LOW copy's rise away (the number now ends a
--- phrase): Hedda keeps a scale of 14 semitones, Katja one of 12.5, but
--- Zira's two copies end up 1.3 semitones apart, too close for a scale. So
--- the pause is a profile's choice (endPause), measured with it.
+-- The pause lowers both copies, as the silent LOW copy in front of an
+-- audible HIGH copy carries it too (measured 2026-11-12 with exactly the
+-- game's text, pad included): Hedda's copies stay 5.15 semitones apart
+-- (5.3 without the pause), Katja's 2.66 (3.3), but Zira's come to 1.7
+-- (5.6), too close for a scale. So the pause is a profile's choice
+-- (endPause, the register call sets profile.lowEnd), measured with it.
+-- Must stay on one line in this form: tools/voice-profiles/render.ps1
+-- reads it from here.
 GroupHealth.END_PAUSE = '<silence msec="5"/>'
-
--- The end of a profile's LOW copy: the pause, or nothing.
-function GroupHealth.lowEnd(profile)
-    return profile.endPause and GroupHealth.END_PAUSE or ""
-end
 
 -- A cache key for a point list, so equal gates share one curve object.
 function GroupHealth.pointsKey(points)
