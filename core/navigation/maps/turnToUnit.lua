@@ -208,6 +208,45 @@ local function note(run, line)
     tinsert(run.lines, line)
 end
 
+local function cameraZoom()
+    local ok, zoom = pcall(GetCameraZoom)
+    if ok and type(zoom) == "number" and not secrets.isSecret(zoom) then
+        return zoom
+    end
+    return nil
+end
+
+-- Move the camera to distance yards (in or out).
+local function zoomTo(distance)
+    local zoom = cameraZoom()
+    if zoom == nil then
+        return
+    end
+    if distance > zoom then
+        CameraZoomOut(distance - zoom)
+    elseif distance < zoom then
+        CameraZoomIn(zoom - distance)
+    end
+end
+
+-- The press's line for /wv unitturnlog, with how far the character turned.
+local function record(run, message)
+    local facing = facingDegrees()
+    if run.facing ~= nil and facing ~= nil then
+        -- positive = turned right, as the bearing
+        local turned = (run.facing - facing + 180) % 360 - 180
+        note(run, string.format("turned %.1f to facing %.1f", turned, facing))
+    end
+    note(run, message or "facing")
+    tinsert(readings, run.unit .. ": " .. table.concat(run.lines, ", "))
+    while #readings > 20 do
+        tremove(readings, 1)
+    end
+end
+
+-- The pulse lands a frame later; the log and the zoom wait this long.
+local LAND_DELAY = 0.1
+
 -- message nil: facing the unit; the character turns to the camera if a
 -- sweep moved it. "" ends quietly. Otherwise the message is said. Either
 -- way without a find, the camera goes back behind the character, which
@@ -222,24 +261,23 @@ local function finish(run, message)
         pcall(SetCVar, "cameraZoomSpeed", run.zoomSpeed)
         run.zoomSpeed = nil
     end
-    local facing = facingDegrees()
-    if run.facing ~= nil and facing ~= nil then
-        -- positive = turned right, as the bearing
-        local turned = (run.facing - facing + 180) % 360 - 180
-        note(run, string.format("turned %.1f to facing %.1f", turned, facing))
-    end
-    note(run, message or "facing")
-    tinsert(readings, run.unit .. ": " .. table.concat(run.lines, ", "))
-    while #readings > 20 do
-        tremove(readings, 1)
-    end
     if message == nil then
         if run.swept then
             module:faceCamera()
+            C_Timer.After(LAND_DELAY, function()
+                record(run)
+                -- The player's own camera distance back, after the sweep's.
+                if run.zoomFrom ~= nil then
+                    zoomTo(run.zoomFrom)
+                end
+            end)
+        else
+            record(run)
         end
         module:fireAlert("turnToUnit", { action = "facing" })
         return
     end
+    record(run, message)
     if run.swept then
         camera.align()
     end
@@ -339,14 +377,6 @@ end
 -- The edge sweep (unitAim.edgeBearing has the rule), for where the plate
 -- cannot be measured: true when the unit is in front of the camera with a
 -- plate, false when not, nil when the game will not say.
-local function cameraZoom()
-    local ok, zoom = pcall(GetCameraZoom)
-    if ok and type(zoom) == "number" and not secrets.isSecret(zoom) then
-        return zoom
-    end
-    return nil
-end
-
 local function inFront(unit)
     local plate = findPlate(unit)
     if plate == nil then
@@ -364,23 +394,23 @@ local function inFront(unit)
     return behind == false
 end
 
--- The last turn: the character to the bearing found, a turn to waypoint
--- turn from the camera behind it (the turn snaps it back and unzooms it).
+-- The last turn: the camera from where the sweep left it (run.cameraAt,
+-- degrees from the character's facing) on to the bearing, then the pulse
+-- turns the character (finish). Snapping the camera back behind the
+-- character first and turning from there went wrong in game: the snap had
+-- not landed when the turn started (asked 132, turned -164).
 local function turnToBearing(run, bearing)
-    run.swept = false
-    if run.zoomSpeed ~= nil then
-        pcall(SetCVar, "cameraZoomSpeed", run.zoomSpeed)
-        run.zoomSpeed = nil
-    end
-    camera.align()
     note(run, string.format("bearing %.1f", bearing))
     -- The unit's direction in the world (degrees left from north, as the
     -- facing): standing still, it must come out the same at any facing.
     if run.facing ~= nil then
         note(run, string.format("facing %.1f, unit in the world %.1f", run.facing, (run.facing - bearing) % 360))
     end
-    local started = module:turnByAngle(bearing, {
+    local sweep = (bearing - run.cameraAt + 180) % 360 - 180
+    note(run, string.format("camera at %.1f, sweep %.1f", run.cameraAt, sweep))
+    local started = module:turnByAngle(sweep, {
         label = "unit ",
+        cameraOnly = true,
         onDone = function(how)
             if running ~= run then
                 return
@@ -409,6 +439,7 @@ edgeSweep = function(run)
     run.zoomSpeed = okSpeed and speed or nil
     pcall(SetCVar, "cameraZoomSpeed", ZOOM_SPEED)
     local zoomFrom = cameraZoom()
+    run.zoomFrom = zoomFrom
     if zoomFrom ~= nil and zoomFrom > ZOOM_TO then
         CameraZoomIn(zoomFrom - ZOOM_TO)
     elseif zoomFrom ~= nil then
@@ -442,6 +473,8 @@ edgeSweep = function(run)
                     last = now
                 end
                 previous = moved
+                -- Where the camera stops: a stopping frame does not move.
+                run.cameraAt = moved
                 return #changes >= 2
             end,
             onDone = function(how)
