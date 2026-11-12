@@ -3,20 +3,14 @@
 --
 -- In first person a unit changes between in front of the camera and
 -- behind it exactly 90 degrees either side of its bearing, at any distance
--- (WoW: Forever, 2026-11-12: the two changes lay 180 degrees apart). So the
--- first change a sweep meets gives the bearing.
+-- (WoW: Forever, 2026-11-12: the two changes lay 180 degrees apart, and
+-- turns from one change landed within about 2 degrees). That holds with the
+-- camera level, as first person starts. So the first change a sweep meets
+-- gives the bearing.
 local unitAim = {}
+local wrap = WowVision.turnMath.wrap
 
 unitAim.FIRST_PERSON_HALF = 90
-
--- degrees into (-180, 180]
-function unitAim.wrap(degrees)
-    local wrapped = (degrees + 180) % 360 - 180
-    if wrapped == -180 then
-        return 180
-    end
-    return wrapped
-end
 
 -- The unit's bearing (positive = right, as the turn) from the first change
 -- of a sweep to the right: at, the degrees swept at the change; cameIn,
@@ -24,22 +18,23 @@ end
 -- false when it went behind (it lies back).
 function unitAim.firstPersonBearing(at, cameIn)
     if cameIn then
-        return unitAim.wrap(at + unitAim.FIRST_PERSON_HALF)
+        return wrap(at + unitAim.FIRST_PERSON_HALF)
     end
-    return unitAim.wrap(at - unitAim.FIRST_PERSON_HALF)
+    return wrap(at - unitAim.FIRST_PERSON_HALF)
 end
 
--- With the camera behind the character instead (for a unit so close that
--- its plate leaves the first-person view), the two changes lie the same
--- angle either side of the bearing, wider the nearer the unit, so a sweep
--- needs both: the bearing is the middle of the in-front stretch. first and
--- second: { at = degrees swept, cameIn = came in front }, in sweep order.
--- Returns the bearing and the stretch's width (half a circle or more).
+-- With the camera behind the character instead, a unit's in-front stretch
+-- lies symmetric about its bearing, whatever its width: half a circle or
+-- more by the behind-camera answer (wider the nearer the unit), or about
+-- the screen's width where only an on-screen unit has a plate. So the
+-- bearing is the middle of two changes. first and second: { at = degrees
+-- swept, cameIn = came in front }, in sweep order. Returns the bearing and
+-- the stretch's width.
 function unitAim.closeBearing(first, second)
     if first.cameIn then
-        return unitAim.wrap((first.at + second.at) / 2), second.at - first.at
+        return wrap((first.at + second.at) / 2), second.at - first.at
     end
-    return unitAim.wrap((first.at + second.at + 360) / 2), first.at + 360 - second.at
+    return wrap((first.at + second.at + 360) / 2), first.at + 360 - second.at
 end
 
 WowVision.unitAim = unitAim

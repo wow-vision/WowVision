@@ -41,6 +41,7 @@ local pitchLock = WowVision.pitchLock
 -- turnToUnit.lua), with options that turn to waypoint does not use.
 
 local TOLERANCE = 3 -- degrees: already facing it, do nothing
+module.TURN_TOLERANCE = TOLERANCE
 local SETTLE_MIN_FRAMES = 2
 local SETTLE_MIN_TIME = 0.05
 -- Lead: the turn lands its steps plus the idle frame plus the pulse frame
@@ -110,19 +111,18 @@ end
 
 local function measure(turn)
     local endFacing = GetPlayerFacing()
-    if endFacing == nil or turn.startFacing == nil then
+    if endFacing == nil or WowVision.isSecret(endFacing) or WowVision.isSecret(turn.startFacing) then
         return
     end
     local turned = turnMath.turned(turn.startFacing, endFacing, turn.direction, turn.target)
     local aimError = 0
     local landDistance = -1
-    if turn.landX ~= nil and turn.x ~= nil then
+    if turn.landX ~= nil then
         aimError = turnMath.relativeBearing(turn.landX, turn.landY, endFacing, turn.x, turn.y)
         landDistance = math.sqrt((turn.x - turn.landX) ^ 2 + (turn.y - turn.landY) ^ 2)
     end
     addLog(string.format(
-        "%starget %.1f turned %.1f error %.1f | speed %.0f frames %d/%d trim %s fps %.0f frame ms %s | lead %.1f, aim at landing %.1f, %.1f yd, moving %.1f",
-        turn.label or "",
+        "target %.1f turned %.1f error %.1f | speed %.0f frames %d/%d trim %s fps %.0f frame ms %s | lead %.1f, aim at landing %.1f, %.1f yd, moving %.1f",
         turn.target,
         turned,
         turned - turn.target,
@@ -155,10 +155,11 @@ local function onUpdate()
     if turn.stopFrame ~= nil then
         turn.framesSinceStop = turn.framesSinceStop + 1
         if turn.framesSinceStop >= turn.settleFrames then
-            if not turn.cameraOnly then
+            release(turn, "landed")
+            -- (only turns to a point have an aim to measure against)
+            if turn.x ~= nil then
                 measure(turn)
             end
-            release(turn, "landed")
         end
         return
     end
@@ -290,17 +291,26 @@ end
 -- boarding point, or the noted dock near it) and at a fishing spot (its water).
 module.facingWithoutWaypoint = nil
 
--- True while a turn to unit press runs, also between its turns
--- (turnToUnit.lua): a turn to waypoint then is refused like one during a
--- running turn.
-module.turnHeld = false
+-- A caller that runs several turns in a row (turnToUnit.lua) holds the
+-- camera between them: until then, or for at most the seconds given (a
+-- callback error must not block turning for good), turn to waypoint is
+-- refused as during a running turn, and the pitch lock does not level.
+local heldUntil = 0
+
+function module:holdTurns(seconds)
+    heldUntil = GetTime() + seconds
+end
+
+function module:releaseTurns()
+    heldUntil = 0
+end
 
 -- Far enough that the lead of a moving player does not bend the bearing to it.
 local FACING_REACH = 10000
 
 -- Turn to face the world point (x, y), aiming where it lies when the turn lands.
 local function turnToPoint(x, y)
-    if current ~= nil or module.turnHeld then
+    if module:isTurning() then
         return false
     end
     local px, py = UnitPosition("player")
@@ -364,15 +374,14 @@ function module:turnToFacing(facing)
     return turnToPoint(px + math.cos(facing) * FACING_REACH, py + math.sin(facing) * FACING_REACH)
 end
 
--- True while a turn runs (a new one would be refused).
+-- True while a turn runs or the camera is held (see holdTurns).
 function module:isTurning()
-    return current ~= nil
+    return current ~= nil or GetTime() < heldUntil
 end
 
 -- The same sweep by relative degrees (positive = right), for callers that
 -- find the angle themselves (turnToUnit.lua). Needs neither the player's
 -- position nor facing. options (all optional):
---   label        prefix for the turn log
 --   onDone(how)  when the turn ends: "landed", "aborted" or "watchdog"
 --   cameraOnly   sweep the camera from where it is and leave the character
 --                alone: no snap, no free-look change, no pulse; released

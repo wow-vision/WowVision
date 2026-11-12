@@ -1,6 +1,7 @@
 local module = WowVision.base.navigation.maps
 local L = module.L
 local unitAim = WowVision.unitAim
+local turnMath = WowVision.turnMath
 local camera = WowVision.navigationCamera
 local secrets = WowVision.secrets
 local rangeCheck = LibStub("LibRangeCheck-3.0", true)
@@ -31,15 +32,22 @@ local rangeCheck = LibStub("LibRangeCheck-3.0", true)
 -- A unit standing close can lose its plate in first person (the plate is
 -- high above the view; in game on an escort, 2026-11-12), or never change
 -- sides; with offscreen nameplates off any plate goes when its unit leaves
--- the screen. Then the press measures once more with the camera pulled in
--- close behind the character: two changes, the bearing in their middle
--- (unitAim.closeBearing).
+-- the screen, and a unit off screen has none at the press. Then the press
+-- measures with the camera pulled in close behind the character: two
+-- changes, the bearing in their middle (unitAim.closeBearing). A unit
+-- nearer than that camera never goes behind it; the player stands at it.
+--
+-- The press holds the turn engine (holdTurns) from start to end, so turn
+-- to waypoint and the pitch lock keep off the camera between its turns.
 
--- The measuring sweeps: degrees per second (6 a frame at 60 fps, so the
--- bearing is good to about 3 degrees), and how far: in first person the
--- change comes within half a turn, behind the character the second change
--- within a turn; a little more allows for the primed start.
-local SWEEP_SPEED = 360
+-- The measuring sweeps: degrees a frame (a change is placed to half of it,
+-- so the bearing is good to about 3 degrees), as a speed between these
+-- (360 at 60 fps; below 20 fps the step grows), and how far: in first
+-- person the change comes within half a turn, behind the character the
+-- second within a turn; a little more allows for the primed start.
+local SWEEP_STEP = 6
+local SWEEP_SPEED_MIN = 120
+local SWEEP_SPEED_MAX = 360
 local FIRST_PERSON_LIMIT = 200
 local CLOSE_LIMIT = 400
 -- Frames for the switch to first person to land and the plates to follow.
@@ -55,14 +63,14 @@ local ZOOM_SPEED = 50
 local ZOOM_STILL = 2
 local ZOOM_FRAMES = 60
 -- Behind the character the in-front stretch is at least half a circle,
--- wider the nearer the unit; outside this the changes were not clean.
+-- wider the nearer the unit; where plates went off screen it is about the
+-- screen's width. Outside these the changes were not clean.
 local WIDTH_MIN = 170
+local WIDTH_ON_SCREEN_MIN = 40
 local WIDTH_MAX = 330
--- As turn to waypoint: this close counts as facing it already.
-local FACING_TOLERANCE = 3
--- A press still running after this long (a Lua error in a callback) is
--- given up, and a new press starts over.
-local STUCK = 5
+-- How long a press may hold the turn engine at most (renewed at each
+-- stage): a Lua error in a callback must not block turning for good.
+local HOLD_SECONDS = 10
 local KEEP_READINGS = 40
 
 local alert = module:addAlert({ key = "turnToUnit", label = L["Turn to Unit"] })
@@ -203,7 +211,7 @@ local function finish(run, message)
         return
     end
     running = nil
-    module.turnHeld = false
+    module:releaseTurns()
     waitFrame:SetScript("OnUpdate", nil)
     if run.zoomSpeed ~= nil then
         pcall(SetCVar, "cameraZoomSpeed", run.zoomSpeed)
@@ -215,7 +223,7 @@ local function finish(run, message)
     local facing = facingDegrees()
     if run.facing ~= nil and facing ~= nil then
         -- positive = turned right, as the bearing
-        note(run, string.format("turned %.1f", unitAim.wrap(run.facing - facing)))
+        note(run, string.format("turned %.1f", turnMath.wrap(run.facing - facing)))
     end
     note(run, message or "facing")
     local list = readings()
@@ -235,14 +243,15 @@ end
 local function approach(run, angle)
     note(run, string.format("approach %.1f", angle))
     local started = module:turnByAngle(angle, {
-        label = "unit ",
         keepCamera = true,
         lateStart = true,
         onDone = function(how)
-            if how == "landed" then
-                finish(run)
-            else
+            if how ~= "landed" then
                 finish(run, "")
+            elseif run.unitChanged then
+                finish(run, L["Lost the nameplate"])
+            else
+                finish(run)
             end
         end,
     })
@@ -252,12 +261,20 @@ local function approach(run, angle)
     end
 end
 
-local measure
+local measure, zoomClose
 
 -- Pull the camera in close behind the character, then measure again.
 local function measureClose(run)
     note(run, "close")
+    module:holdTurns(HOLD_SECONDS)
     camera.align()
+    -- The snap out of first person lands a frame later: read the zoom then.
+    afterFrames(run, VIEW_FRAMES, function()
+        zoomClose(run)
+    end)
+end
+
+zoomClose = function(run)
     local okSpeed, speed = pcall(GetCVar, "cameraZoomSpeed")
     if okSpeed and speed ~= nil and run.zoomSpeed == nil then
         run.zoomSpeed = speed
@@ -305,9 +322,13 @@ measure = function(run, close)
     -- offscreen nameplates off (the game's default) a plate is there only
     -- while its unit is on screen, and the screen's edges lie the same angle
     -- either side of the bearing too, so the middle still holds.
+    local sawGone = false
     local function state()
         local now = inFront(run)
-        if close and now == "gone" then
+        if now == true or now == false then
+            run.plateSeen = true
+        elseif close and now == "gone" then
+            sawGone = true
             return false
         end
         return now
@@ -321,15 +342,17 @@ measure = function(run, close)
     elseif last == nil then
         return finish(run, L["Nameplate position is hidden here"])
     end
+    module:holdTurns(HOLD_SECONDS)
     local previous = 0
     local stoppedAt = 0
     local changes = {}
     local ended = nil
+    local frameTime = turnMath.frameTime(GetFramerate())
+    local speed = math.max(SWEEP_SPEED_MIN, math.min(SWEEP_SPEED_MAX, SWEEP_STEP / frameTime))
     local started = module:turnByAngle(close and CLOSE_LIMIT or FIRST_PERSON_LIMIT, {
-        label = "unit ",
         cameraOnly = true,
         lateStart = true,
-        fixedSpeed = SWEEP_SPEED,
+        fixedSpeed = speed,
         onFrame = function(moved)
             stoppedAt = moved
             local now = state()
@@ -337,7 +360,12 @@ measure = function(run, close)
                 ended = now
                 return true
             end
-            if now ~= nil and now ~= last then
+            if now == nil then
+                -- no answer this frame: a change may lie anywhere since the
+                -- last one, so previous stays there
+                return false
+            end
+            if now ~= last then
                 tinsert(changes, { at = (previous + moved) / 2, cameIn = now })
                 last = now
                 if #changes >= needed then
@@ -364,24 +392,24 @@ measure = function(run, close)
                     return measureClose(run)
                 end
                 -- (behind the character state() never says "gone")
-                return finish(run, L["Could not turn to it"])
+                return finish(run, run.plateSeen and L["Could not turn to it"] or L["No nameplate"])
             end
             local bearing, width
             if close then
                 bearing, width = unitAim.closeBearing(changes[1], changes[2])
-                note(run, string.format("width %.1f", width))
-                if width < WIDTH_MIN or width > WIDTH_MAX then
+                note(run, string.format("width %.1f%s", width, sawGone and " on screen" or ""))
+                if width < (sawGone and WIDTH_ON_SCREEN_MIN or WIDTH_MIN) or width > WIDTH_MAX then
                     return finish(run, L["Could not turn to it"])
                 end
             else
                 bearing = unitAim.firstPersonBearing(changes[1].at, changes[1].cameIn)
             end
             note(run, string.format("bearing %.1f", bearing))
-            if math.abs(bearing) <= FACING_TOLERANCE then
+            if math.abs(bearing) <= module.TURN_TOLERANCE then
                 note(run, "already facing")
                 return finish(run)
             end
-            approach(run, unitAim.wrap(bearing - stoppedAt))
+            approach(run, turnMath.wrap(bearing - stoppedAt))
         end,
     })
     if started ~= true then
@@ -391,29 +419,26 @@ end
 
 -- Turn to face unit ("target" or "focus").
 function module:turnToUnit(unit)
-    if running ~= nil then
-        if GetTime() - running.started < STUCK then
-            return false
-        end
-        finish(running, "")
-    end
     if self:isTurning() then
-        -- a turn to waypoint still runs
+        -- a turn, or a press, still has the camera
         return false
+    end
+    if running ~= nil then
+        -- a press whose hold ran out (a Lua error in a callback): undo it
+        finish(running, "")
     end
     if not UnitExists(unit) then
         WowVision:notify(unit == "focus" and L["No focus"] or L["No target"])
         return false
     end
-    if findPlate(unit) == nil then
+    local hasPlate = findPlate(unit) ~= nil
+    if not hasPlate and IsInInstance() then
         -- Instances hide friendly nameplates from addons (forbidden frames).
         local reaction = UnitReaction("player", unit)
-        if IsInInstance() and reaction ~= nil and not secrets.isSecret(reaction) and reaction >= 5 then
+        if reaction ~= nil and not secrets.isSecret(reaction) and reaction >= 5 then
             WowVision:notify(L["Friendly nameplates are hidden here"])
-        else
-            WowVision:notify(L["No nameplate"])
+            return false
         end
-        return false
     end
     if not cameraSpeedWritable() then
         WowVision:notify(L["Turning is not available here"])
@@ -421,20 +446,28 @@ function module:turnToUnit(unit)
     end
     local run = {
         unit = unit,
-        started = GetTime(),
         facing = facingDegrees(),
         lines = {},
     }
     running = run
-    module.turnHeld = true
+    module:holdTurns(HOLD_SECONDS)
     note(run, (InCombatLockdown() and "in combat" or "no combat") .. ", " .. (IsInInstance() and "instance" or "world"))
     note(run, rangeText(unit))
     if run.facing ~= nil then
         note(run, string.format("facing %.1f", run.facing))
     end
+    -- Free look (gamepad) goes off with the camera behind the character, as
+    -- in every turn (camera.lua), and stays off for the whole press.
     camera.align()
-    camera.firstPerson()
     run.freeLookOff = camera.beginGamepadTurn()
+    if not hasPlate then
+        -- off screen with offscreen nameplates off, or out of plate range:
+        -- only the close sweep can find it
+        note(run, "no plate at the press")
+        measureClose(run)
+        return true
+    end
+    camera.firstPerson()
     afterFrames(run, VIEW_FRAMES, function()
         measure(run, false)
     end)
