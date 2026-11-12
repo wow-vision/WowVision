@@ -16,6 +16,8 @@ local secrets = WowVision.secrets
 -- place on screen into a turn; each turn is a turn to waypoint sweep
 -- (turnTo.lua), so it lands frame-exact and needs neither the player's
 -- position nor facing. Two or three turns per press: see unitAim.lua.
+-- The sweeps move only the camera; the character turns once, at the end,
+-- and only when the unit was found.
 --
 -- A unit with coordinates (a group member outdoors) is turned to by them,
 -- like a waypoint.
@@ -61,14 +63,38 @@ local function fieldOfView()
     return fov
 end
 
--- What the unit's plate says now: "none", "secret", "behind", or "seen"
--- plus its offset from the screen centre (-1 to 1).
-local function readPlate(unit)
+-- The unit's plate: asked for by the unit token, else found among the
+-- plates by UnitIsUnit (fine outdoors; secret in instances, then skipped).
+local function findPlate(unit)
     if C_NamePlate == nil or C_NamePlate.GetNamePlateForUnit == nil then
-        return "none"
+        return nil
     end
     local ok, plate = pcall(C_NamePlate.GetNamePlateForUnit, unit)
-    if not ok or plate == nil then
+    if ok and plate ~= nil then
+        return plate
+    end
+    local okList, plates = pcall(C_NamePlate.GetNamePlates)
+    if not okList or type(plates) ~= "table" then
+        return nil
+    end
+    for _, candidate in ipairs(plates) do
+        local token = candidate.unitToken or (candidate.UnitFrame and candidate.UnitFrame.unit)
+        if token ~= nil then
+            local okSame, same = pcall(UnitIsUnit, token, unit)
+            if okSame and not secrets.isSecret(same) and same == true then
+                return candidate
+            end
+        end
+    end
+    return nil
+end
+
+-- What the unit's plate says now: "none", "hidden" (the game keeps its
+-- place on screen from addons) plus why, "behind", or "seen" plus its
+-- offset from the screen centre (-1 to 1).
+local function readPlate(unit)
+    local plate = findPlate(unit)
+    if plate == nil then
         return "none"
     end
     local token = plate.unitToken or (plate.UnitFrame and plate.UnitFrame.unit)
@@ -80,24 +106,80 @@ local function readPlate(unit)
         end
     end
     local okCenter, x = pcall(plate.GetCenter, plate)
-    if not okCenter or x == nil then
-        return "none"
-    end
-    if secrets.isSecret(x) then
-        return "secret"
+    if not okCenter then
+        return "hidden", "center error"
+    elseif x == nil then
+        return "hidden", "no center"
+    elseif secrets.isSecret(x) then
+        return "hidden", "secret center"
     end
     local width = WorldFrame:GetWidth() * WorldFrame:GetEffectiveScale()
     local offset = unitAim.offset(x * plate:GetEffectiveScale(), width)
     if offset == nil then
-        return "none"
+        return "hidden", "no screen width"
     end
     return "seen", offset
+end
+
+local function shown(value)
+    if secrets.isSecret(value) then
+        return "secret"
+    end
+    return tostring(value)
+end
+
+-- For the log when no plate is found: the nameplate settings, the unit, and
+-- every plate there is.
+local function describe(unit)
+    local parts = {}
+    for _, name in ipairs({
+        "nameplateShowAll",
+        "nameplateShowFriendlyNpcs",
+        "nameplateShowFriendlyPlayers",
+        "nameplateShowEnemies",
+        "nameplateShowOffscreen",
+        "nameplateMaxDistance",
+    }) do
+        local ok, value = pcall(GetCVar, name)
+        tinsert(parts, name .. " " .. (ok and shown(value) or "error"))
+    end
+    local okReaction, reaction = pcall(UnitReaction, "player", unit)
+    tinsert(parts, "reaction " .. (okReaction and shown(reaction) or "error"))
+    local okVisible, visible = pcall(UnitIsVisible, unit)
+    tinsert(parts, "visible " .. (okVisible and shown(visible) or "error"))
+    if C_NamePlate == nil then
+        tinsert(parts, "no C_NamePlate")
+        return table.concat(parts, "; ")
+    end
+    local ok, plate = pcall(C_NamePlate.GetNamePlateForUnit, unit)
+    tinsert(parts, "by token " .. (ok and (plate == nil and "nil" or "plate") or ("error " .. tostring(plate))))
+    local okForbidden, forbidden = pcall(C_NamePlate.GetNamePlateForUnit, unit, true)
+    tinsert(
+        parts,
+        "with forbidden " .. (okForbidden and (forbidden == nil and "nil" or "plate") or ("error " .. tostring(forbidden)))
+    )
+    local okList, plates = pcall(C_NamePlate.GetNamePlates)
+    if not okList or type(plates) ~= "table" then
+        tinsert(parts, "plate list error")
+        return table.concat(parts, "; ")
+    end
+    tinsert(parts, #plates .. " plates")
+    for _, candidate in ipairs(plates) do
+        local token = candidate.unitToken or (candidate.UnitFrame and candidate.UnitFrame.unit)
+        local okSame, same = pcall(UnitIsUnit, tostring(token), unit)
+        tinsert(parts, tostring(token) .. " same " .. (okSame and shown(same) or "error"))
+    end
+    return table.concat(parts, "; ")
 end
 
 local function note(run, line)
     tinsert(run.lines, line)
 end
 
+-- message nil: facing the unit; the character turns to the camera if a
+-- sweep moved it. "" ends quietly. Otherwise the message is said. Either
+-- way without a find, the camera goes back behind the character, which
+-- has not moved.
 local function finish(run, message)
     if running ~= run then
         return
@@ -110,8 +192,16 @@ local function finish(run, message)
         tremove(readings, 1)
     end
     if message == nil then
+        if run.swept then
+            module:faceCamera()
+        end
         module:fireAlert("turnToUnit", { action = "facing" })
-    elseif message ~= "" then
+        return
+    end
+    if run.swept then
+        camera.align()
+    end
+    if message ~= "" then
         WowVision:notify(message)
     end
 end
@@ -145,12 +235,16 @@ step = function(run)
         if run.aim.turns > 0 then
             return finish(run, L["Lost the nameplate"])
         end
+        if run.searches == 0 then
+            note(run, describe(run.unit))
+        end
         if run.searches >= SEARCH_TURNS then
             return finish(run, L["No nameplate"])
         end
         run.searches = run.searches + 1
         return turnThen(run, SEARCH_TURN)
-    elseif kind == "secret" then
+    elseif kind == "hidden" then
+        note(run, offset)
         return finish(run, L["Nameplate position is hidden here"])
     end
     local angle = nil
@@ -172,26 +266,32 @@ step = function(run)
     return turnThen(run, unitAim.nextTurn(run.aim, kind, angle, offset))
 end
 
--- Turn by degrees, then read the plate again.
+-- Sweep the camera by degrees (the character stays), then read the plate
+-- again. Only a found unit turns the character (finish).
 turnThen = function(run, turn)
     note(run, string.format("turn %.1f", turn))
-    local started = module:turnByAngle(turn, "unit ", function(how)
-        if running ~= run then
-            return
-        end
-        if how ~= "landed" then
-            -- The player turned, or the watchdog stopped it: end quietly.
-            return finish(run, "")
-        end
-        afterFrames(run, READ_FRAMES, function()
-            step(run)
-        end)
-    end)
+    local started = module:turnByAngle(turn, {
+        label = "unit ",
+        cameraOnly = true,
+        onDone = function(how)
+            if running ~= run then
+                return
+            end
+            if how ~= "landed" then
+                -- The player turned, or the watchdog stopped it: end quietly.
+                return finish(run, "")
+            end
+            afterFrames(run, READ_FRAMES, function()
+                step(run)
+            end)
+        end,
+    })
     if started == "facing" then
         return finish(run)
     elseif not started then
         return finish(run, "")
     end
+    run.swept = true
 end
 
 -- Turn to face unit ("target" or "focus").

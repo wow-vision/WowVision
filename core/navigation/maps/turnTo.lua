@@ -92,11 +92,15 @@ end
 local function stopSweep(turn)
     stopCamera()
     restoreYawSpeed()
-    camera.transfer()
+    if not turn.cameraOnly then
+        camera.transfer()
+    end
     turn.stopFrame = turn.sweep.frames
     turn.framesSinceStop = 0
     turn.landX, turn.landY = UnitPosition("player")
-    pitchLock.afterTurn()
+    if not turn.cameraOnly then
+        pitchLock.afterTurn()
+    end
 end
 
 local function measure(turn)
@@ -146,7 +150,9 @@ local function onUpdate()
     if turn.stopFrame ~= nil then
         turn.framesSinceStop = turn.framesSinceStop + 1
         if turn.framesSinceStop >= turn.settleFrames then
-            measure(turn)
+            if not turn.cameraOnly then
+                measure(turn)
+            end
             release(turn, "landed")
         end
         return
@@ -250,12 +256,14 @@ startTurn = function(relative, frameTime, turn)
 
     pitchLock.noteTurn()
     stopCamera()
-    camera.align()
-    -- With the gamepad, free look is off for the turn (camera.lua). Only now,
-    -- with the camera straight behind the character: free look going off
-    -- hands any camera offset to the character, and pressing the stick
-    -- nudges the camera.
-    camera.beginGamepadTurn()
+    if not turn.cameraOnly then
+        camera.align()
+        -- With the gamepad, free look is off for the turn (camera.lua). Only now,
+        -- with the camera straight behind the character: free look going off
+        -- hands any camera offset to the character, and pressing the stick
+        -- nudges the camera.
+        camera.beginGamepadTurn()
+    end
     if savedYawSpeed == nil then
         savedYawSpeed = GetCVar("cameraYawMoveSpeed")
     end
@@ -304,18 +312,47 @@ end
 
 -- Turn by relative degrees (positive = right) with the same sweep. Needs
 -- neither the player's position nor facing, so it also runs where the game
--- hides them (Retail and WoW: Forever instances). onDone(how) runs when the
--- turn ends: "landed", "aborted" (the player turned) or "watchdog". Returns
--- false while another turn runs, "facing" (nothing to do, onDone is not
--- called) within the tolerance, true when the turn started.
-function module:turnByAngle(relative, label, onDone)
+-- hides them (Retail and WoW: Forever instances). options:
+--   label       prefix for the turn log
+--   onDone(how) runs when the turn ends: "landed", "aborted" (the player
+--               turned) or "watchdog"
+--   cameraOnly  sweep the camera from where it is and leave the character
+--               alone (no snap behind it, no pulse); module:faceCamera()
+--               hands the result over later
+-- Returns false while another turn runs, "facing" (nothing to do, onDone is
+-- not called) within the tolerance, true when the turn started.
+function module:turnByAngle(relative, options)
     if current ~= nil then
         return false
     end
     if math.abs(relative) <= TOLERANCE then
         return "facing"
     end
-    return startTurn(relative, turnMath.frameTime(GetFramerate()), { label = label, onDone = onDone })
+    local turn = {}
+    for key, value in pairs(options or {}) do
+        turn[key] = value
+    end
+    return startTurn(relative, turnMath.frameTime(GetFramerate()), turn)
+end
+
+-- Turn the character to where the camera looks: the pulse that ends a turn,
+-- for camera-only sweeps. With the gamepad, free look goes off for it.
+function module:faceCamera()
+    if current ~= nil then
+        return false
+    end
+    pitchLock.noteTurn()
+    local gamepad = camera.beginGamepadTurn()
+    camera.transfer()
+    pitchLock.afterTurn()
+    if gamepad then
+        C_Timer.After(0.1, function()
+            if current == nil then
+                camera.endGamepadTurn()
+            end
+        end)
+    end
+    return true
 end
 
 -- Turn to a facing (radians, as GetPlayerFacing), with the same sweep.
