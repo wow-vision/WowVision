@@ -394,11 +394,14 @@ local function inFront(unit)
     return behind == false
 end
 
--- The last turn: the camera from where the sweep left it (run.cameraAt,
--- degrees from the character's facing) on to the bearing, then the pulse
--- turns the character (finish). Snapping the camera back behind the
--- character first and turning from there went wrong in game: the snap had
--- not landed when the turn started (asked 132, turned -164).
+-- The last turn is exactly a turn to waypoint turn by the bearing, from the
+-- same start: the camera behind the character at the player's distance.
+-- The sweep leaves the camera far round and close in, so it is snapped
+-- back first and given SNAP_FRAMES to land. Turning in the same frame as
+-- the snap went wrong in game (asked 132, turned -164; asked -111, turned
+-- 0.6).
+local SNAP_FRAMES = 3
+
 local function turnToBearing(run, bearing)
     note(run, string.format("bearing %.1f", bearing))
     -- The unit's direction in the world (degrees left from north, as the
@@ -406,27 +409,32 @@ local function turnToBearing(run, bearing)
     if run.facing ~= nil then
         note(run, string.format("facing %.1f, unit in the world %.1f", run.facing, (run.facing - bearing) % 360))
     end
-    local sweep = (bearing - run.cameraAt + 180) % 360 - 180
-    note(run, string.format("camera at %.1f, sweep %.1f", run.cameraAt, sweep))
-    local started = module:turnByAngle(sweep, {
-        label = "unit ",
-        cameraOnly = true,
-        onDone = function(how)
-            if running ~= run then
-                return
-            end
-            if how == "landed" then
-                finish(run)
-            else
-                finish(run, "")
-            end
-        end,
-    })
-    if started == "facing" then
-        return finish(run)
-    elseif not started then
-        return finish(run, "")
+    if run.zoomSpeed ~= nil then
+        pcall(SetCVar, "cameraZoomSpeed", run.zoomSpeed)
+        run.zoomSpeed = nil
     end
+    camera.align()
+    run.swept = false
+    afterFrames(run, SNAP_FRAMES, function()
+        local started = module:turnByAngle(bearing, {
+            label = "unit ",
+            onDone = function(how)
+                if running ~= run then
+                    return
+                end
+                if how == "landed" then
+                    finish(run)
+                else
+                    finish(run, "")
+                end
+            end,
+        })
+        if started == "facing" then
+            return finish(run)
+        elseif not started then
+            return finish(run, "")
+        end
+    end)
 end
 
 -- From the camera snapped behind the character (its facing is the zero of
@@ -473,8 +481,6 @@ edgeSweep = function(run)
                     last = now
                 end
                 previous = moved
-                -- Where the camera stops: a stopping frame does not move.
-                run.cameraAt = moved
                 return #changes >= 2
             end,
             onDone = function(how)
