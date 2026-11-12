@@ -705,6 +705,10 @@ local function trialRun(kind, primed, after)
     local okSpeed, savedSpeed = pcall(GetCVar, "cameraYawMoveSpeed")
     camera.align()
     C_Timer.After(0.5, function()
+        -- As every turn to waypoint turn: with the gamepad, free look off for
+        -- the sweep and the pulse, else the pulse hands nothing over (the
+        -- first run of this trial turned 0 every time).
+        local freeLookOff = camera.beginGamepadTurn()
         local function finishTrial(expected)
             MoveViewLeftStop()
             MoveViewRightStop()
@@ -713,14 +717,16 @@ local function trialRun(kind, primed, after)
             end
             camera.transfer()
             C_Timer.After(0.4, function()
+                camera.endGamepadTurn()
                 local now = facingDegrees()
                 local turned = now and ((before - now + 180) % 360 - 180) or nil
                 local line = string.format(
-                    "sweep test %s %s: frames say %.1f, turned %s",
+                    "sweep test %s %s: frames say %.1f, turned %s, free look %s",
                     kind,
                     primed and "with workaround" or "without",
                     expected,
-                    turned and string.format("%.1f", turned) or "unknown"
+                    turned and string.format("%.1f", turned) or "unknown",
+                    freeLookOff and "switched off" or "untouched"
                 )
                 print("WowVision " .. line)
                 addReading(line)
