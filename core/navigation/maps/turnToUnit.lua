@@ -73,7 +73,25 @@ alert:addOutput({
 
 local waitFrame = CreateFrame("Frame")
 local running = nil
-local readings = {}
+-- The log of presses (and trials), kept in WowVisionDump.turnToUnit so it
+-- is in the SavedVariables after a /reload or logout: no copying from chat.
+local KEEP_READINGS = 40
+
+local function readings()
+    WowVisionDump = WowVisionDump or {}
+    if type(WowVisionDump.turnToUnit) ~= "table" then
+        WowVisionDump.turnToUnit = {}
+    end
+    return WowVisionDump.turnToUnit
+end
+
+local function addReading(text)
+    local list = readings()
+    tinsert(list, date("%Y-%m-%d %H:%M:%S") .. " " .. text)
+    while #list > KEEP_READINGS do
+        tremove(list, 1)
+    end
+end
 
 local function fieldOfView()
     local ok, value = pcall(GetCVar, "cameraFov")
@@ -237,10 +255,7 @@ local function record(run, message)
         note(run, string.format("turned %.1f to facing %.1f", turned, facing))
     end
     note(run, message or "facing")
-    tinsert(readings, run.unit .. ": " .. table.concat(run.lines, ", "))
-    while #readings > 20 do
-        tremove(readings, 1)
-    end
+    addReading(run.unit .. ": " .. table.concat(run.lines, ", "))
 end
 
 -- The pulse lands a frame later; the log and the zoom wait this long.
@@ -687,10 +702,7 @@ module:registerCommand({
                 local after = facingDegrees()
                 local turned = (before and after) and ((before - after + 180) % 360 - 180) or nil
                 line("after the pulse: turned " .. (turned and string.format("%.1f", turned) or "unknown"))
-                tinsert(readings, "flip test: " .. table.concat(lines, "; "))
-                while #readings > 20 do
-                    tremove(readings, 1)
-                end
+                addReading("flip test: " .. table.concat(lines, "; "))
                 WowVision:speak("flip test done")
             end)
         end)
@@ -702,8 +714,8 @@ module:registerCommand({
     name = "unitturnlog",
     description = "Show the last turns to a unit",
     func = function()
-        local lines = { string.format("%d presses, field of view %d", #readings, fieldOfView()) }
-        for _, line in ipairs(readings) do
+        local lines = { string.format("%d presses, field of view %d", #readings(), fieldOfView()) }
+        for _, line in ipairs(readings()) do
             tinsert(lines, line)
         end
         for _, line in ipairs(lines) do
