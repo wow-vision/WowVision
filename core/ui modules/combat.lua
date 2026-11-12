@@ -134,8 +134,10 @@ local lossOfControl = C_LossOfControl or {}
 local unitAuras = C_UnitAuras or {}
 
 -- A new number is said once it held this long: a plate that blinks out
--- and back is not spoken twice.
-local SETTLE = 0.5
+-- and back is not spoken twice, and a pack that comes in one after another
+-- is said as one number. 0.3 s is the window Sku's TBC count waits for a
+-- burst of new enemies (tFlushWindow in SkuCore/aqCombat.lua).
+local SETTLE = 0.3
 
 local PLATES = {}
 for i = 1, 40 do
@@ -241,6 +243,10 @@ local api = {
     inCombat = UnitAffectingCombat,
     classification = UnitClassification,
     threat = UnitThreatSituation,
+    inGroup = function()
+        return IsInGroup()
+    end,
+    tapDenied = UnitIsTapDenied,
     isSecret = secrets.isSecret,
     -- The crowd control reads are guarded: each game version has a
     -- different part of them, and a refused read means "unknown".

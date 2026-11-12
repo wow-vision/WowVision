@@ -13,7 +13,8 @@
 local enemyCount = {}
 WowVision.enemyCount = enemyCount
 
--- "group": enemies that you, your pet or a group member are fighting.
+-- "group": enemies that you, your pet or a group member are fighting; in a
+-- group also any enemy in combat that nobody outside it has tapped.
 -- "player": enemies attacking you (you hold their aggro).
 enemyCount.modes = { "group", "player" }
 
@@ -25,6 +26,8 @@ local ELITE = { elite = true, rareelite = true, worldboss = true }
 --   exists(unit), reaction(unit), isDead(unit), inCombat(unit),
 --   classification(unit)
 --   threat(member, unit)        UnitThreatSituation
+--   inGroup()                   IsInGroup
+--   tapDenied(unit)             UnitIsTapDenied
 --   isSecret(value)
 
 -- Hostile by reaction (4 or lower: hated to neutral). Unlike "can attack",
@@ -47,6 +50,25 @@ local function groupFights(api, unit, group)
         end
     end
     return false
+end
+
+-- In a group: whether the enemy is in combat and nobody outside the group
+-- has tapped it, which makes the fight the group's. Needed because the
+-- client gets an enemy's threat list only once you are on it yourself:
+-- in a WoW: Forever dungeon (2026-11-12, 44 fights) groupFights found
+-- nothing until you were in combat, 1.5 to 22 seconds after the group.
+-- Both are shown on the plate (in combat; a grey bar when tapped by
+-- others). A secret answer to either is unknown and counts as no.
+local function groupHolds(api, unit)
+    if not api.inGroup() then
+        return false
+    end
+    local inCombat = api.inCombat(unit)
+    if api.isSecret(inCombat) or inCombat ~= true then
+        return false
+    end
+    local tapped = api.tapDenied(unit)
+    return not api.isSecret(tapped) and tapped == false
 end
 
 -- Whether you hold the enemy's aggro (threat status 2 or 3). A secret
@@ -73,7 +95,7 @@ local function counts(api, mode, group, eliteOnly, unit)
     if mode == "player" then
         fights = attacksPlayer(api, unit)
     else
-        fights = groupFights(api, unit, group)
+        fights = groupHolds(api, unit) or groupFights(api, unit, group)
     end
     if fights and eliteOnly then
         fights = ELITE[api.classification(unit)] == true

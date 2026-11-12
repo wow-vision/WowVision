@@ -6,7 +6,9 @@ local SECRET = setmetatable({}, { __tostring = function()
 end })
 
 -- A world standing in for the game's. plates: token -> enemy, where an
--- enemy is { reaction, dead, class, threat = { member = status } }.
+-- enemy is { reaction, dead, class, threat = { member = status }, tapped }
+-- (tapped: UnitIsTapDenied, true when left out). A group of more than
+-- player and pet is a party.
 local function world(plates, group)
     group = group or { "player", "pet" }
     local present = {}
@@ -43,6 +45,16 @@ local function world(plates, group)
         threat = function(member, unit)
             local threat = plates[unit].threat or {}
             return threat[member]
+        end,
+        inGroup = function()
+            return #group > 2
+        end,
+        tapDenied = function(unit)
+            local tapped = plates[unit].tapped
+            if tapped == nil then
+                return true
+            end
+            return tapped
         end,
         isSecret = function(value)
             return value == SECRET
@@ -83,6 +95,31 @@ testRunner:addSuite("EnemyCount", {
         }, { "player", "pet", "party1" })
         t:assertEqual(enemyCount.count(api, "group", false), 1)
         t:assertEqual(enemyCount.count(api, "player", false), 0)
+    end,
+
+    ["in a group, an enemy in combat nobody else tapped counts without its threat list"] = function(t)
+        local party = { "player", "pet", "party1" }
+        local api = world({
+            nameplate1 = enemy(nil, { tapped = false }),
+            nameplate2 = enemy(nil, { tapped = true }),
+            nameplate3 = enemy(nil, { tapped = false, idle = true }),
+            nameplate4 = enemy(nil, { tapped = SECRET }),
+        }, party)
+        t:assertEqual(enemyCount.count(api, "group", false), 1)
+        t:assertEqual(enemyCount.count(api, "player", false), 0)
+    end,
+
+    ["solo, an untapped enemy in combat needs you on its threat list"] = function(t)
+        local api = world({ nameplate1 = enemy(nil, { tapped = false }) })
+        t:assertEqual(enemyCount.count(api, "group", false), 0)
+    end,
+
+    ["a secret combat flag does not count by the group rule"] = function(t)
+        local api = world({ nameplate1 = enemy(nil, { tapped = false }) }, { "player", "pet", "party1" })
+        api.inCombat = function()
+            return SECRET
+        end
+        t:assertEqual(enemyCount.count(api, "group", false), 0)
     end,
 
     ["player mode counts only enemies you hold aggro of"] = function(t)
