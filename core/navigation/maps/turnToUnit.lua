@@ -196,6 +196,14 @@ local function describe(unit)
     return table.concat(parts, "; ")
 end
 
+local function facingDegrees()
+    local ok, facing = pcall(GetPlayerFacing)
+    if ok and type(facing) == "number" and not secrets.isSecret(facing) then
+        return math.deg(facing)
+    end
+    return nil
+end
+
 local function note(run, line)
     tinsert(run.lines, line)
 end
@@ -213,6 +221,12 @@ local function finish(run, message)
     if run.zoomSpeed ~= nil then
         pcall(SetCVar, "cameraZoomSpeed", run.zoomSpeed)
         run.zoomSpeed = nil
+    end
+    local facing = facingDegrees()
+    if run.facing ~= nil and facing ~= nil then
+        -- positive = turned right, as the bearing
+        local turned = (run.facing - facing + 180) % 360 - 180
+        note(run, string.format("turned %.1f to facing %.1f", turned, facing))
     end
     note(run, message or "facing")
     tinsert(readings, run.unit .. ": " .. table.concat(run.lines, ", "))
@@ -360,6 +374,11 @@ local function turnToBearing(run, bearing)
     end
     camera.align()
     note(run, string.format("bearing %.1f", bearing))
+    -- The unit's direction in the world (degrees left from north, as the
+    -- facing): standing still, it must come out the same at any facing.
+    if run.facing ~= nil then
+        note(run, string.format("facing %.1f, unit in the world %.1f", run.facing, (run.facing - bearing) % 360))
+    end
     local started = module:turnByAngle(bearing, {
         label = "unit ",
         onDone = function(how)
@@ -517,6 +536,9 @@ function module:turnToUnit(unit)
         lines = {},
         searches = 0,
         started = GetTime(),
+        -- For the log: the facing at the press (degrees, as GetPlayerFacing;
+        -- nil where the game hides it).
+        facing = facingDegrees(),
     }
     running = run
     -- Read the plate with the camera straight behind the character.
