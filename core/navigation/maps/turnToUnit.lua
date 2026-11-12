@@ -628,67 +628,66 @@ function module:turnToUnit(unit)
 end
 
 -- Trial of FlipCameraYaw (turns the camera by an angle at once, in
--- degrees; on Forever 1.60.1, no restriction listed): may an addon call
--- it, which way does a positive angle go, and is it there in the same
--- frame? Outdoors only (needs the facing). Two flips, each from the camera
--- behind the character and ended by the pulse: +90 with the pulse in the
--- same frame, then -90 with the pulse a frame later. Each line says how far
--- the character turned (positive = right, as the turn keys' bearing).
-local flipLines = {}
-
-local function flipLine(text)
-    tinsert(flipLines, text)
-    print("WowVision flip test: " .. text)
-end
-
-local function flipTrial(angle, pulseLater, after)
-    local before = facingDegrees()
-    if before == nil then
-        flipLine("no facing here (instance?)")
-        return
-    end
-    camera.align()
-    C_Timer.After(0.3, function()
-        local ok, err = pcall(FlipCameraYaw, angle)
-        if not ok then
-            flipLine(string.format("FlipCameraYaw(%d) refused: %s", angle, tostring(err)))
-            return
-        end
-        local function pulse()
-            camera.transfer()
-            C_Timer.After(0.3, function()
-                local now = facingDegrees()
-                local turned = now and ((before - now + 180) % 360 - 180) or nil
-                flipLine(
-                    string.format(
-                        "FlipCameraYaw(%d), pulse %s: turned %s",
-                        angle,
-                        pulseLater and "a frame later" or "same frame",
-                        turned and string.format("%.1f", turned) or "unknown"
-                    )
-                )
-                if after then
-                    after()
-                end
-            end)
-        end
-        if pulseLater then
-            C_Timer.After(0, pulse)
-        else
-            pulse()
-        end
-    end)
-end
+-- degrees; on Forever 1.60.1, no restriction listed). The first trial
+-- (from a timer, 0.3 s after a camera snap) turned the character 0 degrees
+-- both times. This one calls it straight from the command (the Enter key
+-- press), without a snap, by 180 degrees, and watches whether the camera
+-- turned at all: a target in front of the camera must then be behind it
+-- (the game's behind-camera answer, per frame for 10 frames). Then the
+-- pulse, and how far the character turned (outdoors; positive = right).
+local FLIP_WATCH_FRAMES = 10
 
 module:registerCommand({
     name = "fliptest",
-    description = "Try FlipCameraYaw: two quarter turns, logged",
+    description = "Try FlipCameraYaw: half a turn from the key press, logged",
     func = function()
-        flipLines = {}
-        flipTrial(90, false, function()
-            flipTrial(-90, true, function()
-                local text = "flip test: " .. table.concat(flipLines, "; ")
-                tinsert(readings, text)
+        local lines = {}
+        local function line(text)
+            tinsert(lines, text)
+            print("WowVision flip test: " .. text)
+        end
+        local hasTarget = UnitExists("target")
+        local function state()
+            if not hasTarget then
+                return "no target"
+            end
+            local front = inFront("target")
+            if front == nil then
+                return "unknown"
+            end
+            return front and "in front" or "behind"
+        end
+        local before = facingDegrees()
+        line("before: target " .. state() .. ", facing " .. (before and string.format("%.1f", before) or "unknown"))
+        local ok, err = pcall(FlipCameraYaw, 180)
+        if not ok then
+            line("FlipCameraYaw(180) refused: " .. tostring(err))
+            return
+        end
+        line("FlipCameraYaw(180) called, same moment: target " .. state())
+        local states = {}
+        local frames = 0
+        local last = GetTime()
+        local watcher = CreateFrame("Frame")
+        watcher:SetScript("OnUpdate", function(self)
+            local now = GetTime()
+            if now <= last then
+                return
+            end
+            last = now
+            frames = frames + 1
+            tinsert(states, state())
+            if frames < FLIP_WATCH_FRAMES then
+                return
+            end
+            self:SetScript("OnUpdate", nil)
+            line("frames after: " .. table.concat(states, ", "))
+            camera.transfer()
+            C_Timer.After(0.3, function()
+                local after = facingDegrees()
+                local turned = (before and after) and ((before - after + 180) % 360 - 180) or nil
+                line("after the pulse: turned " .. (turned and string.format("%.1f", turned) or "unknown"))
+                tinsert(readings, "flip test: " .. table.concat(lines, "; "))
                 while #readings > 20 do
                     tremove(readings, 1)
                 end
