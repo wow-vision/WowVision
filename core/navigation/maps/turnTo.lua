@@ -96,6 +96,11 @@ local function stopSweep(turn)
         camera.transfer()
     end
     turn.stopFrame = turn.sweep.frames
+    if turn.cameraOnly then
+        -- No pulse to wait for: release in the next frame, so a caller can
+        -- go on before the camera follow style starts to swing it back.
+        turn.settleFrames = 1
+    end
     turn.framesSinceStop = 0
     turn.landX, turn.landY = UnitPosition("player")
     if not turn.cameraOnly then

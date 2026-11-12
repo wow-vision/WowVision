@@ -403,6 +403,10 @@ end
 -- reach the bearing.
 local EDGE_FIND = 400
 local EDGE_TOTAL = 800
+-- Faster: stop as soon as the bearing is known and turn the short way at
+-- full speed from there, one frame later. false: the one motion above,
+-- which worked in game (2026-11-12) but sweeps up to two turns.
+local FAST_APPROACH = true
 
 edgeSweep = function(run)
     note(run, "edge sweep")
@@ -469,6 +473,12 @@ edgeSweep = function(run)
                         target = target + 360
                     end
                     run.target = target
+                    if FAST_APPROACH then
+                        -- Stop here; the approach turns the short way.
+                        run.stoppedAt = moved
+                        run.approach = (bearing - moved + 180) % 360 - 180
+                        return "quiet"
+                    end
                     if target - moved <= step / 2 then
                         run.stoppedAt = moved
                         return true
@@ -502,13 +512,45 @@ edgeSweep = function(run)
                     note(run, failure == "width" and "width off" or (#changes .. " changes in " .. frame .. " frames"))
                     return finish(run, L["Could not turn to it"])
                 end
-                note(run, string.format("stopped at %.1f for %.1f", run.stoppedAt or -1, run.target or -1))
-                -- The character has turned; the camera's distance comes back.
-                run.swept = false
-                if run.zoomFrom ~= nil then
-                    zoomTo(run.zoomFrom)
+                local function done()
+                    -- The character has turned; the camera's distance comes back.
+                    run.swept = false
+                    if run.zoomFrom ~= nil then
+                        zoomTo(run.zoomFrom)
+                    end
+                    finish(run)
                 end
-                finish(run)
+                if run.approach == nil then
+                    note(run, string.format("stopped at %.1f for %.1f", run.stoppedAt or -1, run.target or -1))
+                    return done()
+                end
+                -- The approach: at once, from where the camera stands, the
+                -- short way at full speed; its stop hands the camera over.
+                note(run, string.format("stopped at %.1f, approach %.1f", run.stoppedAt, run.approach))
+                local approached = module:turnByAngle(run.approach, {
+                    label = "unit ",
+                    keepCamera = true,
+                    onDone = function(approachHow)
+                        if running ~= run then
+                            return
+                        end
+                        if approachHow ~= "landed" then
+                            return finish(run, "")
+                        end
+                        done()
+                    end,
+                })
+                if approached == "facing" then
+                    -- Already pointing at it: only the hand-over.
+                    module:faceCamera()
+                    return C_Timer.After(LAND_DELAY, function()
+                        if running == run then
+                            done()
+                        end
+                    end)
+                elseif not approached then
+                    return finish(run, "")
+                end
             end,
         })
         if not started then
