@@ -401,6 +401,10 @@ end
 -- the snap went wrong in game (asked 132, turned -164; asked -111, turned
 -- 0.6).
 local SNAP_FRAMES = 3
+-- Outdoors, where the game tells the facing: a turn that landed more than
+-- CORRECT_ABOVE degrees off is followed by up to MAX_CORRECTIONS more.
+local CORRECT_ABOVE = 5
+local MAX_CORRECTIONS = 2
 
 local function turnToBearing(run, bearing)
     note(run, string.format("bearing %.1f", bearing))
@@ -415,18 +419,43 @@ local function turnToBearing(run, bearing)
     end
     camera.align()
     run.swept = false
-    afterFrames(run, SNAP_FRAMES, function()
-        local started = module:turnByAngle(bearing, {
+    -- For the log: the camera settings that decide how a snap lands, and
+    -- the zoom each wait frame (an instant snap jumps in one frame).
+    local settings = {}
+    for _, name in ipairs({ "cameraSmoothStyle", "cameraViewBlendStyle" }) do
+        local ok, value = pcall(GetCVar, name)
+        tinsert(settings, name .. " " .. tostring(ok and value or "?"))
+    end
+    local zooms = { string.format("%.1f", cameraZoom() or -1) }
+    local waited = 0
+    local corrections = 0
+    -- The world facing to land on, where the game tells the facing.
+    local goal = run.facing ~= nil and (run.facing - bearing) % 360 or nil
+
+    local function turn(angle)
+        local started = module:turnByAngle(angle, {
             label = "unit ",
             onDone = function(how)
                 if running ~= run then
                     return
                 end
-                if how == "landed" then
-                    finish(run)
-                else
-                    finish(run, "")
+                if how ~= "landed" then
+                    return finish(run, "")
                 end
+                -- Outdoors: a turn that landed off is followed by one
+                -- more, now from the camera behind the character.
+                local facing = facingDegrees()
+                if goal ~= nil and facing ~= nil and corrections < MAX_CORRECTIONS then
+                    local left = (facing - goal + 180) % 360 - 180
+                    if math.abs(left) > CORRECT_ABOVE then
+                        corrections = corrections + 1
+                        note(run, string.format("off %.1f, correction %d", left, corrections))
+                        return afterFrames(run, READ_FRAMES, function()
+                            turn(left)
+                        end)
+                    end
+                end
+                finish(run)
             end,
         })
         if started == "facing" then
@@ -434,7 +463,20 @@ local function turnToBearing(run, bearing)
         elseif not started then
             return finish(run, "")
         end
-    end)
+    end
+
+    local function wait()
+        afterFrames(run, 1, function()
+            waited = waited + 1
+            tinsert(zooms, string.format("%.1f", cameraZoom() or -1))
+            if waited < SNAP_FRAMES then
+                return wait()
+            end
+            note(run, table.concat(settings, ", ") .. ", zoom after snap " .. table.concat(zooms, " "))
+            turn(bearing)
+        end)
+    end
+    wait()
 end
 
 -- From the camera snapped behind the character (its facing is the zero of
