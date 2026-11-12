@@ -77,11 +77,15 @@ local function addLog(line)
     end
 end
 
-local function release(turn)
+-- how: "landed" (the pulse landed), "aborted" (the player turned) or "watchdog".
+local function release(turn, how)
     if current == turn then
         current = nil
         turnFrame:SetScript("OnUpdate", nil)
         camera.endGamepadTurn()
+        if turn.onDone ~= nil then
+            turn.onDone(how)
+        end
     end
 end
 
@@ -97,18 +101,19 @@ end
 
 local function measure(turn)
     local endFacing = GetPlayerFacing()
-    if endFacing == nil then
+    if endFacing == nil or turn.startFacing == nil then
         return
     end
     local turned = turnMath.turned(turn.startFacing, endFacing, turn.direction, turn.target)
     local aimError = 0
     local landDistance = -1
-    if turn.landX ~= nil then
+    if turn.landX ~= nil and turn.x ~= nil then
         aimError = turnMath.relativeBearing(turn.landX, turn.landY, endFacing, turn.x, turn.y)
         landDistance = math.sqrt((turn.x - turn.landX) ^ 2 + (turn.y - turn.landY) ^ 2)
     end
     addLog(string.format(
-        "target %.1f turned %.1f error %.1f | speed %.0f frames %d/%d trim %s fps %.0f frame ms %s | lead %.1f, aim at landing %.1f, %.1f yd, moving %.1f",
+        "%starget %.1f turned %.1f error %.1f | speed %.0f frames %d/%d trim %s fps %.0f frame ms %s | lead %.1f, aim at landing %.1f, %.1f yd, moving %.1f",
+        turn.label or "",
         turn.target,
         turned,
         turned - turn.target,
@@ -141,8 +146,8 @@ local function onUpdate()
     if turn.stopFrame ~= nil then
         turn.framesSinceStop = turn.framesSinceStop + 1
         if turn.framesSinceStop >= turn.settleFrames then
-            release(turn)
             measure(turn)
+            release(turn, "landed")
         end
         return
     end
@@ -151,7 +156,7 @@ local function onUpdate()
         -- The player took over: stop where we are, no pulse.
         stopCamera()
         restoreYawSpeed()
-        release(turn)
+        release(turn, "aborted")
         return
     end
     if #turn.frameMs < 24 then
@@ -172,6 +177,8 @@ module.facingWithoutWaypoint = nil
 
 -- Far enough that the lead of a moving player does not bend the bearing to it.
 local FACING_REACH = 10000
+
+local startTurn
 
 -- Turn to face the world point (x, y), aiming where it lies when the turn lands.
 local function turnToPoint(x, y)
@@ -207,13 +214,21 @@ local function turnToPoint(x, y)
         pitchLock.alreadyFacing()
         return true
     end
+    return startTurn(relative, frameTime, {
+        x = x,
+        y = y,
+        lead = relative - raw,
+        moving = moving,
+    })
+end
 
+-- Start the sweep for a turn of relative degrees (positive = right). turn
+-- holds the caller's extras (aim point, lead, label, onDone).
+startTurn = function(relative, frameTime, turn)
     local target = math.abs(relative)
     local sweepSpeed, steps = turnMath.plan(target, frameTime)
     local cvar = math.min(sweepSpeed, turnMath.CVAR_MAX)
-    local turn = {
-        x = x,
-        y = y,
+    for key, value in pairs({
         target = target,
         direction = relative > 0 and 1 or -1,
         speed = sweepSpeed,
@@ -222,12 +237,15 @@ local function turnToPoint(x, y)
         frameTime = frameTime,
         settleFrames = math.max(SETTLE_MIN_FRAMES, math.ceil(SETTLE_MIN_TIME / frameTime - 1e-9)),
         sweep = turnMath.newSweep(target, sweepSpeed, steps),
-        startFacing = facing,
+        -- nil where the game hides the facing; measure() then logs nothing
+        startFacing = GetPlayerFacing(),
         lastTime = GetTime(),
         frameMs = {},
-        lead = relative - raw,
-        moving = moving,
-    }
+    }) do
+        turn[key] = value
+    end
+    turn.lead = turn.lead or 0
+    turn.moving = turn.moving or 0
     current = turn
 
     pitchLock.noteTurn()
@@ -259,8 +277,8 @@ local function turnToPoint(x, y)
             stopCamera()
         end
         restoreYawSpeed()
-        release(turn)
         addLog("watchdog stopped a turn")
+        release(turn, "watchdog")
     end)
     return true
 end
@@ -277,6 +295,27 @@ function module:turnToWaypoint()
         return false
     end
     return turnToPoint(waypoint.x, waypoint.y)
+end
+
+-- Turn to face the world point (x, y), as a route waypoint is turned to.
+function module:turnToPoint(x, y)
+    return turnToPoint(x, y)
+end
+
+-- Turn by relative degrees (positive = right) with the same sweep. Needs
+-- neither the player's position nor facing, so it also runs where the game
+-- hides them (Retail and WoW: Forever instances). onDone(how) runs when the
+-- turn ends: "landed", "aborted" (the player turned) or "watchdog". Returns
+-- false while another turn runs, "facing" (nothing to do, onDone is not
+-- called) within the tolerance, true when the turn started.
+function module:turnByAngle(relative, label, onDone)
+    if current ~= nil then
+        return false
+    end
+    if math.abs(relative) <= TOLERANCE then
+        return "facing"
+    end
+    return startTurn(relative, turnMath.frameTime(GetFramerate()), { label = label, onDone = onDone })
 end
 
 -- Turn to a facing (radians, as GetPlayerFacing), with the same sweep.

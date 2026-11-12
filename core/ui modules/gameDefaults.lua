@@ -10,6 +10,9 @@ WowVision.gameDefaults = gameDefaults
 
 gameDefaults.CVARS = {
     { name = "autoLootDefault", value = "1", label = "Auto Loot" },
+    -- Friendly NPCs get a nameplate, so turn to target and turn to focus
+    -- find an escort or other friendly NPC (navigation/maps/turnToUnit.lua).
+    { name = "nameplateShowFriendlyNpcs", value = "1", label = "Friendly NPC Nameplates" },
 }
 
 -- Audio Assist (Blizzard_CombatAudioAlerts): on, your health, target health

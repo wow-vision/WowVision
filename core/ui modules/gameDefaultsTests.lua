@@ -59,7 +59,10 @@ local function fakeGame(options)
 end
 
 local function allCVars(value)
-    local cvars = { autoLootDefault = value }
+    local cvars = {}
+    for _, cvar in ipairs(gameDefaults.CVARS) do
+        cvars[cvar.name] = value
+    end
     for _, cvar in ipairs(gameDefaults.AUDIO_ASSIST_CVARS) do
         cvars[cvar.name] = value
     end
@@ -82,6 +85,7 @@ testRunner:addSuite("GameDefaults", {
         })
         local report = gameDefaults.apply(api, L)
         t:assertEqual(game.cvars.autoLootDefault, "1")
+        t:assertEqual(game.cvars.nameplateShowFriendlyNpcs, "1")
         t:assertEqual(game.cvars.CAAEnabled, "1")
         t:assertEqual(game.cvars.CAASayTargetName, "0")
         t:assertEqual(game.cvars.CAAPlayerHealthPercent, "2")
@@ -99,7 +103,9 @@ testRunner:addSuite("GameDefaults", {
 
     ["settings already right are not written again"] = function(t)
         local cvars = allCVars("0")
-        cvars.autoLootDefault = "1"
+        for _, cvar in ipairs(gameDefaults.CVARS) do
+            cvars[cvar.name] = cvar.value
+        end
         for _, cvar in ipairs(gameDefaults.AUDIO_ASSIST_CVARS) do
             cvars[cvar.name] = cvar.value
         end
@@ -117,9 +123,13 @@ testRunner:addSuite("GameDefaults", {
     end,
 
     ["without Audio Assist only the rest is set"] = function(t)
-        local game, api = fakeGame({ noAudioAssist = true, cvars = { autoLootDefault = "0" } })
+        local game, api = fakeGame({
+            noAudioAssist = true,
+            cvars = { autoLootDefault = "0", nameplateShowFriendlyNpcs = "0" },
+        })
         local report = gameDefaults.apply(api, L)
         t:assertEqual(game.cvars.autoLootDefault, "1")
+        t:assertEqual(game.cvars.nameplateShowFriendlyNpcs, "1")
         t:assertNil(game.cvars.CAAEnabled)
         t:assertEqual(#report.failed, 0)
     end,
