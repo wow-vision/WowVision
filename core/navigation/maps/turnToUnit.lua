@@ -153,6 +153,7 @@ local function finish(run, message)
         return
     end
     running = nil
+    module.turnHeld = false
     waitFrame:SetScript("OnUpdate", nil)
     camera.align()
     if run.freeLookOff then
@@ -299,6 +300,7 @@ function module:turnToUnit(unit)
         lines = {},
     }
     running = run
+    module.turnHeld = true
     note(run, (InCombatLockdown() and "in combat" or "no combat") .. ", " .. (IsInInstance() and "instance" or "world"))
     if run.facing ~= nil then
         note(run, string.format("facing %.1f", run.facing))

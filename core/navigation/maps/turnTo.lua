@@ -233,6 +233,11 @@ local function startTurn(relative, frameTime, turn)
         turn.settleFrames = 1
     end
     turn.sweep = turnMath.newSweep(target - turn.startStep, sweepSpeed, steps)
+    if turn.startStep >= target then
+        -- The primed step alone covers it (very low frame rates): stop at
+        -- once instead of a forced minimal trim.
+        turn.sweep.stopNext = true
+    end
     -- nil where the game hides the facing; measure() then logs nothing
     turn.startFacing = GetPlayerFacing()
     turn.lastTime = GetTime()
@@ -285,12 +290,17 @@ end
 -- boarding point, or the noted dock near it) and at a fishing spot (its water).
 module.facingWithoutWaypoint = nil
 
+-- True while a turn to unit press runs, also between its turns
+-- (turnToUnit.lua): a turn to waypoint then is refused like one during a
+-- running turn.
+module.turnHeld = false
+
 -- Far enough that the lead of a moving player does not bend the bearing to it.
 local FACING_REACH = 10000
 
 -- Turn to face the world point (x, y), aiming where it lies when the turn lands.
 local function turnToPoint(x, y)
-    if current ~= nil then
+    if current ~= nil or module.turnHeld then
         return false
     end
     local px, py = UnitPosition("player")

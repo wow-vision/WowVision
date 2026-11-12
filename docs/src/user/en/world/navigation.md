@@ -162,8 +162,9 @@ The game tells addons nothing about where an NPC stands, but it does say whether
 - The unit needs a nameplate. For NPCs, friendly NPC nameplates must be on: the game option, or Apply Recommended Game Settings (see [First login](../getting-started/first-login.md)).
 - If you already face the unit (within about 3 degrees), nothing turns; you only hear the click.
 - Without a target or focus you hear No target or No focus; without a nameplate, No nameplate.
-- In dungeons the game hides friendly nameplates from addons, so you hear Friendly nameplates are hidden here. Enemies still work.
+- In dungeons and other instances the game hides friendly nameplates from addons, so you hear Friendly nameplates are hidden here. Enemies still work.
 - If your target changes or the unit disappears during the press, you hear Lost the nameplate.
+- If the game refuses the camera changes the press needs, you hear Turning is not available here; if the nameplate gave no answer, Could not turn to it or Nameplate position is hidden here. Your character does not turn then.
 - Pressing a turn key yourself stops it. A press while Turn to Waypoint is still turning is ignored.
 - The press uses first person (camera view 1, which cannot be saved over) and puts the camera back behind you afterwards, as Turn to Waypoint does with view 5.
 
