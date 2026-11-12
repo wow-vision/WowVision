@@ -427,6 +427,17 @@ local EDGE_TOTAL = 800
 -- (/wv sweeptest, 2026-11-12). false: the one motion, which also works but
 -- sweeps up to two turns.
 local FAST_APPROACH = true
+-- First person (SetView(1), instant with the instant view switching
+-- camera.lua sets) instead of pulling the camera in to ZOOM_TO: no zoom
+-- wait, and the unit changes between in front and behind exactly
+-- FIRST_PERSON_HALF degrees either side of its bearing at any distance, so
+-- one change gives the bearing (the first-person presses measured widths
+-- of 180). false: the camera at ZOOM_TO and both changes.
+local FIRST_PERSON = true
+local FIRST_PERSON_HALF = 90
+-- As turn to waypoint: a bearing this small means facing it already; no
+-- turn and no pulse then.
+local FACING_TOLERANCE = 3
 
 edgeSweep = function(run)
     note(run, "edge sweep")
@@ -435,11 +446,17 @@ edgeSweep = function(run)
     run.zoomSpeed = okSpeed and speed or nil
     pcall(SetCVar, "cameraZoomSpeed", ZOOM_SPEED)
     local zoomFrom = cameraZoom()
-    run.zoomFrom = zoomFrom
-    if zoomFrom ~= nil and zoomFrom > ZOOM_TO then
-        CameraZoomIn(zoomFrom - ZOOM_TO)
-    elseif zoomFrom ~= nil then
-        CameraZoomOut(ZOOM_TO - zoomFrom)
+    local zoomTarget = ZOOM_TO
+    if FIRST_PERSON then
+        zoomTarget = 0
+        pcall(SetView, 1)
+    else
+        run.zoomFrom = zoomFrom
+        if zoomFrom ~= nil and zoomFrom > ZOOM_TO then
+            CameraZoomIn(zoomFrom - ZOOM_TO)
+        elseif zoomFrom ~= nil then
+            CameraZoomOut(ZOOM_TO - zoomFrom)
+        end
     end
     run.swept = true
     local frames, lastZoom, stillFrames = 0, zoomFrom, 0
@@ -482,11 +499,24 @@ edgeSweep = function(run)
                     last = now
                 end
                 previous = moved
-                if #changes >= 2 then
-                    local bearing, width = unitAim.edgeBearing(changes[1], changes[2], nil)
-                    run.bearing, run.width = bearing, width
+                local bearing, width = nil, nil
+                if FIRST_PERSON and #changes >= 1 then
+                    -- In first person the change lies 90 degrees either side.
+                    local change = changes[1]
+                    bearing = change.at + (change.front and FIRST_PERSON_HALF or -FIRST_PERSON_HALF)
+                    bearing = (bearing + 180) % 360 - 180
+                elseif #changes >= 2 then
+                    bearing, width = unitAim.edgeBearing(changes[1], changes[2], nil)
                     if width < WIDTH_MIN or width > WIDTH_MAX then
+                        run.bearing, run.width = bearing, width
                         failure = "width"
+                        return "quiet"
+                    end
+                end
+                if bearing ~= nil then
+                    run.bearing, run.width = bearing, width
+                    if math.abs(bearing) <= FACING_TOLERANCE then
+                        run.alreadyFacing = true
                         return "quiet"
                     end
                     target = bearing % 360
@@ -524,7 +554,14 @@ edgeSweep = function(run)
                     note(run, string.format("change %.1f %s frame %d", changes[2].at, changes[2].front and "in" or "out", changes[2].frame))
                 end
                 if run.bearing ~= nil then
-                    note(run, string.format("width %.1f, bearing %.1f", run.width, run.bearing))
+                    note(
+                        run,
+                        string.format(
+                            "%s, bearing %.1f",
+                            run.width and string.format("width %.1f", run.width) or "first person",
+                            run.bearing
+                        )
+                    )
                     if run.facing ~= nil then
                         note(run, string.format("facing %.1f, unit in the world %.1f", run.facing, (run.facing - run.bearing) % 360))
                     end
@@ -534,12 +571,20 @@ edgeSweep = function(run)
                     return finish(run, L["Could not turn to it"])
                 end
                 local function done()
-                    -- The character has turned; the camera's distance comes back.
+                    -- The character has turned (the pulse landed); the camera
+                    -- comes back: out of first person, or to its distance.
                     run.swept = false
-                    if run.zoomFrom ~= nil then
+                    if FIRST_PERSON then
+                        camera.align()
+                    elseif run.zoomFrom ~= nil then
                         zoomTo(run.zoomFrom)
                     end
                     finish(run)
+                end
+                if run.alreadyFacing then
+                    -- Facing it already: no turn, no pulse.
+                    note(run, "already facing")
+                    return done()
                 end
                 if run.approach == nil then
                     note(run, string.format("stopped at %.1f for %.1f", run.stoppedAt or -1, run.target or -1))
@@ -591,7 +636,7 @@ edgeSweep = function(run)
                 stillFrames = 0
             end
             lastZoom = zoom
-            local near = zoom ~= nil and math.abs(zoom - ZOOM_TO) <= 0.3
+            local near = zoom ~= nil and math.abs(zoom - zoomTarget) <= 0.3
             if (near and stillFrames >= ZOOM_STILL) or frames >= ZOOM_FRAMES then
                 return sweep()
             end
