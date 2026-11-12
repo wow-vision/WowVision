@@ -6,8 +6,17 @@ local graph = WowVision.graph
 local nodes = graph.nodes
 local ControlId = graph.ControlId
 
--- Role check popups (party role poll and LFD role check): the three role
--- check buttons as a vertical list, then accept, decline, close.
+-- Role check popups (party role poll and LFD role check) and the group
+-- invitation that asks for a role (LFGInvitePopup: Retail and WoW: Forever
+-- show it in place of the plain invitation popup when the inviting group
+-- offers roles, e.g. a group from the group finder; it is shown with
+-- StaticPopupSpecial_Show, so the popups window never sees it). Each one:
+-- the title (the invitation line on the invite popup), the warning that
+-- accepting leaves your queues when the game shows it, the three role
+-- check buttons as a vertical list, then accept, decline, close. A role the
+-- class cannot play has its check button hidden and is left out. The
+-- invite popup's Accept stays disabled until a role is checked, and the
+-- game declines the invitation itself when its timer runs out.
 
 local function getPopupTitle(frame)
     local regions = { frame:GetRegions() }
@@ -32,6 +41,15 @@ local function makeRender(frameName)
             return
         end
         builder:pushContext("rolePoll", getPopupTitle(frame))
+
+        local warning = frame.QueueWarningText
+        if warning ~= nil and warning:IsShown() and nodes.plainText(warning:GetText()) ~= nil then
+            builder:beginStop("warning")
+            builder:addItem(
+                ControlId.structural("rolePoll:warning"),
+                nodes.text({ label = nodes.fontText(warning) })
+            )
+        end
 
         builder:beginStop("roles")
         builder:pushContext("roles", L["Roles"])
@@ -77,4 +95,12 @@ module:registerWindow({
     frameName = "LFDRoleCheckPopup",
     conflictingAddons = { "Sku" },
     graphScreen = { render = makeRender("LFDRoleCheckPopup") },
+})
+
+module:registerWindow({
+    type = "FrameWindow",
+    name = "LFGInvitePopup",
+    frameName = "LFGInvitePopup",
+    conflictingAddons = { "Sku" },
+    graphScreen = { render = makeRender("LFGInvitePopup") },
 })

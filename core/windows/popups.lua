@@ -153,6 +153,10 @@ end
 -- answered until the fight ended. The popup's own buttons are not
 -- protected: clicking Accept runs the dialog's OnAccept (AcceptGroup, and
 -- the flag that keeps its OnHide from declining), in or out of combat.
+-- An invitation that asks for a role comes in its own window
+-- (LFGInvitePopup, see RolePoll.lua); its Accept takes the checked role and
+-- stays disabled until one is checked (the game checks it when only one is
+-- open), so then the role has to be picked in that window first.
 local INVITE_POPUPS = { PARTY_INVITE = true, PARTY_INVITE_XREALM = true }
 
 function module.acceptInvite()
@@ -162,6 +166,14 @@ function module.acceptInvite()
             accept = firstShownButton(frame)
         end
     end)
+    local rolePopup = LFGInvitePopup
+    if accept == nil and rolePopup ~= nil and rolePopup:IsShown() then
+        accept = LFGInvitePopupAcceptButton
+        if accept ~= nil and not accept:IsEnabled() then
+            WowVision:notify(L["Choose a role first"])
+            return false
+        end
+    end
     if accept == nil then
         WowVision:notify(L["No group invitation"])
         return false
