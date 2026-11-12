@@ -42,9 +42,8 @@ local MISSED = 10
 -- plates follow the camera a frame later.
 local READ_FRAMES = 2
 -- The edge sweep (where plates cannot be measured): degrees per second
--- (6 degrees a frame at 60 fps) and how far it may go.
+-- (6 degrees a frame at 60 fps).
 local EDGE_SPEED = 360
-local EDGE_SWEEP = 400
 -- The camera is pulled in to this many yards for it, staying behind the
 -- character (third person: first person turned out wrong in game). A unit
 -- nearer than that never goes behind the camera. A fast zoom, then wait
@@ -394,96 +393,17 @@ local function inFront(unit)
     return behind == false
 end
 
--- The last turn is exactly a turn to waypoint turn by the bearing, from the
--- same start: the camera behind the character at the player's distance.
--- The sweep leaves the camera far round and close in, so it is snapped
--- back first and given SNAP_FRAMES to land. Turning in the same frame as
--- the snap went wrong in game (asked 132, turned -164; asked -111, turned
--- 0.6).
-local SNAP_FRAMES = 3
--- Outdoors, where the game tells the facing: a turn that landed more than
--- CORRECT_ABOVE degrees off is followed by up to MAX_CORRECTIONS more.
-local CORRECT_ABOVE = 5
--- Off for now: in game the corrections from a clean start landed wrong too
--- (asked 10.9, turned -153) and spun the character round.
-local MAX_CORRECTIONS = 0
+-- One motion, as a turn to waypoint turn ends: the camera sweeps right
+-- from straight behind the character, finds the two changes, sweeps on to
+-- the bearing and stops there, and the stop hands the camera to the
+-- character in the same frame. Snapping the camera back after the
+-- measuring and turning from there went wrong in game (asked 87, turned
+-- -33; the camera follow style swings the camera back in any pause).
+-- The sweep goes once round to find the changes, and at most once more to
+-- reach the bearing.
+local EDGE_FIND = 400
+local EDGE_TOTAL = 800
 
-local function turnToBearing(run, bearing)
-    note(run, string.format("bearing %.1f", bearing))
-    -- The unit's direction in the world (degrees left from north, as the
-    -- facing): standing still, it must come out the same at any facing.
-    if run.facing ~= nil then
-        note(run, string.format("facing %.1f, unit in the world %.1f", run.facing, (run.facing - bearing) % 360))
-    end
-    if run.zoomSpeed ~= nil then
-        pcall(SetCVar, "cameraZoomSpeed", run.zoomSpeed)
-        run.zoomSpeed = nil
-    end
-    camera.align()
-    run.swept = false
-    -- For the log: the camera settings that decide how a snap lands, and
-    -- the zoom each wait frame (an instant snap jumps in one frame).
-    local settings = {}
-    for _, name in ipairs({ "cameraSmoothStyle", "cameraViewBlendStyle" }) do
-        local ok, value = pcall(GetCVar, name)
-        tinsert(settings, name .. " " .. tostring(ok and value or "?"))
-    end
-    local zooms = { string.format("%.1f", cameraZoom() or -1) }
-    local waited = 0
-    local corrections = 0
-    -- The world facing to land on, where the game tells the facing.
-    local goal = run.facing ~= nil and (run.facing - bearing) % 360 or nil
-
-    local function turn(angle)
-        local started = module:turnByAngle(angle, {
-            label = "unit ",
-            onDone = function(how)
-                if running ~= run then
-                    return
-                end
-                if how ~= "landed" then
-                    return finish(run, "")
-                end
-                -- Outdoors: a turn that landed off is followed by one
-                -- more, now from the camera behind the character.
-                local facing = facingDegrees()
-                if goal ~= nil and facing ~= nil and corrections < MAX_CORRECTIONS then
-                    local left = (facing - goal + 180) % 360 - 180
-                    if math.abs(left) > CORRECT_ABOVE then
-                        corrections = corrections + 1
-                        note(run, string.format("off %.1f, correction %d", left, corrections))
-                        return afterFrames(run, READ_FRAMES, function()
-                            turn(left)
-                        end)
-                    end
-                end
-                finish(run)
-            end,
-        })
-        if started == "facing" then
-            return finish(run)
-        elseif not started then
-            return finish(run, "")
-        end
-    end
-
-    local function wait()
-        afterFrames(run, 1, function()
-            waited = waited + 1
-            tinsert(zooms, string.format("%.1f", cameraZoom() or -1))
-            if waited < SNAP_FRAMES then
-                return wait()
-            end
-            note(run, table.concat(settings, ", ") .. ", zoom after snap " .. table.concat(zooms, " "))
-            turn(bearing)
-        end)
-    end
-    wait()
-end
-
--- From the camera snapped behind the character (its facing is the zero of
--- every angle here): pull the camera in close, sweep it right until the
--- unit changed between in front and behind twice, turn to the middle.
 edgeSweep = function(run)
     note(run, "edge sweep")
     camera.align()
@@ -509,12 +429,24 @@ edgeSweep = function(run)
         local changes = {}
         local previous = 0
         local frame = 0
-        local started = module:turnByAngle(EDGE_SWEEP, {
+        local target = nil
+        local failure = nil
+        local started = module:turnByAngle(EDGE_TOTAL, {
             label = "unit ",
-            cameraOnly = true,
+            keepCamera = true,
             fixedSpeed = EDGE_SPEED,
             onFrame = function(moved)
                 frame = frame + 1
+                local step = moved - previous
+                if target ~= nil then
+                    previous = moved
+                    -- Stop on the frame nearest the bearing.
+                    if target - moved <= step / 2 then
+                        run.stoppedAt = moved
+                        return true
+                    end
+                    return false
+                end
                 local now = inFront(run.unit)
                 if now ~= nil and now ~= last then
                     -- A change while the camera has not moved yet is the
@@ -525,7 +457,27 @@ edgeSweep = function(run)
                     last = now
                 end
                 previous = moved
-                return #changes >= 2
+                if #changes >= 2 then
+                    local bearing, width = unitAim.edgeBearing(changes[1], changes[2], nil)
+                    run.bearing, run.width = bearing, width
+                    if width < WIDTH_MIN or width > WIDTH_MAX then
+                        failure = "width"
+                        return "quiet"
+                    end
+                    target = bearing % 360
+                    while target < moved do
+                        target = target + 360
+                    end
+                    run.target = target
+                    if target - moved <= step / 2 then
+                        run.stoppedAt = moved
+                        return true
+                    end
+                elseif moved >= EDGE_FIND then
+                    failure = "changes"
+                    return "quiet"
+                end
+                return false
             end,
             onDone = function(how)
                 if running ~= run then
@@ -534,37 +486,29 @@ edgeSweep = function(run)
                 if how ~= "landed" then
                     return finish(run, "")
                 end
-                -- The sweep moves only the camera: the character's facing
-                -- must not have changed.
-                local facing = facingDegrees()
-                if run.facing ~= nil and facing ~= nil then
-                    note(run, string.format("character during the sweep %.1f", (run.facing - facing + 180) % 360 - 180))
+                if #changes >= 1 then
+                    note(run, string.format("change %.1f %s frame %d", changes[1].at, changes[1].front and "in" or "out", changes[1].frame))
                 end
-                if #changes < 2 then
-                    note(run, #changes .. " changes in " .. frame .. " frames")
+                if #changes >= 2 then
+                    note(run, string.format("change %.1f %s frame %d", changes[2].at, changes[2].front and "in" or "out", changes[2].frame))
+                end
+                if run.bearing ~= nil then
+                    note(run, string.format("width %.1f, bearing %.1f", run.width, run.bearing))
+                    if run.facing ~= nil then
+                        note(run, string.format("facing %.1f, unit in the world %.1f", run.facing, (run.facing - run.bearing) % 360))
+                    end
+                end
+                if failure ~= nil then
+                    note(run, failure == "width" and "width off" or (#changes .. " changes in " .. frame .. " frames"))
                     return finish(run, L["Could not turn to it"])
                 end
-                local bearing, width = unitAim.edgeBearing(changes[1], changes[2], nil)
-                note(
-                    run,
-                    string.format(
-                        "changes %.1f %s frame %d, %.1f %s frame %d, zoom %s, width %.1f",
-                        changes[1].at,
-                        changes[1].front and "in" or "out",
-                        changes[1].frame,
-                        changes[2].at,
-                        changes[2].front and "in" or "out",
-                        changes[2].frame,
-                        tostring(cameraZoom()),
-                        width
-                    )
-                )
-                if width < WIDTH_MIN or width > WIDTH_MAX then
-                    return finish(run, L["Could not turn to it"])
+                note(run, string.format("stopped at %.1f for %.1f", run.stoppedAt or -1, run.target or -1))
+                -- The character has turned; the camera's distance comes back.
+                run.swept = false
+                if run.zoomFrom ~= nil then
+                    zoomTo(run.zoomFrom)
                 end
-                afterFrames(run, READ_FRAMES, function()
-                    turnToBearing(run, bearing)
-                end)
+                finish(run)
             end,
         })
         if not started then

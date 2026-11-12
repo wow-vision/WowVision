@@ -150,7 +150,8 @@ local function onUpdate()
     if turn.stopFrame ~= nil then
         turn.framesSinceStop = turn.framesSinceStop + 1
         if turn.framesSinceStop >= turn.settleFrames then
-            if not turn.cameraOnly then
+            -- (a turn its caller stops has no planned angle to measure)
+            if not turn.cameraOnly and turn.onFrame == nil then
                 measure(turn)
             end
             release(turn, "landed")
@@ -169,9 +170,16 @@ local function onUpdate()
         tinsert(turn.frameMs, string.format("%.0f", delta * 1000))
     end
     -- The degrees the camera has moved so far; the caller may stop here.
-    if turn.onFrame ~= nil and turn.onFrame(turn.sweep.committed * turn.speed) then
-        stopSweep(turn)
-        return
+    if turn.onFrame ~= nil then
+        local stop = turn.onFrame(turn.sweep.committed * turn.speed)
+        if stop then
+            if stop == "quiet" then
+                -- Stop without handing the camera to the character.
+                turn.cameraOnly = true
+            end
+            stopSweep(turn)
+            return
+        end
     end
     local action, fraction = turn.sweep:frame(delta)
     if action == "stop" then
@@ -267,7 +275,9 @@ startTurn = function(relative, frameTime, turn)
     pitchLock.noteTurn()
     stopCamera()
     if not turn.cameraOnly then
-        camera.align()
+        if not turn.keepCamera then
+            camera.align()
+        end
         -- With the gamepad, free look is off for the turn (camera.lua). Only now,
         -- with the camera straight behind the character: free look going off
         -- hands any camera offset to the character, and pressing the stick
@@ -329,10 +339,13 @@ end
 --   cameraOnly  sweep the camera from where it is and leave the character
 --               alone (no snap behind it, no pulse); module:faceCamera()
 --               hands the result over later
+--   keepCamera  no snap behind the character at the start (the caller
+--               placed the camera); the stop still hands it over
 --   fixedSpeed  degrees per second, for a search sweep
 --   onFrame(moved) runs every frame before the step with the degrees the
 --               camera has moved so far; returning true stops the sweep
---               there (it still ends with onDone("landed"))
+--               there, "quiet" stops it without handing the camera to the
+--               character (both still end with onDone("landed"))
 -- Returns false while another turn runs, "facing" (nothing to do, onDone is
 -- not called) within the tolerance, true when the turn started.
 function module:turnByAngle(relative, options)
