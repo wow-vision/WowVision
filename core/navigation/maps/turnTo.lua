@@ -176,7 +176,7 @@ local function onUpdate()
     end
     -- The degrees the camera has moved so far; the caller may stop here.
     if turn.onFrame ~= nil then
-        local stop = turn.onFrame(turn.sweep.committed * turn.speed)
+        local stop = turn.onFrame(turn.sweep.committed * turn.speed + turn.startStep)
         if stop then
             if stop == "quiet" then
                 -- Stop without handing the camera to the character.
@@ -282,6 +282,8 @@ startTurn = function(relative, frameTime, turn)
     if turn.lateStart then
         sweepTarget = math.max(target - sweepSpeed * frameTime, target * 0.05)
     end
+    -- The camera's move the sweep does not count (onFrame reports it too).
+    turn.startStep = target - sweepTarget
     for key, value in pairs({
         target = target,
         direction = relative > 0 and 1 or -1,
@@ -376,7 +378,8 @@ end
 --               frame step taken off (see startTurn)
 --   fixedSpeed  degrees per second, for a search sweep
 --   onFrame(moved) runs every frame before the step with the degrees the
---               camera has moved so far; returning true stops the sweep
+--               camera has moved so far (a primed start's extra frame
+--               included); returning true stops the sweep
 --               there, "quiet" stops it without handing the camera to the
 --               character (both still end with onDone("landed"))
 -- Returns false while another turn runs, "facing" (nothing to do, onDone is
