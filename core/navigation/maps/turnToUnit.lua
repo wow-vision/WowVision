@@ -42,19 +42,23 @@ local MISSED = 10
 -- plates follow the camera a frame later.
 local READ_FRAMES = 2
 -- The edge sweep (where plates cannot be measured): degrees per second
--- (6 degrees a frame at 60 fps), how far it may go, how far back.
+-- (6 degrees a frame at 60 fps) and how far it may go.
 local EDGE_SPEED = 360
 local EDGE_SWEEP = 400
-local EDGE_BACK = 60
--- Zoom to first person for it: a fast zoom, then wait until the camera is
--- this close (yards) and holds still, at most ZOOM_FRAMES frames. A zoom
--- still running during the sweep moves the two changes unevenly.
+-- The camera is pulled in to this many yards for it, staying behind the
+-- character (third person: first person turned out wrong in game). A unit
+-- nearer than that never goes behind the camera. A fast zoom, then wait
+-- until it is there and has held still ZOOM_STILL frames, at most
+-- ZOOM_FRAMES: a zoom still running moves the two changes unevenly.
+local ZOOM_TO = 2
 local ZOOM_SPEED = 50
-local ZOOM_NEAR = 0.5
+local ZOOM_STILL = 2
 local ZOOM_FRAMES = 60
--- In first person the in-front stretch is half a circle. A stretch further
--- off than this means the changes were not clean: no turn then.
-local WIDTH_SLACK = 30
+-- With the camera behind the character the in-front stretch is at least
+-- half a circle, wider the nearer the unit. Outside these the changes were
+-- not clean: no turn then.
+local WIDTH_MIN = 170
+local WIDTH_MAX = 330
 -- Assumed horizontal field of view when the game does not say; the gain
 -- takes up the error (unitAim.lua).
 local FOV_DEFAULT = 90
@@ -376,92 +380,9 @@ local function turnToBearing(run, bearing)
     end
 end
 
--- For the log: when the game itself reports a change (its event), as the
--- degrees swept at that moment.
-local eventFrame = CreateFrame("Frame")
-eventFrame:SetScript("OnEvent", function(_, _, _, behind)
-    local run = running
-    if run ~= nil and run.sweepAt ~= nil and #run.events < 12 then
-        tinsert(run.events, string.format("%s %.1f", behind and "out" or "in", run.sweepAt))
-    end
-end)
-
-local function startEvents(run)
-    run.events = {}
-    pcall(eventFrame.RegisterEvent, eventFrame, "NAME_PLATE_UNIT_BEHIND_CAMERA_CHANGED")
-end
-
-local function stopEvents(run)
-    eventFrame:UnregisterAllEvents()
-    run.sweepAt = nil
-    if run.events ~= nil and #run.events > 0 then
-        note(run, "events " .. table.concat(run.events, " "))
-    end
-    run.events = nil
-end
-
-local function changeText(change)
-    return string.format("%.1f %s frame %d", change.at, change.front and "in" or "out", change.frame)
-end
-
--- The sweep back over the second change, then the bearing.
-local function sweepBack(run, changes, swept)
-    local last = changes[2].front
-    local previous = swept
-    local back = nil
-    local started = module:turnByAngle(-EDGE_BACK, {
-        label = "unit ",
-        cameraOnly = true,
-        fixedSpeed = EDGE_SPEED,
-        onFrame = function(moved)
-            local yaw = swept - moved
-            run.sweepAt = yaw
-            local now = inFront(run.unit)
-            if now ~= nil and now ~= last then
-                back = (previous + yaw) / 2
-                return true
-            end
-            previous = yaw
-            return false
-        end,
-        onDone = function(how)
-            if running ~= run then
-                return
-            end
-            stopEvents(run)
-            if how ~= "landed" then
-                return finish(run, "")
-            end
-            local bearing, width, lag = unitAim.edgeBearing(changes[1], changes[2], back)
-            note(
-                run,
-                string.format(
-                    "changes %s, %s, back %s, zoom %s, width %.1f, lag %.1f",
-                    changeText(changes[1]),
-                    changeText(changes[2]),
-                    back and string.format("%.1f", back) or "none",
-                    tostring(cameraZoom()),
-                    width,
-                    lag
-                )
-            )
-            if math.abs(width - 180) > WIDTH_SLACK then
-                return finish(run, L["Could not turn to it"])
-            end
-            afterFrames(run, READ_FRAMES, function()
-                turnToBearing(run, bearing)
-            end)
-        end,
-    })
-    if not started then
-        stopEvents(run)
-        return finish(run, "")
-    end
-end
-
 -- From the camera snapped behind the character (its facing is the zero of
--- every angle here): zoom in to first person, sweep the camera right until
--- the unit changed between in front and behind twice, then sweep back.
+-- every angle here): pull the camera in close, sweep it right until the
+-- unit changed between in front and behind twice, turn to the middle.
 edgeSweep = function(run)
     note(run, "edge sweep")
     camera.align()
@@ -469,35 +390,39 @@ edgeSweep = function(run)
     run.zoomSpeed = okSpeed and speed or nil
     pcall(SetCVar, "cameraZoomSpeed", ZOOM_SPEED)
     local zoomFrom = cameraZoom()
-    CameraZoomIn(50)
+    if zoomFrom ~= nil and zoomFrom > ZOOM_TO then
+        CameraZoomIn(zoomFrom - ZOOM_TO)
+    elseif zoomFrom ~= nil then
+        CameraZoomOut(ZOOM_TO - zoomFrom)
+    end
     run.swept = true
-    local frames, lastZoom = 0, zoomFrom
+    local frames, lastZoom, stillFrames = 0, zoomFrom, 0
 
     local function sweep()
-        note(run, string.format("zoom %s to %s in %d frames", tostring(zoomFrom), tostring(lastZoom), frames))
+        note(run, string.format("zoom %.1f to %s in %d frames", zoomFrom or -1, tostring(lastZoom), frames))
         local last = inFront(run.unit)
         if last == nil then
             return finish(run, L["Nameplate position is hidden here"])
         end
         local changes = {}
         local previous = 0
-        local swept = 0
         local frame = 0
-        startEvents(run)
         local started = module:turnByAngle(EDGE_SWEEP, {
             label = "unit ",
             cameraOnly = true,
             fixedSpeed = EDGE_SPEED,
             onFrame = function(moved)
                 frame = frame + 1
-                run.sweepAt = moved
                 local now = inFront(run.unit)
                 if now ~= nil and now ~= last then
-                    changes[#changes + 1] = { at = (previous + moved) / 2, front = now, frame = frame }
+                    -- A change while the camera has not moved yet is the
+                    -- game catching up, not an edge.
+                    if moved > previous then
+                        changes[#changes + 1] = { at = (previous + moved) / 2, front = now, frame = frame }
+                    end
                     last = now
                 end
                 previous = moved
-                swept = moved
                 return #changes >= 2
             end,
             onDone = function(how)
@@ -505,31 +430,53 @@ edgeSweep = function(run)
                     return
                 end
                 if how ~= "landed" then
-                    stopEvents(run)
                     return finish(run, "")
                 end
                 if #changes < 2 then
-                    stopEvents(run)
                     note(run, #changes .. " changes in " .. frame .. " frames")
                     return finish(run, L["Could not turn to it"])
                 end
-                sweepBack(run, changes, swept)
+                local bearing, width = unitAim.edgeBearing(changes[1], changes[2], nil)
+                note(
+                    run,
+                    string.format(
+                        "changes %.1f %s frame %d, %.1f %s frame %d, zoom %s, width %.1f",
+                        changes[1].at,
+                        changes[1].front and "in" or "out",
+                        changes[1].frame,
+                        changes[2].at,
+                        changes[2].front and "in" or "out",
+                        changes[2].frame,
+                        tostring(cameraZoom()),
+                        width
+                    )
+                )
+                if width < WIDTH_MIN or width > WIDTH_MAX then
+                    return finish(run, L["Could not turn to it"])
+                end
+                afterFrames(run, READ_FRAMES, function()
+                    turnToBearing(run, bearing)
+                end)
             end,
         })
         if not started then
-            stopEvents(run)
             return finish(run, "")
         end
     end
 
-    -- Wait for the zoom to land: close in and no longer moving.
+    -- Wait for the zoom to land: near its distance and holding still.
     local function wait()
         afterFrames(run, 1, function()
             frames = frames + 1
             local zoom = cameraZoom()
-            local still = zoom ~= nil and lastZoom ~= nil and math.abs(zoom - lastZoom) < 0.01
+            if zoom ~= nil and lastZoom ~= nil and math.abs(zoom - lastZoom) < 0.01 then
+                stillFrames = stillFrames + 1
+            else
+                stillFrames = 0
+            end
             lastZoom = zoom
-            if (zoom ~= nil and zoom <= ZOOM_NEAR and still) or frames >= ZOOM_FRAMES then
+            local near = zoom ~= nil and math.abs(zoom - ZOOM_TO) <= 0.3
+            if (near and stillFrames >= ZOOM_STILL) or frames >= ZOOM_FRAMES then
                 return sweep()
             end
             wait()

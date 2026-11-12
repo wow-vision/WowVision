@@ -90,12 +90,13 @@ end
 -- The camera orbits the character, so the unit changes between in front
 -- of the camera and behind it at the same angle either side of its
 -- bearing, whatever the camera's distance and the unit's: the middle of
--- the two changes is the bearing. Zoomed in to first person the two
--- changes lie 90 degrees either side, so they exist for a unit at any
--- distance. A sweep to the right passes both; the game reports each change
--- a little late, which moves both the same way, so a short sweep back over
--- the second change measures that lag: seen going right at t, going back
--- at u, the change itself is at the middle and the lag half the gap.
+-- the two changes is the bearing. They exist only for a unit farther
+-- than the camera, so turnToUnit.lua pulls the camera in close (still
+-- behind the character). A sweep to the right passes both. In game
+-- (Forever, 2026-11-12) the game's own change event came in the very frame
+-- the camera crossed, so no lag is taken out; a sweep back over the second
+-- change could measure one: seen going right at t, going back at u, the
+-- change itself is at the middle and the lag half the gap.
 unitAim.LAG_MAX = 30
 
 local function wrap(degrees)
