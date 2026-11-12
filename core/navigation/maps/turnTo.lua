@@ -168,6 +168,11 @@ local function onUpdate()
     if #turn.frameMs < 24 then
         tinsert(turn.frameMs, string.format("%.0f", delta * 1000))
     end
+    -- The degrees the camera has moved so far; the caller may stop here.
+    if turn.onFrame ~= nil and turn.onFrame(turn.sweep.committed * turn.speed) then
+        stopSweep(turn)
+        return
+    end
     local action, fraction = turn.sweep:frame(delta)
     if action == "stop" then
         stopSweep(turn)
@@ -233,6 +238,11 @@ end
 startTurn = function(relative, frameTime, turn)
     local target = math.abs(relative)
     local sweepSpeed, steps = turnMath.plan(target, frameTime)
+    if turn.fixedSpeed ~= nil then
+        -- A search sweep: a steady speed instead of the fewest frames.
+        sweepSpeed = turn.fixedSpeed
+        steps = math.max(1, math.ceil(target / (sweepSpeed * frameTime) - 1e-9))
+    end
     local cvar = math.min(sweepSpeed, turnMath.CVAR_MAX)
     for key, value in pairs({
         target = target,
@@ -319,6 +329,10 @@ end
 --   cameraOnly  sweep the camera from where it is and leave the character
 --               alone (no snap behind it, no pulse); module:faceCamera()
 --               hands the result over later
+--   fixedSpeed  degrees per second, for a search sweep
+--   onFrame(moved) runs every frame before the step with the degrees the
+--               camera has moved so far; returning true stops the sweep
+--               there (it still ends with onDone("landed"))
 -- Returns false while another turn runs, "facing" (nothing to do, onDone is
 -- not called) within the tolerance, true when the turn started.
 function module:turnByAngle(relative, options)

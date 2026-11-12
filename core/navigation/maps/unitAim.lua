@@ -82,4 +82,51 @@ function unitAim.nextTurn(aim, kind, angle, offset)
     return turn
 end
 
+-- The edge sweep, where the game will not tell where a plate is on screen
+-- (WoW: Forever refuses to measure nameplates: "Can't measure restricted
+-- regions"), but still tells whether it is behind the camera
+-- (C_NamePlateManager.IsNamePlateUnitBehindCamera, not secret).
+--
+-- The camera orbits the character, so the unit changes between in front
+-- of the camera and behind it at the same angle either side of its
+-- bearing, whatever the camera's distance and the unit's: the middle of
+-- the two changes is the bearing. Zoomed in to first person the two
+-- changes lie 90 degrees either side, so they exist for a unit at any
+-- distance. A sweep to the right passes both; the game reports each change
+-- a little late, which moves both the same way, so a short sweep back over
+-- the second change measures that lag: seen going right at t, going back
+-- at u, the change itself is at the middle and the lag half the gap.
+unitAim.LAG_MAX = 30
+
+local function wrap(degrees)
+    while degrees > 180 do
+        degrees = degrees - 360
+    end
+    while degrees <= -180 do
+        degrees = degrees + 360
+    end
+    return degrees
+end
+
+-- first and second: the two changes the sweep saw, in order, as
+-- { at = degrees swept, front = true when the unit came in front }. back:
+-- degrees swept where the sweep back saw the second change undone (nil:
+-- no lag correction). Returns the bearing relative to where the sweep
+-- started (positive = right), the width of the in-front stretch, and the
+-- lag.
+function unitAim.edgeBearing(first, second, back)
+    local lag = 0
+    if back ~= nil then
+        lag = math.max(0, math.min(unitAim.LAG_MAX, (second.at - back) / 2))
+    end
+    local a, b = first.at - lag, second.at - lag
+    local width
+    if first.front then
+        width = b - a
+    else
+        width = a + 360 - b
+    end
+    return wrap((a + b + (first.front and 0 or 360)) / 2), width, lag
+end
+
 WowVision.unitAim = unitAim

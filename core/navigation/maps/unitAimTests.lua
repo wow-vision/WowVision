@@ -45,6 +45,68 @@ local function press(bearing, distance, camDistance, trueFov, assumedFov)
     return bearing, aim.turns
 end
 
+local function wrap(d)
+    while d > 180 do
+        d = d - 360
+    end
+    while d <= -180 do
+        d = d + 360
+    end
+    return d
+end
+
+-- The edge sweep as turnToUnit.lua runs it: right in steps of step degrees,
+-- the game reporting the in-front state lag degrees late, then back to the
+-- left over the second change. Returns the bearing found.
+local function edgeSweep(bearing, half, step, lag)
+    local function front(yaw)
+        return math.abs(wrap(bearing - yaw)) < half
+    end
+    local changes = {}
+    local last = front(-lag)
+    local yaw = 0
+    while #changes < 2 and yaw < 400 do
+        yaw = yaw + step
+        local now = front(yaw - lag)
+        if now ~= last then
+            changes[#changes + 1] = { at = yaw - step / 2, front = now }
+            last = now
+        end
+    end
+    local back = nil
+    local start = yaw
+    while back == nil and yaw > start - 60 do
+        yaw = yaw - step
+        local now = front(yaw + lag)
+        if now ~= last then
+            back = yaw + step / 2
+        end
+    end
+    return unitAim.edgeBearing(changes[1], changes[2], back)
+end
+
+testRunner:addSuite("UnitAimEdges", {
+    ["the middle of the two changes is the bearing, the lag taken out"] = function(t)
+        for _, bearing in ipairs({ 0, 30, -60, 120, 179, -150 }) do
+            for _, lag in ipairs({ 0, 6, 12 }) do
+                local found = edgeSweep(bearing, 90, 6, lag)
+                t:assertTrue(math.abs(wrap(found - bearing)) <= 3.5)
+            end
+        end
+    end,
+
+    ["a narrow in-front stretch (no zoom) gives the bearing too"] = function(t)
+        local found, width = edgeSweep(40, 50, 4, 4)
+        t:assertTrue(math.abs(found - 40) <= 2.5)
+        t:assertTrue(math.abs(width - 100) <= 4)
+    end,
+
+    ["without the sweep back the lag stays in"] = function(t)
+        local _, _, lag = unitAim.edgeBearing({ at = -80, front = false }, { at = 110, front = true }, nil)
+        t:assertEqual(lag, 0)
+    end,
+})
+
 testRunner:addSuite("UnitAim", {
     ["the offset runs from the left edge to the right edge"] = function(t)
         t:assertEqual(unitAim.offset(0, 1000), -1)

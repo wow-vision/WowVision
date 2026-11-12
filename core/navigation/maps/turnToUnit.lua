@@ -19,6 +19,10 @@ local secrets = WowVision.secrets
 -- The sweeps move only the camera; the character turns once, at the end,
 -- and only when the unit was found.
 --
+-- WoW: Forever refuses to measure nameplates ("Can't measure restricted
+-- regions", tested 2026-11-12) but says whether one is behind the camera:
+-- there the edge sweep finds the bearing instead (unitAim.edgeBearing).
+--
 -- A unit with coordinates (a group member outdoors) is turned to by them,
 -- like a waypoint.
 
@@ -37,6 +41,14 @@ local MISSED = 10
 -- Frames to wait after the camera moved, before its plates are read: the
 -- plates follow the camera a frame later.
 local READ_FRAMES = 2
+-- The edge sweep (where plates cannot be measured): degrees per second
+-- (6 degrees a frame at 60 fps), how far it may go, how far back.
+local EDGE_SPEED = 360
+local EDGE_SWEEP = 400
+local EDGE_BACK = 60
+-- Zoom to first person for it: a fast zoom, and frames to let it land.
+local ZOOM_SPEED = 50
+local ZOOM_FRAMES = 6
 -- Assumed horizontal field of view when the game does not say; the gain
 -- takes up the error (unitAim.lua).
 local FOV_DEFAULT = 90
@@ -89,51 +101,6 @@ local function findPlate(unit)
     return nil
 end
 
--- One call on a frame for the log: its values, "secret", or the error.
-local function try(frame, method)
-    if frame == nil then
-        return method .. " no frame"
-    end
-    local fn = frame[method]
-    if type(fn) ~= "function" then
-        return method .. " missing"
-    end
-    local result = { pcall(fn, frame) }
-    if not result[1] then
-        return method .. " error " .. tostring(result[2])
-    end
-    local values = {}
-    for i = 2, #result do
-        local value = result[i]
-        if secrets.isSecret(value) then
-            values[#values + 1] = "secret"
-        elseif type(value) == "number" then
-            values[#values + 1] = string.format("%.1f", value)
-        else
-            values[#values + 1] = tostring(value)
-        end
-    end
-    return method .. " " .. (#values > 0 and table.concat(values, " ") or "nothing")
-end
-
--- For the log when the plate's place cannot be read: what else the plate,
--- its unit frame and the behind-camera check answer.
-local function describePlate(plate, token)
-    local parts = { "token " .. tostring(token) }
-    for _, method in ipairs({ "IsForbidden", "IsShown", "IsVisible", "GetLeft", "GetRect", "GetScaledRect", "GetPoint" }) do
-        tinsert(parts, try(plate, method))
-    end
-    for _, method in ipairs({ "GetCenter", "GetLeft", "GetScaledRect" }) do
-        tinsert(parts, "unit frame " .. try(plate.UnitFrame, method))
-    end
-    local manager = C_NamePlateManager
-    if token ~= nil and manager ~= nil and manager.IsNamePlateUnitBehindCamera ~= nil then
-        local ok, behind = pcall(manager.IsNamePlateUnitBehindCamera, token)
-        tinsert(parts, "behind camera " .. (ok and (secrets.isSecret(behind) and "secret" or tostring(behind)) or "error"))
-    end
-    return table.concat(parts, "; ")
-end
-
 -- What the unit's plate says now: "none", "hidden" (the game keeps its
 -- place on screen from addons) plus why, "behind", or "seen" plus its
 -- offset from the screen centre (-1 to 1).
@@ -152,7 +119,7 @@ local function readPlate(unit)
     end
     local okCenter, x = pcall(plate.GetCenter, plate)
     if not okCenter then
-        return "hidden", "center error " .. tostring(x) .. "; " .. describePlate(plate, token)
+        return "hidden", "measuring refused"
     elseif x == nil then
         return "hidden", "no center"
     elseif secrets.isSecret(x) then
@@ -231,6 +198,10 @@ local function finish(run, message)
     end
     running = nil
     waitFrame:SetScript("OnUpdate", nil)
+    if run.zoomSpeed ~= nil then
+        pcall(SetCVar, "cameraZoomSpeed", run.zoomSpeed)
+        run.zoomSpeed = nil
+    end
     note(run, message or "facing")
     tinsert(readings, run.unit .. ": " .. table.concat(run.lines, ", "))
     while #readings > 20 do
@@ -251,7 +222,7 @@ local function finish(run, message)
     end
 end
 
-local step, turnThen
+local step, turnThen, edgeSweep
 
 -- Run fn once frames real frames have passed.
 local function afterFrames(run, frames, fn)
@@ -290,7 +261,7 @@ step = function(run)
         return turnThen(run, SEARCH_TURN)
     elseif kind == "hidden" then
         note(run, offset)
-        return finish(run, L["Nameplate position is hidden here"])
+        return edgeSweep(run)
     end
     local angle = nil
     if kind == "seen" then
@@ -337,6 +308,157 @@ turnThen = function(run, turn)
         return finish(run, "")
     end
     run.swept = true
+end
+
+-- The edge sweep (unitAim.edgeBearing has the rule), for where the plate
+-- cannot be measured: true when the unit is in front of the camera with a
+-- plate, false when not, nil when the game will not say.
+local function inFront(unit)
+    local plate = findPlate(unit)
+    if plate == nil then
+        return false
+    end
+    local token = plate.unitToken or (plate.UnitFrame and plate.UnitFrame.unit)
+    local manager = C_NamePlateManager
+    if token == nil or manager == nil or manager.IsNamePlateUnitBehindCamera == nil then
+        return nil
+    end
+    local ok, behind = pcall(manager.IsNamePlateUnitBehindCamera, token)
+    if not ok or secrets.isSecret(behind) then
+        return nil
+    end
+    return behind == false
+end
+
+-- The last turn: the character to the bearing found, a turn to waypoint
+-- turn from the camera behind it (the turn snaps it back and unzooms it).
+local function turnToBearing(run, bearing)
+    run.swept = false
+    if run.zoomSpeed ~= nil then
+        pcall(SetCVar, "cameraZoomSpeed", run.zoomSpeed)
+        run.zoomSpeed = nil
+    end
+    camera.align()
+    note(run, string.format("bearing %.1f", bearing))
+    local started = module:turnByAngle(bearing, {
+        label = "unit ",
+        onDone = function(how)
+            if running ~= run then
+                return
+            end
+            if how == "landed" then
+                finish(run)
+            else
+                finish(run, "")
+            end
+        end,
+    })
+    if started == "facing" then
+        return finish(run)
+    elseif not started then
+        return finish(run, "")
+    end
+end
+
+-- The sweep back over the second change, then the bearing.
+local function sweepBack(run, changes, swept)
+    local last = changes[2].front
+    local previous = swept
+    local back = nil
+    local started = module:turnByAngle(-EDGE_BACK, {
+        label = "unit ",
+        cameraOnly = true,
+        fixedSpeed = EDGE_SPEED,
+        onFrame = function(moved)
+            local yaw = swept - moved
+            local now = inFront(run.unit)
+            if now ~= nil and now ~= last then
+                back = (previous + yaw) / 2
+                return true
+            end
+            previous = yaw
+            return false
+        end,
+        onDone = function(how)
+            if running ~= run then
+                return
+            end
+            if how ~= "landed" then
+                return finish(run, "")
+            end
+            local bearing, width, lag = unitAim.edgeBearing(changes[1], changes[2], back)
+            note(
+                run,
+                string.format(
+                    "changes %.1f %s, %.1f %s, back %s, width %.1f, lag %.1f",
+                    changes[1].at,
+                    changes[1].front and "in" or "out",
+                    changes[2].at,
+                    changes[2].front and "in" or "out",
+                    back and string.format("%.1f", back) or "none",
+                    width,
+                    lag
+                )
+            )
+            afterFrames(run, READ_FRAMES, function()
+                turnToBearing(run, bearing)
+            end)
+        end,
+    })
+    if not started then
+        return finish(run, "")
+    end
+end
+
+-- Zoom in to first person, sweep the camera right until the unit changed
+-- between in front and behind twice, then sweep back.
+edgeSweep = function(run)
+    note(run, "edge sweep")
+    local okSpeed, speed = pcall(GetCVar, "cameraZoomSpeed")
+    run.zoomSpeed = okSpeed and speed or nil
+    pcall(SetCVar, "cameraZoomSpeed", ZOOM_SPEED)
+    CameraZoomIn(50)
+    run.swept = true
+    afterFrames(run, ZOOM_FRAMES, function()
+        local last = inFront(run.unit)
+        if last == nil then
+            return finish(run, L["Nameplate position is hidden here"])
+        end
+        local changes = {}
+        local previous = 0
+        local swept = 0
+        local started = module:turnByAngle(EDGE_SWEEP, {
+            label = "unit ",
+            cameraOnly = true,
+            fixedSpeed = EDGE_SPEED,
+            onFrame = function(moved)
+                local now = inFront(run.unit)
+                if now ~= nil and now ~= last then
+                    changes[#changes + 1] = { at = (previous + moved) / 2, front = now }
+                    last = now
+                end
+                previous = moved
+                swept = moved
+                return #changes >= 2
+            end,
+            onDone = function(how)
+                if running ~= run then
+                    return
+                end
+                if how ~= "landed" then
+                    return finish(run, "")
+                end
+                if #changes < 2 then
+                    note(run, #changes .. " changes")
+                    return finish(run, L["Could not turn to it"])
+                end
+                sweepBack(run, changes, swept)
+            end,
+        })
+        if not started then
+            return finish(run, "")
+        end
+    end)
 end
 
 -- Turn to face unit ("target" or "focus").
