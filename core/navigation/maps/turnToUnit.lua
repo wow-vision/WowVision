@@ -642,70 +642,133 @@ function module:turnToUnit(unit)
     return true
 end
 
--- Trial of FlipCameraYaw (turns the camera by an angle at once, in
--- degrees; on Forever 1.60.1, no restriction listed). The first trial
--- (from a timer, 0.3 s after a camera snap) turned the character 0 degrees
--- both times. This one calls it straight from the command (the Enter key
--- press), without a snap, by 180 degrees, and watches whether the camera
--- turned at all: a target in front of the camera must then be behind it
--- (the game's behind-camera answer, per frame for 10 frames). Then the
--- pulse, and how far the character turned (outdoors; positive = right).
-local FLIP_WATCH_FRAMES = 10
+-- Trial (/wv sweeptest, outdoors): does a camera sweep started late (from a
+-- timer, not a key press) first jump, and does the workaround on
+-- warcraft.wiki.gg (API_MoveViewLeftStart: start with speed 0, then the
+-- real speed a frame later) stop that? Its own small sweep, so turn to
+-- waypoint (turnTo.lua) is not touched. Each trial: camera snapped behind
+-- the character, half a second, the sweep(s) at 720 degrees per second for
+-- a counted number of frames, the pulse, and how far the character turned
+-- against how far the counted frames say. Four kinds, twice each: one sweep
+-- right without and with the workaround, and right then at once back left
+-- (the short-way approach) without and with it. Results go to
+-- WowVisionDump.turnToUnit. (FlipCameraYaw was tried before: an addon's
+-- call does not move the camera, 2026-11-12.)
+local TRIAL_CVAR = 360
+local TRIAL_FACTOR = 2
+local trialFrame = CreateFrame("Frame")
 
-module:registerCommand({
-    name = "fliptest",
-    description = "Try FlipCameraYaw: half a turn from the key press, logged",
-    func = function()
-        local lines = {}
-        local function line(text)
-            tinsert(lines, text)
-            print("WowVision flip test: " .. text)
+-- One sweep: direction 1 = right (the character's facing turns right after
+-- the pulse), -1 = left, for frames frames. done(degrees the frames say).
+local function trialSweep(direction, frames, primed, done)
+    local function start()
+        SetCVar("cameraYawMoveSpeed", TRIAL_CVAR)
+        if direction > 0 then
+            MoveViewLeftStart(TRIAL_FACTOR)
+        else
+            MoveViewRightStart(TRIAL_FACTOR)
         end
-        local hasTarget = UnitExists("target")
-        local function state()
-            if not hasTarget then
-                return "no target"
-            end
-            local front = inFront("target")
-            if front == nil then
-                return "unknown"
-            end
-            return front and "in front" or "behind"
-        end
-        local before = facingDegrees()
-        line("before: target " .. state() .. ", facing " .. (before and string.format("%.1f", before) or "unknown"))
-        local ok, err = pcall(FlipCameraYaw, 180)
-        if not ok then
-            line("FlipCameraYaw(180) refused: " .. tostring(err))
-            return
-        end
-        line("FlipCameraYaw(180) called, same moment: target " .. state())
-        local states = {}
-        local frames = 0
-        local last = GetTime()
-        local watcher = CreateFrame("Frame")
-        watcher:SetScript("OnUpdate", function(self)
+        local counted, expected, last = 0, 0, GetTime()
+        trialFrame:SetScript("OnUpdate", function(self)
             local now = GetTime()
             if now <= last then
                 return
             end
+            local delta = now - last
             last = now
-            frames = frames + 1
-            tinsert(states, state())
-            if frames < FLIP_WATCH_FRAMES then
+            counted = counted + 1
+            if counted >= frames then
+                -- this frame's step does not happen (turnTo.lua's facts)
+                MoveViewLeftStop()
+                MoveViewRightStop()
+                self:SetScript("OnUpdate", nil)
+                return done(expected * direction)
+            end
+            expected = expected + TRIAL_CVAR * TRIAL_FACTOR * delta
+        end)
+    end
+    if primed then
+        MoveViewLeftStart(0)
+        MoveViewRightStart(0)
+        C_Timer.After(0, start)
+    else
+        start()
+    end
+end
+
+local function trialRun(kind, primed, after)
+    local before = facingDegrees()
+    if before == nil then
+        addReading("sweep test: no facing here (instance?)")
+        return
+    end
+    local okSpeed, savedSpeed = pcall(GetCVar, "cameraYawMoveSpeed")
+    camera.align()
+    C_Timer.After(0.5, function()
+        local function finishTrial(expected)
+            MoveViewLeftStop()
+            MoveViewRightStop()
+            if okSpeed then
+                SetCVar("cameraYawMoveSpeed", savedSpeed)
+            end
+            camera.transfer()
+            C_Timer.After(0.4, function()
+                local now = facingDegrees()
+                local turned = now and ((before - now + 180) % 360 - 180) or nil
+                local line = string.format(
+                    "sweep test %s %s: frames say %.1f, turned %s",
+                    kind,
+                    primed and "with workaround" or "without",
+                    expected,
+                    turned and string.format("%.1f", turned) or "unknown"
+                )
+                print("WowVision " .. line)
+                addReading(line)
+                after()
+            end)
+        end
+        if kind == "single" then
+            trialSweep(1, 8, primed, finishTrial)
+        else
+            trialSweep(1, 8, primed, function(first)
+                -- straight on, the frame after the stop: back left
+                C_Timer.After(0, function()
+                    trialSweep(-1, 4, primed, function(second)
+                        finishTrial(first + second)
+                    end)
+                end)
+            end)
+        end
+    end)
+end
+
+module:registerCommand({
+    name = "sweeptest",
+    description = "Trial: late camera sweeps with and without the speed 0 workaround, logged",
+    func = function()
+        local plan = {
+            { "single", false },
+            { "single", true },
+            { "back", false },
+            { "back", true },
+            { "single", false },
+            { "single", true },
+            { "back", false },
+            { "back", true },
+        }
+        local index = 0
+        local function nextTrial()
+            index = index + 1
+            local trial = plan[index]
+            if trial == nil then
+                WowVision:speak("sweep test done")
                 return
             end
-            self:SetScript("OnUpdate", nil)
-            line("frames after: " .. table.concat(states, ", "))
-            camera.transfer()
-            C_Timer.After(0.3, function()
-                local after = facingDegrees()
-                local turned = (before and after) and ((before - after + 180) % 360 - 180) or nil
-                line("after the pulse: turned " .. (turned and string.format("%.1f", turned) or "unknown"))
-                addReading("flip test: " .. table.concat(lines, "; "))
-                WowVision:speak("flip test done")
+            trialRun(trial[1], trial[2], function()
+                C_Timer.After(0.3, nextTrial)
             end)
-        end)
+        end
+        nextTrial()
     end,
 })
 
