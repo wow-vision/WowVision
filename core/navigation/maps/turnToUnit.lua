@@ -3,6 +3,7 @@ local L = module.L
 local unitAim = WowVision.unitAim
 local camera = WowVision.navigationCamera
 local secrets = WowVision.secrets
+local rangeCheck = LibStub("LibRangeCheck-3.0", true)
 
 -- Turn the character to face a unit: the target, or the focus (an escort
 -- NPC on focus keeps the target free for the fight). A sighted player sees
@@ -26,16 +27,37 @@ local secrets = WowVision.secrets
 -- tolerance nothing more happens. Else the camera turns the short way to
 -- the bearing and its stop hands it to the character, as a turn to
 -- waypoint ends. Then the camera goes back behind the character.
+--
+-- A unit standing close can lose its plate in first person (the plate is
+-- high above the view; in game on an escort, 2026-11-12), or never change
+-- sides; with offscreen nameplates off any plate goes when its unit leaves
+-- the screen. Then the press measures once more with the camera pulled in
+-- close behind the character: two changes, the bearing in their middle
+-- (unitAim.closeBearing).
 
--- The measuring sweep: degrees per second (6 a frame at 60 fps, so the
--- bearing is good to about 3 degrees), and how far: the change comes within
--- half a turn, a little more allows for the primed start.
+-- The measuring sweeps: degrees per second (6 a frame at 60 fps, so the
+-- bearing is good to about 3 degrees), and how far: in first person the
+-- change comes within half a turn, behind the character the second change
+-- within a turn; a little more allows for the primed start.
 local SWEEP_SPEED = 360
-local SWEEP_LIMIT = 200
+local FIRST_PERSON_LIMIT = 200
+local CLOSE_LIMIT = 400
 -- Frames for the switch to first person to land and the plates to follow.
 local VIEW_FRAMES = 3
 -- In first person the camera is at the character's eyes.
 local FIRST_PERSON_ZOOM = 0.5
+-- Behind the character: the camera's distance in yards (a unit nearer
+-- than that never goes behind the camera), a fast zoom, and the wait for
+-- it to land: near that distance and still for ZOOM_STILL frames, at most
+-- ZOOM_FRAMES (a zoom still running moves the two changes unevenly).
+local CLOSE_ZOOM = 2
+local ZOOM_SPEED = 50
+local ZOOM_STILL = 2
+local ZOOM_FRAMES = 60
+-- Behind the character the in-front stretch is at least half a circle,
+-- wider the nearer the unit; outside this the changes were not clean.
+local WIDTH_MIN = 170
+local WIDTH_MAX = 330
 -- As turn to waypoint: this close counts as facing it already.
 local FACING_TOLERANCE = 3
 -- A press still running after this long (a Lua error in a callback) is
@@ -54,6 +76,19 @@ alert:addOutput({
 
 local waitFrame = CreateFrame("Frame")
 local running = nil
+
+-- A press ends when its unit changes: the game's events, since the unit's
+-- identity is secret in instances (as core/targeting/range.lua does).
+local UNIT_EVENTS = { PLAYER_TARGET_CHANGED = "target", PLAYER_FOCUS_CHANGED = "focus" }
+local eventFrame = CreateFrame("Frame")
+for event in pairs(UNIT_EVENTS) do
+    pcall(eventFrame.RegisterEvent, eventFrame, event)
+end
+eventFrame:SetScript("OnEvent", function(_, event)
+    if running ~= nil and UNIT_EVENTS[event] == running.unit then
+        running.unitChanged = true
+    end
+end)
 
 -- The press log, kept in WowVisionDump.turnToUnit so it is in the
 -- SavedVariables after a /reload: one line per press.
@@ -86,6 +121,18 @@ local function cameraZoom()
     return nil
 end
 
+-- For the log: the unit's distance as LibRangeCheck tells it.
+local function rangeText(unit)
+    if rangeCheck == nil then
+        return "range unknown"
+    end
+    local ok, minRange, maxRange = pcall(rangeCheck.GetRange, rangeCheck, unit)
+    if not ok or minRange == nil or secrets.isSecret(minRange) or secrets.isSecret(maxRange) then
+        return "range unknown"
+    end
+    return "range " .. minRange .. " to " .. tostring(maxRange or "far")
+end
+
 local function findPlate(unit)
     local ok, plate = pcall(C_NamePlate.GetNamePlateForUnit, unit)
     if ok then
@@ -95,12 +142,15 @@ local function findPlate(unit)
 end
 
 -- Whether the press's unit is in front of the camera now: true, false,
--- "lost" (its plate is gone or belongs to another unit now: target changed,
--- unit died or out of range), or nil (the game will not say).
+-- "changed" (the target or focus is another unit now), "gone" (its plate
+-- is not there), or nil (the game will not say).
 local function inFront(run)
+    if run.unitChanged then
+        return "changed"
+    end
     local plate = findPlate(run.unit)
-    if plate == nil or plate ~= run.plate then
-        return "lost"
+    if plate == nil then
+        return "gone"
     end
     local token = plate.unitToken or (plate.UnitFrame and plate.UnitFrame.unit)
     local manager = C_NamePlateManager
@@ -155,6 +205,9 @@ local function finish(run, message)
     running = nil
     module.turnHeld = false
     waitFrame:SetScript("OnUpdate", nil)
+    if run.zoomSpeed ~= nil then
+        pcall(SetCVar, "cameraZoomSpeed", run.zoomSpeed)
+    end
     camera.align()
     if run.freeLookOff then
         camera.endGamepadTurn()
@@ -194,43 +247,102 @@ local function approach(run, angle)
         end,
     })
     if started ~= true then
-        -- (the change lies 90 degrees off the bearing: never "facing")
+        -- (the stop lies well off the bearing: never "facing")
         finish(run, "")
     end
 end
 
--- Sweep the camera alone to the right until the unit changes between in
--- front and behind; that change gives the bearing.
-local function measure(run)
-    local zoom = cameraZoom()
-    if zoom ~= nil and zoom > FIRST_PERSON_ZOOM then
-        -- The view switch was refused: no first person, no 90 degrees.
-        note(run, string.format("not in first person, zoom %.1f", zoom))
-        return finish(run, L["Turning is not available here"])
+local measure
+
+-- Pull the camera in close behind the character, then measure again.
+local function measureClose(run)
+    note(run, "close")
+    camera.align()
+    local okSpeed, speed = pcall(GetCVar, "cameraZoomSpeed")
+    if okSpeed and speed ~= nil and run.zoomSpeed == nil then
+        run.zoomSpeed = speed
     end
-    local last = inFront(run)
-    if last == "lost" then
+    pcall(SetCVar, "cameraZoomSpeed", ZOOM_SPEED)
+    local zoom = cameraZoom()
+    if zoom ~= nil and zoom > CLOSE_ZOOM then
+        CameraZoomIn(zoom - CLOSE_ZOOM)
+    end
+    local frames, lastZoom, still = 0, zoom, 0
+    local function wait()
+        afterFrames(run, 1, function()
+            frames = frames + 1
+            local now = cameraZoom()
+            if now ~= nil and lastZoom ~= nil and math.abs(now - lastZoom) < 0.01 then
+                still = still + 1
+            else
+                still = 0
+            end
+            lastZoom = now
+            local near = now ~= nil and math.abs(now - CLOSE_ZOOM) <= 0.3
+            if (near and still >= ZOOM_STILL) or frames >= ZOOM_FRAMES then
+                return measure(run, true)
+            end
+            wait()
+        end)
+    end
+    wait()
+end
+
+-- Sweep the camera alone to the right until the unit has changed between
+-- in front and behind once (first person) or twice (close, behind the
+-- character); then the bearing, and the approach.
+measure = function(run, close)
+    if not close then
+        local zoom = cameraZoom()
+        if zoom ~= nil and zoom > FIRST_PERSON_ZOOM then
+            -- The view switch was refused: no first person, no 90 degrees.
+            note(run, string.format("not in first person, zoom %.1f", zoom))
+            return finish(run, L["Turning is not available here"])
+        end
+    end
+    local needed = close and 2 or 1
+    -- Behind the character a missing plate counts as "not in front": with
+    -- offscreen nameplates off (the game's default) a plate is there only
+    -- while its unit is on screen, and the screen's edges lie the same angle
+    -- either side of the bearing too, so the middle still holds.
+    local function state()
+        local now = inFront(run)
+        if close and now == "gone" then
+            return false
+        end
+        return now
+    end
+    local last = state()
+    if last == "changed" then
         return finish(run, L["Lost the nameplate"])
+    elseif last == "gone" then
+        note(run, "plate gone before the sweep")
+        return measureClose(run)
     elseif last == nil then
         return finish(run, L["Nameplate position is hidden here"])
     end
     local previous = 0
-    local change = nil
-    local lost = false
-    local started = module:turnByAngle(SWEEP_LIMIT, {
+    local stoppedAt = 0
+    local changes = {}
+    local ended = nil
+    local started = module:turnByAngle(close and CLOSE_LIMIT or FIRST_PERSON_LIMIT, {
         label = "unit ",
         cameraOnly = true,
         lateStart = true,
         fixedSpeed = SWEEP_SPEED,
         onFrame = function(moved)
-            local now = inFront(run)
-            if now == "lost" then
-                lost = true
+            stoppedAt = moved
+            local now = state()
+            if now == "changed" or now == "gone" then
+                ended = now
                 return true
             end
             if now ~= nil and now ~= last then
-                change = { at = (previous + moved) / 2, cameIn = now, moved = moved }
-                return true
+                tinsert(changes, { at = (previous + moved) / 2, cameIn = now })
+                last = now
+                if #changes >= needed then
+                    return true
+                end
             end
             previous = moved
             return false
@@ -239,21 +351,37 @@ local function measure(run)
             if running ~= run then
                 return
             end
+            for _, change in ipairs(changes) do
+                note(run, string.format("change %.1f %s", change.at, change.cameIn and "in" or "out"))
+            end
             if how ~= "landed" then
                 return finish(run, "")
-            elseif lost then
+            elseif ended == "changed" then
                 return finish(run, L["Lost the nameplate"])
-            elseif change == nil then
-                note(run, "no change")
+            elseif ended == "gone" or #changes < needed then
+                note(run, ended == "gone" and "plate gone in the sweep" or "no change")
+                if not close then
+                    return measureClose(run)
+                end
+                -- (behind the character state() never says "gone")
                 return finish(run, L["Could not turn to it"])
             end
-            local bearing = unitAim.firstPersonBearing(change.at, change.cameIn)
-            note(run, string.format("change %.1f %s, bearing %.1f", change.at, change.cameIn and "in" or "out", bearing))
+            local bearing, width
+            if close then
+                bearing, width = unitAim.closeBearing(changes[1], changes[2])
+                note(run, string.format("width %.1f", width))
+                if width < WIDTH_MIN or width > WIDTH_MAX then
+                    return finish(run, L["Could not turn to it"])
+                end
+            else
+                bearing = unitAim.firstPersonBearing(changes[1].at, changes[1].cameIn)
+            end
+            note(run, string.format("bearing %.1f", bearing))
             if math.abs(bearing) <= FACING_TOLERANCE then
                 note(run, "already facing")
                 return finish(run)
             end
-            approach(run, unitAim.wrap(bearing - change.moved))
+            approach(run, unitAim.wrap(bearing - stoppedAt))
         end,
     })
     if started ~= true then
@@ -277,8 +405,7 @@ function module:turnToUnit(unit)
         WowVision:notify(unit == "focus" and L["No focus"] or L["No target"])
         return false
     end
-    local plate = findPlate(unit)
-    if plate == nil then
+    if findPlate(unit) == nil then
         -- Instances hide friendly nameplates from addons (forbidden frames).
         local reaction = UnitReaction("player", unit)
         if IsInInstance() and reaction ~= nil and not secrets.isSecret(reaction) and reaction >= 5 then
@@ -294,7 +421,6 @@ function module:turnToUnit(unit)
     end
     local run = {
         unit = unit,
-        plate = plate,
         started = GetTime(),
         facing = facingDegrees(),
         lines = {},
@@ -302,6 +428,7 @@ function module:turnToUnit(unit)
     running = run
     module.turnHeld = true
     note(run, (InCombatLockdown() and "in combat" or "no combat") .. ", " .. (IsInInstance() and "instance" or "world"))
+    note(run, rangeText(unit))
     if run.facing ~= nil then
         note(run, string.format("facing %.1f", run.facing))
     end
@@ -309,7 +436,7 @@ function module:turnToUnit(unit)
     camera.firstPerson()
     run.freeLookOff = camera.beginGamepadTurn()
     afterFrames(run, VIEW_FRAMES, function()
-        measure(run)
+        measure(run, false)
     end)
     return true
 end

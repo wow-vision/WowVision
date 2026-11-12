@@ -157,13 +157,13 @@ Turning needs two camera settings: the camera following style Always (the game o
 
 Ctrl+I turns your character to face your target, Ctrl+U to face your focus. It is meant for units you cannot click or follow, such as an escort NPC: put it on your focus (/focus) and keep your target free for the fight.
 
-The game tells addons nothing about where an NPC stands, but it does say whether a unit's nameplate is in front of the camera or behind it. So a press switches the camera to first person, turns it around you until the nameplate changes sides, works out the direction from that, and turns you with the same turn as Turn to Waypoint. A press takes about half a second. The camera moves first; your character turns once, at the end. You hear a click when you face the unit.
+The game tells addons nothing about where an NPC stands, but it does say whether a unit's nameplate is in front of the camera or behind it. So a press switches the camera to first person, turns it around you until the nameplate changes sides, works out the direction from that, and turns you with the same turn as Turn to Waypoint. A press takes about half a second. The camera moves first; your character turns once, at the end. You hear a click when you face the unit. When the unit stands very close, or with offscreen nameplates off, the press measures a second time with the camera close behind you, which takes about a second longer.
 
 - The unit needs a nameplate. For NPCs, friendly NPC nameplates must be on: the game option, or Apply Recommended Game Settings (see [First login](../getting-started/first-login.md)).
 - If you already face the unit (within about 3 degrees), nothing turns; you only hear the click.
 - Without a target or focus you hear No target or No focus; without a nameplate, No nameplate.
 - In dungeons and other instances the game hides friendly nameplates from addons, so you hear Friendly nameplates are hidden here. Enemies still work.
-- If your target changes or the unit disappears during the press, you hear Lost the nameplate.
+- If your target or focus changes during the press, you hear Lost the nameplate.
 - If the game refuses the camera changes the press needs, you hear Turning is not available here; if the nameplate gave no answer, Could not turn to it or Nameplate position is hidden here. Your character does not turn then.
 - Pressing a turn key yourself stops it. A press while Turn to Waypoint is still turning is ignored.
 - The press uses first person (camera view 1, which cannot be saved over) and puts the camera back behind you afterwards, as Turn to Waypoint does with view 5.

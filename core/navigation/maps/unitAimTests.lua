@@ -41,6 +41,34 @@ testRunner:addSuite("UnitAim", {
         end
     end,
 
+    ["behind the character the middle of both changes is the bearing"] = function(t)
+        -- camera camDistance behind, unit distance away: in front while
+        -- camDistance + distance * cos(bearing - yaw) > 0
+        local function sweep(bearing, distance, camDistance)
+            local function inFront(yaw)
+                return camDistance + distance * math.cos(math.rad(bearing - yaw)) > 0
+            end
+            local changes = {}
+            local last = inFront(0)
+            for yaw = 1, 400 do
+                local now = inFront(yaw)
+                if now ~= last then
+                    tinsert(changes, { at = yaw - 0.5, cameIn = now })
+                    last = now
+                    if #changes == 2 then
+                        break
+                    end
+                end
+            end
+            return unitAim.closeBearing(changes[1], changes[2])
+        end
+        for _, bearing in ipairs({ 0, 40, -75, 150, -170 }) do
+            local found, width = sweep(bearing, 3, 2)
+            t:assertTrue(math.abs(unitAim.wrap(found - bearing)) <= 1)
+            t:assertTrue(width > 180 and width < 330)
+        end
+    end,
+
     ["the first change comes within half a turn"] = function(t)
         for bearing = -179, 180, 7 do
             local at = firstChange(bearing)

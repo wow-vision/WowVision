@@ -29,4 +29,17 @@ function unitAim.firstPersonBearing(at, cameIn)
     return unitAim.wrap(at - unitAim.FIRST_PERSON_HALF)
 end
 
+-- With the camera behind the character instead (for a unit so close that
+-- its plate leaves the first-person view), the two changes lie the same
+-- angle either side of the bearing, wider the nearer the unit, so a sweep
+-- needs both: the bearing is the middle of the in-front stretch. first and
+-- second: { at = degrees swept, cameIn = came in front }, in sweep order.
+-- Returns the bearing and the stretch's width (half a circle or more).
+function unitAim.closeBearing(first, second)
+    if first.cameIn then
+        return unitAim.wrap((first.at + second.at) / 2), second.at - first.at
+    end
+    return unitAim.wrap((first.at + second.at + 360) / 2), first.at + 360 - second.at
+end
+
 WowVision.unitAim = unitAim
