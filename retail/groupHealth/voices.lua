@@ -21,7 +21,10 @@ local voices = GroupHealth.voices
 -- Measured with the pause 2026-11-12: the copies stay 5.15 semitones apart
 -- and every level still falls a semitone or more.
 -- Also used by the OneCore Hedda, which renders the very same sound, and by
--- every voice without a profile.
+-- every voice without a profile. Those get the pause too, on purpose: a
+-- number that is not cut off weighs more than a switch between the copies
+-- nobody measured for them (a voice like Zira would hear the two copies
+-- close together; it needs a profile of its own then).
 voices:register({
     key = "hedda",
     match = "hedda",
