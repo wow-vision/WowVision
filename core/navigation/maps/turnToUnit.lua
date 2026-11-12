@@ -367,6 +367,7 @@ turnThen = function(run, turn)
     local started = module:turnByAngle(turn, {
         label = "unit ",
         cameraOnly = true,
+        lateStart = true,
         onDone = function(how)
             if running ~= run then
                 return
@@ -419,12 +420,13 @@ end
 local EDGE_FIND = 400
 local EDGE_TOTAL = 800
 -- Faster: stop as soon as the bearing is known and turn the short way at
--- full speed from there, one frame later. Off: in game it landed at random
--- (2026-11-12). A camera sweep started later than its key press first
--- jumps by the distance it would have covered meanwhile (warcraft.wiki.gg,
--- API_MoveViewLeftStart), and turnTo.lua's own measurements rule out a
--- sweep right after a stop. The one motion above works.
-local FAST_APPROACH = false
+-- full speed from there, one frame later. Both turns start late (not a key
+-- press), so they are primed (turnByAngle lateStart): unprimed, a late
+-- start jumps by an unknown amount and the approach landed at random; primed,
+-- a sweep of 90 then straight back 45 landed at 45.5 both times
+-- (/wv sweeptest, 2026-11-12). false: the one motion, which also works but
+-- sweeps up to two turns.
+local FAST_APPROACH = true
 
 edgeSweep = function(run)
     note(run, "edge sweep")
@@ -456,6 +458,7 @@ edgeSweep = function(run)
         local started = module:turnByAngle(EDGE_TOTAL, {
             label = "unit ",
             keepCamera = true,
+            lateStart = true,
             fixedSpeed = EDGE_SPEED,
             onFrame = function(moved)
                 frame = frame + 1
@@ -548,6 +551,7 @@ edgeSweep = function(run)
                 local approached = module:turnByAngle(run.approach, {
                     label = "unit ",
                     keepCamera = true,
+                    lateStart = true,
                     onDone = function(approachHow)
                         if running ~= run then
                             return
@@ -641,113 +645,6 @@ function module:turnToUnit(unit)
     end)
     return true
 end
-
--- Trial (/wv sweeptest, outdoors): does a camera sweep started late (from a
--- timer, not a key press) land wrong, and does the workaround on
--- warcraft.wiki.gg (API_MoveViewLeftStart: speed 0 first, the real start a
--- frame later) help? It only calls the turn engine (turnTo.lua stays as
--- it is), from a timer, the way turn to unit does: a normal turn of 90, and
--- a camera-only sweep of 90 followed at once by a turn of 45 back (the
--- short-way approach), each without and with the workaround, twice.
--- Each line: asked against turned (positive = right). Results go to
--- WowVisionDump.turnToUnit. (An own copy of the sweep turned 0 every time;
--- FlipCameraYaw from an addon does not move the camera.)
-local function prime(fn)
-    MoveViewLeftStart(0)
-    MoveViewRightStart(0)
-    C_Timer.After(0, fn)
-end
-
-local function trialRun(kind, primed, after)
-    local before = facingDegrees()
-    if before == nil then
-        addReading("sweep test: no facing here (instance?)")
-        return
-    end
-    local asked = kind == "single" and 90 or 45
-    local function landed(how)
-        C_Timer.After(0.3, function()
-            local now = facingDegrees()
-            local turned = now and ((before - now + 180) % 360 - 180) or nil
-            local line = string.format(
-                "sweep test %s %s: asked %d, turned %s (%s)",
-                kind,
-                primed and "with workaround" or "without",
-                asked,
-                turned and string.format("%.1f", turned) or "unknown",
-                tostring(how)
-            )
-            print("WowVision " .. line)
-            addReading(line)
-            after()
-        end)
-    end
-    local function go(fn)
-        if primed then
-            prime(fn)
-        else
-            fn()
-        end
-    end
-    C_Timer.After(0.5, function()
-        if kind == "single" then
-            go(function()
-                if not module:turnByAngle(90, { label = "trial ", onDone = landed }) then
-                    landed("not started")
-                end
-            end)
-            return
-        end
-        camera.align()
-        go(function()
-            local started = module:turnByAngle(90, {
-                label = "trial ",
-                cameraOnly = true,
-                onDone = function()
-                    -- at once, from where the camera stands: back 45
-                    go(function()
-                        if not module:turnByAngle(-45, { label = "trial ", keepCamera = true, onDone = landed }) then
-                            landed("second not started")
-                        end
-                    end)
-                end,
-            })
-            if not started then
-                landed("not started")
-            end
-        end)
-    end)
-end
-
-module:registerCommand({
-    name = "sweeptest",
-    description = "Trial: late turns through the turn engine, with and without the speed 0 workaround, logged",
-    func = function()
-        local plan = {
-            { "single", false },
-            { "single", true },
-            { "back", false },
-            { "back", true },
-            { "single", false },
-            { "single", true },
-            { "back", false },
-            { "back", true },
-        }
-        local index = 0
-        local function nextTrial()
-            index = index + 1
-            local trial = plan[index]
-            if trial == nil then
-                WowVision:speak("sweep test done")
-                return
-            end
-            trialRun(trial[1], trial[2], function()
-                C_Timer.After(0.3, nextTrial)
-            end)
-        end
-        nextTrial()
-    end,
-})
 
 -- Copyable diagnostics: one line per press, also printed to chat.
 module:registerCommand({

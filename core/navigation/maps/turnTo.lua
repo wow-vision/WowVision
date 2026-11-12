@@ -249,6 +249,26 @@ end
 -- Start the sweep for a turn of relative degrees (positive = right). turn
 -- holds the caller's extras (aim point, lead, label, onDone).
 startTurn = function(relative, frameTime, turn)
+    if turn.lateStart and not turn.primed then
+        -- A start that is not a key press (a timer, an OnUpdate) first
+        -- jumps by the distance the camera would have covered meanwhile
+        -- (warcraft.wiki.gg, API_MoveViewLeftStart); in game a turn of 90
+        -- from a timer landed at -53 and +44. Speed 0 first and the real
+        -- start a frame later (the wiki's workaround) make it land one
+        -- frame step further each time (113 and 112), which the sweep
+        -- below takes off (/wv sweeptest, 2026-11-12).
+        turn.primed = true
+        current = turn
+        MoveViewLeftStart(0)
+        MoveViewRightStart(0)
+        C_Timer.After(0, function()
+            if current == turn then
+                current = nil
+                startTurn(relative, turnMath.frameTime(GetFramerate()), turn)
+            end
+        end)
+        return true
+    end
     local target = math.abs(relative)
     local sweepSpeed, steps = turnMath.plan(target, frameTime)
     if turn.fixedSpeed ~= nil then
@@ -257,6 +277,11 @@ startTurn = function(relative, frameTime, turn)
         steps = math.max(1, math.ceil(target / (sweepSpeed * frameTime) - 1e-9))
     end
     local cvar = math.min(sweepSpeed, turnMath.CVAR_MAX)
+    -- A primed late start moves one frame step more than the sweep counts.
+    local sweepTarget = target
+    if turn.lateStart then
+        sweepTarget = math.max(target - sweepSpeed * frameTime, target * 0.05)
+    end
     for key, value in pairs({
         target = target,
         direction = relative > 0 and 1 or -1,
@@ -265,7 +290,7 @@ startTurn = function(relative, frameTime, turn)
         cvar = cvar,
         frameTime = frameTime,
         settleFrames = math.max(SETTLE_MIN_FRAMES, math.ceil(SETTLE_MIN_TIME / frameTime - 1e-9)),
-        sweep = turnMath.newSweep(target, sweepSpeed, steps),
+        sweep = turnMath.newSweep(sweepTarget, sweepSpeed, steps),
         -- nil where the game hides the facing; measure() then logs nothing
         startFacing = GetPlayerFacing(),
         lastTime = GetTime(),
@@ -346,6 +371,9 @@ end
 --               hands the result over later
 --   keepCamera  no snap behind the character at the start (the caller
 --               placed the camera); the stop still hands it over
+--   lateStart   the call is not a key press (a timer, an OnUpdate): prime
+--               the camera with speed 0 and start a frame later, the extra
+--               frame step taken off (see startTurn)
 --   fixedSpeed  degrees per second, for a search sweep
 --   onFrame(moved) runs every frame before the step with the degrees the
 --               camera has moved so far; returning true stops the sweep
