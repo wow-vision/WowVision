@@ -404,9 +404,12 @@ end
 local EDGE_FIND = 400
 local EDGE_TOTAL = 800
 -- Faster: stop as soon as the bearing is known and turn the short way at
--- full speed from there, one frame later. false: the one motion above,
--- which worked in game (2026-11-12) but sweeps up to two turns.
-local FAST_APPROACH = true
+-- full speed from there, one frame later. Off: in game it landed at random
+-- (2026-11-12). A camera sweep started later than its key press first
+-- jumps by the distance it would have covered meanwhile (warcraft.wiki.gg,
+-- API_MoveViewLeftStart), and turnTo.lua's own measurements rule out a
+-- sweep right after a stop. The one motion above works.
+local FAST_APPROACH = false
 
 edgeSweep = function(run)
     note(run, "edge sweep")
@@ -623,6 +626,77 @@ function module:turnToUnit(unit)
     end)
     return true
 end
+
+-- Trial of FlipCameraYaw (turns the camera by an angle at once, in
+-- degrees; on Forever 1.60.1, no restriction listed): may an addon call
+-- it, which way does a positive angle go, and is it there in the same
+-- frame? Outdoors only (needs the facing). Two flips, each from the camera
+-- behind the character and ended by the pulse: +90 with the pulse in the
+-- same frame, then -90 with the pulse a frame later. Each line says how far
+-- the character turned (positive = right, as the turn keys' bearing).
+local flipLines = {}
+
+local function flipLine(text)
+    tinsert(flipLines, text)
+    print("WowVision flip test: " .. text)
+end
+
+local function flipTrial(angle, pulseLater, after)
+    local before = facingDegrees()
+    if before == nil then
+        flipLine("no facing here (instance?)")
+        return
+    end
+    camera.align()
+    C_Timer.After(0.3, function()
+        local ok, err = pcall(FlipCameraYaw, angle)
+        if not ok then
+            flipLine(string.format("FlipCameraYaw(%d) refused: %s", angle, tostring(err)))
+            return
+        end
+        local function pulse()
+            camera.transfer()
+            C_Timer.After(0.3, function()
+                local now = facingDegrees()
+                local turned = now and ((before - now + 180) % 360 - 180) or nil
+                flipLine(
+                    string.format(
+                        "FlipCameraYaw(%d), pulse %s: turned %s",
+                        angle,
+                        pulseLater and "a frame later" or "same frame",
+                        turned and string.format("%.1f", turned) or "unknown"
+                    )
+                )
+                if after then
+                    after()
+                end
+            end)
+        end
+        if pulseLater then
+            C_Timer.After(0, pulse)
+        else
+            pulse()
+        end
+    end)
+end
+
+module:registerCommand({
+    name = "fliptest",
+    description = "Try FlipCameraYaw: two quarter turns, logged",
+    func = function()
+        flipLines = {}
+        flipTrial(90, false, function()
+            flipTrial(-90, true, function()
+                local text = "flip test: " .. table.concat(flipLines, "; ")
+                tinsert(readings, text)
+                while #readings > 20 do
+                    tremove(readings, 1)
+                end
+                WowVision:speak("flip test done")
+            end)
+        end)
+    end,
+})
 
 -- Copyable diagnostics: one line per press, also printed to chat.
 module:registerCommand({
