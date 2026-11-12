@@ -643,57 +643,19 @@ function module:turnToUnit(unit)
 end
 
 -- Trial (/wv sweeptest, outdoors): does a camera sweep started late (from a
--- timer, not a key press) first jump, and does the workaround on
--- warcraft.wiki.gg (API_MoveViewLeftStart: start with speed 0, then the
--- real speed a frame later) stop that? Its own small sweep, so turn to
--- waypoint (turnTo.lua) is not touched. Each trial: camera snapped behind
--- the character, half a second, the sweep(s) at 720 degrees per second for
--- a counted number of frames, the pulse, and how far the character turned
--- against how far the counted frames say. Four kinds, twice each: one sweep
--- right without and with the workaround, and right then at once back left
--- (the short-way approach) without and with it. Results go to
--- WowVisionDump.turnToUnit. (FlipCameraYaw was tried before: an addon's
--- call does not move the camera, 2026-11-12.)
-local TRIAL_CVAR = 360
-local TRIAL_FACTOR = 2
-local trialFrame = CreateFrame("Frame")
-
--- One sweep: direction 1 = right (the character's facing turns right after
--- the pulse), -1 = left, for frames frames. done(degrees the frames say).
-local function trialSweep(direction, frames, primed, done)
-    local function start()
-        SetCVar("cameraYawMoveSpeed", TRIAL_CVAR)
-        if direction > 0 then
-            MoveViewLeftStart(TRIAL_FACTOR)
-        else
-            MoveViewRightStart(TRIAL_FACTOR)
-        end
-        local counted, expected, last = 0, 0, GetTime()
-        trialFrame:SetScript("OnUpdate", function(self)
-            local now = GetTime()
-            if now <= last then
-                return
-            end
-            local delta = now - last
-            last = now
-            counted = counted + 1
-            if counted >= frames then
-                -- this frame's step does not happen (turnTo.lua's facts)
-                MoveViewLeftStop()
-                MoveViewRightStop()
-                self:SetScript("OnUpdate", nil)
-                return done(expected * direction)
-            end
-            expected = expected + TRIAL_CVAR * TRIAL_FACTOR * delta
-        end)
-    end
-    if primed then
-        MoveViewLeftStart(0)
-        MoveViewRightStart(0)
-        C_Timer.After(0, start)
-    else
-        start()
-    end
+-- timer, not a key press) land wrong, and does the workaround on
+-- warcraft.wiki.gg (API_MoveViewLeftStart: speed 0 first, the real start a
+-- frame later) help? It only calls the turn engine (turnTo.lua stays as
+-- it is), from a timer, the way turn to unit does: a normal turn of 90, and
+-- a camera-only sweep of 90 followed at once by a turn of 45 back (the
+-- short-way approach), each without and with the workaround, twice.
+-- Each line: asked against turned (positive = right). Results go to
+-- WowVisionDump.turnToUnit. (An own copy of the sweep turned 0 every time;
+-- FlipCameraYaw from an addon does not move the camera.)
+local function prime(fn)
+    MoveViewLeftStart(0)
+    MoveViewRightStart(0)
+    C_Timer.After(0, fn)
 end
 
 local function trialRun(kind, primed, after)
@@ -702,55 +664,64 @@ local function trialRun(kind, primed, after)
         addReading("sweep test: no facing here (instance?)")
         return
     end
-    local okSpeed, savedSpeed = pcall(GetCVar, "cameraYawMoveSpeed")
-    camera.align()
-    C_Timer.After(0.5, function()
-        -- As every turn to waypoint turn: with the gamepad, free look off for
-        -- the sweep and the pulse, else the pulse hands nothing over (the
-        -- first run of this trial turned 0 every time).
-        local freeLookOff = camera.beginGamepadTurn()
-        local function finishTrial(expected)
-            MoveViewLeftStop()
-            MoveViewRightStop()
-            if okSpeed then
-                SetCVar("cameraYawMoveSpeed", savedSpeed)
-            end
-            camera.transfer()
-            C_Timer.After(0.4, function()
-                camera.endGamepadTurn()
-                local now = facingDegrees()
-                local turned = now and ((before - now + 180) % 360 - 180) or nil
-                local line = string.format(
-                    "sweep test %s %s: frames say %.1f, turned %s, free look %s",
-                    kind,
-                    primed and "with workaround" or "without",
-                    expected,
-                    turned and string.format("%.1f", turned) or "unknown",
-                    freeLookOff and "switched off" or "untouched"
-                )
-                print("WowVision " .. line)
-                addReading(line)
-                after()
-            end)
-        end
-        if kind == "single" then
-            trialSweep(1, 8, primed, finishTrial)
+    local asked = kind == "single" and 90 or 45
+    local function landed(how)
+        C_Timer.After(0.3, function()
+            local now = facingDegrees()
+            local turned = now and ((before - now + 180) % 360 - 180) or nil
+            local line = string.format(
+                "sweep test %s %s: asked %d, turned %s (%s)",
+                kind,
+                primed and "with workaround" or "without",
+                asked,
+                turned and string.format("%.1f", turned) or "unknown",
+                tostring(how)
+            )
+            print("WowVision " .. line)
+            addReading(line)
+            after()
+        end)
+    end
+    local function go(fn)
+        if primed then
+            prime(fn)
         else
-            trialSweep(1, 8, primed, function(first)
-                -- straight on, the frame after the stop: back left
-                C_Timer.After(0, function()
-                    trialSweep(-1, 4, primed, function(second)
-                        finishTrial(first + second)
-                    end)
-                end)
-            end)
+            fn()
         end
+    end
+    C_Timer.After(0.5, function()
+        if kind == "single" then
+            go(function()
+                if not module:turnByAngle(90, { label = "trial ", onDone = landed }) then
+                    landed("not started")
+                end
+            end)
+            return
+        end
+        camera.align()
+        go(function()
+            local started = module:turnByAngle(90, {
+                label = "trial ",
+                cameraOnly = true,
+                onDone = function()
+                    -- at once, from where the camera stands: back 45
+                    go(function()
+                        if not module:turnByAngle(-45, { label = "trial ", keepCamera = true, onDone = landed }) then
+                            landed("second not started")
+                        end
+                    end)
+                end,
+            })
+            if not started then
+                landed("not started")
+            end
+        end)
     end)
 end
 
 module:registerCommand({
     name = "sweeptest",
-    description = "Trial: late camera sweeps with and without the speed 0 workaround, logged",
+    description = "Trial: late turns through the turn engine, with and without the speed 0 workaround, logged",
     func = function()
         local plan = {
             { "single", false },
