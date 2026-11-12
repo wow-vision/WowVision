@@ -404,7 +404,9 @@ local SNAP_FRAMES = 3
 -- Outdoors, where the game tells the facing: a turn that landed more than
 -- CORRECT_ABOVE degrees off is followed by up to MAX_CORRECTIONS more.
 local CORRECT_ABOVE = 5
-local MAX_CORRECTIONS = 2
+-- Off for now: in game the corrections from a clean start landed wrong too
+-- (asked 10.9, turned -153) and spun the character round.
+local MAX_CORRECTIONS = 0
 
 local function turnToBearing(run, bearing)
     note(run, string.format("bearing %.1f", bearing))
@@ -531,6 +533,12 @@ edgeSweep = function(run)
                 end
                 if how ~= "landed" then
                     return finish(run, "")
+                end
+                -- The sweep moves only the camera: the character's facing
+                -- must not have changed.
+                local facing = facingDegrees()
+                if run.facing ~= nil and facing ~= nil then
+                    note(run, string.format("character during the sweep %.1f", (run.facing - facing + 180) % 360 - 180))
                 end
                 if #changes < 2 then
                     note(run, #changes .. " changes in " .. frame .. " frames")
