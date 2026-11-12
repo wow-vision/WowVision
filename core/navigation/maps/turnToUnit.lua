@@ -89,6 +89,51 @@ local function findPlate(unit)
     return nil
 end
 
+-- One call on a frame for the log: its values, "secret", or the error.
+local function try(frame, method)
+    if frame == nil then
+        return method .. " no frame"
+    end
+    local fn = frame[method]
+    if type(fn) ~= "function" then
+        return method .. " missing"
+    end
+    local result = { pcall(fn, frame) }
+    if not result[1] then
+        return method .. " error " .. tostring(result[2])
+    end
+    local values = {}
+    for i = 2, #result do
+        local value = result[i]
+        if secrets.isSecret(value) then
+            values[#values + 1] = "secret"
+        elseif type(value) == "number" then
+            values[#values + 1] = string.format("%.1f", value)
+        else
+            values[#values + 1] = tostring(value)
+        end
+    end
+    return method .. " " .. (#values > 0 and table.concat(values, " ") or "nothing")
+end
+
+-- For the log when the plate's place cannot be read: what else the plate,
+-- its unit frame and the behind-camera check answer.
+local function describePlate(plate, token)
+    local parts = { "token " .. tostring(token) }
+    for _, method in ipairs({ "IsForbidden", "IsShown", "IsVisible", "GetLeft", "GetRect", "GetScaledRect", "GetPoint" }) do
+        tinsert(parts, try(plate, method))
+    end
+    for _, method in ipairs({ "GetCenter", "GetLeft", "GetScaledRect" }) do
+        tinsert(parts, "unit frame " .. try(plate.UnitFrame, method))
+    end
+    local manager = C_NamePlateManager
+    if token ~= nil and manager ~= nil and manager.IsNamePlateUnitBehindCamera ~= nil then
+        local ok, behind = pcall(manager.IsNamePlateUnitBehindCamera, token)
+        tinsert(parts, "behind camera " .. (ok and (secrets.isSecret(behind) and "secret" or tostring(behind)) or "error"))
+    end
+    return table.concat(parts, "; ")
+end
+
 -- What the unit's plate says now: "none", "hidden" (the game keeps its
 -- place on screen from addons) plus why, "behind", or "seen" plus its
 -- offset from the screen centre (-1 to 1).
@@ -107,7 +152,7 @@ local function readPlate(unit)
     end
     local okCenter, x = pcall(plate.GetCenter, plate)
     if not okCenter then
-        return "hidden", "center error"
+        return "hidden", "center error " .. tostring(x) .. "; " .. describePlate(plate, token)
     elseif x == nil then
         return "hidden", "no center"
     elseif secrets.isSecret(x) then
