@@ -18,11 +18,13 @@ local ControlId = graph.ControlId
 -- invite popup's Accept stays disabled until a role is checked, and the
 -- game declines the invitation itself when its timer runs out.
 
+-- The first text region, without markup: the invite popup's line starts
+-- with an atlas icon while a party sync (quest session) is active.
 local function getPopupTitle(frame)
     local regions = { frame:GetRegions() }
     for _, region in ipairs(regions) do
         if region:GetObjectType() == "FontString" then
-            return region:GetText()
+            return nodes.plainText(region:GetText()) or L["Role Poll"]
         end
     end
     return L["Role Poll"]
