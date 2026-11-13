@@ -193,13 +193,72 @@ local function frameVisible(frame)
     return ok and visible == true
 end
 
+-- Whether you are your own target. The game may hide UnitIsUnit's answer
+-- (a secret) or refuse it in instances; then two plain GUIDs answer, and
+-- when those are hidden too the last readable answer since the target
+-- changed holds (the target cannot change without PLAYER_TARGET_CHANGED,
+-- which forgets it). Read once per update tick (refreshSelfTarget), not per
+-- frame and rule. selfTarget.how says how it was read, for /wv cdmlog.
+local selfTarget = { now = false, last = nil, how = "no" }
+
+local function plainGUID(unit)
+    if UnitGUID == nil then
+        return nil
+    end
+    local ok, guid = pcall(UnitGUID, unit)
+    if not ok or guid == nil or secrets.isSecret(guid) then
+        return nil
+    end
+    return guid
+end
+
+local function yesNo(value)
+    return value and "yes" or "no"
+end
+
+local function refreshSelfTarget()
+    local same, why = secrets.readBool(UnitIsUnit, "target", "player")
+    local how = nil
+    if same == nil then
+        local target, player = plainGUID("target"), plainGUID("player")
+        if target ~= nil and player ~= nil then
+            same = target == player
+            how = why .. ", by GUID " .. yesNo(same)
+        end
+    end
+    if same ~= nil then
+        selfTarget.last = same
+        selfTarget.now, selfTarget.how = same, how or yesNo(same)
+    elseif selfTarget.last ~= nil then
+        selfTarget.now, selfTarget.how = selfTarget.last, why .. ", kept " .. yesNo(selfTarget.last)
+    else
+        selfTarget.now, selfTarget.how = false, why .. ", unknown"
+    end
+end
+
+local function forgetSelfTarget()
+    selfTarget.now, selfTarget.last, selfTarget.how = false, nil, "no"
+end
+
+-- Whether the frame's aura sits on the monitor's unit. The viewers scan
+-- "player" before "target" and keep the first match, so with yourself as
+-- target an aura on you is always labelled "player" (Blizzard_CooldownViewer,
+-- CooldownViewerItemData.lua scanUnits): a target monitor takes it then.
+local function onUnit(frame, unit)
+    local frameUnit = frame.auraDataUnit
+    if frameUnit == unit then
+        return true
+    end
+    return unit == "target" and frameUnit == "player" and selfTarget.now
+end
+
 -- Whether the frame shows its aura on the unit right now. A buff item (the
 -- Buff Icon and Buff Bar viewers) says so with IsActive; a cooldown item
 -- (Essential, Utility) is active whenever it has a cooldown, so there the
 -- cached aura data stands for the aura. A frame that is not drawn shows
 -- nothing.
 local function auraShown(frame, unit)
-    if frame.auraDataUnit ~= unit or frame.auraDataCached == nil then
+    if not onUnit(frame, unit) or frame.auraDataCached == nil then
         return false
     end
     if not frameVisible(frame) then
@@ -377,7 +436,7 @@ local function frameCode(frame, unit)
     if frame.auraDataCached ~= nil then
         code = code + 1
     end
-    if frame.auraDataUnit == unit then
+    if onUnit(frame, unit) then
         code = code + 2
     end
     if isActiveItem(frame) then
@@ -414,6 +473,9 @@ local function describeFrame(frame, unit, since)
     end
     if frame.auraDataUnit ~= nil then
         text = text .. " " .. tostring(frame.auraDataUnit)
+        if unit == "target" and frame.auraDataUnit == "player" then
+            text = text .. " (self target " .. selfTarget.how .. ")"
+        end
     end
     local active = isActiveItem(frame)
     if active == true then
@@ -798,6 +860,7 @@ end
 -- change (each item is forced inactive first); two ticks of quiet keep
 -- that from reading as the aura dropping and coming back.
 function CdmAuraMonitor:onTargetChanged()
+    forgetSelfTarget()
     if self.unit ~= "target" then
         return
     end
@@ -829,6 +892,9 @@ function CdmAuraMonitor:update()
         self._skipTicks = self._skipTicks - 1
         return
     end
+    if self.unit == "target" then
+        refreshSelfTarget()
+    end
     for _, rule in ipairs(self.rules or {}) do
         if rule.enabled and rule.updateFromViewers ~= nil then
             rule:updateFromViewers(self.unit)
@@ -854,6 +920,9 @@ end
 
 -- What the tracked auras read right now, each rule in turn.
 function CdmAuraMonitor:currentTexts()
+    if self.unit == "target" then
+        refreshSelfTarget()
+    end
     local texts = {}
     for _, rule in ipairs(self.rules or {}) do
         if rule.enabled and rule.currentText ~= nil then

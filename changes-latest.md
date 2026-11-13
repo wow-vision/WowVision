@@ -5,3 +5,5 @@
 ### Modern
 * Quest log: Escape on a quest's details goes back to the quest list, as the Back button does. Escape on the list closes the log as before.
 * Group health: a number in the urgent part of the scale is no longer cut off at its end (Hedda, Katja and voices without a profile of their own).
+* Cooldown Manager Auras monitors: a monitor on Target now hears your own auras while you target yourself. Before, it reported them as Missing, because the cooldown manager labels an aura on you as Player even when you are your own target. In instances, where the game may hide whether you are your own target, the last answer it could read since your target changed holds.
+* Cooldown manager (/cdm): the manual explains the game's Lua error when you move an item while a buff the cooldown manager tracks is on you. The change is still saved; make such changes with no tracked buffs on you, and reload before combat, or the next buff in combat brings the same error.
