@@ -80,6 +80,30 @@ local function removeConfigOf(field, pair, instance)
     return config
 end
 
+-- Put one instance's config into a side's array of the store and bind the
+-- instance to it. position(array) picks the slot (nil: the end). Returns
+-- false when that side has no store.
+local function bindIntoStore(field, pair, side, instance, config, position)
+    local store = classes.constrainPair(field, pair)[side]
+    if store == nil then
+        return false
+    end
+    if store[field.key] == nil then
+        store[field.key] = { _type = "array" }
+    end
+    local array = store[field.key]
+    tinsert(array, position ~= nil and position(array) or #array + 1, config)
+    instance:setDB({ [side] = config })
+    rawset(instance, "_scopeSide", side)
+    return true
+end
+
+-- The config table an instance is bound to, or nil.
+local function boundConfig(instance)
+    local bound = rawget(instance, "_db")
+    return bound ~= nil and (bound.char or bound.global) or nil
+end
+
 classes.registerFieldType("ComponentArray", {
     -- Assignment accepts instances or configs; configs go through the factory.
     validate = function(field, value)
@@ -178,16 +202,7 @@ classes.registerFieldType("ComponentArray", {
                 elseif constrained.char == nil and constrained.global ~= nil then
                     side = "global"
                 end
-                local store = constrained[side]
-                if store ~= nil then
-                    if store[field.key] == nil then
-                        store[field.key] = { _type = "array" }
-                    end
-                    local config = instanceToConfig(field, instance)
-                    tinsert(store[field.key], config)
-                    instance:setDB({ [side] = config })
-                    rawset(instance, "_scopeSide", side)
-                end
+                bindIntoStore(field, pair, side, instance, instanceToConfig(field, instance))
             end
             field.events.valueChange:emit(obj, field.key, instances)
             return #instances
@@ -211,7 +226,9 @@ classes.registerFieldType("ComponentArray", {
         -- side. The copy goes through the restore path (factory + setDB on
         -- a db-form config), so nested arrays (a monitor's rules) and alert
         -- settings come along. changes(config) may edit the copy's config
-        -- first (a new label). Returns the new instance.
+        -- first (a new label). Returns the new instance, or nil when the
+        -- element is not in the array or has no store to persist the copy
+        -- in (a copy that vanished at the next reload would only pretend).
         copyElement = function(field, obj, instance, changes)
             local instances = field:get(obj)
             local index = nil
@@ -221,7 +238,9 @@ classes.registerFieldType("ComponentArray", {
                     break
                 end
             end
-            if index == nil then
+            local side = rawget(instance, "_scopeSide")
+            local pair = rawget(obj, "_db")
+            if index == nil or side == nil or pair == nil or classes.constrainPair(field, pair)[side] == nil then
                 return nil
             end
             local config = classes.deepCopy(instanceToConfig(field, instance))
@@ -229,29 +248,27 @@ classes.registerFieldType("ComponentArray", {
                 changes(config)
             end
             local copy = field.factory(config)
-            local side = rawget(instance, "_scopeSide")
-            local pair = rawget(obj, "_db")
-            if pair ~= nil and side ~= nil then
-                local store = classes.constrainPair(field, pair)[side]
-                if store ~= nil then
-                    if store[field.key] == nil then
-                        store[field.key] = { _type = "array" }
-                    end
-                    local array = store[field.key]
-                    local bound = rawget(instance, "_db")
-                    local original = bound ~= nil and (bound.char or bound.global) or nil
-                    local position = #array + 1
-                    for i, entry in ipairs(array) do
-                        if entry == original then
-                            position = i + 1
-                            break
-                        end
-                    end
-                    tinsert(array, position, config)
-                    copy:setDB({ [side] = config })
-                    rawset(copy, "_scopeSide", side)
+            -- The store keeps memory's order: right after the original's
+            -- config, else before the config of the next element in memory
+            -- that sits in the same array, else at the end.
+            local function position(array)
+                local slot = {}
+                for i, entry in ipairs(array) do
+                    slot[entry] = i
                 end
+                local original = boundConfig(instance)
+                if original ~= nil and slot[original] ~= nil then
+                    return slot[original] + 1
+                end
+                for i = index + 1, #instances do
+                    local later = boundConfig(instances[i])
+                    if later ~= nil and slot[later] ~= nil then
+                        return slot[later]
+                    end
+                end
+                return #array + 1
             end
+            bindIntoStore(field, pair, side, copy, config, position)
             tinsert(instances, index + 1, copy)
             field.events.valueChange:emit(obj, field.key, instances)
             return copy

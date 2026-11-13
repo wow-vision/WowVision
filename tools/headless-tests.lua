@@ -1535,6 +1535,41 @@ WowVision.testing.testRunner:addSuite("ComponentCopy", {
         t:assertEqual(db.monitors[1].rules[2].spell, 8921)
         t:assertEqual(db.monitors[1].rules[3].spell, 93402)
     end,
+    ["a copy needs a store; the store keeps memory's order"] = function(t)
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return (instance.class.name:gsub("Monitor$", ""))
+            end,
+        })
+        -- No store: nothing is copied, nothing pretends to be
+        local loose = { monitors = {} }
+        field:addElement(loose, { type = "CdmAura", label = "Loose" })
+        t:assertNil(field:copyElement(loose, loose.monitors[1]))
+        t:assertEqual(#loose.monitors, 1)
+
+        -- The original's config is gone from the array: the copy goes in
+        -- before the next element's config, as in memory
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        field:setDB(container, { global = db })
+        field:addElement(container, { type = "CdmAura", label = "First" })
+        field:addElement(container, { type = "CdmAura", label = "Second" })
+        field:addElement(container, { type = "CdmAura", label = "Third" })
+        table.remove(db.monitors, 1)
+        local copy = field:copyElement(container, container.monitors[1], function(config)
+            config.label = "First Copy 1"
+        end)
+        t:assertEqual(container.monitors[2], copy)
+        t:assertEqual(db.monitors[1].label, "First Copy 1")
+        t:assertEqual(db.monitors[2].label, "Second")
+        t:assertEqual(db.monitors[3].label, "Third")
+    end,
 })
 
 WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {
