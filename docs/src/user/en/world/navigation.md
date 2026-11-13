@@ -125,6 +125,8 @@ For Beacon Sound you choose one of the beacon sets: Notification, Probe (Deep), 
 | Key | Binding name | What it does |
 |-----|--------------|--------------|
 | I | Turn to Waypoint | Turns your character to face the current waypoint. See below. |
+| Ctrl+I | Turn to Target | Turns your character to face your target. See below. |
+| Ctrl+U | Turn to Focus | Turns your character to face your focus. See below. |
 | Alt Gr or Ctrl+Alt | (setting) | Speaks the distance to the current waypoint. Held, it repeats every second. |
 | Unbound by default | Announce Distance | The same distance announcement on a key of your choice. |
 | Alt+P | Cycle Arrival Distance | Switches between the short, medium and long arrival distance. |
@@ -150,6 +152,21 @@ Nothing is spoken when it works. A few things you should know:
 - On a controller, press the right stick instead of I.
 
 Turning needs two camera settings: the camera following style Always (the game option "Always adjust camera") and instant switching between saved camera views. WowVision sets both once on each character, at the first login where one of them had to be changed, and tells you in the chat: "WowVision set the camera to always follow behind your character, which turning to waypoints needs. You can change the camera following style in the game options under Controls." If you change the following style back later, turns will land in the wrong places. WowVision does not set it again. WowVision also uses saved camera view 5 for turning, so anything you saved there is overwritten. During a turn it briefly changes the game's mouse look speed and puts your own value back afterwards. With a gamepad, free look is switched off for the length of the turn.
+
+### Turn to target and focus (Ctrl+I, Ctrl+U)
+
+Ctrl+I turns your character to face your target, Ctrl+U to face your focus. It is meant for units you cannot click or follow, such as an escort NPC: put it on your focus (/focus) and keep your target free for the fight.
+
+The game tells addons nothing about where an NPC stands, but it does say whether a unit's nameplate is in front of the camera or behind it. So a press switches the camera to first person, turns it around you until the nameplate changes sides, works out the direction from that, and turns you with the same turn as Turn to Waypoint. A press takes about half a second. The camera moves first; your character turns once, at the end. You hear a click when you face the unit. When the unit stands close, or is off screen while offscreen nameplates are off, the press measures with the camera close behind you instead, which takes about a second longer. A unit within about 2 yards cannot be measured that way; you are standing at it then. Walking while you press works, but the result is most exact when you stand still.
+
+- The unit needs a nameplate. For NPCs, friendly NPC nameplates must be on: the game option, or Apply Recommended Game Settings (see [First login](../getting-started/first-login.md)).
+- If you already face the unit (within about 3 degrees), nothing turns; you only hear the click.
+- Without a target or focus you hear No target or No focus; without a nameplate, No nameplate.
+- In dungeons and other instances the game hides friendly nameplates from addons, so you hear Friendly nameplates are hidden here. Enemies still work.
+- If your target or focus changes during the press, you hear Lost the nameplate.
+- If the game refuses the camera changes the press needs, you hear Turning is not available here; if the nameplate gave no answer, Could not turn to it or Nameplate position is hidden here. Your character does not turn then.
+- Pressing a turn key yourself stops it. A press while Turn to Waypoint is still turning is ignored.
+- The press uses first person (camera view 1, which cannot be saved over) and puts the camera back behind you afterwards, as Turn to Waypoint does with view 5.
 
 ### Arrival distance
 
@@ -300,6 +317,7 @@ Three settings of the Navigation module are related: Announce Remaining Waypoint
 | Command | What it does |
 |---------|--------------|
 | /wv turnlog | Lists the last turns made by the I key with their error in degrees, in a window and in the chat, and speaks a summary such as "10 turns, mean error 1.2 degrees". Include this in a bug report if turning goes wrong. |
+| /wv unitturnlog | Lists the last presses of Ctrl+I and Ctrl+U, one line each with what the press found and how far you turned, in a window and in the chat. The lines are also saved with your settings. Include this in a bug report if turning to a unit goes wrong. |
 
 ## Examples
 

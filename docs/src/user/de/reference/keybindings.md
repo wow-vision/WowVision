@@ -94,6 +94,8 @@ Siehe [Chat](../windows/chat.md).
 | Aktion | Standardtaste | Hinweise |
 |---|---|---|
 | Zum Wegpunkt drehen (Turn to Waypoint) | I | Dreht dich zum aktuellen Wegpunkt deiner Route |
+| Zum Ziel drehen (Turn to Target) | Strg+I | Dreht dich zu deinem Ziel, gefunden über seine Namensplakette |
+| Zum Fokus drehen (Turn to Focus) | Strg+U | Dasselbe für deinen Fokus, zum Beispiel einen NPC, den du begleitest |
 | Nächster Wegpunkt (Next Waypoint) | Strg+W | Springt zum nächsten Wegpunkt vor. Du hörst, wie viele Wegpunkte noch übrig sind, zum Beispiel "12 verbleibend" |
 | Vorheriger Wegpunkt (Previous Waypoint) | Strg+S | Geht zum vorherigen Wegpunkt zurück, mit derselben Zählung |
 | Route von hier neu starten (Start the Route Again From Here) | Strg+Umschalt+N | Plant die Route zu deinem letzten Ziel noch einmal, beginnend dort, wo du stehst. Du hörst "Keine Route zum Neustarten", wenn du noch kein Ziel gewählt hast |

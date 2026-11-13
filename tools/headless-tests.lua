@@ -241,6 +241,8 @@ loadAddonFile("core/navigation/camera.lua")
 loadAddonFile("core/navigation/cameraTests.lua")
 loadAddonFile("core/navigation/maps/turnMath.lua")
 loadAddonFile("core/navigation/maps/turnTests.lua")
+loadAddonFile("core/navigation/maps/unitAim.lua")
+loadAddonFile("core/navigation/maps/unitAimTests.lua")
 loadAddonFile("core/quests/Adapter.lua")
 loadAddonFile("core/quests/tests.lua")
 loadAddonFile("core/quests/completion.lua")
@@ -2515,6 +2517,7 @@ local parseOnly = {
     "core/navigation/falling.lua",
     "core/navigation/compass.lua",
     "core/navigation/maps/turnTo.lua",
+    "core/navigation/maps/turnToUnit.lua",
     "core/navigation/maps/module.lua",
     "core/navigation/maps/Beacon.lua",
     "core/navigation/maps/Path.lua",

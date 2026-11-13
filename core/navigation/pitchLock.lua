@@ -73,6 +73,13 @@ local function canLevel()
     return pitchLock.locked and inWaterOrAir()
 end
 
+-- A later level (after a delay, or from an ascend key) keeps off a camera
+-- that a turn, or a turn to unit press between its turns, still has.
+local function cameraBusy()
+    local maps = WowVision.base.navigation.maps
+    return maps ~= nil and maps.isTurning ~= nil and maps:isTurning()
+end
+
 local function level()
     lastLevel = GetTime()
     camera.align()
@@ -93,7 +100,7 @@ function pitchLock.afterTurn()
     end
     local seq = turnSeq
     C_Timer.After(AFTER_TURN_DELAY, function()
-        if seq == turnSeq and canLevel() then
+        if seq == turnSeq and canLevel() and not cameraBusy() then
             level()
         end
     end)
@@ -110,7 +117,7 @@ end
 
 local function levelQuietly()
     local now = GetTime()
-    if canLevel() and now - lastLevel >= LEVEL_DEBOUNCE and now - lastTurn >= TURN_QUIET then
+    if canLevel() and not cameraBusy() and now - lastLevel >= LEVEL_DEBOUNCE and now - lastTurn >= TURN_QUIET then
         level()
     end
 end
