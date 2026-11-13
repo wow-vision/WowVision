@@ -824,6 +824,21 @@ end
 -- drag does, so the game's rules decide what lands on the cursor (locked
 -- bars, unlearned spells, revoked pets). target is a frame, or a function
 -- returning the frame that shows the entry now.
+-- The drag key on a real frame, as the mouse would have it: with something
+-- held on the cursor the frame's drop script runs (a bag slot takes the held
+-- bag, where its drag script would only pick up the bag in it); otherwise,
+-- or on a frame without a drop script, its drag script.
+function nodes.runDrag(frame)
+    local script = nil
+    if GetCursorInfo ~= nil and GetCursorInfo() ~= nil and (frame.HasScript == nil or frame:HasScript("OnReceiveDrag")) then
+        script = frame:GetScript("OnReceiveDrag")
+    end
+    script = script or frame:GetScript("OnDragStart")
+    if script ~= nil then
+        script(frame)
+    end
+end
+
 function nodes.dragScript(target)
     return function()
         WowVision.cursor = WowVision.cursor or {}
@@ -837,10 +852,7 @@ function nodes.dragScript(target)
         if type(frame) ~= "table" or frame.GetScript == nil then
             return
         end
-        local script = frame:GetScript("OnDragStart")
-        if script ~= nil then
-            script(frame)
-        end
+        nodes.runDrag(frame)
     end
 end
 

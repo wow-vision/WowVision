@@ -152,7 +152,8 @@ The minimap scanner. Typed alone it scans now, the same as Ctrl+Shift+F. See [Mi
 | /wv mscan clear | Forgets every seen entry and the walking memory, and says "Seen entries cleared" |
 | /wv mscan log | Shows how the last scan and the walking check went (for bug reports) |
 | /wv mscan walk | Shows what the walking check remembers |
-| /wv mscan raw | Shows one unparsed read of the minimap (for bug reports) |
+| /wv mscan raw | Shows one unparsed read of the minimap; also saved for sending after /reload (for bug reports) |
+| /wv mscan sku | Measures the scanner's minimap searches on the spot where you stand (for bug reports) |
 
 Versions: the command exists everywhere, but scanning needs a game version whose minimap can be read; otherwise you hear "Minimap scanner not available on this client".
 

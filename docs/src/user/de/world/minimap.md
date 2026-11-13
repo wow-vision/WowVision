@@ -16,13 +16,15 @@ Die Minikarte zeigt nur, was dein Charakter gerade darauf sehen kann. Der Scanne
 - Interessante Orte. Die Städte und Wahrzeichen, die die Minikarte als Pfeile zeichnet, etwa Goldhain oder Sturmwind. Das sind nur Namen ohne Position, weil das Spiel diese Pfeile in einem festen Abstand in Richtung des Ortes zeichnet.
 - Anderes Aufspüren. Hast du eine andere Aufspür-Fähigkeit an, zum Beispiel Wildtiere aufspüren oder Humanoide aufspüren, lassen sich ihre Punkte nicht nach Namen sortieren. Sie werden als Unsortiert (Unsorted) in der Kategorie Sammeln des Scanners aufgeführt. Solange eine solche Aufspür-Fähigkeit an ist, kann der Scanner diese Punkte außerdem nicht von Questgebern unterscheiden, sodass Questgeber ohne spezielle Aufspür-Art ebenfalls in Unsortiert landen.
 
-Der Scanner sieht Punkte bis zur Reichweite der Minikarte: etwa 233 Yards im Freien und 150 Yards drinnen. Drinnen zeigt die Minikarte nur das Gebäude, in dem du bist, ein Scan drinnen kennt also nur dieses Gebäude.
+Der Scanner sieht Punkte bis zur Reichweite der Minikarte: etwa 233 Yards im Freien und 150 Yards drinnen. Drinnen zeigt die Minikarte nur das Gebäude, in dem du bist, ein Scan drinnen kennt also nur dieses Gebäude. Das Spiel schaltet die Minikarte nicht nur in Häusern auf ihre Innenansicht, sondern auch in manchen überdachten Straßen, zum Beispiel in Teilen von Sturmwind; WowVision bemerkt das und behandelt es als drinnen.
+
+Namen, die Titel von Quests in deinem Questlog sind, werden weggelassen. Die Minikarte zeigt sie als Gebiet der Quest oder als Pfeil an ihrem Rand, der dorthin zeigt; diese Quests hat WowVision schon mit ihren echten Orten unter Quests, Laufend im [Scanner](scanner.md).
 
 ## Scannen: Strg+Umschalt+F
 
 Drücke Strg+Umschalt+F (Minikarte scannen, Scan Minimap), um einmal zu scannen. Die Belegung lässt sich im Fenster für die Tastenbelegung ändern; siehe [Tastenbelegung](../basics/keybindings.md). Du kannst auch `/wv mscan` tippen.
 
-Du hörst "Scanne Minikarte" und nach ein bis zwei Sekunden das Ergebnis, zum Beispiel:
+Du hörst "Scanne Minikarte" und das Ergebnis, nach ein bis zwei Sekunden, wenn nichts neu ist, und nach bis zu etwa sechs Sekunden, wenn viel Neues zu verorten ist. Zum Beispiel:
 
 - "Scan fertig, 4 neu: 1 Interessante Orte, 1 Gastwirte, 2 Questgeber"
 - "Nichts Neues in der Nähe"
@@ -38,10 +40,11 @@ Ein Scan übernimmt vorübergehend die Minikarte und den Mauszeiger, deshalb mü
 - Keine Maussteuerung. "Zum Scannen Maussteuerung beenden", wenn du mit der Maus steuerst.
 - Schließe jedes Fenster. Der Mauszeiger muss über der Spielwelt ruhen, nicht über einem Fenster. Standardmäßig bewegt der Scan den Mauszeiger selbst in die Bildschirmmitte (siehe Mauszeiger vor dem Scan zentrieren), deshalb blockiert jedes Fenster, das in der Bildschirmmitte offen ist, ihn. Die Meldung nennt das Fenster, das im Weg ist: "Scan abgebrochen, Fenster: " gefolgt vom Namen des Fensters. Schließe das Fenster mit Esc und scanne erneut.
 - Sei an einem Ort mit Position. "Hier keine Position" erscheint an Orten, an denen das Spiel dich nicht orten kann, zum Beispiel in manchen Instanzen.
+- Nichts am Mauszeiger. Solange ein Zauber darauf wartet, auf dem Boden platziert zu werden, etwas am Mauszeiger hängt oder eine Maustaste gedrückt ist, startet der Scan nicht: "Scan abgebrochen, Zielauswahl" oder "Scan abgebrochen, Maus".
 
 Sobald ein Scan läuft, bewege dich nicht, drehe dich nicht, benutze die Maus nicht und gehe nicht in einen Kampf, bis er fertig ist. Jedes davon bricht ihn ab, mit "Scan abgebrochen, bewegt", "Scan abgebrochen, gedreht", "Scan abgebrochen, Maus", "Scan abgebrochen, Maussteuerung" oder "Scan abgebrochen, Kampf". ("Gedreht" kann nur vorkommen, wenn die Spieloption zum Drehen der Minikarte, englisch Rotate Minimap, an ist.) Nichts Halbfertiges wird behalten, scanne also einfach erneut. Drückst du die Taste während eines laufenden Scans, hörst du "Scan läuft bereits".
 
-Während er läuft, schaltet der Scan kurz deine Aufspür-Arten an und aus und verkleinert die Minikarte, danach stellt er alles wieder her. Questgebiet-Ansagen sind stummgeschaltet, bis er fertig ist. Ist eine Aufspür-Art nicht zurückgekommen, sagt WowVision es dir: "Aufspüren nicht wiederhergestellt" gefolgt von ihrem Namen. Schalte sie im [Scanner](scanner.md) unter Verfolgung wieder ein.
+Während er läuft, schaltet der Scan kurz deine Aufspür-Arten an und aus und verschiebt und verkleinert die Minikarte, danach stellt er alles wieder her. Währenddessen nimmt die Minikarte keine Klicks an (ein Klick würde die Stelle für deine Gruppe markieren), und ihr Tooltip bleibt verborgen. Questgebiet-Ansagen sind stummgeschaltet, bis er fertig ist. Ist eine Aufspür-Art nicht zurückgekommen, sagt WowVision es dir: "Aufspüren nicht wiederhergestellt" gefolgt von ihrem Namen. Schalte sie im [Scanner](scanner.md) unter Verfolgung wieder ein.
 
 Geht innerhalb des Scans etwas schief, hörst du "Minikarten-Scan fehlgeschlagen".
 
@@ -160,7 +163,8 @@ Du brauchst diese nur für Fehlerberichte.
 | `/wv mscan clear` | Vergisst jeden gesehenen Eintrag und das Laufgedächtnis. Du hörst "Gesehene Einträge gelöscht". |
 | `/wv mscan log` | Zeigt, wie der letzte Scan verlaufen ist, und das Protokoll der Laufansagen. Das Protokoll wird nach `/reload` auch in der Datei der gespeicherten Variablen gesichert. |
 | `/wv mscan walk` | Zeigt, was die Laufprüfung gerade im Gedächtnis hat. |
-| `/wv mscan raw` | Macht eine unverarbeitete Messung der Minikarte zur Fehlersuche, für den Tag, an dem das Spiel die Benennung der Punkte ändert. |
+| `/wv mscan raw` | Macht eine unverarbeitete Messung der Minikarte zur Fehlersuche, für den Tag, an dem das Spiel die Benennung der Punkte ändert. Nach /reload steht das Ergebnis in der Datei `WTF\Account\<Account>\SavedVariables\WowVision.lua` (WowVisionDump, minimapRaw), die du einschicken kannst, statt das Fenster zu kopieren. |
+| `/wv mscan sku` | Misst die Wege des Scanners, die Minikarte zu lesen, an der Stelle, an der du stehst (dauert etwa eine halbe Minute; bleib stehen): die Reichweite, eine Lesung der verkleinerten Minikarte und die Suche des Scans und der Laufprüfung, jede verglichen mit einer langsamen in voller Größe. Das Ergebnis öffnet sich in einem Fenster und wird als WowVisionDump, minimapSku gespeichert. |
 
 ## Verwandte Seiten
 

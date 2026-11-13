@@ -98,7 +98,7 @@ See [Chat](../windows/chat.md).
 | Cycle Arrival Distance | Alt+P | Changes how close you must come before a waypoint counts as reached |
 | Announce Distance | Unbound | Speaks the distance to the waypoint. Alt Gr (or Ctrl+Alt) does the same out of the box |
 | Route to Your Target | Unbound | Starts a route to your current target |
-| Route to the Nearest Unvisited of the Same Name | Unbound | Routes to the nearest place with the same name you have not visited yet |
+| Route to the Nearest Unvisited of the Same Name | Unbound | Routes to the place with the same name you have not visited yet that is the shortest walk away |
 | Direct to the Nearest Unvisited of the Same Name | Unbound | The same as a straight beacon instead of a route |
 | WowNav Route Status | Unbound | (WoW: Forever) Speaks the state of the WowNav route |
 | New WowNav Route Around a Blocked Spot | Unbound | (WoW: Forever) Plans a new route that avoids the spot where you are stuck |
