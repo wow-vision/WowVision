@@ -171,7 +171,7 @@ local function list(n)
 end
 
 testRunner:addSuite("ListEnds", {
-    ["up and down past a list's end stay silent"] = function(t)
+    ["up and down past a list's end read the entry again, or stay silent with the setting off"] = function(t)
         withHost(function(host)
             host:open(list(3))
             press(host, "down")
@@ -180,13 +180,21 @@ testRunner:addSuite("ListEnds", {
             local count = #host.spoken
             press(host, "down")
             t:assertEqual((focused(host)), "C")
-            t:assertEqual(#host.spoken, count)
+            t:assertEqual(#host.spoken, count + 1, "the last entry is read again")
+            t:assertEqual(host.spoken[#host.spoken], "C")
         end)
         withHost(function(host)
             host:open(list(3))
             press(host, "up")
             t:assertEqual((focused(host)), "A")
-            t:assertEqual(#host.spoken, 0)
+            t:assertEqual(#host.spoken, 1, "the first entry is read again")
+        end)
+        withHost(function(host)
+            WowVision.base.ui = { settings = { edgeSound = false } }
+            host:open(list(3))
+            press(host, "up")
+            t:assertEqual((focused(host)), "A")
+            t:assertEqual(#host.spoken, 0, "off: silent")
         end)
     end,
 

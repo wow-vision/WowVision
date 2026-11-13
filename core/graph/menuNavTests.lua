@@ -466,3 +466,55 @@ testRunner:addSuite("MenuNavigation", {
         end)
     end,
 })
+
+-- Up or Down on the first or last entry: Sku's list-edge sound and the entry read again.
+local function withPlaySound(fn)
+    local saved = PlaySound
+    local played = {}
+    PlaySound = function(kit)
+        tinsert(played, kit)
+    end
+    local ok, err = pcall(fn, played)
+    PlaySound = saved
+    if not ok then
+        error(err, 0)
+    end
+end
+
+testRunner:addSuite("ListEdgeSound", {
+    ["Down on the last entry and Up on the first sound and read the entry again"] = function(t)
+        withHost(function(host)
+            withPlaySound(function(played)
+                host:open({ key = "list", render = list({ "Alpha", "Beta", "Gamma" }) })
+                press(host, "up")
+                t:assertEqual(#played, 1, "Up on the first entry sounds")
+                t:assertEqual(played[1], 681, "Sku's boundary sound")
+                t:assertEqual(lastSpoken(host), "Alpha", "the entry is read again")
+                press(host, "down")
+                t:assertEqual(#played, 1, "a step that moves does not sound")
+                t:assertEqual(lastSpoken(host), "Beta")
+                press(host, "down")
+                press(host, "down")
+                t:assertEqual(focusedKey(host), "Gamma")
+                t:assertEqual(#played, 2, "Down on the last entry sounds")
+                t:assertEqual(lastSpoken(host), "Gamma")
+            end)
+        end)
+    end,
+
+    ["the setting switches it off, Left and Right bumps stay silent"] = function(t)
+        withHost(function(host)
+            withPlaySound(function(played)
+                host:open({ key = "list", render = list({ "Alpha", "Beta" }) })
+                WowVision.base.ui.settings.edgeSound = false
+                press(host, "up")
+                t:assertEqual(#played, 0, "off: no sound")
+                t:assertEqual(#host.spoken, 0, "off: nothing read again")
+                WowVision.base.ui.settings.edgeSound = true
+                press(host, "left")
+                press(host, "right")
+                t:assertEqual(#played, 0, "Left and Right are level keys, not list edges")
+            end)
+        end)
+    end,
+})

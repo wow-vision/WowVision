@@ -22,6 +22,15 @@ settings:add({
     default = true,
 })
 
+-- Up or Down on the first or last entry of a list plays a short sound and reads the entry again, as Sku does
+-- (graph/Host.lua).
+settings:add({
+    type = "Bool",
+    key = "edgeSound",
+    label = L["Sound at the Start and End of Lists"],
+    default = true,
+})
+
 -- Letters jump to the next entry starting with them in the lists that own the keyboard: the WowVision menu, context
 -- and dropdown menus (graph/typeAhead.lua, graph/Host.lua).
 settings:add({

@@ -838,8 +838,9 @@ end
 -- ends it; a focused slider adjusts on left/right before any navigation;
 -- edge-wired movement next; at an edge, a node's own onRight/onLeft (a Scanner
 -- entry opening its level, or going back), then right opens the entry's next
--- level, left/right get tree semantics, and left goes back one level; a bump
--- with nothing to do stays silent. The same
+-- level, left/right get tree semantics, and left goes back one level; an Up or
+-- Down bump at the first or last entry sounds and reads the entry again (the
+-- UI module's edgeSound setting), any other bump stays silent. The same
 -- arrow pressed twice quickly skips empty slots (doublePress.lua).
 function GraphHost:_arrow(screen, dir, at)
     local kg = screen.keyGraph
@@ -913,8 +914,24 @@ function GraphHost:_arrow(screen, dir, at)
         end
     end
 
-    -- Focus did not move: stay silent. Re-reading the same node on a
-    -- boundary bump is noise when arrowing quickly.
+    -- Focus did not move on Up or Down: the first or last entry. As in Sku, a
+    -- short sound and the entry read again (Left and Right bumps stay silent:
+    -- they are level and tree keys).
+    if (dir == "up" or dir == "down") and self:_playsEdgeSound() then
+        if PlaySound ~= nil then
+            PlaySound(GraphHost.EDGE_SOUND)
+        end
+        self:_announceMove(screen, { from = node, to = node })
+    end
+end
+
+-- The game's sound kit Sku plays when Up or Down hits the end of a list.
+GraphHost.EDGE_SOUND = 681
+
+-- The UI module's setting; on unless switched off.
+function GraphHost:_playsEdgeSound()
+    local ui = WowVision.base ~= nil and WowVision.base.ui or nil
+    return ui == nil or ui.settings == nil or ui.settings.edgeSound ~= false
 end
 
 -- The UI module's setting; on unless switched off.
