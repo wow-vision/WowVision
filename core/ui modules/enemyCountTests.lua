@@ -467,3 +467,95 @@ testRunner:addSuite("EnemyCountLostLine", {
         t:assertEqual(watch:check(queue, 30), nil)
     end,
 })
+
+-- Announcer ----------------------------------------------------------------------
+
+-- A speech module standing in for tbc/, mists/, retail/ speech.lua: speak
+-- queues a line behind one that plays (or sends it at once when idle), stop
+-- replaces the queue table. fired: every message the alert fired, with
+-- which outputs ("all" or "speech").
+local function speechWorld(busy)
+    local w = { queue = {}, time = 0, fired = {}, busy = busy ~= false }
+    function w.speak(text)
+        if w.busy then
+            table.insert(w.queue, { text = text })
+        else
+            w.busy = true
+        end
+    end
+    function w.stop()
+        w.queue = {}
+        w.busy = false
+    end
+    w.announcer = enemyCount.Announcer:new({
+        fire = function(message)
+            table.insert(w.fired, { message = message, outputs = "all" })
+            w.speak(tostring(message.count))
+        end,
+        queue = function()
+            return w.queue
+        end,
+        now = function()
+            return w.time
+        end,
+    })
+    return w
+end
+
+local function settled(said)
+    return { said = said, pending = nil }
+end
+
+testRunner:addSuite("EnemyCountAnnouncer", {
+    ["a number queued behind other speech and thrown away by a stop is said again"] = function(t)
+        local w = speechWorld()
+        w.announcer:say({ count = 3 })
+        w.stop()
+        w.time = 5
+        w.announcer:resay(settled(3), true)
+        t:assertEqual(#w.fired, 2)
+        t:assertEqual(w.fired[2].message.count, 3)
+        t:assertEqual(w.fired[2].message.again, true)
+    end,
+
+    ["a number the queue sent is not said again"] = function(t)
+        local w = speechWorld()
+        w.announcer:say({ count = 3 })
+        table.remove(w.queue, 1)
+        w.time = 10
+        w.announcer:resay(settled(3), true)
+        t:assertEqual(#w.fired, 1)
+    end,
+
+    ["a number sent at once is not watched"] = function(t)
+        local w = speechWorld(false)
+        w.announcer:say({ count = 2 })
+        w.stop()
+        w.time = 10
+        w.announcer:resay(settled(2), true)
+        t:assertEqual(#w.fired, 1)
+    end,
+
+    ["the queue is read before the fire: a stop during the fire leaves nothing to watch"] = function(t)
+        local w = speechWorld()
+        local fire = w.announcer.config.fire
+        w.announcer.config.fire = function(message)
+            fire(message)
+            -- an interrupting output of the same alert
+            w.stop()
+        end
+        w.announcer:say({ count = 4 })
+        w.time = 10
+        w.announcer:resay(settled(4), true)
+        t:assertEqual(#w.fired, 1)
+    end,
+
+    ["no repeat while a newer number waits to settle"] = function(t)
+        local w = speechWorld()
+        w.announcer:say({ count = 3 })
+        w.stop()
+        w.time = 10
+        w.announcer:resay({ said = 3, pending = 2 }, true)
+        t:assertEqual(#w.fired, 1)
+    end,
+})

@@ -471,3 +471,74 @@ function LostLine:check(queue, now)
     self.item = nil
     return self.message
 end
+
+-- Announcer -----------------------------------------------------------------
+-- The speech side of the count (core/ui modules/combat.lua): fires a number,
+-- watches its line in the speech queue (LostLine) and says a lost one again.
+-- config:
+--   fire(message)  fires the Enemy Count alert, every output
+--   queue()        WowVision's speech queue table, nil without one (Vanilla)
+--   now()          the time
+-- Only a line that waits in the queue is watched. A line sent at once (the
+-- queue was idle) or one cut while it already plays is not said again: the
+-- queue no longer holds it, and nothing tells it apart from one heard.
+local Announcer = WowVision.Class("EnemyCountAnnouncer")
+enemyCount.Announcer = Announcer
+
+function Announcer:initialize(config)
+    self.config = config
+    self.lost = LostLine:new()
+end
+
+-- Fires a count. A message without a number (crowd control texts alone)
+-- means the free count changed without being said, so the last number is no
+-- longer worth saying again.
+function Announcer:say(message)
+    local config = self.config
+    local queue = config.queue()
+    local before = type(queue) == "table" and #queue or nil
+    config.fire(message)
+    if message.count == nil then
+        self.lost:forget()
+        return
+    end
+    if before == nil then
+        return
+    end
+    local item = nil
+    if config.queue() == queue and #queue > before then
+        item = queue[#queue]
+    end
+    self.lost:fired(queue, item, message, config.now())
+end
+
+-- The number watched no longer stands.
+function Announcer:forget()
+    self.lost:forget()
+end
+
+-- Says a lost number again, once, while it is still the count's: not while
+-- a newer number waits to settle in `active` (it is said soon), and with
+-- `plain` (no crowd control) only when the settler still holds that number.
+function Announcer:resay(active, plain)
+    local config = self.config
+    local queue = config.queue()
+    if type(queue) ~= "table" then
+        return
+    end
+    if active.pending ~= nil then
+        return
+    end
+    local message = self.lost:check(queue, config.now())
+    if message ~= nil and plain and active.said ~= message.count then
+        message = nil
+    end
+    if message ~= nil then
+        -- A copy marked as said again, for whoever looks at the alert.
+        local again = { again = true }
+        for key, value in pairs(message) do
+            again[key] = value
+        end
+        config.fire(again)
+    end
+end

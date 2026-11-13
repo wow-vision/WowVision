@@ -307,57 +307,32 @@ local api = {
 local settler = enemyCount.Settler:new(SETTLE)
 local controlSettler = enemyCount.Settler:new(SETTLE, enemyCount.CONTROL_IDLE)
 local tracker = enemyCount.ControlTracker:new()
-local lostLine = enemyCount.LostLine:new()
 local recountQueued, settleQueued = false, false
 
--- Fires a count and watches its line in the speech queue (lostLine). A
--- message without a number (crowd control texts alone) means the free
--- count changed without being said, so the last number is no longer worth
--- saying again. The queue's absence (Vanilla) or a line sent at once
--- leaves nothing to watch.
+-- Fires the counts and says a lost one again (enemyCount.Announcer).
+local announcer = enemyCount.Announcer:new({
+    fire = function(message)
+        enemyCountAlert:fire(message)
+    end,
+    queue = function()
+        local speech = WowVision.base.speech
+        return speech and speech.queue
+    end,
+    now = GetTime,
+})
+
 local function sayCount(message)
-    local speech = WowVision.base.speech
-    local queue = speech and speech.queue
-    local before = type(queue) == "table" and #queue or nil
-    enemyCountAlert:fire(message)
-    if message.count == nil then
-        lostLine:forget()
-        return
-    end
-    if before == nil then
-        return
-    end
-    local item = nil
-    if speech.queue == queue and #queue > before then
-        item = queue[#queue]
-    end
-    lostLine:fired(queue, item, message, GetTime())
+    announcer:say(message)
 end
 
--- Says a lost number again (lostLine), once, while it is still the
--- count's: not while a newer number waits to settle (it is said soon), and
--- in the plain count only when the settler still holds that number.
 local function resayLost()
-    local speech = WowVision.base.speech
-    local queue = speech and speech.queue
-    if type(queue) ~= "table" or not enemyCountAlert.enabled then
+    if not enemyCountAlert.enabled then
         return
     end
-    local active = controlOn() and controlSettler or settler
-    if active.pending ~= nil then
-        return
-    end
-    local message = lostLine:check(queue, GetTime())
-    if message ~= nil and active == settler and settler.said ~= message.count then
-        message = nil
-    end
-    if message ~= nil then
-        -- A copy marked as said again, for whoever looks at the alert.
-        local again = { again = true }
-        for key, value in pairs(message) do
-            again[key] = value
-        end
-        enemyCountAlert:fire(again)
+    if controlOn() then
+        announcer:resay(controlSettler, false)
+    else
+        announcer:resay(settler, true)
     end
 end
 
@@ -378,7 +353,7 @@ local function recountControl(skip)
         if message == nil then
             -- A quiet change (a controlled enemy gone): the number watched
             -- no longer matches the fight.
-            lostLine:forget()
+            announcer:forget()
         else
             if message.ended then
                 controlEndedAlert:fire({})
