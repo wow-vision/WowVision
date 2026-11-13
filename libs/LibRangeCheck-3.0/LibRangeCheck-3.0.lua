@@ -4650,10 +4650,17 @@ end
 
 -- << load-time initialization
 
+-- WowVision: registers on the frame every time, not only when the frame is
+-- new. With minor 99 we usually upgrade a copy another addon loaded first
+-- (WeakAuras 38, TellMeWhen 31): its frame exists, and upstream's activate
+-- then skipped every registration, so the events added since that copy
+-- never arrived. RegisterEvent on a registered event is harmless.
 function lib:activate()
   if not self.frame then
-    local frame = CreateFrame("Frame")
-    self.frame = frame
+    self.frame = CreateFrame("Frame")
+  end
+  do
+    local frame = self.frame
 
     frame:RegisterEvent("CHARACTER_POINTS_CHANGED")
     frame:RegisterEvent("SPELLS_CHANGED")
@@ -4677,11 +4684,14 @@ function lib:activate()
     end
   end
 
-  if not self.cacheResetTimer then
-    self.cacheResetTimer = C_Timer.NewTicker(5, function()
-      invalidateRangeCache(5)
-    end)
+  -- WowVision: an older copy's ticker trims that copy's cache, not ours (each
+  -- copy has its own local rangeCache): cancel it and start ours.
+  if self.cacheResetTimer then
+    self.cacheResetTimer:Cancel()
   end
+  self.cacheResetTimer = C_Timer.NewTicker(5, function()
+    invalidateRangeCache(5)
+  end)
 
   initItemRequests()
 
