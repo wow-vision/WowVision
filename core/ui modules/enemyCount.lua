@@ -14,7 +14,8 @@ local enemyCount = {}
 WowVision.enemyCount = enemyCount
 
 -- "group": enemies that you, your pet or a group member are fighting; in a
--- group also any enemy in combat that nobody outside it has tapped.
+-- group, while one of you is in combat, also any enemy in combat that nobody
+-- outside it has tapped.
 -- "player": enemies attacking you (you hold their aggro).
 enemyCount.modes = { "group", "player" }
 
@@ -59,8 +60,12 @@ end
 -- nothing until you were in combat, 1.5 to 22 seconds after the group.
 -- Both are shown on the plate (in combat; a grey bar when tapped by
 -- others). A secret answer to either is unknown and counts as no.
-local function groupHolds(api, unit)
-    if not api.inGroup() then
+-- `busy`: whether someone in the group is in combat (groupBusy). An enemy
+-- that attacks someone outside the group is not tapped until that player
+-- hits it, and was counted without this for a second or two (dungeon
+-- 2026-11-13: twice "1" with nobody in the group in combat).
+local function groupHolds(api, unit, busy)
+    if not busy then
         return false
     end
     local inCombat = api.inCombat(unit)
@@ -69,6 +74,24 @@ local function groupHolds(api, unit)
     end
     local tapped = api.tapDenied(unit)
     return not api.isSecret(tapped) and tapped == false
+end
+
+-- Whether you are in a group and you, your pet or a member is in combat.
+-- Read once per count. The combat flag of group units stayed readable in a
+-- WoW: Forever dungeon (2026-11-13: it started 99 of 101 logged fights).
+local function groupBusy(api, group)
+    if not api.inGroup() then
+        return false
+    end
+    for _, member in ipairs(group) do
+        if api.exists(member) then
+            local inCombat = api.inCombat(member)
+            if not api.isSecret(inCombat) and inCombat == true then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 -- Whether you hold the enemy's aggro (threat status 2 or 3). A secret
@@ -85,7 +108,7 @@ local function attacksPlayer(api, unit)
 end
 
 -- Whether the enemy on a plate counts for a mode.
-local function counts(api, mode, group, eliteOnly, unit)
+local function counts(api, mode, group, busy, eliteOnly, unit)
     -- An enemy out of combat has an empty threat list: skipping it first
     -- spares the walk over a raid's members for every idle plate.
     if not (isHostile(api, unit) and not api.isDead(unit) and api.inCombat(unit)) then
@@ -95,7 +118,7 @@ local function counts(api, mode, group, eliteOnly, unit)
     if mode == "player" then
         fights = attacksPlayer(api, unit)
     else
-        fights = groupHolds(api, unit) or groupFights(api, unit, group)
+        fights = groupHolds(api, unit, busy) or groupFights(api, unit, group)
     end
     if fights and eliteOnly then
         fights = ELITE[api.classification(unit)] == true
@@ -107,9 +130,10 @@ end
 -- the plate the game is removing right now still exists during its event.
 function enemyCount.count(api, mode, eliteOnly, skip)
     local group = mode == "group" and api.group() or nil
+    local busy = group ~= nil and groupBusy(api, group)
     local count = 0
     for _, unit in ipairs(api.plates()) do
-        if unit ~= skip and counts(api, mode, group, eliteOnly, unit) then
+        if unit ~= skip and counts(api, mode, group, busy, eliteOnly, unit) then
             count = count + 1
         end
     end
@@ -148,9 +172,10 @@ end
 -- crowd controlled.
 function enemyCount.scan(api, mode, eliteOnly, skip)
     local group = mode == "group" and api.group() or nil
+    local busy = group ~= nil and groupBusy(api, group)
     local free, controlled = {}, {}
     for _, unit in ipairs(api.plates()) do
-        if unit ~= skip and counts(api, mode, group, eliteOnly, unit) then
+        if unit ~= skip and counts(api, mode, group, busy, eliteOnly, unit) then
             if enemyCount.isControlled(api, unit) then
                 table.insert(controlled, unit)
             else

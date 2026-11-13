@@ -70,7 +70,7 @@ All in UI, Combat.
 | Enemy Count Alert, Enabled | On | Switches the enemy count on or off |
 | Enemy Count Alert, TTS Alert | On | Speaks the number |
 | Enemy Count Alert, Voice Alert | Off | Plays a recorded number from your voice pack instead |
-| Count Enemies | Attacking You or Your Group | Attacking You or Your Group counts every enemy that you, your pet or a group member is fighting; in a group also every enemy in combat that no one outside your group has tapped, so a fight your group starts without you counts at once. Attacking You counts only enemies that have you as their main target (those whose aggro you hold) |
+| Count Enemies | Attacking You or Your Group | Attacking You or Your Group counts every enemy that you, your pet or a group member is fighting; in a group, while you, your pet or a group member is in combat, also every enemy in combat that no one outside your group has tapped, so a fight your group starts without you counts at once. Attacking You counts only enemies that have you as their main target (those whose aggro you hold) |
 | Count Elite Enemies Only | Off | Leaves out normal monsters. Elites, rare elites and world bosses still count |
 | Announce Crowd Control | Off | Experimental. With Spell Names or Without Names, the number counts only the enemies still free to fight and crowd control is said apart (see below). Off keeps the plain count |
 | Crowd Control Ended Alert, Sound Alert | On | The short sound for a crowd control that ends, with Announce Crowd Control on |

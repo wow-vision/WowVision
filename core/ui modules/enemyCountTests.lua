@@ -8,9 +8,16 @@ end })
 -- A world standing in for the game's. plates: token -> enemy, where an
 -- enemy is { reaction, dead, class, threat = { member = status }, tapped }
 -- (tapped: UnitIsTapDenied, true when left out). A group of more than
--- player and pet is a party.
-local function world(plates, group)
+-- player and pet is a party. fighting: group units in combat (member ->
+-- true or SECRET), by default all of them.
+local function world(plates, group, fighting)
     group = group or { "player", "pet" }
+    if fighting == nil then
+        fighting = {}
+        for _, member in ipairs(group) do
+            fighting[member] = true
+        end
+    end
     local present = {}
     for _, member in ipairs(group) do
         present[member] = true
@@ -37,6 +44,9 @@ local function world(plates, group)
             return plates[unit].dead == true
         end,
         inCombat = function(unit)
+            if plates[unit] == nil then
+                return fighting[unit] or false
+            end
             return plates[unit].idle ~= true
         end,
         classification = function(unit)
@@ -109,6 +119,15 @@ testRunner:addSuite("EnemyCount", {
         t:assertEqual(enemyCount.count(api, "player", false), 0)
     end,
 
+    ["in a group out of combat, an untapped enemy in combat does not count"] = function(t)
+        local party = { "player", "pet", "party1" }
+        local plates = { nameplate1 = enemy(nil, { tapped = false }) }
+        t:assertEqual(enemyCount.count(world(plates, party, {}), "group", false), 0)
+        t:assertEqual(enemyCount.count(world(plates, party, { party1 = SECRET }), "group", false), 0)
+        t:assertEqual(enemyCount.count(world(plates, party, { party1 = true }), "group", false), 1)
+        t:assertEqual(enemyCount.count(world(plates, party, { pet = true }), "group", false), 1)
+    end,
+
     ["solo, an untapped enemy in combat needs you on its threat list"] = function(t)
         local api = world({ nameplate1 = enemy(nil, { tapped = false }) })
         t:assertEqual(enemyCount.count(api, "group", false), 0)
@@ -116,8 +135,12 @@ testRunner:addSuite("EnemyCount", {
 
     ["a secret combat flag does not count by the group rule"] = function(t)
         local api = world({ nameplate1 = enemy(nil, { tapped = false }) }, { "player", "pet", "party1" })
-        api.inCombat = function()
-            return SECRET
+        local inCombat = api.inCombat
+        api.inCombat = function(unit)
+            if unit == "nameplate1" then
+                return SECRET
+            end
+            return inCombat(unit)
         end
         t:assertEqual(enemyCount.count(api, "group", false), 0)
     end,
