@@ -207,6 +207,32 @@ local registry = WowVision.components.createRegistry({
 WowVision.monitors.Monitor = Monitor
 WowVision.monitors.registry = registry
 
+-- What a target monitor says when the target changes, for its
+-- announceOnUnitChange field (a Bool before, so false and true keep their
+-- saved meaning): false speaks only what differs from the old target, true
+-- speaks the new target's state, "never" settles on the new target in
+-- silence (later changes on it speak as usual).
+WowVision.monitors.TARGET_CHANGE_CHOICES = {
+    { value = false, label = L["Only Changes"] },
+    { value = true, label = L["Always"] },
+    { value = "never", label = L["Never"] },
+}
+
+-- Point a monitor's rules at a new target per its announceOnUnitChange.
+function Monitor:rulesOnTargetChange()
+    local mode = self.announceOnUnitChange
+    for _, rule in ipairs(self.rules or {}) do
+        if mode == true then
+            if rule.reset then
+                rule:reset()
+            end
+            rule._announceRequested = true
+        elseif mode == "never" and rule.forget then
+            rule:forget()
+        end
+    end
+end
+
 function WowVision.monitors:createType(key)
     return registry:createType({ key = key })
 end

@@ -107,6 +107,12 @@ function AuraStateRule:reset()
     WowVision.monitors.StateRule.reset(self)
 end
 
+function AuraStateRule:forget()
+    self.trackedObjects = {}
+    self._baseDuration = nil
+    WowVision.monitors.StateRule.forget(self)
+end
+
 -- Spoken as "Moonfire Expiring" rather than "expiring".
 function AuraStateRule:stateMessage(stateKey)
     return self:namedStateMessage(stateKey, self:spokenName())
@@ -184,7 +190,7 @@ local AuraMonitor = WowVision.monitors:createType("Aura")
 
 AuraMonitor:addFields({
     { key = "unit", type = "String", default = "target", persist = true, label = L["Unit"], sortPriority = 2 },
-    { key = "announceOnUnitChange", type = "Bool", default = false, persist = true, label = L["Announce on Target Change"], sortPriority = 2 },
+    { key = "announceOnUnitChange", type = "Choice", default = false, persist = true, label = L["Announce on Target Change"], sortPriority = 2, choices = WowVision.monitors.TARGET_CHANGE_CHOICES },
 })
 
 AuraMonitor:updateFields({
@@ -212,14 +218,7 @@ function AuraMonitor:createTracker()
 end
 
 function AuraMonitor:onUnitsChanged(unitId, guid)
-    if self.announceOnUnitChange then
-        for _, rule in ipairs(self.rules or {}) do
-            if rule.reset then
-                rule:reset()
-            end
-            rule._announceRequested = true
-        end
-    end
+    self:rulesOnTargetChange()
 end
 
 function AuraMonitor:getLabel()

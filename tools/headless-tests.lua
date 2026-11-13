@@ -1308,6 +1308,77 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         monitor:update()
         GetTime = savedGetTime
     end,
+    ["on a target change: only changes, always, or never"] = function(t)
+        local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
+        local field = monitor.class:getField("announceOnUnitChange")
+        t:assertEqual(monitor.announceOnUnitChange, false)
+        t:assertEqual(field:getValueString(monitor, false), "Only Changes")
+        t:assertEqual(field:getValueString(monitor, "never"), "Never")
+        monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
+        local rule = monitor.rules[1]
+        local fired = {}
+        for _, state in ipairs({ "applied", "missing" }) do
+            local alert = rule.class:getField(state):getAlert(rule)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(fired, message.text)
+                    end
+                end
+            end
+        end
+        local function up()
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = "target", {}, true
+        end
+        local function down()
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = nil, nil, false
+        end
+        local function switchTo(present)
+            monitor:onTargetChanged()
+            if present then
+                up()
+            else
+                down()
+            end
+            for _ = 1, 3 do
+                monitor:update()
+            end
+        end
+        up()
+        monitor:update()
+        t:assertEqual(#fired, 0)
+
+        -- Only changes: a new target without the aura speaks Missing, one with it stays quiet
+        switchTo(false)
+        t:assertEqual(fired[#fired], "Sunfire Missing")
+        switchTo(true)
+        t:assertEqual(fired[#fired], "Sunfire Applied")
+        switchTo(true)
+        t:assertEqual(#fired, 2)
+
+        -- Always: the new target's state, even when it is the same
+        monitor.announceOnUnitChange = true
+        switchTo(true)
+        t:assertEqual(#fired, 3)
+        t:assertEqual(fired[3], "Sunfire Applied")
+
+        -- Never: switching speaks nothing, either way
+        monitor.announceOnUnitChange = "never"
+        switchTo(false)
+        switchTo(true)
+        switchTo(false)
+        t:assertEqual(#fired, 3)
+        -- ...but a change on the new target still speaks
+        up()
+        monitor:update()
+        t:assertEqual(fired[#fired], "Sunfire Applied")
+        down()
+        monitor:update()
+        t:assertEqual(fired[#fired], "Sunfire Missing")
+        t:assertEqual(#fired, 5)
+    end,
 })
 
 -- Spell Cooldowns monitor: the cooldown APIs as the game answers them,
