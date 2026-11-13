@@ -1437,6 +1437,77 @@ C_CooldownViewer.GetValidAlertTypes = C_CooldownViewer.GetValidAlertTypes or fun
     return {}
 end
 loadAddonFile("retail/monitors/SpellCooldownMonitor.lua")
+WowVision.testing.testRunner:addSuite("ComponentCopy", {
+    ["a copied monitor carries its rules and alert settings, then lives on its own"] = function(t)
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return (instance.class.name:gsub("Monitor$", ""))
+            end,
+        })
+        field:setDB(container, { global = db })
+        field:addElement(container, { type = "CdmAura", label = "Dots", unit = "target" })
+        field:addElement(container, { type = "CdmAura", label = "Last", unit = "target" })
+        local original = container.monitors[1]
+        local rulesField = original.class:getField("rules")
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 8921 })
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 93402 })
+        local alert = original.rules[1].class:getField("applied"):getAlert(original.rules[1])
+        alert:setEnabled(true)
+
+        local copy = field:copyElement(container, original, function(config)
+            config.label = "Dots Copy 1"
+        end)
+        -- Lands right after its original, in memory and in the store
+        t:assertEqual(container.monitors[2], copy)
+        t:assertEqual(container.monitors[3].label, "Last")
+        t:assertEqual(db.monitors[2].label, "Dots Copy 1")
+        t:assertEqual(db.monitors[3].label, "Last")
+        t:assertEqual(original.label, "Dots")
+        -- Everything else comes along: unit, rules, spells, alert settings
+        t:assertEqual(copy.unit, "target")
+        t:assertEqual(#copy.rules, 2)
+        t:assertEqual(copy.rules[1].spell, 8921)
+        t:assertEqual(copy.rules[2].spell, 93402)
+        local copiedAlert = copy.rules[1].class:getField("applied"):getAlert(copy.rules[1])
+        t:assertEqual(copiedAlert:getEnabled(), true)
+
+        -- The copy is its own: changing it leaves the original alone
+        copy.unit = "player"
+        copiedAlert:setEnabled(false)
+        copy.rules[2].spell = 78674
+        t:assertEqual(original.unit, "target")
+        t:assertEqual(alert:getEnabled(), true)
+        t:assertEqual(original.rules[2].spell, 93402)
+
+        -- Both survive a reload as they are
+        local again = { monitors = {} }
+        field:setDB(again, { global = db })
+        t:assertEqual(#again.monitors, 3)
+        t:assertEqual(again.monitors[1].unit, "target")
+        t:assertEqual(again.monitors[2].unit, "player")
+        t:assertEqual(again.monitors[2].rules[2].spell, 78674)
+        t:assertEqual(again.monitors[1].rules[2].spell, 93402)
+        local reloadedAlert = again.monitors[1].rules[1].class:getField("applied"):getAlert(again.monitors[1].rules[1])
+        t:assertEqual(reloadedAlert:getEnabled(), true)
+
+        -- A single rule copies inside its monitor
+        local ruleCopy = rulesField:copyElement(again.monitors[1], again.monitors[1].rules[1])
+        t:assertEqual(#again.monitors[1].rules, 3)
+        t:assertEqual(again.monitors[1].rules[2], ruleCopy)
+        t:assertEqual(ruleCopy.spell, 8921)
+        t:assertEqual(db.monitors[1].rules[2].spell, 8921)
+        t:assertEqual(db.monitors[1].rules[3].spell, 93402)
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {
     ["the pickers list the Essential and Utility spells, cooldowns only for cooldown rules"] = function(t)
         -- An entry's linked spells are picks of their own, the base is not

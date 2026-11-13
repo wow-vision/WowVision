@@ -207,6 +207,56 @@ classes.registerFieldType("ComponentArray", {
             return removed
         end,
 
+        -- Add a full copy of one element right after it, in the same store
+        -- side. The copy goes through the restore path (factory + setDB on
+        -- a db-form config), so nested arrays (a monitor's rules) and alert
+        -- settings come along. changes(config) may edit the copy's config
+        -- first (a new label). Returns the new instance.
+        copyElement = function(field, obj, instance, changes)
+            local instances = field:get(obj)
+            local index = nil
+            for i, current in ipairs(instances or {}) do
+                if current == instance then
+                    index = i
+                    break
+                end
+            end
+            if index == nil then
+                return nil
+            end
+            local config = classes.deepCopy(instanceToConfig(field, instance))
+            if changes ~= nil then
+                changes(config)
+            end
+            local copy = field.factory(config)
+            local side = rawget(instance, "_scopeSide")
+            local pair = rawget(obj, "_db")
+            if pair ~= nil and side ~= nil then
+                local store = classes.constrainPair(field, pair)[side]
+                if store ~= nil then
+                    if store[field.key] == nil then
+                        store[field.key] = { _type = "array" }
+                    end
+                    local array = store[field.key]
+                    local bound = rawget(instance, "_db")
+                    local original = bound ~= nil and (bound.char or bound.global) or nil
+                    local position = #array + 1
+                    for i, entry in ipairs(array) do
+                        if entry == original then
+                            position = i + 1
+                            break
+                        end
+                    end
+                    tinsert(array, position, config)
+                    copy:setDB({ [side] = config })
+                    rawset(copy, "_scopeSide", side)
+                end
+            end
+            tinsert(instances, index + 1, copy)
+            field.events.valueChange:emit(obj, field.key, instances)
+            return copy
+        end,
+
         -- The store side an instance lives in.
         scopeOf = function(field, instance)
             return rawget(instance, "_scopeSide") or "char"
