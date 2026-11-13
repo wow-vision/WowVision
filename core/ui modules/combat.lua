@@ -243,9 +243,6 @@ local api = {
     inCombat = UnitAffectingCombat,
     classification = UnitClassification,
     threat = UnitThreatSituation,
-    inGroup = function()
-        return IsInGroup()
-    end,
     -- Guarded like utils.groupFighting's reads: a missing or refused
     -- answer is nil, which the group rule counts as no.
     tapDenied = function(unit)

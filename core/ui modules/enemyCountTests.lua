@@ -56,9 +56,6 @@ local function world(plates, group, fighting)
             local threat = plates[unit].threat or {}
             return threat[member]
         end,
-        inGroup = function()
-            return #group > 2
-        end,
         tapDenied = function(unit)
             local tapped = plates[unit].tapped
             if tapped == nil then

@@ -27,7 +27,6 @@ local ELITE = { elite = true, rareelite = true, worldboss = true }
 --   exists(unit), reaction(unit), isDead(unit), inCombat(unit),
 --   classification(unit)
 --   threat(member, unit)        UnitThreatSituation
---   inGroup()                   IsInGroup
 --   tapDenied(unit)             UnitIsTapDenied
 --   isSecret(value)
 
@@ -56,8 +55,10 @@ end
 -- Whether you are in a group and you, your pet or a member is in combat.
 -- The combat flag of group units stayed readable in a WoW: Forever dungeon
 -- (2026-11-13: it started 99 of 101 logged fights).
+-- group is api.group(): outside a group only you and your pet
+-- (utils.groupUnits), so more than two units means a group.
 local function groupBusy(api, group)
-    if not api.inGroup() then
+    if #group <= 2 then
         return false
     end
     for _, member in ipairs(group) do
