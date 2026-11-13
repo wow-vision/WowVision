@@ -30,10 +30,10 @@ local function run(frames)
         end
     end)
     WowVision.base, geterrorhandler = savedBase, savedHandler
-    -- leave the handler list as the real tree has it (no tree: nothing to run)
-    if savedBase ~= nil then
-        WowVision.Module.rebuildAllUpdateHandlers()
-    end
+    -- the handler list still holds the test tree's handlers (the throwing
+    -- one too): mark it stale, so the next real run builds it again from
+    -- the real tree, whatever that is by then
+    WowVision.Module._markUpdateHandlersDirty()
     return ok, err, ran, reported
 end
 
