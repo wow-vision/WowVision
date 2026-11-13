@@ -99,10 +99,20 @@ module:registerWindow({
     graphScreen = { render = makeRender("LFDRoleCheckPopup") },
 })
 
+-- Closing WowVision's window leaves the invitation on screen, as the popups
+-- window does with the plain invitation popup (Close All Windows and a
+-- route start keep popups that wait for an answer). Hiding the frame here
+-- would skip the game's StaticPopupSpecial_Hide: no decline, no timeout,
+-- and the frame left in the game's list of shown dialogs. The window opens
+-- again on the next check while the frame is shown.
+local function keepInvitation()
+    WowVision.UIHost.windowManager:closeWindow("LFGInvitePopup")
+end
+
 module:registerWindow({
     type = "FrameWindow",
     name = "LFGInvitePopup",
     frameName = "LFGInvitePopup",
     conflictingAddons = { "Sku" },
-    graphScreen = { render = makeRender("LFGInvitePopup") },
+    graphScreen = { render = makeRender("LFGInvitePopup"), onRequestClose = keepInvitation },
 })
