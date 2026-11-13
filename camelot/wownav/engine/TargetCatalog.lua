@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/TargetCatalog.lua at
--- 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 52c6c83), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Independent provider snapshots. No provider owns a physical graph node.
 WowVisionNavigationTargetCatalog = { providers = {}, revision = 0 }
@@ -116,7 +116,11 @@ end
 --   classes[i] = { kind, category (string, or list of strings), entry (number or false), nameEn, nameDe (absent = nameEn),
 --                  a = availability (absent = header default), s = search aliases (absent = none),
 --                  nk/nm/np = spoken name (name key, map ID, English place name; a dungeon entrance: all three or none) }
---   targets[j] = { id, class index, x, y, z (absent = unknown height), l = levels (z absent), r = radius, p = true (approx) }
+--   targets[j] = { id, class index, x, y, z (absent = unknown height), l = levels (z absent), r = radius, p = true (approx),
+--                  n = node (Weg B: the number of the target's node in the zone's navdata, zone.base + n; a list as long as l for a
+--                  target with levels, false for a level without one) }
+-- The header carries navFingerprint, the fingerprint of the navdata the node numbers belong to: the resolver uses n only when the
+-- loaded zone has that fingerprint (TargetResolver.lua). A core that does not know n and navFingerprint ignores them.
 -- ExpandCatalog turns the rows into the tables the rest of the core reads (target rows without the provenance, which stays in the
 -- pipeline report, and without the constants that were lifted into the header). Everything is validated here; the expanded rows
 -- are cached on the catalogue until another continent is activated.
@@ -190,9 +194,27 @@ function C.ValidateCatalog(catalog)
             end
         end
         if radius ~= nil and (not C.Finite(radius) or radius <= 0) then return nil, "invalid radius" end
+        if row.n ~= nil and not C.ValidNodeNumbers(row.n, levels) then return nil, "invalid node number" end
+    end
+    if catalog.navFingerprint ~= nil and (type(catalog.navFingerprint) ~= "string" or catalog.navFingerprint == "") then
+        return nil, "invalid navFingerprint"
     end
     catalog.classObjects = expandedClasses
     return expandedClasses
+end
+
+-- n of a compact row (Weg B): a node number >= 0 for a row with a height, a list of numbers or false as long as its levels.
+local function nodeNumber(value)
+    return C.Finite(value) and value >= 0 and value % 1 == 0
+end
+
+function C.ValidNodeNumbers(n, levels)
+    if type(n) ~= "table" then return levels == nil and nodeNumber(n) end
+    if type(levels) ~= "table" or #n ~= #levels then return false end
+    for index = 1, #n do
+        if n[index] ~= false and not nodeNumber(n[index]) then return false end
+    end
+    return true
 end
 
 -- The row table of one compact row of a validated catalogue (the shape the rest of the core reads). The category list and the aliases
@@ -205,6 +227,7 @@ local function buildRow(catalog, class, row)
         zStatus = z == nil and "unknown" or "known", availability = class.availability or catalog.availability or "static",
         levels = row.l, radius = row.r, approx = row.p and true or nil,
         nameKey = class.nameKey, nameMapId = class.nameMapId, nameParam = class.nameParam,
+        targetNode = row.n, navFingerprint = catalog.navFingerprint,     -- Weg B: the node of the target (TargetResolver.lua)
     }
 end
 
@@ -523,7 +546,22 @@ function C:ActivateZones(nav, zones)
                 ok, reason = staged:ReplaceCompact(id, catalog.payloadSha256, catalog)
                 if ok then expanded[catalog] = true end
             else
+                -- Dock model (user decision 10.11.2026): the head of a dyn catalog may carry navFingerprint (the fingerprint of the
+                -- navdata of the same export) and a row may carry n (the node number of the zone, as in the logical catalogue).
+                local fingerprint = catalog.navFingerprint
+                if fingerprint ~= nil and (type(fingerprint) ~= "string" or fingerprint == "") then
+                    return false, "invalid navFingerprint"
+                end
+                for _, row in ipairs(catalog.targets) do
+                    if type(row) == "table" and row.n ~= nil and not nodeNumber(row.n) then return false, "invalid node number" end
+                end
                 ok, reason = staged:ReplaceSnapshot(id, catalog.payloadSha256, catalog.targets)
+                if ok and fingerprint then
+                    -- the snapshot is a clone: the stored rows carry the fixed node (n, or the node at the coordinates)
+                    for _, stored in ipairs(staged.providers[id].targets) do
+                        stored.navFingerprint, stored.targetNode, stored.dynNode = fingerprint, stored.n, true
+                    end
+                end
             end
             if not ok then return false, reason end
             staged.providers[id].zoneId = zone.zoneId       -- the lists show the zone name behind every entry

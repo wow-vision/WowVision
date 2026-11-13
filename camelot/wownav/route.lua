@@ -460,6 +460,12 @@ function Route:appendLogicalTarget(source, result)
         and (source.interactionMode == "manual_wait" or source.activationMode == "walk_into_trigger") then
         return
     end
+    -- his Weg B for the dyn layer (a dock of the dock model, its point on board, a dungeon entrance with its node): the
+    -- route ends exactly on the fixed node of the row and the arrival is the normal one there; no unchecked end point
+    -- behind it
+    if source.dynNode and (result.targetNode == "target_node" or result.targetNode == "target_node_id") then
+        return
+    end
     if type(source.x) ~= "number" or type(source.y) ~= "number" then
         return
     end
@@ -613,8 +619,11 @@ end
 --   { kind = "choose", result, reachable = { [band] = bool } }  (floors to choose from; his /vn ebene)
 --   { kind = "fail", reason = key or text }
 function Route:prepare(target, nav, startOverride)
-    -- a dock or a walk-in target is reached on foot (his LayerTargetContext)
-    local footOnly = target.interactionMode == "manual_wait" or target.activationMode == "walk_into_trigger"
+    -- a waiting point and the point on board of the dock model are reached on foot (his LayerTargetStart). A walk-in
+    -- target is not: portals and lifts are parts of a route (his chapter 02 rule 11), and the pre-point of a trigger may
+    -- lie where only another action leads (the room of Stormwind's portal 702 is reached through portal 704); the route
+    -- then ends at the pre-point of that action and the trigger's own activation follows after it
+    local footOnly = target.interactionMode == "manual_wait" or target.boardingPoint == true
     local context = self:targetContext(startOverride, footOnly)
     if not context then
         local x, y = self.env.position()
@@ -633,7 +642,11 @@ function Route:prepare(target, nav, startOverride)
         -- so every such band would read "no path").
         local reachable = {}
         for i, band in ipairs(result.bands) do
-            for _, candidate in ipairs(band.candidates) do
+            -- since his 12.11.2026 the resolver itself marks the bands the start can reach (band.selectable)
+            if band.selectable ~= nil then
+                reachable[i] = band.selectable == true
+            end
+            for _, candidate in ipairs(reachable[i] ~= nil and {} or band.candidates) do
                 local id = candidate.id
                 if id == nil and candidate.zone ~= nil then
                     local binding = self.N.BindCell(candidate.zone, candidate.cell, target.x, target.y, candidate.distance)
@@ -951,6 +964,30 @@ function Route:cancelAction()
     self.action = nil
 end
 
+-- The volume that proves the arrival of an action: its arrival volume; an action record without one (his DemoAddon,
+-- 11/2026) has the position of its exit node, the start of the next leg, within the arrival radius of that node.
+function Route:arrivalVolumeOf(action)
+    if type(action.arrivalVolume) == "table" then
+        return action.arrivalVolume
+    end
+    local N = self.N
+    local toNode = action.toNode
+    if type(toNode) ~= "number" then
+        return nil
+    end
+    if not N.Exists(toNode) then
+        N.LoadZone(action.toZoneId or math.floor(toNode / N.ZONE_BASE))
+        if not N.Exists(toNode) then
+            return nil
+        end
+    end
+    local x, y = N.Position(toNode)
+    if x == nil then
+        return nil
+    end
+    return { x = x, y = y, radius = self.G.ArrivalRadius(toNode) or Route.ARRIVAL_TARGET_RADIUS }
+end
+
 -- His Actions:Observe without a height: the arrival volume in the plane, after the source volume was left (lift,
 -- portal on the same map) or after the map changed (tram entrance, portal to another map); the nearer of the two
 -- volumes counts, so a widened circle never proves an arrival at the source. widen: the minimum radius of both
@@ -990,7 +1027,8 @@ function Route:observeAction(x, y, map, widen)
         end
     end
     current.lastX, current.lastY = x, y
-    if map ~= toMap or not inVolume2D(action.arrivalVolume, x, y, widen) then
+    local arrival = self:arrivalVolumeOf(action)
+    if map ~= toMap or not inVolume2D(arrival, x, y, widen) then
         return nil
     end
     local mode = action.arrival and action.arrival.mode
@@ -1003,7 +1041,7 @@ function Route:observeAction(x, y, map, widen)
         if fromMap == toMap and not current.sourceLeft and not through then
             return nil
         end
-        local sv, av = action.sourceVolume, action.arrivalVolume
+        local sv, av = action.sourceVolume, arrival
         if not through and type(sv) == "table" and type(sv.x) == "number" and fromMap == toMap
             and distance(x, y, sv.x, sv.y) <= distance(x, y, av.x, av.y) then
             return nil

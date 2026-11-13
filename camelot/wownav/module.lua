@@ -464,6 +464,31 @@ local function keepRouteZones(N, path, px, py, map, targetNodeId)
     N.KeepZones(keep)
 end
 
+-- His height hint (Guidance.HeightHint): the target lies clearly above or below where the route ends. The target's
+-- height is the row's, else the level the resolver chose (queryZ); the route's end is its last network point (before an
+-- unchecked end point). Nothing for a water target, for a route that ends at a transit (the entrance is not the target)
+-- or without any height. Returns the text or nil.
+local function heightHintText(N, request, outcome)
+    local plan, contract, result = outcome.plan, request.contract, outcome.result
+    if contract == nil or route.path == nil or #route.path == 0 or plan == nil or plan.pendingAction ~= nil then
+        return nil
+    end
+    if result ~= nil and result.endpointSurface == "water" then
+        return nil
+    end
+    local targetZ = type(contract.z) == "number" and contract.z or (result ~= nil and result.queryZ or nil)
+    local endId = route.logicalPrepoint or route.path[#route.path]
+    if endId == nil or not N.Exists(endId) then
+        return nil
+    end
+    local _, _, endZ = N.Position(endId)
+    local hint = route.G.HeightHint(targetZ, endZ)
+    if hint == nil then
+        return nil
+    end
+    return WowVisionNavigationText("height_hint_" .. hint.direction, hint.yards)
+end
+
 local function startRoute(self, request, outcome)
     local N = self:network()
     local trimmed = false
@@ -500,7 +525,9 @@ local function startRoute(self, request, outcome)
     if request.dockTarget ~= nil and not trimmed then
         route.waitCheck = dock.waitAreaCheck(N, request.dockTarget)
     end
-    route.activation = request.activationTarget
+    -- a walk-in target's activation belongs to the leg that ends at it: a leg that ends at the pre-point of a portal on
+    -- the way has none (his StartNavigationToNode: pendingAction carries it to the leg after the teleport)
+    route.activation = route.pendingAction == nil and request.activationTarget or nil
     do
         local lastX, lastY, lastZ = N.Position(route.path[#route.path])
         logLine(string.format("route %s: %d waypoints, ends %.1f %.1f %.1f%s%s", tostring(request.label), #route.path,
@@ -551,6 +578,10 @@ local function startRoute(self, request, outcome)
         text = reversed.text .. ". " .. text
     end
     say(text)
+    self.heightHint = heightHintText(N, request, outcome)
+    if self.heightHint ~= nil then
+        say(self.heightHint)
+    end
 end
 
 -- The network point of the request's start (request.startOverride, catalog.startNode): a waypoint's own or a target's
@@ -619,7 +650,8 @@ local function targetRequest(N, target, px, py, map)
     -- a boarding point ("At the vehicle") picked as a route's destination is a place like any other: routed to on the
     -- network, never taken for its dock (it lies a few yards from the dock's waiting point); F10's Direct leads
     -- straight to it instead
-    local boarding = type(target.data) == "table" and target.data.boardingTargetId ~= nil
+    local boarding = type(target.data) == "table"
+        and (target.data.boardingTargetId ~= nil or dock.isBoardingRow(target.data))
     local dockTarget
     local dockRow = not boarding and dock.isDockRow(target.data) and target.data or nil
     if dockRow == nil and not boarding then
@@ -664,7 +696,14 @@ local function targetRequest(N, target, px, py, map)
     else
         contract = positionContract(target, map)
     end
+    -- the point on board of a dock of the dock model is walked to on foot, from its dock (his LayerTargetStart)
+    local boardingTarget
+    if type(target.data) == "table" and dock.isBoardingRow(target.data) then
+        boardingTarget = dock.boardingTarget(N, target.data)
+        contract.boardingPoint = boardingTarget ~= nil or nil
+    end
     return { contract = contract, label = target.label, onArrive = target.onArrive, dockTarget = dockTarget,
+        boardingTarget = boardingTarget,
         activationTarget = activationTarget, approx = type(target.data) == "table" and target.data.approx == true,
         lowestFloor = type(target.data) == "table" and target.data.lowestFloor == true, start = start,
         reversed = target.reversed }
@@ -927,6 +966,7 @@ function module:stopRoute(keepPenalties, keepDock)
         self.path = nil
     end
     routeMap = nil
+    self.heightHint = nil
 end
 
 local function onOutcome(self, request, outcome)
@@ -1000,16 +1040,25 @@ function module:onRouteEvent(path, event)
         path:finish()
         maps:stopPath()
         self.path = nil
+        local endNode = route.logicalPrepoint or (route.path ~= nil and route.path[#route.path]) or nil
         route:reset()
         local x, y = route.env.position()
         logLine(string.format("arrived at the dock %s at %.1f %.1f", tostring(request.label), x or 0, y or 0))
-        local boarding = dock.arrived(self:network(), request.dockTarget, x, y)
+        local boarding, ship = dock.arrived(self:network(), request.dockTarget, x, y)
         if boarding ~= nil then
             self.dockPath = boarding
             maps:pathfind(boarding)
         end
         if request.onArrive ~= nil then
             request.onArrive()
+        end
+        -- a dock of the dock model: the route goes on to the point on board, from the node this one ended on
+        if ship ~= nil and endNode ~= nil then
+            local N = self:network()
+            local ex, ey, ez = N.Position(endNode)
+            local row = dock.rowOf(ship)
+            self:routeTo({ x = ship.x, y = ship.y, z = ship.z, label = row.n, data = row,
+                start = { nodeId = endNode, x = ex, y = ey, z = ez, n = request.label } })
         end
     elseif kind == "arrived" then
         local request = self.request
@@ -1021,6 +1070,11 @@ function module:onRouteEvent(path, event)
         local x, y = route.env.position()
         local N = self:network()
         local radius = route.G.EffectiveRadius(Route.ARRIVAL_TARGET_RADIUS)
+        local hint = self.heightHint
+        if request ~= nil and request.boardingTarget ~= nil then
+            -- the point on board: the context of its dock is "reached" again (his Dock:BoardingArrival)
+            dock.boardingArrival(N, request.boardingTarget, x, y)
+        end
         if request ~= nil and fishing.arrived(N, request.contract, x, y, radius) then
             -- at a fishing spot: his Arrival says where the water lies; the beacon sounds from it
             logLine(string.format("arrived at the fishing spot %s at %.1f %.1f", tostring(label), x or 0, y or 0))
@@ -1031,7 +1085,7 @@ function module:onRouteEvent(path, event)
             end
         elseif Route.reachesTarget(result, radius) then
             -- an approximate result whose network ends at the target is an arrival too (Route.reachesTarget)
-            say(L["Arrived"] .. (label ~= nil and (" " .. label) or ""))
+            say(L["Arrived"] .. (label ~= nil and (" " .. label) or "") .. (hint ~= nil and (". " .. hint) or ""))
         elseif result.normalizedWater then
             -- his stop_water_net_ends / stop_net_ends: how far the network ends from the target
             say(WowVisionNavigationText("stop_water_net_ends", result.delta3D or result.deltaXY or 0,

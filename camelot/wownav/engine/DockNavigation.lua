@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/DockNavigation.lua at
--- 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 52c6c83), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Passive waiting-point mode with a fixed boarding orientation point. Audio and the XY arrival signal run only in the
 -- core OnUpdate; there is no vehicle detection.
@@ -50,8 +50,58 @@ local function validTarget(target, nav)
     return true
 end
 
+local function nonEmptyString(value)
+    return type(value) == "string" and value ~= ""
+end
+
+local function vesselKind(target)
+    return target.facilityKind == "boat" or target.facilityKind == "zeppelin"
+end
+
+-- Dock model (user decision 10.11.2026): a boat or zeppelin landing is an ordinary dynamic point on its own fixed node. There is no
+-- waiting circle, no waiting proof and no boarding straight; the route ends on the node and the arrival is the normal one.
+-- boardingPointId (optional) names the row of the point on board that the route continues to.
+local function vesselDock(target)
+    return type(target) == "table" and target.type == "transit_facility" and target.facilityRole == "waiting"
+        and vesselKind(target)
+        and target.interactionMode == nil and target.activationMode == nil and target.waitingRadius == nil
+        and target.waitpointProofId == nil and target.boardingHintStatus == nil
+        and target.boardingDirX == nil and target.boardingDirY == nil and target.boardingPreviewDistance == nil
+        and nonEmptyString(target.id) and nonEmptyString(target.transportRouteId) and nonEmptyString(target.transportStopId)
+        and finite(target.nativeMapId) and finite(target.x) and finite(target.y) and finite(target.z)
+        and (target.boardingPointId == nil or nonEmptyString(target.boardingPointId)) or false
+end
+
+-- The point on board ("Am Schiff", "Am Zeppelin"): a row of its own with its own node, linked to the dock node by one ordinary link.
+local function boardingPoint(target)
+    return type(target) == "table" and target.type == "transit_facility" and target.facilityRole == "onboard"
+        and vesselKind(target) and nonEmptyString(target.id) and nonEmptyString(target.dockId)
+        and nonEmptyString(target.transportRouteId) and nonEmptyString(target.transportStopId)
+        and finite(target.nativeMapId) and finite(target.x) and finite(target.y) and finite(target.z) or false
+end
+
+function Dock:IsVesselDock(target, nav)
+    return type(nav or _G.NavData) == "table" and vesselDock(target)
+end
+
+function Dock:IsBoardingPoint(target, nav)
+    return type(nav or _G.NavData) == "table" and boardingPoint(target)
+end
+
+-- The row of the point on board of a dock of the new model, or nil.
+function Dock:BoardingPointOf(dock, nav)
+    if not vesselDock(dock) or not dock.boardingPointId or type(nav) ~= "table" then return nil end
+    for _, candidate in ipairs(targetList(nav)) do
+        if candidate.id == dock.boardingPointId and boardingPoint(candidate) and candidate.dockId == dock.id then
+            return candidate
+        end
+    end
+    return nil
+end
+
 function Dock:IsDock(target, nav)
-    return validTarget(target, nav or _G.NavData)
+    nav = nav or _G.NavData
+    return validTarget(target, nav) or (type(nav) == "table" and vesselDock(target))
 end
 
 function Dock:Reset(passiveRetained)
@@ -60,7 +110,34 @@ function Dock:Reset(passiveRetained)
     self.generation = self.generation + 1
 end
 
+local function vehicleText(target)
+    return WowVisionNavigationText(({tram = "vehicle_tram", boat = "vehicle_boat",
+                     zeppelin = "vehicle_zeppelin", lift = "vehicle_lift"})[target.facilityKind]
+        or "vehicle_other")
+end
+
+-- The dock context "reached": the passive mode (Dock:ChoosePassive) chooses the counterpart dock from it.
+local function setVesselReached(self, dock, nav, x, y)
+    self.reached = { id = dock.id, zoneId = nav.zoneId, navFingerprint = nav.exportFingerprint,
+                      waitpointFingerprint = nil, vessel = true,
+                      lastX = finite(x) and x or nil, lastY = finite(y) and y or nil }
+end
+
+-- Arrival at a dock of the new model (the normal arrival on its node): context "reached", the text of the dock and the hint to the
+-- next point. -> true, the row of the point on board (or nil)
 function Dock:Arrival(target, nav, x, y)
+    if vesselDock(target) then
+        if type(nav) ~= "table" or not nonEmptyString(nav.exportFingerprint) then return false end
+        if self.reached and self.reached.id == target.id
+            and self.reached.navFingerprint == nav.exportFingerprint then return false end
+        self:Reset(false)
+        setVesselReached(self, target, nav, x, y)
+        local ship = self:BoardingPointOf(target, nav)
+        local text = WowVisionNavigationText("dock_reached", WowVisionNavigationTargetName(target), vehicleText(target))
+        if ship then text = text .. WowVisionNavigationText("dock_boarding_next", WowVisionNavigationTargetName(ship)) end
+        WowVisionNavigationPrint(text)
+        return true, ship
+    end
     if not validTarget(target, nav) then return false end
     if self.reached and self.reached.id == target.id
         and self.reached.navFingerprint == nav.exportFingerprint then return false end
@@ -69,10 +146,7 @@ function Dock:Arrival(target, nav, x, y)
                       navFingerprint = nav.exportFingerprint,
                       waitpointFingerprint = nav.waitpointFingerprint,
                       lastX = finite(x) and x or nil, lastY = finite(y) and y or nil }
-    local vehicle = WowVisionNavigationText(({tram = "vehicle_tram", boat = "vehicle_boat",
-                     zeppelin = "vehicle_zeppelin", lift = "vehicle_lift"})[target.facilityKind]
-        or "vehicle_other")
-    local text = WowVisionNavigationText("dock_reached", WowVisionNavigationTargetName(target), vehicle)
+    local text = WowVisionNavigationText("dock_reached", WowVisionNavigationTargetName(target), vehicleText(target))
     if target.boardingHintStatus == "certified" then
         text = text .. WowVisionNavigationText("dock_boarding_hint")
     end
@@ -80,8 +154,22 @@ function Dock:Arrival(target, nav, x, y)
     return true
 end
 
+-- Arrival at the point on board: the context of its dock is "reached" again (the route to the point started with a Reset), so that the
+-- passive mode can choose the counterpart dock. -> true when the context was set
+function Dock:BoardingArrival(ship, nav, x, y)
+    if not boardingPoint(ship) or type(nav) ~= "table" or not nonEmptyString(nav.exportFingerprint) then return false end
+    for _, candidate in ipairs(targetList(nav)) do
+        if candidate.id == ship.dockId and vesselDock(candidate) and candidate.transportRouteId == ship.transportRouteId then
+            self:Reset(false)
+            setVesselReached(self, candidate, nav, x, y)
+            return true
+        end
+    end
+    return false
+end
+
 function Dock:ChoosePassive(target, nav, targetFingerprint)
-    if type(target) ~= "table" or target.interactionMode ~= "manual_wait"
+    if type(target) ~= "table" or (target.interactionMode ~= "manual_wait" and not vesselDock(target))
         or type(target.id) ~= "string"
         or type(target.transportRouteId) ~= "string"
         or type(targetFingerprint) ~= "string" or targetFingerprint == ""
@@ -93,7 +181,7 @@ function Dock:ChoosePassive(target, nav, targetFingerprint)
     for _, localTarget in ipairs(targetList(nav)) do
         if localTarget.id == self.reached.id then start = localTarget; break end
     end
-    if not validTarget(start, nav)
+    if not (validTarget(start, nav) or vesselDock(start))
         or start.transportRouteId ~= target.transportRouteId
         or start.id == target.id then return false end
     local targetZone = target.zoneId or nav.zoneId
@@ -117,7 +205,7 @@ function Dock:ZoneLoaded(nav)
     elseif self.passive and nav then
         local found = false
         for _, target in ipairs(targetList(nav)) do
-            if target.id == self.passive.id and validTarget(target, nav)
+            if target.id == self.passive.id and (validTarget(target, nav) or vesselDock(target))
                 and target.transportRouteId == self.passive.transportRouteId then
                 found = true
                 break
@@ -223,7 +311,8 @@ function Dock:AlignmentTarget(x, y, nav)
     for _, candidate in ipairs(targetList(nav)) do
         if candidate.id == context.id then target = candidate; break end
     end
-    if not validTarget(target, nav) or playerMap() ~= target.nativeMapId then return nil end
+    local vessel = vesselDock(target)
+    if not (vessel or validTarget(target, nav)) or playerMap() ~= target.nativeMapId then return nil end
     local dx, dy = x - target.x, y - target.y
     local distance = math.sqrt(dx * dx + dy * dy)
     if self.passive then
@@ -231,6 +320,8 @@ function Dock:AlignmentTarget(x, y, nav)
         if distance > 30 then return nil end
         return "dock-passive:" .. target.id, target.x, target.y
     end
+    -- the new model has no straight and no direction tone: the ordinary route to the point on board leads
+    if vessel then return nil end
     if distance > target.waitingRadius + (target.boardingPreviewDistance or 0)
         or target.boardingHintStatus ~= "certified" then
         return nil
@@ -246,6 +337,8 @@ end
 -- orientation, not a certified foot route.
 function Dock:BeaconTarget(x, y, nav)
     if not self.reached then return nil end
+    -- a dock of the new model keeps its context (the passive mode needs it) and gives no tone
+    if self.reached.vessel then return nil end
     local id, px, py = self:AlignmentTarget(x, y, nav)
     if not id or not finite(px) or not finite(py) then
         self:Reset(false)

@@ -68,7 +68,7 @@ Die Einstiegspunkte sind die 50 nächsten Einträge: die Orte, die im Netz liege
 
 ### Ziele
 
-Jedes Ziel liest seinen Namen, seine Entfernung, was es ist und wo es ist, zum Beispiel "Innkeeper Allison (Innkeeper), 85 Meter, Questgeber, Händler, Gastwirt, Stormwind City". Die zusätzlichen Wörter stammen aus den Kategorien des Ortes. Das sind: Questgeber, Lehrer, Händler, Flugmeister, Gastwirt, Bankier, Stallmeister, Auktionator, Geistheiler, Geistführer, NPC oder Gegner, Truhe, Kraut oder Erz, Objekt, Questgegenstand, Interaktionsobjekt, Briefkasten, Amboss, Schmiede, Tür, Buch, Stuhl, Schild, Angelplatz, Schalter, Falle, Zauberfokus, Eroberungspunkt, zerstörbares Gebäude, Gildenbank, Falltür, Wegpunkt, Orientierungspunkt, Transport, Live-Ziel, Zonenübergang, Verkehrsmittel, Schiff, Tiefenbahn, Dungeon, Portal, Zeppelin, Aufzug und tauchen. Du kannst nach jedem dieser Wörter suchen, nach dem Namen oder nach einem Gebietsnamen: "Bankier", "Briefkasten", "Ironforge".
+Jedes Ziel liest seinen Namen, seine Entfernung, was es ist und wo es ist, zum Beispiel "Innkeeper Allison (Innkeeper), 85 Meter, Questgeber, Händler, Gastwirt, Stormwind City". Die zusätzlichen Wörter stammen aus den Kategorien des Ortes. Das sind: Questgeber, Lehrer, Händler, Flugmeister, Gastwirt, Bankier, Stallmeister, Auktionator, Geistheiler, Geistführer, NPC oder Gegner, Kraut oder Erz, Objekt, Questgegenstand, Interaktionsobjekt, Briefkasten, Amboss, Schmiede, Tür, Buch, Stuhl, Schild, Angelplatz, Schalter, Falle, Zauberfokus, Eroberungspunkt, zerstörbares Gebäude, Gildenbank, Falltür, Wegpunkt, Orientierungspunkt, Transport, Live-Ziel, Zonenübergang, Verkehrsmittel, Schiff, Tiefenbahn, Dungeon, Portal, Zeppelin, Aufzug und tauchen. Du kannst nach jedem dieser Wörter suchen, nach dem Namen oder nach einem Gebietsnamen: "Bankier", "Briefkasten", "Ironforge".
 
 - Die Liste zeigt höchstens die nächsten 1000 Treffer. Wurde sie gekürzt, beginnt der erste Eintrag, den du hörst, mit "Die nächsten 1000 von 4821 Treffern".
 - Ein Ziel ohne Netzpunkt in der Nähe (siehe Zielradius um das Netz (Meter)) wird weggelassen. Ein Ort, dessen Gebiet noch nicht vorbereitet ist, wird ungeprüft angeboten und beim Wählen geprüft.
@@ -130,6 +130,7 @@ Bleibst du hängen, versucht WowNav, wieder in die Route einzusteigen und an Eng
 - Im Netz oder höchstens 1,5 Meter vom Ende des Netzes: "Angekommen" und der Name des Ortes.
 - Nah am Netz, aber weiter von seinem Ende entfernt: "Das Netz endet 4.2 Meter vom Ziel; Umgebung selbst absuchen. Die letzte Strecke ist ungeprüft." Kennen die Daten die Höhe nicht, kommt "horizontal" dazu.
 - Ein Wasserziel: "Das Netz endet 6.1 Meter von der Position an der Wasseroberfläche; Tauchtiefe 12.0 Meter. Den restlichen Weg und das Tauchen selbst übernehmen, die letzte Strecke ist ungeprüft."
+- Liegt das Ziel deutlich über oder unter dem Ende der Route, hörst du zusätzlich "Ziel liegt erhöht, etwa 12 Meter." oder "Ziel liegt tiefer, etwa 12 Meter." Das wird beim Start der Route und mit der Ankunft gesagt.
 
 ### Routenstatus und neue Route
 
@@ -149,6 +150,8 @@ Ein Anleger ist ein Wartepunkt für ein Schiff, einen Zeppelin oder eine Haltest
 Stehst du an einem Anleger und wählst das andere Ende derselben Linie, wird nichts gegangen. WowNav merkt es sich und sagt, wohin die Fahrt geht und womit, zum Beispiel "Fahrt nach Ironforge mit die Tiefenbahn: hier warten, nach Gehör einsteigen und an der Endhaltestelle aussteigen. In der Nähe dreht dich I zum Anleger." Kommst du später in die Nähe dieses Anlegers, hörst du seinen Namen, gefolgt von "ist nah; I dreht dich dorthin", und I blickt jetzt zu diesem Anleger. Wähle den Anleger erneut, um den Rest des Weges zu gehen. Das funktioniert nur bei einer Linie, deren Anleger auf derselben Karte liegen, wie die Tiefenbahn: Die Liste enthält nur Orte der Karte, auf der du bist, deshalb lässt sich der Anleger am anderen Ende einer Seereise zu einem anderen Kontinent von hier aus nicht wählen.
 
 Eine Station zu betreten (im Umkreis von etwa 100 Metern um einen Anleger) zählt als Erreichen des Anlegers, sodass du den fernen Anleger wählen kannst, ohne vorher zum nahen zu gehen. Wählst du einen Anleger deiner eigenen Station, etwa den anderen Anleger in Menethil Harbor, gehst du wie üblich dorthin.
+
+Manche Anleger, bisher der im Hafen von Sturmwind, funktionieren ohne Wartekreis. Du gehst zu ihnen wie zu jedem Ort. Bei der Ankunft hörst du "Anleger ... erreicht. Hier auf das Schiff warten. Steige ein, wenn du die Ankunft hörst. Nächster Punkt: Am Schiff nach Auberdine." Die Route zu diesem Punkt am Schiff startet danach von selbst, und wenn du ihn erreichst, gilt der Anleger wieder als erreicht, sodass du den fernen Anleger der Linie wählen und vormerken kannst. An diesen Anlegern gibt es kein Einstiegs-Beacon.
 
 ### Portale, der Eingang der Tiefenbahn und begehbare Orte
 
