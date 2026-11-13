@@ -38,7 +38,7 @@ local enemyCountAlert = module:addAlert({
     label = L["Enemy Count Alert"],
 })
 
-enemyCountAlert:addOutput({
+local enemyCountSpeech = enemyCountAlert:addOutput({
     type = "TTS",
     key = "tts",
     label = L["TTS Alert"],
@@ -134,8 +134,13 @@ local lossOfControl = C_LossOfControl or {}
 local unitAuras = C_UnitAuras or {}
 
 -- A new number is said once it held this long: a plate that blinks out
--- and back is not spoken twice.
-local SETTLE = 0.5
+-- and back is not spoken twice, and a pack that comes in one after another
+-- is said as one number. 0.3 s is the length of the window Sku's TBC count
+-- waits for a burst of new enemies (tFlushWindow in SkuCore/aqCombat.lua).
+-- Unlike Sku's window, which flushes 0.3 s after the first new enemy, this
+-- hold starts again at every change, so a pack that trickles in is said
+-- 0.3 s after its last member.
+local SETTLE = 0.3
 
 local PLATES = {}
 for i = 1, 40 do
@@ -241,6 +246,18 @@ local api = {
     inCombat = UnitAffectingCombat,
     classification = UnitClassification,
     threat = UnitThreatSituation,
+    -- Guarded like utils.groupFighting's reads: a missing or refused
+    -- answer is nil, which the group rule counts as no.
+    tapDenied = function(unit)
+        if UnitIsTapDenied == nil then
+            return nil
+        end
+        local ok, tapped = pcall(UnitIsTapDenied, unit)
+        if not ok then
+            return nil
+        end
+        return tapped
+    end,
     isSecret = secrets.isSecret,
     -- The crowd control reads are guarded: each game version has a
     -- different part of them, and a refused read means "unknown".
@@ -292,6 +309,34 @@ local controlSettler = enemyCount.Settler:new(SETTLE, enemyCount.CONTROL_IDLE)
 local tracker = enemyCount.ControlTracker:new()
 local recountQueued, settleQueued = false, false
 
+-- Fires the counts and says a lost one again (enemyCount.Announcer).
+local announcer = enemyCount.Announcer:new({
+    fire = function(message)
+        enemyCountAlert:fire(message)
+    end,
+    -- The alert's own checks (Alert:fire), for its speech output alone.
+    fireSpeech = function(message)
+        if enemyCountAlert.enabled and enemyCountSpeech.enabled and enemyCountSpeech:respondsTo(message.action) then
+            enemyCountSpeech:fire(message)
+        end
+    end,
+    queue = function()
+        local speech = WowVision.base.speech
+        return speech and speech.queue
+    end,
+    now = GetTime,
+    enabled = function()
+        return enemyCountAlert.enabled
+    end,
+    mode = function()
+        return module.settings.enemyCountControlMode
+    end,
+})
+
+local function sayCount(message)
+    announcer:say(message)
+end
+
 -- Whether a count is on or about to be said, so the ticker keeps checking.
 local function counting()
     if controlOn() then
@@ -306,12 +351,16 @@ local function recountControl(skip)
     local free, controlled = enemyCount.scan(api, settings.enemyCountMode, settings.enemyCountEliteOnly, skip)
     if controlSettler:update(enemyCount.controlKey(free, controlled), GetTime()) ~= nil then
         local message = tracker:change(free, controlled, api.controlText)
-        if message ~= nil then
+        if message == nil then
+            -- A quiet change (a controlled enemy gone): the free count is
+            -- the same, a lost number still stands.
+            announcer:quietChange()
+        else
             if message.ended then
                 controlEndedAlert:fire({})
             end
             if message.count ~= nil or message.texts ~= nil then
-                enemyCountAlert:fire(message)
+                sayCount(message)
             end
         end
     end
@@ -329,7 +378,7 @@ local function recount(skip)
         local count = enemyCount.count(api, module.settings.enemyCountMode, module.settings.enemyCountEliteOnly, skip)
         local say = settler:update(count, GetTime())
         if say ~= nil then
-            enemyCountAlert:fire({ count = say })
+            sayCount({ count = say })
         end
         active = settler
     end
@@ -408,8 +457,15 @@ function module:onEnable()
             return
         end
         nextCheck = now + 1
-        if counting() or UnitAffectingCombat("player") then
-            recount()
+        local function check()
+            if counting() or UnitAffectingCombat("player") then
+                recount()
+            end
+        end
+        if controlOn() then
+            announcer:tick(check, controlSettler, false)
+        else
+            announcer:tick(check, settler, true)
         end
     end)
 end

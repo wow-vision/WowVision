@@ -10,6 +10,9 @@ WowVision.gameDefaults = gameDefaults
 
 gameDefaults.CVARS = {
     { name = "autoLootDefault", value = "1", label = "Auto Loot" },
+    -- An enemy behind you or beside you gets its nameplate at once, so the
+    -- combat module's enemy count hears it without waiting for the camera.
+    { name = "nameplateShowOffscreen", value = "1", label = "Offscreen Nameplates" },
 }
 
 -- Audio Assist (Blizzard_CombatAudioAlerts): on, your health, target health
