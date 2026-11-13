@@ -193,11 +193,6 @@ local function frameVisible(frame)
     return ok and visible == true
 end
 
--- Whether the frame shows its aura on the unit right now. A buff item (the
--- Buff Icon and Buff Bar viewers) says so with IsActive; a cooldown item
--- (Essential, Utility) is active whenever it has a cooldown, so there the
--- cached aura data stands for the aura. A frame that is not drawn shows
--- nothing.
 -- Whether the frame's aura sits on the monitor's unit. The viewers scan
 -- "player" before "target" and keep the first match, so with yourself as
 -- target an aura on you is always labelled "player" (Blizzard_CooldownViewer,
@@ -222,6 +217,11 @@ local function onUnit(frame, unit)
     return unit == "target" and frameUnit == "player" and targetIsPlayer()
 end
 
+-- Whether the frame shows its aura on the unit right now. A buff item (the
+-- Buff Icon and Buff Bar viewers) says so with IsActive; a cooldown item
+-- (Essential, Utility) is active whenever it has a cooldown, so there the
+-- cached aura data stands for the aura. A frame that is not drawn shows
+-- nothing.
 local function auraShown(frame, unit)
     if not onUnit(frame, unit) or frame.auraDataCached == nil then
         return false
