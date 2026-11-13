@@ -564,6 +564,19 @@ testRunner:addSuite("EnemyCountAnnouncer", {
         t:assertEqual(#w.fired, 1)
     end,
 
+    ["the check recounts first: a lost number the count moved past is not said"] = function(t)
+        local w = speechWorld()
+        local active = settled(3)
+        w.announcer:say({ count = 3 })
+        w.stop()
+        w.time = 6
+        -- One enemy left quietly; the recount sees 2 and holds it to settle.
+        w.announcer:tick(function()
+            active.pending = 2
+        end, active, true)
+        t:assertEqual(#w.fired, 1)
+    end,
+
     ["no repeat while a newer number waits to settle"] = function(t)
         local w = speechWorld()
         w.announcer:say({ count = 3 })

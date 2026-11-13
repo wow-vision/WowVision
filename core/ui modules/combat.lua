@@ -331,17 +331,6 @@ local function sayCount(message)
     announcer:say(message)
 end
 
-local function resayLost()
-    if not enemyCountAlert.enabled then
-        return
-    end
-    if controlOn() then
-        announcer:resay(controlSettler, false)
-    else
-        announcer:resay(settler, true)
-    end
-end
-
 -- Whether a count is on or about to be said, so the ticker keeps checking.
 local function counting()
     if controlOn() then
@@ -462,9 +451,17 @@ function module:onEnable()
             return
         end
         nextCheck = now + 1
-        resayLost()
-        if counting() or UnitAffectingCombat("player") then
-            recount()
+        local function check()
+            if counting() or UnitAffectingCombat("player") then
+                recount()
+            end
+        end
+        if not enemyCountAlert.enabled then
+            check()
+        elseif controlOn() then
+            announcer:tick(check, controlSettler, false)
+        else
+            announcer:tick(check, settler, true)
         end
     end)
 end

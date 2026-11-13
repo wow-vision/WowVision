@@ -545,3 +545,12 @@ function Announcer:resay(active, plain)
         config.fireSpeech(again)
     end
 end
+
+-- The once-a-second check: the recount first, then a lost number. A count
+-- that moved on quietly (an enemy died or left without an event) is seen
+-- first, so a number already known to be outdated is never said again;
+-- the new one follows on its own.
+function Announcer:tick(recount, active, plain)
+    recount()
+    self:resay(active, plain)
+end
