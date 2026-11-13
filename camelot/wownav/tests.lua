@@ -647,20 +647,21 @@ if haveNetwork then
         local game = newGame()
         local route = Route.new(game.env)
         N.LoadZone(LOCH_MODAN)
-        -- Thorgrum Borrelson, the gryphon master of Thelsamar: his network point lies on the road, yards away
+        -- Thorgrum Borrelson, the gryphon master of Thelsamar. Since the fixed target nodes his network point is his own
+        -- node, so a spot picked 8 yd beside him (a scanner hit, a place of the list) is what lies away from the network
         local master = zoneRows(LOCH_MODAN, "thorgrum")[1]
         t:assertNotNil(master, "Loch Modan's gryphon master")
-        game.x, game.y = master.x + 1, master.y
         local picked
-        for _, e in ipairs(catalog.entryPoints(N, C, 0, game.x, game.y, 20, { german = false })) do
+        for _, e in ipairs(catalog.entryPoints(N, C, 0, master.x + 1, master.y, 20, { german = false })) do
             if e.tid == master.tid then
                 picked = e
             end
         end
         t:assertNotNil(picked, "he is an entry point")
         local startId, startZ = catalog.startNode(N, R, catalog.activeNav(), picked, 0)
-        local sx, sy = N.Position(startId)
-        t:assertTrue(Route.distance(sx, sy, master.x, master.y) > Route.ARRIVAL_START_RADIUS, "not where he stands")
+        t:assertNotNil(startId)
+        picked = { x = picked.x + 8, y = picked.y, z = picked.z }
+        game.x, game.y = picked.x, picked.y
         route.anchor.last = startZ
         -- a quest giver farther away (not the gryphon master, who gives quests too)
         local target
@@ -682,7 +683,7 @@ if haveNetwork then
         route:prependStart(picked.x, picked.y, picked.z)
         local fx, fy = N.Position(route.path[1])
         t:assertEqual(route.pathIndex, 1)
-        t:assertTrue(Route.distance(fx, fy, master.x, master.y) < 0.01, "the first waypoint is the gryphon master")
+        t:assertTrue(Route.distance(fx, fy, picked.x, picked.y) < 0.01, "the first waypoint is the picked spot")
         t:assertEqual(route.path[2], startId, "then his network point")
         -- standing at him: the first waypoint is reached, the route goes on to his network point
         local event
@@ -1074,20 +1075,13 @@ if haveNetwork then
             local contract = catalog.contract(to, DOCK_MAP)
             local result = runJob(N.Job(route.prepare, route, contract, { nativeMapId = DOCK_MAP }))
             t:assertEqual(result.kind, "start", tostring(result.reason))
-            t:assertEqual(result.plan.path[#result.plan.path], target.nodeId,
-                "the route ends at the dock's waiting node")
+            t:assertTrue(dock.isVesselTarget(target), "a dock of the dock model: an ordinary point on its own node")
+            t:assertEqual(result.plan.path[#result.plan.path], result.result.endNodeId,
+                "the route ends at the dock's own node")
             route:begin(result.plan, contract, result.result, to.n)
-            t:assertNil(route.logicalTarget, "no logical end point behind a dock's waiting node")
-            local nx, ny = N.Position(target.nodeId)
-            local inside = (nx - target.x) ^ 2 + (ny - target.y) ^ 2 <= target.waitingRadius ^ 2
-            route.waitCheck = dock.waitAreaCheck(N, target)
-            -- a waiting node outside the circle gets no circle rule that could never be met; where the node lies in the
-            -- circle, his circle rule ends the route
-            if inside then
-                t:assertNotNil(route.waitCheck, "his circle rule where the waiting node lies in it")
-            else
-                t:assertNil(route.waitCheck, "no circle rule that could never be met")
-            end
+            t:assertNil(route.logicalTarget, "no logical end point behind a dock's node")
+            t:assertNil(dock.waitAreaCheck(N, target), "no waiting circle")
+            local nx, ny = N.Position(result.result.endNodeId)
             local arrived
             route.pathIndex = #route.path
             for _ = 1, 20 do
@@ -1098,32 +1092,17 @@ if haveNetwork then
                     break
                 end
             end
-            t:assertNotNil(arrived, "the route ends at the waiting node")
+            t:assertNotNil(arrived, "the route ends at the dock's node")
             local said = {}
             text.say = function(message)
                 said[#said + 1] = message
             end
-            -- (the headless tests have no beacon paths: a stand-in for the boarding beacon)
-            local stand = dock.boardingPath == nil
-            if stand then
-                dock.boardingPath = function()
-                    return {}
-                end
-            end
-            local boarding = dock.arrived(N, target, nx, ny)
-            if stand then
-                dock.boardingPath = nil
-            end
-            t:assertNotNil(boarding, "the boarding beacon where his rule gives a point")
+            local boarding, ship = dock.arrived(N, target, nx, ny)
+            t:assertNil(boarding, "no boarding beacon in the dock model")
+            t:assertNotNil(ship, "the point on board is the next point")
             t:assertNotNil(said[1] and said[1]:find(BOAT, 1, true), tostring(said[1]))
             local Dock = _G.WowVisionNavigationDockNavigation
             t:assertNotNil(Dock.reached, "the dock stays reached")
-            -- at the waiting point itself the turn key faces the boarding point a few yards ahead
-            local px, py, id = dock.alignment(N, target.x, target.y)
-            t:assertNotNil(px, "the turn key has a point")
-            t:assertTrue(id:find("^dock%-boarding:") ~= nil)
-            local ahead = math.sqrt((px - target.x) ^ 2 + (py - target.y) ^ 2)
-            t:assertTrue(math.abs(ahead - target.boardingPreviewDistance) < 0.01)
             -- from the waiting node the dock on the coast is noted, not walked to
             local next = dock.choose(N, far, nx, ny)
             t:assertEqual(next, "passive")
@@ -1202,12 +1181,11 @@ if haveNetwork then
             t:assertEqual(outcome.kind, "start", tostring(outcome.reason))
             -- the route is not cut on the pier (the tram's drop rule): its end lies at the dock
             local ex, ey = N.Position(outcome.plan.path[#outcome.plan.path])
-            local reach = target.waitingRadius + target.boardingPreviewDistance
-            t:assertTrue(Route.distance(ex, ey, target.x, target.y) <= reach,
-                "the route ends within the boarding beacon's reach of the dock")
-            -- walked with the dock's arrival rule (module.lua: route.waitCheck), the route ends
+            t:assertTrue(dock.isVesselTarget(target), "a dock of the dock model")
+            -- the route ends on the dock's own node, no unchecked end behind it
+            t:assertEqual(outcome.plan.path[#outcome.plan.path], outcome.result.endNodeId)
             route:begin(outcome.plan, catalog.contract(auberdine, 0), outcome.result, auberdine.n)
-            route.waitCheck = dock.waitAreaCheck(N, target)
+            t:assertNil(route.logicalTarget)
             local arrived
             for _ = 1, 2000 do
                 game.t = game.t + 0.3
@@ -1221,13 +1199,12 @@ if haveNetwork then
                 end
             end
             t:assertNotNil(arrived, "the route to the dock ends")
-            ex, ey = game.x, game.y
-            -- arrived there, his boarding beacon has its point
-            x, y = ex, ey
+            -- arrived there, the point on board is the next point (no beacon)
             local Dock = _G.WowVisionNavigationDockNavigation
             Dock:Reset(false)
-            Dock:Arrival(target, dock.nav(N, target.zoneId), ex, ey)
-            t:assertNotNil(dock.alignment(N, ex, ey), "the boarding point is the next point")
+            local beacon, ship = dock.arrived(N, target, game.x, game.y)
+            t:assertNil(beacon)
+            t:assertNotNil(ship, "the point on board is the next point")
         end)
         _G.UnitPosition = saved
         _G.WowVisionNavigationDockNavigation:Reset(false)
@@ -1250,19 +1227,17 @@ if haveNetwork then
                     N.LoadZone(zoneId)
                 end
             end
-            local rows = dock.boardingRows(N, from.x, from.y)
-            local ofLine = 0
-            for _, r in ipairs(rows) do
-                t:assertNotNil(r.boardingTargetId)
-                if r.boardingTargetId == from.tid or r.boardingTargetId == docks.coast.tid then
-                    ofLine = ofLine + 1
-                    t:assertEqual(r.n, "On the ship")
+            -- the dock model: the points on board are rows of the data, in the list like any other place
+            local hits = catalog.search(N, C, DOCK_MAP, "on the ship", from.x, from.y, { german = false })
+            local boardRows = {}
+            for _, r in ipairs(hits) do
+                if dock.isBoardingRow(r) then
+                    boardRows[#boardRows + 1] = r
+                    t:assertEqual(r.n:find("On the ship", 1, true), 1, r.n)
                 end
             end
-            t:assertEqual(ofLine, 2, "one per dock of the line")
-            local hits = catalog.search(N, C, DOCK_MAP, "on the ship", from.x, from.y,
-                { german = false, extra = rows })
-            t:assertTrue(#hits >= 2)
+            t:assertTrue(#boardRows >= 2, "one per dock of the line")
+            hits = boardRows
             t:assertTrue(hits[1].distance <= hits[2].distance)
             -- picked as a route's destination, a boarding point is routed to like any place (from a waypoint nearby)
             local game = newGame()
@@ -1608,15 +1583,19 @@ if haveNetwork then
 
     suite["a point on a link routes to itself without leaving it"] = function(t)
         setup()
-        local id = nil
-        for _, row in ipairs(zoneRows(ELWYNN)) do
-            local result = R:Resolve({ nativeMapId = 0 }, catalog.contract(row, 0), {})
-            if result ~= nil and result.binding ~= nil and result.binding.type == "link" then
-                id = result.endNodeId
+        -- (since his Weg B every target of a rebuilt zone is bound to its own node, none to a link: a point on a link is
+        -- made here)
+        local zone = N.LoadZone(ELWYNN)
+        local link
+        for k = 1, #zone.lu do
+            if zone.ldir[k] == 0 then
+                link = k
                 break
             end
         end
-        t:assertTrue(id ~= nil, "a target on a link")
+        t:assertTrue(link ~= nil, "a link")
+        local id = N.LinkpointNode(zone, link, 100)
+        t:assertTrue(id ~= nil, "a point on a link")
         local route = N.RouteIds(id, id)
         t:assertEqual(#route.path, 1)
         t:assertEqual(route.path[1], id)
@@ -1786,6 +1765,199 @@ if haveNetwork then
         t:assertNil(route:update(game.x, game.y), "not there yet")
         game.x, game.t = deputy.x, game.t + 1
         t:assertEqual(route:update(game.x, game.y).kind, "arrived")
+    end
+
+    -- ---- his DemoAddon of 11/2026 (data 52c6c83): Weg B, the dock model, the height hint
+
+    suite["Weg B: a target of a rebuilt zone is bound to its fixed node"] = function(t)
+        setup()
+        local zone = N.LoadZone(ELWYNN)
+        local checked = 0
+        for _, row in ipairs(zoneRows(ELWYNN)) do
+            if type(row.targetNode) == "number" and row.navFingerprint == zone.fingerprint then
+                local result = R:Resolve({ nativeMapId = 0 }, catalog.contract(row, 0), {})
+                t:assertEqual(result.targetNode, "target_node_id", tostring(row.n))
+                t:assertEqual(result.quality, "exact")
+                t:assertEqual(result.endNodeId, zone.base + row.targetNode, tostring(row.n))
+                checked = checked + 1
+                if checked >= 20 then
+                    break
+                end
+            end
+        end
+        t:assertTrue(checked > 0, "rows that carry their node")
+    end
+
+    suite["Weg B: a row without the fingerprint of the loaded zone is bound over the cells, as before"] = function(t)
+        setup()
+        local zone = N.LoadZone(ELWYNN)
+        for _, row in ipairs(zoneRows(ELWYNN)) do
+            if type(row.targetNode) == "number" and row.navFingerprint == zone.fingerprint then
+                local contract = catalog.contract(row, 0)
+                contract.navFingerprint = nil
+                local result = R:Resolve({ nativeMapId = 0 }, contract, {})
+                t:assertNil(result.targetNode, "the cells decide")
+                t:assertNotNil(result.endNodeId)
+                return
+            end
+        end
+        error("no row with a node")
+    end
+
+    suite["his height hint: the target lies above or below where the route ends"] = function(t)
+        setup()
+        local tolerance = select(2, R:Settings())
+        t:assertNil(G.HeightHint(5 + tolerance, 5), "up to the tolerance there is no hint")
+        t:assertNil(G.HeightHint(nil, 5))
+        t:assertNil(G.HeightHint(5, nil))
+        local above = G.HeightHint(20, 5)
+        t:assertEqual(above.direction, "above")
+        t:assertEqual(above.yards, 15)
+        local below = G.HeightHint(1.4, 5 + tolerance + 10)
+        t:assertEqual(below.direction, "below")
+        t:assertEqual(WowVisionNavigationText("height_hint_above", 15), "Target is above, about 15 yards.")
+        t:assertEqual(WowVisionNavigationText("height_hint_below", 4), "Target is below, about 4 yards.")
+    end
+
+    suite["a transit record without an arrival volume is proven by the position of its exit node"] = function(t)
+        setup()
+        local game = newGame()
+        local route = Route.new(game.env)
+        local zone = N.LoadZone(UNDERCITY)
+        local lift
+        for _, action in ipairs(zone.actions) do
+            if action.kind == "lift" then
+                lift = action
+                break
+            end
+        end
+        t:assertNotNil(lift)
+        local bare = {}
+        for key, value in pairs(lift) do
+            bare[key] = value
+        end
+        bare.arrivalVolume = nil
+        local volume = route:arrivalVolumeOf(bare)
+        local tx, ty = N.Position(lift.toNode)
+        t:assertNotNil(volume, "the exit node stands in for the volume")
+        t:assertEqual(volume.x, tx)
+        t:assertEqual(volume.y, ty)
+        route:startAction(bare, { contract = {} }, lift.toNode, nil)
+        local fx, fy = N.Position(lift.fromNode)
+        t:assertNil(route:observeAction(fx, fy, 0, 3))
+        t:assertEqual(route:observeAction(tx, ty, 0, 3), "arrived")
+    end
+
+    suite["a chest of the data is said as an object"] = function(t)
+        t:assertEqual(text.categories({ category = { "chest" } }), "object")
+    end
+
+    -- the dock model: a landing is an ordinary point on its own node, the point on board a place of its own
+    local function stormwindHarbor()
+        N.LoadZone(STORMWIND)
+        local dockRow, boardRow
+        for _, r in ipairs(catalog.search(N, C, 0, "auberdine", -8650, 1337, { german = false })) do
+            if r.distance ~= nil and r.distance < 300 then
+                dockRow = dockRow or (dock.isVesselRow(r) and r or nil)
+                boardRow = boardRow or (dock.isBoardingRow(r) and r or nil)
+            end
+        end
+        return dockRow, boardRow
+    end
+
+    suite["the dock model: a landing is routed to on its node, no circle, no logical end"] = function(t)
+        setup()
+        local saved = _G.UnitPosition
+        _G.UnitPosition = function()
+            return -8650, 1337, 0, 0
+        end
+        local ok, err = pcall(function()
+            local dockRow, boardRow = stormwindHarbor()
+            t:assertNotNil(dockRow, "the Stormwind landing of the ship to Auberdine")
+            t:assertNotNil(boardRow, "the point on board")
+            t:assertTrue(dock.isDockRow(dockRow))
+            t:assertFalse(dock.isDockRow(boardRow), "the point on board is no dock")
+            local target = dock.target(N, dockRow)
+            t:assertNotNil(target)
+            t:assertTrue(dock.isVesselTarget(target))
+            t:assertNil(dock.waitAreaCheck(N, target), "no waiting circle")
+            local game = newGame()
+            local route = Route.new(game.env)
+            local start = catalog.autoPoints(N, target.x, target.y - 60, nil, 1)[1]
+            t:assertNotNil(start, "a waypoint near the landing")
+            game.x, game.y = start.x, start.y
+            local contract = catalog.contract(dockRow, 0)
+            local outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = 0 }, start.nodeId))
+            t:assertEqual(outcome.kind, "start", tostring(outcome.reason))
+            t:assertTrue(outcome.result.targetNode == "target_node" or outcome.result.targetNode == "target_node_id",
+                "bound to its fixed node: " .. tostring(outcome.result.targetNode))
+            route:begin(outcome.plan, contract, outcome.result, dockRow.n)
+            t:assertNil(route.logicalTarget, "the route ends on the node, no unchecked end point behind it")
+            t:assertEqual(route.path[#route.path], outcome.result.endNodeId)
+        end)
+        _G.UnitPosition = saved
+        _G.WowVisionNavigationDockNavigation:Reset(false)
+        text.say = nil
+        if not ok then
+            error(err, 0)
+        end
+    end
+
+    suite["the dock model: the arrival names the point on board, the route to it is on foot, its arrival sets the dock"] = function(t)
+        setup()
+        local saved = _G.UnitPosition
+        _G.UnitPosition = function()
+            return -8650, 1337, 0, 0
+        end
+        local ok, err = pcall(function()
+            local dockRow, boardRow = stormwindHarbor()
+            t:assertNotNil(dockRow)
+            t:assertNotNil(boardRow)
+            local Dock = _G.WowVisionNavigationDockNavigation
+            Dock:Reset(false)
+            local target = dock.target(N, dockRow)
+            local said = {}
+            text.say = function(message)
+                said[#said + 1] = message
+            end
+            -- the normal arrival: the text of the dock and the next point, no beacon
+            local landing = R:Resolve({ nativeMapId = 0 }, catalog.contract(dockRow, 0), {})
+            t:assertNotNil(landing.endNodeId, "the landing's node")
+            local nodeX, nodeY = N.Position(landing.endNodeId)
+            local beacon, ship = dock.arrived(N, target, nodeX, nodeY)
+            t:assertNil(beacon, "no boarding beacon in the dock model")
+            t:assertNotNil(ship, "the point on board is next")
+            t:assertEqual(ship.id, boardRow.tid)
+            t:assertNotNil(said[1] and said[1]:find("Next point", 1, true), tostring(said[1]))
+            t:assertNotNil(Dock.reached, "the dock is reached")
+            t:assertTrue(Dock.reached.vessel == true)
+            -- the route to the point on board is on foot
+            local shipTarget = dock.boardingTarget(N, boardRow)
+            t:assertNotNil(shipTarget)
+            local contract = catalog.contract(boardRow, 0)
+            contract.boardingPoint = true
+            local game = newGame()
+            local route = Route.new(game.env)
+            local startNode = landing.endNodeId
+            game.x, game.y = nodeX, nodeY
+            local outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = 0 }, startNode))
+            t:assertEqual(outcome.kind, "start", tostring(outcome.reason))
+            -- its arrival: the context of its dock is reached again, so the other dock of the line can be noted
+            Dock:Reset(false)
+            t:assertTrue(dock.boardingArrival(N, shipTarget, shipTarget.x, shipTarget.y))
+            t:assertNotNil(Dock.reached)
+            t:assertEqual(Dock.reached.id, dockRow.tid)
+            -- standing at the landing counts as reached without a route
+            Dock:Reset(false)
+            local _, standing = dock.choose(N, dockRow, nodeX, nodeY)
+            t:assertNotNil(standing)
+        end)
+        _G.UnitPosition = saved
+        _G.WowVisionNavigationDockNavigation:Reset(false)
+        text.say = nil
+        if not ok then
+            error(err, 0)
+        end
     end
 end
 

@@ -215,6 +215,15 @@ local function listRow(N, item, german)
         -- approx: a position that is itself an estimate (a compact row's p, a dyn row's approximate: Zephras Isle)
         interactionMode = item.interactionMode, activationMode = item.activationMode,
         approx = item.approx or item.approximate == true or nil,
+        -- his Weg B: the fixed node of the target (a number, or a list as long as the levels) and the fingerprint of the
+        -- navdata its numbers belong to; dynNode for a row of the dyn layer (the dock model)
+        navFingerprint = item.navFingerprint, targetNode = item.targetNode, dynNode = item.dynNode,
+        pointApprox = item.approx,      -- the compact row's p (his target.approx), not a dyn row's approximate
+        -- the dock model (dock.lua): a landing, its point on board and the link between them
+        facilityRole = item.facilityRole, facilityKind = item.facilityKind, dockId = item.dockId,
+        boardingPointId = item.boardingPointId,
+        -- the circle in which the route to a waiting point or an activation area has to end (R.EndRadius)
+        waitingRadius = item.waitingRadius, activationCaptureRadius = item.activationCaptureRadius,
     }
 end
 
@@ -497,5 +506,9 @@ function catalog.contract(r, map)
         id = r.tid, kind = r.kind, nameEn = r.nameEn or r.n, nativeMapId = map, coordinateSpace = "world",
         x = r.x, y = r.y, z = r.z, zStatus = r.z == nil and "unknown" or "known", levels = r.levels,
         surface = r.surface, interactionMode = r.interactionMode, activationMode = r.activationMode,
+        -- his Weg B: what the resolver binds the target to its fixed node with (TargetResolver:ResolveTargetNode)
+        zoneId = r.zoneId, navFingerprint = r.navFingerprint, targetNode = r.targetNode, dynNode = r.dynNode,
+        approx = r.pointApprox,
+        waitingRadius = r.waitingRadius, activationCaptureRadius = r.activationCaptureRadius,
     }
 end

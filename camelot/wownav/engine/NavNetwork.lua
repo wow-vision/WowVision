@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/NavNetwork.lua at
--- 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 52c6c83), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- NavNetwork (schema 7, concept chapters 7, 7a and 8): loader/decoder, continent graph, attachment cells and the
 -- A* search. Replaces the graph, funnel, guidance and zone-by-zone world travel of the old core.
@@ -826,6 +826,113 @@ function N.NodesWithin(zoneId, x, y, radius)
 end
 
 -- ---------------------------------------------------------------------------
+-- The node of a logical target (Weg B, user decision 10.11.2026)
+-- ---------------------------------------------------------------------------
+-- Every logical target of a zone built with Weg B has a fixed node of the network: the build puts it on the target's access point and
+-- links it like every other node. The core finds it by the target's coordinates: a node whose x and y lie within TARGET_XY_TOLERANCE of
+-- the target's (half the export resolution of the node coordinates, 0.1 yd; a tolerance, never an equality, because the build rounds
+-- in Python and the decoder sums in Lua), of those the one with the smallest height difference within the height band (a water node:
+-- the target not more than the band above it). Where that does not find it the catalog row carries the node number (n, see
+-- TargetCatalog.lua). tools/wegenetz/target_nodes.py is the twin of this rule in the pipeline.
+N.TARGET_XY_TOLERANCE = 0.05   -- yd: half the export resolution of the node coordinates (K2, 0.1 yd)
+local XY_EPSILON = 1e-6        -- the noise of the prefix sums (0.1 * integer)
+local POINT_OFFSET, POINT_SPAN = 1000000, 2000000
+local NEAR_CELL = 10.0         -- yd: raster of the search for the nearest nodes (speed only)
+
+local function PointKey(kx, ky)
+    return (kx + POINT_OFFSET) * POINT_SPAN + (ky + POINT_OFFSET)
+end
+
+-- The nodes of a zone on the 0.1 yd raster of the export (built on first use, kept with the decoded zone).
+local function PointMap(zone)
+    if zone.pointMap then return zone.pointMap end
+    local map = {}
+    for i = 1, zone.n do
+        local key = PointKey(floor(zone.x[i] * 10 + 0.5), floor(zone.y[i] * 10 + 0.5))
+        local list = map[key]
+        if not list then list = {}; map[key] = list end
+        list[#list + 1] = i
+    end
+    zone.pointMap = map
+    return map
+end
+
+local function FitsNode(zone, i, z, tolerance)
+    if z == nil then return true end
+    if zone.area[i] == 2 then return z <= zone.z[i] + tolerance end          -- a water node holds everything under its surface
+    return abs(zone.z[i] - z) <= tolerance
+end
+N.FitsNode = FitsNode
+
+-- The node of a target by its coordinates: the local index (1-based) or nil.
+function N.TargetNodeAt(zone, x, y, z, tolerance)
+    tolerance = tolerance or N.HEIGHT_TOLERANCE
+    local map = PointMap(zone)
+    local kx, ky = floor(x * 10 + 0.5), floor(y * 10 + 0.5)
+    local limit = N.TARGET_XY_TOLERANCE + XY_EPSILON
+    local best, bestDifference
+    for dx = -1, 1 do
+        for dy = -1, 1 do
+            for _, i in ipairs(map[PointKey(kx + dx, ky + dy)] or {}) do
+                if abs(zone.x[i] - x) <= limit and abs(zone.y[i] - y) <= limit and FitsNode(zone, i, z, tolerance) then
+                    local difference = z and abs(zone.z[i] - z) or 0
+                    if not best or difference < bestDifference or (difference == bestDifference and i < best) then
+                        best, bestDifference = i, difference
+                    end
+                end
+            end
+        end
+    end
+    return best
+end
+
+-- A node as the binding of a target (choice: "target_node" by the coordinates, "target_node_id" by n, "nearest_node" the fallback).
+function N.NodeTargetBinding(zone, i, x, y, choice)
+    local nx, ny, nz = zone.x[i], zone.y[i], zone.z[i]
+    return { zone = zone, type = "node", id = zone.base + i - 1, x = nx, y = ny, z = nz, choice = choice, node = i,
+        cellDistance = 0, approach = false, airDistance = sqrt((nx - x) ^ 2 + (ny - y) ^ 2) }
+end
+
+local function NearMap(zone)
+    if zone.nearMap then return zone.nearMap end
+    local map = {}
+    for i = 1, zone.n do
+        local key = PointKey(floor(zone.x[i] / NEAR_CELL), floor(zone.y[i] / NEAR_CELL))
+        local list = map[key]
+        if not list then list = {}; map[key] = list end
+        list[#list + 1] = i
+    end
+    zone.nearMap = map
+    return map
+end
+
+-- The fallback of a target without its node (a target that came with a target update after the build): the physical nodes of the zone
+-- within radius in the plane that fit its height, nearest first (a water node without an exit is left out). The last straight from such
+-- a node to the target is not checked: the route says so ("approximate").
+function N.NearestNodeBindings(zone, x, y, z, radius, tolerance)
+    tolerance = tolerance or N.HEIGHT_TOLERANCE
+    local map = NearMap(zone)
+    local reach = floor(radius / NEAR_CELL) + 1
+    local gx, gy = floor(x / NEAR_CELL), floor(y / NEAR_CELL)
+    local found = {}
+    for dx = -reach, reach do
+        for dy = -reach, reach do
+            for _, i in ipairs(map[PointKey(gx + dx, gy + dy)] or {}) do
+                local d = sqrt((zone.x[i] - x) ^ 2 + (zone.y[i] - y) ^ 2)
+                if d <= radius and FitsNode(zone, i, z, tolerance) and not zone.noExit[i] then
+                    found[#found + 1] = N.NodeTargetBinding(zone, i, x, y, "nearest_node")
+                end
+            end
+        end
+    end
+    table.sort(found, function(p, q)
+        if p.airDistance ~= q.airDistance then return p.airDistance < q.airDistance end
+        return p.id < q.id
+    end)
+    return found
+end
+
+-- ---------------------------------------------------------------------------
 -- Virtual points
 -- ---------------------------------------------------------------------------
 local function NewVirtual(data)
@@ -960,6 +1067,7 @@ end
 
 -- Bands at most 2 yd apart belong to the same layer (chapter 4.1).
 local SAME_LAYER_GAP = 2.0
+N.SAME_LAYER_GAP = SAME_LAYER_GAP   -- read by Guidance.ArrivalFloor (level grouping)
 
 local function MiddleOf(hit)
     return (hit.zone.cellZMin[hit.cell] + hit.zone.cellZMax[hit.cell]) / 2

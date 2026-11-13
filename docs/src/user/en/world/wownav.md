@@ -66,7 +66,7 @@ The entry points are the 50 nearest entries: the places that sit on the network 
 
 ### Destinations
 
-Each destination reads its name, its distance, what it is and where it is, for example "Innkeeper Allison (Innkeeper), 85 yards, quest giver, vendor, innkeeper, Stormwind City". The extra words come from the categories of the place. They are: quest giver, trainer, vendor, flight master, innkeeper, banker, stable master, auctioneer, spirit healer, spirit guide, NPC or mob, chest, herb or ore, object, quest item, interaction object, mailbox, anvil, forge, door, book, chair, sign, fishing spot, switch, trap, spell focus, capture point, destructible building, guild bank, trapdoor, waypoint, orientation point, transport, live target, zone transition, transit, ship, tram, dungeon, portal, zeppelin, elevator and dive. You can search for any of these words, for the name or for a zone name: "banker", "mailbox", "Ironforge".
+Each destination reads its name, its distance, what it is and where it is, for example "Innkeeper Allison (Innkeeper), 85 yards, quest giver, vendor, innkeeper, Stormwind City". The extra words come from the categories of the place. They are: quest giver, trainer, vendor, flight master, innkeeper, banker, stable master, auctioneer, spirit healer, spirit guide, NPC or mob, herb or ore, object, quest item, interaction object, mailbox, anvil, forge, door, book, chair, sign, fishing spot, switch, trap, spell focus, capture point, destructible building, guild bank, trapdoor, waypoint, orientation point, transport, live target, zone transition, transit, ship, tram, dungeon, portal, zeppelin, elevator and dive. You can search for any of these words, for the name or for a zone name: "banker", "mailbox", "Ironforge".
 
 - The list shows at most the nearest 1000 matches. When it was cut, the first entry you hear starts with "The nearest 1000 of 4821 results".
 - A destination with no network point near it (see Target Radius Around the Network (Yards)) is left out. A place whose zone has not been prepared yet is offered unchecked, and checked when you choose it.
@@ -128,6 +128,7 @@ If you get stuck, WowNav tries to re-enter the route and step back at gates, but
 - On the network, or within 1.5 yards of its end: "Arrived" and the name of the place.
 - Close to the network but farther from its end: "The network ends 4.2 yards from the target; search the surroundings yourself. The last stretch is unchecked." If the data does not know the height, "horizontally" is added.
 - A water target: "The network ends 6.1 yards from the water surface position; diving depth 12.0 yards. The rest of the way and the diving are yours, the last stretch is unchecked."
+- When the target lies clearly above or below the end of the route, you also hear "Target is above, about 12 yards." or "Target is below, about 12 yards." That is said when the route starts and with the arrival.
 
 ### Route status and new route
 
@@ -147,6 +148,8 @@ A dock is a waiting place for a ship, zeppelin or tram stop. Choosing one in F10
 If you stand at a dock and choose the other end of the same line, nothing is walked. WowNav notes it and says where the ride goes and with what, for example "Ride to Ironforge with the Deeprun Tram: wait here, board by ear and get off at the last stop. Near it, I turns you toward the dock." When you come near that dock later, you hear its name followed by "is near; I turns you toward it", and I now faces that dock. Choose the dock again to walk the rest of the way. This only works for a line whose docks are on the same map, such as the Deeprun Tram: the list only holds places of the map you are on, so the dock at the far end of a sea crossing to another continent cannot be chosen from here.
 
 Being in a station (within about 100 yards of a dock) counts as having reached it, so you can choose the far dock without walking to the near one first. Choosing a dock of your own station, such as the other dock in Menethil Harbor, walks to it as usual.
+
+Some docks, so far the one in Stormwind's harbour, work without a waiting circle. Choosing one walks you to it like to any place. When you arrive you hear "Dock ... reached. Wait here for the ship. Board when you hear it arrive. Next point: On the ship to Auberdine." The route to that point on board then starts by itself, and when you reach it the dock counts as reached again, so you can choose the far dock of the line to note it. There is no boarding beacon at these docks.
 
 ### Portals, the tram entrance and walk-in places
 

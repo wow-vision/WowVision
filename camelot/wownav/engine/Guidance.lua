@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/Guidance.lua at
--- 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 52c6c83), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Guidance (schema 7, concept chapter 7 points 5 to 8): arrival at a waypoint, gate line, angle bisector, height
 -- state of the route and local re-entry. Pure functions on the NavNetwork; the player state (Navigation.path, index,
@@ -34,6 +34,75 @@ end
 -- Arrival radius of a waypoint in yd (nil for points without a code, e.g. the end point at the target)
 function G.ArrivalRadius(id)
     return G.EffectiveRadius(Net().Radius(id))
+end
+
+-- Height-aware arrival (player setting /vn floor, SavedVariables heightAwareArrival, default OFF: the estimated height can be
+-- stale after lifts and jumps). Where a second walkable level lies directly above or below the target (height bands of the
+-- cells at the target X/Y, grouped like the attachment choice: bands at most SAME_LAYER_GAP apart are one level), the
+-- arrival names the floor of the target and is not counted while the estimated height clearly points to the other level.
+function G.ArrivalFloorOn()
+    local db = _G.WowVisionNavigationDB
+    return db ~= nil and db.heightAwareArrival == true
+end
+
+-- Levels (merged height bands) at x/y, lowest first: { { zMin =, zMax = }, ... }
+local function Levels(x, y)
+    local net = Net()
+    local bands = net.HeightBands(x, y)
+    local levels = {}
+    for _, band in ipairs(bands) do   -- HeightBands is sorted by zMin
+        local last = levels[#levels]
+        if last and band.zMin - last.zMax <= net.SAME_LAYER_GAP then
+            if band.zMax > last.zMax then last.zMax = band.zMax end
+        else
+            levels[#levels + 1] = { zMin = band.zMin, zMax = band.zMax }
+        end
+    end
+    return levels
+end
+
+local function FitsLevel(level, z)
+    local tolerance = Net().HEIGHT_TOLERANCE
+    return level.zMin - tolerance <= z and z <= level.zMax + tolerance
+end
+
+-- targetZ: height of the target (end node), estimated: the estimated player height or nil (unknown).
+-- Returns nil when the feature is off, the target has no second level at its X/Y or its own level is not found. Otherwise
+-- { floor = "lower" | "middle" | "upper", wrongLevel = true | false }; wrongLevel is true only when the estimate fits a
+-- level other than the target level and does NOT fit the target level (unclear or ambiguous estimate: false, as before).
+function G.ArrivalFloor(x, y, targetZ, estimated)
+    if not G.ArrivalFloorOn() or type(targetZ) ~= "number" then return nil end
+    local levels = Levels(x, y)
+    if #levels < 2 then return nil end
+    local own, ownDistance
+    for i, level in ipairs(levels) do
+        if FitsLevel(level, targetZ) then
+            local distance = abs((level.zMin + level.zMax) / 2 - targetZ)
+            if not ownDistance or distance < ownDistance then own, ownDistance = i, distance end
+        end
+    end
+    if not own then return nil end
+    local floor = own == 1 and "lower" or own == #levels and "upper" or "middle"
+    local wrongLevel = false
+    if type(estimated) == "number" and not FitsLevel(levels[own], estimated) then
+        for i, level in ipairs(levels) do
+            if i ~= own and FitsLevel(level, estimated) then wrongLevel = true; break end
+        end
+    end
+    return { floor = floor, wrongLevel = wrongLevel }
+end
+
+-- Height hint (always on): the target lies clearly above or below the point where the route ends. endZ: height of the
+-- last network point of the route, targetZ: height of the target (or of the chosen level); both nil-safe. The threshold is
+-- the height tolerance of the resolver (player setting /vn tolerance, default NavNetwork.HEIGHT_TOLERANCE); a difference
+-- up to the tolerance gives no hint. Returns nil or { direction = "above" | "below", yards = whole yards (rounded) }.
+function G.HeightHint(targetZ, endZ)
+    if type(targetZ) ~= "number" or type(endZ) ~= "number" then return nil end
+    local resolver = _G.WowVisionNavigationTargetResolver
+    local tolerance = resolver and select(2, resolver:Settings()) or Net().HEIGHT_TOLERANCE
+    local difference = targetZ - endZ
+    if abs(difference) <= tolerance then return nil end
+    return { direction = difference > 0 and "above" or "below", yards = math.floor(abs(difference) + 0.5) }
 end
 
 -- Gate half width in yd or nil. Drives the final approach, the fallback and the click tolerance.

@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/FishingNavigation.lua
--- at 2661280), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- at 52c6c83), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- Fishing spots (dyn layer, kind "fishing_spot"). The data row holds only the standing point, the proven direction to the water
 -- (fishingDirX/Y) and the preview distance (middle of the cast range). The water point is computed here: standing point +

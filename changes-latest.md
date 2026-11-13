@@ -19,3 +19,11 @@
 * Cooldown Manager Auras monitors: a monitor on Target now hears your own auras while you target yourself. Before, it reported them as Missing, because the cooldown manager labels an aura on you as Player even when you are your own target. In instances, where the game may hide whether you are your own target, the last answer it could read since your target changed holds.
 * Cooldown manager (/cdm): the manual explains the game's Lua error when you move an item while a buff the cooldown manager tracks is on you. The change is still saved; make such changes with no tracked buffs on you, and reload before combat, or the next buff in combat brings the same error.
 * Dungeons: a menu entry or target name the game keeps hidden no longer causes an error; it is spoken as the game gives it. Typing letters in a list skips such entries. Target names read quest objectives in dungeons too. There the game hides whether an objective is finished, so each objective is read and its count says how far it is.
+
+### Forever
+* WowNav data: all zones are rebuilt on new map data. New stair logic, a repaired Deeprun Tram.
+* WowNav routes: every target of a rebuilt zone now has its own point in the network, and a route to it ends exactly there instead of a step short of it.
+* WowNav, ships and zeppelins: choosing a landing walks you to it like to any place. Arriving there says where the vessel waits and names the point on board, and the route to that point starts by itself. These landings have no waiting circle and no boarding beacon.
+* WowNav, portals: a route to a portal or an entrance may lead through other portals first, as to the portal room in Stormwind, and a teleport is recognised even when the game gives no height.
+* WowNav: when the target lies clearly above or below where the route ends, it says so at the start and on arrival ("Target is above, about 12 yards").
+* WowNav: chests in the destination list are called objects.
