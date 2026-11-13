@@ -37,12 +37,16 @@ GroupHealth.MAX_RAID_GROUPS = 8
 -- - The voice's own melody comes on top. A number that ends the sentence
 --   falls; a number followed by anything, even a silent word, rises: the
 --   same absmiddle sounds about 4 semitones higher on Hedda, 6.5 on Zira.
---   Punctuation and "?" change nothing on Hedda; <emph> replaces the pitch
---   instead of adding to it.
+--   Punctuation and "?" as the last word change nothing on Hedda; <emph>
+--   replaces the pitch instead of adding to it. A "?" or "!" with any word
+--   after it (2026-11-11) makes the number end a sentence: the falling
+--   form, 3 to 4 semitones lower, no deeper than the HIGH copy already
+--   goes, so it adds no range.
 -- So every announcement carries the number twice, each behind a volume
 -- gate: the LOW copy first (rising: the urgent part of the scale), the
 -- HIGH copy last (falling: the healthy part). The HIGH copy starts about
--- 0.15 seconds after the LOW one would have. 13 levels, about 1 to 1.5
+-- 0.15 seconds after the LOW one would have, 0.2 with the pause after the
+-- LOW copy (END_PAUSE). 13 levels, about 1 to 1.5
 -- semitones apart: the two lowest and the two highest 7 percent steps
 -- share a level.
 --
@@ -79,8 +83,10 @@ end
 -- levels in all, as the two lowest and the two highest steps share one);
 -- measured (the voice's peak pitch line per copy, { a, b } = a + b *
 -- absmiddle semitones, for the tests); fallback (true for the profile of
--- voices without one). The profile gets its pitch per step (scale) and the
--- first step of the HIGH copy (highFrom).
+-- voices without one); endPause (true: the LOW copy ends in
+-- GroupHealth.END_PAUSE; `measured` was then rendered with it). The
+-- profile gets its pitch per step (scale), the first step of the HIGH copy
+-- (highFrom) and the end of its LOW copy (lowEnd).
 function VoiceProfiles:register(info)
     checkLevels(info, "low")
     checkLevels(info, "high")
@@ -100,6 +106,7 @@ function VoiceProfiles:register(info)
     tinsert(scale, info.high[#info.high])
     info.scale = scale
     info.highFrom = #info.low + 2
+    info.lowEnd = info.endPause and GroupHealth.END_PAUSE or ""
     self.profiles[info.key] = info
     if info.fallback then
         self.fallback = info
@@ -210,6 +217,29 @@ function GroupHealth.ratePoints(low, high, rate)
     end
     return points
 end
+
+-- The end of the LOW copy. The silent HIGH copy right behind it cuts the
+-- audible number off: the volume drops to 0 where the next word starts,
+-- while the number is still sounding (Hedda: 60 ms heard instead of 88, at
+-- nearly full loudness, no fade). A short pause after the number lets it
+-- end as it would alone. Measured offline through SAPI, 2026-11-10, on
+-- Hedda, Zira and Katja: 5 ms gives the whole number with its natural fade
+-- and the shortest announcement (about 0.05 s longer than without the
+-- pause; 1 or 2 ms make SAPI add a longer pause of its own, about 0.1 s);
+-- 10 and 20 ms sound the same as 5. A comma, a dash or a quieter instead
+-- of a silent HIGH copy did not help. A comma instead of the pause
+-- (2026-11-11) keeps the whole number and sits 0.7 semitones higher, but
+-- SAPI adds about 0.22 s after it (and 0.08 s before a HIGH number behind
+-- a silent comma copy), and by ear it made no difference.
+-- The pause lowers both copies, as the silent LOW copy in front of an
+-- audible HIGH copy carries it too (measured 2026-11-12 with exactly the
+-- game's text, pad included): Hedda's copies stay 5.15 semitones apart
+-- (5.3 without the pause), Katja's 2.66 (3.3), but Zira's come to 1.7
+-- (5.6), too close for a scale. So the pause is a profile's choice
+-- (endPause, the register call sets profile.lowEnd), measured with it.
+-- Must stay on one line in this form: tools/voice-profiles/render.ps1
+-- reads it from here.
+GroupHealth.END_PAUSE = '<silence msec="5"/>'
 
 -- A cache key for a point list, so equal gates share one curve object.
 function GroupHealth.pointsKey(points)

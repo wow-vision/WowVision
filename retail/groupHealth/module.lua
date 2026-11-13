@@ -481,7 +481,7 @@ function module:announce(member, lane)
         end
     end
     local pad = GroupHealth.uniquePad(self:nextCount())
-    local lowPart = GroupHealth.segment(lowVolume, pitch, number .. pad, lowRate)
+    local lowPart = GroupHealth.segment(lowVolume, pitch, number .. pad .. profile.lowEnd, lowRate)
     local highPart = GroupHealth.segment(highVolume, pitch, number, highRate)
     self:speak(lowPart .. highPart .. fullPart)
     return true
