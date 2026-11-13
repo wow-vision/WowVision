@@ -78,9 +78,12 @@ function Objects:track(info)
     return objectType:track(info)
 end
 
+-- Each type updates on its own (utils.guardedCall): one that throws is
+-- reported once and the types after it still update.
 function Objects:update()
+    local guardedCall = WowVision.utils.guardedCall
     for _, objectType in ipairs(self.types.items) do
-        objectType:onUpdate()
+        guardedCall(objectType, objectType.onUpdate, objectType)
     end
 end
 
