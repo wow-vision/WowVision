@@ -84,6 +84,7 @@ Some more things to know:
 - An enemy counts only while its nameplate exists, which means within the game's nameplate range (about 45 yards on WoW: Forever).
 - Turning on the Minor and Minions nameplate options in the game also counts small trash monsters and enemy pets.
 - Only enemies that are hostile to you, alive and in combat count. Neutral monsters count once they are fighting.
+- A number that other speech threw away before it was spoken (an interrupting alert such as a target change empties the speech queue) is said again once, when no newer number came within 5 seconds. Not on Vanilla.
 - A new number is announced only after it has held for 0.3 seconds (as long as Sku waits for a pack), so an enemy that flickers out of range and back is not spoken twice. The count is also re-checked every second during a fight, which catches monsters that die or give up quietly.
 
 ### Announce Crowd Control

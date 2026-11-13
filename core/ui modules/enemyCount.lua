@@ -388,3 +388,68 @@ function Settler:update(count, now)
     end
     return nil
 end
+
+-- Lost lines ----------------------------------------------------------------
+-- A number waiting in WowVision's speech queue is thrown away when any
+-- speech stop empties the queue: an alert that interrupts (a target change,
+-- an error message) or a key that does. The settler takes it as said, so
+-- the number heard before stood. In a WoW: Forever dungeon (2026-11-13, 101
+-- fights in 84 minutes) 29 of 567 lines were lost, every one while other
+-- speech played, and the old number stood up to 63 s. A lost number is said
+-- again once, when no newer number came within RESAY_AFTER seconds of it:
+-- 13 times in that run.
+--
+-- A stop replaces the queue table with a new one (tbc/, mists/, retail/
+-- speech.lua) and never takes a line out of the old one, so a line still in
+-- the old table after the swap was never sent. One the queue sent is no
+-- longer in it.
+enemyCount.RESAY_AFTER = 5
+
+local LostLine = WowVision.Class("EnemyCountLostLine")
+enemyCount.LostLine = LostLine
+
+function LostLine:initialize()
+    self.item = nil
+end
+
+local function holds(queue, item)
+    for _, entry in ipairs(queue) do
+        if entry == item then
+            return true
+        end
+    end
+    return false
+end
+
+-- A number fired: `queue` the speech queue it was put in, `item` its line
+-- there (nil when it was sent at once or not queued: nothing to watch),
+-- `message` what to fire again.
+function LostLine:fired(queue, item, message, now)
+    self.queue, self.item, self.message, self.at = queue, item, message, now
+end
+
+-- Run on the count's checks with the speech queue as it is now. Returns the
+-- message to fire again, once, or nil.
+function LostLine:check(queue, now)
+    local item = self.item
+    if item == nil then
+        return nil
+    end
+    if queue == self.queue then
+        if not holds(queue, item) then
+            -- sent
+            self.item = nil
+        end
+        return nil
+    end
+    if not holds(self.queue, item) then
+        -- sent before the stop
+        self.item = nil
+        return nil
+    end
+    if now - self.at < enemyCount.RESAY_AFTER then
+        return nil
+    end
+    self.item = nil
+    return self.message
+end

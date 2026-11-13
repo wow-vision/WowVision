@@ -296,7 +296,45 @@ local api = {
 local settler = enemyCount.Settler:new(SETTLE)
 local controlSettler = enemyCount.Settler:new(SETTLE, enemyCount.CONTROL_IDLE)
 local tracker = enemyCount.ControlTracker:new()
+local lostLine = enemyCount.LostLine:new()
 local recountQueued, settleQueued = false, false
+
+-- Fires a count and watches its line in the speech queue (lostLine). A
+-- message without a number (crowd control texts alone) leaves the watch on
+-- the last number. The queue's absence (Vanilla) or a line sent at once
+-- leaves nothing to watch.
+local function sayCount(message)
+    local speech = WowVision.base.speech
+    local queue = speech and speech.queue
+    local before = type(queue) == "table" and #queue or nil
+    enemyCountAlert:fire(message)
+    if message.count == nil or before == nil then
+        return
+    end
+    local item = nil
+    if speech.queue == queue and #queue > before then
+        item = queue[#queue]
+    end
+    lostLine:fired(queue, item, message, GetTime())
+end
+
+-- Says a lost number again (lostLine), once.
+local function resayLost()
+    local speech = WowVision.base.speech
+    local queue = speech and speech.queue
+    if type(queue) ~= "table" or not enemyCountAlert.enabled then
+        return
+    end
+    local message = lostLine:check(queue, GetTime())
+    if message ~= nil then
+        -- A copy marked as said again, for whoever looks at the alert.
+        local again = { again = true }
+        for key, value in pairs(message) do
+            again[key] = value
+        end
+        enemyCountAlert:fire(again)
+    end
+end
 
 -- Whether a count is on or about to be said, so the ticker keeps checking.
 local function counting()
@@ -317,7 +355,7 @@ local function recountControl(skip)
                 controlEndedAlert:fire({})
             end
             if message.count ~= nil or message.texts ~= nil then
-                enemyCountAlert:fire(message)
+                sayCount(message)
             end
         end
     end
@@ -335,7 +373,7 @@ local function recount(skip)
         local count = enemyCount.count(api, module.settings.enemyCountMode, module.settings.enemyCountEliteOnly, skip)
         local say = settler:update(count, GetTime())
         if say ~= nil then
-            enemyCountAlert:fire({ count = say })
+            sayCount({ count = say })
         end
         active = settler
     end
@@ -414,6 +452,7 @@ function module:onEnable()
             return
         end
         nextCheck = now + 1
+        resayLost()
         if counting() or UnitAffectingCombat("player") then
             recount()
         end

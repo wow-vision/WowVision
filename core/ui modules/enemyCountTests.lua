@@ -415,3 +415,49 @@ testRunner:addSuite("EnemyCountControl", {
         t:assertEqual(settler:update("2|", 1.5), "2|")
     end,
 })
+
+-- Lost lines -------------------------------------------------------------------
+
+testRunner:addSuite("EnemyCountLostLine", {
+    ["a line the queue sent is not said again"] = function(t)
+        local watch = enemyCount.LostLine:new()
+        local queue, line = {}, {}
+        table.insert(queue, line)
+        watch:fired(queue, line, { count = 2 }, 0)
+        table.remove(queue, 1)
+        t:assertEqual(watch:check(queue, 1), nil)
+        -- A stop after it was sent changes nothing.
+        t:assertEqual(watch:check({}, 10), nil)
+    end,
+
+    ["a line thrown away by a stop is said again after 5 seconds, once"] = function(t)
+        local watch = enemyCount.LostLine:new()
+        local queue, line, message = {}, {}, { count = 3 }
+        table.insert(queue, { "other speech" })
+        table.insert(queue, line)
+        watch:fired(queue, line, message, 10)
+        local afterStop = {}
+        t:assertEqual(watch:check(afterStop, 11), nil)
+        t:assertEqual(watch:check(afterStop, 14.9), nil)
+        t:assertEqual(watch:check(afterStop, 15), message)
+        t:assertEqual(watch:check(afterStop, 16), nil)
+    end,
+
+    ["a newer number replaces the watch"] = function(t)
+        local watch = enemyCount.LostLine:new()
+        local queue, lost = {}, {}
+        table.insert(queue, lost)
+        watch:fired(queue, lost, { count = 3 }, 0)
+        local afterStop = {}
+        watch:fired(afterStop, nil, { count = 2 }, 2)
+        t:assertEqual(watch:check({}, 10), nil)
+    end,
+
+    ["a line still waiting is not said again"] = function(t)
+        local watch = enemyCount.LostLine:new()
+        local queue, line = {}, {}
+        table.insert(queue, line)
+        watch:fired(queue, line, { count = 1 }, 0)
+        t:assertEqual(watch:check(queue, 30), nil)
+    end,
+})
