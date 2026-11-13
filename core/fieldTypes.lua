@@ -222,6 +222,19 @@ classes.registerFieldType("ComponentArray", {
             return removed
         end,
 
+        -- Whether the Copy menu entry is offered: the element names itself
+        -- by a label field (the copy is named "<label> Copy 1"; an entry
+        -- without one, like a static buffer's object, would come out as a
+        -- second identical entry) and has a store the copy persists in.
+        canCopy = function(field, obj, instance)
+            if instance.class == nil or instance.class:getField("label") == nil then
+                return false
+            end
+            local side = rawget(instance, "_scopeSide")
+            local pair = rawget(obj, "_db")
+            return side ~= nil and pair ~= nil and classes.constrainPair(field, pair)[side] ~= nil
+        end,
+
         -- Add a full copy of one element right after it, in the same store
         -- side. The copy goes through the restore path (factory + setDB on
         -- a db-form config), so nested arrays (a monitor's rules) and alert

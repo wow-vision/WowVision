@@ -425,7 +425,7 @@ local function pushComponentList(field, owner)
             local pair = rawget(owner, "_db")
             local hasScope = field.setComponentScope ~= nil and pair ~= nil and pair.global ~= nil
             vtable.contextActions = function(add)
-                if field.copyElement ~= nil then
+                if field:canCopy(owner, captured) then
                     add({
                         label = L["Copy"],
                         onActivate = function()

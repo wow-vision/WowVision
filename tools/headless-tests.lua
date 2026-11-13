@@ -1603,6 +1603,39 @@ WowVision.testing.testRunner:addSuite("ComponentCopy", {
         t:assertEqual(built, 2)
         t:assertEqual(#container.monitors[2].rules, 2)
     end,
+    ["Copy is offered on labeled components with a store only"] = function(t)
+        local Unnamed = WowVision.Class("CopyTestUnnamed")
+        Unnamed:addFields({ { key = "value", type = "Number", persist = true } })
+        local function arrayOf(factory)
+            return WowVision.classes.newField({
+                key = "things",
+                type = "ComponentArray",
+                persist = true,
+                factory = factory,
+                getTypeKey = function()
+                    return "Thing"
+                end,
+            })
+        end
+        local unnamedField = arrayOf(function(config)
+            return Unnamed:new(config)
+        end)
+        local unnamed = { things = {} }
+        unnamedField:setDB(unnamed, { global = { things = { _type = "array" } } })
+        unnamedField:addElement(unnamed, { value = 1 })
+        t:assertFalse(unnamedField:canCopy(unnamed, unnamed.things[1]))
+
+        local monitorField = arrayOf(function(config)
+            return WowVision.monitors.registry:createTemporaryComponent(config)
+        end)
+        local stored = { things = {} }
+        monitorField:setDB(stored, { global = { things = { _type = "array" } } })
+        monitorField:addElement(stored, { type = "CdmAura", label = "Dots" })
+        t:assertTrue(monitorField:canCopy(stored, stored.things[1]))
+        local loose = { things = {} }
+        monitorField:addElement(loose, { type = "CdmAura", label = "Loose" })
+        t:assertFalse(monitorField:canCopy(loose, loose.things[1]))
+    end,
     ["copying a buffer before the focused one keeps the focus"] = function(t)
         local group = WowVision.buffers:create("Group", { label = "Group" })
         group:setDB({ global = {} })
