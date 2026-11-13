@@ -76,7 +76,10 @@ local function installGame(game)
         table.insert(spoken, text)
     end
 
+    -- As in the game, the shown special popups (the role invitation) are in
+    -- the same list as the static dialogs, without a `which`.
     local dialogs = game.dialogs or {}
+    local invite = game.invite
     _G.StaticPopup_ForEachShownDialog = function(func)
         for _, dialog in ipairs(dialogs) do
             func({
@@ -86,12 +89,15 @@ local function installGame(game)
                 end,
             })
         end
+        if invite ~= nil and invite.shown ~= false then
+            func(_G.LFGInvitePopup)
+        end
     end
 
-    local invite = game.invite
     if invite ~= nil then
         local regions = { fakeFontString(invite.title) }
         _G.LFGInvitePopup = {
+            special = true,
             QueueWarningText = invite.warning ~= nil and fakeFontString(invite.warning, invite.warningShown) or nil,
             IsShown = function()
                 return invite.shown ~= false
@@ -168,6 +174,46 @@ testRunner:addSuite("GroupInvite", {
         t:assertFalse(ok)
         t:assertEqual(accept.clicks, 0)
         t:assertEqual(spoken[1], "Choose a role first")
+    end,
+
+    ["accept takes the plain invitation when the role invitation is listed too"] = function(t)
+        local plain, roleAccept = fakeButton(), fakeButton()
+        local spoken, restore = installGame({
+            dialogs = { { which = "PARTY_INVITE", buttons = { plain } } },
+            invite = { title = "Ann invites you", accept = roleAccept },
+        })
+        local ok = popups.acceptInvite()
+        restore()
+        t:assertTrue(ok)
+        t:assertEqual(plain.clicks, 1)
+        t:assertEqual(roleAccept.clicks, 0)
+        t:assertEqual(spoken[1], "Group invitation accepted")
+    end,
+
+    ["the popups window leaves the special role invitation to its own window"] = function(t)
+        local popupsWindow = harness.windows.popups
+        local _, restore = installGame({ invite = { title = "Ann invites you", accept = fakeButton() } })
+        local open = popupsWindow.isOpen(popupsWindow)
+        local builder, record = recordingBuilder()
+        popupsWindow.graphScreen.render(builder)
+        restore()
+        t:assertFalse(open)
+        t:assertNil(record.contexts[1])
+    end,
+
+    ["the popups window still opens for a static dialog next to the role invitation"] = function(t)
+        local popupsWindow = harness.windows.popups
+        local _, restore = installGame({
+            dialogs = { { which = "CONFIRM_LEAVE", buttons = {} } },
+            invite = { title = "Ann invites you", accept = fakeButton() },
+        })
+        local open = popupsWindow.isOpen(popupsWindow)
+        local builder, record = recordingBuilder()
+        popupsWindow.graphScreen.render(builder)
+        restore()
+        t:assertTrue(open)
+        t:assertEqual(#record.contexts, 1)
+        t:assertEqual(record.contexts[1].key, "popup:CONFIRM_LEAVE")
     end,
 
     ["accept without an invitation says so"] = function(t)

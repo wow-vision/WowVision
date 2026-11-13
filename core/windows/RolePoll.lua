@@ -9,8 +9,9 @@ local ControlId = graph.ControlId
 -- Role check popups (party role poll and LFD role check) and the group
 -- invitation that asks for a role (LFGInvitePopup: Retail and WoW: Forever
 -- show it in place of the plain invitation popup when the inviting group
--- offers roles, e.g. a group from the group finder; it is shown with
--- StaticPopupSpecial_Show, so the popups window never sees it). Each one:
+-- offers roles, e.g. a group from the group finder). All three are special
+-- popups (StaticPopupSpecial_Show): the game lists them among its shown
+-- dialogs, and the popups window skips them (no `which`). Each one:
 -- the title (the invitation line on the invite popup), the warning that
 -- accepting leaves your queues when the game shows it, the three role
 -- check buttons as a vertical list, then accept, decline, close. A role the
