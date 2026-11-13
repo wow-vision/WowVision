@@ -85,7 +85,7 @@ Noch ein paar Dinge, die du wissen solltest:
 - Schaltest du die Namensplaketten-Optionen Minor und Minions im Spiel ein (Minor und Minions heißen sie im englischen Spiel; in der deutschen Oberfläche suche nach den entsprechenden Optionen für unwichtige Gegner und Diener), zählen auch kleine Trashmonster und gegnerische Begleiter.
 - Nur Gegner zählen, die dir feindlich gesinnt sind, leben und im Kampf sind. Neutrale Monster zählen, sobald sie kämpfen.
 - Eine Zahl, die andere Sprachausgabe verworfen hat, bevor sie gesprochen wurde (ein unterbrechender Alarm wie ein Zielwechsel leert die Sprachwarteschlange), wird einmal wiederholt, wenn innerhalb von 5 Sekunden keine neuere Zahl kam. Nicht in Vanilla.
-- Eine neue Zahl wird erst angesagt, nachdem sie 0,3 Sekunden lang Bestand hatte (so lange wartet Sku auf eine Gruppe von Gegnern). Ein Gegner, der aus der Reichweite und wieder zurück flackert, wird also nicht doppelt gesprochen. Während eines Kampfes wird die Zahl außerdem jede Sekunde neu geprüft, wodurch Monster erfasst werden, die leise sterben oder aufgeben.
+- Eine neue Zahl wird erst angesagt, nachdem sie 0,3 Sekunden lang Bestand hatte. Ein Gegner, der aus der Reichweite und wieder zurück flackert, wird also nicht doppelt gesprochen. Die Wartezeit beginnt bei jeder Änderung neu, so wird eine Gruppe, die nacheinander dazukommt, als eine Zahl gesagt, 0,3 Sekunden nach dem letzten Gegner. Während eines Kampfes wird die Zahl außerdem jede Sekunde neu geprüft, wodurch Monster erfasst werden, die leise sterben oder aufgeben.
 
 ### Kontrolleffekte ansagen
 

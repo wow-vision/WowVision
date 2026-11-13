@@ -135,8 +135,11 @@ local unitAuras = C_UnitAuras or {}
 
 -- A new number is said once it held this long: a plate that blinks out
 -- and back is not spoken twice, and a pack that comes in one after another
--- is said as one number. 0.3 s is the window Sku's TBC count waits for a
--- burst of new enemies (tFlushWindow in SkuCore/aqCombat.lua).
+-- is said as one number. 0.3 s is the length of the window Sku's TBC count
+-- waits for a burst of new enemies (tFlushWindow in SkuCore/aqCombat.lua).
+-- Unlike Sku's window, which flushes 0.3 s after the first new enemy, this
+-- hold starts again at every change, so a pack that trickles in is said
+-- 0.3 s after its last member.
 local SETTLE = 0.3
 
 local PLATES = {}
