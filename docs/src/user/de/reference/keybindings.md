@@ -188,6 +188,7 @@ Das sind keine zusätzlichen Belegungen. Es sind die Fenstertasten aus den erste
 | Scanner | Tab | Springt zwischen der Liste und dem Schalter Aktualisieren (Refresh) |
 | Aktionsleisten (Umschalt+F4), Taschen und andere Platzfenster | \\ oder Strg+D, dann Entf | Einen Platz auf den Cursor nehmen, dann leeren oder zerstören |
 | Freunde-, Ignorier-, Wer- und Gildenlisten (Classic Era, TBC und Mists) | Bild auf, Bild ab | Die Liste eine Seite scrollen; Pos1 und Ende tun dort nichts |
+| Fenster mit Seiten: Zauberbuch, Händler, Briefkasten, Bücher und Briefe, Spielzeugkiste, Erbstücke, Vorlagen | Bild auf, Bild ab | Zur vorherigen oder nächsten Seite blättern und auf ihrem ersten Eintrag landen |
 | WowVision-Menü, Kontextmenüs, Dropdown-Menüs | Buchstaben | Zum nächsten Eintrag springen, der mit dem Buchstaben beginnt. Lässt sich mit der Einstellung Buchstaben-Navigation in Menüs (Letter Navigation in Menus) ausschalten |
 | Eingabefelder | Eingabe, Tab, Esc | Eingabe setzt den Cursor in ein Feld des Spiels und übernimmt ein WowVision-Feld; Tab geht weiter; Esc bricht ein WowVision-Feld ab |
 

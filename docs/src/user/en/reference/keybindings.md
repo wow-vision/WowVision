@@ -184,6 +184,7 @@ These are not extra bindings. They are the window keys from the first sections, 
 | Scanner | Tab | Jumps between the list and the Refresh button |
 | Action bars (Shift+F4), bags and other slot windows | \\ or Ctrl+D, then Delete | Pick up a slot onto the cursor, then clear or destroy it |
 | Friends, ignore, who and guild lists (Classic Era, TBC and Mists) | Page Up, Page Down | Scroll the list a page; Home and End do nothing there |
+| Paged windows: spellbook, merchant, mailbox, books and letters, toy box, heirlooms, appearances | Page Up, Page Down | Turn to the previous or next page and land on its first entry |
 | WowVision menu, context menus, dropdown menus | Letters | Jump to the next entry that starts with the letter. Can be switched off with the Letter Navigation in Menus setting |
 | Edit boxes | Enter, Tab, Escape | Enter puts the cursor in a game box and accepts a WowVision box; Tab moves on; Escape cancels a WowVision box |
 
