@@ -190,7 +190,7 @@ Lädt dich jemand in eine Gruppe ein, zeigt das Spiel ein Einladungs-Popup, das 
 | /wv accept | Nimmt die Einladung an, die gerade angezeigt wird |
 | Taste Gruppeneinladung annehmen (Accept Group Invitation) | Dasselbe als Taste. Sie ist unbelegt: Leg sie im Tastenbelegungs-Bildschirm (/wv bind) auf eine Taste |
 
-Du hörst „Gruppeneinladung angenommen“. Ist keine Einladung da, hörst du „Keine Gruppeneinladung“. Eine Einladung mit Rollenwahl wird mit der aktivierten Rolle angenommen; ist noch keine aktiviert, hörst du „Erst eine Rolle wählen“ und wählst sie im Einladungsfenster. Zum Ablehnen beantwortest du das Popup nach dem Kampf oder lässt die Einladung verfallen.
+Du hörst „Gruppeneinladung angenommen“. Ist keine Einladung da, hörst du „Keine Gruppeneinladung“. Eine Einladung mit Rollenwahl wird mit der aktivierten Rolle angenommen; ist noch keine aktiviert, hörst du „Erst eine Rolle wählen“ und wählst sie nach dem Kampf im Einladungsfenster. Zum Ablehnen beantwortest du das Popup oder Fenster nach dem Kampf oder lässt die Einladung verfallen.
 
 ## Eine Gruppe schnell verlassen: /pquit und /dquit
 
