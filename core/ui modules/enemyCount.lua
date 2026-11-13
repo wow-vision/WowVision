@@ -482,6 +482,8 @@ end
 --                        voice pack number or a sound plays at once
 --   queue()              WowVision's speech queue table, nil without one (Vanilla)
 --   now()                the time
+--   enabled()            whether the Enemy Count alert is on
+--   mode()               the crowd control mode (enemyCountControlMode)
 -- Only a line that waits in the queue is watched. A line sent at once (the
 -- queue was idle) or one cut while it already plays is not said again: the
 -- queue no longer holds it, and nothing tells it apart from one heard.
@@ -513,6 +515,7 @@ function Announcer:say(message)
         item = queue[#queue]
     end
     self.lost:fired(queue, item, message, config.now())
+    self.mode = config.mode()
 end
 
 -- The number watched no longer stands.
@@ -523,8 +526,16 @@ end
 -- Says a lost number again, once, while it is still the count's: not while
 -- a newer number waits to settle in `active` (it is said soon), and with
 -- `plain` (no crowd control) only when the settler still holds that number.
+--
+-- While the alert is off nothing is counted, and after a crowd control mode
+-- switch the numbers mean something else, so a lost number from before
+-- either is forgotten, never said late.
 function Announcer:resay(active, plain)
     local config = self.config
+    if not config.enabled() or config.mode() ~= self.mode then
+        self.lost:forget()
+        return
+    end
     local queue = config.queue()
     if type(queue) ~= "table" then
         return

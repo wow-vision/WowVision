@@ -325,6 +325,12 @@ local announcer = enemyCount.Announcer:new({
         return speech and speech.queue
     end,
     now = GetTime,
+    enabled = function()
+        return enemyCountAlert.enabled
+    end,
+    mode = function()
+        return module.settings.enemyCountControlMode
+    end,
 })
 
 local function sayCount(message)
@@ -456,9 +462,7 @@ function module:onEnable()
                 recount()
             end
         end
-        if not enemyCountAlert.enabled then
-            check()
-        elseif controlOn() then
+        if controlOn() then
             announcer:tick(check, controlSettler, false)
         else
             announcer:tick(check, settler, true)

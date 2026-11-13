@@ -475,7 +475,7 @@ testRunner:addSuite("EnemyCountLostLine", {
 -- replaces the queue table. fired: every message the alert fired, with
 -- which outputs ("all" or "speech").
 local function speechWorld(busy)
-    local w = { queue = {}, time = 0, fired = {}, busy = busy ~= false }
+    local w = { queue = {}, time = 0, fired = {}, busy = busy ~= false, enabled = true, mode = "off" }
     function w.speak(text)
         if w.busy then
             table.insert(w.queue, { text = text })
@@ -501,6 +501,12 @@ local function speechWorld(busy)
         end,
         now = function()
             return w.time
+        end,
+        enabled = function()
+            return w.enabled
+        end,
+        mode = function()
+            return w.mode
         end,
     })
     return w
@@ -574,6 +580,29 @@ testRunner:addSuite("EnemyCountAnnouncer", {
         w.announcer:tick(function()
             active.pending = 2
         end, active, true)
+        t:assertEqual(#w.fired, 1)
+    end,
+
+    ["a lost number is forgotten while the alert is off"] = function(t)
+        local w = speechWorld()
+        w.announcer:say({ count = 3 })
+        w.stop()
+        w.time = 2
+        w.enabled = false
+        w.announcer:resay(settled(3), true)
+        w.time = 60
+        w.enabled = true
+        w.announcer:resay(settled(3), true)
+        t:assertEqual(#w.fired, 1)
+    end,
+
+    ["a lost number from before a crowd control mode switch is not said"] = function(t)
+        local w = speechWorld()
+        w.announcer:say({ count = 3 })
+        w.stop()
+        w.mode = "names"
+        w.time = 10
+        w.announcer:resay(settled(3), false)
         t:assertEqual(#w.fired, 1)
     end,
 
