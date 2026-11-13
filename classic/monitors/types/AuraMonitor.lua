@@ -107,9 +107,10 @@ function AuraStateRule:reset()
     WowVision.monitors.StateRule.reset(self)
 end
 
+-- Like reset (the old target's auras dropped), but the next state settles
+-- in silence.
 function AuraStateRule:forget()
-    self.trackedObjects = {}
-    self._baseDuration = nil
+    self:reset()
     WowVision.monitors.StateRule.forget(self)
 end
 

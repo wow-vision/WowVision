@@ -648,14 +648,16 @@ function CdmAuraStateRule:currentText(unit)
     return name .. ", " .. L["Missing"]
 end
 
+-- reset announces the next state, forget settles it in silence; both drop
+-- the pandemic hold.
 function CdmAuraStateRule:reset()
     monitors.StateRule.reset(self)
     self._holdSince = nil
 end
 
 function CdmAuraStateRule:forget()
+    self:reset()
     monitors.StateRule.forget(self)
-    self._holdSince = nil
 end
 
 function CdmAuraStateRule:getLabel()
@@ -799,6 +801,13 @@ function CdmAuraMonitor:rescan()
     end
 end
 
+-- The /wv cdmlog note on a rule's first tick after a target change.
+local TARGET_CHANGE_TRACE = {
+    changes = "after target change",
+    always = "after target change, announcing",
+    never = "after target change, silent",
+}
+
 -- The viewers refresh their items against the new target a tick after the
 -- change (each item is forced inactive first); two ticks of quiet keep
 -- that from reading as the aura dropping and coming back.
@@ -807,16 +816,9 @@ function CdmAuraMonitor:onTargetChanged()
         return
     end
     self._skipTicks = 2
-    self:rulesOnTargetChange()
-    local mode = self.announceOnUnitChange
+    local note = TARGET_CHANGE_TRACE[self:rulesOnTargetChange()] or "after target change"
     for _, rule in ipairs(self.rules or {}) do
-        if mode == "always" then
-            rule._traceNext = "after target change, announcing"
-        elseif mode == "never" then
-            rule._traceNext = "after target change, silent"
-        else
-            rule._traceNext = "after target change"
-        end
+        rule._traceNext = note
     end
 end
 
