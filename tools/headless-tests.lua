@@ -1570,6 +1570,39 @@ WowVision.testing.testRunner:addSuite("ComponentCopy", {
         t:assertEqual(db.monitors[2].label, "Second")
         t:assertEqual(db.monitors[3].label, "Third")
     end,
+    ["a copy builds its rules once"] = function(t)
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return (instance.class.name:gsub("Monitor$", ""))
+            end,
+        })
+        field:setDB(container, { global = db })
+        field:addElement(container, { type = "CdmAura", label = "Dots", unit = "target" })
+        local original = container.monitors[1]
+        local rulesField = original.class:getField("rules")
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 8921 })
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 93402 })
+        local registry = WowVision.monitors.ruleRegistry
+        local built = 0
+        local saved = registry.createTemporaryComponent
+        registry.createTemporaryComponent = function(...)
+            built = built + 1
+            return saved(...)
+        end
+        local ok, err = pcall(field.copyElement, field, container, original)
+        registry.createTemporaryComponent = saved
+        t:assertTrue(ok, tostring(err))
+        t:assertEqual(built, 2)
+        t:assertEqual(#container.monitors[2].rules, 2)
+    end,
 })
 
 WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {

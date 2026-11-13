@@ -247,7 +247,20 @@ classes.registerFieldType("ComponentArray", {
             if changes ~= nil then
                 changes(config)
             end
-            local copy = field.factory(config)
+            -- Built once: the factory gets the config without its nested
+            -- component arrays, which the copy's setDB below builds from the
+            -- store. Building them in the factory too left a first set of
+            -- rules or buffers running unowned (a tracked buffer's tracker).
+            local build = {}
+            for key, value in pairs(config) do
+                build[key] = value
+            end
+            for _, nested in ipairs(instance.class:getFields()) do
+                if nested.typeKey == "ComponentArray" then
+                    build[nested.key] = nil
+                end
+            end
+            local copy = field.factory(build)
             -- The store keeps memory's order: right after the original's
             -- config, else before the config of the next element in memory
             -- that sits in the same array, else at the end.
