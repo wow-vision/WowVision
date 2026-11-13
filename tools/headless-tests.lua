@@ -1789,12 +1789,14 @@ do
     end
     loadAddonFile("core/graph/Screen.lua")
     loadAddonFile("core/graph/Host.lua")
+    loadAddonFile("core/graph/liveWatch.lua")
     CreateFrame = savedCreateFrame
     announcer.positionText, announcer.expandedStateText = savedPosition, savedExpanded
     WowVision.graphHost = nil
 end
 loadAddonFile("core/scanner/menuTests.lua")
 loadAddonFile("core/graph/menuNavTests.lua")
+loadAddonFile("core/graph/secretLabelTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
 
