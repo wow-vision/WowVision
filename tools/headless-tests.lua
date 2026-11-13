@@ -419,6 +419,9 @@ do
                 getDefaultDB = function()
                     return {}
                 end,
+                -- the profiler's side: off, as the game's starts
+                start = function() end,
+                stop = function() end,
             }
         end,
     }
