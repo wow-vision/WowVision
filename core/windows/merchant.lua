@@ -183,6 +183,18 @@ local function render(builder, screen)
     builder:popContext()
 
     if not buyback then
+        if
+            (MerchantPrevPageButton ~= nil and MerchantPrevPageButton:IsShown())
+            or (MerchantNextPageButton ~= nil and MerchantNextPageButton:IsShown())
+        then
+            nodes.pageKeys(builder, {
+                prev = MerchantPrevPageButton,
+                next = MerchantNextPageButton,
+                page = function()
+                    return MerchantFrame.page
+                end,
+            })
+        end
         if MerchantPrevPageButton ~= nil and MerchantPrevPageButton:IsShown() then
             builder:beginStop("prevPage")
             builder:addItem(

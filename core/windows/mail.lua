@@ -91,6 +91,19 @@ local function renderInbox(builder)
     end
     builder:popContext()
 
+    if
+        (InboxPrevPageButton ~= nil and InboxPrevPageButton:IsShown())
+        or (InboxNextPageButton ~= nil and InboxNextPageButton:IsShown())
+    then
+        nodes.pageKeys(builder, {
+            prev = InboxPrevPageButton,
+            next = InboxNextPageButton,
+            page = function()
+                return InboxFrame.pageNum
+            end,
+        })
+    end
+
     if InboxPrevPageButton ~= nil and InboxPrevPageButton:IsShown() then
         builder:beginStop("prevPage")
         builder:addItem(

@@ -136,6 +136,17 @@ local function render(builder, screen)
     end
     builder:popContext()
 
+    if
+        (SpellBookPrevPageButton ~= nil and SpellBookPrevPageButton:IsShown())
+        or (SpellBookNextPageButton ~= nil and SpellBookNextPageButton:IsShown())
+    then
+        nodes.pageKeys(builder, {
+            prev = SpellBookPrevPageButton,
+            next = SpellBookNextPageButton,
+            page = SpellBook_GetCurrentPage,
+        })
+    end
+
     if SpellBookPrevPageButton ~= nil and SpellBookPrevPageButton:IsShown() then
         builder:beginStop("prevPage")
         builder:addItem(

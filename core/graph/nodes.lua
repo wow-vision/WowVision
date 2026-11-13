@@ -944,14 +944,58 @@ function nodes.proxyFoundButton(config)
     return vtable
 end
 
+-- Page Up and Page Down over a paged list or text: every node of the current
+-- stop (call it right after the content, before the next beginStop) presses
+-- the game's own Previous and Next Page buttons, a true click as Enter does
+-- (a page number written from addon code would taint the secure spell
+-- buttons it feeds). A turned page lands on the stop's first entry (Host
+-- landAfterPageTurn). config: { prev = button, next = button, page =
+-- function returning the shown page }. A direction whose button is hidden
+-- (a book's first page has no Previous) clicks nothing but still owns its
+-- key, so it never scrolls the chat instead; the target resolves each tick
+-- (Host click drift), so the key works once the button shows.
+function nodes.pageKeys(builder, config)
+    local stopKey = builder.stopKey
+    local ok, page = pcall(config.page)
+    if ok and page ~= nil then
+        builder:setStopPage(page)
+    end
+    local function spec(button, keymap)
+        return {
+            binding = keymap,
+            type = "Click",
+            emulatedKey = "LeftButton",
+            target = function()
+                if button ~= nil and button:IsShown() then
+                    return button
+                end
+                return nil
+            end,
+            postClick = function()
+                WowVision.graphHost:landAfterPageTurn(stopKey)
+            end,
+        }
+    end
+    builder:addStopBindings({ spec(config.prev, "scrollUp"), spec(config.next, "scrollDown") })
+    return builder
+end
+
 -- A page row for Blizzard paging controls (the collections paging frame, the
 -- modern spellbook's paging controls: both carry PrevPageButton, PageText,
 -- NextPageButton): previous page, the page text, next page. Nothing while
--- the controls are hidden or there is a single page.
+-- the controls are hidden or there is a single page. Call it right after the
+-- paged content: Page Up and Page Down on that content turn the pages too.
 function nodes.pagingRow(builder, key, paging)
     if paging == nil or not paging:IsShown() or (paging.GetMaxPages ~= nil and paging:GetMaxPages() <= 1) then
         return builder
     end
+    nodes.pageKeys(builder, {
+        prev = paging.PrevPageButton,
+        next = paging.NextPageButton,
+        page = function()
+            return paging:GetCurrentPage()
+        end,
+    })
     builder:beginStop(key .. "Paging")
     builder:startRow()
     builder:addItem(

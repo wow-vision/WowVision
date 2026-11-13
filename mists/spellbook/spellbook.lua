@@ -84,6 +84,13 @@ function module.renderSpellBook(builder)
             builder:addItem(ControlId.structural("spellsEmpty"), nodes.text({ label = L["Empty"] }))
         end
         builder:popContext()
+        if SpellBookPageNavigationFrame ~= nil and SpellBookPageNavigationFrame:IsShown() then
+            nodes.pageKeys(builder, {
+                prev = SpellBookPrevPageButton,
+                next = SpellBookNextPageButton,
+                page = SpellBook_GetCurrentPage,
+            })
+        end
     end
 
     if SpellBookPageNavigationFrame ~= nil and SpellBookPageNavigationFrame:IsShown() then
