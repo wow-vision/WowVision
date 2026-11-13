@@ -1,3 +1,8 @@
+### Summary
+The Minimap Scanner is switched off for now on Retail and WoW: Forever: a change by Blizzard broke the minimap reads it depends on. New in this version: WowNav runs on rebuilt map data for every zone, Turn to Target and Turn to Focus turn you to face a unit, a Breath Alert tells you how much air is left, Page Up and Page Down turn pages, group invitations that ask for your role are read, monitors and buffers can be copied, the enemy count in a group starts earlier, and errors in dungeons no longer stop menus and windows.
+
+The full manual is online, in English and German: [WowVision documentation](https://wow-vision.github.io/WowVision/).
+
 ### All Versions
 * Group invitations that ask for your role (Retail and WoW: Forever, for example from a group finder group) are read: the invitation line, the queue warning, the role checkboxes, Accept and Decline. Before, this window was silent and the invitation ran out. /wv accept and the Accept Group Invitation key accept it with the checked role.
 * Bags: the drag key on a bag slot places the bag you are holding, replacing the one in the slot, as Enter does. Before, it only picked up the bag that was in the slot.

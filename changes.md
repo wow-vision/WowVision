@@ -1,5 +1,44 @@
 # Changes
 
+## V1.0.3
+
+### Summary
+The Minimap Scanner is switched off for now on Retail and WoW: Forever: a change by Blizzard broke the minimap reads it depends on. New in this version: WowNav runs on rebuilt map data for every zone, Turn to Target and Turn to Focus turn you to face a unit, a Breath Alert tells you how much air is left, Page Up and Page Down turn pages, group invitations that ask for your role are read, monitors and buffers can be copied, the enemy count in a group starts earlier, and errors in dungeons no longer stop menus and windows.
+
+The full manual is online, in English and German: [WowVision documentation](https://wow-vision.github.io/WowVision/).
+
+### All Versions
+* Group invitations that ask for your role (Retail and WoW: Forever, for example from a group finder group) are read: the invitation line, the queue warning, the role checkboxes, Accept and Decline. Before, this window was silent and the invitation ran out. /wv accept and the Accept Group Invitation key accept it with the checked role.
+* Bags: the drag key on a bag slot places the bag you are holding, replacing the one in the slot, as Enter does. Before, it only picked up the bag that was in the slot.
+* Lists: with the new Sound at the Start and End of Lists setting (UI menu, on by default), Up on the first entry or Down on the last entry of a list plays a short sound and reads the entry again, as in Sku.
+* Navigation: new Breath Alert for the breath, fatigue and feign death bars. It speaks the bar's name and how full it is, one line per step down ("Breath 90", "Breath 80", down to "Breath 0"); the Breath Step setting chooses steps of 5, 10, 20 or 25 percent. The Compass screen in the Navigation menu is now called Environmental Alerts, as it holds this and the zone, indoors, flying, swimming and diving alerts; saved settings carry over.
+* Paged windows: Page Up and Page Down turn the page while you are on the paged content: the spellbook, the merchant, the mailbox, books and letters, and on WoW: Forever the toy box, heirlooms and appearances. They press the window's own Previous Page and Next Page buttons and put you on the first entry of the new page. The page buttons stay where they were.
+* Errors: one part of WowVision that fails no longer stops the rest. Before, an error that repeated every frame (for example a range check in a dungeon) left menus and windows dead until a reload; now the error is still reported, once instead of every frame, and everything else keeps working. The spoken Lua error alert says each error at most once every 5 seconds, also when two errors take turns.
+* Range checks: WowVision's copy of LibRangeCheck is now the current upstream version with our fixes, and it is used by every addon that embeds the library. Another addon's older copy can no longer throw errors every frame in dungeons. In dungeons a new target no longer gets the old target's range for a moment.
+* Monitors: Announce on Target Change is now a choice of Only Changes (the default, what off did before), Always (what on did before) and Never (a target change is silent; later changes on the new target speak as usual). Saved settings keep their meaning.
+* Context menu: Copy on a monitor, a rule, a buffer group or a buffer adds a full copy right after it ("Moonfire Copy 1"), in the same scope; a copied monitor brings its rules.
+* Monitors: adding, copying or removing a rule no longer makes every rule of the monitor say its current state again.
+* Enemy count: in a group, an enemy fighting your group counts at once, before you join the fight yourself; before, the game kept its threat list from WowVision until you were in the fight, often several seconds. It counts while you, your pet or a group member is in combat and no one outside your group has tapped it, so while nobody in your group is fighting, an enemy that attacks a player outside your group before they hit it does not count. A new number is now said once it held for 0.3 seconds instead of half a second (the length of Sku's wait for a pack; the wait starts again at every change, so a pack that comes in one after another is said 0.3 seconds after the last enemy). A number that an interrupting alert (such as a target change) threw out of the speech queue before it was spoken is said again once when no newer number came within 5 seconds and the count still stands; only the spoken number is repeated, not the voice pack's; before, the old number stood until the count changed, in long fights up to a minute. In a group, enemy players in combat near your fighting group count too, also those fighting someone outside it (the game never marks a player as tapped): in PvP a wider picture of the enemy players around you.
+* Recommended game settings: Apply Recommended Game Settings also turns on offscreen nameplates, so while enemy nameplates are shown, an enemy behind you or beside you gets its nameplate at once and the enemy count can say it without waiting for the camera to face it. Enemy nameplates themselves are not switched on by it.
+* Navigation: Turn to Target (Ctrl+I) and Turn to Focus (Ctrl+U) turn your character to face your target or focus, found by its nameplate, for example to follow an escort NPC. Apply Recommended Game Settings now also switches friendly NPC nameplates on.
+
+### Modern
+* Quest log: Escape on a quest's details goes back to the quest list, as the Back button does. Escape on the list closes the log as before.
+* Group health: a number in the urgent part of the scale is no longer cut off at its end (Hedda, Katja and voices without a profile of their own).
+* Cooldown Manager Auras monitors: a monitor on Target now hears your own auras while you target yourself. Before, it reported them as Missing, because the cooldown manager labels an aura on you as Player even when you are your own target. In instances, where the game may hide whether you are your own target, the last answer it could read since your target changed holds.
+* Cooldown manager (/cdm): the manual explains the game's Lua error when you move an item while a buff the cooldown manager tracks is on you. The change is still saved; make such changes with no tracked buffs on you, and reload before combat, or the next buff in combat brings the same error.
+* Dungeons: a menu entry or target name the game keeps hidden no longer causes an error; it is spoken as the game gives it. Typing letters in a list skips such entries. Target names read quest objectives in dungeons too. There the game hides whether an objective is finished, so each objective is read and its count says how far it is.
+* Minimap Scanner: switched off for now. A change by Blizzard broke the minimap reads it depends on. The scan key (Ctrl+Shift+F) and /wv mscan say "Due to Blizzard restrictions the minimap scanner is unavailable.", and the walking announcements do not run.
+
+### Forever
+* WowNav data: all zones are rebuilt on new map data. New stair logic, a repaired Deeprun Tram.
+* WowNav routes: every target of a rebuilt zone now has its own point in the network, and a route to it ends exactly there instead of a step short of it.
+* WowNav, ships and zeppelins: choosing a landing walks you to it like to any place. Arriving there says where the vessel waits and names the point on board, and the route to that point starts by itself. These landings have no waiting circle and no boarding beacon.
+* WowNav, portals: a route to a portal or an entrance may lead through other portals first, as to the portal room in Stormwind, and a teleport is recognised even when the game gives no height.
+* WowNav: when the target lies clearly above or below where the route ends, it says so at the start and on arrival ("Target is above, about 12 yards").
+* WowNav: chests in the destination list are called objects.
+* WowNav: the zones around you are now prepared a little in every frame instead of each in one piece. Before, walking into a big zone such as the Barrens made the game stand still for a moment, several times in a row.
+
 ## V1.0.2
 
 ### Summary
