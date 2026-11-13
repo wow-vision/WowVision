@@ -25,7 +25,7 @@ You can reach the screen of a module that has settings of its own directly with 
 | /wv gsettings ui | UI |
 | /wv gsettings ui.tooltip.quality | UI, Tooltip, Quality |
 | /wv gsettings ui.combat | UI, Combat |
-| /wv gsettings navigation.compass | Navigation, Compass |
+| /wv gsettings navigation.compass | Navigation, Environmental Alerts |
 | /wv gsettings navigation.maps | Navigation, Beacon and Routes |
 | /wv gsettings chat | Chat |
 | /wv gsettings targeting | Targeting |
@@ -60,7 +60,7 @@ Because it is a list that owns the keyboard, you can press letters to jump: S fo
 | Errors | All | How game error and info messages are spoken. | [Combat](../world/combat.md) |
 | Minimap Scanner | All | Minimap scan and the walking announcements. | [Minimap](../world/minimap.md) |
 | Monitors | All | Aura, cooldown and other monitors. | [Monitors](../information/monitors.md) |
-| Navigation | All | Atlas, Beacon and Routes, Compass, Fall Detection, Follow, Pitch Lock, Visited Waypoints, Wall Detection and more. | [Movement](../world/movement.md), [Navigation](../world/navigation.md) |
+| Navigation | All | Atlas, Beacon and Routes, Environmental Alerts, Fall Detection, Follow, Pitch Lock, Visited Waypoints, Wall Detection and more. | [Movement](../world/movement.md), [Navigation](../world/navigation.md) |
 | Quests | All | Quest log tools, quest area and quest progress alerts. | [Quests](../world/quests.md) |
 | Scanner | All | The scanner (F9): scan radius, entries per category, and Scanner as Tree to choose between a tree and a menu. | [Scanner](../world/scanner.md) |
 | Speech | All | Voice, rate, volume and speech behaviour. | [Speech](./speech.md) |

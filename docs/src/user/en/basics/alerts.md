@@ -28,7 +28,7 @@ Alert settings are account-wide, so an alert you change on one character changes
 
 Alerts sit at the bottom of the screen of the module they belong to, after its settings, each as a button. (The Chat module lists its tab alerts right after Enabled, and Targeting keeps the three target alerts inside Hard Target.)
 
-1. Open the WowVision menu with Shift+F1 and go into the module, for example Navigation, then Compass.
+1. Open the WowVision menu with Shift+F1 and go into the module, for example Navigation, then Environmental Alerts.
 2. Move down to the alert, for example Zone Changed Alert, and press Enter.
 3. The alert's screen opens with an Enabled checkbox at the top, followed by one button per output. Alerts that have a setting of their own (such as Speak Messages for chat) show it here too.
 4. Press Enter on an output, for example Sound Alert, to open its settings.
@@ -57,7 +57,7 @@ Example: have your target's name spoken by a different voice.
 
 Example: put the compass on TTS instead of recorded voice.
 
-1. Shift+F1, N (Navigation), Enter, then C for Compass, Enter.
+1. Shift+F1, N (Navigation), Enter, then E for Environmental Alerts, Enter.
 2. Open Speak Compass Direction. Open Voice Alert and turn Enabled off. Go back and open TTS Alert, turn Enabled on.
 
 ## The alerts, module by module
@@ -76,15 +76,16 @@ Menu paths read from the first level of the WowVision menu. The state in bracket
 
 | Alert | Menu path | When it fires | Outputs |
 |---|---|---|---|
-| Speak Compass Direction | Navigation, Compass | The direction you face changes (north, northeast, east and so on). | Voice Alert (on; recorded directions), TTS Alert (off) |
-| Zone Changed Alert | Navigation, Compass | You enter a new zone. Speaks the zone's name. | TTS, Sound Alert (off) |
-| Subzone Changed Alert | Navigation, Compass | You enter a new subzone, such as a town district or a cave. Speaks its name. | TTS, Sound Alert (off) |
-| Outdoors Alert | Navigation, Compass | You step outside. Says "outdoors". | TTS, Sound Alert (off) |
-| Indoors Alert | Navigation, Compass | You go inside. Says "indoors". | TTS, Sound Alert (off) |
-| Flying Started Alert | Navigation, Compass | You take off on a flying mount. Says "flying". | TTS, Sound Alert (off) |
-| Flying Ended Alert | Navigation, Compass | You land. Says "flying ended". | TTS, Sound Alert (off) |
-| Swimming Alert | Navigation, Compass | You enter water. Says "swimming". | TTS, Sound Alert (off) |
-| Diving Alert | Navigation, Compass | You go under water. Says "diving". | TTS, Sound Alert (off) |
+| Speak Compass Direction | Navigation, Environmental Alerts | The direction you face changes (north, northeast, east and so on). | Voice Alert (on; recorded directions), TTS Alert (off) |
+| Zone Changed Alert | Navigation, Environmental Alerts | You enter a new zone. Speaks the zone's name. | TTS, Sound Alert (off) |
+| Subzone Changed Alert | Navigation, Environmental Alerts | You enter a new subzone, such as a town district or a cave. Speaks its name. | TTS, Sound Alert (off) |
+| Outdoors Alert | Navigation, Environmental Alerts | You step outside. Says "outdoors". | TTS, Sound Alert (off) |
+| Indoors Alert | Navigation, Environmental Alerts | You go inside. Says "indoors". | TTS, Sound Alert (off) |
+| Flying Started Alert | Navigation, Environmental Alerts | You take off on a flying mount. Says "flying". | TTS, Sound Alert (off) |
+| Flying Ended Alert | Navigation, Environmental Alerts | You land. Says "flying ended". | TTS, Sound Alert (off) |
+| Swimming Alert | Navigation, Environmental Alerts | You enter water. Says "swimming". | TTS, Sound Alert (off) |
+| Diving Alert | Navigation, Environmental Alerts | You go under water. Says "diving". | TTS, Sound Alert (off) |
+| Breath Alert | Navigation, Environmental Alerts | A breath, fatigue or feign death bar runs down by one step (Breath Step, default 10 percent). Says the bar's name and percent, "Breath 80". | TTS (game voice), Voice Alert (off), Sound Alert (off) |
 | Fall Detection | Navigation, Fall Detection | You fall. The announcement is said once when the falling sounds start. | Falling Sound (a rising series of sounds; the longer the fall, the higher the sound), Falling Announcement (TTS "Falling") |
 | Wall Detection | Navigation, Wall Detection | You are moving but something holds you back. | Five sounds for five degrees of blocking: Blocked, Mostly Blocked, Impeded, Slowed and Slightly Slowed. |
 | Beacon | Navigation, Beacon and Routes | A route or beacon is active. | Beacon Sound (a directional ping that speeds up as you turn towards the target), Beacon Aligned (a click when you face it), Beacon Off Course (when you turn away), Waypoint Reached (when you arrive) |

@@ -56,6 +56,8 @@ loadAddonFile("core/navigation/atlas/MapDataset.lua")
 loadAddonFile("core/navigation/atlas/datasetTests.lua")
 loadAddonFile("core/navigation/stuckMath.lua")
 loadAddonFile("core/navigation/stuckTests.lua")
+loadAddonFile("core/navigation/breathSteps.lua")
+loadAddonFile("core/navigation/breathTests.lua")
 loadAddonFile("core/navigation/visitedStore.lua")
 loadAddonFile("core/navigation/visitedTests.lua")
 loadAddonFile("core/navigation/corpseFind.lua")
@@ -2069,6 +2071,7 @@ local parseOnly = {
     "core/movement.lua",
     "core/navigation/walls.lua",
     "core/navigation/falling.lua",
+    "core/navigation/compass.lua",
     "core/navigation/maps/turnTo.lua",
     "core/navigation/maps/module.lua",
     "core/navigation/maps/Beacon.lua",

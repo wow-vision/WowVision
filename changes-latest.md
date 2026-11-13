@@ -1,6 +1,7 @@
 ### All Versions
 * Bags: the drag key on a bag slot places the bag you are holding, replacing the one in the slot, as Enter does. Before, it only picked up the bag that was in the slot.
 * Lists: with the new Sound at the Start and End of Lists setting (UI menu, on by default), Up on the first entry or Down on the last entry of a list plays a short sound and reads the entry again, as in Sku.
+* Navigation: new Breath Alert for the breath, fatigue and feign death bars. It speaks the bar's name and how full it is, one line per step down ("Breath 90", "Breath 80", down to "Breath 0"); the Breath Step setting chooses steps of 5, 10, 20 or 25 percent. The Compass screen in the Navigation menu is now called Environmental Alerts, as it holds this and the zone, indoors, flying, swimming and diving alerts; saved settings carry over.
 
 ### Modern
 * Quest log: Escape on a quest's details goes back to the quest list, as the Back button does. Escape on the list closes the log as before.

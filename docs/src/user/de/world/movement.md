@@ -7,7 +7,7 @@ Alles hier steht im WowVision-Menü (tippe /wv) unter Navigation. Die Routen- un
 | Menüeintrag | Was er enthält |
 |-------------|----------------|
 | Navigation | Drei Einstellungen: Automatisch zum Interaktionsziel bewegen (Auto-move to Interact Target), Automatisch zur Leiche navigieren (Automatically Navigate to Corpse) und Verbleibende Wegpunkte ansagen (Announce Remaining Waypoints, beschrieben auf der Seite [Navigation und Routen](navigation.md#was-du-hörst)). Die anderen Einträge unter Navigation (Karten, besuchte Orte, Beacon und so weiter) werden auf der Seite [Navigation und Routen](navigation.md) beschrieben |
-| Navigation, Kompass | Alarme für Blickrichtung, Gebiet, drinnen/draußen, Fliegen, Schwimmen und Tauchen |
+| Navigation, Umwelt-Alarme | Alarme für Blickrichtung, Gebiet, drinnen/draußen, Fliegen, Schwimmen, Tauchen und Atem |
 | Navigation, Fallerkennung | Fallgeräusche und Ansage |
 | Navigation, Wanderkennung | Kollisionsgeräusche |
 | Navigation, Folgen | Töne für das Folgen und das Beenden des Folgens |
@@ -15,9 +15,9 @@ Alles hier steht im WowVision-Menü (tippe /wv) unter Navigation. Die Routen- un
 
 Jedes dieser Untermenüs hat oben einen Schalter Aktiviert, sodass sich jede Funktion komplett ausschalten lässt.
 
-## Kompass und Umgebung
+## Umwelt-Alarme
 
-Das Modul Kompass beobachtet deinen Charakter und spricht, wenn sich etwas an deiner Umgebung ändert. Jeder seiner Einträge ist ein Alarm (siehe [Alarme](../basics/alerts.md)): Er hat einen Schalter Aktiviert und eine oder mehrere Ausgaben, meist TTS-Alarm (Sprache) und Soundalarm.
+Das Modul Umwelt-Alarme beobachtet deinen Charakter und spricht, wenn sich etwas an deiner Umgebung ändert. Jeder seiner Einträge ist ein Alarm (siehe [Alarme](../basics/alerts.md)): Er hat einen Schalter Aktiviert und eine oder mehrere Ausgaben, meist TTS-Alarm (Sprache) und Soundalarm.
 
 | Alarm | Was ihn auslöst | Standardausgabe |
 |-------|-----------------|-----------------|
@@ -30,6 +30,7 @@ Das Modul Kompass beobachtet deinen Charakter und spricht, wenn sich etwas an de
 | Flug-beendet-Alarm (Flying Ended Alert) | Du landest | TTS-Alarm an, Soundalarm aus |
 | Schwimm-Alarm (Swimming Alert) | Du gehst ins Wasser | TTS-Alarm an, Soundalarm aus |
 | Tauch-Alarm (Diving Alert) | Dein Charakter taucht unter die Oberfläche | TTS-Alarm an, Soundalarm aus |
+| Atem-Alarm (Breath Alert) | Eine Atem-, Erschöpfungs- oder Totstellen-Leiste sinkt um einen Schritt | TTS-Alarm an, Stimmenalarm aus, Soundalarm aus |
 
 ### Kompassrichtung
 
@@ -47,13 +48,19 @@ Der "Gebietsänderungs-Alarm" spricht den Gebietsnamen, wenn du in ein neues Geb
 
 Du hörst "draußen" oder "drinnen", wenn das Spiel entscheidet, dass du von einem zum anderen gewechselt hast, "fliegen", wenn du auf einem Flugreittier abhebst, "Flug beendet", wenn du landest, "schwimmen", wenn du ins Wasser gehst, und "tauchen", wenn du unter die Oberfläche gehst. Wenn du wieder aus dem Wasser läufst, wird nichts gesagt.
 
+### Atem und Erschöpfung
+
+Unter Wasser zeigt das Spiel eine Atemleiste, die sinkt, solange du die Luft anhältst. Schwimmst du zu weit ins tiefe Wasser hinaus, erscheint eine Erschöpfungsleiste. Jäger sehen eine Leiste, während sie sich tot stellen. Der Atem-Alarm sagt den Namen der Leiste und wie voll sie ist, eine Zeile pro Schritt nach unten: "Atem 90", "Atem 80" und so weiter bis "Atem 0", wenn du zu ertrinken beginnst. Während sich die Leiste nach dem Auftauchen wieder füllt, wird nichts gesagt; tauchst du wieder ab, zählen die Schritte von dort herunter, wo die Leiste gerade steht.
+
+Die Schritte sind standardmäßig 10 Prozent. Ändere sie mit Atem-Schritt (5, 10, 20 oder 25 Prozent) im Bildschirm Umwelt-Alarme. Das Spiel zeigt nur die Leiste, nicht die verbleibenden Sekunden, darum sagt WowVision ebenfalls Prozent. Der Atem-Alarm spricht mit einer Spielstimme, damit Bewegungstasten ihn nicht abschneiden.
+
 ### Das ändern
 
 Jeder Alarm der Tabelle außer Kompassrichtung ansagen hat einen Soundalarm, und der ist standardmäßig aus. Um statt der Sprache oder zusätzlich dazu einen Ton zu bekommen, öffne den Alarm, schalte Soundalarm ein und wähle mit seiner Einstellung Sound einen Ton.
 
 Beispiel: Du willst einen Ton, wenn du nach drinnen trittst, und keine Sprache.
 
-1. Drücke Umschalt+F1 (oder tippe /wv), gehe zu Navigation, dann Kompass, dann Drinnen-Alarm.
+1. Drücke Umschalt+F1 (oder tippe /wv), gehe zu Navigation, dann Umwelt-Alarme, dann Drinnen-Alarm.
 2. Schalte TTS-Alarm aus.
 3. Schalte Soundalarm ein und wähle mit Sound einen Ton.
 
