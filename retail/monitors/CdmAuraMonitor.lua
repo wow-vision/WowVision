@@ -577,6 +577,16 @@ function CdmAuraStateRule:updateFromViewers(unit)
     end
     local changed = codes ~= self._lastCodes
     self._lastCodes = codes
+    -- After forget (a silent target change) every new reading settles in
+    -- silence until one holds still for a tick: the viewers may show the
+    -- old target's items a tick longer than the skip window.
+    if self._settling then
+        if changed then
+            monitors.StateRule.forget(self)
+        else
+            self._settling = nil
+        end
+    end
     local before = self:getCurrentState()
     local note = nil
     local state
@@ -658,6 +668,8 @@ end
 function CdmAuraStateRule:forget()
     self:reset()
     monitors.StateRule.forget(self)
+    self._settling = true
+    self._lastCodes = nil
 end
 
 function CdmAuraStateRule:getLabel()

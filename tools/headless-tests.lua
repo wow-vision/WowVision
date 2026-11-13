@@ -1380,7 +1380,9 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         switchTo(true)
         switchTo(false)
         t:assertEqual(#fired, 3)
-        -- ...but a change on the new target still speaks
+        -- ...but once the reading holds still for a tick, a change on the
+        -- new target speaks
+        monitor:update()
         up()
         monitor:update()
         t:assertEqual(fired[#fired], "Sunfire Applied")
@@ -1388,6 +1390,23 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         monitor:update()
         t:assertEqual(fired[#fired], "Sunfire Missing")
         t:assertEqual(#fired, 5)
+
+        -- Never, with the viewer a tick late: the first reading is still the
+        -- old target's, the next one is the new target's; neither speaks
+        monitor:onTargetChanged()
+        down()
+        for _ = 1, 3 do
+            monitor:update()
+        end
+        up()
+        monitor:update()
+        monitor:update()
+        t:assertEqual(#fired, 5)
+        -- once the reading holds still, a change speaks again
+        down()
+        monitor:update()
+        t:assertEqual(fired[#fired], "Sunfire Missing")
+        t:assertEqual(#fired, 6)
     end,
 })
 
