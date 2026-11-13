@@ -108,22 +108,6 @@ local function makeRender(frameName)
     end
 end
 
-module:registerWindow({
-    type = "FrameWindow",
-    name = "RolePoll",
-    frameName = "RolePollPopup",
-    conflictingAddons = { "Sku" },
-    graphScreen = { render = makeRender("RolePollPopup") },
-})
-
-module:registerWindow({
-    type = "FrameWindow",
-    name = "LFDRoleCheckPopup",
-    frameName = "LFDRoleCheckPopup",
-    conflictingAddons = { "Sku" },
-    graphScreen = { render = makeRender("LFDRoleCheckPopup") },
-})
-
 -- Closing WowVision's window leaves the invitation on screen, as the popups
 -- window does with the plain invitation popup (Close All Windows and a
 -- route start keep popups that wait for an answer). Hiding the frame here
@@ -134,10 +118,18 @@ local function keepInvitation()
     WowVision.UIHost.windowManager:closeWindow("LFGInvitePopup")
 end
 
-module:registerWindow({
-    type = "FrameWindow",
-    name = "LFGInvitePopup",
-    frameName = "LFGInvitePopup",
-    conflictingAddons = { "Sku" },
-    graphScreen = { render = makeRender("LFGInvitePopup"), onRequestClose = keepInvitation },
-})
+-- The three role popups share one render. Only the invitation keeps its
+-- frame on a close request; the role checks close as any frame window does.
+for _, def in ipairs({
+    { window = "RolePoll", frame = "RolePollPopup" },
+    { window = "LFDRoleCheckPopup", frame = "LFDRoleCheckPopup" },
+    { window = "LFGInvitePopup", frame = "LFGInvitePopup", onRequestClose = keepInvitation },
+}) do
+    module:registerWindow({
+        type = "FrameWindow",
+        name = def.window,
+        frameName = def.frame,
+        conflictingAddons = { "Sku" },
+        graphScreen = { render = makeRender(def.frame), onRequestClose = def.onRequestClose },
+    })
+end
