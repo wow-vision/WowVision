@@ -1817,6 +1817,7 @@ do
     WowVision.base = savedBase
     WowVision._popupsTestHarness = harness
     loadAddonFile("core/windows/popupsTests.lua")
+    WowVision._popupsTestHarness = nil
 end
 loadAddonFile("core/graph/menuNavTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")

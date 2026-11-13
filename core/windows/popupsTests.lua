@@ -52,7 +52,9 @@ end
 
 -- The game's globals for one test: static popup dialogs (each { which,
 -- buttons }), the invite popup with its role buttons, and notify recorded.
--- Returns the spoken lines and a restore function.
+-- Returns the spoken lines and a restore function. The restore also runs
+-- after a test that throws (see the suite's wrapper at the end), so a failing
+-- test never leaves the stand-ins for later suites.
 local GLOBALS = {
     "StaticPopup_ForEachShownDialog",
     "LFGInvitePopup",
@@ -64,6 +66,8 @@ local GLOBALS = {
     "LFGInvitePopupRoleButtonHealer",
     "LFGInvitePopupRoleButtonDPS",
 }
+
+local activeRestore = nil
 
 local function installGame(game)
     local saved = {}
@@ -121,12 +125,18 @@ local function installGame(game)
         end
     end
 
-    return spoken, function()
+    local function restore()
+        if activeRestore ~= restore then
+            return
+        end
+        activeRestore = nil
         for _, name in ipairs(GLOBALS) do
             _G[name] = saved[name]
         end
         WowVision.notify = savedNotify
     end
+    activeRestore = restore
+    return spoken, restore
 end
 
 -- A builder that records the render: contexts, stops and item labels.
@@ -150,7 +160,7 @@ local function recordingBuilder()
     return builder, record
 end
 
-testRunner:addSuite("GroupInvite", {
+local tests = {
     ["accept clicks the plain invitation popup's first shown button"] = function(t)
         local hidden, accept = fakeButton({ shown = false }), fakeButton()
         local spoken, restore = installGame({
@@ -279,4 +289,19 @@ testRunner:addSuite("GroupInvite", {
         t:assertEqual(record.stops[1], "roles")
         t:assertEqual(record.labels[1], "Healer")
     end,
-})
+}
+
+-- Each test restores the game's globals even when it throws.
+for name, test in pairs(tests) do
+    tests[name] = function(t)
+        local ok, err = pcall(test, t)
+        if activeRestore ~= nil then
+            activeRestore()
+        end
+        if not ok then
+            error(err, 0)
+        end
+    end
+end
+
+testRunner:addSuite("GroupInvite", tests)
