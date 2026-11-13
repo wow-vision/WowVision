@@ -19,16 +19,38 @@ local ControlId = graph.ControlId
 -- invite popup's Accept stays disabled until a role is checked, and the
 -- game declines the invitation itself when its timer runs out.
 
--- The first text region, without markup: the invite popup's line starts
--- with an atlas icon while a party sync (quest session) is active.
-local function getPopupTitle(frame)
-    local regions = { frame:GetRegions() }
-    for _, region in ipairs(regions) do
+-- The title's font string: the named one where the frame has it
+-- (LFGInvitePopupText, LFDRoleCheckPopup.Text), else the first text region
+-- (RolePollPopup's title has no name). Looked up once per frame; the render
+-- runs every tick.
+local titleStrings = setmetatable({}, { __mode = "k" })
+
+local function findTitleString(frame)
+    local named = frame.Text or _G[frame:GetName() .. "Text"]
+    if named ~= nil then
+        return named
+    end
+    for i = 1, select("#", frame:GetRegions()) do
+        local region = select(i, frame:GetRegions())
         if region:GetObjectType() == "FontString" then
-            return nodes.plainText(region:GetText()) or L["Role Poll"]
+            return region
         end
     end
-    return L["Role Poll"]
+    return false
+end
+
+-- The title without markup: the invite popup's line starts with an atlas
+-- icon while a party sync (quest session) is active.
+local function getPopupTitle(frame)
+    local title = titleStrings[frame]
+    if title == nil then
+        title = findTitleString(frame)
+        titleStrings[frame] = title
+    end
+    if title == false then
+        return L["Role Poll"]
+    end
+    return nodes.plainText(title:GetText()) or L["Role Poll"]
 end
 
 local ROLES = {
@@ -46,7 +68,8 @@ local function makeRender(frameName)
         builder:pushContext("rolePoll", getPopupTitle(frame))
 
         local warning = frame.QueueWarningText
-        if warning ~= nil and warning:IsShown() and nodes.plainText(warning:GetText()) ~= nil then
+        local warningText = warning ~= nil and warning:IsShown() and warning:GetText() or nil
+        if warningText ~= nil and warningText ~= "" then
             builder:beginStop("warning")
             builder:addItem(
                 ControlId.structural("rolePoll:warning"),

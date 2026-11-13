@@ -56,6 +56,7 @@ end
 local GLOBALS = {
     "StaticPopup_ForEachShownDialog",
     "LFGInvitePopup",
+    "LFGInvitePopupText",
     "LFGInvitePopupAcceptButton",
     "LFGInvitePopupDeclineButton",
     "LFGInvitePopupCloseButton",
@@ -95,10 +96,17 @@ local function installGame(game)
     end
 
     if invite ~= nil then
-        local regions = { fakeFontString(invite.title) }
+        -- The queue warning is an ARTWORK font string too, ahead of the
+        -- title in region order: the title must come from its name.
+        local warningString = invite.warning ~= nil and fakeFontString(invite.warning, invite.warningShown) or nil
+        local regions = { warningString or fakeFontString("not the title") }
+        _G.LFGInvitePopupText = fakeFontString(invite.title)
         _G.LFGInvitePopup = {
             special = true,
-            QueueWarningText = invite.warning ~= nil and fakeFontString(invite.warning, invite.warningShown) or nil,
+            GetName = function()
+                return "LFGInvitePopup"
+            end,
+            QueueWarningText = warningString,
             IsShown = function()
                 return invite.shown ~= false
             end,
