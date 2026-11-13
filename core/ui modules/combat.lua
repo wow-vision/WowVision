@@ -352,9 +352,9 @@ local function recountControl(skip)
     if controlSettler:update(enemyCount.controlKey(free, controlled), GetTime()) ~= nil then
         local message = tracker:change(free, controlled, api.controlText)
         if message == nil then
-            -- A quiet change (a controlled enemy gone): the number watched
-            -- no longer matches the fight.
-            announcer:forget()
+            -- A quiet change (a controlled enemy gone): the free count is
+            -- the same, a lost number still stands.
+            announcer:quietChange()
         else
             if message.ended then
                 controlEndedAlert:fire({})

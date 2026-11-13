@@ -606,6 +606,20 @@ testRunner:addSuite("EnemyCountAnnouncer", {
         t:assertEqual(#w.fired, 1)
     end,
 
+    ["crowd control: a quiet change keeps a lost number that still stands, without its old texts"] = function(t)
+        local w = speechWorld()
+        w.mode = "names"
+        w.announcer:say({ count = 3, texts = { "Polymorph" }, textCount = 1 })
+        w.stop()
+        -- The polymorphed enemy dies: the free count stays 3.
+        w.announcer:quietChange()
+        w.time = 10
+        w.announcer:resay(settled("3|"), false)
+        t:assertEqual(#w.fired, 2)
+        t:assertEqual(w.fired[2].message.count, 3)
+        t:assertNil(w.fired[2].message.texts)
+    end,
+
     ["no repeat while a newer number waits to settle"] = function(t)
         local w = speechWorld()
         w.announcer:say({ count = 3 })

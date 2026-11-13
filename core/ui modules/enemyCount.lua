@@ -518,9 +518,14 @@ function Announcer:say(message)
     self.mode = config.mode()
 end
 
--- The number watched no longer stands.
-function Announcer:forget()
-    self.lost:forget()
+-- With crowd control on, a quiet change (a controlled enemy gone, nothing to
+-- say): the free count is the same, so a lost number still stands. Its
+-- crowd control texts may not, so only the number is said again.
+function Announcer:quietChange()
+    local lost = self.lost
+    if lost.item ~= nil and lost.message ~= nil and lost.message.texts ~= nil then
+        lost.message = { count = lost.message.count }
+    end
 end
 
 -- Says a lost number again, once, while it is still the count's: not while
