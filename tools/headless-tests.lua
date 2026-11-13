@@ -1603,6 +1603,24 @@ WowVision.testing.testRunner:addSuite("ComponentCopy", {
         t:assertEqual(built, 2)
         t:assertEqual(#container.monitors[2].rules, 2)
     end,
+    ["copying a buffer before the focused one keeps the focus"] = function(t)
+        local group = WowVision.buffers:create("Group", { label = "Group" })
+        group:setDB({ global = {} })
+        for _, label in ipairs({ "A", "B", "C" }) do
+            group:addBuffer(WowVision.buffers:create("Static", { label = label }))
+        end
+        group:focusIndex(3)
+        t:assertEqual(group:getFocus().label, "C")
+        local field = group.class:getField("items")
+        local copy = field:copyElement(group, group.items[1], function(config)
+            config.label = "A Copy 1"
+        end)
+        t:assertEqual(group.items[2], copy)
+        t:assertEqual(group:getFocus().label, "C")
+        -- A copy after the focus leaves it alone
+        field:copyElement(group, group.items[4])
+        t:assertEqual(group:getFocus().label, "C")
+    end,
 })
 
 WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {

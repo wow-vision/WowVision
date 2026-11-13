@@ -283,6 +283,12 @@ classes.registerFieldType("ComponentArray", {
             end
             bindIntoStore(field, pair, side, copy, config, position)
             tinsert(instances, index + 1, copy)
+            -- A buffer group walks this same array as its ViewList items:
+            -- an insert before its focus moves the focus on, as
+            -- ViewList:add does, so the player stays where they were.
+            if obj.items == instances and type(obj.index) == "number" and index + 1 <= obj.index then
+                obj.index = obj.index + 1
+            end
             field.events.valueChange:emit(obj, field.key, instances)
             return copy
         end,
