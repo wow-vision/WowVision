@@ -639,6 +639,16 @@ function CdmAuraStateRule:updateFromViewers(unit)
     end
     local changed = codes ~= self._lastCodes
     self._lastCodes = codes
+    -- After forget (a silent target change) every new reading settles in
+    -- silence until one holds still for a tick: the viewers may show the
+    -- old target's items a tick longer than the skip window.
+    if self._settling then
+        if changed then
+            monitors.StateRule.forget(self)
+        else
+            self._settling = nil
+        end
+    end
     local before = self:getCurrentState()
     local note = nil
     local state
@@ -710,9 +720,18 @@ function CdmAuraStateRule:currentText(unit)
     return name .. ", " .. L["Missing"]
 end
 
+-- reset announces the next state, forget settles it in silence; both drop
+-- the pandemic hold.
 function CdmAuraStateRule:reset()
     monitors.StateRule.reset(self)
     self._holdSince = nil
+end
+
+function CdmAuraStateRule:forget()
+    self:reset()
+    monitors.StateRule.forget(self)
+    self._settling = true
+    self._lastCodes = nil
 end
 
 function CdmAuraStateRule:getLabel()
@@ -742,7 +761,7 @@ local UNIT_CHOICES = {
 
 CdmAuraMonitor:addFields({
     { key = "unit", type = "Choice", default = "target", persist = true, label = L["Unit"], sortPriority = 2, choices = UNIT_CHOICES },
-    { key = "announceOnUnitChange", type = "Bool", default = false, persist = true, label = L["Announce on Target Change"], sortPriority = 2 },
+    { key = "announceOnUnitChange", type = "Choice", default = "changes", persist = true, label = L["Announce on Target Change"], sortPriority = 2, choices = monitors.TARGET_CHANGE_CHOICES, validate = monitors.targetChangeValue },
     -- The countdown text on the tracked items gains a decimal ("8.7"); it
     -- changes what is drawn on screen, so off by default.
     { key = "decimalTimer", type = "Bool", default = false, persist = true, label = L["One Decimal Timer"], sortPriority = 2 },
@@ -856,6 +875,13 @@ function CdmAuraMonitor:rescan()
     end
 end
 
+-- The /wv cdmlog note on a rule's first tick after a target change.
+local TARGET_CHANGE_TRACE = {
+    changes = "after target change",
+    always = "after target change, announcing",
+    never = "after target change, silent",
+}
+
 -- The viewers refresh their items against the new target a tick after the
 -- change (each item is forced inactive first); two ticks of quiet keep
 -- that from reading as the aura dropping and coming back.
@@ -865,16 +891,9 @@ function CdmAuraMonitor:onTargetChanged()
         return
     end
     self._skipTicks = 2
+    local note = TARGET_CHANGE_TRACE[self:rulesOnTargetChange()] or "after target change"
     for _, rule in ipairs(self.rules or {}) do
-        if self.announceOnUnitChange then
-            if rule.reset then
-                rule:reset()
-            end
-            rule._announceRequested = true
-            rule._traceNext = "after target change, announcing"
-        else
-            rule._traceNext = "after target change"
-        end
+        rule._traceNext = note
     end
 end
 

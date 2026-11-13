@@ -201,6 +201,7 @@ Shift+F10 opens a menu of extra actions for the control you are on. You hear "Me
 
 - On a real game button you usually get Left Click, Right Click and Drag. Some windows add what the click does, for example "Sell, Right Click", and window-specific actions such as linking an item in chat or inviting a player.
 - On a setting in the WowVision menu you get a Scope submenu (see [per-character and account-wide settings](./menu-and-settings.md#per-character-and-account-wide-settings)).
+- On an entry in a list you build yourself in the WowVision menu (a monitor, a rule, a buffer group, a buffer) you get Copy: it adds a full copy right after the entry, named "<name> Copy 1" (or the next free number), and speaks that name. The copy lives where the original lives (account or character), and a copied monitor brings its rules along.
 - If a control has no actions, you hear "Menu Empty".
 
 Inside the menu use Up and Down, Enter to run an entry (the menu closes afterwards, except for entries that act on the game directly), and Escape to close it. Submenus read as "Dropdown" and open with Enter. Entries with a Checked or Unchecked state read as radio buttons. Letters jump to entries, as described above.

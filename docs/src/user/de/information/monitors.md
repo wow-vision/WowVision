@@ -64,6 +64,10 @@ Monitore, die du hinzufügst, werden standardmäßig accountweit gespeichert, al
 
 Beim Wechseln des Bereichs wird nichts gelöscht.
 
+### Einen Monitor oder eine Regel kopieren
+
+Um einen zweiten Monitor wie einen vorhandenen zu bauen, gehe in der Monitorliste zu ihm, drücke Umschalt+F10 und wähle Kopie. Du hörst den neuen Namen, zum Beispiel „Mondfeuer Kopie 1“; die Kopie steht direkt hinter dem Original, mit denselben Einstellungen, Alarmen und Regeln, im selben Bereich. Benenne sie um und ändere, was anders sein soll. Kopie funktioniert genauso bei einer Regel in einem Monitor.
+
 ### Einstellungen, die jeder Monitor und jede Regel hat
 
 | Einstellung | Standard | Was sie bewirkt |
@@ -113,7 +117,7 @@ Im Menü heißt dieser Monitortyp Aura. Er beobachtet Buffs und Debuffs auf eine
 | Einstellung | Standard | Was sie bewirkt |
 |---|---|---|
 | Einheit | target | Welche Einheit beobachtet wird, als Text eingegeben: `target`, `player`, `focus`, `pet`, `mouseover`, `party1` und so weiter |
-| Bei Zielwechsel ansagen | Aus | Wenn du das Ziel wechselst (oder sich die Einheit ändert), sagt jede Regel den Zustand an, den sie auf der neuen Einheit findet, einschließlich Fehlend |
+| Bei Zielwechsel ansagen | Nur Änderungen | Was die Regeln sagen, wenn du das Ziel wechselst (oder sich die Einheit ändert). Nur Änderungen: Eine Regel spricht nur, wenn sich der Zustand des neuen Ziels von ihrem bisherigen unterscheidet. Immer: Jede Regel sagt den Zustand an, den sie auf der neuen Einheit findet, einschließlich Fehlend. Nie: Die Regeln übernehmen den Zustand des neuen Ziels still; spätere Änderungen auf diesem Ziel werden wie gewohnt gesprochen |
 
 Regeltyp: Aura-Zustandsregel. Sie verfolgt einen Zauber durch sein Leben auf der Einheit.
 
@@ -138,8 +142,8 @@ Gut zu wissen:
 - Läuft ab braucht beide Bedingungen: innerhalb des Pandemic-Fensters und unter der Ablaufschwelle. Bei einer kurzen Aura (sagen wir 6 Sekunden) ist das Pandemic-Fenster so klein, dass die Aura direkt von Aktiv zu Läuft ab geht.
 - Auren ohne Dauer bleiben bei Aktiv.
 - Wenn mehr als eine passende Aura vorhanden ist (wenn Vom Spieler gewirkt aus ist und mehrere Leute sie aufgelegt haben), meldet die Regel die gesündeste.
-- Fehlend wird gesprochen, wenn eine Aura, die verfolgt wurde, verschwindet. Wenn der Monitor startet (zum Beispiel bei der Anmeldung) und die Aura nie da war, wird Fehlend nicht gesprochen. Nimm Bei Zielwechsel ansagen, wenn du bei jedem neuen Ziel „Mondfeuer Fehlend“ oder „Mondfeuer Aktiv“ hören willst.
-- Ohne Bei Zielwechsel ansagen spricht ein Zielwechsel trotzdem, wenn sich der Zustand des neuen Ziels von dem unterscheidet, den die Regel hatte (zum Beispiel von Aktiv zu Fehlend).
+- Fehlend wird gesprochen, wenn eine Aura, die verfolgt wurde, verschwindet. Wenn der Monitor startet (zum Beispiel bei der Anmeldung) und die Aura nie da war, wird Fehlend nicht gesprochen. Stelle Bei Zielwechsel ansagen auf Immer, wenn du bei jedem neuen Ziel „Mondfeuer Fehlend“ oder „Mondfeuer Aktiv“ hören willst.
+- Mit Bei Zielwechsel ansagen auf Nur Änderungen (der Standard) spricht ein Zielwechsel trotzdem, wenn sich der Zustand des neuen Ziels von dem unterscheidet, den die Regel hatte (zum Beispiel von Aktiv zu Fehlend). Stelle es auf Nie, um beim Zielwechsel nichts zu hören, nur die Änderungen, die danach auf dem neuen Ziel folgen.
 - Vom Spieler gewirkt muss für Effekte ohne Wirker ausgeschaltet werden, etwa viele Procs von Schmuckstücken.
 - Eine Regel erkennt die Aura an ihrer eigenen Zaubernummer. Wenn der Zauber, den du wirkst, und die Aura, die er auf das Ziel legt, verschiedene Nummern haben (bei den Classic-Versionen kann das vom Zauberrang abhängen), wähle die Aura aus den Schnellauswahlen, statt den Namen zu tippen. Die Aura erscheint dort, sobald dein Monitor sie auf der Einheit gesehen hat.
 
@@ -193,7 +197,7 @@ Die Alarme des Spiels brauchst du aber selten: Die Monitore von WowVision könne
 | Einstellung | Standard | Was sie bewirkt |
 |---|---|---|
 | Einheit | Ziel | Ziel oder Spieler |
-| Bei Zielwechsel ansagen | Aus | Jede Regel sagt ihren aktuellen Zustand an, wenn du das Ziel wechselst (nur bei Ziel) |
+| Bei Zielwechsel ansagen | Nur Änderungen | Was die Regeln sagen, wenn du das Ziel wechselst (nur bei Ziel): Nur Änderungen spricht einen Zustand, der sich vom alten Ziel unterscheidet, Immer sagt den aktuellen Zustand jeder Regel an, Nie bleibt still und spricht nur spätere Änderungen auf dem neuen Ziel |
 | Timer mit einer Nachkommastelle | Aus | Der Countdown auf den verfolgten Symbolen zeigt unter zehn Minuten Zehntelsekunden („8.7“). Das ändert, was sehende Spieler auf dem Bildschirm sehen, deshalb ist es standardmäßig aus. Es ist auch das, was Verfolgte Auren ansagen liest |
 
 ### Regeltyp: Aura-Regel des Abklingzeitmanagers

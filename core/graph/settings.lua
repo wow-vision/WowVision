@@ -330,6 +330,20 @@ local function instanceLabel(instance)
     return "item"
 end
 
+-- "<label> Copy 1", or the next free number among the array's labels.
+local function copyLabel(field, owner, instance)
+    local base = instanceLabel(instance)
+    local taken = {}
+    for _, current in ipairs(field:get(owner) or {}) do
+        taken[instanceLabel(current)] = true
+    end
+    local number = 1
+    while taken[base .. " " .. L["Copy"] .. " " .. number] do
+        number = number + 1
+    end
+    return base .. " " .. L["Copy"] .. " " .. number
+end
+
 local function pushComponentEditor(field, owner, instance)
     pushScreen("component:" .. tostring(instance), function(builder)
         -- The instance may have been removed under us.
@@ -406,11 +420,26 @@ local function pushComponentList(field, owner)
                     pushComponentEditor(field, owner, captured)
                 end,
             })
-            -- A component's context menu moves it between the account and
-            -- this character (when both stores back the array).
+            -- A component's context menu copies it, and moves it between the
+            -- account and this character (when both stores back the array).
             local pair = rawget(owner, "_db")
-            if field.setComponentScope ~= nil and pair ~= nil and pair.global ~= nil then
-                vtable.contextActions = function(add)
+            local hasScope = field.setComponentScope ~= nil and pair ~= nil and pair.global ~= nil
+            vtable.contextActions = function(add)
+                if field:canCopy(owner, captured) then
+                    add({
+                        label = L["Copy"],
+                        onActivate = function()
+                            local label = copyLabel(field, owner, captured)
+                            local copy = field:copyElement(owner, captured, function(config)
+                                config.label = label
+                            end)
+                            if copy ~= nil then
+                                WowVision:notify(label)
+                            end
+                        end,
+                    })
+                end
+                if hasScope then
                     add(scopeSubmenu(function()
                         return field:scopeOf(captured) == "global"
                     end, function(scope)

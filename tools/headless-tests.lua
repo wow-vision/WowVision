@@ -967,14 +967,15 @@ WowVision.testing.testRunner:addSuite("MonitorConstruction", {
                 return WowVision.monitors.registry:createTemporaryComponent(config)
             end,
             getTypeKey = function(instance)
-                return "Aura"
+                return "PlainStandIn"
             end,
         })
-        -- A plain Monitor stands in for the WoW-API-dependent types here.
-        WowVision.monitors.registry.types:register("Aura", WowVision.monitors.Monitor)
+        -- A plain Monitor stands in for the WoW-API-dependent types here
+        -- (under its own key: the classic Aura type is loaded further down).
+        WowVision.monitors.registry.types:register("PlainStandIn", WowVision.monitors.Monitor)
         field:setDB(container, db)
 
-        field:addElement(container, { type = "Aura", label = "Test Monitor" })
+        field:addElement(container, { type = "PlainStandIn", label = "Test Monitor" })
         t:assertEqual(db.monitors[1].label, "Test Monitor")
 
         local monitor = container.monitors[1]
@@ -1168,7 +1169,7 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         t:assertEqual(#fired, 5)
 
         -- A target change holds the rule for two ticks, then announces when asked
-        monitor.announceOnUnitChange = true
+        monitor.announceOnUnitChange = "always"
         monitor:onTargetChanged()
         moonfireIcon.auraDataUnit, moonfireIcon.auraDataCached, moonfireIcon.active = "target", {}, true
         monitor:update()
@@ -1179,7 +1180,7 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         moonfireIcon.auraDataUnit, moonfireIcon.auraDataCached, moonfireIcon.active = nil, nil, false
         monitor:update()
         t:assertEqual(fired[#fired], "Moonfire Missing")
-        monitor.announceOnUnitChange = false
+        monitor.announceOnUnitChange = "changes"
 
         -- The pandemic marker goes at expiry before the aura data does: the
         -- rule holds Pandemic across the gap and goes straight to Missing
@@ -1403,6 +1404,106 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
             error(err, 0)
         end
     end,
+    ["on a target change: only changes, always, or never"] = function(t)
+        local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
+        local field = monitor.class:getField("announceOnUnitChange")
+        t:assertEqual(monitor.announceOnUnitChange, "changes")
+        t:assertEqual(field:getValueString(monitor, "changes"), "Only Changes")
+        t:assertEqual(field:getValueString(monitor, "never"), "Never")
+        -- The field was a Bool: saved true and false keep their meaning
+        monitor.announceOnUnitChange = true
+        t:assertEqual(monitor.announceOnUnitChange, "always")
+        monitor.announceOnUnitChange = false
+        t:assertEqual(monitor.announceOnUnitChange, "changes")
+        local restored = WowVision.monitors:create("CdmAura", { unit = "target" })
+        restored:setDB({ global = { announceOnUnitChange = true } })
+        t:assertEqual(restored.announceOnUnitChange, "always")
+        restored:setDB({ global = { announceOnUnitChange = false } })
+        t:assertEqual(restored.announceOnUnitChange, "changes")
+        monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
+        local rule = monitor.rules[1]
+        local fired = {}
+        for _, state in ipairs({ "applied", "missing" }) do
+            local alert = rule.class:getField(state):getAlert(rule)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(fired, message.text)
+                    end
+                end
+            end
+        end
+        local function up()
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = "target", {}, true
+        end
+        local function down()
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = nil, nil, false
+        end
+        local function switchTo(present)
+            monitor:onTargetChanged()
+            if present then
+                up()
+            else
+                down()
+            end
+            for _ = 1, 3 do
+                monitor:update()
+            end
+        end
+        up()
+        monitor:update()
+        t:assertEqual(#fired, 0)
+
+        -- Only changes: a new target without the aura speaks Missing, one with it stays quiet
+        switchTo(false)
+        t:assertEqual(fired[#fired], "Sunfire Missing")
+        switchTo(true)
+        t:assertEqual(fired[#fired], "Sunfire Applied")
+        switchTo(true)
+        t:assertEqual(#fired, 2)
+
+        -- Always: the new target's state, even when it is the same
+        monitor.announceOnUnitChange = "always"
+        switchTo(true)
+        t:assertEqual(#fired, 3)
+        t:assertEqual(fired[3], "Sunfire Applied")
+
+        -- Never: switching speaks nothing, either way
+        monitor.announceOnUnitChange = "never"
+        switchTo(false)
+        switchTo(true)
+        switchTo(false)
+        t:assertEqual(#fired, 3)
+        -- ...but once the reading holds still for a tick, a change on the
+        -- new target speaks
+        monitor:update()
+        up()
+        monitor:update()
+        t:assertEqual(fired[#fired], "Sunfire Applied")
+        down()
+        monitor:update()
+        t:assertEqual(fired[#fired], "Sunfire Missing")
+        t:assertEqual(#fired, 5)
+
+        -- Never, with the viewer a tick late: the first reading is still the
+        -- old target's, the next one is the new target's; neither speaks
+        monitor:onTargetChanged()
+        down()
+        for _ = 1, 3 do
+            monitor:update()
+        end
+        up()
+        monitor:update()
+        monitor:update()
+        t:assertEqual(#fired, 5)
+        -- once the reading holds still, a change speaks again
+        down()
+        monitor:update()
+        t:assertEqual(fired[#fired], "Sunfire Missing")
+        t:assertEqual(#fired, 6)
+    end,
 })
 
 -- Spell Cooldowns monitor: the cooldown APIs as the game answers them,
@@ -1461,6 +1562,313 @@ C_CooldownViewer.GetValidAlertTypes = C_CooldownViewer.GetValidAlertTypes or fun
     return {}
 end
 loadAddonFile("retail/monitors/SpellCooldownMonitor.lua")
+WowVision.testing.testRunner:addSuite("ComponentCopy", {
+    ["a copied monitor carries its rules and alert settings, then lives on its own"] = function(t)
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return (instance.class.name:gsub("Monitor$", ""))
+            end,
+        })
+        field:setDB(container, { global = db })
+        field:addElement(container, { type = "CdmAura", label = "Dots", unit = "target" })
+        field:addElement(container, { type = "CdmAura", label = "Last", unit = "target" })
+        local original = container.monitors[1]
+        local rulesField = original.class:getField("rules")
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 8921 })
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 93402 })
+        local alert = original.rules[1].class:getField("applied"):getAlert(original.rules[1])
+        alert:setEnabled(true)
+
+        local copy = field:copyElement(container, original, function(config)
+            config.label = "Dots Copy 1"
+        end)
+        -- Lands right after its original, in memory and in the store
+        t:assertEqual(container.monitors[2], copy)
+        t:assertEqual(container.monitors[3].label, "Last")
+        t:assertEqual(db.monitors[2].label, "Dots Copy 1")
+        t:assertEqual(db.monitors[3].label, "Last")
+        t:assertEqual(original.label, "Dots")
+        -- Everything else comes along: unit, rules, spells, alert settings
+        t:assertEqual(copy.unit, "target")
+        t:assertEqual(#copy.rules, 2)
+        t:assertEqual(copy.rules[1].spell, 8921)
+        t:assertEqual(copy.rules[2].spell, 93402)
+        local copiedAlert = copy.rules[1].class:getField("applied"):getAlert(copy.rules[1])
+        t:assertEqual(copiedAlert:getEnabled(), true)
+
+        -- The copy is its own: changing it leaves the original alone
+        copy.unit = "player"
+        copiedAlert:setEnabled(false)
+        copy.rules[2].spell = 78674
+        t:assertEqual(original.unit, "target")
+        t:assertEqual(alert:getEnabled(), true)
+        t:assertEqual(original.rules[2].spell, 93402)
+
+        -- Both survive a reload as they are
+        local again = { monitors = {} }
+        field:setDB(again, { global = db })
+        t:assertEqual(#again.monitors, 3)
+        t:assertEqual(again.monitors[1].unit, "target")
+        t:assertEqual(again.monitors[2].unit, "player")
+        t:assertEqual(again.monitors[2].rules[2].spell, 78674)
+        t:assertEqual(again.monitors[1].rules[2].spell, 93402)
+        local reloadedAlert = again.monitors[1].rules[1].class:getField("applied"):getAlert(again.monitors[1].rules[1])
+        t:assertEqual(reloadedAlert:getEnabled(), true)
+
+        -- A single rule copies inside its monitor
+        local ruleCopy = rulesField:copyElement(again.monitors[1], again.monitors[1].rules[1])
+        t:assertEqual(#again.monitors[1].rules, 3)
+        t:assertEqual(again.monitors[1].rules[2], ruleCopy)
+        t:assertEqual(ruleCopy.spell, 8921)
+        t:assertEqual(db.monitors[1].rules[2].spell, 8921)
+        t:assertEqual(db.monitors[1].rules[3].spell, 93402)
+    end,
+    ["a copy needs a store; the store keeps memory's order"] = function(t)
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return (instance.class.name:gsub("Monitor$", ""))
+            end,
+        })
+        -- No store: nothing is copied, nothing pretends to be
+        local loose = { monitors = {} }
+        field:addElement(loose, { type = "CdmAura", label = "Loose" })
+        t:assertNil(field:copyElement(loose, loose.monitors[1]))
+        t:assertEqual(#loose.monitors, 1)
+
+        -- The original's config is gone from the array: the copy goes in
+        -- before the next element's config, as in memory
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        field:setDB(container, { global = db })
+        field:addElement(container, { type = "CdmAura", label = "First" })
+        field:addElement(container, { type = "CdmAura", label = "Second" })
+        field:addElement(container, { type = "CdmAura", label = "Third" })
+        table.remove(db.monitors, 1)
+        local copy = field:copyElement(container, container.monitors[1], function(config)
+            config.label = "First Copy 1"
+        end)
+        t:assertEqual(container.monitors[2], copy)
+        t:assertEqual(db.monitors[1].label, "First Copy 1")
+        t:assertEqual(db.monitors[2].label, "Second")
+        t:assertEqual(db.monitors[3].label, "Third")
+    end,
+    ["a copy builds its rules once"] = function(t)
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return (instance.class.name:gsub("Monitor$", ""))
+            end,
+        })
+        field:setDB(container, { global = db })
+        field:addElement(container, { type = "CdmAura", label = "Dots", unit = "target" })
+        local original = container.monitors[1]
+        local rulesField = original.class:getField("rules")
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 8921 })
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 93402 })
+        local registry = WowVision.monitors.ruleRegistry
+        local built = 0
+        local saved = registry.createTemporaryComponent
+        registry.createTemporaryComponent = function(...)
+            built = built + 1
+            return saved(...)
+        end
+        local ok, err = pcall(field.copyElement, field, container, original)
+        registry.createTemporaryComponent = saved
+        t:assertTrue(ok, tostring(err))
+        t:assertEqual(built, 2)
+        t:assertEqual(#container.monitors[2].rules, 2)
+    end,
+    ["Copy is offered on labeled components with a store only"] = function(t)
+        local Unnamed = WowVision.Class("CopyTestUnnamed")
+        Unnamed:addFields({ { key = "value", type = "Number", persist = true } })
+        local function arrayOf(factory)
+            return WowVision.classes.newField({
+                key = "things",
+                type = "ComponentArray",
+                persist = true,
+                factory = factory,
+                getTypeKey = function()
+                    return "Thing"
+                end,
+            })
+        end
+        local unnamedField = arrayOf(function(config)
+            return Unnamed:new(config)
+        end)
+        local unnamed = { things = {} }
+        unnamedField:setDB(unnamed, { global = { things = { _type = "array" } } })
+        unnamedField:addElement(unnamed, { value = 1 })
+        t:assertFalse(unnamedField:canCopy(unnamed, unnamed.things[1]))
+
+        local monitorField = arrayOf(function(config)
+            return WowVision.monitors.registry:createTemporaryComponent(config)
+        end)
+        local stored = { things = {} }
+        monitorField:setDB(stored, { global = { things = { _type = "array" } } })
+        monitorField:addElement(stored, { type = "CdmAura", label = "Dots" })
+        t:assertTrue(monitorField:canCopy(stored, stored.things[1]))
+        local loose = { things = {} }
+        monitorField:addElement(loose, { type = "CdmAura", label = "Loose" })
+        t:assertFalse(monitorField:canCopy(loose, loose.things[1]))
+    end,
+    ["copying a buffer before the focused one keeps the focus"] = function(t)
+        local group = WowVision.buffers:create("Group", { label = "Group" })
+        group:setDB({ global = {} })
+        for _, label in ipairs({ "A", "B", "C" }) do
+            group:addBuffer(WowVision.buffers:create("Static", { label = label }))
+        end
+        group:focusIndex(3)
+        t:assertEqual(group:getFocus().label, "C")
+        local field = group.class:getField("items")
+        local copy = field:copyElement(group, group.items[1], function(config)
+            config.label = "A Copy 1"
+        end)
+        t:assertEqual(group.items[2], copy)
+        t:assertEqual(group:getFocus().label, "C")
+        -- A copy after the focus leaves it alone
+        field:copyElement(group, group.items[4])
+        t:assertEqual(group:getFocus().label, "C")
+    end,
+})
+
+-- The classic Aura monitor (TBC, Mists, Vanilla) with a stand-in tracker:
+-- the harness has no Aura object type, so each test hands the monitor a
+-- tracker whose events it fires itself.
+loadAddonFile("classic/monitors/types/AuraMonitor.lua")
+local function classicAuraSetup(mode)
+    local tracker = {
+        items = {},
+        events = {
+            add = WowVision.Event:new("add"),
+            remove = WowVision.Event:new("remove"),
+            unitsChanged = WowVision.Event:new("unitsChanged"),
+        },
+        untrack = function() end,
+    }
+    local monitor = WowVision.monitors:create("Aura", { unit = "target", announceOnUnitChange = mode })
+    monitor.createTracker = function()
+        return tracker
+    end
+    monitor:setDB({ global = {} })
+    monitor.class:getField("rules"):addElement(monitor, { type = "AuraState", spell = 8921, playerOnly = false })
+    local fired = {}
+    local function listen(rule)
+        for _, state in ipairs({ "applied", "missing" }) do
+            local alert = rule.class:getField(state):getAlert(rule)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(fired, message.text)
+                    end
+                end
+            end
+        end
+    end
+    listen(monitor.rules[1])
+    local function aura()
+        local values = { spellId = 8921, duration = 0 }
+        return {
+            get = function(_, key)
+                return values[key]
+            end,
+        }
+    end
+    -- A new target: the game's order, the unit change first, then the old
+    -- target's auras go and the new one's come
+    local function switchTo(old, new)
+        tracker.events.unitsChanged:emit(tracker, "target", "guid")
+        if old ~= nil then
+            tracker.items[old] = nil
+            tracker.events.remove:emit(tracker, old)
+        end
+        if new ~= nil then
+            tracker.items[new] = true
+            tracker.events.add:emit(tracker, new)
+        end
+        monitor:update()
+    end
+    return monitor, tracker, fired, aura, switchTo, listen
+end
+
+WowVision.testing.testRunner:addSuite("ClassicAuraMonitor", {
+    ["on a target change: only changes, always, or never"] = function(t)
+        local monitor, tracker, fired, aura, switchTo = classicAuraSetup("changes")
+        local first = aura()
+        tracker.items[first] = true
+        monitor:update()
+        t:assertEqual(#fired, 0)
+        -- Only changes: a target without the aura speaks Missing, one with it Applied
+        switchTo(first, nil)
+        t:assertEqual(fired[#fired], "Moonfire Missing")
+        local second = aura()
+        switchTo(nil, second)
+        t:assertEqual(fired[#fired], "Moonfire Applied")
+        local third = aura()
+        switchTo(second, third)
+        t:assertEqual(#fired, 2)
+        -- Always: the new target's state, even when it is the same
+        monitor.announceOnUnitChange = "always"
+        local fourth = aura()
+        switchTo(third, fourth)
+        t:assertEqual(#fired, 3)
+        t:assertEqual(fired[3], "Moonfire Applied")
+        -- Never: switching speaks nothing, either way
+        monitor.announceOnUnitChange = "never"
+        switchTo(fourth, nil)
+        local fifth = aura()
+        switchTo(nil, fifth)
+        t:assertEqual(#fired, 3)
+        -- ...but a change on the new target still speaks
+        tracker.items[fifth] = nil
+        tracker.events.remove:emit(tracker, fifth)
+        monitor:update()
+        t:assertEqual(fired[#fired], "Moonfire Missing")
+        t:assertEqual(#fired, 4)
+    end,
+    ["copying a rule announces nothing"] = function(t)
+        local monitor, tracker, fired, aura, _, listen = classicAuraSetup("changes")
+        tracker.items[aura()] = true
+        monitor:update()
+        monitor:update()
+        t:assertEqual(#fired, 0)
+        local copy = monitor.class:getField("rules"):copyElement(monitor, monitor.rules[1])
+        listen(copy)
+        monitor:update()
+        monitor:update()
+        t:assertEqual(#monitor.rules, 2)
+        t:assertEqual(#fired, 0)
+        -- Changing what a rule tracks still starts over and announces
+        monitor.rules[1].spell = 8921
+        monitor.rules[1].playerOnly = true
+        monitor.rules[1].playerOnly = false
+        monitor:update()
+        t:assertEqual(fired[#fired], "Moonfire Applied")
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {
     ["the pickers list the Essential and Utility spells, cooldowns only for cooldown rules"] = function(t)
         -- An entry's linked spells are picks of their own, the base is not

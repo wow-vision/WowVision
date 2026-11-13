@@ -6,6 +6,9 @@
 * Paged windows: Page Up and Page Down turn the page while you are on the paged content: the spellbook, the merchant, the mailbox, books and letters, and on WoW: Forever the toy box, heirlooms and appearances. They press the window's own Previous Page and Next Page buttons and put you on the first entry of the new page. The page buttons stay where they were.
 * Errors: one part of WowVision that fails no longer stops the rest. Before, an error that repeated every frame (for example a range check in a dungeon) left menus and windows dead until a reload; now the error is still reported, once instead of every frame, and everything else keeps working. The spoken Lua error alert says each error at most once every 5 seconds, also when two errors take turns.
 * Range checks: WowVision's copy of LibRangeCheck is now the current upstream version with our fixes, and it is used by every addon that embeds the library. Another addon's older copy can no longer throw errors every frame in dungeons. In dungeons a new target no longer gets the old target's range for a moment.
+* Monitors: Announce on Target Change is now a choice of Only Changes (the default, what off did before), Always (what on did before) and Never (a target change is silent; later changes on the new target speak as usual). Saved settings keep their meaning.
+* Context menu: Copy on a monitor, a rule, a buffer group or a buffer adds a full copy right after it ("Moonfire Copy 1"), in the same scope; a copied monitor brings its rules.
+* Monitors: adding, copying or removing a rule no longer makes every rule of the monitor say its current state again.
 
 ### Modern
 * Quest log: Escape on a quest's details goes back to the quest list, as the Back button does. Escape on the list closes the log as before.
