@@ -1,7 +1,8 @@
 local testRunner = WowVision.testing.testRunner
 
 -- Module.runAllUpdates over a small tree: the middle module throws.
-local function run()
+-- frames: how many frames to run (default 1).
+local function run(frames)
     local root = WowVision.Module:new("updateTestRoot")
     local ran = {}
     for _, key in ipairs({ "first", "broken", "last" }) do
@@ -24,7 +25,9 @@ local function run()
     end
     local ok, err = pcall(function()
         WowVision.Module.rebuildAllUpdateHandlers()
-        WowVision.Module.runAllUpdates()
+        for _ = 1, frames or 1 do
+            WowVision.Module.runAllUpdates()
+        end
     end)
     WowVision.base, geterrorhandler = savedBase, savedHandler
     -- leave the handler list as the real tree has it (no tree: nothing to run)
@@ -45,5 +48,12 @@ testRunner:addSuite("Module updates", {
         local _, _, _, reported = run()
         t:assertEqual(#reported, 1)
         t:assertTrue(reported[1]:find("broken update", 1, true) ~= nil, reported[1])
+    end,
+
+    ["a module that fails every frame is reported once"] = function(t)
+        local ok, err, ran, reported = run(3)
+        t:assertTrue(ok, tostring(err))
+        t:assertEqual(#ran, 6)
+        t:assertEqual(#reported, 1)
     end,
 })
