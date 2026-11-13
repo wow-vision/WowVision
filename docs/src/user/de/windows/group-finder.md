@@ -179,7 +179,7 @@ Beispiel: Ein Leiter startet eine Rollenabfrage. Du hörst den Titel des Popups.
 
 ## Einladung mit Rollenwahl
 
-Auf Retail und WoW: Forever kommt eine Einladung von einer Gruppe, die Rollen anbietet (zum Beispiel einer Gruppe aus der Gruppensuche), nicht als normales Einladungs-Popup, sondern als eigenes Fenster, das nach deiner Rolle fragt. Es wird wie die Rollen-Popups oben gelesen. Der Titel ist die Einladungszeile („... lädt dich in eine Gruppe ein“). Warnt das Spiel, dass du beim Annehmen deine Warteschlangen verlässt, kommt diese Warnung als Nächstes. Dann die Rollen, die deine Klasse spielen kann, dann Annehmen und Ablehnen. Annehmen bleibt deaktiviert, bis eine Rolle aktiviert ist; ist nur eine Rolle offen, aktiviert das Spiel sie für dich. Läuft die Zeit ab, lehnt das Spiel die Einladung selbst ab.
+Auf Retail und WoW: Forever kommt eine Einladung von einer Gruppe, die Rollen anbietet (zum Beispiel einer Gruppe aus der Gruppensuche), nicht als normales Einladungs-Popup, sondern als eigenes Fenster, das nach deiner Rolle fragt. Es wird wie die Rollen-Popups oben gelesen. Der Titel ist die Einladungszeile („... lädt dich in eine Gruppe ein“). Zeigt das Spiel eine Warnung (beim Annehmen verlässt du deine Warteschlangen, oder du wirst während einer aktiven Gruppensynchronisierung eingeladen), kommt sie als Nächstes. Dann die Rollen, die deine Klasse spielen kann, dann Annehmen und Ablehnen. Annehmen bleibt deaktiviert, bis eine Rolle aktiviert ist; ist nur eine Rolle offen, aktiviert das Spiel sie für dich. Läuft die Zeit ab, lehnt das Spiel die Einladung selbst ab.
 
 ## Eine Gruppeneinladung im Kampf annehmen
 

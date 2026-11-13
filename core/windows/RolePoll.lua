@@ -12,8 +12,9 @@ local ControlId = graph.ControlId
 -- offers roles, e.g. a group from the group finder). All three are special
 -- popups (StaticPopupSpecial_Show): the game lists them among its shown
 -- dialogs, and the popups window skips them (no `which`). Each one:
--- the title (the invitation line on the invite popup), the warning that
--- accepting leaves your queues when the game shows it, the three role
+-- the title (the invitation line on the invite popup), the invite popup's
+-- warning line when the game fills it (accepting leaves your queues, and/or
+-- the party sync warning while a party sync is active), the three role
 -- check buttons as a vertical list, then accept, decline, close. A role the
 -- class cannot play has its check button hidden and is left out. The
 -- invite popup's Accept stays disabled until a role is checked, and the

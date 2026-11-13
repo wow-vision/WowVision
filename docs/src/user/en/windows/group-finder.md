@@ -178,7 +178,7 @@ Example: a leader starts a role poll. You hear the popup's title. Down to Healer
 
 ## Invitation with a role choice
 
-On Retail and WoW: Forever, an invitation from a group that offers roles (for example a group from the group finder) does not come as the plain invitation popup but as its own window that asks for your role. It reads like the role popups above. The title is the invitation line ("... invites you to a group"). When the game warns that accepting leaves your queues, that warning comes next. Then the roles your class can play, then Accept and Decline. Accept stays disabled until a role is checked; when only one role is open, the game checks it for you. The game declines the invitation itself when its timer runs out.
+On Retail and WoW: Forever, an invitation from a group that offers roles (for example a group from the group finder) does not come as the plain invitation popup but as its own window that asks for your role. It reads like the role popups above. The title is the invitation line ("... invites you to a group"). When the game shows a warning (accepting leaves your queues, or you are invited while a party sync is active), it comes next. Then the roles your class can play, then Accept and Decline. Accept stays disabled until a role is checked; when only one role is open, the game checks it for you. The game declines the invitation itself when its timer runs out.
 
 ## Accepting a group invitation in combat
 
