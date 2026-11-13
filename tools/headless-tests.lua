@@ -1309,36 +1309,93 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         GetTime = savedGetTime
     end,
     ["a target monitor hears your own auras while you target yourself"] = function(t)
-        local savedUnitIsUnit, savedIsSecret = UnitIsUnit, issecretvalue
+        local saved = { UnitIsUnit = UnitIsUnit, UnitGUID = UnitGUID }
         local selfTarget = false
         UnitIsUnit = function(a, b)
             return selfTarget and a == "target" and b == "player"
         end
-        local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
-        monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
-        local rule = monitor.rules[1]
-        monitor:update()
-        -- The viewers label an aura on you "player", whoever is targeted
-        sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = "player", {}, true
-        monitor:update()
-        t:assertEqual(rule:currentText("target"), "Sunfire, Missing")
-        t:assertTrue(rule:getCurrentState() ~= "applied")
+        UnitGUID = nil
+        local ok, err = pcall(function()
+            local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
+            monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
+            local rule = monitor.rules[1]
+            monitor:update()
+            -- The viewers label an aura on you "player", whoever is targeted
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = "player", {}, true
+            monitor:update()
+            t:assertEqual(rule:currentText("target"), "Sunfire, Missing")
+            -- The first reading settles silently: never Applied, nothing said
+            t:assertEqual(rule:getCurrentState(), nil)
 
-        -- Targeting yourself, the target monitor takes it
-        selfTarget = true
-        monitor:update()
-        t:assertEqual(rule:currentText("target"), "Sunfire")
-        t:assertEqual(rule:getCurrentState(), "applied")
-
-        -- An answer we cannot read keeps the plain label match
-        issecretvalue = function(value)
-            return value == true
-        end
-        t:assertEqual(rule:currentText("target"), "Sunfire, Missing")
-        issecretvalue = savedIsSecret
-
-        UnitIsUnit = savedUnitIsUnit
+            -- Targeting yourself, the target monitor takes it
+            selfTarget = true
+            monitor:update()
+            t:assertEqual(rule:currentText("target"), "Sunfire")
+            t:assertEqual(rule:getCurrentState(), "applied")
+        end)
+        UnitIsUnit, UnitGUID = saved.UnitIsUnit, saved.UnitGUID
         sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = nil, nil, false
+        if not ok then
+            error(err, 0)
+        end
+    end,
+    ["a hidden or refused self-target answer never turns your aura Missing"] = function(t)
+        local saved = { UnitIsUnit = UnitIsUnit, UnitGUID = UnitGUID, issecretvalue = issecretvalue }
+        local hidden = { secretValue = true }
+        issecretvalue = function(value)
+            return value == hidden
+        end
+        local answer, guids = "yes", nil
+        UnitIsUnit = function()
+            if answer == "refused" then
+                error("restricted")
+            end
+            return answer == "hidden" and hidden or answer == "yes"
+        end
+        UnitGUID = function(unit)
+            return guids ~= nil and guids[unit] or hidden
+        end
+        local ok, err = pcall(function()
+            local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
+            monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
+            local rule = monitor.rules[1]
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = "player", {}, true
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "applied")
+
+            -- Hidden (and no readable GUIDs): the last readable answer holds
+            answer = "hidden"
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "applied")
+            t:assertEqual(rule:currentText("target"), "Sunfire")
+            answer = "refused"
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "applied")
+
+            -- A new target forgets it; the GUIDs answer when they are plain
+            monitor:onTargetChanged()
+            guids = { target = "Player-1", player = "Player-1" }
+            for _ = 1, 3 do
+                monitor:update()
+            end
+            t:assertEqual(rule:getCurrentState(), "applied")
+            guids = { target = "Player-2", player = "Player-1" }
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "missing")
+
+            -- A new target with nothing readable is not you
+            monitor:onTargetChanged()
+            guids = nil
+            for _ = 1, 3 do
+                monitor:update()
+            end
+            t:assertEqual(rule:currentText("target"), "Sunfire, Missing")
+        end)
+        UnitIsUnit, UnitGUID, issecretvalue = saved.UnitIsUnit, saved.UnitGUID, saved.issecretvalue
+        sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = nil, nil, false
+        if not ok then
+            error(err, 0)
+        end
     end,
 })
 
