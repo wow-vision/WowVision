@@ -208,21 +208,33 @@ WowVision.monitors.Monitor = Monitor
 WowVision.monitors.registry = registry
 
 -- What a target monitor says when the target changes, for its
--- announceOnUnitChange field (a Bool before, so false and true keep their
--- saved meaning): false speaks only what differs from the old target, true
--- speaks the new target's state, "never" settles on the new target in
--- silence (later changes on it speak as usual).
+-- announceOnUnitChange field: "changes" speaks only what differs from the
+-- old target, "always" speaks the new target's state, "never" settles on
+-- the new target in silence (later changes on it speak as usual).
 WowVision.monitors.TARGET_CHANGE_CHOICES = {
-    { value = false, label = L["Only Changes"] },
-    { value = true, label = L["Always"] },
+    { value = "changes", label = L["Only Changes"] },
+    { value = "always", label = L["Always"] },
     { value = "never", label = L["Never"] },
 }
 
+-- The field was a Bool before: a saved false reads as "changes" and a saved
+-- true as "always", so old settings keep their meaning without a migration
+-- (restore runs through this validate too).
+function WowVision.monitors.targetChangeValue(field, value)
+    if value == true or value == "always" then
+        return "always"
+    elseif value == "never" then
+        return "never"
+    end
+    return "changes"
+end
+
 -- Point a monitor's rules at a new target per its announceOnUnitChange.
+-- Returns the mode it acted on.
 function Monitor:rulesOnTargetChange()
     local mode = self.announceOnUnitChange
     for _, rule in ipairs(self.rules or {}) do
-        if mode == true then
+        if mode == "always" then
             if rule.reset then
                 rule:reset()
             end
@@ -231,6 +243,7 @@ function Monitor:rulesOnTargetChange()
             rule:forget()
         end
     end
+    return mode
 end
 
 function WowVision.monitors:createType(key)

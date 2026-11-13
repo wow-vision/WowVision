@@ -685,7 +685,7 @@ local UNIT_CHOICES = {
 
 CdmAuraMonitor:addFields({
     { key = "unit", type = "Choice", default = "target", persist = true, label = L["Unit"], sortPriority = 2, choices = UNIT_CHOICES },
-    { key = "announceOnUnitChange", type = "Choice", default = false, persist = true, label = L["Announce on Target Change"], sortPriority = 2, choices = monitors.TARGET_CHANGE_CHOICES },
+    { key = "announceOnUnitChange", type = "Choice", default = "changes", persist = true, label = L["Announce on Target Change"], sortPriority = 2, choices = monitors.TARGET_CHANGE_CHOICES, validate = monitors.targetChangeValue },
     -- The countdown text on the tracked items gains a decimal ("8.7"); it
     -- changes what is drawn on screen, so off by default.
     { key = "decimalTimer", type = "Bool", default = false, persist = true, label = L["One Decimal Timer"], sortPriority = 2 },
@@ -810,7 +810,7 @@ function CdmAuraMonitor:onTargetChanged()
     self:rulesOnTargetChange()
     local mode = self.announceOnUnitChange
     for _, rule in ipairs(self.rules or {}) do
-        if mode == true then
+        if mode == "always" then
             rule._traceNext = "after target change, announcing"
         elseif mode == "never" then
             rule._traceNext = "after target change, silent"

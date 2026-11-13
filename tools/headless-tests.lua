@@ -1162,7 +1162,7 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         t:assertEqual(#fired, 5)
 
         -- A target change holds the rule for two ticks, then announces when asked
-        monitor.announceOnUnitChange = true
+        monitor.announceOnUnitChange = "always"
         monitor:onTargetChanged()
         moonfireIcon.auraDataUnit, moonfireIcon.auraDataCached, moonfireIcon.active = "target", {}, true
         monitor:update()
@@ -1173,7 +1173,7 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         moonfireIcon.auraDataUnit, moonfireIcon.auraDataCached, moonfireIcon.active = nil, nil, false
         monitor:update()
         t:assertEqual(fired[#fired], "Moonfire Missing")
-        monitor.announceOnUnitChange = false
+        monitor.announceOnUnitChange = "changes"
 
         -- The pandemic marker goes at expiry before the aura data does: the
         -- rule holds Pandemic across the gap and goes straight to Missing
@@ -1311,9 +1311,19 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
     ["on a target change: only changes, always, or never"] = function(t)
         local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
         local field = monitor.class:getField("announceOnUnitChange")
-        t:assertEqual(monitor.announceOnUnitChange, false)
-        t:assertEqual(field:getValueString(monitor, false), "Only Changes")
+        t:assertEqual(monitor.announceOnUnitChange, "changes")
+        t:assertEqual(field:getValueString(monitor, "changes"), "Only Changes")
         t:assertEqual(field:getValueString(monitor, "never"), "Never")
+        -- The field was a Bool: saved true and false keep their meaning
+        monitor.announceOnUnitChange = true
+        t:assertEqual(monitor.announceOnUnitChange, "always")
+        monitor.announceOnUnitChange = false
+        t:assertEqual(monitor.announceOnUnitChange, "changes")
+        local restored = WowVision.monitors:create("CdmAura", { unit = "target" })
+        restored:setDB({ global = { announceOnUnitChange = true } })
+        t:assertEqual(restored.announceOnUnitChange, "always")
+        restored:setDB({ global = { announceOnUnitChange = false } })
+        t:assertEqual(restored.announceOnUnitChange, "changes")
         monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
         local rule = monitor.rules[1]
         local fired = {}
@@ -1359,7 +1369,7 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         t:assertEqual(#fired, 2)
 
         -- Always: the new target's state, even when it is the same
-        monitor.announceOnUnitChange = true
+        monitor.announceOnUnitChange = "always"
         switchTo(true)
         t:assertEqual(#fired, 3)
         t:assertEqual(fired[3], "Sunfire Applied")
