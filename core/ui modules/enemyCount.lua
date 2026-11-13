@@ -53,32 +53,9 @@ local function groupFights(api, unit, group)
     return false
 end
 
--- In a group: whether the enemy is in combat and nobody outside the group
--- has tapped it, which makes the fight the group's. Needed because the
--- client gets an enemy's threat list only once you are on it yourself:
--- in a WoW: Forever dungeon (2026-11-12, 44 fights) groupFights found
--- nothing until you were in combat, 1.5 to 22 seconds after the group.
--- Both are shown on the plate (in combat; a grey bar when tapped by
--- others). A secret answer to either is unknown and counts as no.
--- `busy`: whether someone in the group is in combat (groupBusy). An enemy
--- that attacks someone outside the group is not tapped until that player
--- hits it, and was counted without this for a second or two (dungeon
--- 2026-11-13: twice "1" with nobody in the group in combat).
-local function groupHolds(api, unit, busy)
-    if not busy then
-        return false
-    end
-    local inCombat = api.inCombat(unit)
-    if api.isSecret(inCombat) or inCombat ~= true then
-        return false
-    end
-    local tapped = api.tapDenied(unit)
-    return not api.isSecret(tapped) and tapped == false
-end
-
 -- Whether you are in a group and you, your pet or a member is in combat.
--- Read once per count. The combat flag of group units stayed readable in a
--- WoW: Forever dungeon (2026-11-13: it started 99 of 101 logged fights).
+-- The combat flag of group units stayed readable in a WoW: Forever dungeon
+-- (2026-11-13: it started 99 of 101 logged fights).
 local function groupBusy(api, group)
     if not api.inGroup() then
         return false
@@ -92,6 +69,46 @@ local function groupBusy(api, group)
         end
     end
     return false
+end
+
+-- What one count knows about your group (group mode only): `members` the
+-- group's units, `busy` groupBusy, read on the first plate that asks and
+-- kept for the rest of the count, so idle plates cost no walk over a raid.
+local function groupView(api, mode)
+    if mode ~= "group" then
+        return nil
+    end
+    return { members = api.group(), busy = nil }
+end
+
+local function isBusy(api, view)
+    if view.busy == nil then
+        view.busy = groupBusy(api, view.members)
+    end
+    return view.busy
+end
+
+-- In a group: whether the enemy is in combat and nobody outside the group
+-- has tapped it, which makes the fight the group's. Needed because the
+-- client gets an enemy's threat list only once you are on it yourself:
+-- in a WoW: Forever dungeon (2026-11-12, 44 fights) groupFights found
+-- nothing until you were in combat, 1.5 to 22 seconds after the group.
+-- Both are shown on the plate (in combat; a grey bar when tapped by
+-- others). A secret answer to either is unknown and counts as no.
+-- Only while someone in the group is in combat (isBusy): an enemy that
+-- attacks someone outside the group is not tapped until that player hits
+-- it, and was counted without this for a second or two (dungeon
+-- 2026-11-13: twice "1" with nobody in the group in combat).
+local function groupHolds(api, unit, view)
+    if not isBusy(api, view) then
+        return false
+    end
+    local inCombat = api.inCombat(unit)
+    if api.isSecret(inCombat) or inCombat ~= true then
+        return false
+    end
+    local tapped = api.tapDenied(unit)
+    return not api.isSecret(tapped) and tapped == false
 end
 
 -- Whether you hold the enemy's aggro (threat status 2 or 3). A secret
@@ -108,7 +125,7 @@ local function attacksPlayer(api, unit)
 end
 
 -- Whether the enemy on a plate counts for a mode.
-local function counts(api, mode, group, busy, eliteOnly, unit)
+local function counts(api, mode, view, eliteOnly, unit)
     -- An enemy out of combat has an empty threat list: skipping it first
     -- spares the walk over a raid's members for every idle plate.
     if not (isHostile(api, unit) and not api.isDead(unit) and api.inCombat(unit)) then
@@ -118,7 +135,7 @@ local function counts(api, mode, group, busy, eliteOnly, unit)
     if mode == "player" then
         fights = attacksPlayer(api, unit)
     else
-        fights = groupHolds(api, unit, busy) or groupFights(api, unit, group)
+        fights = groupHolds(api, unit, view) or groupFights(api, unit, view.members)
     end
     if fights and eliteOnly then
         fights = ELITE[api.classification(unit)] == true
@@ -129,11 +146,10 @@ end
 -- The number of enemies for a mode. `skip` is a plate token to leave out:
 -- the plate the game is removing right now still exists during its event.
 function enemyCount.count(api, mode, eliteOnly, skip)
-    local group = mode == "group" and api.group() or nil
-    local busy = group ~= nil and groupBusy(api, group)
+    local view = groupView(api, mode)
     local count = 0
     for _, unit in ipairs(api.plates()) do
-        if unit ~= skip and counts(api, mode, group, busy, eliteOnly, unit) then
+        if unit ~= skip and counts(api, mode, view, eliteOnly, unit) then
             count = count + 1
         end
     end
@@ -171,11 +187,10 @@ end
 -- The fighting enemies split in two lists of plate tokens: free and
 -- crowd controlled.
 function enemyCount.scan(api, mode, eliteOnly, skip)
-    local group = mode == "group" and api.group() or nil
-    local busy = group ~= nil and groupBusy(api, group)
+    local view = groupView(api, mode)
     local free, controlled = {}, {}
     for _, unit in ipairs(api.plates()) do
-        if unit ~= skip and counts(api, mode, group, busy, eliteOnly, unit) then
+        if unit ~= skip and counts(api, mode, view, eliteOnly, unit) then
             if enemyCount.isControlled(api, unit) then
                 table.insert(controlled, unit)
             else
