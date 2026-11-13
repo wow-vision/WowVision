@@ -426,6 +426,61 @@ testRunner:addSuite("MenuNavigation", {
         end)
     end,
 
+    ["a window naming a way back has the close key click it; with none the key stays with the game"] = function(t)
+        withHost(function(host)
+            local savedActivator = WowVision.inputActivator
+            local specs, released = {}, 0
+            WowVision.inputActivator = {
+                anyInputHeld = function()
+                    return false
+                end,
+                activate = function(_, spec)
+                    tinsert(specs, spec)
+                    return {
+                        release = function()
+                            released = released + 1
+                        end,
+                    }
+                end,
+            }
+            local ok, err = pcall(function()
+                local back = nil
+                host:open({
+                    key = "log",
+                    render = list({ "One" }),
+                    closeClick = function()
+                        return back
+                    end,
+                })
+                host:_syncCloseKey()
+                t:assertEqual(host._closeHandle, nil, "no view to leave: Escape is the game's")
+                t:assertEqual(specs[#specs].binding, "gameClose")
+
+                back = { name = "Back" }
+                host:_syncCloseKey()
+                local spec = specs[#specs]
+                t:assertEqual(spec.binding, "close")
+                t:assertEqual(spec.type, "Click")
+                t:assertEqual(spec.target, back)
+                t:assertEqual(spec.emulatedKey, "LeftButton")
+                t:assertEqual(host._gameCloseHandle, nil, "the controller's button is the click too")
+
+                local count = #specs
+                host:_syncCloseKey()
+                t:assertEqual(#specs, count, "taken once")
+
+                back = nil
+                host:_syncCloseKey()
+                t:assertEqual(host._closeHandle, nil, "back on the list the key is let go")
+                t:assertEqual(specs[#specs].binding, "gameClose")
+            end)
+            WowVision.inputActivator = savedActivator
+            if not ok then
+                error(err, 0)
+            end
+        end)
+    end,
+
     ["closing all closes every stack and the game's windows; in combat the game's stay"] = function(t)
         withHost(function(host)
             local savedClose = CloseAllWindows

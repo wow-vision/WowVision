@@ -619,10 +619,25 @@ local function render(builder, screen)
     builder:popContext()
 end
 
+-- Escape on the details goes back to the list, as the Back button does; on
+-- the list it stays with the game and closes the log.
+local function detailsBackButton()
+    local detailsFrame = QuestMapFrame ~= nil and QuestMapFrame.DetailsFrame or nil
+    if detailsFrame == nil or not detailsFrame:IsVisible() then
+        return nil
+    end
+    local backFrame = detailsFrame.BackFrame
+    local button = backFrame ~= nil and backFrame.BackButton or nil
+    if button ~= nil and button:IsVisible() and button:IsEnabled() then
+        return button
+    end
+    return nil
+end
+
 module:registerWindow({
     type = "FrameWindow",
     name = "QuestLog",
     frameName = "QuestMapFrame",
     conflictingAddons = { "Sku" },
-    graphScreen = { render = render },
+    graphScreen = { render = render, closeClick = detailsBackButton },
 })

@@ -10,6 +10,9 @@ local graph = WowVision.graph
 --   wrap            tab wraps between stops (default true)
 --   captureClose    hold the close key while this stack is focused (frameless
 --                   windows the game cannot close for us)
+--   closeClick      function() -- a button of the game that steps back a view
+--                   inside the window, or nil; while it returns one the close
+--                   key clicks it instead of going to the game
 --   onRequestClose  function(stack) -- close/escape pressed on the last screen;
 --                   the owner (window bridge) closes the real UI. Absent = the
 --                   host just closes the stack.
