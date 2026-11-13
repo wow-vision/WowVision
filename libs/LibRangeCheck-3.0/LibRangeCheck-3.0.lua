@@ -4038,6 +4038,17 @@ local function resetRangeCache()
   wipe(rangeCache)
 end
 
+-- WowVision: an entry keyed by a unit token (the GUID was secret) belongs to
+-- whoever holds that token now; when the token changes hands the entry is
+-- someone else's range, so it goes (lib:dropUnitKeyedRanges).
+local function dropUnitKeyedRanges()
+  for k, v in pairs(rangeCache) do
+    if v.byUnit then
+      rangeCache[k] = nil
+    end
+  end
+end
+
 local function invalidateRangeCache(maxAge)
   local currentTime = GetTime()
   for k, v in pairs(rangeCache) do
@@ -4120,7 +4131,8 @@ local function getCachedRange(unit, noItems, maxCacheAge)
   -- unfortunately, caching on GUID is not possible due to secrets, using unit instead
   -- WowVision: WoW Forever hands out secret GUIDs too (isMidnight is false
   -- there), so the client is asked for the helper instead of the version checked.
-  local cacheKey = ((issecretvalue ~= nil and issecretvalue(guid)) and unit or guid) .. (noItems and "-1" or "-0")
+  local byUnit = issecretvalue ~= nil and issecretvalue(guid)
+  local cacheKey = (byUnit and unit or guid) .. (noItems and "-1" or "-0")
   local cacheItem = rangeCache[cacheKey] or nil
 
   local currentTime = GetTime()
@@ -4134,6 +4146,7 @@ local function getCachedRange(unit, noItems, maxCacheAge)
   local result = cacheItem or {}
   result.minRange, result.maxRange = getRange(unit, noItems)
   result.updateTime = currentTime
+  result.byUnit = byUnit -- WowVision: see dropUnitKeyedRanges
   rangeCache[cacheKey] = result
   return result.minRange, result.maxRange
 end
@@ -4514,6 +4527,21 @@ function lib:OnEvent(event, ...)
   end
 end
 
+-- WowVision: a unit token now names someone else (dropUnitKeyedRanges).
+local UNIT_TOKEN_EVENTS = {
+  "PLAYER_TARGET_CHANGED",
+  "PLAYER_FOCUS_CHANGED",
+  "UPDATE_MOUSEOVER_UNIT",
+  "NAME_PLATE_UNIT_ADDED",
+  "NAME_PLATE_UNIT_REMOVED",
+  "GROUP_ROSTER_UPDATE",
+}
+for _, event in ipairs(UNIT_TOKEN_EVENTS) do
+  lib[event] = function()
+    dropUnitKeyedRanges()
+  end
+end
+
 function lib:LEARNED_SPELL_IN_TAB()
   self:scheduleInit()
 end
@@ -4654,7 +4682,14 @@ end
 -- new. With minor 99 we usually upgrade a copy another addon loaded first
 -- (WeakAuras 38, TellMeWhen 31): its frame exists, and upstream's activate
 -- then skipped every registration, so the events added since that copy
--- never arrived. RegisterEvent on a registered event is harmless.
+-- (and ours below) never arrived. RegisterEvent on a registered event is
+-- harmless.
+local function registerIfValid(frame, event)
+  if not C_EventUtils or not C_EventUtils.IsEventValid or C_EventUtils.IsEventValid(event) then
+    frame:RegisterEvent(event)
+  end
+end
+
 function lib:activate()
   if not self.frame then
     self.frame = CreateFrame("Frame")
@@ -4681,6 +4716,10 @@ function lib:activate()
     if playerClass == "MAGE" or playerClass == "SHAMAN" then
       -- Mage and Shaman gladiator gloves modify spell ranges
       frame:RegisterUnitEvent("UNIT_INVENTORY_CHANGED", "player")
+    end
+
+    for _, event in ipairs(UNIT_TOKEN_EVENTS) do
+      registerIfValid(frame, event)
     end
   end
 
