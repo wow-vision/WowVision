@@ -1289,6 +1289,9 @@ end
 -- (ActivatePackage and PreloadNeighbours), the player's zones and the zones that share a seam with them are decoded,
 -- one per step. Zones the player walks into later get their neighbours prepared the same way.
 local PRELOAD_CHECK = 1.0      -- seconds between two looks at the player's zones
+-- Decoding time per frame (N.LoadZoneInSteps): a big zone decoded in one piece froze the game for about half a second
+-- (the Barrens: 0.45 s in the tests' Lua), and a zone change decodes several in a row.
+local PRELOAD_BUDGET_MS = 4
 local preloadCheckAt = 0
 
 local function stepPreload(N, px, py, map)
@@ -1319,15 +1322,26 @@ local function stepPreload(N, px, py, map)
                     end
                 end
             end
+            -- a zone that is half decoded goes on first, so its work is not thrown away; one that is no longer wanted
+            -- is let go (its half-built tables are large)
+            local loading = N.loading and N.loading.zoneId
+            if loading ~= nil and not keep[loading] then
+                N.loading = nil
+            end
+            for i, zoneId in ipairs(pending) do
+                if zoneId == loading then
+                    table.remove(pending, i)
+                    table.insert(pending, 1, zoneId)
+                    break
+                end
+            end
             preload = { key = key, pending = pending, index = 0, keep = keep }
         end
     end
+    -- one zone after the other, each over as many frames as it needs
     local zoneId = preload.pending[preload.index + 1]
-    if zoneId ~= nil then
+    if zoneId ~= nil and (N.decoded[zoneId] or N.LoadZoneInSteps(zoneId, PRELOAD_BUDGET_MS, debugprofilestop)) then
         preload.index = preload.index + 1
-        if not N.decoded[zoneId] then
-            N.LoadZone(zoneId)
-        end
     end
 end
 

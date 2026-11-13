@@ -27,3 +27,4 @@
 * WowNav, portals: a route to a portal or an entrance may lead through other portals first, as to the portal room in Stormwind, and a teleport is recognised even when the game gives no height.
 * WowNav: when the target lies clearly above or below where the route ends, it says so at the start and on arrival ("Target is above, about 12 yards").
 * WowNav: chests in the destination list are called objects.
+* WowNav: the zones around you are now prepared a little in every frame instead of each in one piece. Before, walking into a big zone such as the Barrens made the game stand still for a moment, several times in a row.

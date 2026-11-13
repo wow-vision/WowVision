@@ -68,7 +68,8 @@ do
 end
 local BASE = 92
 
-local function Chars(text)
+-- pause (optional, also in PrefixSum and Decode): called between pieces of the work; it may yield (N.LoadZoneInSteps).
+local function Chars(text, pause)
     local n, result, i = #text, {}, 1
     while i <= n do
         local j = min(n, i + 3999)
@@ -79,6 +80,7 @@ local function Chars(text)
             result[i + k - 1] = value
         end
         i = j + 1
+        if pause then pause() end
     end
     return result
 end
@@ -323,11 +325,12 @@ end
 -- ---------------------------------------------------------------------------
 -- Decoder
 -- ---------------------------------------------------------------------------
-local function PrefixSum(values, factor)
+local function PrefixSum(values, factor, pause)
     local sum, result = 0, {}
     for i = 1, #values do
         sum = sum + values[i]
         result[i] = sum * factor
+        if pause and i % 4096 == 0 then pause() end
     end
     return result
 end
@@ -338,11 +341,13 @@ end
 
 local CELL_SIZES = { [0] = 16, [1] = 8, [2] = 32 }
 
-local function Decode(raw)
+-- pause (optional): called every few hundred steps of the long loops, so a caller that runs the decoding in a coroutine
+-- can spread it over several frames (N.LoadZoneInSteps). The result is the same with and without it.
+local function Decode(raw, pause)
     local n = raw.nodeCount
     local zone = { id = raw.zoneId, base = raw.zoneId * ZONE_BASE, mapId = raw.mapId, n = n,
         fingerprint = raw.fingerprint, raw = raw }
-    zone.x, zone.y, zone.z = PrefixSum(raw.x, 0.1), PrefixSum(raw.y, 0.1), PrefixSum(raw.z, 0.1)
+    zone.x, zone.y, zone.z = PrefixSum(raw.x, 0.1, pause), PrefixSum(raw.y, 0.1, pause), PrefixSum(raw.z, 0.1, pause)
     if #zone.x ~= n or #zone.y ~= n or #zone.z ~= n then error("coordinate fields have the wrong length") end
     local dictionary = {}
     for i, code in ipairs(raw.codes) do
@@ -353,24 +358,29 @@ local function Decode(raw)
             noExit = floor(code / 1048576) % 2 == 1,     -- 4.27: water component without a checked exit
         }
     end
-    local codes = Chars(raw.c)
+    local codes = Chars(raw.c, pause)
     if #codes ~= n then error("code field has the wrong length") end
     zone.bits, zone.area, zone.radius, zone.noExit = {}, {}, {}, {}
     for i = 1, n do
         local entry = dictionary[codes[i]]
         if not entry then error("code outside the dictionary") end
         zone.bits[i], zone.area[i], zone.radius[i], zone.noExit[i] = entry.bits, entry.area, entry.radius, entry.noExit
+        if pause and i % 1024 == 0 then pause() end
     end
-    zone.layer = Chars(raw.s)
+    zone.layer = Chars(raw.s, pause)
     -- Links (CSR, K6/K7)
-    local counts, offsets, flags = Chars(raw.lo), raw.lt, Chars(raw.lf)
+    local counts, offsets, flags = Chars(raw.lo, pause), raw.lt, Chars(raw.lf, pause)
     local linkCount = raw.linkCount
     if #counts ~= n or #offsets ~= linkCount or #flags ~= linkCount then error("link fields have the wrong length") end
     zone.lu, zone.lv, zone.lflag, zone.ldir, zone.llen = {}, {}, {}, {}, {}
     zone.adj = {}
-    for i = 1, n do zone.adj[i] = {} end
+    for i = 1, n do
+        zone.adj[i] = {}
+        if pause and i % 1024 == 0 then pause() end
+    end
     local k = 0
     for u = 0, n - 1 do
+        if pause and u % 64 == 0 then pause() end
         for _ = 1, counts[u + 1] do
             k = k + 1
             local v = u + offsets[k]
@@ -459,8 +469,8 @@ local function Decode(raw)
     zone.seam = {}
     -- Attachment cells (K10)
     local cx, cy, cz, ch = raw.cx, raw.cy, raw.cz, raw.ch
-    local classes, layers, attachmentCounts = Chars(raw.cc), Chars(raw.cl), Chars(raw.an)
-    local references, masks = raw.ar, Chars(raw.aq)
+    local classes, layers, attachmentCounts = Chars(raw.cc, pause), Chars(raw.cl, pause), Chars(raw.an, pause)
+    local references, masks = raw.ar, Chars(raw.aq, pause)
     local m = raw.cellCount
     if #cx ~= m or #cy ~= m or #cz ~= m or #ch ~= m or #classes ~= m or #layers ~= m
         or #attachmentCounts ~= m or #masks ~= 3 * #references then
@@ -476,6 +486,7 @@ local function Decode(raw)
     zone.cellMap = { {}, {}, {} }
     local ox, oy, mz, previous, a = 0, 0, 0, 0, 0
     for i = 1, m do
+        if pause and i % 256 == 0 then pause() end
         ox, oy, mz = ox + cx[i], oy + cy[i], mz + cz[i]
         local kind = classes[i]
         local size = CELL_SIZES[kind]
@@ -510,11 +521,12 @@ local function Decode(raw)
     -- Floor of the cells (F10, optional field cm): 16-bit mask per cell, bit 4 * row + column of the 4 x 4 fields. Data without the field
     -- (older exports) leave zone.cellFloor nil: every cell then covers its whole square.
     if raw.cm ~= nil then
-        local floors = Chars(raw.cm)
+        local floors = Chars(raw.cm, pause)
         if #floors ~= 3 * m then error("cell floor field has the wrong length") end
         zone.cellFloor = {}
         for i = 1, m do
             zone.cellFloor[i] = (floors[3 * i - 2] * BASE + floors[3 * i - 1]) * BASE + floors[3 * i]
+            if pause and i % 4096 == 0 then pause() end
         end
     end
     return zone
@@ -666,11 +678,58 @@ function N.LoadZone(zoneId)
     return zone
 end
 
+-- WowVision: decodes a zone over several calls, for work in the background (the zones prepared around the player). The
+-- result is the one N.LoadZone gives; the decoding runs in a coroutine that yields once a call has used `budget` on
+-- `clock` (clock() in the budget's unit; debugprofilestop: ms). Returns true when nothing is left to do for the zone
+-- (decoded and attached; decoded meanwhile by N.LoadZone; or not decodable, which N.LoadZone reports when asked), false
+-- while more remains. One zone at a time: another zone drops the unfinished one. Compiling the packed text is one piece
+-- and takes as long as it takes; the call after it goes on with the decoding.
+N.loading = nil       -- the unfinished zone: { zoneId, source, thread, pause, budget, clock, started, steps }
+
+function N.LoadZoneInSteps(zoneId, budget, clock)
+    local source = ZoneSource(zoneId)
+    local ready = N.zones[zoneId] or N.decoded[zoneId]
+    if source == nil or (ready and (N.zones[zoneId] or ready.source == source)) then
+        -- nothing to decode, or N.LoadZone was faster (a route needed the zone): its copy is the zone
+        if N.loading and N.loading.zoneId == zoneId then N.loading = nil end
+        return true
+    end
+    local job = N.loading
+    if not job or job.zoneId ~= zoneId or job.source ~= source then
+        job = { zoneId = zoneId, source = source, steps = 0 }
+        job.pause = function()
+            if job.clock() - job.started >= job.budget then coroutine.yield() end
+        end
+        -- (no pcall around the decoding: Lua 5.1 cannot yield through one; resume reports an error instead)
+        job.thread = coroutine.create(function()
+            local raw = Unpacked("WVN7", "WVN7Src", zoneId)
+            if type(raw) ~= "table" then return nil end
+            job.pause()
+            return Decode(raw, job.pause)
+        end)
+        N.loading = job
+    end
+    job.budget, job.clock, job.started, job.steps = budget, clock, clock(), job.steps + 1
+    local ok, decoded = coroutine.resume(job.thread)
+    if ok and coroutine.status(job.thread) ~= "dead" then return false end
+    N.loading = nil
+    if not ok or type(decoded) ~= "table" then return true end
+    if type(source) == "string" then
+        _G.WVN7[zoneId] = nil
+        decoded.raw = nil
+    end
+    decoded.source = source
+    N.decoded[zoneId] = decoded
+    N.LoadZone(zoneId)      -- attaches the decoded copy (seams, callback), as a decode in one piece does
+    return true
+end
+
 -- Drops a decoded zone, attached or only kept in N.decoded (it is decoded again on demand, from the packed source if there
 -- is one). Virtual points on its links go with it. The other zones need no update: their seams point at waypoint IDs, and
 -- the search decodes a zone behind a seam when it gets there. Never call this while a route job of that zone is running.
 -- N.onZoneUnloaded(zone) (optional) lets the core drop what it derived from the zone (resolutions, lists).
 function N.UnloadZone(zoneId)
+    if N.loading and N.loading.zoneId == zoneId then N.loading = nil end
     local zone = N.zones[zoneId] or N.decoded[zoneId]
     if not zone then return false end
     N.decoded[zoneId] = nil

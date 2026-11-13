@@ -1959,6 +1959,120 @@ if haveNetwork then
             error(err, 0)
         end
     end
+
+    -- N.LoadZoneInSteps: the zones around the player are decoded over several frames.
+    local function firstZone()
+        local ids = {}
+        for id in pairs(N.index) do
+            if N.ZoneAvailable(id) then
+                ids[#ids + 1] = id
+            end
+        end
+        table.sort(ids)
+        return ids[1]
+    end
+
+    -- A clock that moves on by one at every look, so a budget is a number of pause points.
+    local function tickClock()
+        local now = 0
+        return function()
+            now = now + 1
+            return now
+        end
+    end
+
+    local ZONE_ARRAYS = {
+        "x", "y", "z", "bits", "area", "radius", "noExit", "layer", "lu", "lv", "lflag", "ldir", "llen",
+        "cellX", "cellY", "cellSize", "cellKind", "cellZMin", "cellZMax", "cellLayer", "cellStart", "cellCount",
+        "attLink", "attNode", "attT", "attMask", "cellFloor",
+    }
+
+    suite["a zone decoded in steps is the zone a decode in one piece gives"] = function(t)
+        setup()
+        local id = firstZone()
+        N.UnloadZone(id)
+        local whole = N.LoadZone(id)
+        t:assertNotNil(whole)
+        N.UnloadZone(id)
+
+        local clock = tickClock()
+        local steps = 0
+        repeat
+            steps = steps + 1
+            t:assertTrue(steps < 100000, "the decoding ends")
+        until N.LoadZoneInSteps(id, 20, clock)
+        t:assertTrue(steps > 10, "it took several steps: " .. steps)
+        t:assertNil(N.loading)
+        local stepped = N.zones[id]
+        t:assertNotNil(stepped, "the zone is attached, as after N.LoadZone")
+        t:assertEqual(N.decoded[id], stepped)
+        t:assertNil(stepped.raw, "the raw tables are let go")
+        t:assertNil(_G.WVN7[id])
+
+        t:assertEqual(stepped.n, whole.n)
+        t:assertEqual(stepped.cells, whole.cells)
+        t:assertEqual(#stepped.actions, #whole.actions)
+        for _, key in ipairs(ZONE_ARRAYS) do
+            local a, b = whole[key], stepped[key]
+            t:assertEqual(b == nil, a == nil, key)
+            if a ~= nil then
+                local last = 0
+                for i in pairs(a) do
+                    if i > last then
+                        last = i
+                    end
+                end
+                local same = true
+                for i = 1, last do
+                    if a[i] ~= b[i] then
+                        same = false
+                        break
+                    end
+                end
+                t:assertTrue(same, key .. " is the same")
+            end
+        end
+        for i = 1, whole.n do
+            local a, b = whole.adj[i], stepped.adj[i]
+            if #a ~= #b or table.concat(a, ",") ~= table.concat(b, ",") then
+                t:assertTrue(false, "the neighbours of waypoint " .. i .. " are the same")
+            end
+        end
+        -- once decoded there is nothing left to do
+        t:assertTrue(N.LoadZoneInSteps(id, 20, clock))
+    end
+
+    suite["a zone needed while it is decoded in steps is decoded at once, and that copy stays"] = function(t)
+        setup()
+        local id = firstZone()
+        N.UnloadZone(id)
+        local clock = tickClock()
+        t:assertFalse(N.LoadZoneInSteps(id, 20, clock))
+        t:assertFalse(N.LoadZoneInSteps(id, 20, clock))
+        t:assertNotNil(N.loading)
+        local zone = N.LoadZone(id)
+        t:assertNotNil(zone, "a route gets the zone at once")
+        t:assertTrue(N.LoadZoneInSteps(id, 20, clock), "nothing left to do")
+        t:assertNil(N.loading)
+        t:assertEqual(N.zones[id], zone, "the zone a route already uses is not replaced")
+    end
+
+    suite["a zone dropped while it is decoded in steps starts again when asked for"] = function(t)
+        setup()
+        local id = firstZone()
+        N.UnloadZone(id)
+        local clock = tickClock()
+        t:assertFalse(N.LoadZoneInSteps(id, 20, clock))
+        t:assertNotNil(N.loading)
+        N.UnloadZone(id)
+        t:assertNil(N.loading, "the unfinished work goes with the zone")
+        t:assertNil(N.zones[id])
+        local steps = 0
+        repeat
+            steps = steps + 1
+        until N.LoadZoneInSteps(id, 20, clock) or steps > 100000
+        t:assertNotNil(N.zones[id])
+    end
 end
 
 testRunner:addSuite("WowNav routes", suite)
