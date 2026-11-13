@@ -39,7 +39,7 @@ function Monitor:initialize(config)
         if field then
             field.events.valueChange:subscribe(self, function(self, event, target, fieldKey, value)
                 if target == self then
-                    self._trackingDirty = true
+                    self:markTrackingDirty(true)
                 end
             end)
         end
@@ -66,6 +66,18 @@ function Monitor:onSetInfo()
     self._trackingDirty = true
 end
 
+-- Ask for a tracking restart on the next update. resetRules: what is
+-- tracked changed (the unit, a rule's spell), so the rules start over and
+-- announce the state they find. Without it (a rule added, copied or
+-- removed) the rules settle on what they find in silence: the game state
+-- did not change, only the list of rules did.
+function Monitor:markTrackingDirty(resetRules)
+    self._trackingDirty = true
+    if resetRules then
+        self._resetRulesOnRestart = true
+    end
+end
+
 function Monitor:onRulesChanged(rules)
     -- Unsubscribe from old rules
     for _, rule in ipairs(self._subscribedRules or {}) do
@@ -74,11 +86,11 @@ function Monitor:onRulesChanged(rules)
     -- Subscribe to new rules
     for _, rule in ipairs(rules or {}) do
         rule.events.trackingDirty:subscribe(self, function(self, event, rule)
-            self._trackingDirty = true
+            self:markTrackingDirty(true)
         end)
     end
     self._subscribedRules = rules
-    self._trackingDirty = true
+    self:markTrackingDirty(false)
 end
 
 function Monitor:getTrackingFields()
@@ -90,8 +102,10 @@ function Monitor:createTracker()
 end
 
 function Monitor:restartTracking()
+    local resetRules = self._resetRulesOnRestart
+    self._resetRulesOnRestart = nil
     if self.tracker then
-        self:cleanupTracker()
+        self:cleanupTracker(not resetRules)
     end
 
     if not self.rules or #self.rules == 0 then
@@ -127,7 +141,8 @@ function Monitor:onUnitsChanged(unitId, guid)
     -- Override in subclasses
 end
 
-function Monitor:cleanupTracker()
+-- quiet: the rules settle on what the new tracker finds without announcing.
+function Monitor:cleanupTracker(quiet)
     if self.tracker then
         self.tracker.events.add:unsubscribe(self)
         self.tracker.events.remove:unsubscribe(self)
@@ -137,9 +152,11 @@ function Monitor:cleanupTracker()
     end
     self.trackedObjects = {}
     self.pendingEvents = {}
-    -- Reset all rules
+    -- Start all rules over: announcing, or in silence when quiet
     for _, rule in ipairs(self.rules or {}) do
-        if rule.reset then
+        if quiet and rule.forget then
+            rule:forget()
+        elseif rule.reset then
             rule:reset()
         end
     end

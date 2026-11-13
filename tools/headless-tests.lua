@@ -1753,6 +1753,25 @@ WowVision.testing.testRunner:addSuite("ClassicAuraMonitor", {
         t:assertEqual(fired[#fired], "Moonfire Missing")
         t:assertEqual(#fired, 4)
     end,
+    ["copying a rule announces nothing"] = function(t)
+        local monitor, tracker, fired, aura, _, listen = classicAuraSetup("changes")
+        tracker.items[aura()] = true
+        monitor:update()
+        monitor:update()
+        t:assertEqual(#fired, 0)
+        local copy = monitor.class:getField("rules"):copyElement(monitor, monitor.rules[1])
+        listen(copy)
+        monitor:update()
+        monitor:update()
+        t:assertEqual(#monitor.rules, 2)
+        t:assertEqual(#fired, 0)
+        -- Changing what a rule tracks still starts over and announces
+        monitor.rules[1].spell = 8921
+        monitor.rules[1].playerOnly = true
+        monitor.rules[1].playerOnly = false
+        monitor:update()
+        t:assertEqual(fired[#fired], "Moonfire Applied")
+    end,
 })
 
 WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {
