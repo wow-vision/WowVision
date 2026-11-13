@@ -574,15 +574,13 @@ function Module.runAllUpdates()
     if updateHandlersDirty then
         Module.rebuildAllUpdateHandlers()
     end
+    local errorHandler = geterrorhandler()
     for _, handler in ipairs(moduleUpdateHandlers) do
+        -- start and stop return at once while profiling is off
         local profiler = handler.module.profiler
-        if profiler.enabled then
-            profiler:start("update")
-            xpcall(handler.func, geterrorhandler(), handler.module)
-            profiler:stop("update")
-        else
-            xpcall(handler.func, geterrorhandler(), handler.module)
-        end
+        profiler:start("update")
+        xpcall(handler.func, errorHandler, handler.module)
+        profiler:stop("update")
     end
 end
 
