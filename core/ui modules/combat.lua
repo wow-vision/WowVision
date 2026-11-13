@@ -38,7 +38,7 @@ local enemyCountAlert = module:addAlert({
     label = L["Enemy Count Alert"],
 })
 
-enemyCountAlert:addOutput({
+local enemyCountSpeech = enemyCountAlert:addOutput({
     type = "TTS",
     key = "tts",
     label = L["TTS Alert"],
@@ -313,6 +313,12 @@ local recountQueued, settleQueued = false, false
 local announcer = enemyCount.Announcer:new({
     fire = function(message)
         enemyCountAlert:fire(message)
+    end,
+    -- The alert's own checks (Alert:fire), for its speech output alone.
+    fireSpeech = function(message)
+        if enemyCountAlert.enabled and enemyCountSpeech.enabled and enemyCountSpeech:respondsTo(message.action) then
+            enemyCountSpeech:fire(message)
+        end
     end,
     queue = function()
         local speech = WowVision.base.speech

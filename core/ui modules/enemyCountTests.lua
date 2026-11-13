@@ -492,6 +492,10 @@ local function speechWorld(busy)
             table.insert(w.fired, { message = message, outputs = "all" })
             w.speak(tostring(message.count))
         end,
+        fireSpeech = function(message)
+            table.insert(w.fired, { message = message, outputs = "speech" })
+            w.speak(tostring(message.count))
+        end,
         queue = function()
             return w.queue
         end,
@@ -516,6 +520,16 @@ testRunner:addSuite("EnemyCountAnnouncer", {
         t:assertEqual(#w.fired, 2)
         t:assertEqual(w.fired[2].message.count, 3)
         t:assertEqual(w.fired[2].message.again, true)
+    end,
+
+    ["the repeat is the speech line alone: a voice pack number was never thrown away"] = function(t)
+        local w = speechWorld()
+        w.announcer:say({ count = 3 })
+        w.stop()
+        w.time = 5
+        w.announcer:resay(settled(3), true)
+        t:assertEqual(w.fired[1].outputs, "all")
+        t:assertEqual(w.fired[2].outputs, "speech")
     end,
 
     ["a number the queue sent is not said again"] = function(t)

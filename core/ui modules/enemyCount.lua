@@ -476,9 +476,12 @@ end
 -- The speech side of the count (core/ui modules/combat.lua): fires a number,
 -- watches its line in the speech queue (LostLine) and says a lost one again.
 -- config:
---   fire(message)  fires the Enemy Count alert, every output
---   queue()        WowVision's speech queue table, nil without one (Vanilla)
---   now()          the time
+--   fire(message)        fires the Enemy Count alert, every output
+--   fireSpeech(message)  fires its speech (TTS) output alone: only a speech
+--                        line waits in the queue and can be thrown away; a
+--                        voice pack number or a sound plays at once
+--   queue()              WowVision's speech queue table, nil without one (Vanilla)
+--   now()                the time
 -- Only a line that waits in the queue is watched. A line sent at once (the
 -- queue was idle) or one cut while it already plays is not said again: the
 -- queue no longer holds it, and nothing tells it apart from one heard.
@@ -539,6 +542,6 @@ function Announcer:resay(active, plain)
         for key, value in pairs(message) do
             again[key] = value
         end
-        config.fire(again)
+        config.fireSpeech(again)
     end
 end
