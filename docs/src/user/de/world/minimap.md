@@ -2,6 +2,8 @@
 
 Ein sehender Spieler sieht Questgeber, Händler, Kräuter und Erz als Punkte auf der Minikarte. WowVision kann das Bild der Minikarte nicht ansehen, aber es kann das Spiel fragen, wie jeder Punkt heißt. Genau das tut der Minikarten-Scanner (Minimap Scanner): Er findet die benannten Punkte um dich herum, sortiert sie nach Art, errechnet grob, wo jeder liegt, und führt sie im [Scanner](scanner.md) auf, damit du zu ihnen laufen kannst. Er kann auch neue Punkte ansagen, während du an ihnen vorbeigehst.
 
+Derzeit nicht verfügbar: Eine Änderung von Blizzard hat die Minikarten-Abfragen unbrauchbar gemacht, auf denen der Scanner beruht; er ist deshalb vorerst abgeschaltet. Die Scan-Taste und `/wv mscan` antworten "Wegen Einschränkungen von Blizzard ist der Minikarten-Scanner nicht verfügbar.", und die Lauf-Ansagen laufen nicht. Der Rest dieser Seite beschreibt den Scanner so, wie er arbeitet, wenn das Spiel es zulässt.
+
 (Retail und WoW: Forever.) Der Scanner braucht Minikarten-Funktionen, die nur die neueren Spielclients bieten. Die Classic-Clients haben sie nicht: In Classic Era, The Burning Crusade und Mists of Pandaria antwortet die Scan-Taste "Minikarten-Scanner auf diesem Client nicht verfügbar", und die Laufansagen starten nie.
 
 Hinweis: Die Ansagen des Scanners kommen aus lokalisierten Texten und werden auf einem deutschen Client auf Deutsch gesprochen. Namen von Punkten und Aufspür-Fähigkeiten stammen vom Spiel selbst und erscheinen in der Sprache deines Clients.

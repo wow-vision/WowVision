@@ -19,6 +19,7 @@
 * Cooldown Manager Auras monitors: a monitor on Target now hears your own auras while you target yourself. Before, it reported them as Missing, because the cooldown manager labels an aura on you as Player even when you are your own target. In instances, where the game may hide whether you are your own target, the last answer it could read since your target changed holds.
 * Cooldown manager (/cdm): the manual explains the game's Lua error when you move an item while a buff the cooldown manager tracks is on you. The change is still saved; make such changes with no tracked buffs on you, and reload before combat, or the next buff in combat brings the same error.
 * Dungeons: a menu entry or target name the game keeps hidden no longer causes an error; it is spoken as the game gives it. Typing letters in a list skips such entries. Target names read quest objectives in dungeons too. There the game hides whether an objective is finished, so each objective is read and its count says how far it is.
+* Minimap Scanner: switched off for now. A change by Blizzard broke the minimap reads it depends on. The scan key (Ctrl+Shift+F) and /wv mscan say "Due to Blizzard restrictions the minimap scanner is unavailable.", and the walking announcements do not run.
 
 ### Forever
 * WowNav data: all zones are rebuilt on new map data. New stair logic, a repaired Deeprun Tram.

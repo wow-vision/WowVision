@@ -6,6 +6,12 @@ local L = module.L
 module:setLabel(L["Minimap Scanner"])
 local settings = module:hasSettings()
 
+-- Temporary (2026-11-13): Blizzard broke the minimap tooltip reads the scanner rests on. While this is true the scan
+-- (its key and /wv mscan) only says so and the walking check never starts. The diagnostic reads (/wv mscan raw and
+-- sku) still run, to see whether the game answers again. Set it to false to switch the scanner back on; if Blizzard
+-- does not bring the reads back, the scanner goes altogether.
+module.BLOCKED = true
+
 -- The minimap scanner: every named dot on the minimap within its range
 -- (233 yards outdoors, 150 indoors), sorted by kind and placed to a few
 -- yards, listed in the scanner (F9) tagged "seen". Two parts:
@@ -663,6 +669,10 @@ function module:scan()
         speak(L["Minimap scanner not available on this client"])
         return
     end
+    if module.BLOCKED then
+        speak(L["Due to Blizzard restrictions the minimap scanner is unavailable."])
+        return
+    end
     if InCombatLockdown() then
         speak(L["Not in combat"])
         return
@@ -1207,7 +1217,7 @@ function module:walkTick()
 end
 
 function module:onEnable()
-    if Engine.available() then
+    if Engine.available() and not module.BLOCKED then
         self:hasUpdate(function(self)
             self:walkTick()
         end)

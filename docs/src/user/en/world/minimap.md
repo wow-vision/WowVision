@@ -2,6 +2,8 @@
 
 A sighted player sees quest givers, vendors, herbs and ore as dots on the minimap. WowVision cannot look at the minimap picture, but it can ask the game what every dot is called. The Minimap Scanner does exactly that: it finds the named dots around you, sorts them by kind, works out roughly where each one is, and lists them in the [Scanner](scanner.md) so you can walk to them. It can also announce new dots as you walk past them.
 
+Currently unavailable: a change by Blizzard broke the minimap reads the scanner depends on, so it is switched off for now. The scan key and `/wv mscan` answer "Due to Blizzard restrictions the minimap scanner is unavailable.", and the walking announcements do not run. The rest of this page describes the scanner as it works when the game allows it.
+
 (Retail and WoW: Forever.) The scanner needs minimap functions that only the newer game clients offer. The Classic clients do not have them: on Classic Era, The Burning Crusade and Mists of Pandaria the scan key answers "Minimap scanner not available on this client", and the walking announcements never start.
 
 ## What it finds
