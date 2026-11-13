@@ -64,6 +64,10 @@ Monitors you add are stored account-wide by default, so all your characters shar
 
 Nothing is deleted when you change scope.
 
+### Copying a monitor or a rule
+
+To build a second monitor like one you already have, move to it in the monitors list, press Shift+F10 and choose Copy. You hear the new name, for example "Moonfire Copy 1"; the copy sits right after the original, with the same settings, alerts and rules, in the same scope. Rename it and change what differs. Copy works the same on a rule inside a monitor.
+
 ### Settings that every monitor and rule has
 
 | Setting | Default | What it does |
@@ -113,7 +117,7 @@ Watches buffs and debuffs on one unit.
 | Setting | Default | What it does |
 |---|---|---|
 | Unit | target | Which unit to watch, typed as text: `target`, `player`, `focus`, `pet`, `mouseover`, `party1` and so on |
-| Announce on Target Change | Off | When you change target (or the unit changes), every rule announces the state it finds on the new unit, including Missing |
+| Announce on Target Change | Only Changes | What the rules say when you change target (or the unit changes). Only Changes: a rule speaks only when the new target's state differs from what it had. Always: every rule announces the state it finds on the new unit, including Missing. Never: the rules take the new target's state in silence; later changes on that target speak as usual |
 
 Rule type: Aura State Rule. It follows one spell through its life on the unit.
 
@@ -138,8 +142,8 @@ Details worth knowing:
 - Expiring needs both conditions: inside the pandemic window and under the expiry threshold. For a short aura (say 6 seconds) the pandemic window is so small that the aura goes straight from Applied to Expiring.
 - Auras with no duration stay at Applied.
 - If more than one matching aura is present (when Applied by Player is off and several people applied it), the rule reports the healthiest one.
-- Missing is spoken when an aura that was being tracked disappears. When the monitor starts (at login, say) and the aura was never there, Missing is not spoken. Use Announce on Target Change if you want to hear "Moonfire Missing" or "Moonfire Applied" every time you target something new.
-- Without Announce on Target Change, changing target still speaks when the new target's state differs from what the rule had (for example from Applied to Missing).
+- Missing is spoken when an aura that was being tracked disappears. When the monitor starts (at login, say) and the aura was never there, Missing is not spoken. Set Announce on Target Change to Always if you want to hear "Moonfire Missing" or "Moonfire Applied" every time you target something new.
+- With Announce on Target Change at Only Changes (the default), changing target still speaks when the new target's state differs from what the rule had (for example from Applied to Missing). Set it to Never to hear nothing at a target change, only the changes that follow on the new target.
 - Applied by Player must be turned off for effects with no caster, such as many trinket procs.
 - A rule matches the aura by its own spell number. When the spell you cast and the aura it puts on the target have different numbers (on the classic versions this can depend on the spell rank), choose the aura from the quick picks instead of typing the name. The aura appears there once your monitor has seen it on the unit.
 
@@ -193,7 +197,7 @@ You rarely need the game's alerts, though: WowVision's monitors do everything th
 | Setting | Default | What it does |
 |---|---|---|
 | Unit | Target | Target or Player |
-| Announce on Target Change | Off | Every rule announces its current state when you change target (only for Target) |
+| Announce on Target Change | Only Changes | What the rules say when you change target (only for Target): Only Changes speaks a state that differs from the old target's, Always announces every rule's current state, Never stays silent and speaks only later changes on the new target |
 | One Decimal Timer | Off | The countdown drawn on the tracked icons shows tenths of a second ("8.7") below ten minutes. It changes what sighted players see on the screen, which is why it is off by default. It is also what Speak Tracked Auras reads |
 
 ### Rule type: Cooldown Manager Aura Rule

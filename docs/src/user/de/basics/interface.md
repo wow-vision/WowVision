@@ -201,6 +201,7 @@ Umschalt+F10 öffnet ein Menü mit zusätzlichen Aktionen für das Steuerelement
 
 - Bei einem echten Spielschalter bekommst du meistens Linksklick, Rechtsklick und Ziehen. Manche Fenster ergänzen, was der Klick bewirkt, zum Beispiel „Verkaufen, Rechtsklick“, sowie fensterspezifische Aktionen wie einen Gegenstand im Chat verlinken oder einen Spieler einladen.
 - Bei einer Einstellung im WowVision-Menü bekommst du ein Untermenü Bereich (siehe [Einstellungen pro Charakter und accountweit](./menu-and-settings.md#einstellungen-pro-charakter-und-accountweit)).
+- Bei einem Eintrag in einer Liste, die du im WowVision-Menü selbst aufbaust (ein Monitor, eine Regel, eine Puffergruppe, ein Puffer), bekommst du Kopie: Sie fügt direkt hinter dem Eintrag eine vollständige Kopie ein, die „<Name> Kopie 1“ heißt (oder die nächste freie Nummer), und spricht diesen Namen. Die Kopie liegt dort, wo das Original liegt (Account oder Charakter), und ein kopierter Monitor bringt seine Regeln mit.
 - Hat ein Steuerelement keine Aktionen, hörst du „Menü Leer“.
 
 Im Menü benutzt du Pfeil hoch und Pfeil runter, Eingabe, um einen Eintrag auszuführen (danach schließt sich das Menü, außer bei Einträgen, die direkt auf das Spiel wirken), und Esc, um es zu schließen. Untermenüs werden als „Dropdown“ gelesen und mit Eingabe geöffnet. Einträge mit dem Zustand Aktiviert oder Deaktiviert werden als Optionsfelder gelesen. Buchstaben springen zu Einträgen, wie oben beschrieben.
