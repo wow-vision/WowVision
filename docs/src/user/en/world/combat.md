@@ -84,7 +84,8 @@ Some more things to know:
 - An enemy counts only while its nameplate exists, which means within the game's nameplate range (about 45 yards on WoW: Forever).
 - Turning on the Minor and Minions nameplate options in the game also counts small trash monsters and enemy pets.
 - Only enemies that are hostile to you, alive and in combat count. Neutral monsters count once they are fighting.
-- A number that other speech threw away before it was spoken (an interrupting alert such as a target change empties the speech queue) is said again once, when no newer number came within 5 seconds. Not on Vanilla.
+- Enemy players count too. In a group, while you, your pet or a group member is in combat, every enemy player in combat near you counts, also one who is fighting someone outside your group: the game never marks a player as tapped. In PvP this gives you the wider picture, all enemy players fighting around you, as the nameplates show it to a sighted player.
+- A number that other speech threw away before it was spoken (an interrupting alert such as a target change empties the speech queue) is said again once, when no newer number came within 5 seconds and the count did not change in the meantime. Only the spoken number is repeated: a voice pack number plays at once and is never thrown away. A number that was cut off while it was already being spoken is not repeated. Not on Vanilla.
 - A new number is announced only after it has held for 0.3 seconds, so an enemy that flickers out of range and back is not spoken twice. The wait starts again at every change, so a pack that comes in one after another is said as one number, 0.3 seconds after the last enemy. The count is also re-checked every second during a fight, which catches monsters that die or give up quietly.
 
 ### Announce Crowd Control
