@@ -421,6 +421,9 @@ do
                 getDefaultDB = function()
                     return {}
                 end,
+                -- the profiler's side: off, as the game's starts
+                start = function() end,
+                stop = function() end,
             }
         end,
     }
@@ -440,6 +443,7 @@ do
         withStandIns(initialize, self, key)
     end
     loadAddonFile("core/module/alertScopeTests.lua")
+    loadAddonFile("core/module/updateTests.lua")
 end
 
 -- The buffer family on the new class system: construction and db round trip.
@@ -1876,6 +1880,7 @@ do
     end
     loadAddonFile("core/graph/Screen.lua")
     loadAddonFile("core/graph/Host.lua")
+    loadAddonFile("core/graph/liveWatch.lua")
     CreateFrame = savedCreateFrame
     announcer.positionText, announcer.expandedStateText = savedPosition, savedExpanded
     WowVision.graphHost = nil
@@ -1911,6 +1916,7 @@ do
     WowVision._popupsTestHarness = nil
 end
 loadAddonFile("core/graph/menuNavTests.lua")
+loadAddonFile("core/graph/secretLabelTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
 

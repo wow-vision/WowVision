@@ -270,3 +270,60 @@ testRunner:addSuite("FoldCase", {
         t:assertNil(name:find(utils.foldCase("odland"), 1, true), "accents are kept")
     end,
 })
+
+-- utils.guardedCall with the game's error handler swapped for a recorder.
+local function withRecorder(body)
+    local reported = {}
+    local saved = geterrorhandler
+    geterrorhandler = function()
+        return function(message)
+            tinsert(reported, tostring(message))
+        end
+    end
+    local ok, err = pcall(body)
+    geterrorhandler = saved
+    if not ok then
+        error(err, 0)
+    end
+    return reported
+end
+
+testRunner:addSuite("GuardedCall", {
+    ["a call that works returns its results"] = function(t)
+        local ok, a, b = utils.guardedCall({}, function(x, y)
+            return x + y, "done"
+        end, 1, 2)
+        t:assertTrue(ok)
+        t:assertEqual(a, 3)
+        t:assertEqual(b, "done")
+    end,
+
+    ["an error is caught and reported once per part and message"] = function(t)
+        local part = {}
+        local reported = withRecorder(function()
+            for _ = 1, 5 do
+                t:assertFalse(utils.guardedCall(part, error, "same", 0))
+            end
+        end)
+        t:assertEqual(#reported, 1)
+        t:assertEqual(reported[1], "same")
+    end,
+
+    ["two errors that take turns are each reported once"] = function(t)
+        local part = {}
+        local reported = withRecorder(function()
+            for frame = 1, 6 do
+                utils.guardedCall(part, error, frame % 2 == 0 and "x" or "y", 0)
+            end
+        end)
+        t:assertEqual(table.concat(reported, ","), "y,x")
+    end,
+
+    ["the same message from another part is reported again"] = function(t)
+        local reported = withRecorder(function()
+            utils.guardedCall({}, error, "same", 0)
+            utils.guardedCall({}, error, "same", 0)
+        end)
+        t:assertEqual(#reported, 2)
+    end,
+})

@@ -259,8 +259,10 @@ function GraphHost:_checkClickDrift(node)
     end
 end
 
+-- A label the game keeps secret (a hidden name in a dungeon) cannot be
+-- compared, but speech takes it as it is.
 function GraphHost:_speak(text)
-    if text ~= nil and text ~= "" then
+    if WowVision.secrets.hasText(text) then
         WowVision:speak(text)
     end
 end

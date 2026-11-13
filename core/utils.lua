@@ -206,4 +206,43 @@ function utils.moneyLineText(text, sellLabel, coinText)
     return nil
 end
 
+-- Runs func(...) so that an error in it never stops the caller: one failing
+-- part of the frame (a module's update, an object type, the windows) must
+-- not leave the rest dead. The error still goes to the game's error handler
+-- (BugGrabber, WowVision's error list and its spoken alert), called from
+-- inside the failing call so its stack is kept, but once per part and
+-- message: a part that fails every frame would otherwise report 60 times a
+-- second and bury every other line of speech (Screen:buildRender reports a
+-- failing render once the same way). key names the part; any value works.
+-- Returns xpcall's results.
+local reportedErrors = setmetatable({}, { __mode = "k" })
+local errorReporters = setmetatable({}, { __mode = "k" })
+local MAX_MESSAGES_PER_PART = 20
+
+local function reporterFor(key)
+    local reporter = errorReporters[key]
+    if reporter == nil then
+        reporter = function(message)
+            local seen = reportedErrors[key]
+            if seen == nil then
+                seen = { count = 0 }
+                reportedErrors[key] = seen
+            end
+            local text = tostring(message)
+            if not seen[text] and seen.count < MAX_MESSAGES_PER_PART then
+                seen[text] = true
+                seen.count = seen.count + 1
+                geterrorhandler()(message)
+            end
+            return message
+        end
+        errorReporters[key] = reporter
+    end
+    return reporter
+end
+
+function utils.guardedCall(key, func, ...)
+    return xpcall(func, reporterFor(key), ...)
+end
+
 WowVision.utils = utils

@@ -343,8 +343,10 @@ function module:clearLuaErrors()
 end
 local previousHandler = nil
 local inHandler = false
-local lastSpokenError = nil
-local lastSpokenAt = 0
+-- message -> GetTime() it was last spoken; emptied when it grows past 50.
+local spokenAt = {}
+local spokenCount = 0
+local SPEAK_AGAIN_AFTER = 5
 
 local function onLuaError(message)
     if inHandler then
@@ -360,10 +362,20 @@ local function onLuaError(message)
     if #module.luaErrors > MAX_LUA_ERRORS then
         table.remove(module.luaErrors, 1)
     end
-    -- A recurring per-frame error must not flood TTS.
-    if message ~= lastSpokenError or GetTime() - lastSpokenAt > 5 then
-        lastSpokenError = message
-        lastSpokenAt = GetTime()
+    -- A recurring per-frame error must not flood TTS: each message is spoken
+    -- at most once per 5 seconds, also when two errors take turns (checking
+    -- only the last message let them both through on every frame).
+    local now = GetTime()
+    local key = tostring(message)
+    local last = spokenAt[key]
+    if last == nil or now - last > SPEAK_AGAIN_AFTER then
+        if last == nil then
+            spokenCount = spokenCount + 1
+            if spokenCount > 50 then
+                spokenAt, spokenCount = {}, 1
+            end
+        end
+        spokenAt[key] = now
         pcall(function()
             alert:fire({ text = L["Lua error"] .. ": " .. message })
         end)

@@ -46,8 +46,10 @@ function typeAhead.typed(text)
     return (text:gsub("[A-Z]", string.lower))
 end
 
+-- A label the game keeps secret (a hidden name in a dungeon) cannot be
+-- searched: it matches nothing, typing never throws on it.
 local function labelText(label, normal)
-    if type(label) ~= "string" then
+    if type(label) ~= "string" or WowVision.secrets.isSecret(label) then
         return ""
     end
     local text = label:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("|A.-|a", "")

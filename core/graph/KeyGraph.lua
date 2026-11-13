@@ -67,8 +67,8 @@ function KeyGraph.selectedNodeInStop(render, stopKey)
         if node.stopKey == stopKey and node.vtable ~= nil and node.vtable.announcements ~= nil then
             for _, part in ipairs(node.vtable.announcements) do
                 if part ~= nil and part.kind == kinds.selected then
-                    local text = resolveText(part)
-                    if text ~= nil and text ~= "" then
+                    -- a secret text cannot be compared; it has something to say
+                    if WowVision.secrets.hasText(resolveText(part)) then
                         return node
                     end
                 end

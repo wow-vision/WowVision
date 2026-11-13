@@ -40,7 +40,12 @@ License: MIT
 -- @class file
 -- @name LibRangeCheck-3.0
 local MAJOR_VERSION = "LibRangeCheck-3.0"
-local MINOR_VERSION = 31
+-- WowVision: upstream 38 (as WeakAuras ships it) plus our patches, numbered
+-- 99. Other addons embed their own copy and often load first (TellMeWhen
+-- with an unpatched 31: a secret target GUID in a dungeon on Forever threw
+-- every frame); 99 makes ours win and serve them too. Our patches are the
+-- lines marked "WowVision". Merge upstream changes by hand from now on.
+local MINOR_VERSION = 99
 
 ---@class lib
 local lib, oldminor = LibStub:NewLibrary(MAJOR_VERSION, MINOR_VERSION)
@@ -53,8 +58,11 @@ local interfaceVersion = select(4, GetBuildInfo())
 local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 local isEra = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
 local isTBC = WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC
+local isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
 local isCata = WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC
+local isMists = WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC
 local isMidnight = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE and interfaceVersion >= 120000
+local isForever = interfaceVersion >= 16000 and interfaceVersion < 20000
 
 -- WowVision: Mists Classic ships a hybrid API. C_Spell.IsSpellInRange works,
 -- but there is NO spellbook enumeration (neither the global GetSpellBookItemInfo
@@ -135,7 +143,13 @@ local UnitClass = UnitClass
 local UnitRace = UnitRace
 local GetInventoryItemLink = GetInventoryItemLink
 local GetTime = GetTime
-local HandSlotId = GetInventorySlotInfo("HANDSSLOT")
+
+local HandSlotId
+if C_PaperDollInfo and C_PaperDollInfo.GetInventorySlotInfo then
+  HandSlotId = C_PaperDollInfo.GetInventorySlotInfo("HANDSSLOT")
+else
+  HandSlotId = GetInventorySlotInfo("HANDSSLOT")
+end
 local math_floor = math.floor
 local UnitIsVisible = UnitIsVisible
 
@@ -259,6 +273,7 @@ if not isRetail then
 end
 
 tinsert(HarmSpells.MAGE, 44614) -- Flurry (40 yards)
+tinsert(HarmSpells.MAGE, 11366) -- Pyroblast (40 yards)
 tinsert(HarmSpells.MAGE, 5019) -- Shoot (30 yards)
 tinsert(HarmSpells.MAGE, 118) -- Polymorph (30 yards)
 tinsert(HarmSpells.MAGE, 116) -- Frostbolt (40 yards)
@@ -282,6 +297,14 @@ tinsert(FriendSpells.PALADIN, 19750) -- Flash of Light (40 yards, level 4)
 tinsert(FriendSpells.PALADIN, 85673) -- Word of Glory (40 yards, level 7)
 tinsert(FriendSpells.PALADIN, 4987) -- Cleanse (Holy) (40 yards, level 12)
 tinsert(FriendSpells.PALADIN, 213644) -- Cleanse Toxins (Protection, Retribution) (40 yards, level 12)
+
+if isRetail or isMists then
+  tinsert(FriendSpells.PALADIN, 53563) -- Beacon of Light (60 yards)
+end
+
+if isTBC or isMists then
+    tinsert(FriendSpells.PALADIN, 6940) -- Blessing/Hand of Sacrifice (30 yards)
+end
 
 if not isRetail then
   tinsert(FriendSpells.PALADIN, 635) -- Holy Light (40 yards, level 1, rank 1)
@@ -308,7 +331,7 @@ tinsert(FriendSpells.PRIEST, 527) -- Purify / Dispel Magic (40 yards retail, 30 
 tinsert(FriendSpells.PRIEST, 2061) -- Flash Heal (40 yards, level 3 retail, level 20 tbc)
 
 tinsert(HarmSpells.PRIEST, 589) -- Shadow Word: Pain (40 yards)
-if isEra then
+if isEra or isForever then
   tinsert(HarmSpells.PRIEST, 18807) -- Mind Flay (20-24 yards)
 end
 tinsert(HarmSpells.PRIEST, 8092) -- Mind Blast (40 yards)
@@ -369,7 +392,7 @@ if not isRetail then
 end
 
 -- Warlocks
-if isEra then
+if isEra or isForever then
   tinsert(FriendSpells.WARLOCK, 132) -- Detect Invisibility (30 yards, level 26)
 else
   tinsert(FriendSpells.WARLOCK, 20707) -- Soulstone (40 yards) ~ this can be precasted so leave it in friendly as well as res
@@ -387,7 +410,7 @@ else
   tinsert(HarmSpells.WARLOCK, 18223) -- Curse of Exhaustion (Affliction) (30/33/36/35/38/42 yards)
   tinsert(HarmSpells.WARLOCK, 689) -- Drain Life (Affliction) (20/22/24 yards, level 14, rank 1)
 end
-if isEra then
+if isEra or isForever then
   tinsert(HarmSpells.WARLOCK, 403677) -- Master Channeler (Affliction) (20/22/24 yards, level 14, rank 1)
   tinsert(HarmSpells.WARLOCK, 426320) -- Shadowflame (30/33/36/39/42 yards, level 14, rank 1)
 end
@@ -396,7 +419,7 @@ tinsert(HarmSpells.WARLOCK, 5019) -- Shoot (30 yards)
 tinsert(HarmSpells.WARLOCK, 686) -- Shadow Bolt (Demonology, Affliction) (40 yards)
 tinsert(HarmSpells.WARLOCK, 5782) -- Fear (30 yards)
 
-if not isEra then
+if not isEra and not isForever then
   tinsert(ResSpells.WARLOCK, 20707) -- Soulstone (40 yards)
 end
 
@@ -405,7 +428,7 @@ tinsert(PetSpells.WARLOCK, 755) -- Health Funnel (45 yards)
 -- Items
 
 local FriendItems
-if isEra then
+if isEra or isForever then
   FriendItems = {
     [5] = {
       1970,   -- Restoring Balm
@@ -2131,7 +2154,7 @@ else
 end
 
 local HarmItems
-if isEra then
+if isEra or isForever then
   HarmItems = {
     [5] = {
       8149,   -- Voodoo Charm
@@ -2229,7 +2252,6 @@ if isEra then
       233226, -- Ancient Zandalarian Rope
     },
     [35] = {
-      996,    -- Ring of Righteous Flame (TEST)
       1258,   -- Bind On Use Test Item
       1399,   -- Magic Candle
       1402,   -- Brimstone
@@ -3901,7 +3923,7 @@ end
 local function getSpellData(sid)
   local name, _, _, _, minRange, range = GetSpellInfo(sid)
   if useSpellIDChecker() then
-    -- No spellbook to scan; the spell ID is usable as the checker key if known.
+    -- WowVision: no spellbook to scan; the spell ID is usable as the checker key if known.
     local usable = (name and IsSpellKnown(sid)) and sid or nil
     return name, fixRange(minRange), fixRange(range), usable
   end
@@ -3964,7 +3986,7 @@ local function createCheckerList(spellList, itemList, interactList)
     for range, items in pairs(itemList) do
       for i = 1, #items do
         local item = items[i]
-        if Item:CreateFromItemID(item):IsItemDataCached() and C_Item.GetItemInfo(item) then
+        if C_Item.IsItemDataCachedByID(item) and C_Item.GetItemInfo(item) then
           addChecker(res, range, nil, checkers_Item[item], "item:" .. item)
           break
         end
@@ -4014,6 +4036,17 @@ local rangeCache = {}
 
 local function resetRangeCache()
   wipe(rangeCache)
+end
+
+-- WowVision: an entry keyed by a unit token (the GUID was secret) belongs to
+-- whoever holds that token now; when the token changes hands the entry is
+-- someone else's range, so it goes (lib:dropUnitKeyedRanges).
+local function dropUnitKeyedRanges()
+  for k, v in pairs(rangeCache) do
+    if v.byUnit then
+      rangeCache[k] = nil
+    end
+  end
 end
 
 local function invalidateRangeCache(maxAge)
@@ -4096,9 +4129,10 @@ local function getCachedRange(unit, noItems, maxCacheAge)
   -- compose cache key out of unit guid and noItems
   local guid = UnitGUID(unit)
   -- unfortunately, caching on GUID is not possible due to secrets, using unit instead
-  -- WowVision: WoW Forever hands out secret GUIDs under its own project id,
-  -- so the client is asked for the helper instead of the version checked.
-  local cacheKey = ((issecretvalue ~= nil and issecretvalue(guid)) and unit or guid) .. (noItems and "-1" or "-0")
+  -- WowVision: WoW Forever hands out secret GUIDs too (isMidnight is false
+  -- there), so the client is asked for the helper instead of the version checked.
+  local byUnit = issecretvalue ~= nil and issecretvalue(guid)
+  local cacheKey = (byUnit and unit or guid) .. (noItems and "-1" or "-0")
   local cacheItem = rangeCache[cacheKey] or nil
 
   local currentTime = GetTime()
@@ -4112,6 +4146,7 @@ local function getCachedRange(unit, noItems, maxCacheAge)
   local result = cacheItem or {}
   result.minRange, result.maxRange = getRange(unit, noItems)
   result.updateTime = currentTime
+  result.byUnit = byUnit -- WowVision: see dropUnitKeyedRanges
   rangeCache[cacheKey] = result
   return result.minRange, result.maxRange
 end
@@ -4492,6 +4527,21 @@ function lib:OnEvent(event, ...)
   end
 end
 
+-- WowVision: a unit token now names someone else (dropUnitKeyedRanges).
+local UNIT_TOKEN_EVENTS = {
+  "PLAYER_TARGET_CHANGED",
+  "PLAYER_FOCUS_CHANGED",
+  "UPDATE_MOUSEOVER_UNIT",
+  "NAME_PLATE_UNIT_ADDED",
+  "NAME_PLATE_UNIT_REMOVED",
+  "GROUP_ROSTER_UPDATE",
+}
+for _, event in ipairs(UNIT_TOKEN_EVENTS) do
+  lib[event] = function()
+    dropUnitKeyedRanges()
+  end
+end
+
 function lib:LEARNED_SPELL_IN_TAB()
   self:scheduleInit()
 end
@@ -4549,7 +4599,7 @@ function lib:processItemRequests(itemRequests)
       if not i then
         itemRequests[range] = nil
         break
-      elseif Item:CreateFromItemID(item):IsItemEmpty() or self.failedItemRequests[item] then
+      elseif not C_Item.DoesItemExistByID(item) or self.failedItemRequests[item] then
         -- print("### processItemRequests: failed: " .. tostring(item))
         tremove(items, i)
       elseif pendingItemRequest[item] and GetTime() < itemRequestTimeoutAt[item] then
@@ -4628,23 +4678,38 @@ end
 
 -- << load-time initialization
 
+-- WowVision: registers on the frame every time, not only when the frame is
+-- new. With minor 99 we usually upgrade a copy another addon loaded first
+-- (WeakAuras 38, TellMeWhen 31): its frame exists, and upstream's activate
+-- then skipped every registration, so the events added since that copy
+-- (and ours below) never arrived. RegisterEvent on a registered event is
+-- harmless.
+local function registerIfValid(frame, event)
+  if not C_EventUtils or not C_EventUtils.IsEventValid or C_EventUtils.IsEventValid(event) then
+    frame:RegisterEvent(event)
+  end
+end
+
 function lib:activate()
   if not self.frame then
-    local frame = CreateFrame("Frame")
-    self.frame = frame
+    self.frame = CreateFrame("Frame")
+  end
+  do
+    local frame = self.frame
 
-    if not (isMidnight or isTBC) then
-      pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
-    end
     frame:RegisterEvent("CHARACTER_POINTS_CHANGED")
     frame:RegisterEvent("SPELLS_CHANGED")
 
-    if isEra or isCata then
-      frame:RegisterEvent("CVAR_UPDATE")
+    if C_EventUtils and C_EventUtils.IsEventValid("LEARNED_SPELL_IN_TAB") then
+      frame:RegisterEvent("LEARNED_SPELL_IN_TAB")
     end
 
-    if isRetail or isCata then
+    if C_EventUtils and C_EventUtils.IsEventValid("PLAYER_TALENT_UPDATE") then
       frame:RegisterEvent("PLAYER_TALENT_UPDATE")
+    end
+
+    if (isEra or isTBC or isWrath or isCata or isForever) then
+      frame:RegisterEvent("CVAR_UPDATE")
     end
 
     local _, playerClass = UnitClass("player")
@@ -4652,13 +4717,20 @@ function lib:activate()
       -- Mage and Shaman gladiator gloves modify spell ranges
       frame:RegisterUnitEvent("UNIT_INVENTORY_CHANGED", "player")
     end
+
+    for _, event in ipairs(UNIT_TOKEN_EVENTS) do
+      registerIfValid(frame, event)
+    end
   end
 
-  if not self.cacheResetTimer then
-    self.cacheResetTimer = C_Timer.NewTicker(5, function()
-      invalidateRangeCache(5)
-    end)
+  -- WowVision: an older copy's ticker trims that copy's cache, not ours (each
+  -- copy has its own local rangeCache): cancel it and start ours.
+  if self.cacheResetTimer then
+    self.cacheResetTimer:Cancel()
   end
+  self.cacheResetTimer = C_Timer.NewTicker(5, function()
+    invalidateRangeCache(5)
+  end)
 
   initItemRequests()
 
