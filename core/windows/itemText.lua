@@ -43,6 +43,18 @@ local function render(builder, screen)
     contentText(builder, ControlId.structural("body"), function()
         return ItemTextGetText()
     end)
+    -- Page Up and Page Down on the text turn its pages. The next page's text
+    -- arrives later; the live watch speaks it on the body.
+    if
+        (ItemTextPrevPageButton ~= nil and ItemTextPrevPageButton:IsShown())
+        or (ItemTextNextPageButton ~= nil and ItemTextNextPageButton:IsShown())
+    then
+        nodes.pageKeys(builder, {
+            prev = ItemTextPrevPageButton,
+            next = ItemTextNextPageButton,
+            page = ItemTextGetPage,
+        })
+    end
 
     if ItemTextPrevPageButton ~= nil and ItemTextPrevPageButton:IsShown() then
         builder:beginStop("prevPage")

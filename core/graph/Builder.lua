@@ -39,6 +39,10 @@ function Builder:initialize(expansion)
     -- (beginGroup). A frame whose group is collapsed suppresses every
     -- declaration beneath it (the stack stays balanced regardless).
     self.parents = {}
+    -- Bindings every node of a stop carries (addStopBindings), and the page
+    -- each paged stop showed at this render (setStopPage).
+    self.stopBindings = {}
+    self.stopPages = {}
 end
 
 function Builder:_currentParent()
@@ -69,6 +73,29 @@ function Builder:beginStop(key)
     end
     self.stopKey = key
     self.stopAuto = self.stopAuto + 1
+    return self
+end
+
+-- Bindings every node of the current stop carries, after its own: a node's
+-- own binding for the same key wins (a scroll list's Page Up). The page keys
+-- over a paged list (nodes.pageKeys) use this.
+function Builder:addStopBindings(specs)
+    local list = self.stopBindings[self.stopKey]
+    if list == nil then
+        list = {}
+        self.stopBindings[self.stopKey] = list
+    end
+    for _, spec in ipairs(specs) do
+        tinsert(list, spec)
+    end
+    return self
+end
+
+-- The page the current stop shows at this render (any comparable value). The
+-- render keeps it, so a page key can tell afterwards whether its click
+-- turned the page.
+function Builder:setStopPage(page)
+    self.stopPages[self.stopKey] = page
     return self
 end
 
@@ -481,7 +508,12 @@ function Builder:build()
     for _, node in ipairs(self.declared) do
         render.nodes[node.id.key] = node
         tinsert(render.order, node)
+        local stopBindings = self.stopBindings[node.stopKey]
+        if stopBindings ~= nil then
+            node.stopBindings = stopBindings
+        end
     end
+    render.stopPages = self.stopPages
 
     self:_wireMenuEdges()
     for _, edge in ipairs(self.rawEdges) do

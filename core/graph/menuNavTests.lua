@@ -466,3 +466,157 @@ testRunner:addSuite("MenuNavigation", {
         end)
     end,
 })
+
+-- A paged list: one stop of entries with page keys, then a stop after it. page is the shown page; turning it swaps
+-- the entries, as the game's page buttons do.
+local function pagedList(state)
+    return function(builder)
+        builder:beginStop("items")
+        for _, name in ipairs(state.pages[state.page]) do
+            builder:addLabel(sid(name), name)
+        end
+        nodes.pageKeys(builder, {
+            prev = state.prev,
+            next = state.next,
+            page = function()
+                return state.page
+            end,
+        })
+        builder:beginStop("after")
+        builder:addLabel(sid("search"), "Search")
+    end
+end
+
+local function shownButton()
+    return {
+        IsShown = function()
+            return true
+        end,
+    }
+end
+
+local function specFor(host, binding)
+    local screen = host:focusedScreen()
+    screen.keyGraph:rerender()
+    for _, spec in ipairs(host:_nodeBindingSpecs(screen.keyGraph:currentNode())) do
+        if spec.binding == binding then
+            return spec
+        end
+    end
+    return nil
+end
+
+testRunner:addSuite("PageKeys", {
+    ["page keys belong to the paged stop only, and press the page buttons"] = function(t)
+        withHost(function(host)
+            local state = { page = 1, pages = { { "A1", "A2" }, { "B1" } }, prev = shownButton(), next = shownButton() }
+            host:open({ key = "paged", render = pagedList(state) })
+            local down = specFor(host, "scrollDown")
+            t:assertNotNil(down, "the list carries Page Down")
+            t:assertEqual(down.type, "Click", "a true click of the game's button")
+            t:assertEqual(down.target(), state.next)
+            t:assertEqual(specFor(host, "scrollUp").target(), state.prev)
+            press(host, "next")
+            t:assertEqual(focusedKey(host), "search")
+            t:assertNil(specFor(host, "scrollDown"), "not on the stops after the list")
+        end)
+    end,
+
+    ["a node's own Page Up wins over the stop's"] = function(t)
+        withHost(function(host)
+            local own = { binding = "scrollUp", type = "Function", func = function() end }
+            host:open({
+                key = "own",
+                render = function(builder)
+                    builder:addItem(sid("row"), {
+                        announcements = { { text = "Row" } },
+                        bindings = { own },
+                    })
+                    nodes.pageKeys(builder, {
+                        prev = shownButton(),
+                        next = shownButton(),
+                        page = function()
+                            return 1
+                        end,
+                    })
+                end,
+            })
+            t:assertEqual(specFor(host, "scrollUp"), own)
+            t:assertEqual(specFor(host, "scrollDown").type, "Click")
+        end)
+    end,
+
+    ["a hidden page button still owns its key, and works once it shows"] = function(t)
+        withHost(function(host)
+            local shown = false
+            local prev = {
+                IsShown = function()
+                    return shown
+                end,
+            }
+            local state = { page = 1, pages = { { "A1" } }, prev = prev, next = shownButton() }
+            host:open({ key = "first", render = pagedList(state) })
+            local up = specFor(host, "scrollUp")
+            t:assertNotNil(up, "the chat does not get the key")
+            t:assertNil(up.target(), "nothing to click on the first page")
+            shown = true
+            t:assertEqual(up.target(), prev, "the same binding finds the button once it shows")
+        end)
+    end,
+
+    ["a turned page lands on its first entry; an unturned page keeps focus"] = function(t)
+        withHost(function(host)
+            local state = {
+                page = 1,
+                pages = { { "A1", "A2" }, { "B1", "B2" } },
+                prev = shownButton(),
+                next = shownButton(),
+            }
+            host:open({ key = "paged", render = pagedList(state) })
+            press(host, "down")
+            t:assertEqual(focusedKey(host), "A2")
+            -- The game's next page button turns the page; then the binding's postClick runs.
+            local pageDown = specFor(host, "scrollDown")
+            state.page = 2
+            pageDown.postClick()
+            t:assertEqual(focusedKey(host), "B1", "the new page's first entry")
+            press(host, "down")
+            pageDown = specFor(host, "scrollDown")
+            pageDown.postClick() -- the last page: the button did nothing
+            t:assertEqual(focusedKey(host), "B2", "focus stays")
+        end)
+    end,
+
+    ["the same control on a new page is announced again, once"] = function(t)
+        withHost(function(host)
+            local labels = { "Apple", "Bread" }
+            local state = { page = 1 }
+            host:open({
+                key = "pooled",
+                render = function(builder)
+                    builder:beginStop("items")
+                    builder:addItem(sid("slot1"), nodes.text({
+                        label = function()
+                            return labels[state.page]
+                        end,
+                    }))
+                    nodes.pageKeys(builder, {
+                        prev = shownButton(),
+                        next = shownButton(),
+                        page = function()
+                            return state.page
+                        end,
+                    })
+                end,
+            })
+            local screen = host:focusedScreen()
+            screen._lastSpokenKey = graph.ControlId.structural("slot1")
+            screen._liveKey = screen._lastSpokenKey
+            local pageDown = specFor(host, "scrollDown")
+            state.page = 2
+            pageDown.postClick()
+            t:assertNil(screen._lastSpokenKey, "the focus announcement speaks the slot again")
+            t:assertNil(screen._liveKey, "the live watch baselines the new page instead of speaking it twice")
+        end)
+    end,
+})

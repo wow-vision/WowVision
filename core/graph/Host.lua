@@ -399,6 +399,15 @@ function GraphHost:_nodeBindingSpecs(node)
             end
         end
     end
+    -- The stop's shared bindings (the page keys over a paged list): the node's own win.
+    if node.stopBindings ~= nil then
+        for _, spec in ipairs(node.stopBindings) do
+            if not has[spec.binding] then
+                tinsert(specs, spec)
+                has[spec.binding] = true
+            end
+        end
+    end
     if node.vtable.onActivate ~= nil and not has.leftClick then
         tinsert(specs, {
             binding = "leftClick",
@@ -1079,6 +1088,44 @@ function GraphHost:_speakStateText(screen)
     if ok and text ~= nil and text ~= "" then
         self:_speak(text)
         screen._liveKey = nil
+    end
+end
+
+-- After a page key's click (nodes.pageKeys): when the stop's page changed,
+-- land on the stop's first entry, as a fresh page is read from its top. The
+-- render from before the click still holds the old page. No change (the
+-- first or last page, or a page that arrives later): focus stays, and a
+-- text that changes under it is spoken by the live watch.
+function GraphHost:landAfterPageTurn(stopKey)
+    local screen = self:focusedScreen()
+    if screen == nil or screen.keyGraph.current == nil then
+        return
+    end
+    local keyGraph = screen.keyGraph
+    local function pageOf(render)
+        if render.stopPages == nil then
+            return nil
+        end
+        return render.stopPages[stopKey]
+    end
+    local before = pageOf(keyGraph.current)
+    if not keyGraph:rerender() then
+        return
+    end
+    local after = pageOf(keyGraph.current)
+    if after == nil or after == before then
+        return
+    end
+    for _, node in ipairs(keyGraph.current.order) do
+        if node.stopKey == stopKey and node.focusable ~= false then
+            WowVision.base.speech:uiStop()
+            keyGraph:focus(node.id)
+            -- The same control on a new page (a pooled item button) is news:
+            -- announce it, and let the live watch baseline the new page.
+            screen._lastSpokenKey = nil
+            screen._liveKey = nil
+            return
+        end
     end
 end
 
