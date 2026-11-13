@@ -82,7 +82,7 @@ Solange ein Steuerelement den Fokus hat, behält WowVision es im Blick. Ändert 
 
 Pfeil hoch und Pfeil runter gehen in der Reihenfolge durch die Steuerelemente, in der sie erscheinen. Wo Steuerelemente nebeneinander in einer Zeile stehen, gehen Pfeil links und Pfeil rechts an der Zeile entlang. Wenn du aus einer Zeile nach oben oder unten gehst, landest du auf dem ersten Steuerelement der nächsten Zeile. Ausnahme sind Raster und Tabellen, die in Spalten angeordnet sind: Dort bleibst du in derselben Spalte.
 
-Drückst du am Rand einer Liste eine Pfeiltaste, passiert nichts und es wird nichts gesagt. Die Pfeiltasten springen in Fenstern nicht von hinten nach vorn.
+Drückst du Pfeil nach oben auf dem ersten Eintrag einer Liste oder Pfeil nach unten auf dem letzten, hörst du einen kurzen Ton und der Eintrag wird noch einmal vorgelesen, wie in Sku. Mit der Einstellung Ton am Anfang und Ende von Listen (UI-Menü, standardmäßig an) schaltest du das aus; die Pfeiltaste tut dann nichts und es wird nichts gesagt. Pfeil links und rechts am Rand bleiben still, ebenso die Chat-Nachrichten. Die Pfeiltasten springen in Fenstern nicht von hinten nach vorn.
 
 ### Leere Plätze überspringen
 

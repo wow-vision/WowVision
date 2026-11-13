@@ -82,6 +82,7 @@ Press U in the main menu, then Enter. It contains:
 | Bindings | | The keybinding screen, see [Keybindings](./keybindings.md). |
 | Interrupt Speech on Window Close | Off | Cut off speech whenever a window closes. |
 | Sounds on Opening and Closing WowVision Menus | On | Play a short sound when a WowVision window opens and another when it closes: the WowVision menu, the Scanner, the navigation window, the action bars and chat. The game's own windows make their own sounds and get none from WowVision. |
+| Sound at the Start and End of Lists | On | Up on the first entry or Down on the last entry of a list plays a short sound and reads the entry again. Turn it off to have the arrow key do nothing at the edge. |
 | Letter Navigation in Menus | On | Let letter keys jump to entries in menus. Turn it off if you need your letter keys to keep working while a menu is open. |
 | WowVision Sound Channel | Sound Effects | The game sound channel every WowVision sound plays on: alert sounds, voice packs, the beacon and the previews in the sound browsers. The entries are named like the volume sliders in the game's sound options, so that slider is then WowVision's volume. A channel you use for little else gives WowVision a volume of its own. Retail and WoW: Forever also offer Gameplay Sound Effects. |
 
