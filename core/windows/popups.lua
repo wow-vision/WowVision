@@ -26,6 +26,20 @@ local function forEachShownDialog(func)
     end
 end
 
+-- The game's list of shown dialogs also holds the special popups shown with
+-- StaticPopupSpecial_Show (StaticPopup_SetUpPosition inserts every dialog):
+-- the role popups, the role invitation, the guild invite and others. They
+-- have no `which`, no dialog text and no dialog buttons; the role popups
+-- have their own windows (RolePoll.lua). This window takes the static
+-- dialogs only.
+local function forEachStaticDialog(func)
+    forEachShownDialog(function(frame)
+        if frame.which ~= nil then
+            func(frame)
+        end
+    end)
+end
+
 local function getPopupText(frame)
     if frame.GetTextFontString ~= nil then
         return frame:GetTextFontString()
@@ -142,7 +156,7 @@ end
 
 local function render(builder, screen)
     local index = 0
-    forEachShownDialog(function(frame)
+    forEachStaticDialog(function(frame)
         index = index + 1
         renderDialog(builder, frame, index)
     end)
@@ -153,15 +167,28 @@ end
 -- answered until the fight ended. The popup's own buttons are not
 -- protected: clicking Accept runs the dialog's OnAccept (AcceptGroup, and
 -- the flag that keeps its OnHide from declining), in or out of combat.
+-- An invitation that asks for a role comes in its own window
+-- (LFGInvitePopup, see RolePoll.lua), a special popup the static dialog walk
+-- skips, so it is checked by name; its Accept takes the checked role and
+-- stays disabled until one is checked (the game checks it when only one is
+-- open), so then the role has to be picked in that window first.
 local INVITE_POPUPS = { PARTY_INVITE = true, PARTY_INVITE_XREALM = true }
 
 function module.acceptInvite()
     local accept = nil
-    forEachShownDialog(function(frame)
+    forEachStaticDialog(function(frame)
         if accept == nil and INVITE_POPUPS[frame.which] then
             accept = firstShownButton(frame)
         end
     end)
+    local rolePopup = LFGInvitePopup
+    if accept == nil and rolePopup ~= nil and rolePopup:IsShown() then
+        accept = LFGInvitePopupAcceptButton
+        if accept ~= nil and not accept:IsEnabled() then
+            WowVision:notify(L["Choose a role first"])
+            return false
+        end
+    end
     if accept == nil then
         WowVision:notify(L["No group invitation"])
         return false
@@ -195,7 +222,7 @@ module:registerWindow({
     name = "popups",
     isOpen = function(self)
         local any = false
-        forEachShownDialog(function()
+        forEachStaticDialog(function()
             any = true
         end)
         return any

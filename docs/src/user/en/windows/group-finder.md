@@ -176,6 +176,10 @@ The two role popups, the leader's party Role Poll and the dungeon queue's role c
 
 Example: a leader starts a role poll. You hear the popup's title. Down to Healer, press Enter (it reads "Checked"), then Tab to Accept and press Enter.
 
+## Invitation with a role choice
+
+On Retail and WoW: Forever, an invitation from a group that offers roles (for example a group from the group finder) does not come as the plain invitation popup but as its own window that asks for your role. It reads like the role popups above. The title is the invitation line ("... invites you to a group"). When the game shows a warning (accepting leaves your queues, or you are invited while a party sync is active), it comes next. Then the roles your class can play, then Accept and Decline. Accept stays disabled until a role is checked; when only one role is open, the game checks it for you. The game declines the invitation itself when its timer runs out.
+
 ## Accepting a group invitation in combat
 
 When someone invites you to a group, the game shows an invitation popup, which you answer like any other popup. In combat WowVision cannot open the popup for you, so it stays out of reach until the fight ends. These two ways accept the invitation at any time, also in combat:
@@ -185,7 +189,7 @@ When someone invites you to a group, the game shows an invitation popup, which y
 | /wv accept | Accepts the invitation that is shown |
 | Accept Group Invitation key | The same as a key. It is unbound: give it a key in the keybinding window (/wv bind) |
 
-You hear "Group invitation accepted". Without an invitation you hear "No group invitation". To decline, answer the popup after the fight or let the invitation run out.
+You hear "Group invitation accepted". Without an invitation you hear "No group invitation". An invitation with a role choice is accepted with the role that is checked; when none is checked yet you hear "Choose a role first", and you pick it in the invitation window after the fight. To decline, answer the popup or window after the fight or let the invitation run out.
 
 ## Leaving a group quickly: /pquit and /dquit
 

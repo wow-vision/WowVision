@@ -1881,6 +1881,35 @@ do
     WowVision.graphHost = nil
 end
 loadAddonFile("core/scanner/menuTests.lua")
+-- Group invitations: the popups window and the role popups load against a stand-in window module (the
+-- windows they register and the popups module come back to the suite); the game's frames are per test.
+do
+    local savedBase = WowVision.base
+    local harness = { windows = {} }
+    local function stubModule()
+        local stub = { L = WowVision:getLocale() }
+        function stub:setLabel() end
+        function stub:registerCommand() end
+        function stub:registerBinding() end
+        function stub:registerWindow(def)
+            harness.windows[def.name] = def
+        end
+        function stub:createModule(key)
+            local child = stubModule()
+            self[key] = child
+            return child
+        end
+        return stub
+    end
+    WowVision.base = { windows = stubModule() }
+    loadAddonFile("core/windows/popups.lua")
+    loadAddonFile("core/windows/RolePoll.lua")
+    harness.popups = WowVision.base.windows.popups
+    WowVision.base = savedBase
+    WowVision._popupsTestHarness = harness
+    loadAddonFile("core/windows/popupsTests.lua")
+    WowVision._popupsTestHarness = nil
+end
 loadAddonFile("core/graph/menuNavTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
@@ -1971,7 +2000,6 @@ local parseOnly = {
     "mists/talents/glyphs.lua",
     "core/windows/gossip.lua",
     "core/windows/questWindow.lua",
-    "core/windows/popups.lua",
     "core/windows/colorPicker.lua",
     "camelot/character.lua",
     "camelot/spellbook.lua",
@@ -2028,7 +2056,6 @@ local parseOnly = {
     "core/navigation/targetRoute.lua",
     "core/windows/Macros.lua",
     "core/windows/itemText.lua",
-    "core/windows/RolePoll.lua",
     "core/windows/trade.lua",
     "core/windows/bars/bars.lua",
     "core/windows/bars/GenericActionBar.lua",

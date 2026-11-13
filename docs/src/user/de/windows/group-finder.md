@@ -177,6 +177,10 @@ Die beiden Rollen-Popups, die Rollenabfrage (Role Poll) des Gruppenleiters und d
 
 Beispiel: Ein Leiter startet eine Rollenabfrage. Du hörst den Titel des Popups. Mit Pfeil runter zu Heiler, Eingabe drücken (es sagt „Aktiviert“), dann mit Tab zu Annehmen und Eingabe drücken.
 
+## Einladung mit Rollenwahl
+
+Auf Retail und WoW: Forever kommt eine Einladung von einer Gruppe, die Rollen anbietet (zum Beispiel einer Gruppe aus der Gruppensuche), nicht als normales Einladungs-Popup, sondern als eigenes Fenster, das nach deiner Rolle fragt. Es wird wie die Rollen-Popups oben gelesen. Der Titel ist die Einladungszeile („... lädt dich in eine Gruppe ein“). Zeigt das Spiel eine Warnung (beim Annehmen verlässt du deine Warteschlangen, oder du wirst während einer aktiven Gruppensynchronisierung eingeladen), kommt sie als Nächstes. Dann die Rollen, die deine Klasse spielen kann, dann Annehmen und Ablehnen. Annehmen bleibt deaktiviert, bis eine Rolle aktiviert ist; ist nur eine Rolle offen, aktiviert das Spiel sie für dich. Läuft die Zeit ab, lehnt das Spiel die Einladung selbst ab.
+
 ## Eine Gruppeneinladung im Kampf annehmen
 
 Lädt dich jemand in eine Gruppe ein, zeigt das Spiel ein Einladungs-Popup, das du wie jedes andere Popup beantwortest. Im Kampf kann WowVision das Popup nicht für dich öffnen, du erreichst es also erst nach dem Kampf. Diese zwei Wege nehmen die Einladung jederzeit an, auch im Kampf:
@@ -186,7 +190,7 @@ Lädt dich jemand in eine Gruppe ein, zeigt das Spiel ein Einladungs-Popup, das 
 | /wv accept | Nimmt die Einladung an, die gerade angezeigt wird |
 | Taste Gruppeneinladung annehmen (Accept Group Invitation) | Dasselbe als Taste. Sie ist unbelegt: Leg sie im Tastenbelegungs-Bildschirm (/wv bind) auf eine Taste |
 
-Du hörst „Gruppeneinladung angenommen“. Ist keine Einladung da, hörst du „Keine Gruppeneinladung“. Zum Ablehnen beantwortest du das Popup nach dem Kampf oder lässt die Einladung verfallen.
+Du hörst „Gruppeneinladung angenommen“. Ist keine Einladung da, hörst du „Keine Gruppeneinladung“. Eine Einladung mit Rollenwahl wird mit der aktivierten Rolle angenommen; ist noch keine aktiviert, hörst du „Erst eine Rolle wählen“ und wählst sie nach dem Kampf im Einladungsfenster. Zum Ablehnen beantwortest du das Popup oder Fenster nach dem Kampf oder lässt die Einladung verfallen.
 
 ## Eine Gruppe schnell verlassen: /pquit und /dquit
 
