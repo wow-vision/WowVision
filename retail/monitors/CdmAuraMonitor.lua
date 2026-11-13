@@ -473,6 +473,9 @@ local function describeFrame(frame, unit, since)
     end
     if frame.auraDataUnit ~= nil then
         text = text .. " " .. tostring(frame.auraDataUnit)
+        if unit == "target" and frame.auraDataUnit == "player" then
+            text = text .. " (self target " .. selfTarget.how .. ")"
+        end
     end
     local active = isActiveItem(frame)
     if active == true then
