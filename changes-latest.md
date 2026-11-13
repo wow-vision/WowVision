@@ -4,6 +4,4 @@
 * Range checks: WowVision's copy of LibRangeCheck is now the current upstream version with our fixes, and it is used by every addon that embeds the library. Another addon's older copy can no longer throw errors every frame in dungeons.
 
 ### Modern
-
-#### Forever
-* Dungeons: menu entries and target names the game keeps hidden are spoken again instead of skipped. Target names read quest objectives in dungeons too; there the game hides whether an objective is finished, so each objective is read and its count says how far it is.
+* Dungeons: a menu entry or target name the game keeps hidden no longer causes an error; it is spoken as the game gives it. Target names read quest objectives in dungeons too. There the game hides whether an objective is finished, so each objective is read and its count says how far it is.
