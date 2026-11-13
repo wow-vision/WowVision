@@ -87,6 +87,21 @@ local function plainTrue(value)
     return value == true or value == 1
 end
 
+-- Sign 3 on its own, shared with the enemy count: a unit in combat
+-- (UnitAffectingCombat) that nobody outside the group has tapped
+-- (UnitIsTapDenied false) is the group's fight. A missing or secret answer
+-- to either counts as no. isSecret: the secret check to use (the globals'
+-- issecretvalue by default; tests pass their own).
+function utils.groupTapped(inCombat, tapDenied, isSecret)
+    isSecret = isSecret or function(value)
+        return issecretvalue ~= nil and issecretvalue(value)
+    end
+    if isSecret(inCombat) or not (inCombat == true or inCombat == 1) then
+        return false
+    end
+    return tapDenied ~= nil and not isSecret(tapDenied) and not tapDenied
+end
+
 function utils.groupFighting(unit, api)
     api = api or _G
     local function read(name, ...)
@@ -124,11 +139,7 @@ function utils.groupFighting(unit, api)
         end
     end
     if inGroup or inRaid then
-        local tapDenied = read("UnitIsTapDenied", unit)
-        if plainTrue(read("UnitAffectingCombat", unit))
-            and tapDenied ~= nil
-            and not (issecretvalue ~= nil and issecretvalue(tapDenied))
-            and not tapDenied then
+        if utils.groupTapped(read("UnitAffectingCombat", unit), read("UnitIsTapDenied", unit)) then
             return true
         end
     end

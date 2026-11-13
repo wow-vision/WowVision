@@ -270,3 +270,27 @@ testRunner:addSuite("FoldCase", {
         t:assertNil(name:find(utils.foldCase("odland"), 1, true), "accents are kept")
     end,
 })
+
+local TAP_SECRET = {}
+local function tapSecret(value)
+    return value == TAP_SECRET
+end
+
+testRunner:addSuite("GroupTapped", {
+    ["in combat and tapped by nobody else is the group's fight"] = function(t)
+        t:assertTrue(utils.groupTapped(true, false, tapSecret))
+        t:assertTrue(utils.groupTapped(1, false, tapSecret), "1 means in combat")
+    end,
+
+    ["out of combat or tapped by others is not"] = function(t)
+        t:assertFalse(utils.groupTapped(false, false, tapSecret))
+        t:assertFalse(utils.groupTapped(true, true, tapSecret))
+    end,
+
+    ["a missing or secret answer counts as no"] = function(t)
+        t:assertFalse(utils.groupTapped(true, nil, tapSecret))
+        t:assertFalse(utils.groupTapped(nil, false, tapSecret))
+        t:assertFalse(utils.groupTapped(TAP_SECRET, false, tapSecret))
+        t:assertFalse(utils.groupTapped(true, TAP_SECRET, tapSecret))
+    end,
+})

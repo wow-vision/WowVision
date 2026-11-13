@@ -94,7 +94,8 @@ end
 -- in a WoW: Forever dungeon (2026-11-12, 44 fights) groupFights found
 -- nothing until you were in combat, 1.5 to 22 seconds after the group.
 -- Both are shown on the plate (in combat; a grey bar when tapped by
--- others). A secret answer to either is unknown and counts as no.
+-- others). A secret answer to either is unknown and counts as no
+-- (utils.groupTapped, sign 3 of the Target in Combat sound's rule).
 -- Only while someone in the group is in combat (isBusy): an enemy that
 -- attacks someone outside the group is not tapped until that player hits
 -- it, and was counted without this for a second or two (dungeon
@@ -103,12 +104,7 @@ local function groupHolds(api, unit, view)
     if not isBusy(api, view) then
         return false
     end
-    local inCombat = api.inCombat(unit)
-    if api.isSecret(inCombat) or inCombat ~= true then
-        return false
-    end
-    local tapped = api.tapDenied(unit)
-    return not api.isSecret(tapped) and tapped == false
+    return WowVision.utils.groupTapped(api.inCombat(unit), api.tapDenied(unit), api.isSecret)
 end
 
 -- Whether you hold the enemy's aggro (threat status 2 or 3). A secret

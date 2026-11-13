@@ -246,7 +246,18 @@ local api = {
     inGroup = function()
         return IsInGroup()
     end,
-    tapDenied = UnitIsTapDenied,
+    -- Guarded like utils.groupFighting's reads: a missing or refused
+    -- answer is nil, which the group rule counts as no.
+    tapDenied = function(unit)
+        if UnitIsTapDenied == nil then
+            return nil
+        end
+        local ok, tapped = pcall(UnitIsTapDenied, unit)
+        if not ok then
+            return nil
+        end
+        return tapped
+    end,
     isSecret = secrets.isSecret,
     -- The crowd control reads are guarded: each game version has a
     -- different part of them, and a refused read means "unknown".
