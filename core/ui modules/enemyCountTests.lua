@@ -453,6 +453,15 @@ testRunner:addSuite("EnemyCountLostLine", {
         t:assertEqual(watch:check({}, 10), nil)
     end,
 
+    ["a lost number the count moved past is forgotten"] = function(t)
+        local watch = enemyCount.LostLine:new()
+        local queue, lost = {}, {}
+        table.insert(queue, lost)
+        watch:fired(queue, lost, { count = 3 }, 0)
+        watch:forget()
+        t:assertEqual(watch:check({}, 10), nil)
+    end,
+
     ["a line still waiting is not said again"] = function(t)
         local watch = enemyCount.LostLine:new()
         local queue, line = {}, {}

@@ -443,6 +443,12 @@ function LostLine:fired(queue, item, message, now)
     self.queue, self.item, self.message, self.at = queue, item, message, now
 end
 
+-- The number watched no longer stands (the count moved on without a new
+-- number, as crowd control texts alone do): nothing to say again.
+function LostLine:forget()
+    self.item = nil
+end
+
 -- Run on the count's checks with the speech queue as it is now. Returns the
 -- message to fire again, once, or nil.
 function LostLine:check(queue, now)
