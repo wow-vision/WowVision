@@ -1308,6 +1308,38 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         monitor:update()
         GetTime = savedGetTime
     end,
+    ["a target monitor hears your own auras while you target yourself"] = function(t)
+        local savedUnitIsUnit, savedIsSecret = UnitIsUnit, issecretvalue
+        local selfTarget = false
+        UnitIsUnit = function(a, b)
+            return selfTarget and a == "target" and b == "player"
+        end
+        local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
+        monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
+        local rule = monitor.rules[1]
+        monitor:update()
+        -- The viewers label an aura on you "player", whoever is targeted
+        sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = "player", {}, true
+        monitor:update()
+        t:assertEqual(rule:currentText("target"), "Sunfire, Missing")
+        t:assertTrue(rule:getCurrentState() ~= "applied")
+
+        -- Targeting yourself, the target monitor takes it
+        selfTarget = true
+        monitor:update()
+        t:assertEqual(rule:currentText("target"), "Sunfire")
+        t:assertEqual(rule:getCurrentState(), "applied")
+
+        -- An answer we cannot read keeps the plain label match
+        issecretvalue = function(value)
+            return value == true
+        end
+        t:assertEqual(rule:currentText("target"), "Sunfire, Missing")
+        issecretvalue = savedIsSecret
+
+        UnitIsUnit = savedUnitIsUnit
+        sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = nil, nil, false
+    end,
 })
 
 -- Spell Cooldowns monitor: the cooldown APIs as the game answers them,

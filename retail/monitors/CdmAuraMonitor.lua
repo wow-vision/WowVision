@@ -198,8 +198,32 @@ end
 -- (Essential, Utility) is active whenever it has a cooldown, so there the
 -- cached aura data stands for the aura. A frame that is not drawn shows
 -- nothing.
+-- Whether the frame's aura sits on the monitor's unit. The viewers scan
+-- "player" before "target" and keep the first match, so with yourself as
+-- target an aura on you is always labelled "player" (Blizzard_CooldownViewer,
+-- CooldownViewerItemData.lua scanUnits): a target monitor takes it then. An
+-- answer we cannot read (secret, refused) keeps the plain label match.
+local function targetIsPlayer()
+    if UnitIsUnit == nil then
+        return false
+    end
+    local ok, same = pcall(UnitIsUnit, "target", "player")
+    if not ok or secrets.isSecret(same) then
+        return false
+    end
+    return same == true
+end
+
+local function onUnit(frame, unit)
+    local frameUnit = frame.auraDataUnit
+    if frameUnit == unit then
+        return true
+    end
+    return unit == "target" and frameUnit == "player" and targetIsPlayer()
+end
+
 local function auraShown(frame, unit)
-    if frame.auraDataUnit ~= unit or frame.auraDataCached == nil then
+    if not onUnit(frame, unit) or frame.auraDataCached == nil then
         return false
     end
     if not frameVisible(frame) then
@@ -377,7 +401,7 @@ local function frameCode(frame, unit)
     if frame.auraDataCached ~= nil then
         code = code + 1
     end
-    if frame.auraDataUnit == unit then
+    if onUnit(frame, unit) then
         code = code + 2
     end
     if isActiveItem(frame) then
