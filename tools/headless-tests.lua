@@ -961,14 +961,15 @@ WowVision.testing.testRunner:addSuite("MonitorConstruction", {
                 return WowVision.monitors.registry:createTemporaryComponent(config)
             end,
             getTypeKey = function(instance)
-                return "Aura"
+                return "PlainStandIn"
             end,
         })
-        -- A plain Monitor stands in for the WoW-API-dependent types here.
-        WowVision.monitors.registry.types:register("Aura", WowVision.monitors.Monitor)
+        -- A plain Monitor stands in for the WoW-API-dependent types here
+        -- (under its own key: the classic Aura type is loaded further down).
+        WowVision.monitors.registry.types:register("PlainStandIn", WowVision.monitors.Monitor)
         field:setDB(container, db)
 
-        field:addElement(container, { type = "Aura", label = "Test Monitor" })
+        field:addElement(container, { type = "PlainStandIn", label = "Test Monitor" })
         t:assertEqual(db.monitors[1].label, "Test Monitor")
 
         local monitor = container.monitors[1]
@@ -1653,6 +1654,104 @@ WowVision.testing.testRunner:addSuite("ComponentCopy", {
         -- A copy after the focus leaves it alone
         field:copyElement(group, group.items[4])
         t:assertEqual(group:getFocus().label, "C")
+    end,
+})
+
+-- The classic Aura monitor (TBC, Mists, Vanilla) with a stand-in tracker:
+-- the harness has no Aura object type, so each test hands the monitor a
+-- tracker whose events it fires itself.
+loadAddonFile("classic/monitors/types/AuraMonitor.lua")
+local function classicAuraSetup(mode)
+    local tracker = {
+        items = {},
+        events = {
+            add = WowVision.Event:new("add"),
+            remove = WowVision.Event:new("remove"),
+            unitsChanged = WowVision.Event:new("unitsChanged"),
+        },
+        untrack = function() end,
+    }
+    local monitor = WowVision.monitors:create("Aura", { unit = "target", announceOnUnitChange = mode })
+    monitor.createTracker = function()
+        return tracker
+    end
+    monitor:setDB({ global = {} })
+    monitor.class:getField("rules"):addElement(monitor, { type = "AuraState", spell = 8921, playerOnly = false })
+    local fired = {}
+    local function listen(rule)
+        for _, state in ipairs({ "applied", "missing" }) do
+            local alert = rule.class:getField(state):getAlert(rule)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(fired, message.text)
+                    end
+                end
+            end
+        end
+    end
+    listen(monitor.rules[1])
+    local function aura()
+        local values = { spellId = 8921, duration = 0 }
+        return {
+            get = function(_, key)
+                return values[key]
+            end,
+        }
+    end
+    -- A new target: the game's order, the unit change first, then the old
+    -- target's auras go and the new one's come
+    local function switchTo(old, new)
+        tracker.events.unitsChanged:emit(tracker, "target", "guid")
+        if old ~= nil then
+            tracker.items[old] = nil
+            tracker.events.remove:emit(tracker, old)
+        end
+        if new ~= nil then
+            tracker.items[new] = true
+            tracker.events.add:emit(tracker, new)
+        end
+        monitor:update()
+    end
+    return monitor, tracker, fired, aura, switchTo, listen
+end
+
+WowVision.testing.testRunner:addSuite("ClassicAuraMonitor", {
+    ["on a target change: only changes, always, or never"] = function(t)
+        local monitor, tracker, fired, aura, switchTo = classicAuraSetup("changes")
+        local first = aura()
+        tracker.items[first] = true
+        monitor:update()
+        t:assertEqual(#fired, 0)
+        -- Only changes: a target without the aura speaks Missing, one with it Applied
+        switchTo(first, nil)
+        t:assertEqual(fired[#fired], "Moonfire Missing")
+        local second = aura()
+        switchTo(nil, second)
+        t:assertEqual(fired[#fired], "Moonfire Applied")
+        local third = aura()
+        switchTo(second, third)
+        t:assertEqual(#fired, 2)
+        -- Always: the new target's state, even when it is the same
+        monitor.announceOnUnitChange = "always"
+        local fourth = aura()
+        switchTo(third, fourth)
+        t:assertEqual(#fired, 3)
+        t:assertEqual(fired[3], "Moonfire Applied")
+        -- Never: switching speaks nothing, either way
+        monitor.announceOnUnitChange = "never"
+        switchTo(fourth, nil)
+        local fifth = aura()
+        switchTo(nil, fifth)
+        t:assertEqual(#fired, 3)
+        -- ...but a change on the new target still speaks
+        tracker.items[fifth] = nil
+        tracker.events.remove:emit(tracker, fifth)
+        monitor:update()
+        t:assertEqual(fired[#fired], "Moonfire Missing")
+        t:assertEqual(#fired, 4)
     end,
 })
 
