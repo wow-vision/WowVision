@@ -338,10 +338,10 @@ local function copyLabel(field, owner, instance)
         taken[instanceLabel(current)] = true
     end
     local number = 1
-    while taken[base .. " " .. L["Copy"] .. " " .. number] do
+    while taken[base .. " " .. L["CopyName"] .. " " .. number] do
         number = number + 1
     end
-    return base .. " " .. L["Copy"] .. " " .. number
+    return base .. " " .. L["CopyName"] .. " " .. number
 end
 
 local function pushComponentEditor(field, owner, instance)
