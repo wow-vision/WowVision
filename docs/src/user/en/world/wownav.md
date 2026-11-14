@@ -60,6 +60,7 @@ F10 works as described in [Navigation](./navigation.md): Direct, Entry Points, S
 
 The entry points are the 50 nearest entries: the places that sit on the network (the flight master in front of you, a door, a portal) and the network's own waypoints right beside you. You choose where your route starts, as with the classic routes. WowNav never works out your start by itself, except for Ctrl+Shift+N and the route to your target, which start where you stand if that is clear. When you choose a place as your start, your route begins at that place itself.
 
+- The entry point selected for you is the closest one at about the height of the last waypoint of the network you reached (see [Starting at the right height](./navigation.md#starting-at-the-right-height)).
 - The network's own waypoints within 10 yards of you are always in the list, so you can start right where you stand even when the nearest place is far away. With Show Automatic Waypoints on, the waypoints farther away join the list as well. A waypoint is read as "Auto, height 54": only its height in yards is said.
 - While you swim or dive, the nearest water point within 100 yards is always in the list and preselected. If there is none you hear "No water point nearby".
 - If there is nothing of the network near enough, the list says Empty, and a route request answers "No WowNav network here".

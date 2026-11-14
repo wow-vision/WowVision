@@ -326,6 +326,33 @@ testRunner:addSuite("MapRouter", {
         t:assertNil(Router.preselectEntry({}, true))
     end,
 
+    ["the entry at the last known height is preselected, the nearest without one"] = function(t)
+        -- the road under a bridge lies nearest, the bridge itself a little further
+        local entries = {
+            { waypoint = { id = "road", z = 10 }, distance = 2 },
+            { waypoint = { id = "bridge", z = 31 }, distance = 5 },
+            { waypoint = { id = "bridge2", z = 30 }, distance = 8 },
+            { waypoint = { id = "noHeight" }, distance = 9 },
+        }
+        local entry = Router.preselectEntry(entries, false, 30)
+        t:assertEqual(entry.waypoint.id, "bridge", "the first of those at about the height, not the nearest")
+        entry = Router.preselectEntry(entries, false, 12)
+        t:assertEqual(entry.waypoint.id, "road", "within the tolerance")
+        entry = Router.preselectEntry(entries, false, 50)
+        t:assertEqual(entry.waypoint.id, "road", "none at that height: the nearest")
+        entry = Router.preselectEntry(entries, false, nil)
+        t:assertEqual(entry.waypoint.id, "road", "no height known: the nearest")
+        entry = Router.preselectEntry({ { waypoint = { id = "flat" }, distance = 1 } }, false, 30)
+        t:assertEqual(entry.waypoint.id, "flat", "entries without heights: the nearest")
+        t:assertNil(Router.preselectEntry({}, false, 30))
+        -- swimming keeps choosing by water
+        local water = { entries[1], { waypoint = { id = "lake", z = 3, water = true }, distance = 6 } }
+        entry = Router.preselectEntry(water, true, 10)
+        t:assertEqual(entry.waypoint.id, "lake", "swimming: the water entry, whatever the height")
+        t:assertNil(Router.entryAtHeight(entries, nil))
+        t:assertEqual(Router.entryAtHeight(entries, 10 + Router.HEIGHT_TOLERANCE).waypoint.id, "road", "tolerance edge counts")
+    end,
+
     ["nearest by walk: the shorter walk wins over the nearer straight line"] = function(t)
         -- A river between: "near" is 10 yd across it but 60 yd round by the bridge; "far" is 25 yd on this side.
         local waypoints = graph({

@@ -35,6 +35,15 @@ settings:add({
     default = true,
 })
 
+-- The height of the last network point reached is remembered; a new route then starts at the nearest entry point at about
+-- that height, not just the nearest (maps/module.lua, Router.entryAtHeight).
+settings:add({
+    key = "guessStartHeight",
+    type = "Bool",
+    label = L["Guess the Start From the Last Height"],
+    default = true,
+})
+
 -- A route or beacon the player starts closes every open window (maps:closeWindowsForGuidance).
 settings:add({
     key = "closeWindowsOnRoute",
