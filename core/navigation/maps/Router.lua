@@ -154,7 +154,13 @@ end
 -- (wp.water), without moving it to the front -- dry land may be nearer.
 -- Returns the entry (nil for an empty list) and true when swimming found no
 -- water entry, so the nearest is preselected instead.
-function Router.preselectEntry(entries, swimming)
+--
+-- On dry land, with the height of the last network point the player reached
+-- (`height`, Router.entryAtHeight): the nearest entry at about that height
+-- comes first, so a road under a bridge or another floor of a building does
+-- not win just by lying nearer. Without a height, or when no entry lies at
+-- it, the nearest as before.
+function Router.preselectEntry(entries, swimming, height)
     if swimming then
         for _, entry in ipairs(entries) do
             if entry.waypoint.water == true then
@@ -163,7 +169,25 @@ function Router.preselectEntry(entries, swimming)
         end
         return entries[1], true
     end
-    return entries[1], false
+    return Router.entryAtHeight(entries, height) or entries[1], false
+end
+
+-- How far (yards) an entry's height may differ from the remembered one and still count as "this height".
+Router.HEIGHT_TOLERANCE = 4
+
+-- The first (nearest) of `entries` whose waypoint lies at `height`, within Router.HEIGHT_TOLERANCE; nil without a
+-- height, or when none has one (route data without heights, nothing at that level).
+function Router.entryAtHeight(entries, height)
+    if type(height) ~= "number" then
+        return nil
+    end
+    for _, entry in ipairs(entries) do
+        local z = entry.waypoint.z
+        if type(z) == "number" and math.abs(z - height) <= Router.HEIGHT_TOLERANCE then
+            return entry
+        end
+    end
+    return nil
 end
 
 -- ---------------------------------------------------------------------------

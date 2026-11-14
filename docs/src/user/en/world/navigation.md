@@ -50,11 +50,23 @@ The entry point is where your route joins the network. WoW is fully three-dimens
 
 Each entry reads its name, its distance and the direction relative to where you are facing, for example "Innkeeper Allison (Innkeeper), 4 yards, ahead left". The directions are ahead, ahead right, right, behind right, behind, behind left, left and ahead left. The entry that is chosen is announced with selected.
 
-- The closest entry point is selected when the window opens.
+- The closest entry point is selected when the window opens. With WowNav, the closest one at about the height of the last waypoint you reached is selected instead, see "Starting at the right height" below.
 - Press Enter on another entry to select that one instead. You hear selected at once, and again whenever you move back onto it. Only one entry is selected at a time.
 - While you swim or dive, the nearest entry that lies in water is preselected instead, if the data knows about water points. With WowNav, if there is no water point nearby, you hear "No water point nearby". The classic data has no water points, so there the nearest entry stays selected.
 
 The route you get includes the walk from where you stand to the entry point. So choose an entry that you can really walk to.
+
+### Starting at the right height
+
+With WowNav, WowVision remembers the height of the last waypoint of the network that you walked to on a route. When you start the next route, the entry point selected for you is the closest one at about that height (within 4 yards), not simply the closest one. So after you came out of a building or crossed a bridge, the road under the bridge or the floor below you does not win just because it lies nearer.
+
+- Only waypoints you really reached count. Stepping on with Ctrl+W or Ctrl+S does not, and neither do the points a route adds for its start and its last stretch.
+- The height is remembered for the map you are on. On another continent or in an instance it is ignored, and after /reload it is forgotten.
+- If no entry point lies at that height, or no height is known yet, the closest entry point is selected as before.
+- While you swim or dive, the nearest water point is still selected, whatever the height.
+- The same choice is made wherever WowVision picks the start for you: /beacon to and the keys of the visited places.
+
+The setting Guess the Start From the Last Height (Navigation module, on by default) turns this off; the closest entry point is selected then.
 
 ### Direct
 

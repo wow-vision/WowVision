@@ -62,6 +62,7 @@ F10 funktioniert wie in [Navigation und Routen](./navigation.md) beschrieben: Di
 
 Die Einstiegspunkte sind die 50 nächsten Einträge: die Orte, die im Netz liegen (der Flugmeister vor dir, eine Tür, ein Portal), und die eigenen Wegpunkte des Netzes direkt neben dir. Du wählst, wo deine Route beginnt, wie bei den klassischen Routen. WowNav berechnet deinen Start nie selbst, außer bei Strg+Umschalt+N und bei der Route zu deinem Ziel, die dort starten, wo du stehst, wenn das eindeutig ist. Wählst du einen Ort als Start, beginnt deine Route an diesem Ort selbst.
 
+- Als Einstiegspunkt ist für dich der nächste auf etwa der Höhe des zuletzt erreichten Wegpunkts des Netzes ausgewählt (siehe [Auf der richtigen Höhe starten](./navigation.md#auf-der-richtigen-höhe-starten)).
 - Die eigenen Wegpunkte des Netzes im Umkreis von 10 Metern stehen immer in der Liste. So kannst du genau dort starten, wo du stehst, auch wenn der nächste Ort weit weg ist. Mit Automatische Wegpunkte zeigen an kommen auch die Wegpunkte weiter weg dazu. Ein Wegpunkt wird als "Auto, Höhe 54" gelesen: Nur seine Höhe in Metern wird gesagt.
 - Während du schwimmst oder tauchst, ist der nächste Wasserpunkt innerhalb von 100 Metern immer in der Liste und vorgewählt. Gibt es keinen, hörst du "Kein Wasserpunkt in der Nähe".
 - Ist nichts vom Netz nah genug, sagt die Liste Leer, und eine Routenanfrage antwortet "Hier kein WowNav-Netz".

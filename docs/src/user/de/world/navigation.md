@@ -52,11 +52,23 @@ Der Einstiegspunkt ist die Stelle, an der deine Route ins Netz einmündet. WoW i
 
 Jeder Eintrag liest seinen Namen, seine Entfernung und die Richtung relativ zu deiner Blickrichtung, zum Beispiel "Innkeeper Allison (Innkeeper), 4 Meter, voraus links". Die Richtungen sind voraus, voraus rechts, rechts, hinten rechts, hinten, hinten links, links und voraus links. Der gewählte Eintrag wird mit ausgewählt angesagt.
 
-- Der nächste Einstiegspunkt ist beim Öffnen des Fensters ausgewählt.
+- Der nächste Einstiegspunkt ist beim Öffnen des Fensters ausgewählt. Mit WowNav ist stattdessen der nächste auf etwa der Höhe des zuletzt erreichten Wegpunkts ausgewählt, siehe "Auf der richtigen Höhe starten" weiter unten.
 - Drücke Eingabe auf einem anderen Eintrag, um stattdessen diesen zu wählen. Du hörst sofort ausgewählt, und wieder jedes Mal, wenn du auf ihn zurückkehrst. Es ist immer nur ein Eintrag ausgewählt.
 - Während du schwimmst oder tauchst, ist stattdessen der nächste Eintrag vorgewählt, der im Wasser liegt, falls die Daten Wasserpunkte kennen. Mit WowNav hörst du "Kein Wasserpunkt in der Nähe", wenn kein Wasserpunkt in der Nähe ist. In den klassischen Daten gibt es keine Wasserpunkte, dort bleibt also der nächste Eintrag gewählt.
 
 Die Route, die du bekommst, enthält den Weg von deinem Standort bis zum Einstiegspunkt. Wähle also einen Einstiegspunkt, zu dem du wirklich gehen kannst.
+
+### Auf der richtigen Höhe starten
+
+Mit WowNav merkt sich WowVision die Höhe des letzten Wegpunkts des Netzes, zu dem du auf einer Route gegangen bist. Startest du die nächste Route, ist als Einstiegspunkt der nächste auf etwa dieser Höhe (bis 4 Meter Unterschied) ausgewählt, nicht einfach der nächste überhaupt. Wenn du aus einem Gebäude gekommen bist oder eine Brücke überquert hast, gewinnt also die Straße unter der Brücke oder der Boden unter dir nicht allein deshalb, weil sie näher liegen.
+
+- Es zählen nur Wegpunkte, die du wirklich erreicht hast. Weiterschalten mit Strg+W oder Strg+S zählt nicht, ebenso wenig die Punkte, die eine Route für ihren Start und ihr letztes Stück hinzufügt.
+- Die Höhe wird für die Karte gemerkt, auf der du bist. Auf einem anderen Kontinent oder in einer Instanz wird sie ignoriert, und nach /reload ist sie vergessen.
+- Liegt kein Einstiegspunkt auf dieser Höhe oder ist noch keine Höhe bekannt, ist wie bisher der nächste Einstiegspunkt ausgewählt.
+- Während du schwimmst oder tauchst, ist weiterhin der nächste Wasserpunkt ausgewählt, egal auf welcher Höhe.
+- Dieselbe Wahl gilt überall, wo WowVision den Start für dich bestimmt: bei /beacon to und bei den Tasten der besuchten Orte.
+
+Die Einstellung Startpunkt anhand der letzten Höhe wählen (Modul Navigation, standardmäßig an) schaltet das aus; dann ist der nächste Einstiegspunkt ausgewählt.
 
 ### Direkt
 
