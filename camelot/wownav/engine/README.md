@@ -38,6 +38,13 @@ Keep this list current; everything else is his text, line for line (line endings
   Since his cost comparison the check covers all starts and goals of a search and runs after the same-link check: a pair
   on one link is never answered from a set (on a one-way link the near end may be out of reach of the far end).
   `N.wholeMisses` and `N.knownMissAnswers` count both for the module's trail.
+- `NavNetwork.lua`, closed water: `N.Route` drops a goal on a node that nothing can enter (`N.ClosedWater`: his flag
+  `noExit`, no link in its zone in either direction, no seam, no action from it) and answers "no route" at once when
+  no goal is left. His S10b keeps such nodes without links for the announcement; the field-mask choice of a cell may
+  still offer one first (`ChooseAttachment`; `CellBindings` leaves noExit out of the others only), and each such goal
+  searched the whole continent: a corpse run in the Wetlands marsh took 72 s in the game, 0.03 s offline with the
+  check. In data 1f8530e: 1,265 such nodes, 911 of them a cell's attachment. `N.closedWaterGoals` counts them for
+  the module's trail.
 - `NavNetwork.lua`, memory: `N.UnloadZone`, `N.KeepZones` and the hook `N.onZoneUnloaded` drop decoded zones again
   (his core keeps every decoded zone for the session).
 - `NavNetwork.lua`, time slices: `N.Job(fn, ...)` runs any work that searches routes in a coroutine; the A* loop of

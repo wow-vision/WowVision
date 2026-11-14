@@ -1798,6 +1798,48 @@ local reachCache = nil
 -- counters for WowVision's trail: whole searches that missed (kept as sets) and targets answered from those sets
 N.wholeMisses, N.knownMissAnswers = 0, 0
 
+-- WowVision: closed water. S10b keeps the water nodes of a water body without a checked exit (flag noExit, 4.27) for
+-- the announcement only, without links; no search can arrive at such a node. N.Route drops it as a goal, and answers
+-- "no route" at once when no goal is left, instead of searching the whole continent first (a corpse run in the Wetlands
+-- marsh: the cell under the corpse offered such a node first, 72 s in the game). Only a node with no way in or out
+-- counts: noExit, no link in its zone in either direction, no seam, no action from it. An action of another zone that
+-- ended on it would not be seen here; in data 1f8530e none does (1,265 such nodes, all noExit water, none an action's end).
+N.closedWaterGoals = 0      -- goals dropped, for WowVision's trail
+
+-- The nodes of a zone that a link enters, built once per decoded zone.
+local function Inbound(zone)
+    if not zone.inbound then
+        local set = {}
+        for i = 1, zone.n do
+            local adj = zone.adj[i]
+            for j = 1, #adj, 2 do set[adj[j]] = true end
+        end
+        zone.inbound = set
+    end
+    return zone.inbound
+end
+
+function N.ClosedWater(id)
+    if id == nil or id >= VIRT_BASE then return false end
+    local zone = ZoneOf(id)
+    if not zone then return false end
+    local localId = id - zone.base
+    return zone.noExit[localId + 1] == true and #zone.adj[localId + 1] == 0 and not Inbound(zone)[localId]
+        and not zone.seam[localId] and not zone.seamLinkEnds[localId] and not zone.actionsFrom[localId]
+end
+
+-- The goals a search can arrive at: those in closed water leave, unless a start is that node itself.
+local function OpenGoals(starts, goals)
+    local open = {}
+    for _, entry in ipairs(goals) do
+        local id, own = entry.binding.id, false
+        for _, start in ipairs(starts) do own = own or start.binding.id == id end
+        if own or not N.ClosedWater(id) then open[#open + 1] = entry end
+    end
+    N.closedWaterGoals = N.closedWaterGoals + #goals - #open
+    return open
+end
+
 -- B1: start and target are link points of the same link. Walking along the link between the two points is the route (the
 -- piece lies on the checked link; no run to a link end and back). Returns cost, geometric length, edge | nil when the points
 -- are not on one link, the link direction forbids the way between them (the search decides then), or the link carries a penalty.
@@ -2124,6 +2166,9 @@ end
 -- (startBinding, targetBinding). Start and target on one link: the piece of the link between them (B1).
 function N.Route(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
     local starts, goals = SideEntries(startBinding, startPool), SideEntries(targetBinding, targetPool)
+    -- WowVision: goals in closed water (N.ClosedWater) are never reached
+    goals = OpenGoals(starts, goals)
+    if #goals == 0 then return nil, "no_route" end
     -- WowVision: inside a job, a plain search that ran out without its target knows every waypoint it reaches; a later
     -- target outside that set, from a start inside it, has no route: the same answer without the whole search again
     -- (the floor check routes every candidate of a band, each a search of the whole continent)
