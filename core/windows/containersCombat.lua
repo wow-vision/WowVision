@@ -16,7 +16,8 @@ local ControlId = graph.ControlId
 -- The game's own open-bags keys open it in a fight (Open All Bags, Toggle Backpack): a secure click of the backpack
 -- button opens the visible bags as a click by the player does (on WoW: Forever the combined bags, on the other clients
 -- the backpack), so nothing of the game's bag frames is written by addon code. Enter picks the item up or places the
--- one held (the game's pickup call, not protected), Space reads the slot's tooltip.
+-- one held as a secure click of the slot's own item button (bags open as the fight began only), Space reads the
+-- slot's tooltip.
 
 -- Every held bag: backpack, bags, reagent bag where the client has one, keyring.
 local function heldBags()
@@ -48,7 +49,35 @@ local function readSlots()
     return list
 end
 
-local pickup = C_Container.PickupContainerItem or PickupContainerItem
+-- The item buttons the open bags show now: the frames' Items (WoW: Forever, retail), else the named slots of the
+-- classic frames (ContainerFrame<n>Item<i>).
+local function shownItemButtons()
+    local buttons = {}
+    local function add(button)
+        if button ~= nil and button:IsShown() then
+            tinsert(buttons, button)
+        end
+    end
+    if ContainerFrameUtil_EnumerateContainerFrames ~= nil then
+        for _, frame in ContainerFrameUtil_EnumerateContainerFrames() do
+            if frame ~= nil and frame:IsShown() then
+                for _, button in ipairs(frame.Items or {}) do
+                    add(button)
+                end
+            end
+        end
+        return buttons
+    end
+    for i = 1, NUM_CONTAINER_FRAMES or 13 do
+        local frame = _G["ContainerFrame" .. i]
+        if frame ~= nil and frame:IsShown() then
+            for slot = 1, frame.size or 0 do
+                add(_G[frame:GetName() .. "Item" .. slot])
+            end
+        end
+    end
+    return buttons
+end
 
 local function slotNode(bag, slot)
     return {
@@ -69,15 +98,10 @@ local function slotNode(bag, slot)
                 tooltip:SetBagItem(bag, slot)
             end,
         },
+        -- Both clicks are the secure side's while it walks the list (Enter a secure click of the slot's own button,
+        -- Backspace the item action); reached here (back by Ctrl-Tab) they say they cannot.
         bindings = {
-            {
-                binding = "leftClick",
-                type = "Function",
-                func = function()
-                    pickup(bag, slot)
-                end,
-            },
-            -- Used by the secure side while it walks the list; reached here (back by Ctrl-Tab) it says it cannot.
+            { binding = "leftClick", type = "Click" },
             { binding = "rightClick", type = "Click" },
         },
         bagSlot = function()
@@ -175,8 +199,28 @@ WowVision.graph.combatKeys.registerMirror({
         end
         return nil
     end,
+    -- Enter in a fight: a secure click of the slot's own item button (picking up and placing are the button's click
+    -- in the game's code; addon code calling the pickup is refused in combat on WoW: Forever). The bags lay their
+    -- buttons out as they open, so the buttons are known only for bags open as the fight began.
+    clickTargets = function()
+        local targets = {}
+        local byLocation = {}
+        for _, button in ipairs(shownItemButtons()) do
+            local bag, slot = module.slotLocation(button)
+            byLocation[bag .. ":" .. slot] = button
+        end
+        for i, entry in ipairs(slots) do
+            targets[i] = byLocation[entry.bag .. ":" .. entry.slot]
+        end
+        return targets
+    end,
     onMirror = function(index, why)
-        if why == "leftClick" or why == "tooltip" then
+        if why == "leftClick" then
+            -- reached only where no secure click was armed
+            WowVision:notify(L["To move items in a fight, open the bags before it"])
+            return
+        end
+        if why == "tooltip" then
             WowVision.graphHost:combatKey(why)
             return
         end

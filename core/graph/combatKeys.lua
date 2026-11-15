@@ -108,7 +108,10 @@ end
 -- list itself and owns the position, and addon code only lands the window's focus where the secure side says
 -- (onMirror). Per mirror m: m-n the entry count; m-v<i> what the secure use action gets for entry i ("" for nothing);
 -- m-f<i> / m-l<i> the first and last entry of i's group (a bag: Tab goes from group to group); m-open 1 while its
--- window is open; m-start the entry focused as the fight begins (startmode names that mirror). mode is the mirror
+-- window is open; m-start the entry focused as the fight begins (startmode names that mirror); m-p<i> 1 while entry
+-- i's pick button points at its game button (armed out of combat, as the window lays its buttons out); m-pickok 1
+-- while that layout holds in the fight (the window was open as it began and has not been closed); mirror-n /
+-- mirror-k<i> the mirrors' names; lc-n / lc-k<i> the left click's inputs. mode is the mirror
 -- walked now ("" for none), idx its position. ok-n / ok-k<i> / ok-o<i> are the game's own keys that open a mirrored
 -- window (the open-bags keys), bound in a fight to that mirror's opener button.
 
@@ -152,18 +155,35 @@ combatKeys.USE_KEYS = [[
     end
 ]]
 
--- Point the secure use button at the entry at the position (nothing outside a mirrored list).
+-- Point the secure use button at the entry at the position (nothing outside a mirrored list), and the left click at
+-- the entry's own game button: its pick button, a secure click of it, where one is armed (m-p<i>) and the fight's
+-- layout of the window is the one it was armed for (m-pickok); else the left click is the frame's.
 combatKeys.ARM = [[
     local use = self:GetFrameRef("use")
     local mode = self:GetAttribute("mode")
+    local idx = self:GetAttribute("idx") or 1
     local value = nil
+    local pick = nil
     if mode ~= nil and mode ~= "" then
-        value = self:GetAttribute(mode .. "-v" .. (self:GetAttribute("idx") or 1))
+        value = self:GetAttribute(mode .. "-v" .. idx)
+        if self:GetAttribute(mode .. "-pickok") == 1 and self:GetAttribute(mode .. "-p" .. idx) == 1 then
+            pick = "WowVisionCombatPick_" .. mode .. idx
+        end
     end
     if value == "" then
         value = nil
     end
     use:SetAttribute("item", value)
+    if self:GetAttribute("taken") ~= 1 then
+        return
+    end
+    for i = 1, self:GetAttribute("lc-n") or 0 do
+        if pick ~= nil then
+            self:SetBindingClick(true, self:GetAttribute("lc-k" .. i), pick, "LeftButton")
+        else
+            self:SetBindingClick(true, self:GetAttribute("lc-k" .. i), self, "leftClick")
+        end
+    end
 ]]
 
 -- Walk a mirrored list from the entry given (the first when there is none or it is out of range); why is passed on
@@ -214,6 +234,10 @@ combatKeys.COMBAT = [[
     for i = 1, self:GetAttribute("ok-n") or 0 do
         self:SetBindingClick(true, self:GetAttribute("ok-k" .. i), self:GetAttribute("ok-o" .. i), "LeftButton")
     end
+    for i = 1, self:GetAttribute("mirror-n") or 0 do
+        local name = self:GetAttribute("mirror-k" .. i)
+        self:SetAttribute(name .. "-pickok", self:GetAttribute(name .. "-open"))
+    end
     if self:GetAttribute("menuopen") == 1 then
         self:RunAttribute("_take")
     end
@@ -234,6 +258,7 @@ combatKeys.CLICK = [[
     if button == "close" then
         if mode ~= nil then
             self:SetAttribute(mode .. "-open", 0)
+            self:SetAttribute(mode .. "-pickok", 0)
             self:RunAttribute("_leave")
             self:CallMethod("onMirror", mode, 0, "close")
         end
@@ -311,6 +336,7 @@ combatKeys.OPENER = [[
             return false
         end
         owner:SetAttribute(mode .. "-open", 0)
+        owner:SetAttribute(mode .. "-pickok", 0)
         owner:RunAttribute("_leave")
         owner:RunAttribute("_release")
         owner:CallMethod("onMirror", mode, 0, "close")
@@ -507,10 +533,15 @@ end
 --              key that moved ("down", "next"...), or the key handed over there ("leftClick", "tooltip",
 --              "contextMenu")
 --   onClose()  the walked window was closed in the fight: close what the opener's click did not (all the bags)
+--   clickTargets()  optional: entry index -> the game's own button of that entry as the open window lays it out now.
+--              Enter on the entry in a fight is a secure click of it, while the window stays as it was when the
+--              fight began.
 combatKeys.mirrors = {}
 local mirrorsByKey = {}
 local mirrorsDirty = true
 local stagedSignatures = {}
+-- per mirror, entry index -> the game button its pick button points at
+local pickTargets = {}
 local openers = {}
 
 function combatKeys.registerMirror(def)
@@ -565,6 +596,7 @@ local function writeMirrors()
     local names = {}
     for _, def in ipairs(combatKeys.mirrors) do
         tinsert(names, { name = def.key })
+        pickTargets[def.key] = pickTargets[def.key] or {}
         local rows = combatKeys.mirrorAttributes(def.entries())
         local parts = {}
         for i, row in ipairs(rows) do
@@ -584,6 +616,47 @@ local function writeMirrors()
         end
     end
     writeList(keysFrame, "ok", openKeys, { k = "key", o = "opener" })
+    writeList(keysFrame, "mirror", names, { k = "name" })
+end
+
+-- The pick buttons: per mirror and entry a secure click of the entry's own game button, pointed out of combat at the
+-- button the open window shows for it now (WowVisionCombatPick_<mirror><i>). Checked a few times a second while the
+-- window is open; written only when a button changed.
+local PICK_EVERY = 0.25
+local nextPick = 0
+
+local function pickButton(def, index)
+    local name = "WowVisionCombatPick_" .. def.key .. index
+    local button = _G[name]
+    if button == nil then
+        button = CreateFrame("Button", name, UIParent, "SecureActionButtonTemplate")
+        button:RegisterForClicks("AnyDown")
+        button:SetAttribute("useOnKeyDown", true)
+        button:SetAttribute("type", "click")
+        local key, captured = def.key, index
+        button:HookScript("PostClick", function()
+            log("pick " .. key .. " " .. captured)
+        end)
+    end
+    return button
+end
+
+local function tickPicks(def)
+    if def.clickTargets == nil then
+        return
+    end
+    local targets = pickTargets[def.key]
+    local count = keysFrame:GetAttribute(def.key .. "-n") or 0
+    local now = def.isOpen() and def.clickTargets() or {}
+    for index = 1, count do
+        local target = now[index]
+        if targets[index] ~= target then
+            targets[index] = target
+            local button = pickButton(def, index)
+            button:SetAttribute("clickbutton", target)
+            keysFrame:SetAttribute(def.key .. "-p" .. index, target ~= nil and 1 or 0)
+        end
+    end
 end
 
 -- Each update out of combat: whether each mirrored window is open, and the entry it is focused on.
@@ -604,6 +677,13 @@ local function tickMirrors()
     end
     if keysFrame:GetAttribute("startmode") ~= startMode then
         keysFrame:SetAttribute("startmode", startMode)
+    end
+    local now = GetTime()
+    if now >= nextPick then
+        nextPick = now + PICK_EVERY
+        for _, def in ipairs(combatKeys.mirrors) do
+            tickPicks(def)
+        end
     end
 end
 
@@ -630,6 +710,13 @@ local function writeStage()
         end
     end
     writeList(keysFrame, "rc", rightClick, { k = "input" })
+    local leftClick = {}
+    for _, entry in ipairs(menu) do
+        if entry.action == "leftClick" then
+            tinsert(leftClick, entry)
+        end
+    end
+    writeList(keysFrame, "lc", leftClick, { k = "input" })
     keysFrame:SetAttribute("enabled", enabled() and 1 or 0)
     wrapOpeningFrames()
     local opening = 0

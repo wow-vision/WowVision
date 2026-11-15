@@ -74,6 +74,14 @@ local function stage(handle, menu, menuOpen)
         end
     end
     handle.attributes["rc-n"] = rightClick
+    local leftClick = 0
+    for _, entry in ipairs(menu) do
+        if entry[2] == "leftClick" then
+            leftClick = leftClick + 1
+            handle.attributes["lc-k" .. leftClick] = entry[1]
+        end
+    end
+    handle.attributes["lc-n"] = leftClick
     handle.attributes.enabled = 1
     handle.attributes.menuopen = menuOpen and 1 or 0
 end
@@ -251,6 +259,12 @@ local function stageBags(handle, open)
     handle.attributes["ok-n"] = 1
     handle.attributes["ok-k1"] = "B"
     handle.attributes["ok-o1"] = "WowVisionCombatOpen_bags"
+    handle.attributes["mirror-n"] = 1
+    handle.attributes["mirror-k1"] = "bags"
+    -- the slots' own buttons, as the open bags laid them out before the fight
+    for i = 1, #BAGS do
+        handle.attributes["bags-p" .. i] = open and 1 or 0
+    end
 end
 
 -- The game's open-bags key in a fight: the opener's wrapper with the secure frame as owner. False: the click is
@@ -416,6 +430,33 @@ testRunner:addSuite("CombatMirror", {
         handle.attributes["bags-v1"] = ""
         openBags(handle)
         t:assertNil(handle.refs.use.attributes.item)
+    end,
+
+    ["bags open as the fight began: enter is a secure click of the slot's own button"] = function(t)
+        local handle = bagsFight(true)
+        openBags(handle)
+        t:assertEqual(handle.bindings.ENTER, "WowVisionCombatPick_bags1:LeftButton")
+        click(handle, "down")
+        t:assertEqual(handle.bindings.ENTER, "WowVisionCombatPick_bags2:LeftButton")
+        click(handle, "nextWindow")
+        t:assertEqual(handle.bindings.ENTER, "leftClick", "out of the list enter is the frame's again")
+    end,
+
+    ["bags opened in the fight: enter stays with addon code, which says why"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        t:assertEqual(handle.bindings.ENTER, "leftClick")
+        click(handle, "leftClick")
+        t:assertEqual(lastMirror(handle)[4], "leftClick")
+    end,
+
+    ["closed and opened again in the fight: the old buttons are not trusted"] = function(t)
+        local handle = bagsFight(true)
+        openBags(handle)
+        openBags(handle)
+        openBags(handle)
+        t:assertEqual(handle.attributes.mode, "bags")
+        t:assertEqual(handle.bindings.ENTER, "leftClick")
     end,
 
     ["out of a fight the opener does what the button does"] = function(t)
