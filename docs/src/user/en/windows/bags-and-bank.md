@@ -10,6 +10,8 @@ The bags window is a background window. It also opens by itself next to a mercha
 
 Close the bags the way the game does, by pressing the bag key again.
 
+In a fight the bags work too, as a list by bag and slot: see [Menus in combat](../world/combat.md#your-bags-b).
+
 If the addon Sku is loaded, WowVision leaves the bags to Sku and does not read them.
 
 ## Bag shape: grid or list

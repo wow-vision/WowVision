@@ -18,6 +18,8 @@ Open the pane with the game's own character key (C unless you changed it). The g
 
 Press Escape to close it. WowVision closes the game's own panel for you.
 
+In a fight the game does not let addons open the pane; the character key then opens a list of your equipment: see [Menus in combat](../world/combat.md#your-equipment-c).
+
 If the Sku addon is loaded too, WowVision does not read this window, to avoid two addons fighting over the same keys. Switch Sku off if you want WowVision to read the pane.
 
 You can switch WowVision's reading of this window off and on with the Enabled toggle: open the WowVision menu with Shift+F1, go to Windows, then Character. See [The WowVision menu](../basics/menu-and-settings.md).

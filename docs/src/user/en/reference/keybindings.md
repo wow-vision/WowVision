@@ -29,6 +29,8 @@ In combat, WowVision hands the window keys back to the game (see [Combat](../wor
 | Previous Window | Ctrl+Shift+Tab | Switch to the previous open window |
 | Close | Escape | Goes back one level or closes WowVision's own screens and menus. On game windows the game's own Escape closes the window |
 
+Each of these keys, and Enter, Backspace, Shift+F10 and Space, also has a key of its own for fights, named "In Combat:" and the key ("In Combat: Up"). Unbound, the fight uses the key above. See [Menus in combat](../world/combat.md#menus-in-combat).
+
 ## Acting on elements
 
 | Action | Default key | Notes |

@@ -31,6 +31,8 @@ Im Kampf gibt WowVision die Fenstertasten ans Spiel zurück (siehe [Kampf](../wo
 | Vorheriges Fenster (Previous Window) | Strg+Umschalt+Tab | Zum vorherigen geöffneten Fenster wechseln |
 | Schließen (Close) | Esc | Geht eine Ebene zurück oder schließt die eigenen Bildschirme und Menüs von WowVision. In Spielfenstern schließt das Esc des Spiels das Fenster |
 
+Jede dieser Tasten, dazu Eingabe, Rücktaste, Umschalt+F10 und Leertaste, hat auch eine eigene Taste für den Kampf, benannt „Im Kampf:“ und die Taste („Im Kampf: Hoch“). Unbelegt benutzt der Kampf die Taste oben. Siehe [Menüs im Kampf](../world/combat.md#menüs-im-kampf).
+
 ## Auf Elemente einwirken
 
 | Aktion | Standardtaste | Hinweise |

@@ -10,6 +10,8 @@ Das Taschenfenster ist ein Hintergrundfenster. Es öffnet sich auch von selbst n
 
 Schließe die Taschen so, wie es das Spiel tut: Drücke die Taschentaste noch einmal.
 
+Im Kampf funktionieren die Taschen ebenfalls, als Liste nach Tasche und Platz: siehe [Menüs im Kampf](../world/combat.md#deine-taschen-b).
+
 Ist das Addon Sku geladen, überlässt WowVision die Taschen Sku und liest sie nicht.
 
 ## Form der Tasche: Raster oder Liste
