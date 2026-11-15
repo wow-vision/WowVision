@@ -230,6 +230,29 @@ function ResourceMonitor:renderGraphSettings(builder)
             builder:addItem(graph.ControlId.structural("field:" .. field.key), settings.controlFor(field, self))
         end
     end
+    local monitor = self
+    builder:addItem(
+        graph.ControlId.structural("steps"),
+        graph.nodes.button({
+            label = function()
+                return L["Steps"] .. " (" .. #(monitor.rules or {}) .. ")"
+            end,
+            opensLevel = true,
+            onActivate = function()
+                settings.pushScreen("steps:" .. tostring(monitor), function(screen)
+                    monitor:renderStepAlerts(screen)
+                end)
+            end,
+        })
+    )
+end
+
+-- The Steps submenu: one button per step, each opening the step's alert
+-- like any alert button in the addon (Enabled, Sound Alert, TTS Alert).
+function ResourceMonitor:renderStepAlerts(builder)
+    local graph = WowVision.graph
+    local settings = graph.settings
+    builder:pushContext("steps", L["Steps"])
     for _, rule in ipairs(self.rules or {}) do
         local step = rule
         builder:addItem(
@@ -247,6 +270,7 @@ function ResourceMonitor:renderGraphSettings(builder)
             })
         )
     end
+    builder:popContext()
 end
 
 function ResourceMonitor:isCounted()

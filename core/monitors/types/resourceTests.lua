@@ -173,6 +173,14 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
             -- step that opens the step's alert ("1": Enabled, Sound, TTS)
             local savedGraph = WowVision.graph
             local items, pushed, rendered = {}, nil, nil
+            local stepItems = {}
+            local screenBuilder = {
+                pushContext = function() end,
+                popContext = function() end,
+                addItem = function(_, id, vtable)
+                    tinsert(stepItems, vtable)
+                end,
+            }
             WowVision.graph = {
                 ControlId = {
                     structural = function(key)
@@ -193,7 +201,7 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
                     end,
                     pushScreen = function(key, render)
                         pushed = key
-                        render("screen")
+                        render(screenBuilder)
                     end,
                     renderInto = function(_, set)
                         rendered = set
@@ -208,13 +216,19 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
             monitor:renderGraphSettings(builder)
             local labels = {}
             for _, item in ipairs(items) do
-                tinsert(labels, item.label)
+                tinsert(labels, type(item.label) == "function" and item.label() or item.label)
             end
             local text = table.concat(labels, ",")
-            t:assertNil(text:find("rules", 1, true), "no steps list")
+            t:assertNil(text:find("rules", 1, true), "no rule list")
             t:assertNil(text:find("builtFor", 1, true))
-            t:assertEqual(text:sub(-12), ",0,1,2,3,4,5")
-            items[#items - 4].onActivate()
+            t:assertEqual(labels[#labels], "Steps (6)")
+            items[#items].onActivate()
+            labels = {}
+            for _, item in ipairs(stepItems) do
+                tinsert(labels, item.label)
+            end
+            t:assertEqual(table.concat(labels, ","), "0,1,2,3,4,5")
+            stepItems[2].onActivate()
             WowVision.graph = savedGraph
             t:assertNotNil(pushed)
             t:assertEqual(rendered, monitor.rules[2]:getAlert().parameters)
