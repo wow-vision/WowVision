@@ -855,7 +855,10 @@ testRunner:addSuite("CombatPopups", {
             host:open({
                 key = "popup",
                 render = function(builder)
-                    builder:addItem(sid("accept"), nodes.proxyButton({ target = button, combatClick = true, hover = false }))
+                    builder:addItem(
+                        sid("accept"),
+                        nodes.proxyButton({ target = button, combatClick = true, hover = false })
+                    )
                 end,
             })
             host:combatKey("leftClick")
