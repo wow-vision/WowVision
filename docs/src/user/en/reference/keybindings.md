@@ -142,6 +142,14 @@ The roll keys act on the first roll window on screen. With none open you hear "N
 
 See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
 
+## Trade
+
+| Action | Default key | Notes |
+|---|---|---|
+| Accept Trade | Alt+Ctrl+T | Accepts the open trade, also in combat. Without one you hear "No trade open"; after your own acceptance "Already accepted, waiting for" and the other player |
+
+See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
+
 ## Group invitations
 
 | Action | Default key | Notes |

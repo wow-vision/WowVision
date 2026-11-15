@@ -146,6 +146,14 @@ Die Würfeltasten wirken auf das erste Würfelfenster auf dem Bildschirm. Ist ke
 
 Siehe [Beute, Handel und Post](../windows/loot-trade-mail.md).
 
+## Handel
+
+| Aktion | Standardtaste | Hinweise |
+|---|---|---|
+| Handel annehmen (Accept Trade) | Alt+Strg+T | Nimmt den offenen Handel an, auch im Kampf. Ist keiner offen, hörst du "Kein Handel offen"; nach deiner eigenen Zustimmung "Bereits angenommen, warte auf" und den anderen Spieler |
+
+Siehe [Beute, Handel und Post](../windows/loot-trade-mail.md).
+
 ## Gruppeneinladungen
 
 | Aktion | Standardtaste | Hinweise |
