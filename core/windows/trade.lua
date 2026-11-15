@@ -114,6 +114,52 @@ local function render(builder, screen)
     builder:popContext()
 end
 
+-- Accepting the trade without the trade window, also in combat (the window cannot take the keys in a fight). The
+-- same way the group invitation is accepted (popups.lua acceptInvite): the trade button's own click, which runs the
+-- game's AcceptTrade. The button is disabled while your acceptance stands (TradeFrame_SetAcceptState), so then the
+-- key says you are waiting for the other player. The game's security confirmation for a changed offer
+-- (Blizzard_SecureTransferUI) is forbidden to addons: its own dialog has to be answered.
+function module.acceptTrade()
+    if TradeFrame == nil or not TradeFrame:IsShown() then
+        WowVision:notify(L["No trade open"])
+        return false
+    end
+    if TradeFrame.acceptState == 1 then
+        local partner = TradeFrameRecipientNameText ~= nil and TradeFrameRecipientNameText:GetText() or nil
+        WowVision:notify(WowVision.secrets.join({ L["Already accepted, waiting for"], partner }, " "))
+        return false
+    end
+    if not TradeFrameTradeButton:IsEnabled() then
+        WowVision:notify(L["Trade cannot be accepted now"])
+        return false
+    end
+    TradeFrameTradeButton:Click()
+    WowVision:notify(L["Trade accepted"])
+    return true
+end
+
+-- A changed offer after an acceptance: the server answers the next acceptance with the game's security confirmation,
+-- a dialog of its own that addons cannot touch, and the trade button does nothing until it is answered. Said, so the
+-- trade does not seem stuck.
+module:registerEvent("event", "SECURE_TRANSFER_CONFIRM_TRADE_ACCEPT")
+
+function module:onEvent(event)
+    if event == "SECURE_TRANSFER_CONFIRM_TRADE_ACCEPT" then
+        WowVision:notify(L["Confirm the trade in the game's security window"])
+    end
+end
+
+module:registerBinding({
+    type = "Function",
+    key = "trade/accept",
+    inputs = { "CTRL-T" },
+    label = L["Accept Trade"],
+    interruptSpeech = true,
+    func = function()
+        module.acceptTrade()
+    end,
+})
+
 module:registerWindow({
     type = "FrameWindow",
     name = "trade",
