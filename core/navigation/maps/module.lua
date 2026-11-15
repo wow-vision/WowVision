@@ -329,8 +329,39 @@ end
 -- The entry point preselected: the nearest, while swimming the nearest in
 -- water (only the engine's points know water). Second result: true when
 -- swimming found none in water.
+--
+-- On dry land the nearest entry at the height of the last network point reached (module:rememberHeight) comes first,
+-- unless the navigation setting "Guess the Start From the Last Height" is off.
 function module:preselectedEntry(entries)
-    return WowVision.Router.preselectEntry(entries, self:inWater())
+    return WowVision.Router.preselectEntry(entries, self:inWater(), self:lastKnownHeight())
+end
+
+-- The height of the last physical waypoint of a route the player reached ({ z, map }); the map keeps a height from
+-- another continent or instance from meaning anything here.
+module.lastHeight = nil
+
+-- A waypoint of a running route was reached: its height is remembered when it is a point of the network itself (the
+-- route's virtual points -- a start, a last leg -- are not) and was walked to, not stepped to with Ctrl-W.
+function module:rememberHeight(wp)
+    if wp == nil or wp.physical ~= true or type(wp.z) ~= "number" or self.stepping then
+        return
+    end
+    local _, _, _, map = UnitPosition("player")
+    self.lastHeight = { z = wp.z, map = map }
+end
+
+-- The remembered height while it applies: the setting is on and the player is on the map it was reached on. Nil
+-- otherwise.
+function module:lastKnownHeight()
+    local last = self.lastHeight
+    if last == nil or WowVision.base.navigation.settings.guessStartHeight == false then
+        return nil
+    end
+    local _, _, _, map = UnitPosition("player")
+    if map ~= last.map then
+        return nil
+    end
+    return last.z
 end
 
 -- Straight-line beacon to a world position (no routing). onArrive, if
@@ -893,7 +924,8 @@ local REMAINING_DELAY = 0.3
 function module:pathfind(path)
     self.beacon = nil
     self.path = path
-    path.events.arriveAtWaypoint:subscribe(self, function()
+    path.events.arriveAtWaypoint:subscribe(self, function(_, _, _, waypoint)
+        self:rememberHeight(waypoint)
         module:fireAlert("beacon", { action = "arrived" })
         if not self.stepping and WowVision.base.navigation.settings.announceRemaining then
             C_Timer.After(REMAINING_DELAY, function()
