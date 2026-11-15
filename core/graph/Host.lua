@@ -727,7 +727,11 @@ end
 function GraphHost:_syncCloseKey()
     local stack = self:focusedStack()
     local config = stack ~= nil and stack.config or nil
-    local owns = stack ~= nil and (#stack.screens > 1 or (config ~= nil and config.captureClose == true))
+    local capture = config ~= nil and config.captureClose or nil
+    if type(capture) == "function" then
+        capture = capture()
+    end
+    local owns = stack ~= nil and (#stack.screens > 1 or capture == true)
     local target = nil
     if stack ~= nil and not owns and config ~= nil and config.closeClick ~= nil then
         target = config.closeClick()

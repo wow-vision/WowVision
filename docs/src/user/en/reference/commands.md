@@ -27,6 +27,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv close | Closes every WowVision window | all |
 | /wv version | Prints the WowVision version | all |
 | /wv accept | Accepts a group invitation, also in combat | all |
+| /wv pendingtest | Shows a test box that waits like a group invitation | all |
 | /beacon | Sets a beacon, routes to a named place, or reads your position | all |
 | /focus1 to /focus5 | Sets a virtual focus target | all, not with Sku |
 | /pquit | Leaves your party | all, not with Sku |
@@ -86,6 +87,10 @@ Prints the installed WowVision version to your chat window, for example V0.9.0, 
 ### /wv accept
 
 Accepts the group invitation that is shown and says "Group invitation accepted". It also works in combat, where WowVision cannot open the invitation popup. Without an invitation it says "No group invitation". An invitation that asks for a role needs a checked role first, otherwise it says "Choose a role first". The Accept Group Invitation key does the same; it is unbound. Versions: all. See [Group Finder](../windows/group-finder.md).
+
+### /wv pendingtest
+
+Shows a test box that waits like a group invitation: it ignores Escape in the game and runs out after one minute; its Accept and Decline buttons only write to the chat. Use it to try Pending without a group. Being shown by WowVision, the test box makes an Escape that goes to the game report a blocked action while it is open; with Pending Windows on its first choice Escape never goes to the game there, on the other choices the command says so first. The game's own boxes do not do this. Versions: all. See [Pending](../windows/system.md#pending-a-question-that-waits).
 
 ### /beacon
 

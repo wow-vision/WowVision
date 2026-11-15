@@ -9,7 +9,8 @@ local graph = WowVision.graph
 --   render          function(builder, screen) -- add nodes; no return needed
 --   wrap            tab wraps between stops (default true)
 --   captureClose    hold the close key while this stack is focused (frameless
---                   windows the game cannot close for us)
+--                   windows the game cannot close for us); a function asked
+--                   every update (a popup waiting for an answer, pending.lua)
 --   closeClick      function() -- a button of the game that steps back a view
 --                   inside the window, or nil; while it returns one the close
 --                   key clicks it instead of going to the game

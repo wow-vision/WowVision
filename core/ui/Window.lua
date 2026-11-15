@@ -226,9 +226,14 @@ function FrameWindow:getFrame()
     return frame
 end
 
+-- A frame put aside to Pending (windows/pending.lua) stays on screen, and the window counts as closed.
+local function putAside(frame)
+    return WowVision.pending ~= nil and WowVision.pending.isAside(frame)
+end
+
 function FrameWindow:isOpen()
     local frame = self:getFrame()
-    return frame and frame:IsShown() and frame:IsVisible()
+    return frame and frame:IsShown() and frame:IsVisible() and not putAside(frame)
 end
 
 -- Inlined checkState for performance - avoids method call overhead
@@ -242,7 +247,7 @@ function FrameWindow:checkState()
         end
     end
     -- Inline isOpen check
-    local nowOpen = frame and frame:IsShown() and frame:IsVisible()
+    local nowOpen = frame and frame:IsShown() and frame:IsVisible() and not putAside(frame)
     local wasOpen = self._isCurrentlyOpen
     if nowOpen ~= wasOpen then
         self._isCurrentlyOpen = nowOpen

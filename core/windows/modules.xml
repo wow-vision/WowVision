@@ -14,6 +14,7 @@
 <Script file="mail.lua" />
   <Script file="merchant.lua" />
 <Script file="popups.lua" />
+  <Script file="pending.lua" />
 <Script file="colorPicker.lua" />
   <Script file="RolePoll.lua" />
   <Script file="guildInvite.lua" />
