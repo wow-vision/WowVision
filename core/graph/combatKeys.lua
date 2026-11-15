@@ -22,12 +22,12 @@ local graph = WowVision.graph
 -- change made in combat applies when the fight ends.
 --
 -- What cannot work in combat: an entry whose Enter or Backspace is a secure click of a game button (the click
--- button cannot be pointed at another frame in combat). Those say so (Host:combatAction).
+-- button cannot be pointed at another frame in combat). Those say so (Host:combatKey).
 local combatKeys = {}
 graph.combatKeys = combatKeys
 
 -- The menu keys taken while a menu is open: the graph host's navigation keymaps, the close key, and the focused
--- entry's keys that addon code answers (the clicks run the entry's own Function binding, the tooltip reads it).
+-- entry's own keys (Host:combatKey runs the entry's binding for a key where it has one, as out of combat).
 combatKeys.MENU_KEYS = {
     "up",
     "down",
@@ -356,11 +356,10 @@ function combatKeys.onKey(action)
     local host = WowVision.graphHost
     log(action .. ", " .. #host.stacks .. " open")
     if action == "close" then
+        -- Quiet: WowVision's own windows play their closing sound.
         local remaining = WowVision.UIHost.windowManager:closeOwnWindows()
-        if #remaining == 0 then
-            WowVision:notify(L["Menus closed"])
-        else
-            WowVision:notify(L["Menus closed, still open"] .. ": " .. table.concat(remaining, ", "))
+        if #remaining > 0 then
+            log("still open: " .. #remaining)
         end
         return
     end
@@ -368,11 +367,7 @@ function combatKeys.onKey(action)
         WowVision:notify(L["No menu open, Escape gives the keys back"])
         return
     end
-    if action == "leftClick" or action == "rightClick" or action == "tooltip" then
-        host:combatAction(action)
-        return
-    end
-    host:onKey(action)
+    host:combatKey(action)
 end
 
 -- /wv combatkeys: the state of the secure frame and, per staged key, what the game runs on it now.

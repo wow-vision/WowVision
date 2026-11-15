@@ -727,3 +727,115 @@ testRunner:addSuite("PageKeys", {
         end)
     end,
 })
+
+-- A menu key in combat (graph/combatKeys.lua hands it to Host:combatKey): the focused entry's own binding wins, as
+-- out of combat; a secure click it cannot point says so; without a binding the host moves as ever.
+local function withCombat(fn)
+    withHost(function(host, clock)
+        local savedConsts = WowVision.consts
+        WowVision.consts = { UI_DELAY = 0 }
+        WowVision.base.speech.stop = function() end
+        local ok, err = pcall(fn, host, clock)
+        WowVision.consts = savedConsts
+        if not ok then
+            error(err, 0)
+        end
+    end)
+end
+
+testRunner:addSuite("CombatMenuKeys", {
+    ["an entry's own arrow binding runs instead of the host's move"] = function(t)
+        withCombat(function(host)
+            local walked = 0
+            host:open({
+                key = "list",
+                render = function(builder)
+                    builder:addItem(sid("walker"), {
+                        announcements = { { text = "Walker" } },
+                        bindings = {
+                            {
+                                binding = "down",
+                                type = "Function",
+                                func = function()
+                                    walked = walked + 1
+                                end,
+                            },
+                        },
+                    })
+                    builder:addLabel(sid("below"), "Below")
+                end,
+            })
+            host:combatKey("down")
+            t:assertEqual(walked, 1)
+            t:assertEqual(focusedKey(host), "walker")
+        end)
+    end,
+
+    ["without a binding the arrow moves as out of combat"] = function(t)
+        withCombat(function(host)
+            host:open({ key = "list", render = list({ "One", "Two" }) })
+            host:focusedScreen().keyGraph:rerender()
+            host:combatKey("down")
+            t:assertEqual(focusedKey(host), "Two")
+        end)
+    end,
+
+    ["enter on a secure click says it cannot be done in combat"] = function(t)
+        withCombat(function(host)
+            local clicked = false
+            local frame = {
+                Click = function()
+                    clicked = true
+                end,
+            }
+            host:open({
+                key = "list",
+                render = function(builder)
+                    builder:addItem(sid("slot"), {
+                        announcements = { { text = "Slot" } },
+                        bindings = { { binding = "leftClick", type = "Click", target = frame } },
+                    })
+                end,
+            })
+            host:combatKey("leftClick")
+            t:assertFalse(clicked)
+            t:assertEqual(lastSpoken(host), "Not available in combat")
+        end)
+    end,
+
+    ["a click marked for combat runs the frame's own click"] = function(t)
+        withCombat(function(host)
+            local clicked, after = nil, false
+            local frame = {
+                Click = function(_, button)
+                    clicked = button
+                end,
+            }
+            host:open({
+                key = "list",
+                render = function(builder)
+                    builder:addItem(sid("tabs"), {
+                        announcements = { { text = "Chat" } },
+                        bindings = {
+                            {
+                                binding = "right",
+                                type = "Click",
+                                combatClick = true,
+                                emulatedKey = "LeftButton",
+                                target = function()
+                                    return frame
+                                end,
+                                postClick = function()
+                                    after = true
+                                end,
+                            },
+                        },
+                    })
+                end,
+            })
+            host:combatKey("right")
+            t:assertEqual(clicked, "LeftButton")
+            t:assertTrue(after)
+        end)
+    end,
+})

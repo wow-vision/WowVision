@@ -394,35 +394,73 @@ function GraphHost:_dropFocusInCombat()
     self._engageDeferred = false
 end
 
--- Enter, Backspace or the tooltip key in combat (graph/combatKeys.lua): the focused node's own binding for it, when
--- addon code can answer it (a Function binding); a secure click of a game button cannot be pointed at a frame in
--- combat, so that says so.
-function GraphHost:combatAction(binding)
+-- A menu key in combat (graph/combatKeys.lua). As out of combat, the focused entry's own binding for the key wins
+-- (a list behind one node walks itself on the arrows, chat switches its tabs on Left and Right); without one the host
+-- handles it. Addon code can run a Function binding, and a click marked combatClick (a game button that is not
+-- protected and whose own click script needs no secure call: the chat tabs). Any other secure click cannot be
+-- pointed at its frame in combat: on Enter or Backspace that says so; an arrow falls back to the host's own move.
+function GraphHost:combatKey(key)
+    local spec = nil
     local screen = self:focusedScreen()
-    if screen == nil or not screen.keyGraph:rerender() then
-        return
-    end
-    local node = screen.keyGraph:currentNode()
-    if node == nil then
-        return
-    end
-    for _, spec in ipairs(self:_nodeBindingSpecs(node)) do
-        if spec.binding == binding then
-            if spec.type ~= "Function" then
-                break
+    if screen ~= nil and screen.keyGraph:rerender() then
+        local node = screen.keyGraph:currentNode()
+        if node ~= nil then
+            for _, candidate in ipairs(self:_nodeBindingSpecs(node)) do
+                if candidate.binding == key then
+                    spec = candidate
+                    break
+                end
             end
-            if spec.interruptSpeech then
-                WowVision.base.speech:stop()
-            end
-            spec.func()
-            if spec.postClick ~= nil then
-                spec.postClick()
-            end
-            return
         end
     end
-    if binding ~= "tooltip" then
-        self:_speak(WowVision:getLocale()["Not available in combat"])
+    if spec ~= nil and spec.type == "Function" then
+        self:_runInCombat(spec, spec.func)
+        return
+    end
+    if spec ~= nil and spec.type == "Click" and spec.combatClick then
+        local target = spec.target
+        if type(target) == "function" then
+            target = target()
+        end
+        if target ~= nil then
+            self:_runInCombat(spec, function()
+                target:Click(spec.emulatedKey or "LeftButton")
+            end)
+        end
+        return
+    end
+    if key == "leftClick" or key == "rightClick" then
+        if spec ~= nil then
+            self:_speak(WowVision:getLocale()["Not available in combat"])
+        end
+        return
+    end
+    if key == "tooltip" then
+        return
+    end
+    self:onKey(key)
+end
+
+-- Run a binding's action the way its secure button would: speech stopped first where it asks, after the TTS delay,
+-- then its postClick.
+function GraphHost:_runInCombat(spec, action)
+    local function run()
+        action()
+        if spec.postClick ~= nil then
+            spec.postClick()
+        end
+    end
+    if spec.interruptSpeech then
+        WowVision.base.speech:stop()
+    end
+    local delay = spec.delay
+    if delay == nil then
+        delay = WowVision.consts.UI_DELAY or 0
+    end
+    if delay > 0 then
+        C_Timer.After(delay, run)
+    else
+        run()
     end
 end
 
