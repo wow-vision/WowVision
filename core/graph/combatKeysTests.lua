@@ -405,7 +405,6 @@ testRunner:addSuite("CombatMirror", {
 
     ["ctrl-tab to the other windows: backspace is the frame's again"] = function(t)
         local handle = bagsFight(false)
-        handle.attributes.others = 1
         openBags(handle)
         click(handle, "nextWindow")
         t:assertEqual(handle.attributes.mode, "")
@@ -414,12 +413,24 @@ testRunner:addSuite("CombatMirror", {
         t:assertEqual(handle.calls[#handle.calls][2], "otherWindow")
     end,
 
-    ["ctrl-tab with only the bags open stays in them"] = function(t)
+    ["ctrl-tab with only the bags open goes to the other windows, the next one back"] = function(t)
         local handle = bagsFight(false)
         openBags(handle)
         click(handle, "nextWindow")
+        t:assertEqual(handle.attributes.mode, "")
+        t:assertEqual(handle.calls[#handle.calls][2], "otherWindow")
+        click(handle, "nextWindow")
         t:assertEqual(handle.attributes.mode, "bags")
         t:assertEqual(handle.bindings.BACKSPACE, "WowVisionCombatUse:LeftButton")
+    end,
+
+    ["a window-opening key leaves the list being walked"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        opening(handle)
+        t:assertEqual(handle.attributes.mode, "")
+        t:assertEqual(handle.bindings.BACKSPACE, "rightClick")
+        t:assertEqual(handle.attributes.taken, 1)
     end,
 
     ["ctrl-tab goes from the bags to the equipment and back, each where it was left"] = function(t)
@@ -432,7 +443,6 @@ testRunner:addSuite("CombatMirror", {
         handle.attributes["equipment-f1"], handle.attributes["equipment-l1"] = 1, 2
         handle.attributes["equipment-f2"], handle.attributes["equipment-l2"] = 1, 2
         handle.attributes["equipment-open"] = 1
-        handle.attributes.others = 1
         openBags(handle)
         click(handle, "down")
         click(handle, "nextWindow")
@@ -477,7 +487,6 @@ testRunner:addSuite("CombatMirror", {
         t:assertEqual(handle.bindings.ENTER, "WowVisionCombatPick_bags1:LeftButton")
         click(handle, "down")
         t:assertEqual(handle.bindings.ENTER, "WowVisionCombatPick_bags2:LeftButton")
-        handle.attributes.others = 1
         click(handle, "nextWindow")
         t:assertEqual(handle.bindings.ENTER, "leftClick", "out of the list enter is the frame's again")
     end,

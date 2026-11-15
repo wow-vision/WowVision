@@ -100,9 +100,8 @@ end
 --
 -- Attributes: menu-n / menu-k<i> / menu-a<i> the staged inputs and their action names; rc-n / rc-k<i> the inputs of
 -- the right click among them; enabled 1 or 0 (the setting); menuopen 1 when a WowVision window is open (kept current
--- out of combat, read as the fight begins); othersopen likewise for windows other than the mirrored ones, and others
--- its value in the fight (a window-opening key sets it, Escape clears it); fighting 1 in a fight with the setting on;
--- taken 1 while the menu keys are bound to the frame.
+-- out of combat, read as the fight begins); fighting 1 in a fight with the setting on; taken 1 while the menu keys
+-- are bound to the frame.
 --
 -- Mirrored lists (registerMirror below): a window whose entries need a secure action in combat (Backspace uses a bag
 -- item) cannot have addon code point that action at the focused entry. So in such a list the secure side walks the
@@ -214,10 +213,10 @@ combatKeys.ENTER = [[
 ]]
 
 -- Ctrl-Tab in a fight with a mirrored window open: the secure side cycles the windows itself, so walking a list goes
--- on in the next. The ring: each open mirrored window in staged order, then one stop for WowVision's other windows
--- (others: they were open as the fight began or a window-opening key was pressed since). A mirrored window is
--- walked on from the entry it was left on (m-last). With no mirrored window open the key goes to addon code, which
--- cycles the windows as ever.
+-- on in the next. The ring: each open mirrored window in staged order, then one stop for every other window
+-- (addon code focuses the next of them, a popup that opened in the fight too, or says there is none). A mirrored
+-- window is walked on from the entry it was left on (m-last). With no mirrored window open the key goes to addon
+-- code, which cycles the windows as ever.
 combatKeys.CYCLE = [[
     local step = ...
     local count = self:GetAttribute("mirror-n") or 0
@@ -241,7 +240,7 @@ combatKeys.CYCLE = [[
                 target = name
                 break
             end
-        elseif self:GetAttribute("others") == 1 then
+        else
             target = ""
             break
         end
@@ -289,7 +288,6 @@ combatKeys.COMBAT = [[
         return
     end
     self:SetAttribute("fighting", 1)
-    self:SetAttribute("others", self:GetAttribute("othersopen"))
     for i = 1, self:GetAttribute("ok-n") or 0 do
         self:SetBindingClick(true, self:GetAttribute("ok-k" .. i), self:GetAttribute("ok-o" .. i), "LeftButton")
     end
@@ -323,7 +321,6 @@ combatKeys.CLICK = [[
             self:RunAttribute("_leave")
             self:CallMethod("onMirror", mode, 0, "close")
         end
-        self:SetAttribute("others", 0)
         self:RunAttribute("_release")
         self:CallMethod("onCombatKey", button)
         return
@@ -413,11 +410,11 @@ combatKeys.CLICK = [[
     self:CallMethod("onCombatKey", button)
 ]]
 
--- The wrapper on a window-opening binding's button: in a fight, take the menu keys; the button then runs its own
--- action. owner is the secure frame.
+-- The wrapper on a window-opening binding's button: in a fight, leave a mirrored list being walked (the window that
+-- opens gets the keys) and take the menu keys; the button then runs its own action. owner is the secure frame.
 combatKeys.OPENING = [[
     if owner:GetAttribute("fighting") == 1 then
-        owner:SetAttribute("others", 1)
+        owner:RunAttribute("_leave")
         owner:RunAttribute("_take")
     end
 ]]
@@ -820,15 +817,6 @@ function combatKeys.isMirrorStack(stack)
 end
 
 local function tickMirrors()
-    local others = 0
-    for _, stack in ipairs(WowVision.graphHost.stacks) do
-        if not combatKeys.isMirrorStack(stack) then
-            others = 1
-        end
-    end
-    if keysFrame:GetAttribute("othersopen") ~= others then
-        keysFrame:SetAttribute("othersopen", others)
-    end
     local startMode = ""
     for _, def in ipairs(combatKeys.mirrors) do
         local open = def.isOpen() and 1 or 0
@@ -963,10 +951,12 @@ function combatKeys.onKey(action)
         return
     end
     if action == "otherWindow" then
-        -- Ctrl-Tab from a mirrored window to WowVision's other windows (CYCLE)
-        host:focusStack(function(stack)
+        -- Ctrl-Tab from a mirrored window to the other windows (CYCLE); the next Ctrl-Tab goes on to a mirrored one
+        if not host:focusStack(function(stack)
             return not combatKeys.isMirrorStack(stack)
-        end)
+        end) then
+            WowVision:notify(L["No other window"])
+        end
         return
     end
     host:combatKey(action)
@@ -998,6 +988,27 @@ function combatKeys.putsAsideOnOpen(stack)
         config.onRequestClose(stack, "combat")
     end)
     return true
+end
+
+-- A window opened by itself in a fight while a mirrored list is walked: it stays behind (the secure side walks the list
+-- and would not follow the focus); its first line is read and the key that reaches it is named.
+function combatKeys.hintOtherWindow(stack)
+    local L = WowVision:getLocale()
+    local screen = stack.screens[#stack.screens]
+    local line = nil
+    if screen ~= nil and screen.keyGraph:rerender() then
+        line = graph.announcer.compose(nil, screen.keyGraph:currentNode())
+    end
+    local inputs = combatKeys.inputsFor(WowVision.input, "nextWindow")
+    local keyText = inputs[1] ~= nil and GetBindingText ~= nil and GetBindingText(inputs[1]) or inputs[1]
+    local parts = {}
+    if line ~= nil then
+        tinsert(parts, line)
+    end
+    if keyText ~= nil then
+        tinsert(parts, L["To answer, press"] .. " " .. keyText)
+    end
+    WowVision:notify(WowVision.secrets.join(parts, ", "))
 end
 
 -- A popup in front opened in a fight while the menu keys are the game's: say which key lands on it, a moment after

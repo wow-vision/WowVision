@@ -108,6 +108,14 @@ function GraphHost:open(config)
     if combat and graph.combatKeys.putsAsideOnOpen(stack) then
         return stack
     end
+    -- While the secure side walks a mirrored list in a fight (the bags) a window that opens stays behind: the
+    -- secure side would go on walking the list under it. Ctrl-Tab reaches it (graph/combatKeys.lua).
+    if graph.combatKeys ~= nil and graph.combatKeys.walking() ~= nil and InCombatLockdown() then
+        if config.waits then
+            graph.combatKeys.hintOtherWindow(stack)
+        end
+        return stack
+    end
     -- Background stacks (bags auto-opening at a vendor) never steal focus
     -- from an already-open stack; they are still reachable by stack cycling.
     if config.background and self.focusedIndex ~= nil and self.focusedIndex >= 1 and #self.stacks > 1 then
@@ -242,6 +250,10 @@ end
 function GraphHost:_renderFocused()
     local stack = self:focusedStack()
     local screen = self:focusedScreen()
+    -- only background stacks are open (a popup gone to Pending in a fight)
+    if screen == nil then
+        return
+    end
     if not screen.keyGraph:rerender() then
         -- The render produced nothing: the screen closed itself.
         if #stack.screens > 1 then
