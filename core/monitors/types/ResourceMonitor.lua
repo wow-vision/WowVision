@@ -214,7 +214,7 @@ ResourceMonitor:updateFields({
 
 function ResourceMonitor:initialize(config)
     self._last = nil
-    self._secretNoted = {}
+    self._hidden = {}
     monitors.Monitor.initialize(self, config)
 end
 
@@ -296,14 +296,21 @@ function ResourceMonitor:growSteps(maximum)
     end
 end
 
--- Hidden values: the resource stays silent while the game hides it. The
--- first time per resource and session it says so in the chat, with where
--- and whether in combat, so a dungeon run shows when that happens.
-function ResourceMonitor:noteSecret(power)
-    if self._secretNoted[power.key] then
-        return
+-- Hidden values: the resource stays silent while the game hides it. Every
+-- time a resource turns hidden or readable again the chat says so, with
+-- what is hidden and the state around it (where, combat, the power the
+-- game shows, the form, the game's own check, a WowVision menu open), so
+-- a log shows what the hiding goes with.
+local function hiddenDetails(power, currentHidden, maximumHidden)
+    local parts = {}
+    local which = {}
+    if currentHidden then
+        tinsert(which, "current")
     end
-    self._secretNoted[power.key] = true
+    if maximumHidden then
+        tinsert(which, "maximum")
+    end
+    tinsert(parts, table.concat(which, " and "))
     local where = "world"
     if IsInInstance ~= nil then
         local inInstance, instanceType = IsInInstance()
@@ -311,8 +318,37 @@ function ResourceMonitor:noteSecret(power)
             where = tostring(instanceType)
         end
     end
-    local combat = InCombatLockdown ~= nil and InCombatLockdown() and "in combat" or "out of combat"
-    print("WowVision resource monitor: " .. power.key .. " is hidden (" .. where .. ", " .. combat .. ")")
+    tinsert(parts, where)
+    tinsert(parts, InCombatLockdown ~= nil and InCombatLockdown() and "in combat" or "out of combat")
+    if UnitPowerType ~= nil then
+        local _, token = UnitPowerType("player")
+        tinsert(parts, "shown power " .. tostring(token))
+    end
+    if GetShapeshiftFormID ~= nil then
+        tinsert(parts, "form " .. tostring(GetShapeshiftFormID()))
+    end
+    if C_Secrets ~= nil and C_Secrets.ShouldUnitPowerBeSecret ~= nil then
+        tinsert(parts, "game check " .. tostring(C_Secrets.ShouldUnitPowerBeSecret("player", power.id)))
+    end
+    local host = WowVision.graphHost
+    if host ~= nil and host.focusedStack ~= nil then
+        local ok, stack = pcall(host.focusedStack, host)
+        tinsert(parts, "menu " .. ((ok and stack ~= nil) and "open" or "closed"))
+    end
+    return table.concat(parts, ", ")
+end
+
+function ResourceMonitor:noteHidden(power, currentHidden, maximumHidden)
+    local hidden = currentHidden or maximumHidden
+    if (self._hidden[power.key] or false) == hidden then
+        return
+    end
+    self._hidden[power.key] = hidden
+    if hidden then
+        print("WowVision resource: " .. power.key .. " hidden (" .. hiddenDetails(power, currentHidden, maximumHidden) .. ")")
+    else
+        print("WowVision resource: " .. power.key .. " readable again")
+    end
 end
 
 -- Read the resource: current and maximum, or nil while it is hidden or
@@ -320,8 +356,10 @@ end
 function ResourceMonitor:read(power)
     local current = UnitPower("player", power.id)
     local maximum = UnitPowerMax("player", power.id)
-    if WowVision.secrets.isSecret(current) or WowVision.secrets.isSecret(maximum) then
-        self:noteSecret(power)
+    local currentHidden = WowVision.secrets.isSecret(current)
+    local maximumHidden = WowVision.secrets.isSecret(maximum)
+    self:noteHidden(power, currentHidden, maximumHidden)
+    if currentHidden or maximumHidden then
         return nil
     end
     if maximum == nil or maximum <= 0 then

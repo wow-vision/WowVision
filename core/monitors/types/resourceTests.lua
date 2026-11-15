@@ -271,21 +271,24 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
         end)
     end,
 
-    ["a hidden resource stays silent and is noted once"] = function(t)
+    ["a hidden resource stays silent and the chat notes each turn"] = function(t)
         withGame(function()
             game.maximum[COMBO] = 5
             local container, field = boundList({ monitors = { _type = "array" } })
             field:addElement(container, { type = "Resource", powerType = "combopoints" })
             local monitor = container.monitors[1]
             monitor:update()
+            t:assertEqual(#game.printed, 0)
             game.secret = true
             monitor:update()
             monitor:update()
             t:assertEqual(#game.printed, 1)
+            t:assertEqual(game.printed[1], "WowVision resource: combopoints hidden (current, world, out of combat)")
             t:assertEqual(#game.played, 0)
             game.secret = false
             game.power[COMBO] = 2
             monitor:update()
+            t:assertEqual(game.printed[2], "WowVision resource: combopoints readable again")
             t:assertEqual(#game.played, 0, "the first read after hiding settles")
             game.power[COMBO] = 3
             monitor:update()
