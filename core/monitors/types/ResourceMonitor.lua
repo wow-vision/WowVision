@@ -3,13 +3,19 @@ local monitors = WowVision.monitors
 local steps = WowVision.resourceSteps
 local powersDB = WowVision.gameDB:get("Power")
 
--- Resource monitor: sounds and speech for the player's own resources, any
--- of them (combo points, mana, energy, rage, ...). The monitor holds the
--- resource, the step size and the speech settings; every step is a rule of
--- its own with one plain alert (a sound and a speech switch). Picking the
+-- Resource monitor: sounds and speech for the player's own resources
+-- (combo points, holy power, mana, energy, rage, ...). The monitor holds the
+-- resource, the step size and the speech settings; every step is stored as
+-- a rule with one plain alert (a sound and a speech switch), shown in the
+-- monitor's Steps submenu as an ordinary alert button. Picking the
 -- resource, the step size or a default builds the steps anew with those
--- defaults; after that each step is edited like any rule. The steps follow
--- Blizzard's Combat Audio Alerts (resourceSteps.lua).
+-- defaults; after that each step's alert is edited like any alert. The
+-- steps follow Blizzard's Combat Audio Alerts (resourceSteps.lua).
+--
+-- Retail and WoW: Forever hide the player's mana and energy from addons,
+-- even out of combat: a hidden value cannot be compared, so those are left
+-- out of the monitor's list. The Speak Main Resource key (resourceKey.lua)
+-- still speaks them.
 
 -- ---------------------------------------------------------------------------
 -- The speech output of a step: on or off. What it says and in which voice,
@@ -25,8 +31,8 @@ end
 
 -- ---------------------------------------------------------------------------
 -- A step: a count (counted resources) or a percent threshold (bars). Its
--- value and label come from the monitor's setup, so its menu is its alert's
--- menu and nothing else.
+-- value and label come from the monitor's setup; the monitor's Steps
+-- submenu shows only its alert.
 -- ---------------------------------------------------------------------------
 local ResourceStepRule = monitors.ruleRegistry:createType({ key = "ResourceStep" })
 
@@ -83,7 +89,6 @@ end
 -- ---------------------------------------------------------------------------
 local ResourceMonitor = monitors:createType("Resource")
 ResourceMonitor.label = L["Resource"]
-monitors.ResourceMonitor = ResourceMonitor
 
 -- Whether the monitor can follow a resource of the player's now: the game
 -- does not hide its value (Retail and WoW: Forever hide mana and energy,
@@ -203,8 +208,8 @@ ResourceMonitor:updateFields({
     {
         key = "rules",
         label = L["Steps"],
-        -- The steps show as alert buttons in the monitor's own menu
-        -- (renderGraphSettings below), not as a list of their own.
+        -- The steps show as alert buttons in the Steps submenu
+        -- (renderGraphSettings below), not as a rule list.
         showInUI = false,
         -- The setup builds the steps; there is nothing to add by hand.
         availableTypes = function()
@@ -215,7 +220,6 @@ ResourceMonitor:updateFields({
 
 function ResourceMonitor:initialize(config)
     self._last = nil
-    self._hidden = {}
     monitors.Monitor.initialize(self, config)
 end
 
@@ -228,9 +232,7 @@ function ResourceMonitor:getLabel()
 end
 
 -- The monitor's menu (core/graph/settings.lua renderObjectInto): its
--- settings, then one alert button per step, the way every alert in the
--- addon is a button in its owner's menu ("40%" opens Enabled, Sound Alert,
--- TTS Alert).
+-- settings, then the Steps submenu.
 function ResourceMonitor:renderGraphSettings(builder)
     local graph = WowVision.graph
     local settings = graph.settings
@@ -352,70 +354,13 @@ function ResourceMonitor:growSteps(maximum)
     end
 end
 
--- Hidden values: the resource stays silent while the game hides it. Every
--- time a resource turns hidden or readable again the chat says so, with
--- what is hidden and the state around it (where, combat, the power the
--- game shows, the form, the game's own check, a WowVision menu open), so
--- a log shows what the hiding goes with.
-local function hiddenDetails(power, currentHidden, maximumHidden)
-    local parts = {}
-    local which = {}
-    if currentHidden then
-        tinsert(which, "current")
-    end
-    if maximumHidden then
-        tinsert(which, "maximum")
-    end
-    tinsert(parts, table.concat(which, " and "))
-    local where = "world"
-    if IsInInstance ~= nil then
-        local inInstance, instanceType = IsInInstance()
-        if inInstance then
-            where = tostring(instanceType)
-        end
-    end
-    tinsert(parts, where)
-    tinsert(parts, InCombatLockdown ~= nil and InCombatLockdown() and "in combat" or "out of combat")
-    if UnitPowerType ~= nil then
-        local _, token = UnitPowerType("player")
-        tinsert(parts, "shown power " .. tostring(token))
-    end
-    if GetShapeshiftFormID ~= nil then
-        tinsert(parts, "form " .. tostring(GetShapeshiftFormID()))
-    end
-    if C_Secrets ~= nil and C_Secrets.ShouldUnitPowerBeSecret ~= nil then
-        tinsert(parts, "game check " .. tostring(C_Secrets.ShouldUnitPowerBeSecret("player", power.id)))
-    end
-    local host = WowVision.graphHost
-    if host ~= nil and host.focusedStack ~= nil then
-        local ok, stack = pcall(host.focusedStack, host)
-        tinsert(parts, "menu " .. ((ok and stack ~= nil) and "open" or "closed"))
-    end
-    return table.concat(parts, ", ")
-end
-
-function ResourceMonitor:noteHidden(power, currentHidden, maximumHidden)
-    local hidden = currentHidden or maximumHidden
-    if (self._hidden[power.key] or false) == hidden then
-        return
-    end
-    self._hidden[power.key] = hidden
-    if hidden then
-        print("WowVision resource: " .. power.key .. " hidden (" .. hiddenDetails(power, currentHidden, maximumHidden) .. ")")
-    else
-        print("WowVision resource: " .. power.key .. " readable again")
-    end
-end
-
--- Read the resource: current and maximum, or nil while it is hidden or
--- the player does not have it.
+-- Read the resource: current and maximum, or nil while the game hides it
+-- (the list leaves hidden ones out, but a saved pick or a game change can
+-- still meet one) or the player does not have it.
 function ResourceMonitor:read(power)
     local current = UnitPower("player", power.id)
     local maximum = UnitPowerMax("player", power.id)
-    local currentHidden = WowVision.secrets.isSecret(current)
-    local maximumHidden = WowVision.secrets.isSecret(maximum)
-    self:noteHidden(power, currentHidden, maximumHidden)
-    if currentHidden or maximumHidden then
+    if WowVision.secrets.isSecret(current) or WowVision.secrets.isSecret(maximum) then
         return nil
     end
     if maximum == nil or maximum <= 0 then
