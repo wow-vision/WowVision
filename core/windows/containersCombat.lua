@@ -79,6 +79,20 @@ local function shownItemButtons()
     return buttons
 end
 
+-- Entry index -> the item button the open bags show for that slot now.
+local function slotButtons()
+    local targets = {}
+    local byLocation = {}
+    for _, button in ipairs(shownItemButtons()) do
+        local bag, slot = module.slotLocation(button)
+        byLocation[bag .. ":" .. slot] = button
+    end
+    for i, entry in ipairs(slots) do
+        targets[i] = byLocation[entry.bag .. ":" .. entry.slot]
+    end
+    return targets
+end
+
 local function slotNode(bag, slot)
     return {
         controlType = graph.controlTypes.button,
@@ -203,16 +217,7 @@ WowVision.graph.combatKeys.registerMirror({
     -- in the game's code; addon code calling the pickup is refused in combat on WoW: Forever). The bags lay their
     -- buttons out as they open, so the buttons are known only for bags open as the fight began.
     clickTargets = function()
-        local targets = {}
-        local byLocation = {}
-        for _, button in ipairs(shownItemButtons()) do
-            local bag, slot = module.slotLocation(button)
-            byLocation[bag .. ":" .. slot] = button
-        end
-        for i, entry in ipairs(slots) do
-            targets[i] = byLocation[entry.bag .. ":" .. entry.slot]
-        end
-        return targets
+        return slotButtons()
     end,
     onMirror = function(index, why)
         if why == "leftClick" then
@@ -239,6 +244,64 @@ WowVision.graph.combatKeys.registerMirror({
 })
 
 -- A bag swapped or bought changes the list: staged again out of combat.
+-- Measuring (log only, nothing changes): does every opening of the bags give each slot the same item button? If it
+-- does, a pick button armed out of combat stays right for bags opened in the fight, and Enter could pick up there
+-- too. Logged on every opening, in and out of combat, against the opening before.
+local lastLayout = nil
+local wasOpen = false
+local nextLook = 0
+
+local function measureLayout()
+    local layout = slotButtons()
+    local shown, changed, compared = 0, 0, 0
+    for i in ipairs(slots) do
+        local button = layout[i]
+        if button ~= nil then
+            shown = shown + 1
+            if lastLayout ~= nil and lastLayout[i] ~= nil then
+                compared = compared + 1
+                if lastLayout[i] ~= button then
+                    changed = changed + 1
+                end
+            end
+        end
+    end
+    local when = InCombatLockdown() and "in combat" or "out of combat"
+    if lastLayout == nil then
+        WowVision.graph.combatKeys.log("bags layout " .. when .. ": " .. shown .. " slots shown, first opening")
+    else
+        WowVision.graph.combatKeys.log(
+            "bags layout "
+                .. when
+                .. ": "
+                .. shown
+                .. " slots shown, "
+                .. changed
+                .. " of "
+                .. compared
+                .. " got another button than at the last opening"
+        )
+    end
+    if shown > 0 then
+        lastLayout = layout
+    end
+end
+
+local layoutWatch = CreateFrame("Frame")
+layoutWatch:SetScript("OnUpdate", function()
+    local now = GetTime()
+    if now < nextLook then
+        return
+    end
+    nextLook = now + 0.25
+    local open = #shownItemButtons() > 0
+    if open and not wasOpen then
+        -- the frames lay their buttons out as they show; read them a moment later
+        C_Timer.After(0.3, measureLayout)
+    end
+    wasOpen = open
+end)
+
 local events = CreateFrame("Frame")
 events:RegisterEvent("BAG_CONTAINER_UPDATE")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
