@@ -170,13 +170,26 @@ function GraphHost:isOpen()
     return #self.stacks > 0
 end
 
+-- What a stack is called: the outermost level of its focused entry (the window's own context, "Bags"), or nil.
+function GraphHost:stackTitle(stack)
+    local screen = stack.screens[#stack.screens]
+    if screen == nil or not screen.keyGraph:rerender() then
+        return nil
+    end
+    local node = screen.keyGraph:currentNode()
+    while node ~= nil and node.parent ~= nil do
+        node = node.parent
+    end
+    return node ~= nil and announcer.firstPartText(node) or nil
+end
+
 -- ---- per-tick pull: rebuild, announce-once, live watch, binding sync ----
 
 function GraphHost:update()
     local combat = InCombatLockdown()
     local combatKeys = graph.combatKeys
     if not combat and combatKeys ~= nil then
-        combatKeys.setMenuOpen(#self.stacks > 0)
+        combatKeys.tick(#self.stacks > 0)
     end
     if #self.stacks == 0 then
         if combat then

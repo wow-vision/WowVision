@@ -205,6 +205,7 @@ module:registerWindow({
 module:registerBinding({
     type = "Function",
     key = "bars/openWindow",
+    opensWindow = true,
     inputs = { "SHIFT-F4" },
     label = L["Action Bars"],
     interruptSpeech = true,

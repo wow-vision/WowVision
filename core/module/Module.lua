@@ -472,6 +472,11 @@ function Module:enable()
 
     self.bindings:activateAll()
 
+    -- the window-opening keys of these bindings keep their combat wrapper (graph/combatKeys.lua)
+    if WowVision.graph ~= nil and WowVision.graph.combatKeys ~= nil then
+        WowVision.graph.combatKeys.stage()
+    end
+
     for _, v in ipairs(self.registeredEvents) do
         self:_addEvent(v)
     end
@@ -523,6 +528,11 @@ function Module:disable()
     self:_markUpdateHandlersDirty()
 
     self.bindings:deactivateAll()
+
+    -- the window-opening keys of these bindings keep their combat wrapper (graph/combatKeys.lua)
+    if WowVision.graph ~= nil and WowVision.graph.combatKeys ~= nil then
+        WowVision.graph.combatKeys.stage()
+    end
 
     for _, submodule in ipairs(self.submodules) do
         submodule:disable()

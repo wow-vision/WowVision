@@ -523,6 +523,7 @@ module:registerWindow({
 module:registerBinding({
     type = "Script",
     key = "scanner/open",
+    opensWindow = true,
     label = L["Scanner"],
     inputs = { "F9" },
     script = "/run WowVision.base.scanner:openFromKey()",

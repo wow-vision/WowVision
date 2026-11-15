@@ -490,6 +490,7 @@ module:registerWindow({
 module:registerBinding({
     type = "Script",
     key = "chat/openWindow",
+    opensWindow = true,
     label = L["Chat"],
     inputs = { "SHIFT-F3" },
     script = "/run WowVision.UIHost:openWindow('chat')",

@@ -7,17 +7,19 @@ local graph = WowVision.graph
 -- code in combat, so the host lets them go at combat start and the menus fall silent until the fight ends. Secure
 -- code may still change the bindings of its own frame in combat (RestrictedFrames.lua, HANDLE:SetBindingClick and
 -- HANDLE:ClearBinding), and it may call back into addon code (HANDLE:CallMethod, run insecure). So in combat one
--- secure frame holds the keys:
---   * a state driver on [combat] (the game's own SecureStateDriver) binds the opening keys (the WowVision menu key)
---     to the frame for the whole fight, and takes the menu keys too when a menu was open as the fight began;
---   * an opening key takes the menu keys; the close key (Escape) lets them go, so with no menu open every key keeps
---     its game function;
---   * every key is handed to addon code by name (onKey below), where the graph does what it does out of combat.
+-- secure frame holds the menu keys:
+--   * a state driver on [combat] (the game's own SecureStateDriver) tells the frame when a fight begins and ends; it
+--     takes the menu keys at once when a WowVision window was open as the fight began, and lets every key go after;
+--   * a key that opens a WowVision window (a binding declared with opensWindow) takes the menu keys: its own secure
+--     button carries a wrapper of this frame (SecureHandlerWrapScript), so the binding does what it always does and
+--     the wrapper takes the keys before it, in the same key press;
+--   * the close key (Escape) lets them go, so with no menu open every key keeps its game function;
+--   * every menu key is handed to addon code by name (onKey below), where the graph does what it does out of combat.
 -- The only thing the secure side decides is whether the menu keys are taken. It never needs to know what a key does.
 --
--- Every key is the player's own: the WowVision keymaps (the menu keys, and the WowVision menu key), or for a menu
--- key its own combat keymap ("In Combat: Up") where one is set. They are written onto the frame out of combat
--- (stage), on every rebind and setting change; a change made in combat applies when the fight ends.
+-- Every key is the player's own: the WowVision keymaps, or for a menu key its own combat keymap ("In Combat: Up")
+-- where one is set. They are written onto the frame out of combat (stage), on every rebind and setting change; a
+-- change made in combat applies when the fight ends.
 --
 -- What cannot work in combat: an entry whose Enter or Backspace is a secure click of a game button (the click
 -- button cannot be pointed at another frame in combat). Those say so (Host:combatAction).
@@ -44,11 +46,6 @@ combatKeys.MENU_KEYS = {
     "tooltip",
 }
 
--- The keys that open a menu, held the whole fight: each is a WowVision Function binding whose own func runs.
-combatKeys.OPEN_KEYS = {
-    "wowvision/menu",
-}
-
 -- The combat keymap of a menu key: its inputs replace the menu key's in combat when the player set any.
 function combatKeys.combatKeymap(key)
     return "combat/" .. key
@@ -70,8 +67,8 @@ end
 
 -- The flat list written onto the secure frame: { input, action } per input, in the order of the given keys. An input
 -- already taken by an earlier key is skipped (one key, one action).
-function combatKeys.entries(inputManager, keys, taken)
-    taken = taken or {}
+function combatKeys.entries(inputManager, keys)
+    local taken = {}
     local entries = {}
     for _, key in ipairs(keys) do
         for _, input in ipairs(combatKeys.inputsFor(inputManager, key)) do
@@ -84,11 +81,26 @@ function combatKeys.entries(inputManager, keys, taken)
     return entries
 end
 
+-- The secure buttons of the bindings that open a WowVision window, as activated right now (one per input).
+function combatKeys.openingFrames(inputManager)
+    local frames = {}
+    for _, binding in ipairs(inputManager.bindings.orderedBindings) do
+        if binding.opensWindow then
+            for _, activated in ipairs(binding.activated) do
+                for _, frame in ipairs(activated.frames) do
+                    tinsert(frames, frame)
+                end
+            end
+        end
+    end
+    return frames
+end
+
 -- ---- the secure frame ----
 --
--- Attributes: menu-n / menu-k<i> / menu-a<i> and open-n / open-k<i> / open-a<i> the staged inputs and their action
--- names; enabled 1 or 0 (the setting); menuopen 1 when a WowVision window is open (kept current out of combat, read
--- as the fight begins); taken 1 while the menu keys are bound to the frame.
+-- Attributes: menu-n / menu-k<i> / menu-a<i> the staged inputs and their action names; enabled 1 or 0 (the setting);
+-- menuopen 1 when a WowVision window is open (kept current out of combat, read as the fight begins); fighting 1 in a
+-- fight with the setting on; taken 1 while the menu keys are bound to the frame.
 
 -- Bind the menu keys to the frame.
 combatKeys.TAKE = [[
@@ -112,31 +124,36 @@ combatKeys.RELEASE = [[
     end
 ]]
 
--- The fight begins (true) or ends (false). Ending clears everything the frame bound.
+-- The fight begins (true) or ends (false). Ending lets every key go.
 combatKeys.COMBAT = [[
     local fighting = ...
     self:ClearBindings()
     self:SetAttribute("taken", 0)
     if not fighting or self:GetAttribute("enabled") ~= 1 then
+        self:SetAttribute("fighting", 0)
         return
     end
-    for i = 1, self:GetAttribute("open-n") or 0 do
-        self:SetBindingClick(true, self:GetAttribute("open-k" .. i), self, self:GetAttribute("open-a" .. i))
-    end
+    self:SetAttribute("fighting", 1)
     if self:GetAttribute("menuopen") == 1 then
         self:RunAttribute("_take")
     end
 ]]
 
--- A key press, the action name as the button: Escape lets the menu keys go, an opening key takes them; addon code
--- then does what the key does.
+-- A menu key press, the action name as the button: Escape lets the menu keys go; addon code then does what the key
+-- does.
 combatKeys.CLICK = [[
     if button == "close" then
         self:RunAttribute("_release")
-    elseif self:GetAttribute("taken") ~= 1 then
-        self:RunAttribute("_take")
     end
     self:CallMethod("onCombatKey", button)
+]]
+
+-- The wrapper on a window-opening binding's button: in a fight, take the menu keys; the button then runs its own
+-- action. owner is the secure frame.
+combatKeys.OPENING = [[
+    if owner:GetAttribute("fighting") == 1 then
+        owner:RunAttribute("_take")
+    end
 ]]
 
 -- The state driver's handler: the frame's own COMBAT with the new state.
@@ -146,7 +163,10 @@ combatKeys.ON_STATE = [[
 
 local keysFrame = nil
 local stagedOpen = nil
-local stagePending = false
+-- The keys or the window-opening buttons changed (a rebind, a module switched on or off, the setting): written on
+-- the next update out of combat.
+local dirty = true
+local wrapped = {}
 
 local function createFrames()
     local keys = CreateFrame("Button", "WowVisionCombatKeys", UIParent, "SecureHandlerClickTemplate")
@@ -184,31 +204,44 @@ local function writeList(frame, prefix, entries, previous)
     frame:SetAttribute(prefix .. "-n", #entries)
 end
 
--- Write the player's keys and the setting onto the secure frame. Out of combat only; asked in combat, it runs when
--- the fight ends.
-function combatKeys.stage()
-    if InCombatLockdown() then
-        stagePending = true
-        return
+-- Put the wrapper on the buttons of the window-opening bindings, and only on those: a rebind hands out the pooled
+-- buttons afresh, so the old wrappers come off first.
+local function wrapOpeningFrames()
+    for frame in pairs(wrapped) do
+        SecureHandlerUnwrapScript(frame, "OnClick")
     end
-    stagePending = false
+    wrapped = {}
+    for _, frame in ipairs(combatKeys.openingFrames(WowVision.input)) do
+        SecureHandlerWrapScript(frame, "OnClick", keysFrame, combatKeys.OPENING)
+        wrapped[frame] = true
+    end
+end
+
+-- The player's keys, the setting or the window-opening buttons changed: write them anew on the next update out of
+-- combat (tick). Cheap, callable any time, also in combat.
+function combatKeys.stage()
+    dirty = true
+end
+
+local function writeStage()
+    dirty = false
     if keysFrame == nil then
         keysFrame = createFrames()
     end
-    local inputManager = WowVision.input
-    local taken = {}
-    local open = combatKeys.entries(inputManager, combatKeys.OPEN_KEYS, taken)
-    local menu = combatKeys.entries(inputManager, combatKeys.MENU_KEYS, taken)
-    writeList(keysFrame, "open", open, keysFrame:GetAttribute("open-n"))
+    local menu = combatKeys.entries(WowVision.input, combatKeys.MENU_KEYS)
     writeList(keysFrame, "menu", menu, keysFrame:GetAttribute("menu-n"))
     keysFrame:SetAttribute("enabled", enabled() and 1 or 0)
+    wrapOpeningFrames()
 end
 
--- Whether a WowVision window is open, for the next fight's start. Called by the graph host on every update out of
--- combat; written only when it changes.
-function combatKeys.setMenuOpen(open)
-    if keysFrame == nil or stagePending or InCombatLockdown() then
+-- Every graph host update out of combat: write what changed, and whether a WowVision window is open, for the next
+-- fight's start (written only when it changes).
+function combatKeys.tick(open)
+    if InCombatLockdown() then
         return
+    end
+    if dirty then
+        writeStage()
     end
     local value = open and 1 or 0
     if stagedOpen ~= value then
@@ -227,28 +260,27 @@ function combatKeys.active()
     return keysFrame ~= nil and enabled()
 end
 
-local OPEN_SET = {}
-for _, key in ipairs(combatKeys.OPEN_KEYS) do
-    OPEN_SET[key] = true
+local function log(text)
+    local host = WowVision.graphHost
+    if host ~= nil and host.keyLog then
+        print("WowVision combat keys: " .. text)
+    end
 end
 
--- A key pressed in combat, by action name (from the secure frame).
+-- A menu key pressed in combat, by action name (from the secure frame).
 function combatKeys.onKey(action)
     local L = WowVision:getLocale()
-    if OPEN_SET[action] then
-        local binding = WowVision.input:getBinding(action)
-        if binding ~= nil and binding.func ~= nil then
-            WowVision.base.speech:stop()
-            binding.func()
+    local host = WowVision.graphHost
+    log(action .. ", " .. #host.stacks .. " open")
+    if action == "close" then
+        local remaining = WowVision.UIHost.windowManager:closeOwnWindows()
+        if #remaining == 0 then
+            WowVision:notify(L["Menus closed"])
+        else
+            WowVision:notify(L["Menus closed, still open"] .. ": " .. table.concat(remaining, ", "))
         end
         return
     end
-    if action == "close" then
-        WowVision.UIHost.windowManager:closeOwnWindows()
-        WowVision:notify(L["Menus closed"])
-        return
-    end
-    local host = WowVision.graphHost
     if not host:isOpen() then
         WowVision:notify(L["No menu open, Escape gives the keys back"])
         return
@@ -260,11 +292,30 @@ function combatKeys.onKey(action)
     host:onKey(action)
 end
 
-local events = CreateFrame("Frame")
-events:RegisterEvent("PLAYER_LOGIN")
-events:RegisterEvent("PLAYER_REGEN_ENABLED")
-events:SetScript("OnEvent", function(_, event)
-    if event == "PLAYER_LOGIN" or stagePending then
-        combatKeys.stage()
+-- /wv combatkeys: the state of the secure frame and, per staged key, what the game runs on it now.
+function combatKeys.report()
+    if keysFrame == nil then
+        print("WowVision combat keys: not set up yet")
+        return
     end
-end)
+    local function attr(name)
+        return tostring(keysFrame:GetAttribute(name))
+    end
+    print(
+        "WowVision combat keys: enabled "
+            .. attr("enabled")
+            .. ", fighting "
+            .. attr("fighting")
+            .. ", taken "
+            .. attr("taken")
+            .. ", menu open "
+            .. attr("menuopen")
+            .. ", opening buttons "
+            .. #combatKeys.openingFrames(WowVision.input)
+            .. (dirty and ", changes waiting for the end of the fight" or "")
+    )
+    for i = 1, keysFrame:GetAttribute("menu-n") or 0 do
+        local input = keysFrame:GetAttribute("menu-k" .. i)
+        print(input .. ": " .. tostring(GetBindingAction(input, true)))
+    end
+end

@@ -76,6 +76,15 @@ combatMenus.events.valueChange:subscribe(module, function()
     WowVision.graph.combatKeys.stage()
 end)
 
+-- Menus in combat: the secure frame's state and what the game runs on each combat key now (graph/combatKeys.lua).
+module:registerCommand({
+    name = "combatkeys",
+    description = "Print the state of the menu keys in combat",
+    func = function()
+        WowVision.graph.combatKeys.report()
+    end,
+})
+
 -- Chasing stuck movement keys with testers: prints when windows take, wait
 -- for and release the navigation keys, and what the held check saw.
 module:registerCommand({
@@ -398,6 +407,7 @@ module:registerBindings({
     {
         type = "Function",
         key = "wowvision/menu",
+        opensWindow = true,
         label = L["WowVision Menu"],
         inputs = { "SHIFT-F1" },
         interruptSpeech = true,
