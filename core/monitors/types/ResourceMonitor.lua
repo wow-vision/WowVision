@@ -96,10 +96,30 @@ local ResourceMonitor = monitors:createType("Resource")
 ResourceMonitor.label = L["Resource"]
 monitors.ResourceMonitor = ResourceMonitor
 
-local function powerChoices()
+-- Whether the player has a resource now: its maximum is above 0 (the check
+-- the Power object type makes). A hidden maximum cannot be compared and
+-- counts as had.
+local function playerHas(power)
+    if UnitPowerMax == nil then
+        return true
+    end
+    local maximum = UnitPowerMax("player", power.id)
+    if WowVision.secrets.isSecret(maximum) then
+        return true
+    end
+    return maximum ~= nil and maximum > 0
+end
+
+-- The resources to pick from: the ones the player has right now, out of
+-- every resource the client knows (Forever knows all of Retail's), plus the
+-- one already picked so a saved choice still reads.
+local function powerChoices(monitor)
+    local picked = monitor ~= nil and monitor.powerType or nil
     local result = {}
     for _, power in ipairs(powersDB.items) do
-        tinsert(result, { value = power.key, label = power.label })
+        if power.key == picked or playerHas(power) then
+            tinsert(result, { value = power.key, label = power.label })
+        end
     end
     return result
 end

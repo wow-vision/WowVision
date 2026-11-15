@@ -155,6 +155,20 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
             t:assertEqual(#game.played, 0)
             t:assertEqual(#monitor.class:getField("rules"):getAvailableTypes(), 0)
 
+            -- The resource list: only what the player has, plus the pick
+            game.maximum[MANA] = 100
+            local listed = {}
+            for _, choice in ipairs(monitor.class:getField("powerType"):getChoices(monitor)) do
+                tinsert(listed, choice.value)
+            end
+            t:assertEqual(table.concat(listed, ","), "mana,combopoints")
+            game.maximum[MANA] = nil
+            listed = {}
+            for _, choice in ipairs(monitor.class:getField("powerType"):getChoices(nil)) do
+                tinsert(listed, choice.value)
+            end
+            t:assertEqual(table.concat(listed, ","), "combopoints")
+
             -- A step's menu is its alert's menu, without an "Alert" level
             WowVision.graph = WowVision.graph or {}
             local savedSettings = WowVision.graph.settings
