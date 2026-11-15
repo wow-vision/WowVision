@@ -35,8 +35,9 @@ local function entry(frame)
         window = "popups",
         frame = frame,
         which = frame.which,
+        title = "Group Invitation",
         label = function()
-            return "Invite"
+            return "Bob invites you to a group"
         end,
     }
 end
@@ -114,7 +115,7 @@ testRunner:addSuite("PendingWindows", {
             pending.closeRequest("popups", { entry(invite) }, "escape")
             t:assertTrue(pending.isAside(invite))
             t:assertEqual(closed[1], "popups")
-            t:assertEqual(said[1], "Pending")
+            t:assertEqual(said[1], "Group Invitation, Pending", "only the short name: the text was read")
         end)
     end,
 

@@ -116,7 +116,7 @@ function pending.isAside(frame)
 end
 
 -- Put a waiting frame aside. entry: { window = window name, frame = frame, which = dialog key or nil,
--- label = function }.
+-- title = its short name (Group Invitation), label = function: its text }.
 function pending.putAside(entry)
     if aside[entry.frame] ~= nil then
         return
@@ -145,9 +145,14 @@ function pending.closeRequest(windowName, entries, reason, otherwise)
         pending.putAside(entry)
     end
     manager:closeWindow(windowName)
-    -- after the close: Interrupt Speech on Window Close would cut it off
+    -- after the close: Interrupt Speech on Window Close would cut it off. Only the short names: the text was read.
     if #entries > 0 and reason == "escape" then
-        WowVision:notify(L["Pending"])
+        local titles = {}
+        for _, entry in ipairs(entries) do
+            tinsert(titles, entry.title)
+        end
+        tinsert(titles, L["Pending"])
+        WowVision:notify(table.concat(titles, ", "))
     end
 end
 
@@ -191,9 +196,26 @@ local function renderPending(builder)
     builder:popContext()
 end
 
--- First in the WowVision menu while something waits.
+-- First in the WowVision menu while something waits: one waiting popup is the entry itself ("Pending, its text"),
+-- more are a level of their own ("Pending, 2").
 WowVision.graph.settings.registerRootEntry(function(builder)
-    if #pending.list() == 0 then
+    local list = pending.list()
+    if #list == 0 then
+        return
+    end
+    if #list == 1 then
+        local only = list[1]
+        builder:addItem(
+            ControlId.structural("pending"),
+            nodes.button({
+                label = function()
+                    return WowVision.secrets.join({ L["Pending"], only.label() }, ", ")
+                end,
+                onActivate = function()
+                    pending.reopen(only)
+                end,
+            })
+        )
         return
     end
     builder:addItem(
