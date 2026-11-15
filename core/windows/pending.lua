@@ -19,8 +19,8 @@ local ControlId = graph.ControlId
 -- invitation, a summon, death, a resurrection; the role invitation; the ready check). A popup that takes Escape
 -- (Really delete this item?) keeps the game's Escape, which cancels it.
 --
--- UI setting Pending Windows: on (Escape and Close All Windows put them aside), close all (only Close All Windows,
--- Shift-Escape), off (they wait in front, as before).
+-- UI setting Pending Windows: Escape and the Close All Windows key put them aside, only that key (Shift-Escape), or
+-- off (they wait in front, as before).
 
 local pending = {}
 WowVision.pending = pending
@@ -158,7 +158,10 @@ end)
 -- ---- trying it alone ----
 --
 -- /wv pendingtest shows a harmless popup that waits like a group invitation: it ignores Escape and counts down a
--- minute; its buttons only print.
+-- minute; its buttons only print. Being shown by addon code it taints the game's own Escape while it is open
+-- (StaticPopup.lua says as much on addon-initiated dialogs): an Escape that reaches the game then has its stop casting
+-- refused (ADDON_ACTION_FORBIDDEN, SpellStopCasting). With Pending Windows on Escape never reaches the game there; on
+-- the other settings the command says so first. The game's own popups do not do this.
 StaticPopupDialogs = StaticPopupDialogs or {}
 StaticPopupDialogs["WOWVISION_PENDING_TEST"] = {
     text = "WowVision: " .. L["Pending test"],
@@ -178,6 +181,9 @@ module:registerCommand({
     name = "pendingtest",
     description = "Show a test popup that waits like a group invitation",
     func = function()
+        if setting() ~= "on" then
+            print("WowVision: " .. L["Escape on this test popup goes to the game and reports a blocked action"])
+        end
         StaticPopup_Show("WOWVISION_PENDING_TEST")
     end,
 })

@@ -74,8 +74,8 @@ settings:add({
     label = L["Pending Windows"],
     default = "on",
     choices = {
-        { label = L["On"], value = "on" },
-        { label = L["Only Close All Windows"], value = "closeAll" },
+        { label = L["Escape and the Close All Windows Key"], value = "on" },
+        { label = L["Only the Close All Windows Key"], value = "closeAll" },
         { label = L["Off"], value = "off" },
     },
 })
