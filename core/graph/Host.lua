@@ -441,6 +441,40 @@ function GraphHost:combatKey(key)
     self:onKey(key)
 end
 
+-- A mirrored list in combat (graph/combatKeys.lua) moved its position, which the secure side owns there: focus the
+-- stack and land on the entry, spoken as an arrow would speak it. why "open" reads the window afresh, "resume" (the
+-- fight began on it) says nothing new; Up or Down that did not move sounds the list's edge.
+function GraphHost:landMirror(stack, id, why)
+    for i, open in ipairs(self.stacks) do
+        if open == stack and self.focusedIndex ~= i then
+            self.focusedIndex = i
+            self._bindingsDirty = true
+        end
+    end
+    local screen = stack.screens[#stack.screens]
+    if screen == nil or not screen.keyGraph:rerender() then
+        return
+    end
+    local keyGraph = screen.keyGraph
+    local from = keyGraph:currentNode()
+    keyGraph:focus(id)
+    local to = keyGraph:currentNode()
+    if to == nil or why == "resume" then
+        return
+    end
+    WowVision.base.speech:uiStop()
+    if why == "open" then
+        screen:resetAnnouncement()
+    elseif from ~= nil and from.id.key ~= to.id.key then
+        self:_announceMove(screen, { from = from, to = to })
+    elseif (why == "up" or why == "down") and self:_playsEdgeSound() then
+        if PlaySound ~= nil then
+            PlaySound(GraphHost.EDGE_SOUND)
+        end
+        self:_announceMove(screen, { from = to, to = to })
+    end
+end
+
 -- Run a binding's action the way its secure button would: speech stopped first where it asks, after the TTS delay,
 -- then its postClick.
 function GraphHost:_runInCombat(spec, action)

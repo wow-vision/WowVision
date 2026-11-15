@@ -7,7 +7,11 @@ local L = module.L
 -- the slot read as words: stack count, quest item, new, and whether the
 -- slot fails the current bag search. The quality colour follows the name.
 function module.getBagItemLabel(itemButton)
-    local bagID, slotID = module.slotLocation(itemButton)
+    return module.slotLabel(module.slotLocation(itemButton))
+end
+
+-- The same label by bag and slot, without the button (the bags in combat, containersCombat.lua).
+function module.slotLabel(bagID, slotID)
     local info = C_Container.GetContainerItemInfo(bagID, slotID)
     if info == nil then
         return L["Empty"]

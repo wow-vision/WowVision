@@ -98,11 +98,21 @@ end
 
 -- ---- the secure frame ----
 --
--- Attributes: menu-n / menu-k<i> / menu-a<i> the staged inputs and their action names; enabled 1 or 0 (the setting);
--- menuopen 1 when a WowVision window is open (kept current out of combat, read as the fight begins); fighting 1 in a
--- fight with the setting on; taken 1 while the menu keys are bound to the frame.
+-- Attributes: menu-n / menu-k<i> / menu-a<i> the staged inputs and their action names; rc-n / rc-k<i> the inputs of
+-- the right click among them; enabled 1 or 0 (the setting); menuopen 1 when a WowVision window is open (kept current
+-- out of combat, read as the fight begins); fighting 1 in a fight with the setting on; taken 1 while the menu keys are
+-- bound to the frame.
+--
+-- Mirrored lists (registerMirror below): a window whose entries need a secure action in combat (Backspace uses a bag
+-- item) cannot have addon code point that action at the focused entry. So in such a list the secure side walks the
+-- list itself and owns the position, and addon code only lands the window's focus where the secure side says
+-- (onMirror). Per mirror m: m-n the entry count; m-v<i> what the secure use action gets for entry i ("" for nothing);
+-- m-f<i> / m-l<i> the first and last entry of i's group (a bag: Tab goes from group to group); m-open 1 while its
+-- window is open; m-start the entry focused as the fight begins (startmode names that mirror). mode is the mirror
+-- walked now ("" for none), idx its position. ok-n / ok-k<i> / ok-o<i> are the game's own keys that open a mirrored
+-- window (the open-bags keys), bound in a fight to that mirror's opener button.
 
--- Bind the menu keys to the frame.
+-- Bind the menu keys to the frame; in a mirrored list the right click goes to the secure use button.
 combatKeys.TAKE = [[
     if self:GetAttribute("taken") == 1 then
         return
@@ -110,6 +120,10 @@ combatKeys.TAKE = [[
     self:SetAttribute("taken", 1)
     for i = 1, self:GetAttribute("menu-n") or 0 do
         self:SetBindingClick(true, self:GetAttribute("menu-k" .. i), self, self:GetAttribute("menu-a" .. i))
+    end
+    local mode = self:GetAttribute("mode")
+    if mode ~= nil and mode ~= "" then
+        self:RunAttribute("_useKeys", true)
     end
 ]]
 
@@ -124,26 +138,153 @@ combatKeys.RELEASE = [[
     end
 ]]
 
--- The fight begins (true) or ends (false). Ending lets every key go.
+-- The right click's inputs: to the secure use button (true) or back to the frame (false).
+combatKeys.USE_KEYS = [[
+    local on = ...
+    local use = self:GetFrameRef("use")
+    for i = 1, self:GetAttribute("rc-n") or 0 do
+        local key = self:GetAttribute("rc-k" .. i)
+        if on then
+            self:SetBindingClick(true, key, use, "LeftButton")
+        else
+            self:SetBindingClick(true, key, self, "rightClick")
+        end
+    end
+]]
+
+-- Point the secure use button at the entry at the position (nothing outside a mirrored list).
+combatKeys.ARM = [[
+    local use = self:GetFrameRef("use")
+    local mode = self:GetAttribute("mode")
+    local value = nil
+    if mode ~= nil and mode ~= "" then
+        value = self:GetAttribute(mode .. "-v" .. (self:GetAttribute("idx") or 1))
+    end
+    if value == "" then
+        value = nil
+    end
+    use:SetAttribute("item", value)
+]]
+
+-- Walk a mirrored list from the entry given (the first when there is none or it is out of range); why is passed on
+-- to addon code ("open", or "resume" as the fight begins).
+combatKeys.ENTER = [[
+    local mode, start, why = ...
+    local count = self:GetAttribute(mode .. "-n") or 0
+    if start == nil or start < 1 or start > count then
+        start = 1
+    end
+    self:SetAttribute("mode", mode)
+    self:SetAttribute("idx", start)
+    if self:GetAttribute("taken") == 1 then
+        self:RunAttribute("_useKeys", true)
+    else
+        self:RunAttribute("_take")
+    end
+    self:RunAttribute("_arm")
+    self:CallMethod("onMirror", mode, start, why)
+]]
+
+-- Stop walking the mirrored list: the right click is the frame's again.
+combatKeys.LEAVE = [[
+    local mode = self:GetAttribute("mode")
+    if mode == nil or mode == "" then
+        return
+    end
+    self:SetAttribute("mode", "")
+    if self:GetAttribute("taken") == 1 then
+        self:RunAttribute("_useKeys", false)
+    end
+    self:RunAttribute("_arm")
+]]
+
+-- The fight begins (true) or ends (false). Ending lets every key go. Beginning binds the openers of the mirrored
+-- windows, takes the menu keys when a window was open, and keeps walking a mirrored list that had the focus.
 combatKeys.COMBAT = [[
     local fighting = ...
     self:ClearBindings()
     self:SetAttribute("taken", 0)
+    self:SetAttribute("mode", "")
+    self:RunAttribute("_arm")
     if not fighting or self:GetAttribute("enabled") ~= 1 then
         self:SetAttribute("fighting", 0)
         return
     end
     self:SetAttribute("fighting", 1)
+    for i = 1, self:GetAttribute("ok-n") or 0 do
+        self:SetBindingClick(true, self:GetAttribute("ok-k" .. i), self:GetAttribute("ok-o" .. i), "LeftButton")
+    end
     if self:GetAttribute("menuopen") == 1 then
         self:RunAttribute("_take")
     end
+    local mode = self:GetAttribute("startmode")
+    if mode ~= nil and mode ~= "" and self:GetAttribute(mode .. "-open") == 1 then
+        self:RunAttribute("_enter", mode, self:GetAttribute(mode .. "-start"), "resume")
+    end
 ]]
 
--- A menu key press, the action name as the button: Escape lets the menu keys go; addon code then does what the key
--- does.
+-- A menu key press, the action name as the button. Escape lets the menu keys go (and closes a mirrored window). In a
+-- mirrored list the walking keys move the position here and addon code lands the focus; Enter, the tooltip and the
+-- context menu go to addon code with the position; Ctrl-Tab leaves the list. Everything else goes to addon code.
 combatKeys.CLICK = [[
+    local mode = self:GetAttribute("mode")
+    if mode == "" then
+        mode = nil
+    end
     if button == "close" then
+        if mode ~= nil then
+            self:SetAttribute(mode .. "-open", 0)
+            self:RunAttribute("_leave")
+            self:CallMethod("onMirror", mode, 0, "close")
+        end
         self:RunAttribute("_release")
+        self:CallMethod("onCombatKey", button)
+        return
+    end
+    if mode ~= nil then
+        if button == "nextWindow" or button == "previousWindow" then
+            self:RunAttribute("_leave")
+        elseif button == "leftClick" or button == "tooltip" or button == "contextMenu" then
+            self:CallMethod("onMirror", mode, self:GetAttribute("idx"), button)
+            return
+        elseif button ~= "rightClick" then
+            local count = self:GetAttribute(mode .. "-n") or 0
+            if count == 0 then
+                return
+            end
+            local i = self:GetAttribute("idx") or 1
+            local first = self:GetAttribute(mode .. "-f" .. i) or 1
+            local last = self:GetAttribute(mode .. "-l" .. i) or count
+            local j = i
+            if button == "down" then
+                if i < last then
+                    j = i + 1
+                end
+            elseif button == "up" then
+                if i > first then
+                    j = i - 1
+                end
+            elseif button == "home" then
+                j = first
+            elseif button == "end" then
+                j = last
+            elseif button == "next" then
+                j = last + 1
+                if j > count then
+                    j = 1
+                end
+            elseif button == "previous" then
+                j = first - 1
+                if j < 1 then
+                    j = count
+                end
+                j = self:GetAttribute(mode .. "-f" .. j) or j
+            end
+            self:SetAttribute("idx", j)
+            self:RunAttribute("_arm")
+            self:CallMethod("onMirror", mode, j, button)
+            return
+        end
     end
     self:CallMethod("onCombatKey", button)
 ]]
@@ -154,6 +295,29 @@ combatKeys.OPENING = [[
     if owner:GetAttribute("fighting") == 1 then
         owner:RunAttribute("_take")
     end
+]]
+
+-- The wrapper on a mirror's opener button (the game's own open-bags key in a fight): a closed window opens (the click
+-- runs: a secure click of the game's own button) and its list is walked from the top; an open window not walked now
+-- is only stepped into (the click is cancelled); the walked one closes (the click toggles it shut) and the keys go.
+combatKeys.OPENER = [[
+    if owner:GetAttribute("fighting") ~= 1 then
+        return
+    end
+    local mode = self:GetAttribute("mirror")
+    if owner:GetAttribute(mode .. "-open") == 1 then
+        if owner:GetAttribute("mode") ~= mode then
+            owner:RunAttribute("_enter", mode, 1, "open")
+            return false
+        end
+        owner:SetAttribute(mode .. "-open", 0)
+        owner:RunAttribute("_leave")
+        owner:RunAttribute("_release")
+        owner:CallMethod("onMirror", mode, 0, "close")
+        return
+    end
+    owner:SetAttribute(mode .. "-open", 1)
+    owner:RunAttribute("_enter", mode, 1, "open")
 ]]
 
 -- The state driver's handler: the frame's own COMBAT with the new state. The driver hands the state over as a number
@@ -226,7 +390,7 @@ end
 
 local function watch(keys, driver)
     keys:HookScript("OnAttributeChanged", function(_, name, value)
-        if name == "taken" or name == "fighting" then
+        if name == "taken" or name == "fighting" or name == "mode" then
             log(name .. " " .. tostring(value) .. " (" .. lockdown() .. ")")
         end
     end)
@@ -238,8 +402,12 @@ local function watch(keys, driver)
     local events = CreateFrame("Frame")
     events:RegisterEvent("PLAYER_REGEN_DISABLED")
     events:RegisterEvent("PLAYER_REGEN_ENABLED")
+    -- the game's own keys that open a mirrored window may have moved
+    events:RegisterEvent("UPDATE_BINDINGS")
     events:SetScript("OnEvent", function(_, event)
-        if event == "PLAYER_REGEN_DISABLED" then
+        if event == "UPDATE_BINDINGS" then
+            combatKeys.stageMirrors()
+        elseif event == "PLAYER_REGEN_DISABLED" then
             log("fight starts (" .. lockdown() .. "): " .. stateLine())
             C_Timer.After(0.3, function()
                 log("in the fight (" .. lockdown() .. "): " .. stateLine())
@@ -256,11 +424,29 @@ local function createFrames()
     keys:RegisterForClicks("AnyDown")
     keys:SetAttribute("_take", combatKeys.TAKE)
     keys:SetAttribute("_release", combatKeys.RELEASE)
+    keys:SetAttribute("_useKeys", combatKeys.USE_KEYS)
+    keys:SetAttribute("_arm", combatKeys.ARM)
+    keys:SetAttribute("_enter", combatKeys.ENTER)
+    keys:SetAttribute("_leave", combatKeys.LEAVE)
     keys:SetAttribute("_combat", combatKeys.COMBAT)
     keys:SetAttribute("_onclick", combatKeys.CLICK)
     keys.onCombatKey = function(_, action)
         combatKeys.onKey(action)
     end
+    keys.onMirror = function(_, mode, index, why)
+        combatKeys.onMirror(mode, index, why)
+    end
+
+    -- The use action of a mirrored list: the game's secure item action ("bag slot" uses that slot exactly as its right
+    -- click does, SecureCmdUseItem). Bound by key down only, so it must act on the down click.
+    local use = CreateFrame("Button", "WowVisionCombatUse", UIParent, "SecureActionButtonTemplate")
+    use:RegisterForClicks("AnyDown")
+    use:SetAttribute("useOnKeyDown", true)
+    use:SetAttribute("type", "item")
+    use:HookScript("PostClick", function(self)
+        log("use " .. tostring(self:GetAttribute("item")))
+    end)
+    SecureHandlerSetFrameRef(keys, "use", use)
 
     local driver = CreateFrame("Frame", "WowVisionCombatKeysDriver", UIParent, "SecureHandlerStateTemplate")
     SecureHandlerSetFrameRef(driver, "keys", keys)
@@ -276,14 +462,18 @@ local function enabled()
 end
 combatKeys.enabled = enabled
 
-local function writeList(frame, prefix, entries, previous)
+-- Write a numbered list of attributes: prefix-n, and per entry i each field as prefix-<letter><i>.
+local function writeList(frame, prefix, entries, fields)
+    local previous = frame:GetAttribute(prefix .. "-n") or 0
     for i, entry in ipairs(entries) do
-        frame:SetAttribute(prefix .. "-k" .. i, entry.input)
-        frame:SetAttribute(prefix .. "-a" .. i, entry.action)
+        for letter, field in pairs(fields) do
+            frame:SetAttribute(prefix .. "-" .. letter .. i, entry[field])
+        end
     end
-    for i = #entries + 1, previous or 0 do
-        frame:SetAttribute(prefix .. "-k" .. i, nil)
-        frame:SetAttribute(prefix .. "-a" .. i, nil)
+    for i = #entries + 1, previous do
+        for letter in pairs(fields) do
+            frame:SetAttribute(prefix .. "-" .. letter .. i, nil)
+        end
     end
     frame:SetAttribute(prefix .. "-n", #entries)
 end
@@ -301,6 +491,124 @@ local function wrapOpeningFrames()
     end
 end
 
+-- ---- mirrored lists ----
+--
+-- registerMirror(def), def:
+--   key        the mirror's name ("bags")
+--   commands   the game's key bindings that open its window (OPENALLBAGS): their keys are bound in a fight to the
+--              mirror's opener, a secure click of opener()
+--   opener()   the game's own button whose click opens and closes the window
+--   entries()  the list in order: { value = what the secure use action gets ("" for nothing), group = any }; entries
+--              of one group stand together (a bag), Tab goes between groups. Read out of combat only: the list
+--              must not change in a fight.
+--   isOpen()   whether the window is open
+--   focusedIndex()  the entry the window's focus is on while it is the focused window, else nil
+--   onMirror(index, why)  land the window's focus on entry index; why: "open", "resume" (the fight began on it), the
+--              key that moved ("down", "next"...), or the key handed over there ("leftClick", "tooltip",
+--              "contextMenu")
+--   onClose()  the walked window was closed in the fight: close what the opener's click did not (all the bags)
+combatKeys.mirrors = {}
+local mirrorsByKey = {}
+local mirrorsDirty = true
+local stagedSignatures = {}
+local openers = {}
+
+function combatKeys.registerMirror(def)
+    tinsert(combatKeys.mirrors, def)
+    mirrorsByKey[def.key] = def
+    mirrorsDirty = true
+end
+
+-- A mirror's list may have changed (a bag swapped): written on the next update out of combat, when it differs.
+function combatKeys.stageMirrors()
+    mirrorsDirty = true
+end
+
+-- The flat attributes of a mirror's list: value, first and last entry of its group.
+function combatKeys.mirrorAttributes(list)
+    local rows = {}
+    local groupStart = 1
+    for i, entry in ipairs(list) do
+        if i > 1 and entry.group ~= list[i - 1].group then
+            groupStart = i
+        end
+        rows[i] = { value = entry.value or "", first = groupStart }
+    end
+    local groupEnd = #list
+    for i = #list, 1, -1 do
+        if i < #list and list[i].group ~= list[i + 1].group then
+            groupEnd = i
+        end
+        rows[i].last = groupEnd
+    end
+    return rows
+end
+
+local function opener(def)
+    local button = openers[def.key]
+    if button == nil then
+        button = CreateFrame("Button", "WowVisionCombatOpen_" .. def.key, UIParent, "SecureActionButtonTemplate")
+        button:RegisterForClicks("AnyDown")
+        button:SetAttribute("useOnKeyDown", true)
+        button:SetAttribute("type", "click")
+        button:SetAttribute("mirror", def.key)
+        SecureHandlerWrapScript(button, "OnClick", keysFrame, combatKeys.OPENER)
+        openers[def.key] = button
+    end
+    button:SetAttribute("clickbutton", def.opener())
+    return button
+end
+
+local function writeMirrors()
+    mirrorsDirty = false
+    local openKeys = {}
+    local names = {}
+    for _, def in ipairs(combatKeys.mirrors) do
+        tinsert(names, { name = def.key })
+        local rows = combatKeys.mirrorAttributes(def.entries())
+        local parts = {}
+        for i, row in ipairs(rows) do
+            parts[i] = row.value .. "/" .. row.first .. "/" .. row.last
+        end
+        local signature = table.concat(parts, ",")
+        if stagedSignatures[def.key] ~= signature then
+            stagedSignatures[def.key] = signature
+            writeList(keysFrame, def.key, rows, { v = "value", f = "first", l = "last" })
+            log("staged " .. def.key .. ": " .. #rows .. " entries")
+        end
+        local name = opener(def):GetName()
+        for _, command in ipairs(def.commands) do
+            for _, key in ipairs({ GetBindingKey(command) }) do
+                tinsert(openKeys, { key = key, opener = name })
+            end
+        end
+    end
+    writeList(keysFrame, "ok", openKeys, { k = "key", o = "opener" })
+end
+
+-- Each update out of combat: whether each mirrored window is open, and the entry it is focused on.
+local function tickMirrors()
+    local startMode = ""
+    for _, def in ipairs(combatKeys.mirrors) do
+        local open = def.isOpen() and 1 or 0
+        if keysFrame:GetAttribute(def.key .. "-open") ~= open then
+            keysFrame:SetAttribute(def.key .. "-open", open)
+        end
+        local index = open == 1 and def.focusedIndex() or nil
+        if index ~= nil then
+            startMode = def.key
+            if keysFrame:GetAttribute(def.key .. "-start") ~= index then
+                keysFrame:SetAttribute(def.key .. "-start", index)
+            end
+        end
+    end
+    if keysFrame:GetAttribute("startmode") ~= startMode then
+        keysFrame:SetAttribute("startmode", startMode)
+    end
+end
+
+-- ---- staging ----
+
 -- The player's keys, the setting or the window-opening buttons changed: write them anew on the next update out of
 -- combat (tick). Cheap, callable any time, also in combat.
 function combatKeys.stage()
@@ -309,11 +617,19 @@ end
 
 local function writeStage()
     dirty = false
+    mirrorsDirty = true
     if keysFrame == nil then
         keysFrame = createFrames()
     end
     local menu = combatKeys.entries(WowVision.input, combatKeys.MENU_KEYS)
-    writeList(keysFrame, "menu", menu, keysFrame:GetAttribute("menu-n"))
+    writeList(keysFrame, "menu", menu, { k = "input", a = "action" })
+    local rightClick = {}
+    for _, entry in ipairs(menu) do
+        if entry.action == "rightClick" then
+            tinsert(rightClick, entry)
+        end
+    end
+    writeList(keysFrame, "rc", rightClick, { k = "input" })
     keysFrame:SetAttribute("enabled", enabled() and 1 or 0)
     wrapOpeningFrames()
     local opening = 0
@@ -332,6 +648,10 @@ function combatKeys.tick(open)
     if dirty then
         writeStage()
     end
+    if mirrorsDirty then
+        writeMirrors()
+    end
+    tickMirrors()
     local value = open and 1 or 0
     if stagedOpen ~= value then
         stagedOpen = value
@@ -348,6 +668,15 @@ end
 -- Whether the graph runs in combat: the setting is on and the frame exists.
 function combatKeys.active()
     return keysFrame ~= nil and enabled()
+end
+
+-- The mirrored list walked right now, or nil.
+function combatKeys.walking()
+    if keysFrame == nil then
+        return nil
+    end
+    local mode = keysFrame:GetAttribute("mode")
+    return mode ~= "" and mode or nil
 end
 
 -- A menu key pressed in combat, by action name (from the secure frame).
@@ -368,6 +697,20 @@ function combatKeys.onKey(action)
         return
     end
     host:combatKey(action)
+end
+
+-- The secure side moved in a mirrored list, or handed a key over there (from the secure frame).
+function combatKeys.onMirror(mode, index, why)
+    log(mode .. " " .. tostring(why) .. " " .. tostring(index))
+    local def = mirrorsByKey[mode]
+    if def == nil then
+        return
+    end
+    if why == "close" then
+        def.onClose()
+        return
+    end
+    def.onMirror(index, why)
 end
 
 -- /wv combatkeys: the state of the secure frame and, per staged key, what the game runs on it now.

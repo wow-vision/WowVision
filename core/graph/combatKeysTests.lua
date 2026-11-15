@@ -3,17 +3,28 @@ local combatKeys = WowVision.graph.combatKeys
 
 -- The secure snippets of graph/combatKeys.lua run as plain Lua against a stand-in for the game's frame handle: its
 -- attributes, the override bindings it owns, and the calls it makes into addon code.
-local function newHandle()
-    local handle = { attributes = {}, bindings = {}, calls = {} }
-    function handle:GetAttribute(name)
-        return self.attributes[name]
+-- A binding is recorded as the button name alone when it clicks the handle itself, else as "<frame>:<button>".
+local function newHandle(name)
+    local handle = { name = name or "WowVisionCombatKeys", attributes = {}, bindings = {}, calls = {}, refs = {} }
+    function handle:GetName()
+        return self.name
     end
-    function handle:SetAttribute(name, value)
-        self.attributes[name] = value
+    function handle:GetAttribute(attribute)
+        return self.attributes[attribute]
+    end
+    function handle:SetAttribute(attribute, value)
+        self.attributes[attribute] = value
+    end
+    function handle:GetFrameRef(label)
+        return self.refs[label]
     end
     function handle:SetBindingClick(_, key, target, button)
-        assert(target == self, "binds to its own frame")
-        self.bindings[key] = button
+        if target == self then
+            self.bindings[key] = button
+        else
+            local targetName = type(target) == "string" and target or target:GetName()
+            self.bindings[key] = targetName .. ":" .. button
+        end
     end
     function handle:ClearBinding(key)
         self.bindings[key] = nil
@@ -21,11 +32,11 @@ local function newHandle()
     function handle:ClearBindings()
         self.bindings = {}
     end
-    function handle:RunAttribute(name, ...)
-        return self:run(self.attributes[name], "...", ...)
+    function handle:RunAttribute(attribute, ...)
+        return self:run(self.attributes[attribute], "...", ...)
     end
-    function handle:CallMethod(name, ...)
-        tinsert(self.calls, { name, ... })
+    function handle:CallMethod(method, ...)
+        tinsert(self.calls, { method, ... })
     end
     function handle:run(body, params, ...)
         -- the game runs a snippet as the body of function(self, <params>)
@@ -34,7 +45,18 @@ local function newHandle()
     end
     handle.attributes._take = combatKeys.TAKE
     handle.attributes._release = combatKeys.RELEASE
+    handle.attributes._useKeys = combatKeys.USE_KEYS
+    handle.attributes._arm = combatKeys.ARM
+    handle.attributes._enter = combatKeys.ENTER
+    handle.attributes._leave = combatKeys.LEAVE
     handle.attributes._combat = combatKeys.COMBAT
+    handle.refs.use = { name = "WowVisionCombatUse", attributes = {} }
+    function handle.refs.use:GetName()
+        return self.name
+    end
+    function handle.refs.use:SetAttribute(attribute, value)
+        self.attributes[attribute] = value
+    end
     return handle
 end
 
@@ -44,11 +66,30 @@ local function stage(handle, menu, menuOpen)
         handle.attributes["menu-a" .. i] = entry[2]
     end
     handle.attributes["menu-n"] = #menu
+    local rightClick = 0
+    for _, entry in ipairs(menu) do
+        if entry[2] == "rightClick" then
+            rightClick = rightClick + 1
+            handle.attributes["rc-k" .. rightClick] = entry[1]
+        end
+    end
+    handle.attributes["rc-n"] = rightClick
     handle.attributes.enabled = 1
     handle.attributes.menuopen = menuOpen and 1 or 0
 end
 
-local MENU = { { "UP", "up" }, { "DOWN", "down" }, { "TAB", "next" }, { "ESCAPE", "close" } }
+local MENU = {
+    { "UP", "up" },
+    { "DOWN", "down" },
+    { "TAB", "next" },
+    { "SHIFT-TAB", "previous" },
+    { "HOME", "home" },
+    { "END", "end" },
+    { "CTRL-TAB", "nextWindow" },
+    { "ESCAPE", "close" },
+    { "ENTER", "leftClick" },
+    { "BACKSPACE", "rightClick" },
+}
 
 local function click(handle, button)
     handle:run(combatKeys.CLICK, "button, down", button, true)
@@ -187,5 +228,201 @@ testRunner:addSuite("CombatKeys", {
         t:assertEqual(menu[1].input, "UP")
         t:assertEqual(menu[2].input, "DOWN")
         t:assertEqual(menu[2].action, "up")
+    end,
+})
+
+-- A mirrored list: two bags, the backpack with three slots and a bag with two, as registerMirror stages it.
+local BAGS = {
+    { value = "0 1", group = 0 },
+    { value = "0 2", group = 0 },
+    { value = "0 3", group = 0 },
+    { value = "1 1", group = 1 },
+    { value = "1 2", group = 1 },
+}
+
+local function stageBags(handle, open)
+    for i, row in ipairs(combatKeys.mirrorAttributes(BAGS)) do
+        handle.attributes["bags-v" .. i] = row.value
+        handle.attributes["bags-f" .. i] = row.first
+        handle.attributes["bags-l" .. i] = row.last
+    end
+    handle.attributes["bags-n"] = #BAGS
+    handle.attributes["bags-open"] = open and 1 or 0
+    handle.attributes["ok-n"] = 1
+    handle.attributes["ok-k1"] = "B"
+    handle.attributes["ok-o1"] = "WowVisionCombatOpen_bags"
+end
+
+-- The game's open-bags key in a fight: the opener's wrapper with the secure frame as owner. False: the click is
+-- cancelled.
+local function openBags(handle)
+    local opener = newHandle("WowVisionCombatOpen_bags")
+    opener.attributes.mirror = "bags"
+    return opener:run(combatKeys.OPENER, "button, down, owner", "LeftButton", true, handle)
+end
+
+local function lastMirror(handle)
+    for i = #handle.calls, 1, -1 do
+        if handle.calls[i][1] == "onMirror" then
+            return handle.calls[i]
+        end
+    end
+    return nil
+end
+
+local function bagsFight(open)
+    local handle = newHandle()
+    stage(handle, MENU, false)
+    stageBags(handle, open)
+    fight(handle, true)
+    return handle
+end
+
+testRunner:addSuite("CombatMirror", {
+    ["a group's first and last entry are staged per entry"] = function(t)
+        local rows = combatKeys.mirrorAttributes(BAGS)
+        t:assertEqual(rows[2].first, 1)
+        t:assertEqual(rows[2].last, 3)
+        t:assertEqual(rows[4].first, 4)
+        t:assertEqual(rows[5].last, 5)
+        t:assertEqual(rows[5].value, "1 2")
+    end,
+
+    ["the fight binds the open-bags key to the opener"] = function(t)
+        local handle = bagsFight(false)
+        t:assertEqual(handle.bindings.B, "WowVisionCombatOpen_bags:LeftButton")
+    end,
+
+    ["the open-bags key opens the bags and walks them from the first slot"] = function(t)
+        local handle = bagsFight(false)
+        t:assertNotEqual(openBags(handle), false, "the click opens the visible bags")
+        t:assertEqual(handle.attributes.mode, "bags")
+        t:assertEqual(handle.attributes["bags-open"], 1)
+        t:assertEqual(handle.bindings.DOWN, "down")
+        t:assertEqual(handle.bindings.BACKSPACE, "WowVisionCombatUse:LeftButton")
+        t:assertEqual(handle.refs.use.attributes.item, "0 1")
+        local call = lastMirror(handle)
+        t:assertEqual(call[3], 1)
+        t:assertEqual(call[4], "open")
+    end,
+
+    ["down and up stay within the bag"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        click(handle, "down")
+        click(handle, "down")
+        t:assertEqual(handle.attributes.idx, 3)
+        click(handle, "down")
+        t:assertEqual(handle.attributes.idx, 3, "the bag's last slot is an edge")
+        t:assertEqual(lastMirror(handle)[4], "down")
+        click(handle, "up")
+        t:assertEqual(handle.refs.use.attributes.item, "0 2")
+    end,
+
+    ["tab goes from bag to bag and wraps"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        click(handle, "down")
+        click(handle, "next")
+        t:assertEqual(handle.attributes.idx, 4)
+        t:assertEqual(handle.refs.use.attributes.item, "1 1")
+        click(handle, "next")
+        t:assertEqual(handle.attributes.idx, 1)
+        click(handle, "previous")
+        t:assertEqual(handle.attributes.idx, 4, "back to the first slot of the last bag")
+        click(handle, "end")
+        t:assertEqual(handle.attributes.idx, 5)
+        click(handle, "home")
+        t:assertEqual(handle.attributes.idx, 4)
+    end,
+
+    ["walking keys go to addon code only as the new position"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        local before = #handle.calls
+        click(handle, "down")
+        t:assertEqual(#handle.calls, before + 1)
+        t:assertEqual(handle.calls[#handle.calls][1], "onMirror")
+    end,
+
+    ["enter is handed over with the position"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        click(handle, "down")
+        click(handle, "leftClick")
+        local call = lastMirror(handle)
+        t:assertEqual(call[3], 2)
+        t:assertEqual(call[4], "leftClick")
+    end,
+
+    ["the open-bags key again closes the bags and lets the keys go"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        t:assertNotEqual(openBags(handle), false, "the click toggles the visible bags shut")
+        t:assertEqual(handle.attributes.mode, "")
+        t:assertEqual(handle.attributes["bags-open"], 0)
+        t:assertNil(handle.bindings.DOWN)
+        t:assertNil(handle.refs.use.attributes.item)
+        t:assertEqual(lastMirror(handle)[4], "close")
+    end,
+
+    ["bags open but not walked: the key steps in without a click"] = function(t)
+        local handle = bagsFight(true)
+        t:assertEqual(openBags(handle), false)
+        t:assertEqual(handle.attributes.mode, "bags")
+        t:assertEqual(handle.attributes["bags-open"], 1)
+    end,
+
+    ["escape in the bags closes them and lets the keys go"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        click(handle, "close")
+        t:assertEqual(handle.attributes.mode, "")
+        t:assertEqual(handle.attributes["bags-open"], 0)
+        t:assertNil(handle.bindings.BACKSPACE)
+        t:assertEqual(handle.bindings.B, "WowVisionCombatOpen_bags:LeftButton")
+        local closed = false
+        for _, call in ipairs(handle.calls) do
+            closed = closed or (call[1] == "onMirror" and call[4] == "close")
+        end
+        t:assertTrue(closed, "addon code closes the visible bags")
+    end,
+
+    ["ctrl-tab leaves the list: backspace is the frame's again"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        click(handle, "nextWindow")
+        t:assertEqual(handle.attributes.mode, "")
+        t:assertEqual(handle.bindings.BACKSPACE, "rightClick")
+        t:assertNil(handle.refs.use.attributes.item)
+        t:assertEqual(handle.calls[#handle.calls][2], "nextWindow")
+    end,
+
+    ["a fight that begins on a focused bag slot walks on from it"] = function(t)
+        local handle = newHandle()
+        stage(handle, MENU, true)
+        stageBags(handle, true)
+        handle.attributes.startmode = "bags"
+        handle.attributes["bags-start"] = 5
+        fight(handle, true)
+        t:assertEqual(handle.attributes.mode, "bags")
+        t:assertEqual(handle.attributes.idx, 5)
+        t:assertEqual(handle.refs.use.attributes.item, "1 2")
+        t:assertEqual(lastMirror(handle)[4], "resume")
+    end,
+
+    ["the keyring's slots arm nothing"] = function(t)
+        local handle = bagsFight(false)
+        handle.attributes["bags-v1"] = ""
+        openBags(handle)
+        t:assertNil(handle.refs.use.attributes.item)
+    end,
+
+    ["out of a fight the opener does what the button does"] = function(t)
+        local handle = newHandle()
+        stage(handle, MENU, false)
+        stageBags(handle, false)
+        t:assertNil(openBags(handle))
+        t:assertNil(handle.attributes.mode)
     end,
 })
