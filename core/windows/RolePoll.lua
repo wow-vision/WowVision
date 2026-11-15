@@ -130,6 +130,7 @@ local function keepInvitation(_, reason)
     WowVision.pending.closeRequest("LFGInvitePopup", {
         {
             frame = LFGInvitePopup,
+            title = L["Group Invitation"],
             label = function()
                 return getPopupTitle(LFGInvitePopup)
             end,

@@ -94,9 +94,9 @@ Escape cancels the box in the same way as the game does.
 
 ### Pending: a question that waits
 
-Some boxes wait for an answer and ignore Escape in the game: a group invitation, a summon, a resurrection, the death box with Release Spirit, the invitation that asks for your role, and the ready check. Escape on such a box puts it aside: you hear "Pending", the WowVision window over it closes and your keys work in the game again. Nothing is answered. The box stays on the screen exactly as the game shows it, its countdown keeps running, and it can still time out as it would for anyone who leaves it there.
+Some boxes wait for an answer and ignore Escape in the game: a group invitation, a summon, a resurrection, the death box with Release Spirit, the invitation that asks for your role, and the ready check. Escape on such a box puts it aside: you hear its short name and "Pending", for example "Group Invitation, Pending", the WowVision window over it closes and your keys work in the game again. Nothing is answered. The box stays on the screen exactly as the game shows it, its countdown keeps running, and it can still time out as it would for anyone who leaves it there.
 
-While something waits, the WowVision menu (Shift+F1) starts with Pending and how many are waiting. Inside, each box is listed with its text (a countdown the game shows in the text reads as it runs); Enter opens it again in front of you. An entry goes away by itself when the box is answered, cancelled or runs out.
+While something waits, the WowVision menu (Shift+F1) starts with it: one waiting box is the first entry itself, "Pending" and its text; with more, the first entry is Pending and how many are waiting, and inside each box is listed with its text (a countdown the game shows in the text reads as it runs). Enter on a box opens it again in front of you. An entry goes away by itself when the box is answered, cancelled or runs out.
 
 Boxes that take Escape in the game, such as "delete this item?", are not put aside: Escape cancels them as before.
 

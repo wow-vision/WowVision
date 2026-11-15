@@ -37,6 +37,7 @@ local function requestClose(_, reason)
     WowVision.pending.closeRequest("ReadyCheck", {
         {
             frame = ReadyCheckFrame,
+            title = L["Ready Check"],
             label = function()
                 return WowVision.secrets.join({ L["Ready Check"], ReadyCheckFrameText:GetText() }, ", ")
             end,

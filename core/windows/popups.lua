@@ -245,6 +245,25 @@ local function holdsEscape()
     return any and all
 end
 
+-- A put-aside dialog's short name, said with Pending (its text was read when it opened).
+local TITLES = {
+    PARTY_INVITE = "Group Invitation",
+    CONFIRM_SUMMON = "Summon",
+    CONFIRM_SUMMON_SCENARIO = "Summon",
+    CONFIRM_SUMMON_STARTING_AREA = "Summon",
+    RESURRECT = "Resurrection",
+    RESURRECT_NO_SICKNESS = "Resurrection",
+    RESURRECT_NO_TIMER = "Resurrection",
+    DEATH = "Death",
+    HARDCORE_DEATH = "Death",
+    WOWVISION_PENDING_TEST = "Pending test",
+}
+
+local function dialogTitle(frame)
+    local key = frame.which ~= nil and TITLES[frame.which] or nil
+    return L[key or "Popup"]
+end
+
 -- Escape (or the Close All Windows key) on the window: the dialogs in front that ignore Escape go to Pending, their
 -- frames left on screen, labelled with their text (read live: a countdown the game shows in it reads as it runs).
 local function requestClose(_, reason)
@@ -255,6 +274,7 @@ local function requestClose(_, reason)
             tinsert(entries, {
                 frame = frame,
                 which = frame.which,
+                title = dialogTitle(frame),
                 label = function()
                     return text ~= nil and text:GetText() or L["Popup"]
                 end,

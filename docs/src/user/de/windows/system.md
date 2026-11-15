@@ -92,9 +92,9 @@ Esc bricht den Kasten genauso ab, wie es das Spiel tut.
 
 ### Ausstehend: eine Frage, die wartet
 
-Manche Kästen warten auf eine Antwort und überhören im Spiel die Esc-Taste: eine Gruppeneinladung, eine Beschwörung, eine Wiederbelebung, der Todes-Kasten mit Geist freilassen, die Einladung, die nach deiner Rolle fragt, und der Bereitschaftscheck. Esc auf so einem Kasten legt ihn beiseite: du hörst „Ausstehend“, das WowVision-Fenster darüber schließt sich und deine Tasten wirken wieder im Spiel. Beantwortet wird nichts. Der Kasten bleibt genau so auf dem Bildschirm, wie das Spiel ihn zeigt, sein Countdown läuft weiter und er kann ablaufen, wie für jeden, der ihn stehen lässt.
+Manche Kästen warten auf eine Antwort und überhören im Spiel die Esc-Taste: eine Gruppeneinladung, eine Beschwörung, eine Wiederbelebung, der Todes-Kasten mit Geist freilassen, die Einladung, die nach deiner Rolle fragt, und der Bereitschaftscheck. Esc auf so einem Kasten legt ihn beiseite: du hörst seinen kurzen Namen und „Ausstehend“, etwa „Gruppeneinladung, Ausstehend“, das WowVision-Fenster darüber schließt sich und deine Tasten wirken wieder im Spiel. Beantwortet wird nichts. Der Kasten bleibt genau so auf dem Bildschirm, wie das Spiel ihn zeigt, sein Countdown läuft weiter und er kann ablaufen, wie für jeden, der ihn stehen lässt.
 
-Solange etwas wartet, beginnt das WowVision-Menü (Umschalt+F1) mit Ausstehend und der Zahl der wartenden Kästen. Darin steht jeder Kasten mit seinem Text (ein Countdown, den das Spiel im Text zeigt, läuft mit); Eingabe öffnet ihn wieder vor dir. Ein Eintrag verschwindet von selbst, wenn der Kasten beantwortet, abgebrochen oder abgelaufen ist.
+Solange etwas wartet, beginnt das WowVision-Menü (Umschalt+F1) damit: ein wartender Kasten ist selbst der erste Eintrag, „Ausstehend“ und sein Text; bei mehreren ist der erste Eintrag Ausstehend mit der Zahl der wartenden Kästen, und darin steht jeder Kasten mit seinem Text (ein Countdown, den das Spiel im Text zeigt, läuft mit). Eingabe auf einem Kasten öffnet ihn wieder vor dir. Ein Eintrag verschwindet von selbst, wenn der Kasten beantwortet, abgebrochen oder abgelaufen ist.
 
 Kästen, die im Spiel auf Esc hören, etwa „diesen Gegenstand zerstören?“, werden nicht beiseitegelegt: Esc bricht sie ab wie bisher.
 
