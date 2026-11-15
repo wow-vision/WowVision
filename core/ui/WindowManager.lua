@@ -165,9 +165,11 @@ end
 -- what is said next (a route's summary) is not cut off by Interrupt Speech on Window Close.
 local CLOSE_ALL_QUIET = 0.5
 
--- Close every open WowVision window and every window of the game. Popups that wait for an answer stay; in combat the
--- game's protected windows stay too. True when something was open.
-function WindowManager:closeAll()
+-- Close every open WowVision window and every window of the game. Popups that wait for an answer stay on screen. The
+-- reason goes to every window's close request: "closeAllKey" from the Close All Windows key, which with Pending
+-- Windows puts their windows aside (windows/pending.lua); none from a route start, which leaves them in front. In
+-- combat the game's protected windows stay too. True when something was open.
+function WindowManager:closeAll(reason)
     self.quietCloseUntil = GetTime() + CLOSE_ALL_QUIET
     local host = WowVision.graphHost
     local stacks = {}
@@ -178,7 +180,7 @@ function WindowManager:closeAll()
     for i = #stacks, 1, -1 do
         local stack = stacks[i]
         if stack.config ~= nil and stack.config.onRequestClose ~= nil then
-            local ok, err = pcall(stack.config.onRequestClose, stack)
+            local ok, err = pcall(stack.config.onRequestClose, stack, reason)
             if not ok then
                 geterrorhandler()(err)
             end

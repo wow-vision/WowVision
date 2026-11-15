@@ -90,6 +90,24 @@ Ein Kasten hat bis zu drei Teile, jeder ein eigener Stopp:
 
 Esc bricht den Kasten genauso ab, wie es das Spiel tut.
 
+### Ausstehend: eine Frage, die wartet
+
+Manche Kästen warten auf eine Antwort und überhören im Spiel die Esc-Taste: eine Gruppeneinladung, eine Beschwörung, eine Wiederbelebung, der Todes-Kasten mit Geist freilassen, die Einladung, die nach deiner Rolle fragt, und der Bereitschaftscheck. Esc auf so einem Kasten legt ihn beiseite: du hörst seinen kurzen Namen und „Ausstehend“, etwa „Gruppeneinladung, Ausstehend“, das WowVision-Fenster darüber schließt sich und deine Tasten wirken wieder im Spiel. Beantwortet wird nichts. Der Kasten bleibt genau so auf dem Bildschirm, wie das Spiel ihn zeigt, sein Countdown läuft weiter und er kann ablaufen, wie für jeden, der ihn stehen lässt.
+
+Solange etwas wartet, beginnt das WowVision-Menü (Umschalt+F1) damit: ein wartender Kasten ist selbst der erste Eintrag, „Ausstehend“ und sein Text; bei mehreren ist der erste Eintrag Ausstehend mit der Zahl der wartenden Kästen, und darin steht jeder Kasten mit seinem Text (ein Countdown, den das Spiel im Text zeigt, läuft mit). Eingabe auf einem Kasten öffnet ihn wieder vor dir. Ein Eintrag verschwindet von selbst, wenn der Kasten beantwortet, abgebrochen oder abgelaufen ist.
+
+Kästen, die im Spiel auf Esc hören, etwa „diesen Gegenstand zerstören?“, werden nicht beiseitegelegt: Esc bricht sie ab wie bisher.
+
+Die Einstellung Ausstehende Fenster (Pending Windows, im Menü Benutzeroberfläche) wählt, wann ein Kasten beiseitegelegt wird:
+
+- Escape und die Taste Alle Fenster schließen (die Vorgabe): Esc und die Taste Alle Fenster schließen (Umschalt+Esc).
+- Nur die Taste Alle Fenster schließen: Esc lässt so einen Kasten vor dir stehen, wie bisher; Umschalt+Esc legt ihn beiseite.
+- Aus: nichts wird beiseitegelegt; Esc und Umschalt+Esc verhalten sich wie vor Ausstehend.
+
+Startest du eine Route, schließen sich deine Fenster, solche Kästen bleiben aber vor dir.
+
+Zum Ausprobieren ohne Gruppe tippe /wv pendingtest: es zeigt einen Testkasten, der eine Minute lang wie eine Gruppeneinladung wartet; seine Knöpfe schreiben nur in den Chat. Weil WowVision ihn zeigt, meldet ein Esc, das ans Spiel geht, eine blockierte Aktion, solange er offen ist; die eigenen Kästen des Spiels tun das nicht.
+
 Beispiel: eine Gruppeneinladung annehmen.
 
 1. Du hörst das Popup: den Namen des Spielers und „lädt dich in eine Gruppe ein“.
@@ -180,5 +198,5 @@ Jedes dieser Fenster ist ein Modul unter Fenster im WowVision-Menü, und jedes h
 ## Fehlerbehebung
 
 - Esc öffnet das Spielmenü, statt mein Fenster zu schließen. Das Fenster war schon geschlossen. Drücke Esc noch einmal, um das Spielmenü zu verlassen.
-- Ein Popup scheint zu fehlen. Drücke Strg+Tab, um zu ihm zu wechseln. Ein Popup und ein anderes Fenster können gleichzeitig offen sein.
+- Ein Popup scheint zu fehlen. Drücke Strg+Tab, um zu ihm zu wechseln. Ein Popup und ein anderes Fenster können gleichzeitig offen sein. Einen Kasten, den du mit Esc beiseitegelegt hast, findest du unter Ausstehend oben im WowVision-Menü.
 - Ich kann eine Farbe nicht über einen Farbnamen einstellen. Die Farbauswahl nimmt nur Zahlen oder einen Hex-Code.

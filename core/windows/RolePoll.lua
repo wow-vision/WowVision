@@ -113,9 +113,18 @@ end
 -- route start keep popups that wait for an answer). Hiding the frame here
 -- would skip the game's StaticPopupSpecial_Hide: no decline, no timeout,
 -- and the frame left in the game's list of shown dialogs. The window opens
--- again on the next check while the frame is shown.
-local function keepInvitation()
-    WowVision.UIHost.windowManager:closeWindow("LFGInvitePopup")
+-- again on the next check while the frame is shown, unless Pending Windows
+-- put it aside (pending.lua): Escape there, or the Close All Windows key.
+local function keepInvitation(_, reason)
+    WowVision.pending.closeRequest("LFGInvitePopup", {
+        {
+            frame = LFGInvitePopup,
+            title = L["Group Invitation"],
+            label = function()
+                return getPopupTitle(LFGInvitePopup)
+            end,
+        },
+    }, reason)
 end
 
 -- The three role popups share one render. Only the invitation keeps its
@@ -123,13 +132,24 @@ end
 for _, def in ipairs({
     { window = "RolePoll", frame = "RolePollPopup" },
     { window = "LFDRoleCheckPopup", frame = "LFDRoleCheckPopup" },
-    { window = "LFGInvitePopup", frame = "LFGInvitePopup", onRequestClose = keepInvitation },
+    {
+        window = "LFGInvitePopup",
+        frame = "LFGInvitePopup",
+        onRequestClose = keepInvitation,
+        captureClose = function()
+            return WowVision.pending.holdsEscape()
+        end,
+    },
 }) do
     module:registerWindow({
         type = "FrameWindow",
         name = def.window,
         frameName = def.frame,
         conflictingAddons = { "Sku" },
-        graphScreen = { render = makeRender(def.frame), onRequestClose = def.onRequestClose },
+        graphScreen = {
+            render = makeRender(def.frame),
+            onRequestClose = def.onRequestClose,
+            captureClose = def.captureClose,
+        },
     })
 end

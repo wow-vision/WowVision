@@ -2351,6 +2351,11 @@ do
     end
     WowVision.base = { windows = stubModule() }
     loadAddonFile("core/windows/popups.lua")
+    -- Pending windows: the game's dialog table and button words, as the game has them (restored below).
+    local savedDialogs, savedAccept, savedDecline = StaticPopupDialogs, ACCEPT, DECLINE
+    StaticPopupDialogs = {}
+    ACCEPT, DECLINE = "Accept", "Decline"
+    loadAddonFile("core/windows/pending.lua")
     loadAddonFile("core/windows/RolePoll.lua")
     loadAddonFile("core/windows/trade.lua")
     harness.popups = WowVision.base.windows.popups
@@ -2359,7 +2364,9 @@ do
     WowVision._popupsTestHarness = harness
     loadAddonFile("core/windows/popupsTests.lua")
     loadAddonFile("core/windows/tradeTests.lua")
+    loadAddonFile("core/windows/pendingTests.lua")
     WowVision._popupsTestHarness = nil
+    StaticPopupDialogs, ACCEPT, DECLINE = savedDialogs, savedAccept, savedDecline
 end
 loadAddonFile("core/graph/menuNavTests.lua")
 loadAddonFile("core/graph/secretLabelTests.lua")
