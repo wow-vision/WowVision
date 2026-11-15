@@ -49,6 +49,7 @@ local function newHandle(name)
     handle.attributes._arm = combatKeys.ARM
     handle.attributes._enter = combatKeys.ENTER
     handle.attributes._leave = combatKeys.LEAVE
+    handle.attributes._cycle = combatKeys.CYCLE
     handle.attributes._combat = combatKeys.COMBAT
     handle.refs.use = { name = "WowVisionCombatUse", attributes = {} }
     function handle.refs.use:GetName()
@@ -402,14 +403,52 @@ testRunner:addSuite("CombatMirror", {
         t:assertTrue(closed, "addon code closes the visible bags")
     end,
 
-    ["ctrl-tab leaves the list: backspace is the frame's again"] = function(t)
+    ["ctrl-tab to the other windows: backspace is the frame's again"] = function(t)
         local handle = bagsFight(false)
+        handle.attributes.others = 1
         openBags(handle)
         click(handle, "nextWindow")
         t:assertEqual(handle.attributes.mode, "")
         t:assertEqual(handle.bindings.BACKSPACE, "rightClick")
         t:assertNil(handle.refs.use.attributes.item)
-        t:assertEqual(handle.calls[#handle.calls][2], "nextWindow")
+        t:assertEqual(handle.calls[#handle.calls][2], "otherWindow")
+    end,
+
+    ["ctrl-tab with only the bags open stays in them"] = function(t)
+        local handle = bagsFight(false)
+        openBags(handle)
+        click(handle, "nextWindow")
+        t:assertEqual(handle.attributes.mode, "bags")
+        t:assertEqual(handle.bindings.BACKSPACE, "WowVisionCombatUse:LeftButton")
+    end,
+
+    ["ctrl-tab goes from the bags to the equipment and back, each where it was left"] = function(t)
+        local handle = bagsFight(true)
+        handle.attributes["mirror-n"] = 2
+        handle.attributes["mirror-k2"] = "equipment"
+        handle.attributes["equipment-n"] = 2
+        handle.attributes["equipment-v1"] = "1"
+        handle.attributes["equipment-v2"] = "13"
+        handle.attributes["equipment-f1"], handle.attributes["equipment-l1"] = 1, 2
+        handle.attributes["equipment-f2"], handle.attributes["equipment-l2"] = 1, 2
+        handle.attributes["equipment-open"] = 1
+        handle.attributes.others = 1
+        openBags(handle)
+        click(handle, "down")
+        click(handle, "nextWindow")
+        t:assertEqual(handle.attributes.mode, "equipment")
+        click(handle, "down")
+        t:assertEqual(handle.refs.use.attributes.item, "13")
+        click(handle, "nextWindow")
+        t:assertEqual(handle.attributes.mode, "", "then the other windows")
+        click(handle, "nextWindow")
+        t:assertEqual(handle.attributes.mode, "bags")
+        t:assertEqual(handle.attributes.idx, 2, "the bags where they were left")
+        click(handle, "previousWindow")
+        t:assertEqual(handle.attributes.mode, "")
+        click(handle, "previousWindow")
+        t:assertEqual(handle.attributes.mode, "equipment")
+        t:assertEqual(handle.attributes.idx, 2)
     end,
 
     ["a fight that begins on a focused bag slot walks on from it"] = function(t)
@@ -438,6 +477,7 @@ testRunner:addSuite("CombatMirror", {
         t:assertEqual(handle.bindings.ENTER, "WowVisionCombatPick_bags1:LeftButton")
         click(handle, "down")
         t:assertEqual(handle.bindings.ENTER, "WowVisionCombatPick_bags2:LeftButton")
+        handle.attributes.others = 1
         click(handle, "nextWindow")
         t:assertEqual(handle.bindings.ENTER, "leftClick", "out of the list enter is the frame's again")
     end,

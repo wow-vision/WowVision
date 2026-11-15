@@ -441,6 +441,26 @@ function GraphHost:combatKey(key)
     self:onKey(key)
 end
 
+-- Focus the next stack after the focused one that passes the test, and read it afresh (Ctrl-Tab in combat from a
+-- mirrored window to the others, graph/combatKeys.lua). False when none does.
+function GraphHost:focusStack(test)
+    local count = #self.stacks
+    for step = 1, count do
+        local index = ((self.focusedIndex or 0) - 1 + step) % count + 1
+        if test(self.stacks[index]) then
+            self.focusedIndex = index
+            self._bindingsDirty = true
+            local screen = self:focusedScreen()
+            if screen ~= nil then
+                WowVision.base.speech:uiStop()
+                screen:resetAnnouncement()
+            end
+            return true
+        end
+    end
+    return false
+end
+
 -- A mirrored list in combat (graph/combatKeys.lua) moved its position, which the secure side owns there: focus the
 -- stack and land on the entry, spoken as an arrow would speak it. why "open" reads the window afresh, "resume" (the
 -- fight began on it) says nothing new, "reread" reads the entry again; Up or Down that did not move sounds the list's

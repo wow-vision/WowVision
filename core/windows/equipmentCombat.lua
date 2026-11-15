@@ -130,6 +130,10 @@ WowVision.graph.combatKeys.registerMirror({
     isOpen = function()
         return instance() ~= nil
     end,
+    stack = function()
+        local open = instance()
+        return open ~= nil and open.stack or nil
+    end,
     focusedIndex = function()
         return nil
     end,

@@ -230,6 +230,10 @@ WowVision.graph.combatKeys.registerMirror({
     isOpen = function()
         return bagsInstance() ~= nil
     end,
+    stack = function()
+        local open = bagsInstance()
+        return open ~= nil and open.stack or nil
+    end,
     focusedIndex = function()
         local instance = bagsInstance()
         local host = WowVision.graphHost

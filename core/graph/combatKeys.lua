@@ -100,8 +100,9 @@ end
 --
 -- Attributes: menu-n / menu-k<i> / menu-a<i> the staged inputs and their action names; rc-n / rc-k<i> the inputs of
 -- the right click among them; enabled 1 or 0 (the setting); menuopen 1 when a WowVision window is open (kept current
--- out of combat, read as the fight begins); fighting 1 in a fight with the setting on; taken 1 while the menu keys are
--- bound to the frame.
+-- out of combat, read as the fight begins); othersopen likewise for windows other than the mirrored ones, and others
+-- its value in the fight (a window-opening key sets it, Escape clears it); fighting 1 in a fight with the setting on;
+-- taken 1 while the menu keys are bound to the frame.
 --
 -- Mirrored lists (registerMirror below): a window whose entries need a secure action in combat (Backspace uses a bag
 -- item) cannot have addon code point that action at the focused entry. So in such a list the secure side walks the
@@ -202,6 +203,7 @@ combatKeys.ENTER = [[
     end
     self:SetAttribute("mode", mode)
     self:SetAttribute("idx", start)
+    self:SetAttribute(mode .. "-last", start)
     if self:GetAttribute("taken") == 1 then
         self:RunAttribute("_useKeys", true)
     else
@@ -209,6 +211,54 @@ combatKeys.ENTER = [[
     end
     self:RunAttribute("_arm")
     self:CallMethod("onMirror", mode, start, why)
+]]
+
+-- Ctrl-Tab in a fight with a mirrored window open: the secure side cycles the windows itself, so walking a list goes
+-- on in the next. The ring: each open mirrored window in staged order, then one stop for WowVision's other windows
+-- (others: they were open as the fight began or a window-opening key was pressed since). A mirrored window is
+-- walked on from the entry it was left on (m-last). With no mirrored window open the key goes to addon code, which
+-- cycles the windows as ever.
+combatKeys.CYCLE = [[
+    local step = ...
+    local count = self:GetAttribute("mirror-n") or 0
+    local mode = self:GetAttribute("mode")
+    local current = count + 1
+    for i = 1, count do
+        if self:GetAttribute("mirror-k" .. i) == mode then
+            current = i
+        end
+    end
+    local direction = 1
+    if step == "previousWindow" then
+        direction = -1
+    end
+    local target = nil
+    for k = 1, count do
+        local position = (current - 1 + direction * k) % (count + 1) + 1
+        if position <= count then
+            local name = self:GetAttribute("mirror-k" .. position)
+            if self:GetAttribute(name .. "-open") == 1 then
+                target = name
+                break
+            end
+        elseif self:GetAttribute("others") == 1 then
+            target = ""
+            break
+        end
+    end
+    if target == nil then
+        if mode == nil or mode == "" then
+            self:CallMethod("onCombatKey", step)
+        end
+        return
+    end
+    self:SetAttribute("ctx", 0)
+    if target == "" then
+        self:RunAttribute("_leave")
+        self:CallMethod("onCombatKey", "otherWindow")
+        return
+    end
+    self:RunAttribute("_enter", target, self:GetAttribute(target .. "-last"), "open")
 ]]
 
 -- Stop walking the mirrored list: the right click is the frame's again.
@@ -239,6 +289,7 @@ combatKeys.COMBAT = [[
         return
     end
     self:SetAttribute("fighting", 1)
+    self:SetAttribute("others", self:GetAttribute("othersopen"))
     for i = 1, self:GetAttribute("ok-n") or 0 do
         self:SetBindingClick(true, self:GetAttribute("ok-k" .. i), self:GetAttribute("ok-o" .. i), "LeftButton")
     end
@@ -272,6 +323,7 @@ combatKeys.CLICK = [[
             self:RunAttribute("_leave")
             self:CallMethod("onMirror", mode, 0, "close")
         end
+        self:SetAttribute("others", 0)
         self:RunAttribute("_release")
         self:CallMethod("onCombatKey", button)
         return
@@ -290,9 +342,7 @@ combatKeys.CLICK = [[
             self:CallMethod("onMirror", mode, self:GetAttribute("idx"), "contextClose")
             return
         elseif button == "nextWindow" or button == "previousWindow" then
-            self:SetAttribute("ctx", 0)
-            self:RunAttribute("_leave")
-            self:CallMethod("onCombatKey", button)
+            self:RunAttribute("_cycle", button)
             return
         elseif button == "leftClick" then
             -- reached only where the chosen entry has nothing armed
@@ -306,10 +356,12 @@ combatKeys.CLICK = [[
         self:CallMethod("onMirror", mode, ctxi, "contextMove")
         return
     end
+    if button == "nextWindow" or button == "previousWindow" then
+        self:RunAttribute("_cycle", button)
+        return
+    end
     if mode ~= nil then
-        if button == "nextWindow" or button == "previousWindow" then
-            self:RunAttribute("_leave")
-        elseif button == "contextMenu" then
+        if button == "contextMenu" then
             self:SetAttribute("ctx", 1)
             self:SetAttribute("ctxi", 1)
             self:RunAttribute("_arm")
@@ -352,6 +404,7 @@ combatKeys.CLICK = [[
                 j = self:GetAttribute(mode .. "-f" .. j) or j
             end
             self:SetAttribute("idx", j)
+            self:SetAttribute(mode .. "-last", j)
             self:RunAttribute("_arm")
             self:CallMethod("onMirror", mode, j, button)
             return
@@ -364,6 +417,7 @@ combatKeys.CLICK = [[
 -- action. owner is the secure frame.
 combatKeys.OPENING = [[
     if owner:GetAttribute("fighting") == 1 then
+        owner:SetAttribute("others", 1)
         owner:RunAttribute("_take")
     end
 ]]
@@ -512,6 +566,7 @@ local function createFrames()
     keys:SetAttribute("_arm", combatKeys.ARM)
     keys:SetAttribute("_enter", combatKeys.ENTER)
     keys:SetAttribute("_leave", combatKeys.LEAVE)
+    keys:SetAttribute("_cycle", combatKeys.CYCLE)
     keys:SetAttribute("_combat", combatKeys.COMBAT)
     keys:SetAttribute("_onclick", combatKeys.CLICK)
     keys.onCombatKey = function(_, action)
@@ -596,6 +651,7 @@ end
 --              2 right click), "contextClose", "contextDone" (an entry ran)
 --   contextLabels(index)  { left = ..., right = ... }: the two context menu entries of entry index
 --   onClose()  the walked window was closed in the fight: close what the opener's click did not (all the bags)
+--   stack()    the window's stack while it is open, else nil (Ctrl-Tab tells it from WowVision's other windows)
 --   clickTargets()  optional: entry index -> the game's own button of that entry as the open window lays it out now.
 --              Enter on the entry in a fight is a secure click of it, while the window stays as it was when the
 --              fight began.
@@ -753,7 +809,26 @@ local function tickPicks(def)
 end
 
 -- Each update out of combat: whether each mirrored window is open, and the entry it is focused on.
+-- Whether a stack is a mirrored window's.
+function combatKeys.isMirrorStack(stack)
+    for _, def in ipairs(combatKeys.mirrors) do
+        if def.stack ~= nil and def.stack() == stack then
+            return true
+        end
+    end
+    return false
+end
+
 local function tickMirrors()
+    local others = 0
+    for _, stack in ipairs(WowVision.graphHost.stacks) do
+        if not combatKeys.isMirrorStack(stack) then
+            others = 1
+        end
+    end
+    if keysFrame:GetAttribute("othersopen") ~= others then
+        keysFrame:SetAttribute("othersopen", others)
+    end
     local startMode = ""
     for _, def in ipairs(combatKeys.mirrors) do
         local open = def.isOpen() and 1 or 0
@@ -880,6 +955,13 @@ function combatKeys.onKey(action)
     end
     if not host:isOpen() then
         WowVision:notify(L["No menu open, Escape gives the keys back"])
+        return
+    end
+    if action == "otherWindow" then
+        -- Ctrl-Tab from a mirrored window to WowVision's other windows (CYCLE)
+        host:focusStack(function(stack)
+            return not combatKeys.isMirrorStack(stack)
+        end)
         return
     end
     host:combatKey(action)
