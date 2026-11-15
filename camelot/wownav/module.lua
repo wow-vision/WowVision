@@ -601,7 +601,7 @@ end
 -- A job planning in time slices, as every search (stepJob runs it).
 local function newJob(N, request, work)
     return { request = request, startedAt = GetTime(), job = work, frames = 0, misses = N.wholeMisses or 0,
-        answers = N.knownMissAnswers or 0 }
+        answers = N.knownMissAnswers or 0, closed = N.closedWaterGoals or 0 }
 end
 
 -- Starts the search for a request. request: { contract or nodeId, label, onArrive, start }; start: the entry point the
@@ -999,11 +999,14 @@ local function stepJob(self)
     local done, outcome, failure = j.job:Step(BUDGET_MS, debugprofilestop)
     j.frames = j.frames + 1
     if done then
-        -- how long the search took, and the whole searches that missed (the floor check) and what they answered
+        -- how long the search took, the whole searches that missed (the floor check) and what they answered, and the
+        -- goals in closed water that no search was spent on
         local N = self:network()
-        logLine(string.format("search %s: %s after %.1f s in %d frames, %d whole misses, %d targets answered from them",
+        logLine(string.format("search %s: %s after %.1f s in %d frames, %d whole misses, %d targets answered from them, "
+            .. "%d closed water goals left out",
             tostring(j.request.label), type(outcome) == "table" and tostring(outcome.kind) or tostring(failure),
-            GetTime() - j.startedAt, j.frames, (N.wholeMisses or 0) - j.misses, (N.knownMissAnswers or 0) - j.answers))
+            GetTime() - j.startedAt, j.frames, (N.wholeMisses or 0) - j.misses, (N.knownMissAnswers or 0) - j.answers,
+            (N.closedWaterGoals or 0) - j.closed))
     end
     if not done then
         if not j.noticed and GetTime() - j.startedAt >= SLOW_NOTICE then
