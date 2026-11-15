@@ -149,6 +149,7 @@ for _, def in ipairs({
         frame = "LFGInvitePopup",
         onRequestClose = keepInvitation,
         captureClose = holdsEscape,
+        waits = true,
     },
 }) do
     module:registerWindow({
@@ -160,6 +161,7 @@ for _, def in ipairs({
             render = makeRender(def.frame),
             onRequestClose = def.onRequestClose,
             captureClose = def.captureClose,
+            waits = def.waits,
         },
     })
 end

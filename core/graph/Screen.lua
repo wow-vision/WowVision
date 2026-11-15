@@ -17,6 +17,8 @@ local graph = WowVision.graph
 --   onRequestClose  function(stack) -- close/escape pressed on the last screen;
 --                   the owner (window bridge) closes the real UI. Absent = the
 --                   host just closes the stack.
+--   waits           a popup that waits for an answer: in combat the menu key lands
+--                   on it, and Escape puts it aside (graph/combatKeys.lua)
 --   noLevelBack     the left arrow does not go back from this pushed screen
 --                   (a yes/no question)
 local Screen = WowVision.Class("GraphScreen")

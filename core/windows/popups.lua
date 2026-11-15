@@ -153,10 +153,12 @@ local function renderDialog(builder, frame, index)
         )
     end
 
+    -- The buttons are plain game buttons, not protected: in combat their own click runs from addon code, as the
+    -- Accept Group Invitation key does (acceptInvite below).
     for _, button in ipairs(getPopupButtons(frame)) do
         if button:IsShown() then
             builder:beginStop()
-            builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button }))
+            builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button, combatClick = true }))
         end
     end
 
@@ -288,5 +290,5 @@ module:registerWindow({
         return any
     end,
     conflictingAddons = { "Sku" },
-    graphScreen = { render = render, captureClose = holdsEscape, onRequestClose = requestClose },
+    graphScreen = { render = render, captureClose = holdsEscape, onRequestClose = requestClose, waits = true },
 })

@@ -215,8 +215,22 @@ function nodes.proxyButton(config)
             },
         },
         bindings = {
-            { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = target },
-            { binding = "rightClick", type = "Click", emulatedKey = "RightButton", target = target },
+            -- combatClick: the frame's own click may run from addon code in combat (graph/Host.lua combatKey), for a
+            -- button that is not protected and whose click needs no secure call (a popup's buttons)
+            {
+                binding = "leftClick",
+                type = "Click",
+                emulatedKey = "LeftButton",
+                target = target,
+                combatClick = config.combatClick,
+            },
+            {
+                binding = "rightClick",
+                type = "Click",
+                emulatedKey = "RightButton",
+                target = target,
+                combatClick = config.combatClick,
+            },
         },
         tooltip = config.tooltip,
     }

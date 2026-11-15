@@ -63,7 +63,12 @@ module:registerWindow({
     name = "ReadyCheck",
     frameName = "ReadyCheckFrame",
     conflictingAddons = { "Sku" },
-    graphScreen = { render = renderReadyCheck, captureClose = holdsEscape, onRequestClose = requestClose },
+    graphScreen = {
+        render = renderReadyCheck,
+        captureClose = holdsEscape,
+        onRequestClose = requestClose,
+        waits = true,
+    },
 })
 
 --LFD Dungeon Ready

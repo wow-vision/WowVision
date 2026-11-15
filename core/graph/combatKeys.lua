@@ -946,6 +946,11 @@ function combatKeys.onKey(action)
     local host = WowVision.graphHost
     log(action .. ", " .. #host.stacks .. " open")
     if action == "close" then
+        -- A popup that waits in front is put aside to Pending, as Escape does out of combat (windows/pending.lua).
+        local focused = host:focusedStack()
+        if focused ~= nil and focused.config ~= nil and focused.config.waits and focused.config.onRequestClose then
+            focused.config.onRequestClose(focused)
+        end
         -- Quiet: WowVision's own windows play their closing sound.
         local remaining = WowVision.UIHost.windowManager:closeOwnWindows()
         if #remaining > 0 then

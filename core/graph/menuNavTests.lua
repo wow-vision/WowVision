@@ -839,3 +839,38 @@ testRunner:addSuite("CombatMenuKeys", {
         end)
     end,
 })
+
+testRunner:addSuite("CombatPopups", {
+    ["a popup button marked for combat runs its own click there"] = function(t)
+        withCombat(function(host)
+            local clicked = nil
+            local button = {
+                IsShown = function()
+                    return true
+                end,
+                Click = function(_, which)
+                    clicked = which
+                end,
+            }
+            host:open({
+                key = "popup",
+                render = function(builder)
+                    builder:addItem(sid("accept"), nodes.proxyButton({ target = button, combatClick = true, hover = false }))
+                end,
+            })
+            host:combatKey("leftClick")
+            t:assertEqual(clicked, "LeftButton")
+        end)
+    end,
+
+    ["a waiting popup takes the focus from another window"] = function(t)
+        withCombat(function(host)
+            local popup = host:open({ key = "popup", waits = true, render = list({ "Accept" }) })
+            host:open({ key = "chat", render = list({ "Line" }) })
+            t:assertTrue(host:focusStack(function(stack)
+                return stack.config.waits == true
+            end))
+            t:assertEqual(host:focusedStack(), popup)
+        end)
+    end,
+})
