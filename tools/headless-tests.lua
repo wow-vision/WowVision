@@ -333,6 +333,37 @@ loadAddonFile("core/scanner/nearest.lua")
 loadAddonFile("core/scanner/nearestTests.lua")
 loadAddonFile("core/secrets.lua")
 loadAddonFile("core/secretsTests.lua")
+-- The group health monitor's module: loaded against a stand-in module whose settings are a real settings class (as
+-- Module:hasSettings makes them), so a setting's change reaches the module as in the game. The suite stubs the
+-- game's unit functions per test.
+do
+    local savedBase = WowVision.base
+    local stub = { key = "groupHealth", L = WowVision:getLocale() }
+    local noop = function() end
+    stub.setLabel, stub.registerEvent, stub.registerBinding, stub.hasUpdate = noop, noop, noop, noop
+    function stub:hasSettings()
+        if self.settingsFacade == nil then
+            local settingsClass = WowVision.Class("Settings:groupHealthTest")
+            self.settings = settingsClass:new()
+            self.settingsFacade = {
+                add = function(_, def)
+                    settingsClass:addFields({ def })
+                    return settingsClass:getField(def.key)
+                end,
+            }
+        end
+        return self.settingsFacade
+    end
+    WowVision.base = {
+        createModule = function()
+            return stub
+        end,
+    }
+    loadAddonFile("retail/groupHealth/module.lua")
+    WowVision.base = savedBase
+    WowVision.groupHealth._moduleTestHarness = stub
+end
+loadAddonFile("retail/groupHealth/moduleTests.lua")
 loadAddonFile("camelot/petTraining.lua")
 loadAddonFile("camelot/petTrainingTests.lua")
 loadAddonFile("core/gameDB/itemQuality.lua")

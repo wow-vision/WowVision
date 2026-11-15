@@ -71,24 +71,43 @@ settings:add({
     min = 0,
     max = 100,
 })
-settings:add({
+-- Marks a setting that decides who is watched: a change rebuilds the member
+-- list at once. The roster events alone would keep the old list until
+-- someone joins or leaves, or the next /reload. A category's switches each
+-- count as such a setting (the category itself reports no change of them).
+local function decidesWhoIsWatched(field)
+    if field.typeKey == "Category" then
+        for _, subField in ipairs(field:getSubFields()) do
+            decidesWhoIsWatched(subField)
+        end
+        return field
+    end
+    field.events.valueChange:subscribe(module, function(subscriber)
+        if subscriber.enabled then
+            subscriber:rebuild()
+        end
+    end)
+    return field
+end
+
+decidesWhoIsWatched(settings:add({
     key = "includeSelf",
     type = "Bool",
     label = L["Include Yourself"],
     default = true,
-})
-settings:add({
+}))
+decidesWhoIsWatched(settings:add({
     key = "watchParty",
     type = "Bool",
     label = L["Watch Party"],
     default = true,
-})
-settings:add({
+}))
+decidesWhoIsWatched(settings:add({
     key = "watchRaid",
     type = "Bool",
     label = L["Watch Raid"],
     default = true,
-})
+}))
 settings:add({
     key = "announceFull",
     type = "Bool",
@@ -129,12 +148,12 @@ for group = 1, GroupHealth.MAX_RAID_GROUPS do
         default = true,
     })
 end
-settings:add({
+decidesWhoIsWatched(settings:add({
     key = "raidGroups",
     type = "Category",
     label = L["Raid Groups"],
     fields = raidGroupFields,
-})
+}))
 
 local ROLE_LABELS = {
     TANK = L["Tanks"],
