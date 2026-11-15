@@ -109,8 +109,10 @@ end
 -- (onMirror). Per mirror m: m-n the entry count; m-v<i> what the secure use action gets for entry i ("" for nothing);
 -- m-f<i> / m-l<i> the first and last entry of i's group (a bag: Tab goes from group to group); m-open 1 while its
 -- window is open; m-start the entry focused as the fight begins (startmode names that mirror); m-p<i> 1 while entry
--- i's pick button points at its game button (armed out of combat, as the window lays its buttons out); m-pickok 1
--- while that layout holds in the fight (the window was open as it began and has not been closed); mirror-n /
+-- i's pick button points at its game button (armed out of combat, as the window laid its buttons out the last time);
+-- m-trusted 1 when the window lays its buttons out the same on every opening (seen out of combat: then a pick button
+-- is right for a window opened in the fight too); m-pickok 1 while the pick buttons hold in the fight (the window
+-- was open as the fight began, or opened in it and trusted); mirror-n /
 -- mirror-k<i> the mirrors' names; lc-n / lc-k<i> the left click's inputs. mode is the mirror
 -- walked now ("" for none), idx its position. ok-n / ok-k<i> / ok-o<i> are the game's own keys that open a mirrored
 -- window (the open-bags keys), bound in a fight to that mirror's opener button.
@@ -236,7 +238,8 @@ combatKeys.COMBAT = [[
     end
     for i = 1, self:GetAttribute("mirror-n") or 0 do
         local name = self:GetAttribute("mirror-k" .. i)
-        self:SetAttribute(name .. "-pickok", self:GetAttribute(name .. "-open"))
+        local holds = self:GetAttribute(name .. "-open") == 1 or self:GetAttribute(name .. "-trusted") == 1
+        self:SetAttribute(name .. "-pickok", holds and 1 or 0)
     end
     if self:GetAttribute("menuopen") == 1 then
         self:RunAttribute("_take")
@@ -343,6 +346,7 @@ combatKeys.OPENER = [[
         return
     end
     owner:SetAttribute(mode .. "-open", 1)
+    owner:SetAttribute(mode .. "-pickok", owner:GetAttribute(mode .. "-trusted") == 1 and 1 or 0)
     owner:RunAttribute("_enter", mode, 1, "open")
 ]]
 
@@ -523,7 +527,8 @@ end
 --   key        the mirror's name ("bags")
 --   commands   the game's key bindings that open its window (OPENALLBAGS): their keys are bound in a fight to the
 --              mirror's opener, a secure click of opener()
---   opener()   the game's own button whose click opens and closes the window
+--   openers() the game's own buttons whose clicks open and close the window (every bag's own button)
+--   trusted()  optional: the window lays its buttons out the same on every opening (seen so far this session)
 --   entries()  the list in order: { value = what the secure use action gets ("" for nothing), group = any }; entries
 --              of one group stand together (a bag), Tab goes between groups. Read out of combat only: the list
 --              must not change in a fight.
@@ -581,13 +586,30 @@ local function opener(def)
         button = CreateFrame("Button", "WowVisionCombatOpen_" .. def.key, UIParent, "SecureActionButtonTemplate")
         button:RegisterForClicks("AnyDown")
         button:SetAttribute("useOnKeyDown", true)
-        button:SetAttribute("type", "click")
+        button:SetAttribute("type", "macro")
         button:SetAttribute("mirror", def.key)
         SecureHandlerWrapScript(button, "OnClick", keysFrame, combatKeys.OPENER)
         openers[def.key] = button
     end
-    button:SetAttribute("clickbutton", def.opener())
     return button
+end
+
+-- The opener clicks the game's own buttons that open the window, one /click each (a secure macro: every bag's own
+-- button where the bags are separate windows). Written when the buttons change.
+local function updateOpener(def)
+    local lines = {}
+    for _, target in ipairs(def.openers()) do
+        local name = target:GetName()
+        if name ~= nil then
+            tinsert(lines, "/click " .. name)
+        end
+    end
+    local macro = table.concat(lines, "\n")
+    local button = opener(def)
+    if button:GetAttribute("macrotext") ~= macro then
+        button:SetAttribute("macrotext", macro)
+        log(def.key .. " opener: " .. #lines .. " buttons")
+    end
 end
 
 local function writeMirrors()
@@ -608,6 +630,7 @@ local function writeMirrors()
             writeList(keysFrame, def.key, rows, { v = "value", f = "first", l = "last" })
             log("staged " .. def.key .. ": " .. #rows .. " entries")
         end
+        updateOpener(def)
         local name = opener(def):GetName()
         for _, command in ipairs(def.commands) do
             for _, key in ipairs({ GetBindingKey(command) }) do
@@ -645,9 +668,19 @@ local function tickPicks(def)
     if def.clickTargets == nil then
         return
     end
+    local trusted = def.trusted ~= nil and def.trusted() and 1 or 0
+    if keysFrame:GetAttribute(def.key .. "-trusted") ~= trusted then
+        keysFrame:SetAttribute(def.key .. "-trusted", trusted)
+        log(def.key .. " layout trusted " .. trusted)
+    end
+    updateOpener(def)
+    -- Closed, the window keeps the buttons it laid out last; they stay the pick targets for its next opening.
+    if not def.isOpen() then
+        return
+    end
     local targets = pickTargets[def.key]
     local count = keysFrame:GetAttribute(def.key .. "-n") or 0
-    local now = def.isOpen() and def.clickTargets() or {}
+    local now = def.clickTargets()
     for index = 1, count do
         local target = now[index]
         if targets[index] ~= target then
@@ -755,6 +788,12 @@ end
 -- Whether the graph runs in combat: the setting is on and the frame exists.
 function combatKeys.active()
     return keysFrame ~= nil and enabled()
+end
+
+-- The game button entry index's pick button points at (the bags' layout check).
+function combatKeys.pickTarget(key, index)
+    local targets = pickTargets[key]
+    return targets ~= nil and targets[index] or nil
 end
 
 -- The mirrored list walked right now, or nil.

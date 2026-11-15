@@ -459,6 +459,22 @@ testRunner:addSuite("CombatMirror", {
         t:assertEqual(handle.bindings.ENTER, "leftClick")
     end,
 
+    ["a trusted layout: bags opened in the fight pick up too"] = function(t)
+        local handle = newHandle()
+        stage(handle, MENU, false)
+        stageBags(handle, false)
+        handle.attributes["bags-trusted"] = 1
+        for i = 1, #BAGS do
+            handle.attributes["bags-p" .. i] = 1
+        end
+        fight(handle, true)
+        openBags(handle)
+        t:assertEqual(handle.bindings.ENTER, "WowVisionCombatPick_bags1:LeftButton")
+        openBags(handle)
+        openBags(handle)
+        t:assertEqual(handle.bindings.ENTER, "WowVisionCombatPick_bags1:LeftButton", "reopened in the fight")
+    end,
+
     ["out of a fight the opener does what the button does"] = function(t)
         local handle = newHandle()
         stage(handle, MENU, false)

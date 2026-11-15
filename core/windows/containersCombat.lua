@@ -13,11 +13,10 @@ local ControlId = graph.ControlId
 -- so every position stays the same entry for the whole fight. In combat the bags window shows this list whatever the
 -- shape setting; out of combat it is the window as ever.
 --
--- The game's own open-bags keys open it in a fight (Open All Bags, Toggle Backpack): a secure click of the backpack
--- button opens the visible bags as a click by the player does (on WoW: Forever the combined bags, on the other clients
--- the backpack), so nothing of the game's bag frames is written by addon code. Enter picks the item up or places the
--- one held as a secure click of the slot's own item button (bags open as the fight began only), Space reads the
--- slot's tooltip.
+-- The game's own open-bags keys open it in a fight (Open All Bags, Toggle Backpack): secure clicks of the game's own
+-- bag buttons open every bag as the player's clicks do, so nothing of the game's bag frames is written by addon code.
+-- Enter picks the item up or places the one held as a secure click of the slot's own item button (where the buttons
+-- are known: bags open as the fight began, or a layout trusted out of combat), Space reads the slot's tooltip.
 
 -- Every held bag: backpack, bags, reagent bag where the client has one, keyring.
 local function heldBags()
@@ -78,6 +77,42 @@ local function shownItemButtons()
     end
     return buttons
 end
+
+-- The game's own bag buttons, clicked one after the other by the open-bags key in a fight: as one window the backpack
+-- button opens every bag (combined bags); as separate windows each bag's own button opens it, as Open All Bags does.
+local BAG_BUTTONS = {
+    [0] = "MainMenuBarBackpackButton",
+    [1] = "CharacterBag0Slot",
+    [2] = "CharacterBag1Slot",
+    [3] = "CharacterBag2Slot",
+    [4] = "CharacterBag3Slot",
+    [5] = "CharacterReagentBag0Slot",
+}
+
+local function combinedBags()
+    local manager = ContainerFrameSettingsManager
+    return manager ~= nil and manager.IsUsingCombinedBags ~= nil and manager:IsUsingCombinedBags()
+end
+
+local function bagButtons()
+    local buttons = {}
+    for bag = 0, 5 do
+        local button = _G[BAG_BUTTONS[bag]]
+        if button ~= nil and (C_Container.GetContainerNumSlots(bag) or 0) > 0 then
+            tinsert(buttons, button)
+        end
+        if combinedBags() then
+            break
+        end
+    end
+    return buttons
+end
+
+-- Whether the bags lay their buttons out the same on every opening. Right after the interface loads they do not:
+-- the second opening hands every slot another button (the window's button pool, ContainerFrame.lua UpdateItemSlots),
+-- and from then on each opening gives the same (measured on WoW: Forever, 2026-11-15). So the layout is trusted once
+-- an opening kept it, until the bags change.
+local layoutTrusted = false
 
 -- Entry index -> the item button the open bags show for that slot now.
 local function slotButtons()
@@ -177,8 +212,11 @@ end
 WowVision.graph.combatKeys.registerMirror({
     key = "bags",
     commands = { "OPENALLBAGS", "TOGGLEBACKPACK" },
-    opener = function()
-        return MainMenuBarBackpackButton
+    openers = function()
+        return bagButtons()
+    end,
+    trusted = function()
+        return layoutTrusted
     end,
     entries = function()
         slots = readSlots()
@@ -222,7 +260,7 @@ WowVision.graph.combatKeys.registerMirror({
     onMirror = function(index, why)
         if why == "leftClick" then
             -- reached only where no secure click was armed
-            WowVision:notify(L["To move items in a fight, open the bags before it"])
+            WowVision:notify(L["To pick up items in a fight, open your bags once more out of combat"])
             return
         end
         if why == "tooltip" then
@@ -266,6 +304,23 @@ local function measureLayout()
             end
         end
     end
+    if lastLayout ~= nil and compared > 0 then
+        layoutTrusted = changed == 0
+    end
+    -- The safety net: Enter in this fight clicks the buttons armed before it. Opened here, the layout may differ.
+    if InCombatLockdown() then
+        local wrong = 0
+        for i in ipairs(slots) do
+            local armed = WowVision.graph.combatKeys.pickTarget("bags", i)
+            if layout[i] ~= nil and armed ~= nil and armed ~= layout[i] then
+                wrong = wrong + 1
+            end
+        end
+        if wrong > 0 then
+            WowVision.graph.combatKeys.log("bags layout differs from the armed buttons in " .. wrong .. " slots")
+            WowVision:notify(L["Bag layout changed, Enter may pick up the wrong item"])
+        end
+    end
     local when = InCombatLockdown() and "in combat" or "out of combat"
     if lastLayout == nil then
         WowVision.graph.combatKeys.log("bags layout " .. when .. ": " .. shown .. " slots shown, first opening")
@@ -306,5 +361,8 @@ local events = CreateFrame("Frame")
 events:RegisterEvent("BAG_CONTAINER_UPDATE")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:SetScript("OnEvent", function()
+    -- a bag of another size lays out anew
+    layoutTrusted = false
+    lastLayout = nil
     WowVision.graph.combatKeys.stageMirrors()
 end)
