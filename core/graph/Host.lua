@@ -443,7 +443,8 @@ end
 
 -- A mirrored list in combat (graph/combatKeys.lua) moved its position, which the secure side owns there: focus the
 -- stack and land on the entry, spoken as an arrow would speak it. why "open" reads the window afresh, "resume" (the
--- fight began on it) says nothing new; Up or Down that did not move sounds the list's edge.
+-- fight began on it) says nothing new, "reread" reads the entry again; Up or Down that did not move sounds the list's
+-- edge.
 function GraphHost:landMirror(stack, id, why)
     for i, open in ipairs(self.stacks) do
         if open == stack and self.focusedIndex ~= i then
@@ -465,6 +466,8 @@ function GraphHost:landMirror(stack, id, why)
     WowVision.base.speech:uiStop()
     if why == "open" then
         screen:resetAnnouncement()
+    elseif why == "reread" then
+        self:_announceMove(screen, { from = to, to = to })
     elseif from ~= nil and from.id.key ~= to.id.key then
         self:_announceMove(screen, { from = from, to = to })
     elseif (why == "up" or why == "down") and self:_playsEdgeSound() then

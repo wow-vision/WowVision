@@ -257,6 +257,17 @@ WowVision.graph.combatKeys.registerMirror({
     clickTargets = function()
         return slotButtons()
     end,
+    contextLabels = function(index)
+        local entry = slots[index]
+        local labels = entry ~= nil and module.slotClickLabels(function()
+            return entry.bag, entry.slot
+        end) or {}
+        local function label(which, clickName)
+            local ok, effect = pcall(labels[which] or function() end)
+            return ok and effect ~= nil and (effect .. ", " .. clickName) or clickName
+        end
+        return { left = label("left", L["Left Click"]), right = label("right", L["Right Click"]) }
+    end,
     onMirror = function(index, why)
         if why == "leftClick" then
             -- reached only where no secure click was armed
@@ -265,11 +276,6 @@ WowVision.graph.combatKeys.registerMirror({
         end
         if why == "tooltip" then
             WowVision.graphHost:combatKey(why)
-            return
-        end
-        if why == "contextMenu" then
-            -- its own menu would be walked by the host while the secure side walks the bags
-            WowVision:notify(L["Not available in combat"])
             return
         end
         land(index, why)

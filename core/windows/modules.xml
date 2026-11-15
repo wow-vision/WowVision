@@ -5,6 +5,7 @@
   <Include file="bars/modules.xml" />
   <Script file="containers.lua" />
   <Script file="containersCombat.lua" />
+  <Script file="equipmentCombat.lua" />
 <Script file="GameMenu.lua" />
   <Script file="gossip.lua" />
   <Script file="itemText.lua" />

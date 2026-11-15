@@ -175,6 +175,10 @@ combatKeys.ARM = [[
     if value == "" then
         value = nil
     end
+    -- in the entry's context menu Enter runs the chosen entry: the left click (the pick button) or the right (use)
+    if self:GetAttribute("ctx") == 1 and self:GetAttribute("ctxi") == 2 then
+        pick = value ~= nil and use:GetName() or nil
+    end
     use:SetAttribute("item", value)
     if self:GetAttribute("taken") ~= 1 then
         return
@@ -214,6 +218,7 @@ combatKeys.LEAVE = [[
         return
     end
     self:SetAttribute("mode", "")
+    self:SetAttribute("ctx", 0)
     if self:GetAttribute("taken") == 1 then
         self:RunAttribute("_useKeys", false)
     end
@@ -227,6 +232,7 @@ combatKeys.COMBAT = [[
     self:ClearBindings()
     self:SetAttribute("taken", 0)
     self:SetAttribute("mode", "")
+    self:SetAttribute("ctx", 0)
     self:RunAttribute("_arm")
     if not fighting or self:GetAttribute("enabled") ~= 1 then
         self:SetAttribute("fighting", 0)
@@ -258,7 +264,8 @@ combatKeys.CLICK = [[
     if mode == "" then
         mode = nil
     end
-    if button == "close" then
+    if button == "close" and not (mode ~= nil and self:GetAttribute("ctx") == 1) then
+        self:SetAttribute("ctx", 0)
         if mode ~= nil then
             self:SetAttribute(mode .. "-open", 0)
             self:SetAttribute(mode .. "-pickok", 0)
@@ -269,10 +276,46 @@ combatKeys.CLICK = [[
         self:CallMethod("onCombatKey", button)
         return
     end
+    if mode ~= nil and self:GetAttribute("ctx") == 1 then
+        -- the entry's context menu: two entries (left click, right click), Up and Down between them; Escape, Left or
+        -- the context key close it; Ctrl-Tab closes it and leaves the list; Enter is bound to the chosen entry
+        local ctxi = self:GetAttribute("ctxi") or 1
+        if button == "up" or button == "home" then
+            ctxi = 1
+        elseif button == "down" or button == "end" then
+            ctxi = 2
+        elseif button == "close" or button == "left" or button == "contextMenu" then
+            self:SetAttribute("ctx", 0)
+            self:RunAttribute("_arm")
+            self:CallMethod("onMirror", mode, self:GetAttribute("idx"), "contextClose")
+            return
+        elseif button == "nextWindow" or button == "previousWindow" then
+            self:SetAttribute("ctx", 0)
+            self:RunAttribute("_leave")
+            self:CallMethod("onCombatKey", button)
+            return
+        elseif button == "leftClick" then
+            -- reached only where the chosen entry has nothing armed
+            self:CallMethod("onMirror", mode, self:GetAttribute("idx"), "leftClick")
+            return
+        else
+            return
+        end
+        self:SetAttribute("ctxi", ctxi)
+        self:RunAttribute("_arm")
+        self:CallMethod("onMirror", mode, ctxi, "contextMove")
+        return
+    end
     if mode ~= nil then
         if button == "nextWindow" or button == "previousWindow" then
             self:RunAttribute("_leave")
-        elseif button == "leftClick" or button == "tooltip" or button == "contextMenu" then
+        elseif button == "contextMenu" then
+            self:SetAttribute("ctx", 1)
+            self:SetAttribute("ctxi", 1)
+            self:RunAttribute("_arm")
+            self:CallMethod("onMirror", mode, self:GetAttribute("idx"), "contextOpen")
+            return
+        elseif button == "leftClick" or button == "tooltip" then
             self:CallMethod("onMirror", mode, self:GetAttribute("idx"), button)
             return
         elseif button ~= "rightClick" then
@@ -348,6 +391,17 @@ combatKeys.OPENER = [[
     owner:SetAttribute(mode .. "-open", 1)
     owner:SetAttribute(mode .. "-pickok", owner:GetAttribute(mode .. "-trusted") == 1 and 1 or 0)
     owner:RunAttribute("_enter", mode, 1, "open")
+]]
+
+-- The wrapper on the use button and the pick buttons: run from the context menu, the menu closes (Enter is the slot's
+-- own click again) and addon code reads the entry on. owner is the secure frame.
+combatKeys.CONTEXT_DONE = [[
+    if owner:GetAttribute("ctx") ~= 1 then
+        return
+    end
+    owner:SetAttribute("ctx", 0)
+    owner:RunAttribute("_arm")
+    owner:CallMethod("onMirror", owner:GetAttribute("mode"), owner:GetAttribute("idx"), "contextDone")
 ]]
 
 -- The state driver's handler: the frame's own COMBAT with the new state. The driver hands the state over as a number
@@ -477,6 +531,7 @@ local function createFrames()
         log("use " .. tostring(self:GetAttribute("item")))
     end)
     SecureHandlerSetFrameRef(keys, "use", use)
+    SecureHandlerWrapScript(use, "OnClick", keys, combatKeys.CONTEXT_DONE)
 
     local driver = CreateFrame("Frame", "WowVisionCombatKeysDriver", UIParent, "SecureHandlerStateTemplate")
     SecureHandlerSetFrameRef(driver, "keys", keys)
@@ -529,14 +584,17 @@ end
 --              mirror's opener, a secure click of opener()
 --   openers() the game's own buttons whose clicks open and close the window (every bag's own button)
 --   trusted()  optional: the window lays its buttons out the same on every opening (seen so far this session)
+--   fixedTargets  optional: clickTargets are fixed game frames, armed whether the window is open or not
 --   entries()  the list in order: { value = what the secure use action gets ("" for nothing), group = any }; entries
 --              of one group stand together (a bag), Tab goes between groups. Read out of combat only: the list
 --              must not change in a fight.
 --   isOpen()   whether the window is open
 --   focusedIndex()  the entry the window's focus is on while it is the focused window, else nil
 --   onMirror(index, why)  land the window's focus on entry index; why: "open", "resume" (the fight began on it), the
---              key that moved ("down", "next"...), or the key handed over there ("leftClick", "tooltip",
---              "contextMenu")
+--              key that moved ("down", "next"...), the key handed over there ("leftClick", "tooltip"), or the
+--              entry's context menu: "contextOpen", "contextMove" (index is then the menu entry: 1 left click,
+--              2 right click), "contextClose", "contextDone" (an entry ran)
+--   contextLabels(index)  { left = ..., right = ... }: the two context menu entries of entry index
 --   onClose()  the walked window was closed in the fight: close what the opener's click did not (all the bags)
 --   clickTargets()  optional: entry index -> the game's own button of that entry as the open window lays it out now.
 --              Enter on the entry in a fight is a secure click of it, while the window stays as it was when the
@@ -656,6 +714,7 @@ local function pickButton(def, index)
         button:RegisterForClicks("AnyDown")
         button:SetAttribute("useOnKeyDown", true)
         button:SetAttribute("type", "click")
+        SecureHandlerWrapScript(button, "OnClick", keysFrame, combatKeys.CONTEXT_DONE)
         local key, captured = def.key, index
         button:HookScript("PostClick", function()
             log("pick " .. key .. " " .. captured)
@@ -674,8 +733,9 @@ local function tickPicks(def)
         log(def.key .. " layout trusted " .. trusted)
     end
     updateOpener(def)
-    -- Closed, the window keeps the buttons it laid out last; they stay the pick targets for its next opening.
-    if not def.isOpen() then
+    -- Closed, the window keeps the buttons it laid out last; they stay the pick targets for its next opening. Fixed
+    -- buttons (the equipment slots) are armed whether the window is open or not.
+    if not def.fixedTargets and not def.isOpen() then
         return
     end
     local targets = pickTargets[def.key]
@@ -825,6 +885,9 @@ function combatKeys.onKey(action)
     host:combatKey(action)
 end
 
+-- Per mirror, the entry whose context menu is open.
+local contextEntry = {}
+
 -- The secure side moved in a mirrored list, or handed a key over there (from the secure frame).
 function combatKeys.onMirror(mode, index, why)
     log(mode .. " " .. tostring(why) .. " " .. tostring(index))
@@ -834,6 +897,30 @@ function combatKeys.onMirror(mode, index, why)
     end
     if why == "close" then
         def.onClose()
+        return
+    end
+    -- The entry's context menu lives on the secure side; it is spoken here, with no window of its own.
+    if why == "contextOpen" or why == "contextMove" then
+        if why == "contextOpen" then
+            contextEntry[mode] = index
+        end
+        local labels = def.contextLabels(contextEntry[mode] or 1)
+        local L = WowVision:getLocale()
+        local chosen = (why == "contextOpen" or index == 1) and labels.left or labels.right
+        WowVision.base.speech:uiStop()
+        if why == "contextOpen" then
+            WowVision.graphHost:_speak(L["Context Menu"] .. ", " .. chosen)
+        else
+            WowVision.graphHost:_speak(chosen)
+        end
+        return
+    end
+    if why == "contextClose" then
+        def.onMirror(index, "reread")
+        return
+    end
+    if why == "contextDone" then
+        -- what the click did is heard from the entry itself (its label changes live)
         return
     end
     def.onMirror(index, why)

@@ -84,8 +84,15 @@ end
 -- UseContainerItem follow), so the label does too. nil means "nothing worth
 -- naming" and leaves the bare click name.
 function module.itemClickLabels(itemButton)
+    return module.slotClickLabels(function()
+        return module.slotLocation(itemButton)
+    end)
+end
+
+-- The same by bag and slot: locate() returns them (the bags in combat, containersCombat.lua).
+function module.slotClickLabels(locate)
     local function slotInfo()
-        local bagID, slotID = module.slotLocation(itemButton)
+        local bagID, slotID = locate()
         return bagID, slotID, C_Container.GetContainerItemInfo(bagID, slotID)
     end
     return {
