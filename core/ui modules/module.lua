@@ -65,6 +65,21 @@ settings:add({
     default = false,
 })
 
+-- Pending windows (windows/pending.lua): a window that waits for an answer and ignores Escape in the game (a group
+-- invitation, a summon, death, the ready check) is put aside to Pending in the WowVision menu, left on screen and not
+-- answered. On: by Escape and by Close All Windows. Close All Windows: only by that. Off: they wait in front.
+settings:add({
+    type = "Choice",
+    key = "pendingWindows",
+    label = L["Pending Windows"],
+    default = "on",
+    choices = {
+        { label = L["On"], value = "on" },
+        { label = L["Only Close All Windows"], value = "closeAll" },
+        { label = L["Off"], value = "off" },
+    },
+})
+
 -- Chasing stuck movement keys with testers: prints when windows take, wait
 -- for and release the navigation keys, and what the held check saw.
 module:registerCommand({

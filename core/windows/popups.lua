@@ -40,6 +40,15 @@ local function forEachStaticDialog(func)
     end)
 end
 
+-- The static dialogs in front: those not put aside to Pending (pending.lua).
+local function forEachFrontDialog(func)
+    forEachStaticDialog(function(frame)
+        if WowVision.pending == nil or not WowVision.pending.isAside(frame) then
+            func(frame)
+        end
+    end)
+end
+
 local function getPopupText(frame)
     if frame.GetTextFontString ~= nil then
         return frame:GetTextFontString()
@@ -156,7 +165,7 @@ end
 
 local function render(builder, screen)
     local index = 0
-    forEachStaticDialog(function(frame)
+    forEachFrontDialog(function(frame)
         index = index + 1
         renderDialog(builder, frame, index)
     end)
@@ -217,16 +226,67 @@ module:registerBinding({
     end,
 })
 
+-- Pending windows (pending.lua): Escape is WowVision's only while every dialog in front ignores Escape in the game
+-- (one that takes it, Really delete this item?, keeps the game's Escape, which cancels it).
+local function holdsEscape()
+    local pending = WowVision.pending
+    if pending == nil or not pending.puts("escape") then
+        return false
+    end
+    local any, all = false, true
+    forEachFrontDialog(function(frame)
+        any = true
+        if pending.takesEscape(frame) then
+            all = false
+        end
+    end)
+    return any and all
+end
+
+-- Escape (or Close All Windows) on the window: the dialogs in front that ignore Escape go to Pending, their frames
+-- left on screen. The window closes; it opens again on the next check for any dialog still in front.
+local function requestClose()
+    local pending = WowVision.pending
+    local manager = WowVision.UIHost.windowManager
+    local how = manager.closingAll and "closeAll" or "escape"
+    if pending ~= nil and pending.puts(how) then
+        local put = false
+        forEachFrontDialog(function(frame)
+            if not pending.takesEscape(frame) then
+                local text = getPopupText(frame)
+                pending.putAside({
+                    window = "popups",
+                    frame = frame,
+                    which = frame.which,
+                    label = function()
+                        local parts = {}
+                        if text ~= nil then
+                            tinsert(parts, text:GetText())
+                        end
+                        tinsert(parts, pending.timeLeft(frame))
+                        return WowVision.secrets.join(parts, ", ")
+                    end,
+                })
+                put = true
+            end
+        end)
+        if put and how == "escape" then
+            pending.announce()
+        end
+    end
+    manager:closeWindow("popups")
+end
+
 module:registerWindow({
     type = "CustomWindow",
     name = "popups",
     isOpen = function(self)
         local any = false
-        forEachStaticDialog(function()
+        forEachFrontDialog(function()
             any = true
         end)
         return any
     end,
     conflictingAddons = { "Sku" },
-    graphScreen = { render = render },
+    graphScreen = { render = render, captureClose = holdsEscape, onRequestClose = requestClose },
 })

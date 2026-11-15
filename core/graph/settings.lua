@@ -498,8 +498,22 @@ end
 -- Emit one module's menu: enabled toggle (non-vital modules), sorted
 -- submodule buttons pushing child screens, the module's own graph menu items
 -- (getGraphMenuItems), then its settings fields. Mirrors the old ModulePanel.
+-- Entries a module puts first in the WowVision menu's top level, each a render(builder) adding its own items or none
+-- (Pending, windows/pending.lua).
+local rootEntries = {}
+
+function settings.registerRootEntry(render)
+    tinsert(rootEntries, render)
+end
+
 function settings.renderModuleInto(builder, module)
     builder:pushContext("module:" .. tostring(module.key), module:getLabel() or tostring(module.key))
+
+    if module == WowVision.base then
+        for _, render in ipairs(rootEntries) do
+            render(builder)
+        end
+    end
 
     if not module:isVital() then
         builder:addItem(
