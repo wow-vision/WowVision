@@ -11,6 +11,12 @@ local powersDB = WowVision.gameDB:get("Power")
 -- joined into the spoken text, never compared, and a bar's percent comes
 -- from the game's own curve. The bar is on screen for every sighted player.
 
+-- TRACE (temporary, while the key is tried in game): what each press does,
+-- in the chat.
+local function trace(text)
+    print("WowVision main resource: " .. text)
+end
+
 local percentCurve = nil
 local function curve()
     if percentCurve == nil then
@@ -28,9 +34,12 @@ end
 local function barPercent(powerType)
     if UnitPowerPercent ~= nil and C_CurveUtil ~= nil and C_CurveUtil.CreateCurve ~= nil then
         local ok, value = pcall(UnitPowerPercent, "player", powerType, false, curve())
-        if ok and value ~= nil then
+        -- A hidden value throws on any comparison, even with nil; only its
+        -- truth can be tested.
+        if ok and value then
             return value
         end
+        trace("percent function: " .. (ok and "no value" or tostring(value)))
     end
     local current = UnitPower("player", powerType)
     local maximum = UnitPowerMax("player", powerType)
@@ -55,9 +64,11 @@ local function speakMainResource()
     else
         value = barPercent(powerType)
     end
-    if value == nil then
+    if not value then
+        trace("no value for " .. tostring(token))
         return
     end
+    trace("speaking " .. tostring(token) .. (WowVision.secrets.isSecret(value) and " (hidden value)" or ""))
     WowVision:speak(steps.readoutText(name, counted, value))
 end
 
@@ -67,5 +78,11 @@ module:registerBinding({
     inputs = {},
     label = L["Speak Main Resource"],
     interruptSpeech = true,
-    func = speakMainResource,
+    func = function()
+        trace("key pressed")
+        local ok, err = pcall(speakMainResource)
+        if not ok then
+            trace("error: " .. tostring(err))
+        end
+    end,
 })
