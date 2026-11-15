@@ -175,7 +175,7 @@ end
 module:registerBinding({
     type = "Script",
     key = "trade/accept",
-    inputs = { "CTRL-T" },
+    inputs = { "ALT-CTRL-T" },
     label = L["Accept Trade"],
     conflictingAddons = { "Sku" },
     script = "/click TradeFrameTradeButton\n/run WowVision.base.windows.trade.afterAccept()",

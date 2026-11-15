@@ -146,7 +146,7 @@ See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
 
 | Action | Default key | Notes |
 |---|---|---|
-| Accept Trade | Ctrl+T | Accepts the open trade, also in combat. Without one you hear "No trade open"; after your own acceptance "Already accepted, waiting for" and the other player |
+| Accept Trade | Alt+Ctrl+T | Accepts the open trade, also in combat. Without one you hear "No trade open"; after your own acceptance "Already accepted, waiting for" and the other player |
 
 See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
 

@@ -67,7 +67,7 @@ You cannot type your gold into the trade window with WowVision. The game seals t
 
 Press Enter on the Trade button to accept, or Enter on Cancel to call the trade off. Escape also cancels it. The trade goes through when both sides have accepted. WowVision does not read the other player's accept mark, so listen to the game's chat messages.
 
-The Accept Trade key (Ctrl+T) accepts the open trade from anywhere, also in combat, without going to the Trade button: it clicks the game's Trade button for you. When the game takes your acceptance you hear "Trade accepted". When nothing happens it tells you why: "No trade open", "Already accepted, waiting for" and the other player's name, "Answer the popup about the enchant first" (an enchant offered to you that would bind the item), or "Trade cannot be accepted now".
+The Accept Trade key (Alt+Ctrl+T) accepts the open trade from anywhere, also in combat, without going to the Trade button: it clicks the game's Trade button for you. When the game takes your acceptance you hear "Trade accepted". When nothing happens it tells you why: "No trade open", "Already accepted, waiting for" and the other player's name, "Answer the popup about the enchant first" (an enchant offered to you that would bind the item), or "Trade cannot be accepted now".
 
 When the other player changes the offer, you hear the game's warning that they changed it, the one sighted players see on the Trade button. If they change it after you accepted, the game asks for a security confirmation in a window of its own that addons cannot reach and the keyboard cannot answer; WowVision says "Security confirmation WowVision cannot reach: use the mouse, or cancel and trade again".
 
