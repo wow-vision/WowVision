@@ -33,8 +33,9 @@ function UIHost:closeWindow(window)
     return self.windowManager:closeWindow(window)
 end
 
-function UIHost:closeAllWindows()
-    return self.windowManager:closeAll()
+-- reason: see WindowManager:closeAll ("closeAllKey" from the Close All Windows key).
+function UIHost:closeAllWindows(reason)
+    return self.windowManager:closeAll(reason)
 end
 
 -- The window detection, the dropdown watch and the graph host run on their

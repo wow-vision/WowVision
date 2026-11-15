@@ -91,7 +91,7 @@ Nimmt die Gruppeneinladung an, die gerade angezeigt wird, und sagt "Gruppeneinla
 
 ### /wv pendingtest
 
-Zeigt einen Testkasten, der wie eine Gruppeneinladung wartet: er überhört im Spiel die Esc-Taste und läuft nach einer Minute ab; seine Knöpfe Annehmen und Ablehnen schreiben nur in den Chat. Damit probierst du Ausstehend ohne Gruppe aus. Weil WowVision ihn zeigt, meldet ein Esc, das ans Spiel geht, eine blockierte Aktion, solange er offen ist; mit der ersten Wahl der Einstellung Ausstehende Fenster geht Esc dort nie ans Spiel, bei den anderen sagt der Befehl das vorher. Die eigenen Kästen des Spiels tun das nicht. Versionen: alle. Siehe [Ausstehend](../windows/system.md#ausstehend-eine-frage-die-wartet).
+Zeigt einen Testkasten, der wie eine Gruppeneinladung wartet: er überhört im Spiel die Esc-Taste und läuft nach einer Minute ab; seine Knöpfe Annehmen und Ablehnen schreiben nur in den Chat. Damit probierst du Ausstehend ohne Gruppe aus. Weil WowVision ihn zeigt, meldet ein Esc, das ans Spiel geht, eine blockierte Aktion, solange er offen ist, auch wenn er beiseitegelegt ist; der Befehl sagt das vorher. Die eigenen Kästen des Spiels tun das nicht. Versionen: alle. Siehe [Ausstehend](../windows/system.md#ausstehend-eine-frage-die-wartet).
 
 ### /beacon
 

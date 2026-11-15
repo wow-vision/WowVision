@@ -232,7 +232,7 @@ module:registerBinding({
 -- (one that takes it, Really delete this item?, keeps the game's Escape, which cancels it).
 local function holdsEscape()
     local pending = WowVision.pending
-    if pending == nil or not pending.puts("escape") then
+    if pending == nil or not pending.holdsEscape() then
         return false
     end
     local any, all = false, true
@@ -245,38 +245,23 @@ local function holdsEscape()
     return any and all
 end
 
--- Escape (or Close All Windows) on the window: the dialogs in front that ignore Escape go to Pending, their frames
--- left on screen. The window closes; it opens again on the next check for any dialog still in front.
-local function requestClose()
-    local pending = WowVision.pending
-    local manager = WowVision.UIHost.windowManager
-    local how = manager.closingAll and "closeAll" or "escape"
-    if pending ~= nil and pending.puts(how) then
-        local put = false
-        forEachFrontDialog(function(frame)
-            if not pending.takesEscape(frame) then
-                local text = getPopupText(frame)
-                pending.putAside({
-                    window = "popups",
-                    frame = frame,
-                    which = frame.which,
-                    label = function()
-                        local parts = {}
-                        if text ~= nil then
-                            tinsert(parts, text:GetText())
-                        end
-                        tinsert(parts, pending.timeLeft(frame))
-                        return WowVision.secrets.join(parts, ", ")
-                    end,
-                })
-                put = true
-            end
-        end)
-        if put and how == "escape" then
-            pending.announce()
+-- Escape (or the Close All Windows key) on the window: the dialogs in front that ignore Escape go to Pending, their
+-- frames left on screen, labelled with their text (read live: a countdown the game shows in it reads as it runs).
+local function requestClose(_, reason)
+    local entries = {}
+    forEachFrontDialog(function(frame)
+        if not WowVision.pending.takesEscape(frame) then
+            local text = getPopupText(frame)
+            tinsert(entries, {
+                frame = frame,
+                which = frame.which,
+                label = function()
+                    return text ~= nil and text:GetText() or L["Popup"]
+                end,
+            })
         end
-    end
-    manager:closeWindow("popups")
+    end)
+    WowVision.pending.closeRequest("popups", entries, reason)
 end
 
 module:registerWindow({

@@ -125,29 +125,16 @@ end
 -- would skip the game's StaticPopupSpecial_Hide: no decline, no timeout,
 -- and the frame left in the game's list of shown dialogs. The window opens
 -- again on the next check while the frame is shown, unless Pending Windows
--- put it aside (pending.lua): Escape there, or Close All Windows.
-local function keepInvitation()
-    local pending = WowVision.pending
-    local manager = WowVision.UIHost.windowManager
-    local how = manager.closingAll and "closeAll" or "escape"
-    if pending ~= nil and pending.puts(how) then
-        pending.putAside({
-            window = "LFGInvitePopup",
+-- put it aside (pending.lua): Escape there, or the Close All Windows key.
+local function keepInvitation(_, reason)
+    WowVision.pending.closeRequest("LFGInvitePopup", {
+        {
             frame = LFGInvitePopup,
             label = function()
                 return getPopupTitle(LFGInvitePopup)
             end,
-        })
-        if how == "escape" then
-            pending.announce()
-        end
-    end
-    manager:closeWindow("LFGInvitePopup")
-end
-
--- The invitation ignores Escape in the game: with Pending Windows on, Escape puts it aside.
-local function holdsEscape()
-    return WowVision.pending ~= nil and WowVision.pending.puts("escape")
+        },
+    }, reason)
 end
 
 -- The three role popups share one render. Only the invitation keeps its
@@ -159,7 +146,9 @@ for _, def in ipairs({
         window = "LFGInvitePopup",
         frame = "LFGInvitePopup",
         onRequestClose = keepInvitation,
-        captureClose = holdsEscape,
+        captureClose = function()
+            return WowVision.pending.holdsEscape()
+        end,
         waits = true,
     },
 }) do
