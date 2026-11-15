@@ -47,6 +47,12 @@ Keep this list current; everything else is his text, line for line (line endings
   the module's trail.
 - `NavNetwork.lua`, memory: `N.UnloadZone`, `N.KeepZones` and the hook `N.onZoneUnloaded` drop decoded zones again
   (his core keeps every decoded zone for the session).
+- `NavNetwork.lua`, decoding in steps: `N.LoadZoneInSteps(zoneId, budget, clock)` decodes a zone over several calls
+  (a coroutine around `Unpacked` and `Decode`; `Chars`, `PrefixSum` and `Decode` take a `pause` function they call
+  in their long loops) and answers true once the zone is attached. `N.loading` holds the unfinished zone;
+  `N.UnloadZone` lets it go. The module's preloader uses it with 4 ms a frame: since data a9bf246 a big zone decodes
+  in up to half a second (the Barrens: 693,671 links), which stopped the game at every zone border. The compile of
+  the packed text cannot be split (about 75 ms for the Barrens). `N.LoadZone` still decodes in one piece.
 - `NavNetwork.lua`, time slices: `N.Job(fn, ...)` runs any work that searches routes in a coroutine; the A* loop of
   `Pass` yields every 64 expansions once the frame's budget is used. `N.RouteJob` is `N.Job(N.Route, ...)`. No
   `pcall` may stand between a job and the search (Lua 5.1 cannot yield across it).
