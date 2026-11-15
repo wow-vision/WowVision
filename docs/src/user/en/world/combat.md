@@ -85,7 +85,7 @@ A popup that answers something you just did, such as "bind this item to you?", c
 
 ### Trading in a fight
 
-In a fight the buttons of the trade window (Trade, Cancel and the trade slots) say "Not available in combat". Accept the trade with the Accept Trade key (Ctrl+T): it is a key binding of the game's own, so it works in a fight too. See [Key bindings](../reference/keybindings.md).
+In a fight the buttons of the trade window (Trade, Cancel and the trade slots) say "Not available in combat". Accept the trade with the Accept Trade key (Alt+Ctrl+T): it is a key binding of the game's own, so it works in a fight too. See [Key bindings](../reference/keybindings.md).
 
 ### Settings and keys
 

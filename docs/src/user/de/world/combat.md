@@ -85,7 +85,7 @@ Ein Popup, das auf etwas antwortet, das du gerade getan hast, etwa „diesen Geg
 
 ### Handel im Kampf
 
-Im Kampf sagen die Knöpfe des Handelsfensters (Handel, Abbrechen und die Handelsplätze) „Im Kampf nicht verfügbar“. Nimm den Handel mit der Taste Handel annehmen (Strg+T) an: sie ist eine Tastenbelegung des Spiels selbst und wirkt deshalb auch im Kampf. Siehe [Tastenbelegung](../reference/keybindings.md).
+Im Kampf sagen die Knöpfe des Handelsfensters (Handel, Abbrechen und die Handelsplätze) „Im Kampf nicht verfügbar“. Nimm den Handel mit der Taste Handel annehmen (Alt+Strg+T) an: sie ist eine Tastenbelegung des Spiels selbst und wirkt deshalb auch im Kampf. Siehe [Tastenbelegung](../reference/keybindings.md).
 
 ### Einstellungen und Tasten
 
