@@ -71,17 +71,6 @@ function ResourceStepRule:fire(message)
     end
 end
 
--- The step's menu (core/graph/settings.lua renderObjectInto): the alert's
--- own menu, its Enabled switch and the sound and speech outputs, without
--- a level of its own ("Alert") in between.
-function ResourceStepRule:renderGraphSettings(builder)
-    local parameters = self:getAlert().parameters
-    local label = parameters.label
-    parameters.label = nil
-    WowVision.graph.settings.renderInto(builder, parameters)
-    parameters.label = label
-end
-
 function ResourceStepRule:getLabel()
     if self.label ~= nil and self.label ~= "" then
         return self.label
@@ -205,6 +194,9 @@ ResourceMonitor:updateFields({
     {
         key = "rules",
         label = L["Steps"],
+        -- The steps show as alert buttons in the monitor's own menu
+        -- (renderGraphSettings below), not as a list of their own.
+        showInUI = false,
         -- The setup builds the steps; there is nothing to add by hand.
         availableTypes = function()
             return {}
@@ -224,6 +216,37 @@ function ResourceMonitor:getLabel()
     end
     local power = powersDB:get(self.powerType)
     return L["Resource"] .. ": " .. (power ~= nil and power.label or tostring(self.powerType))
+end
+
+-- The monitor's menu (core/graph/settings.lua renderObjectInto): its
+-- settings, then one alert button per step, the way every alert in the
+-- addon is a button in its owner's menu ("40%" opens Enabled, Sound Alert,
+-- TTS Alert).
+function ResourceMonitor:renderGraphSettings(builder)
+    local graph = WowVision.graph
+    local settings = graph.settings
+    for _, field in ipairs(self.class:getFields()) do
+        if field.showInUI ~= false then
+            builder:addItem(graph.ControlId.structural("field:" .. field.key), settings.controlFor(field, self))
+        end
+    end
+    for _, rule in ipairs(self.rules or {}) do
+        local step = rule
+        builder:addItem(
+            graph.ControlId.forObject(step),
+            graph.nodes.button({
+                label = step:getLabel(),
+                opensLevel = true,
+                onActivate = function()
+                    local parameters = step:getAlert().parameters
+                    parameters.label = step:getLabel()
+                    settings.pushScreen("alert:" .. tostring(step), function(screen)
+                        settings.renderInto(screen, parameters)
+                    end)
+                end,
+            })
+        )
+    end
 end
 
 function ResourceMonitor:isCounted()

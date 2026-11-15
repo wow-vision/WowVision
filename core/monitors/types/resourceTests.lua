@@ -169,20 +169,56 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
             end
             t:assertEqual(table.concat(listed, ","), "combopoints")
 
-            -- A step's menu is its alert's menu, without an "Alert" level
-            WowVision.graph = WowVision.graph or {}
-            local savedSettings = WowVision.graph.settings
-            local rendered, renderedLabel
-            WowVision.graph.settings = {
-                renderInto = function(_, set)
-                    rendered, renderedLabel = set, set.label
+            -- The monitor's menu: its settings, then one alert button per
+            -- step that opens the step's alert ("1": Enabled, Sound, TTS)
+            local savedGraph = WowVision.graph
+            local items, pushed, rendered = {}, nil, nil
+            WowVision.graph = {
+                ControlId = {
+                    structural = function(key)
+                        return key
+                    end,
+                    forObject = function(object)
+                        return object
+                    end,
+                },
+                nodes = {
+                    button = function(vtable)
+                        return vtable
+                    end,
+                },
+                settings = {
+                    controlFor = function(fieldDef)
+                        return { label = fieldDef.key }
+                    end,
+                    pushScreen = function(key, render)
+                        pushed = key
+                        render("screen")
+                    end,
+                    renderInto = function(_, set)
+                        rendered = set
+                    end,
+                },
+            }
+            local builder = {
+                addItem = function(_, id, vtable)
+                    tinsert(items, vtable)
                 end,
             }
-            monitor.rules[2]:renderGraphSettings({})
-            WowVision.graph.settings = savedSettings
+            monitor:renderGraphSettings(builder)
+            local labels = {}
+            for _, item in ipairs(items) do
+                tinsert(labels, item.label)
+            end
+            local text = table.concat(labels, ",")
+            t:assertNil(text:find("rules", 1, true), "no steps list")
+            t:assertNil(text:find("builtFor", 1, true))
+            t:assertEqual(text:sub(-12), ",0,1,2,3,4,5")
+            items[#items - 4].onActivate()
+            WowVision.graph = savedGraph
+            t:assertNotNil(pushed)
             t:assertEqual(rendered, monitor.rules[2]:getAlert().parameters)
-            t:assertNil(renderedLabel)
-            t:assertEqual(rendered.label, "Alert")
+            t:assertEqual(rendered.label, "1")
             game.power[COMBO] = 1
             monitor:update()
             t:assertEqual(game.played[1], "Sound/WowVision/alerts/glass1.mp3")
