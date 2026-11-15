@@ -100,6 +100,11 @@ end
 -- ---- stack lifecycle ----
 
 function GraphHost:open(config)
+    -- A popup that waits for an answer, opened in a fight: it cannot take the keys by itself (graph/combatKeys.lua),
+    -- so after it is read the key that lands on it is named.
+    if config.waits and InCombatLockdown() and graph.combatKeys ~= nil then
+        graph.combatKeys.hintMenuKey()
+    end
     local screen = graph.Screen:new(config)
     local stack = { screens = { screen }, config = config }
     tinsert(self.stacks, stack)

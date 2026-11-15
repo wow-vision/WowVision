@@ -975,6 +975,25 @@ end
 -- Per mirror, the entry whose context menu is open.
 local contextEntry = {}
 
+-- A popup that waits opened in a fight while the menu keys are the game's: say which key lands on it, a moment after
+-- the popup itself is read.
+function combatKeys.hintMenuKey()
+    if not combatKeys.active() or combatKeys.taken() then
+        return
+    end
+    local binding = WowVision.input:getBinding("wowvision/menu")
+    local input = binding ~= nil and binding.inputs[1] or nil
+    if input == nil then
+        return
+    end
+    local keyText = GetBindingText ~= nil and GetBindingText(input) or input
+    C_Timer.After(1.5, function()
+        if not combatKeys.taken() then
+            WowVision:notify(WowVision:getLocale()["To answer, press"] .. " " .. keyText)
+        end
+    end)
+end
+
 -- The secure side moved in a mirrored list, or handed a key over there (from the secure frame).
 function combatKeys.onMirror(mode, index, why)
     log(mode .. " " .. tostring(why) .. " " .. tostring(index))
