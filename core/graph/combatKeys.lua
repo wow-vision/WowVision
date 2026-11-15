@@ -156,9 +156,10 @@ combatKeys.OPENING = [[
     end
 ]]
 
--- The state driver's handler: the frame's own COMBAT with the new state.
+-- The state driver's handler: the frame's own COMBAT with the new state. The driver hands the state over as a number
+-- where it reads as one (SecureStateDriver.lua, resolveDriver: tonumber(newValue) or newValue).
 combatKeys.ON_STATE = [[
-    self:GetFrameRef("keys"):RunAttribute("_combat", newstate == "1")
+    self:GetFrameRef("keys"):RunAttribute("_combat", newstate == 1)
 ]]
 
 local keysFrame = nil
@@ -167,6 +168,88 @@ local stagedOpen = nil
 -- the next update out of combat.
 local dirty = true
 local wrapped = {}
+
+-- ---- the log ----
+--
+-- Always on (a test needs no command first): every fight's start and end, what the secure frame changes, every combat
+-- key, and a little into each fight what the game runs on each combat key. WowVisionDump.combatKeys, the previous
+-- session's in combatKeysBefore; /wv combatkeys prints the last lines.
+local LOG_MAX = 300
+local logLines = nil
+
+local function log(text)
+    if logLines == nil then
+        WowVisionDump = WowVisionDump or {}
+        if type(WowVisionDump.combatKeys) == "table" and #WowVisionDump.combatKeys > 0 then
+            WowVisionDump.combatKeysBefore = WowVisionDump.combatKeys
+        end
+        logLines = {}
+        WowVisionDump.combatKeys = logLines
+    end
+    tinsert(logLines, date("%H:%M:%S") .. " " .. text)
+    if #logLines > LOG_MAX then
+        table.remove(logLines, 1)
+    end
+    local host = WowVision.graphHost
+    if host ~= nil and host.keyLog then
+        print("WowVision combat keys: " .. text)
+    end
+end
+combatKeys.log = log
+
+local function lockdown()
+    return InCombatLockdown() and "lockdown" or "no lockdown"
+end
+
+-- What the game runs on each staged combat key right now, one line.
+local function bindingLine()
+    local parts = {}
+    for i = 1, keysFrame:GetAttribute("menu-n") or 0 do
+        local input = keysFrame:GetAttribute("menu-k" .. i)
+        tinsert(parts, input .. "=" .. tostring(GetBindingAction(input, true)))
+    end
+    return table.concat(parts, " ")
+end
+
+local function stateLine()
+    return "fighting "
+        .. tostring(keysFrame:GetAttribute("fighting"))
+        .. ", taken "
+        .. tostring(keysFrame:GetAttribute("taken"))
+        .. ", menu open "
+        .. tostring(keysFrame:GetAttribute("menuopen"))
+        .. ", enabled "
+        .. tostring(keysFrame:GetAttribute("enabled"))
+        .. ", windows "
+        .. #WowVision.graphHost.stacks
+end
+
+local function watch(keys, driver)
+    keys:HookScript("OnAttributeChanged", function(_, name, value)
+        if name == "taken" or name == "fighting" then
+            log(name .. " " .. tostring(value) .. " (" .. lockdown() .. ")")
+        end
+    end)
+    driver:HookScript("OnAttributeChanged", function(_, name, value)
+        if name == "state-combat" then
+            log("state driver: combat " .. tostring(value) .. " (" .. lockdown() .. ")")
+        end
+    end)
+    local events = CreateFrame("Frame")
+    events:RegisterEvent("PLAYER_REGEN_DISABLED")
+    events:RegisterEvent("PLAYER_REGEN_ENABLED")
+    events:SetScript("OnEvent", function(_, event)
+        if event == "PLAYER_REGEN_DISABLED" then
+            log("fight starts (" .. lockdown() .. "): " .. stateLine())
+            C_Timer.After(0.3, function()
+                log("in the fight (" .. lockdown() .. "): " .. stateLine())
+                log("keys: " .. bindingLine())
+            end)
+        else
+            log("fight ends: " .. stateLine())
+        end
+    end)
+end
 
 local function createFrames()
     local keys = CreateFrame("Button", "WowVisionCombatKeys", UIParent, "SecureHandlerClickTemplate")
@@ -182,6 +265,7 @@ local function createFrames()
     local driver = CreateFrame("Frame", "WowVisionCombatKeysDriver", UIParent, "SecureHandlerStateTemplate")
     SecureHandlerSetFrameRef(driver, "keys", keys)
     driver:SetAttribute("_onstate-combat", combatKeys.ON_STATE)
+    watch(keys, driver)
     RegisterStateDriver(driver, "combat", "[combat] 1; 0")
     return keys
 end
@@ -232,6 +316,11 @@ local function writeStage()
     writeList(keysFrame, "menu", menu, keysFrame:GetAttribute("menu-n"))
     keysFrame:SetAttribute("enabled", enabled() and 1 or 0)
     wrapOpeningFrames()
+    local opening = 0
+    for _ in pairs(wrapped) do
+        opening = opening + 1
+    end
+    log("staged " .. #menu .. " menu keys, " .. opening .. " opening buttons, enabled " .. tostring(enabled()))
 end
 
 -- Every graph host update out of combat: write what changed, and whether a WowVision window is open, for the next
@@ -247,6 +336,7 @@ function combatKeys.tick(open)
     if stagedOpen ~= value then
         stagedOpen = value
         keysFrame:SetAttribute("menuopen", value)
+        log("menu open " .. value)
     end
 end
 
@@ -258,13 +348,6 @@ end
 -- Whether the graph runs in combat: the setting is on and the frame exists.
 function combatKeys.active()
     return keysFrame ~= nil and enabled()
-end
-
-local function log(text)
-    local host = WowVision.graphHost
-    if host ~= nil and host.keyLog then
-        print("WowVision combat keys: " .. text)
-    end
 end
 
 -- A menu key pressed in combat, by action name (from the secure frame).
@@ -300,6 +383,10 @@ function combatKeys.report()
     end
     local function attr(name)
         return tostring(keysFrame:GetAttribute(name))
+    end
+    local recent = logLines or {}
+    for i = math.max(1, #recent - 14), #recent do
+        print(recent[i])
     end
     print(
         "WowVision combat keys: enabled "

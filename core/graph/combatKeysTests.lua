@@ -162,9 +162,10 @@ testRunner:addSuite("CombatKeys", {
         function driver:GetFrameRef(name)
             return name == "keys" and keys or nil
         end
-        driver:run(combatKeys.ON_STATE, "stateid, newstate", "combat", "1")
+        -- the game's driver passes a number (SecureStateDriver.lua, resolveDriver)
+        driver:run(combatKeys.ON_STATE, "stateid, newstate", "combat", 1)
         t:assertEqual(keys.bindings.UP, "up")
-        driver:run(combatKeys.ON_STATE, "stateid, newstate", "combat", "0")
+        driver:run(combatKeys.ON_STATE, "stateid, newstate", "combat", 0)
         t:assertNil(next(keys.bindings))
     end,
 
