@@ -67,6 +67,8 @@ You cannot type your gold into the trade window with WowVision. The game seals t
 
 Press Enter on the Trade button to accept, or Enter on Cancel to call the trade off. Escape also cancels it. The trade goes through when both sides have accepted. WowVision does not read the other player's accept mark, so listen to the game's chat messages.
 
+The Accept Trade key (Ctrl+T) accepts the open trade from anywhere, also in combat, without going to the Trade button. When nothing happens it tells you why: "No trade open", "Already accepted, waiting for" and the other player's name, or "Trade cannot be accepted now". If the other player changes the offer after you accepted, the game asks you to confirm in a security window of its own that addons cannot touch; WowVision then says "Confirm the trade in the game's security window", and that window has to be answered first.
+
 ## The mailbox
 
 Walk up to a mailbox and interact with it. The mail window opens, and your bags open next to it. (Press Ctrl+Tab to switch between them.)

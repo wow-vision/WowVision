@@ -150,6 +150,7 @@ Siehe [Beute, Handel und Post](../windows/loot-trade-mail.md).
 
 | Aktion | Standardtaste | Hinweise |
 |---|---|---|
+| Handel annehmen (Accept Trade) | Strg+T | Nimmt den offenen Handel an, auch im Kampf. Ist keiner offen, hörst du "Kein Handel offen"; nach deiner eigenen Zustimmung "Bereits angenommen, warte auf" und den anderen Spieler |
 | Gruppeneinladung annehmen (Accept Group Invitation) | Unbelegt | Nimmt die angezeigte Gruppeneinladung an, auch im Kampf, wie /wv accept. Ist keine da, hörst du "Keine Gruppeneinladung" |
 
 Siehe [Gruppensuche](../windows/group-finder.md).

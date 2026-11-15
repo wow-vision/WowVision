@@ -146,6 +146,7 @@ See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
 
 | Action | Default key | Notes |
 |---|---|---|
+| Accept Trade | Ctrl+T | Accepts the open trade, also in combat. Without one you hear "No trade open"; after your own acceptance "Already accepted, waiting for" and the other player |
 | Accept Group Invitation | Unbound | Accepts the group invitation that is shown, also in combat, the same as /wv accept. Without one you hear "No group invitation" |
 
 See [Group Finder](../windows/group-finder.md).

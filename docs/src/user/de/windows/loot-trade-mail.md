@@ -69,6 +69,8 @@ Mit WowVision kannst du dein Gold nicht ins Handelsfenster eintippen. Das Spiel 
 
 Drücke Eingabe auf der Schaltfläche Handel, um zuzustimmen, oder Eingabe auf Abbrechen, um den Handel abzubrechen. Auch Esc bricht ihn ab. Der Handel kommt zustande, wenn beide Seiten zugestimmt haben. WowVision liest die Zustimmungsmarkierung des anderen Spielers nicht, achte also auf die Chatmeldungen des Spiels.
 
+Die Taste Handel annehmen (Accept Trade, Strg+T) nimmt den offenen Handel von überall an, auch im Kampf, ohne zur Schaltfläche Handel zu gehen. Passiert nichts, sagt sie warum: „Kein Handel offen“, „Bereits angenommen, warte auf“ und der Name des anderen Spielers, oder „Handel kann gerade nicht angenommen werden“. Ändert der andere Spieler das Angebot, nachdem du angenommen hast, fragt das Spiel in einem eigenen Sicherheitsfenster nach, das Addons nicht bedienen können; WowVision sagt dann „Bestätige den Handel im Sicherheitsfenster des Spiels“, und dieses Fenster muss zuerst beantwortet werden.
+
 ## Der Briefkasten
 
 Gehe zu einem Briefkasten und interagiere mit ihm. Das Postfenster öffnet sich, und deine Taschen öffnen sich daneben. (Mit Strg+Tab wechselst du zwischen ihnen.)
