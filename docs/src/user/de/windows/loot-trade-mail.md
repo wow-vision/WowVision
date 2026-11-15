@@ -69,7 +69,9 @@ Mit WowVision kannst du dein Gold nicht ins Handelsfenster eintippen. Das Spiel 
 
 Drücke Eingabe auf der Schaltfläche Handel, um zuzustimmen, oder Eingabe auf Abbrechen, um den Handel abzubrechen. Auch Esc bricht ihn ab. Der Handel kommt zustande, wenn beide Seiten zugestimmt haben. WowVision liest die Zustimmungsmarkierung des anderen Spielers nicht, achte also auf die Chatmeldungen des Spiels.
 
-Die Taste Handel annehmen (Accept Trade, Strg+T) nimmt den offenen Handel von überall an, auch im Kampf, ohne zur Schaltfläche Handel zu gehen. Passiert nichts, sagt sie warum: „Kein Handel offen“, „Bereits angenommen, warte auf“ und der Name des anderen Spielers, oder „Handel kann gerade nicht angenommen werden“. Ändert der andere Spieler das Angebot, nachdem du angenommen hast, fragt das Spiel in einem eigenen Sicherheitsfenster nach, das Addons nicht bedienen können; WowVision sagt dann „Bestätige den Handel im Sicherheitsfenster des Spiels“, und dieses Fenster muss zuerst beantwortet werden.
+Die Taste Handel annehmen (Accept Trade, Strg+T) nimmt den offenen Handel von überall an, auch im Kampf, ohne zur Schaltfläche Handel zu gehen: sie klickt die Schaltfläche Handel des Spiels für dich. Nimmt das Spiel deine Zustimmung an, hörst du „Handel angenommen“. Passiert nichts, sagt sie warum: „Kein Handel offen“, „Bereits angenommen, warte auf“ und der Name des anderen Spielers, „Beantworte zuerst das Popup zur Verzauberung“ (eine dir angebotene Verzauberung, die den Gegenstand bindet), oder „Handel kann gerade nicht angenommen werden“.
+
+Ändert der andere Spieler das Angebot, hörst du die Warnung des Spiels, dass er es geändert hat, dieselbe, die Sehende an der Schaltfläche Handel sehen. Ändert er es, nachdem du angenommen hast, verlangt das Spiel eine Sicherheitsabfrage in einem eigenen Fenster, das Addons nicht erreichen und die Tastatur nicht beantworten kann; WowVision sagt „Sicherheitsabfrage, die WowVision nicht erreicht: benutze die Maus, oder brich ab und handle neu“.
 
 ## Der Briefkasten
 
@@ -133,6 +135,8 @@ Wähle den Reiter Brief senden. Die Stopps sind:
 7. Eine Geldgruppe namens Zu sendender Betrag (Amount to Send) oder Nachnahmebetrag (COD Amount), je nach obiger Wahl, mit drei Eingabefeldern: Gold, Silber und Kupfer. Jedes Feld ist ein eigener Stopp, Tab geht also vom einen zum nächsten.
 8. Porto (Postage): was das Senden kosten wird.
 9. Die Schaltfläche Senden (Send) und die Schaltfläche Abbrechen.
+
+Schickst du Geld oder Gegenstände an einen Spieler, der nicht dein Freund ist, kann das Spiel eine Sicherheitsabfrage in einem Fenster verlangen, das Addons nicht erreichen; Senden scheint dann nichts zu tun, und WowVision sagt „Das Spiel verlangt für diese Post eine Sicherheitsabfrage, die WowVision nicht erreicht“.
 
 Tippen: Gehe mit Tab in ein Eingabefeld und tippe. Tab verlässt das Feld und geht zum nächsten Stopp weiter, Umschalt+Tab geht zurück. Die eigene Tab-Kette des Spiels zwischen den Postfeldern ist abgeschaltet.
 
