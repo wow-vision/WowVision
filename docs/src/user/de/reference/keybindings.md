@@ -169,6 +169,7 @@ Siehe [Gruppensuche](../windows/group-finder.md).
 | Alle Monitore ein- oder ausschalten (Toggle All Monitors) | Unbelegt | Stummschalter für Monitore: Ist mindestens einer an, gehen alle aus („Monitore aus“); sind alle aus, gehen alle an („Monitore an“) |
 | Verfolgte Auren ansagen (Speak Tracked Auras) | Unbelegt | (Retail und WoW: Forever) Liest jede Aura deiner aktivierten Monitore Auren des Abklingzeitmanagers (Cooldown Manager Auras) vor oder sagt "Keine verfolgten Auren" |
 | Verfolgte Abklingzeiten ansagen (Speak Tracked Cooldowns) | Unbelegt | (Retail und WoW: Forever) Liest jeden Zauber deiner aktivierten Monitore Zauber-Abklingzeiten (Spell Cooldowns) vor oder sagt "Keine verfolgten Abklingzeiten" |
+| Hauptressource sprechen (Speak Main Resource) | Unbelegt | Sagt die Ressource, die das Spiel gerade für dich zeigt, etwa „Energie 80%“ oder „Kombopunkte 3“ |
 | Gruppengesundheit ansagen (Speak Group Health) | Alt+H | (Retail und WoW: Forever) Sagt jedes Gruppenmitglied einmal an, in der Reihenfolge der Nummern, mit der Tonhöhe seiner Gesundheit. Auf dem Controller: rechter Trigger + Druck auf den rechten Stick. Funktioniert nur, solange der Gruppen-Gesundheitsmonitor aktiviert ist |
 
 Siehe [Monitore](../information/monitors.md) und [Gruppen-Gesundheitsmonitor](../information/group-health.md).

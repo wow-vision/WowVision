@@ -44,6 +44,9 @@ These work the same everywhere (small differences are explained on each page):
 | Cooldown monitor | Yes | Yes | Yes | No | No |
 | Cooldown Manager Auras monitor | No | No | No | Yes | Yes |
 | Spell Cooldowns monitor (with proc rules) | No | No | No | Yes | Yes |
+| Resource monitor for counted resources (combo points and the like) | Yes | Yes | Yes | Yes | Yes |
+| Resource monitor for bars (mana, energy, rage and the like) | Yes | Yes | Yes | Only bars the game does not hide (not mana or energy) | Only bars the game does not hide (not mana or energy) |
+| Speak Main Resource key | Yes | Yes | Yes | Yes | Yes |
 | Group Health Monitor (speaks your group's health as pitched numbers, off by default) | No | No | No | Yes | Yes |
 | Cooldown manager window (`/cdm`) | No | No | No | Yes | Yes |
 

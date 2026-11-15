@@ -165,6 +165,7 @@ See [Group Finder](../windows/group-finder.md).
 | Toggle All Monitors | Unbound | Mute for monitors: if any monitor is on, turns all off ("Monitors off"); if all are off, turns all on ("Monitors on") |
 | Speak Tracked Auras | Unbound | (Retail and WoW: Forever) Reads out every aura of your enabled Cooldown Manager Auras monitors, or says "No tracked auras" |
 | Speak Tracked Cooldowns | Unbound | (Retail and WoW: Forever) Reads out every spell of your enabled Spell Cooldowns monitors, or says "No tracked cooldowns" |
+| Speak Main Resource | Unbound | Says the resource the game shows for you now, such as "energy 80%" or "combo points 3" |
 | Speak Group Health | Alt+H | (Retail and WoW: Forever) Says every group member once, in number order, with the pitch of their health. On a controller: right trigger + right stick press. Only works while the Group Health Monitor is enabled |
 
 See [Monitors](../information/monitors.md) and [Group Health Monitor](../information/group-health.md).

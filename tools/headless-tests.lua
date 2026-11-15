@@ -987,6 +987,18 @@ WowVision.testing.testRunner:addSuite("BufferConstruction", {
 loadAddonFile("core/monitors/Rule.lua")
 loadAddonFile("core/monitors/Monitor.lua")
 loadAddonFile("core/monitors/rules/StateRule.lua")
+-- The Resource monitor reads the powers list (core/gameDB/powers.lua), which
+-- takes its ids from the game's Enum.PowerType.
+do
+    local savedEnum = Enum
+    Enum = { PowerType = { Mana = 0, Rage = 1, Focus = 2, Energy = 3, ComboPoints = 4 } }
+    loadAddonFile("core/gameDB/gameDB.lua")
+    loadAddonFile("core/gameDB/powers.lua")
+    Enum = savedEnum
+end
+loadAddonFile("core/monitors/types/resourceSteps.lua")
+loadAddonFile("core/monitors/types/ResourceMonitor.lua")
+loadAddonFile("core/monitors/types/resourceTests.lua")
 WowVision.testing.testRunner:addSuite("MonitorConstruction", {
     ["a monitor with a state rule round-trips its db"] = function(t)
         local StateRule = WowVision.monitors.ruleRegistry.types:get("State")

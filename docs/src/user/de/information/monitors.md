@@ -2,7 +2,7 @@
 
 Monitore beobachten das Spiel für dich und sprechen oder spielen einen Sound ab, wenn sich etwas ändert: Ein Debuff, den du gewirkt hast, läuft gleich aus, eine Abklingzeit ist wieder abgelaufen, ein Proc leuchtet auf. Während dir [Puffer](buffers.md) die Antwort geben, wenn du fragst, sagen dir Monitore Bescheid, ohne dass du fragst.
 
-Welche Monitore du hast, hängt von deiner Spielversion ab. Classic Era, The Burning Crusade und Mists of Pandaria haben einen Aura-Monitor (im Menü Aura genannt) und einen Abklingzeit-Monitor (im Menü Cooldown genannt). Retail und WoW: Forever haben Auren des Abklingzeitmanagers (Cooldown Manager Auras) und Zauber-Abklingzeiten (Spell Cooldowns), weil das Spiel dort im Kampf Aura- und Abklingzeitzahlen vor Addons verbirgt. Die Auren des Abklingzeitmanagers lesen den Abklingzeitmanager von Blizzard. Die Zauber-Abklingzeiten nutzen die wenigen Fakten, die das Spiel noch herausgibt, und borgen sich vom Abklingzeitmanager nur die Liste der Zauber zum Auswählen.
+Welche Monitore du hast, hängt von deiner Spielversion ab. Classic Era, The Burning Crusade und Mists of Pandaria haben einen Aura-Monitor (im Menü Aura genannt) und einen Abklingzeit-Monitor (im Menü Cooldown genannt). Retail und WoW: Forever haben Auren des Abklingzeitmanagers (Cooldown Manager Auras) und Zauber-Abklingzeiten (Spell Cooldowns), weil das Spiel dort im Kampf Aura- und Abklingzeitzahlen vor Addons verbirgt. Die Auren des Abklingzeitmanagers lesen den Abklingzeitmanager von Blizzard. Die Zauber-Abklingzeiten nutzen die wenigen Fakten, die das Spiel noch herausgibt, und borgen sich vom Abklingzeitmanager nur die Liste der Zauber zum Auswählen. Jede Version hat außerdem den [Ressourcen-Monitor](#ressourcen-monitor) für deine eigenen Kombopunkte, dein Mana, deine Energie und Ähnliches.
 
 ## So funktionieren Monitore
 
@@ -283,6 +283,61 @@ Die Taste Verfolgte Abklingzeiten ansagen liest den Zustand jeder Regel jedes ak
 
 Die Taste ist standardmäßig nicht belegt. Du findest sie im Fenster für die Tastenbelegung unter Monitor.
 
+## Ressourcen-Monitor
+
+(Alle Versionen)
+
+Spielt einen Sound oder spricht, wenn eine deiner eigenen Ressourcen eine Stufe erreicht: jeder Kombopunkt, oder alle 20 Prozent deines Manas. Er folgt den Regeln der Kampf-Audiohinweise (Combat Audio Alerts) von Blizzard und ergänzt Sounds, die diese Hinweise nicht haben.
+
+Es gibt zwei Arten von Ressourcen:
+
+- Gezählte Ressourcen (Kombopunkte, Heilige Kraft, Chi, Seelensplitter, Arkane Aufladungen, Essenz, Runen): Jeder Punkt ist eine Stufe, von 0 (ausgegeben) bis zu deinem Maximum.
+- Leisten (Mana, Energie, Wut, Fokus, Runenmacht und ähnliche): Die Stufen gehen in der gewählten Größe von 100 abwärts. Alle 40 Prozent ergibt 100, 60 und 20.
+
+Auf Retail und WoW: Forever verbirgt das Spiel manche Leisten vor Addons, auch außerhalb des Kampfes: sicher Mana und Energie. Einer verborgenen Leiste kann der Monitor nicht folgen, deshalb lässt die Liste Ressource alles weg, was das Spiel bei deinem Charakter verbirgt. Gezählte Ressourcen wie Kombopunkte bleiben lesbar. Eine verborgene Leiste hörst du auf Abruf mit der Taste [Hauptressource sprechen](#hauptressource-sprechen).
+
+### Monitoreinstellungen
+
+| Einstellung | Standard | Was sie bewirkt |
+|---|---|---|
+| Ressource | Deine Hauptressource | Die Ressource, der der Monitor folgt. Die Liste zeigt die Ressourcen, die dein Charakter gerade hat und die das Spiel nicht verbirgt (und die schon gewählte). Verbirgt das Spiel deine Hauptressource, beginnt ein neuer Monitor mit der ersten, der er folgen kann, etwa Kombopunkte |
+| Stufen (Leisten) | Alle 20% | Die Stufengröße für Leisten: alle 10, 20, 30, 40 oder 50 Prozent. Gezählte Ressourcen beachten sie nicht |
+| Stufenklänge | Glas | Die Klangreihe, mit der die Stufen beginnen: Glas, Blech, Wassertropfen oder Hängenbleiben (je fünf steigende Klänge) oder Steigende Töne. Bei mehr als fünf Stufen nehmen die Stufen Steigende Töne. Die Zahl 0 bekommt ein Klicken |
+| Klang auf jeder Stufe | An | Ob die Stufen mit eingeschaltetem Klang beginnen |
+| Sprache auf jeder Stufe | An | Ob die Stufen mit eingeschalteter Sprache beginnen |
+| Sprachformat | Name und Zahl (Mana 40) | Die sechs Formate von Blizzard: Name und Prozent, Name und Zahl, Name und Zehntel („Mana 4“), nur Prozent, nur Zahl, nur Zehntel. Eine gezählte Ressource wird immer als Zahl gesprochen |
+| Stimme | Folgt deiner Einstellung Sprachstimme | Die Spielstimme, mit der die Stufen sprechen |
+| Sprachgeschwindigkeit | 0 | Von -10 bis 10 |
+| Sprachlautstärke | 100 | Von 0 bis 100 |
+| Mindestabstand zwischen Meldungen (Sekunden) | 0 | Von 0 bis 5. Eine Meldung, die früher kommt, wartet, und nur die neueste wartende wird gesprochen. Sounds werden nicht zurückgehalten |
+| Stufen | wird für dich gebaut | Das Untermenü mit einem Alarm je Stufe, siehe unten. Es sagt „Noch keine Stufen“, solange der Monitor aus ist oder die Ressource nicht lesbar ist |
+
+Wenn du Ressource, Stufen (Leisten), Stufenklänge, Klang auf jeder Stufe oder Sprache auf jeder Stufe änderst, werden die Stufen mit diesen Vorgaben neu gebaut. Was du an einzelnen Stufen geändert hast, geht dabei verloren, also stelle diese Einstellungen zuerst ein. Erhöht ein Talent dein Maximum (ein Kombopunkt mehr), kommt die neue Stufe dazu, und die anderen bleiben, wie sie sind.
+
+### Die Stufen
+
+Das Untermenü Stufen („Stufen (6)“ bei fünf Kombopunkten) hat eine Schaltfläche je Stufe, benannt nach ihrem Wert: „0“ bis „5“ oder „20%“ bis „100%“. Jede öffnet den Alarm der Stufe, wie jeder Alarm in WowVision: Aktiviert, Soundalarm (Aktiviert und die Soundauswahl) und TTS-Alarm (nur Aktiviert; was und wie gesprochen wird, kommt aus den Einstellungen des Monitors).
+
+### Wann eine Stufe auslöst
+
+- Gezählte Ressourcen: Bei jeder Änderung löst die Stufe der neuen Zahl aus. Bekommst du zwei Punkte auf einmal, spielt die Stufe, bei der du landest.
+- Leisten, wie bei Blizzard: Fällt der Wert auf oder unter eine Stufe, löst sie aus; steigt er über eine Stufe, löst sie aus. Überspringt eine Änderung mehrere Stufen, spielt beim Fallen die niedrigste und beim Steigen die höchste. 100 spielt, wenn du voll bist, nie beim Verlassen.
+- Eine Stufe, deren Alarm aus ist oder deren Klang und Sprache beide aus sind, wird übergangen: Eine Änderung über sie hinweg spielt die nächste Stufe, die zu hören ist.
+- Der erste Wert nach dem Einloggen, dem Neuladen oder dem Wiedereinschalten des Monitors wird still übernommen.
+- Solange das Spiel den Wert verbirgt, bleibt der Monitor still und beginnt still neu, wenn der Wert wieder lesbar ist.
+
+### Hauptressource sprechen
+
+Die Taste Hauptressource sprechen (Speak Main Resource) sagt die Ressource, die das Spiel gerade für dich zeigt: „Energie 80%“ in Katzengestalt, „Mana 43%“ in Normalgestalt, „Wut 20%“ oder die Zahl, etwa „Kombopunkte 3“. Sie funktioniert in jeder Version, auch dort, wo das Spiel den Wert vor Addons verbirgt: Das Spiel lässt WowVision ihn weiterhin sprechen, nur nicht vergleichen. Die Taste ist standardmäßig nicht belegt; du findest sie unter Monitore im Fenster für die Tastenbelegung.
+
+### Beispiel: Kombopunkte mit Glasklängen
+
+1. Monitore, Monitore (0), Hinzufügen, Ressource.
+2. Stelle Ressource auf Kombopunkte. Lass Stufenklänge auf Glas und schalte Sprache auf jeder Stufe aus.
+3. Die Stufen werden gebaut, sobald der Monitor deine Kombopunkte liest (er muss Aktiviert sein). Öffne Stufen, um „0“ bis „5“ zu hören; bis dahin sagt es „Noch keine Stufen“.
+
+Jeder Kombopunkt spielt jetzt Glas 1 bis 5, und das Ausgeben der Punkte spielt das Klicken.
+
 ## Verfügbarkeit
 
 | Funktion | Classic Era | The Burning Crusade | Mists of Pandaria | Retail | WoW: Forever |
@@ -292,6 +347,9 @@ Die Taste ist standardmäßig nicht belegt. Du findest sie im Fenster für die T
 | Auren des Abklingzeitmanagers | Nein | Nein | Nein | Ja | Ja |
 | Zauber-Abklingzeiten (Abklingzeit- und Proc-Regeln) | Nein | Nein | Nein | Ja | Ja |
 | Zustand Pandemic der Auren des Abklingzeitmanagers | Nein | Nein | Nein | Ja | Nein |
+| Ressourcen-Monitor für gezählte Ressourcen (Kombopunkte und Ähnliches) | Ja | Ja | Ja | Ja | Ja |
+| Ressourcen-Monitor für Leisten (Mana, Energie, Wut und Ähnliches) | Ja | Ja | Ja | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) |
+| Hauptressource sprechen | Ja | Ja | Ja | Ja | Ja |
 | Alle Monitore ein- oder ausschalten | Ja | Ja | Ja | Ja | Ja |
 | Verfolgte Auren ansagen, Verfolgte Abklingzeiten ansagen, `/wv cdmlog` | Nein | Nein | Nein | Ja | Ja |
 
@@ -304,6 +362,7 @@ Die vollständige Funktionsübersicht findest du unter [Funktionen nach Spielver
 | Alle Monitore ein- oder ausschalten | nicht belegt | Ist mindestens ein Monitor an, schaltet die Taste alle Monitore aus und sagt „Monitore aus“. Sind alle aus, schaltet sie alle ein und sagt „Monitore an“ |
 | Verfolgte Auren ansagen | nicht belegt | Liest alle verfolgten Auren (Retail und WoW: Forever) |
 | Verfolgte Abklingzeiten ansagen | nicht belegt | Liest alle verfolgten Zauber-Abklingzeiten und Procs (Retail und WoW: Forever) |
+| Hauptressource sprechen | nicht belegt | Sagt die Ressource, die das Spiel gerade für dich zeigt, etwa „Energie 80%“ (alle Versionen) |
 
 Belege sie im Fenster für die Tastenbelegung, siehe [Tastenbelegung](../basics/keybindings.md). Alle Monitore ein- oder ausschalten wirkt als Stummschaltung: Drücke die Taste einmal, um alle Monitore stumm zu schalten, und noch einmal, um alle wieder einzuschalten. Dabei gehen auch Monitore an, die du vorher einzeln ausgeschaltet hattest.
 
