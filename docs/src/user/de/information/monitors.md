@@ -294,15 +294,15 @@ Es gibt zwei Arten von Ressourcen:
 - Gezählte Ressourcen (Kombopunkte, Heilige Kraft, Chi, Seelensplitter, Arkane Aufladungen, Essenz, Runen): Jeder Punkt ist eine Stufe, von 0 (ausgegeben) bis zu deinem Maximum.
 - Leisten (Mana, Energie, Wut, Fokus, Runenmacht und ähnliche): Die Stufen gehen in der gewählten Größe von 100 abwärts. Alle 40 Prozent ergibt 100, 60 und 20.
 
-Auf Retail und WoW: Forever verbirgt das Spiel dein Mana, deine Energie und die anderen Leisten vor Addons, auch außerhalb des Kampfes. Dort kann der Monitor ihnen nicht folgen, und die Liste Ressource lässt sie weg. Gezählte Ressourcen wie Kombopunkte funktionieren in jeder Version. Eine verborgene Leiste hörst du auf Abruf mit der Taste [Hauptressource sprechen](#hauptressource-sprechen).
+Auf Retail und WoW: Forever verbirgt das Spiel manche Leisten vor Addons, auch außerhalb des Kampfes: sicher Mana und Energie. Einer verborgenen Leiste kann der Monitor nicht folgen, deshalb lässt die Liste Ressource alles weg, was das Spiel bei deinem Charakter verbirgt. Gezählte Ressourcen wie Kombopunkte bleiben lesbar. Eine verborgene Leiste hörst du auf Abruf mit der Taste [Hauptressource sprechen](#hauptressource-sprechen).
 
 ### Monitoreinstellungen
 
 | Einstellung | Standard | Was sie bewirkt |
 |---|---|---|
-| Ressource | Deine Hauptressource | Die Ressource, der der Monitor folgt. Die Liste zeigt die Ressourcen, die dein Charakter gerade hat (und die schon gewählte) |
+| Ressource | Deine Hauptressource | Die Ressource, der der Monitor folgt. Die Liste zeigt die Ressourcen, die dein Charakter gerade hat und die das Spiel nicht verbirgt (und die schon gewählte). Verbirgt das Spiel deine Hauptressource, beginnt ein neuer Monitor mit der ersten, der er folgen kann, etwa Kombopunkte |
 | Stufen (Leisten) | Alle 20% | Die Stufengröße für Leisten: alle 10, 20, 30, 40 oder 50 Prozent. Gezählte Ressourcen beachten sie nicht |
-| Stufenklänge | Glas | Die Klangreihe, mit der die Stufen beginnen: Glas, Blech, Wassertropfen oder Feststecken (je fünf steigende Klänge) oder Steigende Töne. Bei mehr als fünf Stufen nehmen die Stufen Steigende Töne. Die Zahl 0 bekommt ein Klicken |
+| Stufenklänge | Glas | Die Klangreihe, mit der die Stufen beginnen: Glas, Blech, Wassertropfen oder Hängenbleiben (je fünf steigende Klänge) oder Steigende Töne. Bei mehr als fünf Stufen nehmen die Stufen Steigende Töne. Die Zahl 0 bekommt ein Klicken |
 | Klang auf jeder Stufe | An | Ob die Stufen mit eingeschaltetem Klang beginnen |
 | Sprache auf jeder Stufe | An | Ob die Stufen mit eingeschalteter Sprache beginnen |
 | Sprachformat | Name und Zahl (Mana 40) | Die sechs Formate von Blizzard: Name und Prozent, Name und Zahl, Name und Zehntel („Mana 4“), nur Prozent, nur Zahl, nur Zehntel. Eine gezählte Ressource wird immer als Zahl gesprochen |
@@ -310,7 +310,7 @@ Auf Retail und WoW: Forever verbirgt das Spiel dein Mana, deine Energie und die 
 | Sprachgeschwindigkeit | 0 | Von -10 bis 10 |
 | Sprachlautstärke | 100 | Von 0 bis 100 |
 | Mindestabstand zwischen Meldungen (Sekunden) | 0 | Von 0 bis 5. Eine Meldung, die früher kommt, wartet, und nur die neueste wartende wird gesprochen. Sounds werden nicht zurückgehalten |
-| Stufen | wird für dich gebaut | Das Untermenü mit einem Alarm je Stufe, siehe unten |
+| Stufen | wird für dich gebaut | Das Untermenü mit einem Alarm je Stufe, siehe unten. Es sagt „Noch keine Stufen“, solange der Monitor aus ist oder die Ressource nicht lesbar ist |
 
 Wenn du Ressource, Stufen (Leisten), Stufenklänge, Klang auf jeder Stufe oder Sprache auf jeder Stufe änderst, werden die Stufen mit diesen Vorgaben neu gebaut. Was du an einzelnen Stufen geändert hast, geht dabei verloren, also stelle diese Einstellungen zuerst ein. Erhöht ein Talent dein Maximum (ein Kombopunkt mehr), kommt die neue Stufe dazu, und die anderen bleiben, wie sie sind.
 
@@ -322,7 +322,8 @@ Das Untermenü Stufen („Stufen (6)“ bei fünf Kombopunkten) hat eine Schaltf
 
 - Gezählte Ressourcen: Bei jeder Änderung löst die Stufe der neuen Zahl aus. Bekommst du zwei Punkte auf einmal, spielt die Stufe, bei der du landest.
 - Leisten, wie bei Blizzard: Fällt der Wert auf oder unter eine Stufe, löst sie aus; steigt er über eine Stufe, löst sie aus. Überspringt eine Änderung mehrere Stufen, spielt beim Fallen die niedrigste und beim Steigen die höchste. 100 spielt, wenn du voll bist, nie beim Verlassen.
-- Der erste Wert nach dem Einloggen oder Neuladen wird still übernommen.
+- Eine Stufe, deren Alarm aus ist oder deren Klang und Sprache beide aus sind, wird übergangen: Eine Änderung über sie hinweg spielt die nächste Stufe, die zu hören ist.
+- Der erste Wert nach dem Einloggen, dem Neuladen oder dem Wiedereinschalten des Monitors wird still übernommen.
 - Solange das Spiel den Wert verbirgt, bleibt der Monitor still und beginnt still neu, wenn der Wert wieder lesbar ist.
 
 ### Hauptressource sprechen
@@ -333,7 +334,7 @@ Die Taste Hauptressource sprechen (Speak Main Resource) sagt die Ressource, die 
 
 1. Monitore, Monitore (0), Hinzufügen, Ressource.
 2. Stelle Ressource auf Kombopunkte. Lass Stufenklänge auf Glas und schalte Sprache auf jeder Stufe aus.
-3. Verlasse das Menü. Die Stufen werden einen Moment später gebaut: Öffne Stufen, um „0“ bis „5“ zu hören.
+3. Die Stufen werden gebaut, sobald der Monitor deine Kombopunkte liest (er muss Aktiviert sein). Öffne Stufen, um „0“ bis „5“ zu hören; bis dahin sagt es „Noch keine Stufen“.
 
 Jeder Kombopunkt spielt jetzt Glas 1 bis 5, und das Ausgeben der Punkte spielt das Klicken.
 
@@ -347,7 +348,7 @@ Jeder Kombopunkt spielt jetzt Glas 1 bis 5, und das Ausgeben der Punkte spielt d
 | Zauber-Abklingzeiten (Abklingzeit- und Proc-Regeln) | Nein | Nein | Nein | Ja | Ja |
 | Zustand Pandemic der Auren des Abklingzeitmanagers | Nein | Nein | Nein | Ja | Nein |
 | Ressourcen-Monitor für gezählte Ressourcen (Kombopunkte und Ähnliches) | Ja | Ja | Ja | Ja | Ja |
-| Ressourcen-Monitor für Leisten (Mana, Energie, Wut und Ähnliches) | Ja | Ja | Ja | Nein | Nein |
+| Ressourcen-Monitor für Leisten (Mana, Energie, Wut und Ähnliches) | Ja | Ja | Ja | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) |
 | Hauptressource sprechen | Ja | Ja | Ja | Ja | Ja |
 | Alle Monitore ein- oder ausschalten | Ja | Ja | Ja | Ja | Ja |
 | Verfolgte Auren ansagen, Verfolgte Abklingzeiten ansagen, `/wv cdmlog` | Nein | Nein | Nein | Ja | Ja |

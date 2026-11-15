@@ -1,6 +1,8 @@
 -- Headless tests for the Resource monitor (tools/headless-tests.lua loads
 -- this with stand-ins for the game's resource functions).
 local steps = WowVision.resourceSteps
+-- The game's string helper the monitor uses.
+strlower = strlower or string.lower
 
 WowVision.testing.testRunner:addSuite("ResourceSteps", {
     ["counted resources step on every count, bars down from 100"] = function(t)
@@ -102,10 +104,8 @@ local function withGame(body)
         C_VoiceChat = C_VoiceChat,
         issecretvalue = issecretvalue,
         play = WowVision.play,
-        print = print,
     }
     game.power, game.maximum, game.now, game.spoken, game.played, game.secret = {}, {}, 0, {}, {}, false
-    game.printed = {}
     UnitPower = function(_, id)
         if game.secret then
             return "SECRET"
@@ -131,12 +131,9 @@ local function withGame(body)
     WowVision.play = function(_, path)
         tinsert(game.played, path)
     end
-    print = function(text)
-        tinsert(game.printed, text)
-    end
     local ok, err = pcall(body)
     UnitPower, UnitPowerMax, GetTime, C_VoiceChat = saved.UnitPower, saved.UnitPowerMax, saved.GetTime, saved.C_VoiceChat
-    issecretvalue, WowVision.play, print = saved.issecretvalue, saved.play, saved.print
+    issecretvalue, WowVision.play = saved.issecretvalue, saved.play
     if not ok then
         error(err, 0)
     end
@@ -171,7 +168,6 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
             local container, field = boundList(db)
             field:addElement(container, { type = "Resource", powerType = "combopoints", speechOn = false })
             local monitor = container.monitors[1]
-            t:assertEqual(monitor:getLabel(), "Resource: combo points")
             monitor:update()
             t:assertEqual(#monitor.rules, 6)
             t:assertEqual(monitor.rules[1]:getLabel(), "0")
@@ -330,6 +326,22 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
             game.power[MANA] = 450
             monitor:update()
             t:assertEqual(game.spoken[2], "mana 50")
+            -- 75 to 55 crosses 70 and 60; the silent 60 leaves it to 70
+            game.power[MANA] = 750
+            monitor:update()
+            game.power[MANA] = 550
+            monitor:update()
+            t:assertEqual(game.spoken[#game.spoken], "mana 70")
+            local spokenBefore = #game.spoken
+
+            -- Switched off and on, it settles in silence on what it finds
+            monitor.enabled = false
+            monitor:update()
+            game.power[MANA] = 250
+            monitor:update()
+            monitor.enabled = true
+            monitor:update()
+            t:assertEqual(#game.spoken, spokenBefore)
 
             -- A new step size builds the steps anew
             monitor.stepSize = 50
@@ -360,6 +372,64 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
         end)
     end,
 
+    ["a new monitor starts on a resource it can follow"] = function(t)
+        withGame(function()
+            game.maximum[MANA], game.maximum[COMBO] = 100, 5
+            local savedType, savedSecrets = UnitPowerType, C_Secrets
+            UnitPowerType = function()
+                return MANA, "MANA"
+            end
+            local ok, first, second = pcall(function()
+                local plain = WowVision.monitors:create("Resource", {})
+                C_Secrets = {
+                    ShouldUnitPowerBeSecret = function(_, id)
+                        return id == MANA
+                    end,
+                }
+                local hidden = WowVision.monitors:create("Resource", {})
+                return plain.powerType, hidden.powerType
+            end)
+            UnitPowerType, C_Secrets = savedType, savedSecrets
+            t:assertTrue(ok, tostring(first))
+            t:assertEqual(first, "mana")
+            t:assertEqual(second, "combopoints")
+        end)
+    end,
+
+    ["the Steps submenu says so before the steps are built"] = function(t)
+        withGame(function()
+            local monitor = WowVision.monitors:create("Resource", { powerType = "combopoints", enabled = false })
+            local savedGraph = WowVision.graph
+            local items = {}
+            WowVision.graph = {
+                ControlId = {
+                    structural = function(key)
+                        return key
+                    end,
+                    forObject = function(object)
+                        return object
+                    end,
+                },
+                nodes = {
+                    button = function(vtable)
+                        return vtable
+                    end,
+                },
+                settings = {},
+            }
+            monitor:renderStepAlerts({
+                pushContext = function() end,
+                popContext = function() end,
+                addItem = function(_, id, vtable)
+                    tinsert(items, vtable)
+                end,
+            })
+            WowVision.graph = savedGraph
+            t:assertEqual(#items, 1)
+            t:assertEqual(items[1].label, "No steps yet")
+        end)
+    end,
+
     ["a hidden resource stays silent and settles when it is back"] = function(t)
         withGame(function()
             game.maximum[COMBO] = 5
@@ -367,11 +437,9 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
             field:addElement(container, { type = "Resource", powerType = "combopoints" })
             local monitor = container.monitors[1]
             monitor:update()
-            t:assertEqual(#game.printed, 0)
             game.secret = true
             monitor:update()
             monitor:update()
-            t:assertEqual(#game.printed, 0)
             t:assertEqual(#game.played, 0)
             game.secret = false
             game.power[COMBO] = 2

@@ -43,7 +43,6 @@ ResourceStepRule:addFields({
         type = "Alert",
         persist = true,
         label = L["Alert"],
-        sortPriority = 3,
         alert = { key = "alert", label = L["Alert"] },
         outputs = {
             { type = "Sound", key = "sound", label = L["Sound Alert"] },
@@ -72,9 +71,25 @@ function ResourceStepRule:setDefaults(soundPath, soundOn, speechOn)
 end
 
 function ResourceStepRule:fire(message)
-    if self.enabled then
-        self:getAlert():fire(message)
+    self:getAlert():fire(message)
+end
+
+-- Whether the step can be heard: its alert is on with at least one output
+-- on. A silent step does not take a crossing from the steps around it.
+function ResourceStepRule:isAudible()
+    if not self.enabled then
+        return false
     end
+    local alert = self:getAlert()
+    if not alert.enabled then
+        return false
+    end
+    for _, output in ipairs(alert.outputs) do
+        if output.enabled then
+            return true
+        end
+    end
+    return false
 end
 
 function ResourceStepRule:getLabel()
@@ -127,16 +142,23 @@ local function powerChoices(monitor)
     return result
 end
 
--- A new monitor starts on the player's main resource.
+-- A new monitor starts on the player's main resource when the monitor can
+-- follow it, else on the first one it can (on Retail and Forever the main
+-- resource is often a hidden bar: combo points or holy power then).
 local function mainPowerKey()
     if UnitPowerType ~= nil then
         local _, token = UnitPowerType("player")
         if type(token) == "string" then
             local key = strlower(token):gsub("_", "")
-            if powersDB:get(key) ~= nil then
+            local power = powersDB:get(key)
+            if power ~= nil and playerHas(power) then
                 return key
             end
         end
+    end
+    local choices = powerChoices(nil)
+    if choices[1] ~= nil then
+        return choices[1].value
     end
     return "mana"
 end
@@ -218,17 +240,18 @@ ResourceMonitor:updateFields({
     },
 })
 
-function ResourceMonitor:initialize(config)
-    self._last = nil
-    monitors.Monitor.initialize(self, config)
-end
+-- The fields the steps are built from: a change of one builds them anew.
+local BUILD_FIELDS = { "powerType", "stepSize", "soundSeries", "soundOn", "speechOn" }
 
-function ResourceMonitor:getLabel()
-    if self.label ~= nil and self.label ~= "" then
-        return self.label
+function ResourceMonitor:initialize(config)
+    monitors.Monitor.initialize(self, config)
+    for _, key in ipairs(BUILD_FIELDS) do
+        self.class:getField(key).events.valueChange:subscribe(self, function(self, event, target)
+            if target == self then
+                self._buildKey = nil
+            end
+        end)
     end
-    local power = powersDB:get(self.powerType)
-    return L["Resource"] .. ": " .. (power ~= nil and power.label or tostring(self.powerType))
 end
 
 -- The monitor's menu (core/graph/settings.lua renderObjectInto): its
@@ -264,6 +287,13 @@ function ResourceMonitor:renderStepAlerts(builder)
     local graph = WowVision.graph
     local settings = graph.settings
     builder:pushContext("steps", L["Steps"])
+    -- Built on the next read of the resource; until then (monitor off,
+    -- resource not readable now) the list would be empty or stale.
+    if self.builtFor ~= self:buildKey() then
+        builder:addItem(graph.ControlId.structural("notBuilt"), graph.nodes.button({ label = L["No steps yet"] }))
+        builder:popContext()
+        return
+    end
     for _, rule in ipairs(self.rules or {}) do
         local step = rule
         builder:addItem(
@@ -288,16 +318,20 @@ function ResourceMonitor:isCounted()
     return steps.isCounted(self.powerType)
 end
 
--- What the steps depend on, as one string.
+-- What the steps depend on, as one string; kept until one of its fields
+-- changes (update compares it every frame).
 function ResourceMonitor:buildKey()
-    local size = self:isCounted() and "count" or tostring(self.stepSize)
-    return table.concat({
-        tostring(self.powerType),
-        size,
-        tostring(self.soundSeries),
-        tostring(self.soundOn),
-        tostring(self.speechOn),
-    }, "|")
+    if self._buildKey == nil then
+        local size = self:isCounted() and "count" or tostring(self.stepSize)
+        self._buildKey = table.concat({
+            tostring(self.powerType),
+            size,
+            tostring(self.soundSeries),
+            tostring(self.soundOn),
+            tostring(self.speechOn),
+        }, "|")
+    end
+    return self._buildKey
 end
 
 -- The label a built step gets: "40%" on a bar, "3" for a count.
@@ -416,6 +450,9 @@ end
 
 function ResourceMonitor:update()
     if not self.enabled then
+        -- Switched back on, it settles in silence on what it finds.
+        self._last = nil
+        self._waitingSpeech = nil
         return
     end
     self:speakWaiting()
@@ -444,7 +481,7 @@ function ResourceMonitor:update()
     end
     local values = {}
     for _, rule in ipairs(self.rules or {}) do
-        if rule.enabled then
+        if rule:isAudible() then
             tinsert(values, rule.value)
         end
     end
@@ -454,7 +491,7 @@ function ResourceMonitor:update()
     end
     local message = self:message(power, counted, stepValue)
     for _, rule in ipairs(self.rules or {}) do
-        if rule.enabled and rule.value == stepValue then
+        if rule.value == stepValue and rule:isAudible() then
             rule:fire(message)
         end
     end

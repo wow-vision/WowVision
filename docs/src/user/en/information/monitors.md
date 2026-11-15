@@ -294,13 +294,13 @@ Resources come in two kinds:
 - Counted resources (combo points, holy power, chi, soul shards, arcane charges, essence, runes): every point is a step, from 0 (spent) to your maximum.
 - Bars (mana, energy, rage, focus, runic power and the like): the steps go down from 100 in the size you choose. Every 40 percent gives 100, 60 and 20.
 
-On Retail and WoW: Forever the game hides your mana, energy and the other bars from addons, even out of combat, so the monitor cannot follow them there; the Resource list leaves them out. Counted resources such as combo points work on every version. To hear a hidden bar on demand, use the [Speak Main Resource](#speak-main-resource) key.
+On Retail and WoW: Forever the game hides some bars from addons, even out of combat: mana and energy for sure. The monitor cannot follow a hidden bar, so the Resource list leaves out whatever the game hides on your character. Counted resources such as combo points stay readable. To hear a hidden bar on demand, use the [Speak Main Resource](#speak-main-resource) key.
 
 ### Monitor settings
 
 | Setting | Default | What it does |
 |---|---|---|
-| Resource | Your main resource | The resource to follow. The list shows the resources your character has right now (and the one already chosen) |
+| Resource | Your main resource | The resource to follow. The list shows the resources your character has right now and the game does not hide (and the one already chosen). When the game hides your main resource, a new monitor starts on the first one it can follow, such as combo points |
 | Steps (Bars) | Every 20% | The step size for bars: every 10, 20, 30, 40 or 50 percent. Counted resources ignore it |
 | Step Sounds | Glass | The sound series the steps start with: Glass, Brass, Water Drop or Stuck (five rising sounds each), or Rising Notes. With more than five steps the steps use Rising Notes. A count of 0 gets a click |
 | Sound on Every Step | On | Whether the steps start with their sound on |
@@ -310,7 +310,7 @@ On Retail and WoW: Forever the game hides your mana, energy and the other bars f
 | Speech Rate | 0 | From -10 to 10 |
 | Speech Volume | 100 | From 0 to 100 |
 | Minimum Time Between Messages (seconds) | 0 | From 0 to 5. A message that comes sooner waits, and only the newest waiting one is spoken. Sounds are not held back |
-| Steps | built for you | The submenu with one alert per step, see below |
+| Steps | built for you | The submenu with one alert per step, see below. It says "No steps yet" while the monitor is off or the resource cannot be read |
 
 Changing Resource, Steps (Bars), Step Sounds, Sound on Every Step or Speech on Every Step builds the steps anew with those defaults. Changes you made to single steps are lost then, so set these first. When a talent raises your maximum (one more combo point), the new step is added and the others stay as they are.
 
@@ -322,7 +322,8 @@ The Steps submenu ("Steps (6)" for five combo points) lists one button per step,
 
 - Counted resources: the step of the new count fires, at every change. Gaining two points at once plays the step you land on.
 - Bars, like Blizzard's alerts: falling to or below a step fires it, rising above a step fires it. When one change crosses several steps, falling plays the lowest and rising the highest. 100 plays when you reach full, never when you leave it.
-- The first value after login or a reload is taken in silence.
+- A step whose alert is off, or whose sound and speech are both off, is skipped: a change that crosses it plays the next step that can be heard.
+- The first value after login, a reload, or switching the monitor back on is taken in silence.
 - While the game hides the value the monitor stays silent, and it starts again in silence when the value is back.
 
 ### Speak Main Resource
@@ -333,7 +334,7 @@ The Speak Main Resource key says the resource the game shows for you now: "energ
 
 1. Monitors, Monitors (0), Add, Resource.
 2. Set Resource to combo points. Leave Step Sounds at Glass and turn Speech on Every Step off.
-3. Leave the menu. The steps are built a moment later: open Steps to hear "0" to "5".
+3. The steps are built as soon as the monitor reads your combo points (it must be Enabled). Open Steps to hear "0" to "5"; until then it says "No steps yet".
 
 Each combo point now plays glass 1 to 5, and spending them plays the click.
 
@@ -347,7 +348,7 @@ Each combo point now plays glass 1 to 5, and spending them plays the click.
 | Spell Cooldowns (cooldown and proc rules) | No | No | No | Yes | Yes |
 | Pandemic state of Cooldown Manager Auras | No | No | No | Yes | No |
 | Resource monitor for counted resources (combo points and the like) | Yes | Yes | Yes | Yes | Yes |
-| Resource monitor for bars (mana, energy, rage and the like) | Yes | Yes | Yes | No | No |
+| Resource monitor for bars (mana, energy, rage and the like) | Yes | Yes | Yes | Only bars the game does not hide (not mana or energy) | Only bars the game does not hide (not mana or energy) |
 | Speak Main Resource | Yes | Yes | Yes | Yes | Yes |
 | Toggle All Monitors | Yes | Yes | Yes | Yes | Yes |
 | Speak Tracked Auras, Speak Tracked Cooldowns, `/wv cdmlog` | No | No | No | Yes | Yes |

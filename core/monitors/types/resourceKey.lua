@@ -11,23 +11,30 @@ local powersDB = WowVision.gameDB:get("Power")
 -- joined into the spoken text, never compared, and a bar's percent comes
 -- from the game's own curve. The bar is on screen for every sighted player.
 
+-- Kept once it is built whole; a failed build is tried again next press.
 local percentCurve = nil
 local function curve()
     if percentCurve == nil then
-        percentCurve = C_CurveUtil.CreateCurve()
-        percentCurve:SetType(Enum.LuaCurveType.Step)
+        local built = C_CurveUtil.CreateCurve()
+        built:SetType(Enum.LuaCurveType.Step)
         for _, point in ipairs(steps.percentCurvePoints()) do
-            percentCurve:AddPoint(point[1], point[2])
+            built:AddPoint(point[1], point[2])
         end
+        percentCurve = built
     end
     return percentCurve
 end
 
--- A bar's percent: through the curve where the game has one (the value may
--- be hidden), else from the plain numbers (classic clients).
+local function curvePercent(powerType)
+    return UnitPowerPercent("player", powerType, false, curve())
+end
+
+-- A bar's percent: through the curve where the game has one (Retail,
+-- Forever, Mists and TBC; the value may be hidden), else from the plain
+-- numbers (Classic Era).
 local function barPercent(powerType)
     if UnitPowerPercent ~= nil and C_CurveUtil ~= nil and C_CurveUtil.CreateCurve ~= nil then
-        local ok, value = pcall(UnitPowerPercent, "player", powerType, false, curve())
+        local ok, value = pcall(curvePercent, powerType)
         -- A hidden value throws on any comparison, even with nil; only its
         -- truth can be tested.
         if ok and value then

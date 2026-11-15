@@ -180,11 +180,13 @@ end
 
 -- The points of a step curve that turns a fraction (0 to 1) into the whole
 -- percent rounded up like Blizzard's: 0 stays 0, anything above 0.39 up to
--- 0.40 reads 40. A step curve takes the last point at or below the input.
+-- 0.40 reads 40 (a step curve takes the last point at or below the input).
+-- Each point sits a billionth above the whole percent, so even a pool of
+-- millions rounds like math.ceil.
 function steps.percentCurvePoints()
     local points = { { 0, 0 } }
     for percent = 1, 100 do
-        tinsert(points, { (percent - 1) / 100 + 0.00001, percent })
+        tinsert(points, { (percent - 1) / 100 + 1e-9, percent })
     end
     return points
 end
