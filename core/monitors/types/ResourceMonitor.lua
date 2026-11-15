@@ -85,10 +85,19 @@ local ResourceMonitor = monitors:createType("Resource")
 ResourceMonitor.label = L["Resource"]
 monitors.ResourceMonitor = ResourceMonitor
 
--- Whether the player has a resource now: its maximum is above 0 (the check
--- the Power object type makes). A hidden maximum cannot be compared and
--- counts as had.
+-- Whether the monitor can follow a resource of the player's now: the game
+-- does not hide its value (Retail and WoW: Forever hide mana and energy,
+-- C_Secrets says so; measured on Forever 2026-11-15) and its maximum is
+-- above 0 (the check the Power object type makes). A hidden maximum alone
+-- cannot be compared and counts as had. Speak Main Resource
+-- (resourceKey.lua) reads the hidden ones.
 local function playerHas(power)
+    if C_Secrets ~= nil and C_Secrets.ShouldUnitPowerBeSecret ~= nil then
+        local ok, hidden = pcall(C_Secrets.ShouldUnitPowerBeSecret, "player", power.id)
+        if ok and hidden == true then
+            return false
+        end
+    end
     if UnitPowerMax == nil then
         return true
     end

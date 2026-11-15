@@ -50,6 +50,29 @@ WowVision.testing.testRunner:addSuite("ResourceSteps", {
         t:assertEqual(steps.text("numberTenths", true, "combo points", 3), "3")
     end,
 
+    ["the main resource readout and its percent curve"] = function(t)
+        t:assertEqual(steps.readoutText("energy", false, 80), "energy 80%")
+        t:assertEqual(steps.readoutText("combo points", true, 3), "combo points 3")
+        -- evaluate the step curve the way the game does: last point at or below
+        local points = steps.percentCurvePoints()
+        local function at(x)
+            local result = nil
+            for _, point in ipairs(points) do
+                if point[1] <= x then
+                    result = point[2]
+                end
+            end
+            return result
+        end
+        t:assertEqual(#points, 101)
+        t:assertEqual(at(0), 0)
+        t:assertEqual(at(0.001), 1)
+        t:assertEqual(at(0.40), 40)
+        t:assertEqual(at(0.401), 41)
+        t:assertEqual(at(0.995), 100)
+        t:assertEqual(at(1), 100)
+    end,
+
     ["sounds take the series, notes when it is too short, a spend sound for 0"] = function(t)
         local five = steps.sounds(true, steps.build(true, 5), "glass")
         t:assertEqual(five[1], "Sound/WowVision/alerts/glass1.mp3")
@@ -167,6 +190,22 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
             for _, choice in ipairs(monitor.class:getField("powerType"):getChoices(nil)) do
                 tinsert(listed, choice.value)
             end
+            t:assertEqual(table.concat(listed, ","), "combopoints")
+
+            -- What the game hides (mana on Retail and Forever) is left out
+            game.maximum[MANA] = 100
+            local savedSecrets = C_Secrets
+            C_Secrets = {
+                ShouldUnitPowerBeSecret = function(_, id)
+                    return id == MANA
+                end,
+            }
+            listed = {}
+            for _, choice in ipairs(monitor.class:getField("powerType"):getChoices(nil)) do
+                tinsert(listed, choice.value)
+            end
+            C_Secrets = savedSecrets
+            game.maximum[MANA] = nil
             t:assertEqual(table.concat(listed, ","), "combopoints")
 
             -- The monitor's menu: its settings, then one alert button per

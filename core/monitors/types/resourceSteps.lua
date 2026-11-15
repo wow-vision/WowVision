@@ -168,6 +168,27 @@ function steps.sounds(counted, values, seriesKey)
     return result
 end
 
+-- The main resource readout (resourceKey.lua): "energy 80%" for a bar,
+-- "combo points 3" for a count. Only concatenation, so a hidden (secret)
+-- value goes through untouched; speech accepts it.
+function steps.readoutText(name, counted, value)
+    if counted then
+        return name .. " " .. value
+    end
+    return name .. " " .. value .. "%"
+end
+
+-- The points of a step curve that turns a fraction (0 to 1) into the whole
+-- percent rounded up like Blizzard's: 0 stays 0, anything above 0.39 up to
+-- 0.40 reads 40. A step curve takes the last point at or below the input.
+function steps.percentCurvePoints()
+    local points = { { 0, 0 } }
+    for percent = 1, 100 do
+        tinsert(points, { (percent - 1) / 100 + 0.00001, percent })
+    end
+    return points
+end
+
 -- What the speech says, in Blizzard's six formats (Combat Audio Alerts,
 -- "Say ... Format"). A count has no percent and is never divided.
 steps.FORMATS = { "full", "noPercent", "tenths", "noName", "number", "numberTenths" }

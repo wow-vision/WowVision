@@ -4,5 +4,6 @@
   <!-- Monitor types every version has: the player's resources. -->
   <Script file="resourceSteps.lua" />
   <Script file="ResourceMonitor.lua" />
+  <Script file="resourceKey.lua" />
 
 </Ui>
