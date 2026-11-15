@@ -24,12 +24,14 @@ function ResourceSpeech:onFire(message)
 end
 
 -- ---------------------------------------------------------------------------
--- A step: a count (counted resources) or a percent threshold (bars).
+-- A step: a count (counted resources) or a percent threshold (bars). Its
+-- value and label come from the monitor's setup, so its menu is its alert's
+-- menu and nothing else.
 -- ---------------------------------------------------------------------------
 local ResourceStepRule = monitors.ruleRegistry:createType({ key = "ResourceStep" })
 
 ResourceStepRule:addFields({
-    { key = "value", type = "Number", default = 0, persist = true, label = L["Step Value (Count or Percent)"], sortPriority = 2 },
+    { key = "value", type = "Number", default = 0, persist = true, showInUI = false },
     {
         key = "alert",
         type = "Alert",
@@ -67,6 +69,17 @@ function ResourceStepRule:fire(message)
     if self.enabled then
         self:getAlert():fire(message)
     end
+end
+
+-- The step's menu (core/graph/settings.lua renderObjectInto): the alert's
+-- own menu, its Enabled switch and the sound and speech outputs, without
+-- a level of its own ("Alert") in between.
+function ResourceStepRule:renderGraphSettings(builder)
+    local parameters = self:getAlert().parameters
+    local label = parameters.label
+    parameters.label = nil
+    WowVision.graph.settings.renderInto(builder, parameters)
+    parameters.label = label
 end
 
 function ResourceStepRule:getLabel()
@@ -172,8 +185,9 @@ ResourceMonitor:updateFields({
     {
         key = "rules",
         label = L["Steps"],
+        -- The setup builds the steps; there is nothing to add by hand.
         availableTypes = function()
-            return { { key = "ResourceStep", label = L["Step"] } }
+            return {}
         end,
     },
 })

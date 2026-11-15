@@ -153,6 +153,22 @@ WowVision.testing.testRunner:addSuite("ResourceMonitor", {
             t:assertEqual(#monitor.rules, 6)
             t:assertEqual(monitor.rules[1]:getLabel(), "0")
             t:assertEqual(#game.played, 0)
+            t:assertEqual(#monitor.class:getField("rules"):getAvailableTypes(), 0)
+
+            -- A step's menu is its alert's menu, without an "Alert" level
+            WowVision.graph = WowVision.graph or {}
+            local savedSettings = WowVision.graph.settings
+            local rendered, renderedLabel
+            WowVision.graph.settings = {
+                renderInto = function(_, set)
+                    rendered, renderedLabel = set, set.label
+                end,
+            }
+            monitor.rules[2]:renderGraphSettings({})
+            WowVision.graph.settings = savedSettings
+            t:assertEqual(rendered, monitor.rules[2]:getAlert().parameters)
+            t:assertNil(renderedLabel)
+            t:assertEqual(rendered.label, "Alert")
             game.power[COMBO] = 1
             monitor:update()
             t:assertEqual(game.played[1], "Sound/WowVision/alerts/glass1.mp3")
