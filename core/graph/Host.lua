@@ -173,7 +173,16 @@ end
 -- ---- per-tick pull: rebuild, announce-once, live watch, binding sync ----
 
 function GraphHost:update()
+    local combat = InCombatLockdown()
+    local combatKeys = graph.combatKeys
+    if not combat and combatKeys ~= nil then
+        combatKeys.setMenuOpen(#self.stacks > 0)
+    end
     if #self.stacks == 0 then
+        if combat then
+            self:_dropFocusInCombat()
+            return
+        end
         if #self._navHandles > 0 then
             self:_logKeys("released the navigation keys")
         end
@@ -181,7 +190,13 @@ function GraphHost:update()
         self:_dropNodeFocus()
         return
     end
-    if InCombatLockdown() then
+    if combat then
+        -- Menus in combat (graph/combatKeys.lua): the secure frame holds the keys and hands them to onKey; the
+        -- screens render and speak as ever, only the bindings stay as they are until the fight ends.
+        if combatKeys == nil or not combatKeys.active() then
+            return
+        end
+        self:_renderFocused()
         return
     end
     if #self._navHandles == 0 then
@@ -198,7 +213,11 @@ function GraphHost:update()
     end
     self:_syncCloseKey()
     self:_syncLetterKeys()
+    self:_renderFocused()
+end
 
+-- Rebuild the focused screen, announce a focus change once, watch it live and keep its node focus current.
+function GraphHost:_renderFocused()
     local stack = self:focusedStack()
     local screen = self:focusedScreen()
     if not screen.keyGraph:rerender() then
@@ -277,12 +296,12 @@ end
 -- ---- focused-node lifecycle: onFocus/onUnfocus + per-node bindings ----
 
 function GraphHost:_syncNodeFocus(screen)
-    if InCombatLockdown() then
-        self._bindingsDirty = true
-        return
-    end
     local node = screen ~= nil and screen.keyGraph:currentNode() or nil
     local newId = node ~= nil and node.id or nil
+    if InCombatLockdown() then
+        self:_syncFocusInCombat(node, newId)
+        return
+    end
 
     if not self._bindingsDirty and newId ~= nil and self._focusNodeId ~= nil and self._focusNodeId == newId then
         self._focusNode = node
@@ -326,6 +345,71 @@ function GraphHost:_syncNodeFocus(screen)
     end
     if not retry then
         self:_setTooltipFor(node)
+    end
+end
+
+-- In combat a node's bindings cannot engage: focus moves (onUnfocus, onFocus, the tooltip) and the bindings wait,
+-- marked as a deferred engage, so after the fight the focused node only takes its keys.
+function GraphHost:_syncFocusInCombat(node, newId)
+    self._bindingsDirty = true
+    if newId ~= nil and self._focusNodeId ~= nil and self._focusNodeId == newId then
+        self._focusNode = node
+        self._engageDeferred = true
+        return
+    end
+    local previous = self._focusNode
+    if previous ~= nil and previous.vtable.onUnfocus ~= nil then
+        pcall(previous.vtable.onUnfocus, previous)
+    end
+    self._focusNodeId = newId
+    self._focusNode = node
+    if node ~= nil and node.vtable.onFocus ~= nil then
+        pcall(node.vtable.onFocus, node)
+    end
+    self._engageDeferred = newId ~= nil
+    self:_setTooltipFor(node)
+end
+
+-- The last screen closed in combat: focus goes, the bindings were let go at combat start.
+function GraphHost:_dropFocusInCombat()
+    if self._focusNode ~= nil and self._focusNode.vtable.onUnfocus ~= nil then
+        pcall(self._focusNode.vtable.onUnfocus, self._focusNode)
+    end
+    self:_setTooltipFor(nil)
+    self._focusNodeId = nil
+    self._focusNode = nil
+    self._engageDeferred = false
+end
+
+-- Enter, Backspace or the tooltip key in combat (graph/combatKeys.lua): the focused node's own binding for it, when
+-- addon code can answer it (a Function binding); a secure click of a game button cannot be pointed at a frame in
+-- combat, so that says so.
+function GraphHost:combatAction(binding)
+    local screen = self:focusedScreen()
+    if screen == nil or not screen.keyGraph:rerender() then
+        return
+    end
+    local node = screen.keyGraph:currentNode()
+    if node == nil then
+        return
+    end
+    for _, spec in ipairs(self:_nodeBindingSpecs(node)) do
+        if spec.binding == binding then
+            if spec.type ~= "Function" then
+                break
+            end
+            if spec.interruptSpeech then
+                WowVision.base.speech:stop()
+            end
+            spec.func()
+            if spec.postClick ~= nil then
+                spec.postClick()
+            end
+            return
+        end
+    end
+    if binding ~= "tooltip" then
+        self:_speak(WowVision:getLocale()["Not available in combat"])
     end
 end
 
@@ -822,6 +906,10 @@ function GraphHost:refreshBindings()
     self:_releaseNavBindings()
     self:_releaseNodeHandles()
     self._bindingsDirty = true
+    -- the combat keys follow the same keymaps
+    if graph.combatKeys ~= nil then
+        graph.combatKeys.stage()
+    end
 end
 
 -- Entry point for navigation keypresses. Mirrors UIHost's TTS sequencing: stop

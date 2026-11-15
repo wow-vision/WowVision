@@ -2292,6 +2292,7 @@ do
     loadAddonFile("core/graph/Screen.lua")
     loadAddonFile("core/graph/Host.lua")
     loadAddonFile("core/graph/liveWatch.lua")
+    loadAddonFile("core/graph/combatKeys.lua")
     CreateFrame = savedCreateFrame
     announcer.positionText, announcer.expandedStateText = savedPosition, savedExpanded
     WowVision.graphHost = nil
@@ -2327,6 +2328,7 @@ do
     WowVision._popupsTestHarness = nil
 end
 loadAddonFile("core/graph/menuNavTests.lua")
+loadAddonFile("core/graph/combatKeysTests.lua")
 loadAddonFile("core/graph/secretLabelTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")

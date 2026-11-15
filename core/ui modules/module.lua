@@ -65,6 +65,17 @@ settings:add({
     default = false,
 })
 
+-- The menus keep working in combat (graph/combatKeys.lua). Off: they fall silent at combat start, as before.
+local combatMenus = settings:add({
+    type = "Bool",
+    key = "combatMenus",
+    label = L["Menus in Combat"],
+    default = true,
+})
+combatMenus.events.valueChange:subscribe(module, function()
+    WowVision.graph.combatKeys.stage()
+end)
+
 -- Chasing stuck movement keys with testers: prints when windows take, wait
 -- for and release the navigation keys, and what the held check saw.
 module:registerCommand({
@@ -408,3 +419,16 @@ module:registerBindings({
         end,
     },
 })
+
+-- Each menu key's own key in combat ("In Combat: Up"), for a player who wants a different key there (one who moves
+-- with the arrows in a fight). Empty, the menu key's own inputs apply (graph/combatKeys.lua).
+for _, key in ipairs(WowVision.graph.combatKeys.MENU_KEYS) do
+    local keymap = WowVision.input:getBinding(key)
+    module:registerBinding({
+        type = "Virtual",
+        key = WowVision.graph.combatKeys.combatKeymap(key),
+        dorment = true,
+        label = L["In Combat"] .. ": " .. (keymap ~= nil and keymap:getLabel() or key),
+        inputs = {},
+    })
+end

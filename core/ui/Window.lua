@@ -290,6 +290,11 @@ function ManualWindow:playsMenuSounds()
     return true
 end
 
+-- A WowVision window: nothing of the game to close, so it closes in combat too (WindowManager:closeOwnWindows).
+function ManualWindow:isOwnWindow()
+    return true
+end
+
 WowVision.ManualWindow = ManualWindow
 
 -- EventWindow - opens/closes based on WoW events

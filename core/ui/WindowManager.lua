@@ -192,6 +192,41 @@ function WindowManager:closeAll()
     return closed
 end
 
+-- Close in combat: only what is WowVision's own -- its windows (ManualWindow:isOwnWindow) and the screens no game
+-- window owns (context menus, text entries). A game window stays: in combat the game refuses addon code that shows or
+-- hides its panels (CheckProtectedFunctionsAllowed in UIParentPanelManager.lua says "Interface action failed"), and its
+-- screen is kept for after the fight.
+function WindowManager:closeOwnWindows()
+    local owners = {}
+    for _, instance in ipairs(self.openWindows) do
+        if instance.stack ~= nil then
+            owners[instance.stack] = instance
+        end
+    end
+    local host = WowVision.graphHost
+    local stacks = {}
+    for _, stack in ipairs(host.stacks) do
+        tinsert(stacks, stack)
+    end
+    for i = #stacks, 1, -1 do
+        local stack = stacks[i]
+        local instance = owners[stack]
+        if instance ~= nil then
+            local window = instance.ref
+            if window.isOwnWindow ~= nil and window:isOwnWindow() then
+                self:closeWindow(instance)
+            end
+        elseif stack.config ~= nil and stack.config.onRequestClose ~= nil then
+            local ok, err = pcall(stack.config.onRequestClose, stack)
+            if not ok then
+                geterrorhandler()(err)
+            end
+        else
+            host:close(stack)
+        end
+    end
+end
+
 -- Update loop for auto-detecting window state changes
 
 function WindowManager:update()
