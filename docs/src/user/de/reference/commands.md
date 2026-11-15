@@ -29,6 +29,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /wv close | Schließt jedes WowVision-Fenster | alle |
 | /wv version | Gibt die WowVision-Version aus | alle |
 | /wv accept | Nimmt eine Gruppeneinladung an, auch im Kampf | alle |
+| /wv pendingtest | Zeigt einen Testkasten, der wie eine Gruppeneinladung wartet | alle |
 | /beacon | Setzt ein Beacon, routet zu einem benannten Ort oder liest deine Position vor | alle |
 | /focus1 bis /focus5 | Setzt ein virtuelles Fokusziel | alle, nicht mit Sku |
 | /pquit | Verlässt deine Gruppe | alle, nicht mit Sku |
@@ -87,6 +88,10 @@ Gibt die installierte WowVision-Version in dein Chatfenster aus, zum Beispiel V0
 ### /wv accept
 
 Nimmt die Gruppeneinladung an, die gerade angezeigt wird, und sagt "Gruppeneinladung angenommen". Das geht auch im Kampf, wo WowVision das Einladungs-Popup nicht öffnen kann. Ist keine Einladung da, sagt es "Keine Gruppeneinladung". Eine Einladung, die nach der Rolle fragt, braucht erst eine aktivierte Rolle, sonst sagt es "Erst eine Rolle wählen". Die Taste Gruppeneinladung annehmen (Accept Group Invitation) tut dasselbe; sie ist unbelegt. Versionen: alle. Siehe [Gruppensuche](../windows/group-finder.md).
+
+### /wv pendingtest
+
+Zeigt einen Testkasten, der wie eine Gruppeneinladung wartet: er überhört im Spiel die Esc-Taste und läuft nach einer Minute ab; seine Knöpfe Annehmen und Ablehnen schreiben nur in den Chat. Damit probierst du Ausstehend ohne Gruppe aus. Weil WowVision ihn zeigt, meldet ein Esc, das ans Spiel geht, eine blockierte Aktion, solange er offen ist; mit der ersten Wahl der Einstellung Ausstehende Fenster geht Esc dort nie ans Spiel, bei den anderen sagt der Befehl das vorher. Die eigenen Kästen des Spiels tun das nicht. Versionen: alle. Siehe [Ausstehend](../windows/system.md#ausstehend-eine-frage-die-wartet).
 
 ### /beacon
 
