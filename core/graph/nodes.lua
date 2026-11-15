@@ -272,8 +272,10 @@ function nodes.proxyContextActions(target, clickLabels, onDrag)
             label = clickLabel("right", L["Right Click"]),
             click = { emulatedKey = "RightButton", target = target },
         })
+        -- a pickup is protected in combat (an action, a spell): not run from the context menu there
         add({
             label = L["Drag"],
+            notInCombat = true,
             onActivate = onDrag or nodes.dragScript(target),
         })
     end

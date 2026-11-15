@@ -99,6 +99,28 @@ local function firstShownButton(frame)
     return nil
 end
 
+-- The dialogs whose buttons may run their own click from addon code in combat (graph/Host.lua combatKey): their
+-- handlers call nothing protected (AcceptGroup, DeclineGroup, the summon and resurrection answers, RepopMe,
+-- DeleteCursorItem; GameDialogDefs.lua), and the delete questions were answered so in a fight in game. Any other
+-- dialog's buttons say Not available in combat: a handler that calls a protected function (AcceptBattlefieldPort)
+-- would be blocked from addon code.
+local COMBAT_CLICKS = {
+    PARTY_INVITE = true,
+    CONFIRM_SUMMON = true,
+    CONFIRM_SUMMON_SCENARIO = true,
+    CONFIRM_SUMMON_STARTING_AREA = true,
+    RESURRECT = true,
+    RESURRECT_NO_SICKNESS = true,
+    RESURRECT_NO_TIMER = true,
+    DEATH = true,
+    HARDCORE_DEATH = true,
+    DELETE_ITEM = true,
+    DELETE_GOOD_ITEM = true,
+    DELETE_QUEST_ITEM = true,
+    DELETE_GOOD_QUEST_ITEM = true,
+    WOWVISION_PENDING_TEST = true,
+}
+
 local function renderDialog(builder, frame, index)
     local contextKey = "popup:" .. tostring(frame.which or index)
     builder:pushContext(contextKey, L["Popup"])
@@ -122,6 +144,7 @@ local function renderDialog(builder, frame, index)
                     binding = "leftClick",
                     type = "Click",
                     emulatedKey = "LeftButton",
+                    combatClick = COMBAT_CLICKS[frame.which],
                     target = function()
                         return firstShownButton(frame)
                     end,
@@ -153,12 +176,16 @@ local function renderDialog(builder, frame, index)
         )
     end
 
-    -- The buttons are plain game buttons, not protected: in combat their own click runs from addon code, as the
-    -- Accept Group Invitation key does (acceptInvite below).
+    -- The buttons are plain game buttons, not protected: in combat their own click runs from addon code for the
+    -- dialogs known to call nothing protected (COMBAT_CLICKS), as the Accept Group Invitation key does.
+    local combatClick = COMBAT_CLICKS[frame.which]
     for _, button in ipairs(getPopupButtons(frame)) do
         if button:IsShown() then
             builder:beginStop()
-            builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button, combatClick = true }))
+            builder:addItem(
+                ControlId.forObject(button),
+                nodes.proxyButton({ target = button, combatClick = combatClick })
+            )
         end
     end
 
@@ -266,9 +293,10 @@ end
 
 -- Escape (or the Close All Windows key) on the window: the dialogs in front that ignore Escape go to Pending, their
 -- frames left on screen, labelled with their text (read live: a countdown the game shows in it reads as it runs).
--- In a fight WowVision holds Escape, so a dialog that takes Escape in the game is cancelled the game's own way
--- (StaticPopup_EscapePressed: the dialogs with hideOnEscape cancel and hide), as Escape does out of combat; the
--- waiting ones go to Pending with the next Escape, as out of combat.
+-- In a fight WowVision holds Escape: on a dialog that takes Escape in the game its Escape only gives the keys back
+-- (graph/combatKeys.lua), and the next Escape reaches the game, which cancels the dialog its own way. Calling the
+-- game's StaticPopup_EscapePressed from addon code would taint the dialogs and the game's later Escape. Waiting
+-- dialogs go to Pending, as out of combat.
 local function takesEscapeInFront()
     local any = false
     forEachFrontDialog(function(frame)
@@ -280,8 +308,7 @@ local function takesEscapeInFront()
 end
 
 local function requestClose(_, reason)
-    if reason == "escape" and InCombatLockdown() and takesEscapeInFront() and StaticPopup_EscapePressed ~= nil then
-        StaticPopup_EscapePressed()
+    if reason == "escape" and InCombatLockdown() and takesEscapeInFront() then
         return
     end
     local entries = {}

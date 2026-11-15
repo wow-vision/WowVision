@@ -373,7 +373,7 @@ testRunner:addSuite("CombatMirror", {
     ["the open-bags key again closes the bags and lets the keys go"] = function(t)
         local handle = bagsFight(false)
         openBags(handle)
-        t:assertNotEqual(openBags(handle), false, "the click toggles the visible bags shut")
+        t:assertEqual(openBags(handle), false, "no click: its toggles would reopen the bags")
         t:assertEqual(handle.attributes.mode, "")
         t:assertEqual(handle.attributes["bags-open"], 0)
         t:assertNil(handle.bindings.DOWN)

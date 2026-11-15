@@ -39,6 +39,65 @@ function module.slotLabel(bagID, slotID)
     return table.concat(parts, ", ")
 end
 
+-- The held bags and the bar buttons that stand for them (the bags window, Bags.lua, and the bags in combat,
+-- core/windows/containersCombat.lua).
+module.KEYRING_ID = KEYRING_CONTAINER or (Enum.BagIndex ~= nil and Enum.BagIndex.Keyring) or nil
+
+module.BAG_SLOT_BUTTONS = {
+    [0] = "MainMenuBarBackpackButton",
+    [1] = "CharacterBag0Slot",
+    [2] = "CharacterBag1Slot",
+    [3] = "CharacterBag2Slot",
+    [4] = "CharacterBag3Slot",
+    [5] = "CharacterReagentBag0Slot",
+}
+
+-- Every held bag, in bar order: backpack, bags, reagent bag, keyring.
+module.HELD_BAG_IDS = { 0, 1, 2, 3, 4, 5 }
+if module.KEYRING_ID ~= nil then
+    tinsert(module.HELD_BAG_IDS, module.KEYRING_ID)
+end
+
+function module.heldBagIds()
+    return module.HELD_BAG_IDS
+end
+
+-- The item buttons the open bag frames show now (pooled: each frame's Items).
+function module.shownItemButtons()
+    local buttons = {}
+    if ContainerFrameUtil_EnumerateContainerFrames == nil then
+        return buttons
+    end
+    for _, frame in ContainerFrameUtil_EnumerateContainerFrames() do
+        if frame ~= nil and frame:IsShown() then
+            for _, button in ipairs(frame.Items or {}) do
+                if button:IsShown() then
+                    tinsert(buttons, button)
+                end
+            end
+        end
+    end
+    return buttons
+end
+
+-- The bar buttons whose clicks open every bag, as Open All Bags does: the backpack button alone with combined bags
+-- (it opens the one window), else each held bag's own button.
+function module.bagOpenButtons()
+    local manager = ContainerFrameSettingsManager
+    local combined = manager ~= nil and manager:IsUsingCombinedBags()
+    local buttons = {}
+    for bag = 0, 5 do
+        local button = _G[module.BAG_SLOT_BUTTONS[bag]]
+        if button ~= nil and (C_Container.GetContainerNumSlots(bag) or 0) > 0 then
+            tinsert(buttons, button)
+        end
+        if combined then
+            break
+        end
+    end
+    return buttons
+end
+
 -- An amount of money as words ("12 Gold 5 Silver"), nil for a secret or
 -- missing amount. Shared by the bags and the bank.
 function module.coinText(amount)

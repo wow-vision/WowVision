@@ -82,13 +82,14 @@ function combatKeys.entries(inputManager, keys)
 end
 
 -- The secure buttons of the bindings that open a WowVision window, as activated right now (one per input).
+-- opensWindow is true, or "cursor" for a key that opens its window only with something on the cursor.
 function combatKeys.openingFrames(inputManager)
     local frames = {}
     for _, binding in ipairs(inputManager.bindings.orderedBindings) do
         if binding.opensWindow then
             for _, activated in ipairs(binding.activated) do
                 for _, frame in ipairs(activated.frames) do
-                    tinsert(frames, frame)
+                    tinsert(frames, { frame = frame, needsCursor = binding.opensWindow == "cursor" })
                 end
             end
         end
@@ -254,7 +255,11 @@ combatKeys.CYCLE = [[
     self:SetAttribute("ctx", 0)
     if target == "" then
         self:RunAttribute("_leave")
-        self:CallMethod("onCombatKey", "otherWindow")
+        if step == "previousWindow" then
+            self:CallMethod("onCombatKey", "otherWindowBack")
+        else
+            self:CallMethod("onCombatKey", "otherWindow")
+        end
         return
     end
     self:RunAttribute("_enter", target, self:GetAttribute(target .. "-last"), "open")
@@ -411,8 +416,13 @@ combatKeys.CLICK = [[
 ]]
 
 -- The wrapper on a window-opening binding's button: in a fight, leave a mirrored list being walked (the window that
--- opens gets the keys) and take the menu keys; the button then runs its own action. owner is the secure frame.
+-- opens gets the keys) and take the menu keys; the button then runs its own action. A key that opens its window only
+-- with something on the cursor (needscursor: Destroy Cursor Item) does nothing of that with an empty cursor (cursor,
+-- kept by the state driver from [cursor]). owner is the secure frame.
 combatKeys.OPENING = [[
+    if self:GetAttribute("needscursor") == 1 and owner:GetAttribute("cursor") ~= 1 then
+        return
+    end
     if owner:GetAttribute("fighting") == 1 then
         owner:RunAttribute("_leave")
         owner:RunAttribute("_take")
@@ -421,7 +431,8 @@ combatKeys.OPENING = [[
 
 -- The wrapper on a mirror's opener button (the game's own open-bags key in a fight): a closed window opens (the click
 -- runs: a secure click of the game's own button) and its list is walked from the top; an open window not walked now
--- is only stepped into (the click is cancelled); the walked one closes (the click toggles it shut) and the keys go.
+-- is only stepped into (the click is cancelled); the walked one closes (addon code closes it, the click is cancelled)
+-- and the keys go.
 combatKeys.OPENER = [[
     if owner:GetAttribute("fighting") ~= 1 then
         return
@@ -437,7 +448,8 @@ combatKeys.OPENER = [[
         owner:RunAttribute("_leave")
         owner:RunAttribute("_release")
         owner:CallMethod("onMirror", mode, 0, "close")
-        return
+        -- no click: its toggles would open what addon code just closed (onClose closes every bag)
+        return false
     end
     owner:SetAttribute(mode .. "-open", 1)
     owner:SetAttribute(mode .. "-pickok", owner:GetAttribute(mode .. "-trusted") == 1 and 1 or 0)
@@ -453,6 +465,11 @@ combatKeys.CONTEXT_DONE = [[
     owner:SetAttribute("ctx", 0)
     owner:RunAttribute("_arm")
     owner:CallMethod("onMirror", owner:GetAttribute("mode"), owner:GetAttribute("idx"), "contextDone")
+]]
+
+-- Whether something is on the cursor ([cursor]), for the keys that open a window only then.
+combatKeys.ON_CURSOR = [[
+    self:GetFrameRef("keys"):SetAttribute("cursor", newstate)
 ]]
 
 -- The state driver's handler: the frame's own COMBAT with the new state. The driver hands the state over as a number
@@ -523,6 +540,9 @@ local function stateLine()
         .. #WowVision.graphHost.stacks
 end
 
+-- The game's keys of the mirrors' opener commands, as last staged (UPDATE_BINDINGS).
+local openerKeys = nil
+
 local function watch(keys, driver)
     keys:HookScript("OnAttributeChanged", function(_, name, value)
         if name == "taken" or name == "fighting" or name == "mode" then
@@ -541,7 +561,19 @@ local function watch(keys, driver)
     events:RegisterEvent("UPDATE_BINDINGS")
     events:SetScript("OnEvent", function(_, event)
         if event == "UPDATE_BINDINGS" then
-            combatKeys.stageMirrors()
+            -- fired for every override too (WowVision's own keys on each focus move): restaged only when the game's
+            -- keys for the openers moved
+            local keys = {}
+            for _, def in ipairs(combatKeys.mirrors) do
+                for _, command in ipairs(def.commands) do
+                    tinsert(keys, table.concat({ command, GetBindingKey(command) }, "="))
+                end
+            end
+            local signature = table.concat(keys, ",")
+            if signature ~= openerKeys then
+                openerKeys = signature
+                combatKeys.stageMirrors()
+            end
         elseif event == "PLAYER_REGEN_DISABLED" then
             log("fight starts (" .. lockdown() .. "): " .. stateLine())
             C_Timer.After(0.3, function()
@@ -588,8 +620,10 @@ local function createFrames()
     local driver = CreateFrame("Frame", "WowVisionCombatKeysDriver", UIParent, "SecureHandlerStateTemplate")
     SecureHandlerSetFrameRef(driver, "keys", keys)
     driver:SetAttribute("_onstate-combat", combatKeys.ON_STATE)
+    driver:SetAttribute("_onstate-cursor", combatKeys.ON_CURSOR)
     watch(keys, driver)
     RegisterStateDriver(driver, "combat", "[combat] 1; 0")
+    RegisterStateDriver(driver, "cursor", "[cursor] 1; 0")
     return keys
 end
 
@@ -620,9 +654,12 @@ end
 local function wrapOpeningFrames()
     for frame in pairs(wrapped) do
         SecureHandlerUnwrapScript(frame, "OnClick")
+        frame:SetAttribute("needscursor", nil)
     end
     wrapped = {}
-    for _, frame in ipairs(combatKeys.openingFrames(WowVision.input)) do
+    for _, opening in ipairs(combatKeys.openingFrames(WowVision.input)) do
+        local frame = opening.frame
+        frame:SetAttribute("needscursor", opening.needsCursor and 1 or nil)
         SecureHandlerWrapScript(frame, "OnClick", keysFrame, combatKeys.OPENING)
         wrapped[frame] = true
     end
@@ -649,6 +686,8 @@ end
 --   contextLabels(index)  { left = ..., right = ... }: the two context menu entries of entry index
 --   onClose()  the walked window was closed in the fight: close what the opener's click did not (all the bags)
 --   stack()    the window's stack while it is open, else nil (Ctrl-Tab tells it from WowVision's other windows)
+--   available()  optional: whether WowVision reads the window at all (its module on, no conflicting addon); without
+--              it the game's own keys stay the game's in a fight
 --   clickTargets()  optional: entry index -> the game's own button of that entry as the open window lays it out now.
 --              Enter on the entry in a fight is a secure click of it, while the window stays as it was when the
 --              fight began.
@@ -743,9 +782,12 @@ local function writeMirrors()
         end
         updateOpener(def)
         local name = opener(def):GetName()
-        for _, command in ipairs(def.commands) do
-            for _, key in ipairs({ GetBindingKey(command) }) do
-                tinsert(openKeys, { key = key, opener = name })
+        -- a window WowVision does not read (its module off, Sku loaded) leaves the game's keys to the game
+        if def.available == nil or def.available() then
+            for _, command in ipairs(def.commands) do
+                for _, key in ipairs({ GetBindingKey(command) }) do
+                    tinsert(openKeys, { key = key, opener = name })
+                end
             end
         end
     end
@@ -928,6 +970,9 @@ function combatKeys.walking()
     return mode ~= "" and mode or nil
 end
 
+-- The other window Ctrl-Tab went to last (otherWindow).
+local lastOther = nil
+
 -- A menu key pressed in combat, by action name (from the secure frame).
 function combatKeys.onKey(action)
     local L = WowVision:getLocale()
@@ -950,13 +995,17 @@ function combatKeys.onKey(action)
         WowVision:notify(L["No menu open, Escape gives the keys back"])
         return
     end
-    if action == "otherWindow" then
-        -- Ctrl-Tab from a mirrored window to the other windows (CYCLE); the next Ctrl-Tab goes on to a mirrored one
+    if action == "otherWindow" or action == "otherWindowBack" then
+        -- Ctrl-Tab from a mirrored window to the other windows (CYCLE): the next of them after the one visited last,
+        -- so each visit goes on to another; the next Ctrl-Tab goes on to a mirrored one
+        local step = action == "otherWindow" and 1 or -1
         if not host:focusStack(function(stack)
             return not combatKeys.isMirrorStack(stack)
-        end) then
+        end, step, lastOther) then
             WowVision:notify(L["No other window"])
+            return
         end
+        lastOther = host:focusedStack()
         return
     end
     host:combatKey(action)
@@ -1011,6 +1060,38 @@ function combatKeys.hintOtherWindow(stack)
     WowVision:notify(WowVision.secrets.join(parts, ", "))
 end
 
+-- A mirrored window in front that the secure side does not walk (Host:update): once per landing on it, a moment later
+-- and if still so, its opener key is named, the key that walks it again (on an open window it steps in).
+local hintedStack = nil
+
+function combatKeys.hintUnwalked(stack)
+    if hintedStack == stack then
+        return
+    end
+    hintedStack = stack
+    C_Timer.After(0.5, function()
+        local host = WowVision.graphHost
+        if host:focusedStack() ~= stack or combatKeys.walking() ~= nil then
+            return
+        end
+        for _, def in ipairs(combatKeys.mirrors) do
+            if def.stack ~= nil and def.stack() == stack then
+                local key = GetBindingKey(def.commands[1])
+                if key ~= nil then
+                    local keyText = GetBindingText ~= nil and GetBindingText(key) or key
+                    WowVision:notify(WowVision:getLocale()["To use items, press"] .. " " .. keyText)
+                end
+                return
+            end
+        end
+    end)
+end
+
+-- Walking a mirrored list again: the next unwalked landing is hinted again.
+function combatKeys.clearUnwalkedHint()
+    hintedStack = nil
+end
+
 -- A popup in front opened in a fight while the menu keys are the game's: say which key lands on it, a moment after
 -- the popup itself is read.
 function combatKeys.hintMenuKey()
@@ -1032,6 +1113,7 @@ end
 
 -- The secure side moved in a mirrored list, or handed a key over there (from the secure frame).
 function combatKeys.onMirror(mode, index, why)
+    combatKeys.clearUnwalkedHint()
     log(mode .. " " .. tostring(why) .. " " .. tostring(index))
     local def = mirrorsByKey[mode]
     if def == nil then

@@ -32,7 +32,7 @@ module:registerBinding({
     label = L["Destroy Cursor Item"],
     -- It brings up the game's delete question: in a fight the key leaves a walked bag list first, so the question
     -- gets the keys (graph/combatKeys.lua).
-    opensWindow = true,
+    opensWindow = "cursor",
     inputs = { "ALT-CTRL-\\", "DELETE" },
     interruptSpeech = true,
     func = function()

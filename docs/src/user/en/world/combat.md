@@ -57,7 +57,7 @@ Your game key for Open All Bags or Toggle Backpack opens all your bags in a figh
 - Space reads the slot's tooltip.
 - B again, or Escape, closes the bags and gives the keys back.
 
-A fight that begins while you are on a bag slot goes on from that slot.
+A fight that begins while you are on a bag slot goes on from that slot. When you come back to your open bags from another window without walking them, they are read but the keys are not theirs yet: you hear "To use items, press" with your bags key, and that key walks them again from where you were.
 
 ### Your equipment (C)
 
@@ -73,19 +73,19 @@ Shift+F10 on a slot opens its two entries: the left click and the right click, w
 
 ### Moving between windows (Ctrl+Tab)
 
-With your bags or equipment open, Ctrl+Tab goes from the bags to the equipment to your other windows and around; each list is taken up again on the slot you left. Without another window you hear "No other window", and the next Ctrl+Tab goes on.
+With your bags or equipment open, Ctrl+Tab goes from the bags to the equipment to your other windows and around; each list is taken up again on the slot you left. From the bags or equipment, each visit goes on to the next of your other windows, so they all come in turn; Ctrl+Shift+Tab goes the other way. Without another window you hear "No other window", and the next Ctrl+Tab goes on.
 
-A window that opens by itself while you walk your bags or equipment, such as the "delete this item?" question, stays behind so your keys are not taken from the list: you hear it and "To answer, press" with your Ctrl+Tab key. The Destroy Cursor Item key (Delete) is the exception: it brings the delete question to the front at once.
+A window that opens by itself while you walk your bags or equipment, such as the "delete this item?" question, stays behind so your keys are not taken from the list: you hear it and "To answer, press" with your Ctrl+Tab key. The Destroy Cursor Item key (Delete) is the exception: with an item on the cursor it brings the delete question to the front at once. With nothing on the cursor, Delete leaves your keys where they are.
 
 ### Popups in a fight
 
-A popup that opens by itself in a fight and waits for an answer (a group invitation, also one that asks for your role, a summon, a resurrection, death, the ready check) does not take your keys: it goes straight to Pending and you hear its name, for example "Group Invitation, Pending". Open the WowVision menu (Shift+F1); the popup is its first entry, and Enter brings it to the front. The buttons of the invitations, summons, resurrections and the death box work there; the ready check and the dungeon finder's role check say "Not available in combat". The Accept Group Invitation key and /wv accept also still work. See [Pending](../windows/system.md#pending-a-question-that-waits).
+A popup that opens by itself in a fight and waits for an answer (a group invitation, also one that asks for your role, a summon, a resurrection, death, the ready check) does not take your keys: it goes straight to Pending and you hear its name, for example "Group Invitation, Pending". Open the WowVision menu (Shift+F1); the popup is its first entry, and Enter brings it to the front. The buttons of the invitations, summons, resurrections, the death box and the delete questions work there, because they call nothing the game protects in a fight; the buttons of every other popup, among them the ready check and the dungeon finder's role check, say "Not available in combat". The Accept Group Invitation key and /wv accept also still work. See [Pending](../windows/system.md#pending-a-question-that-waits).
 
-A popup that answers something you just did, such as "bind this item to you?", comes to the front. If WowVision did not hold the keys at that moment, you hear "To answer, press Shift+F1"; that key lands on it. Escape there does what the game's Escape does: it cancels a popup that takes Escape, and puts one that waits aside to Pending.
+A popup that answers something you just did, such as "bind this item to you?", comes to the front. If WowVision did not hold the keys at that moment, you hear "To answer, press Shift+F1"; that key lands on it. Escape there does what the game's Escape does, in two steps: the first Escape gives the keys back to the game, and a second Escape is the game's own and cancels a popup that takes Escape. A popup that waits is put aside to Pending with the first Escape.
 
 ### Trading in a fight
 
-In an open trade window the Trade button works in a fight. Cancel and the trade slots say "Not available in combat"; the Accept Trade key (Ctrl+T) also accepts the trade.
+In a fight the buttons of the trade window (Trade, Cancel and the trade slots) say "Not available in combat". Accept the trade with the Accept Trade key (Ctrl+T): it is a key binding of the game's own, so it works in a fight too. See [Key bindings](../reference/keybindings.md).
 
 ### Settings and keys
 

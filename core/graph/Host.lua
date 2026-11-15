@@ -210,7 +210,8 @@ function GraphHost:update()
     end
     if #self.stacks == 0 then
         if combat then
-            self:_dropFocusInCombat()
+            -- every binding was let go at combat start: only the focus goes
+            self:_dropNodeFocus()
             return
         end
         if #self._navHandles > 0 then
@@ -226,7 +227,15 @@ function GraphHost:update()
         if combatKeys == nil or not combatKeys.active() then
             return
         end
-        self:_renderFocused()
+        -- A mirrored window (the bags) in front while the secure side does not walk it (focus came back to it, or the
+        -- fight is just beginning on it): its keys would not act on what is read, so it reads quietly, and the key
+        -- that walks it again is named (graph/combatKeys.lua).
+        local stack = self:focusedStack()
+        local quiet = stack ~= nil and combatKeys.isMirrorStack(stack) and combatKeys.walking() == nil
+        if quiet then
+            combatKeys.hintUnwalked(stack)
+        end
+        self:_renderFocused(quiet)
         return
     end
     if #self._navHandles == 0 then
@@ -246,8 +255,9 @@ function GraphHost:update()
     self:_renderFocused()
 end
 
--- Rebuild the focused screen, announce a focus change once, watch it live and keep its node focus current.
-function GraphHost:_renderFocused()
+-- Rebuild the focused screen, announce a focus change once, watch it live and keep its node focus current. quiet: the
+-- focus is taken as heard without speaking it.
+function GraphHost:_renderFocused(quiet)
     local stack = self:focusedStack()
     local screen = self:focusedScreen()
     -- only background stacks are open (a popup gone to Pending in a fight)
@@ -268,7 +278,9 @@ function GraphHost:_renderFocused()
     if node ~= nil then
         if screen._lastSpokenKey == nil or screen._lastSpokenKey ~= node.id then
             local from = screen._lastSpokenNode
-            self:_speak(announcer.compose(from, node))
+            if not quiet then
+                self:_speak(announcer.compose(from, node))
+            end
             screen._lastSpokenKey = node.id
             screen._lastSpokenNode = node
         end
@@ -404,17 +416,6 @@ function GraphHost:_syncFocusInCombat(node, newId)
     self:_setTooltipFor(node)
 end
 
--- The last screen closed in combat: focus goes, the bindings were let go at combat start.
-function GraphHost:_dropFocusInCombat()
-    if self._focusNode ~= nil and self._focusNode.vtable.onUnfocus ~= nil then
-        pcall(self._focusNode.vtable.onUnfocus, self._focusNode)
-    end
-    self:_setTooltipFor(nil)
-    self._focusNodeId = nil
-    self._focusNode = nil
-    self._engageDeferred = false
-end
-
 -- A menu key in combat (graph/combatKeys.lua). As out of combat, the focused entry's own binding for the key wins
 -- (a list behind one node walks itself on the arrows, chat switches its tabs on Left and Right); without one the host
 -- handles it. Addon code can run a Function binding, and a click marked combatClick (a game button that is not
@@ -462,12 +463,21 @@ function GraphHost:combatKey(key)
     self:onKey(key)
 end
 
--- Focus the next stack after the focused one that passes the test, and read it afresh (Ctrl-Tab in combat from a
--- mirrored window to the others, graph/combatKeys.lua). False when none does.
-function GraphHost:focusStack(test)
+-- Focus the next stack after the focused one (or after from) that passes the test, going the direction (1, -1 back),
+-- and read it afresh (Ctrl-Tab in combat from a mirrored window to the others, graph/combatKeys.lua). False when none
+-- does.
+function GraphHost:focusStack(test, direction, from)
     local count = #self.stacks
+    direction = direction or 1
+    -- counted from the stack from (when still open), else from the focused one
+    local start = self.focusedIndex or 0
+    for i, stack in ipairs(self.stacks) do
+        if stack == from then
+            start = i
+        end
+    end
     for step = 1, count do
-        local index = ((self.focusedIndex or 0) - 1 + step) % count + 1
+        local index = (start - 1 + direction * step) % count + 1
         if test(self.stacks[index]) then
             self.focusedIndex = index
             self._bindingsDirty = true
@@ -501,7 +511,13 @@ function GraphHost:landMirror(stack, id, why)
     local from = keyGraph:currentNode()
     keyGraph:focus(id)
     local to = keyGraph:currentNode()
-    if to == nil or why == "resume" then
+    if to == nil then
+        return
+    end
+    if why == "resume" then
+        -- the fight began on it: nothing new to say
+        screen._lastSpokenKey = to.id
+        screen._lastSpokenNode = to
         return
     end
     WowVision.base.speech:uiStop()

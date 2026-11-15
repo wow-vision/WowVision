@@ -214,7 +214,11 @@ function WindowManager:closeOwnWindows()
     for i = #stacks, 1, -1 do
         local stack = stacks[i]
         local instance = owners[stack]
-        if instance ~= nil then
+        local mirrored = WowVision.graph.combatKeys ~= nil and WowVision.graph.combatKeys.isMirrorStack(stack)
+        if mirrored then
+            -- the equipment list in a fight: the secure side keeps it open and closes it (graph/combatKeys.lua)
+            tinsert(remaining, 1, host:stackTitle(stack) or "")
+        elseif instance ~= nil then
             local window = instance.ref
             if window.isOwnWindow ~= nil and window:isOwnWindow() then
                 self:closeWindow(instance)

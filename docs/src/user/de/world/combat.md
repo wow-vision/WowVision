@@ -57,7 +57,7 @@ Deine Spieltaste für Alle Taschen öffnen oder Rucksack öffnen öffnet im Kamp
 - Die Leertaste liest den Tooltip des Platzes.
 - Noch einmal B oder Esc schließt die Taschen und gibt die Tasten zurück.
 
-Beginnt ein Kampf, während du auf einem Taschenplatz stehst, geht es von diesem Platz aus weiter.
+Beginnt ein Kampf, während du auf einem Taschenplatz stehst, geht es von diesem Platz aus weiter. Kommst du aus einem anderen Fenster zu deinen offenen Taschen zurück, ohne durch sie zu gehen, werden sie gelesen, aber die Tasten gehören ihnen noch nicht: du hörst „Zum Benutzen von Gegenständen drücke“ mit deiner Taschentaste, und diese Taste geht wieder durch sie, von dort, wo du warst.
 
 ### Deine Ausrüstung (C)
 
@@ -73,19 +73,19 @@ Umschalt+F10 auf einem Platz öffnet seine zwei Einträge: den Linksklick und de
 
 ### Zwischen Fenstern wechseln (Strg+Tab)
 
-Mit offenen Taschen oder offener Ausrüstung geht Strg+Tab von den Taschen zur Ausrüstung zu deinen anderen Fenstern und reihum; jede Liste wird auf dem Platz wieder aufgenommen, den du verlassen hast. Ohne anderes Fenster hörst du „Kein anderes Fenster“, und das nächste Strg+Tab geht weiter.
+Mit offenen Taschen oder offener Ausrüstung geht Strg+Tab von den Taschen zur Ausrüstung zu deinen anderen Fenstern und reihum; jede Liste wird auf dem Platz wieder aufgenommen, den du verlassen hast. Von Taschen oder Ausrüstung aus geht jeder Besuch zum nächsten deiner anderen Fenster weiter, so kommen alle der Reihe nach dran; Strg+Umschalt+Tab geht andersherum. Ohne anderes Fenster hörst du „Kein anderes Fenster“, und das nächste Strg+Tab geht weiter.
 
-Ein Fenster, das sich von selbst öffnet, während du durch Taschen oder Ausrüstung gehst, etwa die Frage „diesen Gegenstand zerstören?“, bleibt dahinter, damit deiner Liste die Tasten nicht genommen werden: du hörst es und „Zum Antworten drücke“ mit deiner Strg+Tab-Taste. Die Ausnahme ist die Taste Gegenstand am Mauszeiger zerstören (Entf): sie holt die Zerstören-Frage sofort nach vorn.
+Ein Fenster, das sich von selbst öffnet, während du durch Taschen oder Ausrüstung gehst, etwa die Frage „diesen Gegenstand zerstören?“, bleibt dahinter, damit deiner Liste die Tasten nicht genommen werden: du hörst es und „Zum Antworten drücke“ mit deiner Strg+Tab-Taste. Die Ausnahme ist die Taste Gegenstand am Mauszeiger zerstören (Entf): mit einem Gegenstand am Mauszeiger holt sie die Zerstören-Frage sofort nach vorn. Ohne etwas am Mauszeiger lässt Entf deine Tasten, wo sie sind.
 
 ### Popups im Kampf
 
-Ein Popup, das sich im Kampf von selbst öffnet und auf eine Antwort wartet (eine Gruppeneinladung, auch eine, die nach deiner Rolle fragt, eine Beschwörung, eine Wiederbelebung, der Tod, der Bereitschaftscheck), nimmt dir die Tasten nicht: es geht sofort nach Ausstehend, und du hörst seinen Namen, zum Beispiel „Gruppeneinladung, Ausstehend“. Öffne das WowVision-Menü (Umschalt+F1); das Popup ist sein erster Eintrag, und Eingabe holt es nach vorn. Die Knöpfe der Einladungen, Beschwörungen, Wiederbelebungen und des Todes-Kastens funktionieren dort; der Bereitschaftscheck und die Rollenabfrage der Dungeonsuche sagen „Im Kampf nicht verfügbar“. Die Taste Gruppeneinladung annehmen und /wv accept funktionieren ebenfalls weiter. Siehe [Ausstehend](../windows/system.md#ausstehend-eine-frage-die-wartet).
+Ein Popup, das sich im Kampf von selbst öffnet und auf eine Antwort wartet (eine Gruppeneinladung, auch eine, die nach deiner Rolle fragt, eine Beschwörung, eine Wiederbelebung, der Tod, der Bereitschaftscheck), nimmt dir die Tasten nicht: es geht sofort nach Ausstehend, und du hörst seinen Namen, zum Beispiel „Gruppeneinladung, Ausstehend“. Öffne das WowVision-Menü (Umschalt+F1); das Popup ist sein erster Eintrag, und Eingabe holt es nach vorn. Die Knöpfe der Einladungen, Beschwörungen, Wiederbelebungen, des Todes-Kastens und der Zerstören-Fragen funktionieren dort, weil sie nichts aufrufen, was das Spiel im Kampf schützt; die Knöpfe aller anderen Popups, darunter der Bereitschaftscheck und die Rollenabfrage der Dungeonsuche, sagen „Im Kampf nicht verfügbar“. Die Taste Gruppeneinladung annehmen und /wv accept funktionieren ebenfalls weiter. Siehe [Ausstehend](../windows/system.md#ausstehend-eine-frage-die-wartet).
 
-Ein Popup, das auf etwas antwortet, das du gerade getan hast, etwa „diesen Gegenstand an dich binden?“, kommt nach vorn. Hielt WowVision in dem Moment die Tasten nicht, hörst du „Zum Antworten drücke Umschalt-F1“; diese Taste landet darauf. Esc tut dort, was das Esc des Spiels tut: es bricht ein Popup ab, das auf Esc hört, und legt eines, das wartet, nach Ausstehend beiseite.
+Ein Popup, das auf etwas antwortet, das du gerade getan hast, etwa „diesen Gegenstand an dich binden?“, kommt nach vorn. Hielt WowVision in dem Moment die Tasten nicht, hörst du „Zum Antworten drücke Umschalt-F1“; diese Taste landet darauf. Esc tut dort, was das Esc des Spiels tut, in zwei Schritten: das erste Esc gibt die Tasten an das Spiel zurück, ein zweites Esc ist das des Spiels und bricht ein Popup ab, das auf Esc hört. Ein Popup, das wartet, legt schon das erste Esc nach Ausstehend beiseite.
 
 ### Handel im Kampf
 
-In einem offenen Handelsfenster funktioniert die Schaltfläche Handel im Kampf. Abbrechen und die Handelsplätze sagen „Im Kampf nicht verfügbar“; die Taste Handel annehmen (Strg+T) nimmt den Handel ebenfalls an.
+Im Kampf sagen die Knöpfe des Handelsfensters (Handel, Abbrechen und die Handelsplätze) „Im Kampf nicht verfügbar“. Nimm den Handel mit der Taste Handel annehmen (Strg+T) an: sie ist eine Tastenbelegung des Spiels selbst und wirkt deshalb auch im Kampf. Siehe [Tastenbelegung](../reference/keybindings.md).
 
 ### Einstellungen und Tasten
 

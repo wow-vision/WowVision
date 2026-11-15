@@ -18,19 +18,6 @@ local ControlId = graph.ControlId
 -- Enter picks the item up or places the one held as a secure click of the slot's own item button (where the buttons
 -- are known: bags open as the fight began, or a layout trusted out of combat), Space reads the slot's tooltip.
 
--- Every held bag: backpack, bags, reagent bag where the client has one, keyring.
-local function heldBags()
-    local ids = {}
-    for id = 0, NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS or 4 do
-        tinsert(ids, id)
-    end
-    local keyring = KEYRING_CONTAINER or (Enum ~= nil and Enum.BagIndex ~= nil and Enum.BagIndex.Keyring) or nil
-    if keyring ~= nil then
-        tinsert(ids, keyring)
-    end
-    return ids
-end
-
 -- The slots as staged for the fight: { bag, slot } in list order.
 local slots = {}
 
@@ -40,72 +27,12 @@ end
 
 local function readSlots()
     local list = {}
-    for _, bag in ipairs(heldBags()) do
+    for _, bag in ipairs(module.heldBagIds()) do
         for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
             tinsert(list, { bag = bag, slot = slot })
         end
     end
     return list
-end
-
--- The item buttons the open bags show now: the frames' Items (WoW: Forever, retail), else the named slots of the
--- classic frames (ContainerFrame<n>Item<i>).
-local function shownItemButtons()
-    local buttons = {}
-    local function add(button)
-        if button ~= nil and button:IsShown() then
-            tinsert(buttons, button)
-        end
-    end
-    if ContainerFrameUtil_EnumerateContainerFrames ~= nil then
-        for _, frame in ContainerFrameUtil_EnumerateContainerFrames() do
-            if frame ~= nil and frame:IsShown() then
-                for _, button in ipairs(frame.Items or {}) do
-                    add(button)
-                end
-            end
-        end
-        return buttons
-    end
-    for i = 1, NUM_CONTAINER_FRAMES or 13 do
-        local frame = _G["ContainerFrame" .. i]
-        if frame ~= nil and frame:IsShown() then
-            for slot = 1, frame.size or 0 do
-                add(_G[frame:GetName() .. "Item" .. slot])
-            end
-        end
-    end
-    return buttons
-end
-
--- The game's own bag buttons, clicked one after the other by the open-bags key in a fight: as one window the backpack
--- button opens every bag (combined bags); as separate windows each bag's own button opens it, as Open All Bags does.
-local BAG_BUTTONS = {
-    [0] = "MainMenuBarBackpackButton",
-    [1] = "CharacterBag0Slot",
-    [2] = "CharacterBag1Slot",
-    [3] = "CharacterBag2Slot",
-    [4] = "CharacterBag3Slot",
-    [5] = "CharacterReagentBag0Slot",
-}
-
-local function combinedBags()
-    local manager = ContainerFrameSettingsManager
-    return manager ~= nil and manager.IsUsingCombinedBags ~= nil and manager:IsUsingCombinedBags()
-end
-
-local function bagButtons()
-    local buttons = {}
-    for bag = 0, 5 do
-        local button = _G[BAG_BUTTONS[bag]]
-        if button ~= nil and (C_Container.GetContainerNumSlots(bag) or 0) > 0 then
-            tinsert(buttons, button)
-        end
-        if combinedBags() then
-            break
-        end
-    end
-    return buttons
 end
 
 -- Whether the bags lay their buttons out the same on every opening. Right after the interface loads they do not:
@@ -118,7 +45,7 @@ local layoutTrusted = false
 local function slotButtons()
     local targets = {}
     local byLocation = {}
-    for _, button in ipairs(shownItemButtons()) do
+    for _, button in ipairs(module.shownItemButtons()) do
         local bag, slot = module.slotLocation(button)
         byLocation[bag .. ":" .. slot] = button
     end
@@ -186,34 +113,61 @@ local function bagsInstance()
     return window ~= nil and window:getOpenInstance() or nil
 end
 
--- The window opens a moment after the secure click; the focus lands once its screen is there.
+-- The window opens a moment after the secure click; the focus lands once its screen is there. One landing waits at a
+-- time and the latest wins (keys pressed while it waits): it lands where the secure side is, read afresh when the
+-- window was opened meanwhile.
 local LAND_TRIES = 20
 local LAND_STEP = 0.05
+local waiting = nil
 
-local function land(index, why, tries)
+local function landNow(index, why)
     local entry = slots[index]
-    if entry == nil then
+    local instance = bagsInstance()
+    if entry == nil or instance == nil or instance.stack == nil then
+        return false
+    end
+    WowVision.graphHost:landMirror(instance.stack, slotId(entry.bag, entry.slot), why)
+    return true
+end
+
+local function retryLanding()
+    if waiting == nil then
         return
     end
-    local instance = bagsInstance()
-    if instance == nil or instance.stack == nil then
-        if (tries or 0) < LAND_TRIES then
-            C_Timer.After(LAND_STEP, function()
-                land(index, why, (tries or 0) + 1)
-            end)
-        else
-            WowVision.graph.combatKeys.log("bags window did not open")
+    if landNow(waiting.index, waiting.why) then
+        waiting = nil
+        return
+    end
+    waiting.tries = waiting.tries + 1
+    if waiting.tries >= LAND_TRIES then
+        waiting = nil
+        WowVision.graph.combatKeys.log("bags window did not open")
+        return
+    end
+    C_Timer.After(LAND_STEP, retryLanding)
+end
+
+local function land(index, why)
+    if waiting ~= nil then
+        -- a newer position while the window opens: the opening still reads it afresh
+        waiting.index = index
+        if waiting.why ~= "open" then
+            waiting.why = why
         end
         return
     end
-    WowVision.graphHost:landMirror(instance.stack, slotId(entry.bag, entry.slot), why)
+    if landNow(index, why) then
+        return
+    end
+    waiting = { index = index, why = why, tries = 0 }
+    C_Timer.After(LAND_STEP, retryLanding)
 end
 
 WowVision.graph.combatKeys.registerMirror({
     key = "bags",
     commands = { "OPENALLBAGS", "TOGGLEBACKPACK" },
     openers = function()
-        return bagButtons()
+        return module.bagOpenButtons()
     end,
     trusted = function()
         return layoutTrusted
@@ -226,6 +180,11 @@ WowVision.graph.combatKeys.registerMirror({
             list[i] = { value = entry.bag >= 0 and (entry.bag .. " " .. entry.slot) or "", group = entry.bag }
         end
         return list
+    end,
+    -- B stays the game's in a fight while WowVision does not read the bags (the module off, Sku loaded)
+    available = function()
+        local window = WowVision.UIHost.windowManager:getWindow("bags")
+        return window ~= nil and window:canOpen() and module:getEnabled()
     end,
     isOpen = function()
         return bagsInstance() ~= nil
@@ -359,7 +318,7 @@ layoutWatch:SetScript("OnUpdate", function()
         return
     end
     nextLook = now + 0.25
-    local open = #shownItemButtons() > 0
+    local open = #module.shownItemButtons() > 0
     if open and not wasOpen then
         -- the frames lay their buttons out as they show; read them a moment later
         C_Timer.After(0.3, measureLayout)
