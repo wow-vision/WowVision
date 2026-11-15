@@ -90,7 +90,7 @@ Accepts the group invitation that is shown and says "Group invitation accepted".
 
 ### /wv pendingtest
 
-Shows a test box that waits like a group invitation: it ignores Escape in the game and runs out after one minute; its Accept and Decline buttons only write to the chat. Use it to try Pending without a group. Being shown by WowVision, the test box makes an Escape that goes to the game report a blocked action while it is open; with Pending Windows on its first choice Escape never goes to the game there, on the other choices the command says so first. The game's own boxes do not do this. Versions: all. See [Pending](../windows/system.md#pending-a-question-that-waits).
+Shows a test box that waits like a group invitation: it ignores Escape in the game and runs out after one minute; its Accept and Decline buttons only write to the chat. Use it to try Pending without a group. Being shown by WowVision, the test box makes an Escape that goes to the game report a blocked action while it is open, also once it is put aside; the command says so first. The game's own boxes do not do this. Versions: all. See [Pending](../windows/system.md#pending-a-question-that-waits).
 
 ### /beacon
 

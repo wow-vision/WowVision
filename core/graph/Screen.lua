@@ -14,7 +14,8 @@ local graph = WowVision.graph
 --   closeClick      function() -- a button of the game that steps back a view
 --                   inside the window, or nil; while it returns one the close
 --                   key clicks it instead of going to the game
---   onRequestClose  function(stack) -- close/escape pressed on the last screen;
+--   onRequestClose  function(stack, reason) -- close/escape pressed on the last screen
+--                   (reason "escape"), or every window closing (WindowManager:closeAll);
 --                   the owner (window bridge) closes the real UI. Absent = the
 --                   host just closes the stack.
 --   noLevelBack     the left arrow does not go back from this pushed screen

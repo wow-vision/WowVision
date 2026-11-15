@@ -96,7 +96,7 @@ Escape cancels the box in the same way as the game does.
 
 Some boxes wait for an answer and ignore Escape in the game: a group invitation, a summon, a resurrection, the death box with Release Spirit, the invitation that asks for your role, and the ready check. Escape on such a box puts it aside: you hear "Pending", the WowVision window over it closes and your keys work in the game again. Nothing is answered. The box stays on the screen exactly as the game shows it, its countdown keeps running, and it can still time out as it would for anyone who leaves it there.
 
-While something waits, the WowVision menu (Shift+F1) starts with Pending and how many are waiting. Inside, each box is listed with its text and the seconds it has left; Enter opens it again in front of you. An entry goes away by itself when the box is answered, cancelled or runs out.
+While something waits, the WowVision menu (Shift+F1) starts with Pending and how many are waiting. Inside, each box is listed with its text (a countdown the game shows in the text reads as it runs); Enter opens it again in front of you. An entry goes away by itself when the box is answered, cancelled or runs out.
 
 Boxes that take Escape in the game, such as "delete this item?", are not put aside: Escape cancels them as before.
 
@@ -104,9 +104,11 @@ The Pending Windows setting (UI menu) chooses when a box is put aside:
 
 - Escape and the Close All Windows Key (the default): Escape, and the Close All Windows key (Shift+Escape).
 - Only the Close All Windows Key: Escape leaves such a box in front of you, as before; Shift+Escape puts it aside.
-- Off: the boxes wait in front until you answer them.
+- Off: nothing is put aside; Escape and Shift+Escape behave as they did before Pending.
 
-To try it without a group, type /wv pendingtest: it shows a test box that waits like a group invitation for one minute; its buttons only write to the chat.
+Starting a route closes your windows but leaves such boxes in front of you.
+
+To try it without a group, type /wv pendingtest: it shows a test box that waits like a group invitation for one minute; its buttons only write to the chat. Because WowVision shows it, an Escape that reaches the game while it is open reports a blocked action; the game's own boxes do not do that.
 
 Example: accept a group invitation.
 

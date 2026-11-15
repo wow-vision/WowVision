@@ -30,32 +30,20 @@ local function renderReadyCheck(builder, screen)
     builder:popContext()
 end
 
--- The ready check ignores Escape in the game. With Pending Windows (pending.lua) Escape, or Close All Windows, puts
--- it aside: it stays on screen until answered or finished; else the close hides it as any frame window (a hidden
--- ready check is not answered: ReadyCheck.lua OnHide only drops the initiator).
-local function holdsEscape()
-    return WowVision.pending ~= nil and WowVision.pending.puts("escape")
-end
-
-local function requestClose()
-    local pending = WowVision.pending
-    local manager = WowVision.UIHost.windowManager
-    local how = manager.closingAll and "closeAll" or "escape"
-    if pending == nil or not pending.puts(how) then
-        manager:getWindow("ReadyCheck"):requestClose()
-        return
-    end
-    pending.putAside({
-        window = "ReadyCheck",
-        frame = ReadyCheckFrame,
-        label = function()
-            return WowVision.secrets.join({ L["Ready Check"], ReadyCheckFrameText:GetText() }, ", ")
-        end,
-    })
-    if how == "escape" then
-        pending.announce()
-    end
-    manager:closeWindow("ReadyCheck")
+-- The ready check ignores Escape in the game. With Pending Windows (pending.lua) Escape or the Close All Windows key
+-- puts it aside: it stays on screen until answered or finished; any other close hides it as any frame window does (a
+-- hidden ready check is not answered: ReadyCheck.lua OnHide only drops the initiator).
+local function requestClose(_, reason)
+    WowVision.pending.closeRequest("ReadyCheck", {
+        {
+            frame = ReadyCheckFrame,
+            label = function()
+                return WowVision.secrets.join({ L["Ready Check"], ReadyCheckFrameText:GetText() }, ", ")
+            end,
+        },
+    }, reason, function()
+        WowVision.UIHost.windowManager:getWindow("ReadyCheck"):requestClose()
+    end)
 end
 
 module:registerWindow({
@@ -63,7 +51,13 @@ module:registerWindow({
     name = "ReadyCheck",
     frameName = "ReadyCheckFrame",
     conflictingAddons = { "Sku" },
-    graphScreen = { render = renderReadyCheck, captureClose = holdsEscape, onRequestClose = requestClose },
+    graphScreen = {
+        render = renderReadyCheck,
+        captureClose = function()
+            return WowVision.pending.holdsEscape()
+        end,
+        onRequestClose = requestClose,
+    },
 })
 
 --LFD Dungeon Ready

@@ -1055,7 +1055,7 @@ function GraphHost:_close(screen)
         return
     end
     if stack.config ~= nil and stack.config.onRequestClose ~= nil then
-        stack.config.onRequestClose(stack)
+        stack.config.onRequestClose(stack, "escape")
     else
         self:close(stack)
     end

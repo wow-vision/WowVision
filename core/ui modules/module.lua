@@ -417,7 +417,7 @@ module:registerBindings({
         inputs = { "SHIFT-ESCAPE" },
         interruptSpeech = true,
         func = function()
-            if WowVision.UIHost:closeAllWindows() then
+            if WowVision.UIHost:closeAllWindows("closeAllKey") then
                 WowVision:notify(L["All windows closed"])
             end
         end,
