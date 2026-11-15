@@ -106,8 +106,14 @@ local function render(builder, screen)
         })
     )
 
+    -- The Trade button's click is the game's AcceptTrade (TradeFrame.xml), not protected: in combat its own click runs
+    -- (graph/Host.lua combatKey). Cancel hides the panel (TradeFrameCancelButton_OnClick: HideUIPanel), which the game
+    -- refuses to addons in combat, and the item slots are not known to be allowed there: those say so.
     builder:beginStop("trade")
-    builder:addItem(ControlId.forObject(TradeFrameTradeButton), nodes.proxyButton({ target = TradeFrameTradeButton }))
+    builder:addItem(
+        ControlId.forObject(TradeFrameTradeButton),
+        nodes.proxyButton({ target = TradeFrameTradeButton, combatClick = true })
+    )
     builder:beginStop("cancel")
     builder:addItem(ControlId.forObject(TradeFrameCancelButton), nodes.proxyButton({ target = TradeFrameCancelButton }))
 
