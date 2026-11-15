@@ -877,3 +877,75 @@ testRunner:addSuite("CombatPopups", {
         end)
     end,
 })
+
+-- A popup opening by itself in a fight (graph/combatKeys.lua putsAsideOnOpen): one that waits goes to Pending without
+-- the focus; one the player took up from Pending, or one that takes Escape, comes to the front.
+local function inFight(fn)
+    withCombat(function(host)
+        local saved = { combat = InCombatLockdown, pending = WowVision.pending, timer = C_Timer }
+        local closes, takenUp = {}, {}
+        InCombatLockdown = function()
+            return true
+        end
+        WowVision.pending = {
+            puts = function(reason)
+                return reason == "combat"
+            end,
+            takenUp = function(name)
+                return takenUp[name] == true
+            end,
+        }
+        C_Timer = {
+            After = function(_, func)
+                func()
+            end,
+        }
+        local function popup(key, waiting)
+            return {
+                key = key,
+                waits = true,
+                render = list({ "Accept" }),
+                hasWaiting = function()
+                    return waiting
+                end,
+                onRequestClose = function(_, reason)
+                    tinsert(closes, reason)
+                end,
+            }
+        end
+        local ok, err = pcall(fn, host, popup, closes, takenUp)
+        InCombatLockdown, WowVision.pending, C_Timer = saved.combat, saved.pending, saved.timer
+        if not ok then
+            error(err, 0)
+        end
+    end)
+end
+
+testRunner:addSuite("CombatPending", {
+    ["a waiting popup goes to pending and leaves the focus where it was"] = function(t)
+        inFight(function(host, popup, closes)
+            local bags = host:open({ key = "bags", render = list({ "Slot" }) })
+            host:open(popup("popups", true))
+            t:assertEqual(host:focusedStack(), bags)
+            t:assertEqual(closes[1], "combat")
+        end)
+    end,
+
+    ["a popup taken up from pending comes to the front"] = function(t)
+        inFight(function(host, popup, closes, takenUp)
+            host:open({ key = "bags", render = list({ "Slot" }) })
+            takenUp.popups = true
+            local stack = host:open(popup("popups", true))
+            t:assertEqual(host:focusedStack(), stack)
+            t:assertNil(closes[1])
+        end)
+    end,
+
+    ["a popup that takes escape stays in front"] = function(t)
+        inFight(function(host, popup, closes)
+            local stack = host:open(popup("popups", false))
+            t:assertEqual(host:focusedStack(), stack)
+            t:assertNil(closes[1])
+        end)
+    end,
+})

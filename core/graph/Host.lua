@@ -100,14 +100,14 @@ end
 -- ---- stack lifecycle ----
 
 function GraphHost:open(config)
-    -- A popup that waits for an answer, opened in a fight: it cannot take the keys by itself (graph/combatKeys.lua),
-    -- so after it is read the key that lands on it is named.
-    if config.waits and InCombatLockdown() and graph.combatKeys ~= nil then
-        graph.combatKeys.hintMenuKey()
-    end
     local screen = graph.Screen:new(config)
     local stack = { screens = { screen }, config = config }
     tinsert(self.stacks, stack)
+    -- A popup opened by itself in a fight that goes straight to Pending (graph/combatKeys.lua) takes no focus.
+    local combat = config.waits and InCombatLockdown() and graph.combatKeys ~= nil
+    if combat and graph.combatKeys.putsAsideOnOpen(stack) then
+        return stack
+    end
     -- Background stacks (bags auto-opening at a vendor) never steal focus
     -- from an already-open stack; they are still reachable by stack cycling.
     if config.background and self.focusedIndex ~= nil and self.focusedIndex >= 1 and #self.stacks > 1 then
@@ -117,6 +117,10 @@ function GraphHost:open(config)
     screen:resetAnnouncement()
     self._bindingsDirty = true
     WowVision.base.speech:uiStop()
+    -- A popup in front opened by itself in a fight: the key that lands on it is named (graph/combatKeys.lua).
+    if combat then
+        graph.combatKeys.hintMenuKey()
+    end
     return stack
 end
 

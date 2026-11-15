@@ -975,7 +975,32 @@ end
 -- Per mirror, the entry whose context menu is open.
 local contextEntry = {}
 
--- A popup that waits opened in a fight while the menu keys are the game's: say which key lands on it, a moment after
+-- A popup opened by itself in a fight. One that waits for an answer and ignores Escape (a group invitation, a summon,
+-- the ready check) goes straight to Pending, "Group Invitation, Pending": it does not take the keys out of what the
+-- player is doing, and the WowVision menu takes it up (windows/pending.lua). One that takes Escape (most often the
+-- answer to the player's own act: bind this item?) stays in front; with the menu keys the game's, the key that lands
+-- on it is named (hintMenuKey). True when it goes to Pending: the host opens it without the focus.
+function combatKeys.putsAsideOnOpen(stack)
+    local config = stack.config
+    local pending = WowVision.pending
+    if pending == nil or config.onRequestClose == nil or not pending.puts("combat") then
+        return false
+    end
+    -- taken up from Pending by the player: it comes to the front
+    if pending.takenUp(config.key) then
+        return false
+    end
+    if config.hasWaiting ~= nil and not config.hasWaiting() then
+        return false
+    end
+    -- after the window is set up: its close request closes it again
+    C_Timer.After(0, function()
+        config.onRequestClose(stack, "combat")
+    end)
+    return true
+end
+
+-- A popup in front opened in a fight while the menu keys are the game's: say which key lands on it, a moment after
 -- the popup itself is read.
 function combatKeys.hintMenuKey()
     if not combatKeys.active() or combatKeys.taken() then
