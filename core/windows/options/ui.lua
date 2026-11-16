@@ -1431,6 +1431,10 @@ local function render(builder, screen)
                 nodes.proxyButton({ target = list.Header.DefaultsButton })
             )
         end
+    elseif WowVision.layoutPages ~= nil then
+        -- An addon's own page (a canvas, which the lists above know nothing of): read where the addon's
+        -- layout library left a record of what it built (layoutPages.lua: Spoken and its parts).
+        WowVision.layoutPages.render(builder, frame)
     end
 end
 

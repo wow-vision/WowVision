@@ -2,6 +2,8 @@
 ..\FrameXML\UI.xsd">
 
 <Script file="Module.lua" />
+<Script file="layoutPages.lua" />
+<Script file="layoutPagesTests.lua" />
 <Script file="ui.lua" />
 
 </Ui>
