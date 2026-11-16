@@ -509,6 +509,7 @@ module:registerWindow({
 module:registerBinding({
     type = "Script",
     key = "maps/openNavigation",
+    opensWindow = true,
     label = L["Navigation"],
     inputs = { "F10" },
     script = "/run WowVision.base.navigation.maps:openNavigationFromKey()",

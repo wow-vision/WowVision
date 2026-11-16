@@ -58,6 +58,7 @@ module:registerWindow({
             return WowVision.pending.holdsEscape()
         end,
         onRequestClose = requestClose,
+        waits = true,
     },
 })
 

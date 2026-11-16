@@ -727,3 +727,225 @@ testRunner:addSuite("PageKeys", {
         end)
     end,
 })
+
+-- A menu key in combat (graph/combatKeys.lua hands it to Host:combatKey): the focused entry's own binding wins, as
+-- out of combat; a secure click it cannot point says so; without a binding the host moves as ever.
+local function withCombat(fn)
+    withHost(function(host, clock)
+        local savedConsts = WowVision.consts
+        WowVision.consts = { UI_DELAY = 0 }
+        WowVision.base.speech.stop = function() end
+        local ok, err = pcall(fn, host, clock)
+        WowVision.consts = savedConsts
+        if not ok then
+            error(err, 0)
+        end
+    end)
+end
+
+testRunner:addSuite("CombatMenuKeys", {
+    ["an entry's own arrow binding runs instead of the host's move"] = function(t)
+        withCombat(function(host)
+            local walked = 0
+            host:open({
+                key = "list",
+                render = function(builder)
+                    builder:addItem(sid("walker"), {
+                        announcements = { { text = "Walker" } },
+                        bindings = {
+                            {
+                                binding = "down",
+                                type = "Function",
+                                func = function()
+                                    walked = walked + 1
+                                end,
+                            },
+                        },
+                    })
+                    builder:addLabel(sid("below"), "Below")
+                end,
+            })
+            host:combatKey("down")
+            t:assertEqual(walked, 1)
+            t:assertEqual(focusedKey(host), "walker")
+        end)
+    end,
+
+    ["without a binding the arrow moves as out of combat"] = function(t)
+        withCombat(function(host)
+            host:open({ key = "list", render = list({ "One", "Two" }) })
+            host:focusedScreen().keyGraph:rerender()
+            host:combatKey("down")
+            t:assertEqual(focusedKey(host), "Two")
+        end)
+    end,
+
+    ["enter on a secure click says it cannot be done in combat"] = function(t)
+        withCombat(function(host)
+            local clicked = false
+            local frame = {
+                Click = function()
+                    clicked = true
+                end,
+            }
+            host:open({
+                key = "list",
+                render = function(builder)
+                    builder:addItem(sid("slot"), {
+                        announcements = { { text = "Slot" } },
+                        bindings = { { binding = "leftClick", type = "Click", target = frame } },
+                    })
+                end,
+            })
+            host:combatKey("leftClick")
+            t:assertFalse(clicked)
+            t:assertEqual(lastSpoken(host), "Not available in combat")
+        end)
+    end,
+
+    ["a click marked for combat runs the frame's own click"] = function(t)
+        withCombat(function(host)
+            local clicked, after = nil, false
+            local frame = {
+                Click = function(_, button)
+                    clicked = button
+                end,
+            }
+            host:open({
+                key = "list",
+                render = function(builder)
+                    builder:addItem(sid("tabs"), {
+                        announcements = { { text = "Chat" } },
+                        bindings = {
+                            {
+                                binding = "right",
+                                type = "Click",
+                                combatClick = true,
+                                emulatedKey = "LeftButton",
+                                target = function()
+                                    return frame
+                                end,
+                                postClick = function()
+                                    after = true
+                                end,
+                            },
+                        },
+                    })
+                end,
+            })
+            host:combatKey("right")
+            t:assertEqual(clicked, "LeftButton")
+            t:assertTrue(after)
+        end)
+    end,
+})
+
+testRunner:addSuite("CombatPopups", {
+    ["a popup button marked for combat runs its own click there"] = function(t)
+        withCombat(function(host)
+            local clicked = nil
+            local button = {
+                IsShown = function()
+                    return true
+                end,
+                Click = function(_, which)
+                    clicked = which
+                end,
+            }
+            host:open({
+                key = "popup",
+                render = function(builder)
+                    builder:addItem(
+                        sid("accept"),
+                        nodes.proxyButton({ target = button, combatClick = true, hover = false })
+                    )
+                end,
+            })
+            host:combatKey("leftClick")
+            t:assertEqual(clicked, "LeftButton")
+        end)
+    end,
+
+    ["a waiting popup takes the focus from another window"] = function(t)
+        withCombat(function(host)
+            local popup = host:open({ key = "popup", waits = true, render = list({ "Accept" }) })
+            host:open({ key = "chat", render = list({ "Line" }) })
+            t:assertTrue(host:focusStack(function(stack)
+                return stack.config.waits == true
+            end))
+            t:assertEqual(host:focusedStack(), popup)
+        end)
+    end,
+})
+
+-- A popup opening by itself in a fight (graph/combatKeys.lua putsAsideOnOpen): one that waits goes to Pending without
+-- the focus; one the player took up from Pending, or one that takes Escape, comes to the front.
+local function inFight(fn)
+    withCombat(function(host)
+        local saved = { combat = InCombatLockdown, pending = WowVision.pending, timer = C_Timer }
+        local closes, takenUp = {}, {}
+        InCombatLockdown = function()
+            return true
+        end
+        WowVision.pending = {
+            puts = function(reason)
+                return reason == "combat"
+            end,
+            takenUp = function(name)
+                return takenUp[name] == true
+            end,
+        }
+        C_Timer = {
+            After = function(_, func)
+                func()
+            end,
+        }
+        local function popup(key, waiting)
+            return {
+                key = key,
+                waits = true,
+                render = list({ "Accept" }),
+                hasWaiting = function()
+                    return waiting
+                end,
+                onRequestClose = function(_, reason)
+                    tinsert(closes, reason)
+                end,
+            }
+        end
+        local ok, err = pcall(fn, host, popup, closes, takenUp)
+        InCombatLockdown, WowVision.pending, C_Timer = saved.combat, saved.pending, saved.timer
+        if not ok then
+            error(err, 0)
+        end
+    end)
+end
+
+testRunner:addSuite("CombatPending", {
+    ["a waiting popup goes to pending and leaves the focus where it was"] = function(t)
+        inFight(function(host, popup, closes)
+            local bags = host:open({ key = "bags", render = list({ "Slot" }) })
+            host:open(popup("popups", true))
+            t:assertEqual(host:focusedStack(), bags)
+            t:assertEqual(closes[1], "combat")
+        end)
+    end,
+
+    ["a popup taken up from pending comes to the front"] = function(t)
+        inFight(function(host, popup, closes, takenUp)
+            host:open({ key = "bags", render = list({ "Slot" }) })
+            takenUp.popups = true
+            local stack = host:open(popup("popups", true))
+            t:assertEqual(host:focusedStack(), stack)
+            t:assertNil(closes[1])
+        end)
+    end,
+
+    ["a popup that takes escape stays in front"] = function(t)
+        inFight(function(host, popup, closes)
+            local stack = host:open(popup("popups", false))
+            t:assertEqual(host:focusedStack(), stack)
+            t:assertNil(closes[1])
+        end)
+    end,
+})

@@ -16,6 +16,7 @@ local L = WowVision:getLocale()
 --
 -- Entry shapes:
 --   { label = ..., onActivate = fn }                  -- plain action; menu closes after
+--                                                     -- (notInCombat = true: not run in combat)
 --   { label = ..., click = { emulatedKey = "LeftButton", target = frameOrFn } }
 --                                                     -- SECURE click on a real frame;
 --                                                     -- menu stays open (hardware event)
@@ -111,6 +112,11 @@ local function entryNode(entry, index)
         controlType = graph.controlTypes.button,
         announcements = { { text = entry.label, kind = kinds.label } },
         onActivate = function()
+            -- an entry whose action is protected in combat (notInCombat: a pickup) is not run there
+            if entry.notInCombat and InCombatLockdown() then
+                WowVision:notify(L["Not available in combat"])
+                return
+            end
             entry.onActivate()
             closeMenus()
         end,

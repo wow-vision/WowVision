@@ -45,6 +45,10 @@ function module.itemSlotNode(itemButton, label, clickLabels, isEmpty)
     end
     vtable.announcements[1].live = "focus"
     vtable.isEmpty = isEmpty
+    -- where the slot is, for a fight that begins on it (containersCombat.lua)
+    vtable.bagSlot = function()
+        return module.slotLocation(itemButton)
+    end
     tinsert(vtable.bindings, {
         binding = "drag",
         type = "Function",
@@ -80,8 +84,15 @@ end
 -- UseContainerItem follow), so the label does too. nil means "nothing worth
 -- naming" and leaves the bare click name.
 function module.itemClickLabels(itemButton)
+    return module.slotClickLabels(function()
+        return module.slotLocation(itemButton)
+    end)
+end
+
+-- The same by bag and slot: locate() returns them (the bags in combat, containersCombat.lua).
+function module.slotClickLabels(locate)
     local function slotInfo()
-        local bagID, slotID = module.slotLocation(itemButton)
+        local bagID, slotID = locate()
         return bagID, slotID, C_Container.GetContainerItemInfo(bagID, slotID)
     end
     return {
@@ -245,6 +256,10 @@ function module.renderSlots(builder, buttons)
 end
 
 local function render(builder, screen)
+    -- in combat the list the secure side walks (containersCombat.lua)
+    if InCombatLockdown() and module.renderCombat ~= nil and module.renderCombat(builder) then
+        return
+    end
     builder:pushContext("bags", L["Bags"])
     containers:forEachComponent(function(container)
         if container.renderGraph ~= nil and (container.isOpen == nil or container:isOpen()) then

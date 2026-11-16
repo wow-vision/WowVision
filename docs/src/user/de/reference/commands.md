@@ -44,6 +44,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /wv dbcheck | Meldet den Zustand der gespeicherten Variablen | alle |
 | /wv turnlog | Listet die letzten Drehungen zu einem Wegpunkt | alle |
 | /wv keylog | Protokolliert die Tastenbehandlung der Fenster | alle |
+| /wv combatkeys | Zeigt, was die Menütasten im Kampf tun | alle |
 | /wv padlog | Startet das Controller-Protokoll neu | Retail und WoW: Forever (Gamepad-Oberfläche an) |
 | /wv cdmlog | Protokoll der Monitore des Abklingzeitmanagers | Retail und WoW: Forever |
 
@@ -207,6 +208,10 @@ Gibt einen kurzen Bericht über deine gespeicherten Einstellungen im Chatfenster
 ### /wv turnlog
 
 Listet die letzten Drehungen von Zum Wegpunkt drehen auf, je eine Zeile mit ihrem Fehler in Grad, in einem Fenster und im Chat. Er spricht eine Zusammenfassung wie "12 turns, mean error 2.4 degrees" oder "No turns yet".
+
+### /wv combatkeys
+
+Gibt den Zustand der Menütasten im Kampf aus (ob die Einstellung an ist, ob ein Kampf läuft, ob die Tasten übernommen sind, ob ein Menü offen ist) und für jede Kampftaste, was das Spiel gerade auf ihr ausführt, mit den letzten Zeilen des Kampftasten-Protokolls. WowVision führt dieses Protokoll von selbst in der gespeicherten Variablen WowVisionDump (auch das der vorigen Sitzung). Versionen: alle. Siehe [Menüs im Kampf](../world/combat.md#menüs-im-kampf).
 
 ### /wv keylog
 

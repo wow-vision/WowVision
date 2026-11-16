@@ -103,6 +103,19 @@ function GraphHost:open(config)
     local screen = graph.Screen:new(config)
     local stack = { screens = { screen }, config = config }
     tinsert(self.stacks, stack)
+    -- A popup opened by itself in a fight that goes straight to Pending (graph/combatKeys.lua) takes no focus.
+    local combat = config.waits and InCombatLockdown() and graph.combatKeys ~= nil
+    if combat and graph.combatKeys.putsAsideOnOpen(stack) then
+        return stack
+    end
+    -- While the secure side walks a mirrored list in a fight (the bags) a window that opens stays behind: the
+    -- secure side would go on walking the list under it. Ctrl-Tab reaches it (graph/combatKeys.lua).
+    if graph.combatKeys ~= nil and graph.combatKeys.walking() ~= nil and InCombatLockdown() then
+        if config.waits then
+            graph.combatKeys.hintOtherWindow(stack)
+        end
+        return stack
+    end
     -- Background stacks (bags auto-opening at a vendor) never steal focus
     -- from an already-open stack; they are still reachable by stack cycling.
     if config.background and self.focusedIndex ~= nil and self.focusedIndex >= 1 and #self.stacks > 1 then
@@ -112,6 +125,10 @@ function GraphHost:open(config)
     screen:resetAnnouncement()
     self._bindingsDirty = true
     WowVision.base.speech:uiStop()
+    -- A popup in front opened by itself in a fight: the key that lands on it is named (graph/combatKeys.lua).
+    if combat then
+        graph.combatKeys.hintMenuKey()
+    end
     return stack
 end
 
@@ -170,18 +187,55 @@ function GraphHost:isOpen()
     return #self.stacks > 0
 end
 
+-- What a stack is called: the outermost level of its focused entry (the window's own context, "Bags"), or nil.
+function GraphHost:stackTitle(stack)
+    local screen = stack.screens[#stack.screens]
+    if screen == nil or not screen.keyGraph:rerender() then
+        return nil
+    end
+    local node = screen.keyGraph:currentNode()
+    while node ~= nil and node.parent ~= nil do
+        node = node.parent
+    end
+    return node ~= nil and announcer.firstPartText(node) or nil
+end
+
 -- ---- per-tick pull: rebuild, announce-once, live watch, binding sync ----
 
 function GraphHost:update()
+    local combat = InCombatLockdown()
+    local combatKeys = graph.combatKeys
     if #self.stacks == 0 then
+        if combat then
+            -- every binding was let go at combat start: only the focus goes
+            self:_dropNodeFocus()
+            return
+        end
         if #self._navHandles > 0 then
             self:_logKeys("released the navigation keys")
         end
         self:_releaseNavBindings()
         self:_dropNodeFocus()
+        if combatKeys ~= nil then
+            combatKeys.tick(false)
+        end
         return
     end
-    if InCombatLockdown() then
+    if combat then
+        -- Menus in combat (graph/combatKeys.lua): the secure frame holds the keys and hands them to onKey; the
+        -- screens render and speak as ever, only the bindings stay as they are until the fight ends.
+        if combatKeys == nil or not combatKeys.active() then
+            return
+        end
+        -- A mirrored window (the bags) in front while the secure side does not walk it (focus came back to it, or the
+        -- fight is just beginning on it): its keys would not act on what is read, so it reads quietly, and the key
+        -- that walks it again is named (graph/combatKeys.lua).
+        local stack = self:focusedStack()
+        local quiet = stack ~= nil and combatKeys.isMirrorStack(stack) and combatKeys.walking() == nil
+        if quiet then
+            combatKeys.hintUnwalked(stack)
+        end
+        self:_renderFocused(quiet)
         return
     end
     if #self._navHandles == 0 then
@@ -196,11 +250,25 @@ function GraphHost:update()
             self._navWaitLogged = false
         end
     end
+    -- Menus in combat: the next fight's start takes the menu keys only while the host holds them here. While it
+    -- waits for a held key, the fight must not take that key either (graph/combatKeys.lua).
+    if combatKeys ~= nil then
+        combatKeys.tick(#self._navHandles > 0)
+    end
     self:_syncCloseKey()
     self:_syncLetterKeys()
+    self:_renderFocused()
+end
 
+-- Rebuild the focused screen, announce a focus change once, watch it live and keep its node focus current. quiet: the
+-- focus is taken as heard without speaking it.
+function GraphHost:_renderFocused(quiet)
     local stack = self:focusedStack()
     local screen = self:focusedScreen()
+    -- only background stacks are open (a popup gone to Pending in a fight)
+    if screen == nil then
+        return
+    end
     if not screen.keyGraph:rerender() then
         -- The render produced nothing: the screen closed itself.
         if #stack.screens > 1 then
@@ -215,7 +283,9 @@ function GraphHost:update()
     if node ~= nil then
         if screen._lastSpokenKey == nil or screen._lastSpokenKey ~= node.id then
             local from = screen._lastSpokenNode
-            self:_speak(announcer.compose(from, node))
+            if not quiet then
+                self:_speak(announcer.compose(from, node))
+            end
             screen._lastSpokenKey = node.id
             screen._lastSpokenNode = node
         end
@@ -277,12 +347,12 @@ end
 -- ---- focused-node lifecycle: onFocus/onUnfocus + per-node bindings ----
 
 function GraphHost:_syncNodeFocus(screen)
-    if InCombatLockdown() then
-        self._bindingsDirty = true
-        return
-    end
     local node = screen ~= nil and screen.keyGraph:currentNode() or nil
     local newId = node ~= nil and node.id or nil
+    if InCombatLockdown() then
+        self:_syncFocusInCombat(node, newId)
+        return
+    end
 
     if not self._bindingsDirty and newId ~= nil and self._focusNodeId ~= nil and self._focusNodeId == newId then
         self._focusNode = node
@@ -326,6 +396,170 @@ function GraphHost:_syncNodeFocus(screen)
     end
     if not retry then
         self:_setTooltipFor(node)
+    end
+end
+
+-- In combat a node's bindings cannot engage: focus moves (onUnfocus, onFocus, the tooltip) and the bindings wait,
+-- marked as a deferred engage, so after the fight the focused node only takes its keys.
+function GraphHost:_syncFocusInCombat(node, newId)
+    self._bindingsDirty = true
+    if newId ~= nil and self._focusNodeId ~= nil and self._focusNodeId == newId then
+        self._focusNode = node
+        self._engageDeferred = true
+        return
+    end
+    local previous = self._focusNode
+    if previous ~= nil and previous.vtable.onUnfocus ~= nil then
+        pcall(previous.vtable.onUnfocus, previous)
+    end
+    self._focusNodeId = newId
+    self._focusNode = node
+    if node ~= nil and node.vtable.onFocus ~= nil then
+        pcall(node.vtable.onFocus, node)
+    end
+    self._engageDeferred = newId ~= nil
+    self:_setTooltipFor(node)
+end
+
+-- A menu key in combat (graph/combatKeys.lua). As out of combat, the focused entry's own binding for the key wins
+-- (a list behind one node walks itself on the arrows, chat switches its tabs on Left and Right); without one the host
+-- handles it. Addon code can run a Function binding, and a click marked combatClick (a game button that is not
+-- protected and whose own click script needs no secure call: the chat tabs). Any other secure click cannot be
+-- pointed at its frame in combat: on Enter or Backspace that says so; an arrow falls back to the host's own move.
+function GraphHost:combatKey(key)
+    local spec = nil
+    local screen = self:focusedScreen()
+    if screen ~= nil and screen.keyGraph:rerender() then
+        local node = screen.keyGraph:currentNode()
+        if node ~= nil then
+            for _, candidate in ipairs(self:_nodeBindingSpecs(node)) do
+                if candidate.binding == key then
+                    spec = candidate
+                    break
+                end
+            end
+        end
+    end
+    if spec ~= nil and spec.type == "Function" then
+        self:_runInCombat(spec, spec.func)
+        return
+    end
+    if spec ~= nil and spec.type == "Click" and spec.combatClick then
+        local target = spec.target
+        if type(target) == "function" then
+            target = target()
+        end
+        if target ~= nil then
+            self:_runInCombat(spec, function()
+                target:Click(spec.emulatedKey or "LeftButton")
+            end)
+        end
+        return
+    end
+    if key == "leftClick" or key == "rightClick" then
+        if spec ~= nil then
+            self:_speak(WowVision:getLocale()["Not available in combat"])
+        end
+        return
+    end
+    if key == "tooltip" then
+        return
+    end
+    self:onKey(key)
+end
+
+-- Focus the next stack after the focused one (or after from) that passes the test, going the direction (1, -1 back),
+-- and read it afresh (Ctrl-Tab in combat from a mirrored window to the others, graph/combatKeys.lua). False when none
+-- does.
+function GraphHost:focusStack(test, direction, from)
+    local count = #self.stacks
+    direction = direction or 1
+    -- counted from the stack from (when still open), else from the focused one
+    local start = self.focusedIndex or 0
+    for i, stack in ipairs(self.stacks) do
+        if stack == from then
+            start = i
+        end
+    end
+    for step = 1, count do
+        local index = (start - 1 + direction * step) % count + 1
+        if test(self.stacks[index]) then
+            self.focusedIndex = index
+            self._bindingsDirty = true
+            local screen = self:focusedScreen()
+            if screen ~= nil then
+                WowVision.base.speech:uiStop()
+                screen:resetAnnouncement()
+            end
+            return true
+        end
+    end
+    return false
+end
+
+-- A mirrored list in combat (graph/combatKeys.lua) moved its position, which the secure side owns there: focus the
+-- stack and land on the entry, spoken as an arrow would speak it. why "open" reads the window afresh, "resume" (the
+-- fight began on it) says nothing new, "reread" reads the entry again; Up or Down that did not move sounds the list's
+-- edge.
+function GraphHost:landMirror(stack, id, why)
+    for i, open in ipairs(self.stacks) do
+        if open == stack and self.focusedIndex ~= i then
+            self.focusedIndex = i
+            self._bindingsDirty = true
+        end
+    end
+    local screen = stack.screens[#stack.screens]
+    if screen == nil or not screen.keyGraph:rerender() then
+        return
+    end
+    local keyGraph = screen.keyGraph
+    local from = keyGraph:currentNode()
+    keyGraph:focus(id)
+    local to = keyGraph:currentNode()
+    if to == nil then
+        return
+    end
+    if why == "resume" then
+        -- the fight began on it: nothing new to say
+        screen._lastSpokenKey = to.id
+        screen._lastSpokenNode = to
+        return
+    end
+    WowVision.base.speech:uiStop()
+    if why == "open" then
+        screen:resetAnnouncement()
+    elseif why == "reread" then
+        self:_announceMove(screen, { from = to, to = to })
+    elseif from ~= nil and from.id.key ~= to.id.key then
+        self:_announceMove(screen, { from = from, to = to })
+    elseif (why == "up" or why == "down") and self:_playsEdgeSound() then
+        if PlaySound ~= nil then
+            PlaySound(GraphHost.EDGE_SOUND)
+        end
+        self:_announceMove(screen, { from = to, to = to })
+    end
+end
+
+-- Run a binding's action the way its secure button would: speech stopped first where it asks, after the TTS delay,
+-- then its postClick.
+function GraphHost:_runInCombat(spec, action)
+    local function run()
+        action()
+        if spec.postClick ~= nil then
+            spec.postClick()
+        end
+    end
+    if spec.interruptSpeech then
+        WowVision.base.speech:stop()
+    end
+    local delay = spec.delay
+    if delay == nil then
+        delay = WowVision.consts.UI_DELAY or 0
+    end
+    if delay > 0 then
+        C_Timer.After(delay, run)
+    else
+        run()
     end
 end
 
@@ -826,6 +1060,10 @@ function GraphHost:refreshBindings()
     self:_releaseNavBindings()
     self:_releaseNodeHandles()
     self._bindingsDirty = true
+    -- the combat keys follow the same keymaps
+    if graph.combatKeys ~= nil then
+        graph.combatKeys.stage()
+    end
 end
 
 -- Entry point for navigation keypresses. Mirrors UIHost's TTS sequencing: stop

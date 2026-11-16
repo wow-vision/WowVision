@@ -20,6 +20,8 @@ Beschriftungen, die das Spiel selbst liefert, hörst du in der Sprache deines Sp
 
 Mit Esc schließt du es. WowVision schließt dabei das eigene Fenster des Spiels für dich.
 
+Im Kampf erlaubt das Spiel Addons nicht, das Fenster zu öffnen; die Charaktertaste öffnet dann eine Liste deiner Ausrüstung: siehe [Menüs im Kampf](../world/combat.md#deine-ausrüstung-c).
+
 Ist auch das Addon Sku geladen, liest WowVision dieses Fenster nicht, damit sich nicht zwei Addons um dieselben Tasten streiten. Schalte Sku aus, wenn WowVision das Fenster lesen soll.
 
 Du kannst das Vorlesen dieses Fensters mit dem Schalter Aktiviert aus- und einschalten: Öffne das WowVision-Menü mit Umschalt+F1, gehe zu Fenster und dann zu Charakter. Siehe [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md).

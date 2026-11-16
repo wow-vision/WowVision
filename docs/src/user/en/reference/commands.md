@@ -43,6 +43,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv turnlog | Lists the last turns to a waypoint | all |
 | /wv unitturnlog | Lists the last turns to a target or focus | all |
 | /wv keylog | Logs window key handling | all |
+| /wv combatkeys | Shows what the menu keys do in combat | all |
 | /wv padlog | Restarts the controller log | Retail and WoW: Forever (gamepad interface on) |
 | /wv cdmlog | Cooldown manager monitor log | Retail and WoW: Forever |
 
@@ -210,6 +211,10 @@ Lists the last turns made by Turn to Waypoint, one line each with its error in d
 ### /wv unitturnlog
 
 Lists the last presses of Turn to Target and Turn to Focus (up to 40), one line each with the time, the unit, what the press found and how far your character turned, in a window and in chat. It speaks how many presses there are. The lines are also saved with your settings, so they are there after a reload.
+
+### /wv combatkeys
+
+Prints the state of the menu keys in combat (whether the setting is on, whether a fight is on, whether the keys are taken, whether a menu is open) and, per combat key, what the game runs on it now, with the last lines of the combat key log. WowVision keeps that log by itself, in the WowVisionDump saved variable (the previous session's too). Versions: all. See [Menus in combat](../world/combat.md#menus-in-combat).
 
 ### /wv keylog
 

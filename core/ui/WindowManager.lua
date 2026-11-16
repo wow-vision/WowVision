@@ -194,6 +194,49 @@ function WindowManager:closeAll(reason)
     return closed
 end
 
+-- Close in combat: only what is WowVision's own -- its windows (ManualWindow:isOwnWindow) and the screens no game
+-- window owns (context menus, text entries). A game window stays: in combat the game refuses addon code that shows or
+-- hides its panels (CheckProtectedFunctionsAllowed in UIParentPanelManager.lua says "Interface action failed"), and its
+-- screen is kept for after the fight. Returns the titles of the windows that stay.
+function WindowManager:closeOwnWindows()
+    local owners = {}
+    for _, instance in ipairs(self.openWindows) do
+        if instance.stack ~= nil then
+            owners[instance.stack] = instance
+        end
+    end
+    local host = WowVision.graphHost
+    local stacks = {}
+    for _, stack in ipairs(host.stacks) do
+        tinsert(stacks, stack)
+    end
+    local remaining = {}
+    for i = #stacks, 1, -1 do
+        local stack = stacks[i]
+        local instance = owners[stack]
+        local mirrored = WowVision.graph.combatKeys ~= nil and WowVision.graph.combatKeys.isMirrorStack(stack)
+        if mirrored then
+            -- the equipment list in a fight: the secure side keeps it open and closes it (graph/combatKeys.lua)
+            tinsert(remaining, 1, host:stackTitle(stack) or "")
+        elseif instance ~= nil then
+            local window = instance.ref
+            if window.isOwnWindow ~= nil and window:isOwnWindow() then
+                self:closeWindow(instance)
+            else
+                tinsert(remaining, 1, host:stackTitle(stack) or window.name)
+            end
+        elseif stack.config ~= nil and stack.config.onRequestClose ~= nil then
+            local ok, err = pcall(stack.config.onRequestClose, stack)
+            if not ok then
+                geterrorhandler()(err)
+            end
+        else
+            host:close(stack)
+        end
+    end
+    return remaining
+end
+
 -- Update loop for auto-detecting window state changes
 
 function WindowManager:update()

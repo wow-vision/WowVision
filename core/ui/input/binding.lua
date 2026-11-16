@@ -95,6 +95,8 @@ Binding:addFields({
         end,
     },
     { key = "category" },
+    -- The binding opens a WowVision window: in combat its key also takes the menu keys (graph/combatKeys.lua).
+    { key = "opensWindow", default = false },
 })
 
 function Binding:initialize(info)

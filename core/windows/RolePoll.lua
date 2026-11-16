@@ -67,6 +67,10 @@ local function makeRender(frameName)
             return
         end
         builder:pushContext("rolePoll", getPopupTitle(frame))
+        -- The invitation's buttons only check a role, AcceptGroup with the checked roles or DeclineGroup
+        -- (LFGInvitePopup.lua), none protected: in combat their own click runs, as for the plain invitation. The
+        -- role checks' accept is not known to be allowed there.
+        local combatClick = frameName == "LFGInvitePopup"
 
         local warning = frame.QueueWarningText
         local warningText = warning ~= nil and warning:IsShown() and warning:GetText() or nil
@@ -86,7 +90,11 @@ local function makeRender(frameName)
             if checkButton ~= nil and checkButton:IsShown() then
                 builder:addItem(
                     ControlId.forObject(checkButton),
-                    nodes.proxyCheckButton({ target = checkButton, label = L[role.labelKey] })
+                    nodes.proxyCheckButton({
+                        target = checkButton,
+                        label = L[role.labelKey],
+                        combatClick = combatClick,
+                    })
                 )
             end
         end
@@ -100,7 +108,10 @@ local function makeRender(frameName)
                 if suffix == "CloseButton" then
                     label = L["Close"]
                 end
-                builder:addItem(ControlId.forObject(button), nodes.proxyButton({ target = button, label = label }))
+                builder:addItem(
+                    ControlId.forObject(button),
+                    nodes.proxyButton({ target = button, label = label, combatClick = combatClick })
+                )
             end
         end
 
@@ -139,6 +150,7 @@ for _, def in ipairs({
         captureClose = function()
             return WowVision.pending.holdsEscape()
         end,
+        waits = true,
     },
 }) do
     module:registerWindow({
@@ -150,6 +162,7 @@ for _, def in ipairs({
             render = makeRender(def.frame),
             onRequestClose = def.onRequestClose,
             captureClose = def.captureClose,
+            waits = def.waits,
         },
     })
 end

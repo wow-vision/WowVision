@@ -164,4 +164,54 @@ testRunner:addSuite("HeldKeys", {
         t:assertFalse(heldKeys.anyHeld({ "UP", "LEFT" }, env))
         t:assertFalse(heldKeys.anyHeld({}, env))
     end,
+
+    ["runsCommand: the key is down and its game command runs"] = function(t)
+        local env = {
+            isKeyDown = function(key)
+                return key == "UP" or key == "DOWN"
+            end,
+            bindingAction = function(key)
+                return ({ UP = "MOVEFORWARD", DOWN = "MOVEBACKWARD", LEFT = "TURNLEFT" })[key]
+            end,
+            flags = { moveForward = true, turnLeft = true },
+            isMoving = function()
+                return true
+            end,
+        }
+        t:assertTrue(heldKeys.runsCommand("UP", env))
+        -- down, but pressed on a binding of WowVision's own: its game command does not run
+        t:assertFalse(heldKeys.runsCommand("DOWN", env))
+        -- the command runs from another key (A): this key is up
+        t:assertFalse(heldKeys.runsCommand("LEFT", env))
+        t:assertFalse(heldKeys.runsCommand("ENTER", env))
+        t:assertEqual(heldKeys.commandKey({ "DOWN", "LEFT", "UP" }, env), "UP")
+        t:assertNil(heldKeys.commandKey({ "DOWN", "LEFT" }, env))
+    end,
+
+    ["runsCommand: a stale flag does not count"] = function(t)
+        local env = {
+            isKeyDown = function()
+                return true
+            end,
+            bindingAction = function()
+                return "MOVEFORWARD"
+            end,
+            flags = { moveForward = true },
+            isMoving = function()
+                return false
+            end,
+        }
+        t:assertFalse(heldKeys.runsCommand("UP", env))
+    end,
+
+    ["runsCommand: no answer without the key state"] = function(t)
+        local env = classicEnv({ UP = "MOVEFORWARD" }, { moveForward = true })
+        t:assertFalse(heldKeys.runsCommand("UP", env))
+        local refused = classicEnv({ UP = "MOVEFORWARD" }, { moveForward = true })
+        refused.isKeyDown = function()
+            error("secret")
+        end
+        t:assertFalse(heldKeys.runsCommand("UP", refused))
+        t:assertFalse(heldKeys.runsCommand(nil, modernEnv({})))
+    end,
 })

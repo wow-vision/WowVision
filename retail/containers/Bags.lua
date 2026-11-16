@@ -39,22 +39,9 @@ local ControlId = graph.ControlId
 -- its own frame in both modes) with KeyRingButton as its slot button.
 local Bags = WowVision.components.createType("containers", { key = "RetailBags" })
 
-local KEYRING_ID = KEYRING_CONTAINER or (Enum.BagIndex ~= nil and Enum.BagIndex.Keyring) or nil
-
-local BAG_SLOT_BUTTONS = {
-    [0] = "MainMenuBarBackpackButton",
-    [1] = "CharacterBag0Slot",
-    [2] = "CharacterBag1Slot",
-    [3] = "CharacterBag2Slot",
-    [4] = "CharacterBag3Slot",
-    [5] = "CharacterReagentBag0Slot",
-}
-
--- Every held bag, in bar order: backpack, bags, reagent bag, keyring.
-local HELD_BAG_IDS = { 0, 1, 2, 3, 4, 5 }
-if KEYRING_ID ~= nil then
-    tinsert(HELD_BAG_IDS, KEYRING_ID)
-end
+local KEYRING_ID = module.KEYRING_ID
+local BAG_SLOT_BUTTONS = module.BAG_SLOT_BUTTONS
+local HELD_BAG_IDS = module.HELD_BAG_IDS
 
 local function bagSlotButton(bagID)
     if KEYRING_ID ~= nil and bagID == KEYRING_ID then

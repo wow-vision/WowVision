@@ -173,3 +173,34 @@ function heldKeys.anyHeld(inputs, env)
     end
     return false
 end
+
+-- Whether the key of this input is held on a game command that runs until the
+-- key's release (a move, a turn, ascending): what an override landing on the
+-- key would leave running. Stricter than isHeld, for a caller that must not
+-- take a key pressed on a binding of WowVision's own (a menu key in an open
+-- menu) for one: the key reads down AND its command's flag is on and live.
+-- Only where the client has IsKeyDown: the flags alone cannot tell which key
+-- runs the command (W held would read as the Up arrow held), so without it
+-- the answer is no.
+function heldKeys.runsCommand(input, env)
+    local key = heldKeys.baseKey(input)
+    if key == nil or env.isKeyDown == nil then
+        return false
+    end
+    local ok, down = pcall(env.isKeyDown, key)
+    if not ok or down ~= true then
+        return false
+    end
+    local flag = heldCommand(key, env)
+    return flag ~= nil and env.flags[flag] == true and flagLive(flag, env)
+end
+
+-- The first input in the list held on a game command (runsCommand), or nil.
+function heldKeys.commandKey(inputs, env)
+    for _, input in ipairs(inputs) do
+        if heldKeys.runsCommand(input, env) then
+            return input
+        end
+    end
+    return nil
+end

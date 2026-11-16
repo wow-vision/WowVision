@@ -65,6 +65,28 @@ settings:add({
     default = false,
 })
 
+-- The menus keep working in combat (graph/combatKeys.lua). Off, the default: they fall silent at combat start, as
+-- before. On, it takes keys in a fight, among them the game's own bag and character keys, and a key held while a
+-- menu opens in a fight loses its release, so it is the player's choice.
+local combatMenus = settings:add({
+    type = "Bool",
+    key = "combatMenus",
+    label = L["Menus in Combat"],
+    default = false,
+})
+combatMenus.events.valueChange:subscribe(module, function()
+    WowVision.graph.combatKeys.stage()
+end)
+
+-- Menus in combat: the secure frame's state and what the game runs on each combat key now (graph/combatKeys.lua).
+module:registerCommand({
+    name = "combatkeys",
+    description = "Print the state of the menu keys in combat",
+    func = function()
+        WowVision.graph.combatKeys.report()
+    end,
+})
+
 -- Pending windows (windows/pending.lua): a window that waits for an answer and ignores Escape in the game (a group
 -- invitation, a summon, death, the ready check) is put aside to Pending in the WowVision menu, left on screen and not
 -- answered. On: by Escape and by Close All Windows. Close All Windows: only by that. Off: they wait in front.
@@ -402,6 +424,7 @@ module:registerBindings({
     {
         type = "Function",
         key = "wowvision/menu",
+        opensWindow = true,
         label = L["WowVision Menu"],
         inputs = { "SHIFT-F1" },
         interruptSpeech = true,
@@ -423,3 +446,16 @@ module:registerBindings({
         end,
     },
 })
+
+-- Each menu key's own key in combat ("In Combat: Up"), for a player who wants a different key there (one who moves
+-- with the arrows in a fight). Empty, the menu key's own inputs apply (graph/combatKeys.lua).
+for _, key in ipairs(WowVision.graph.combatKeys.MENU_KEYS) do
+    local keymap = WowVision.input:getBinding(key)
+    module:registerBinding({
+        type = "Virtual",
+        key = WowVision.graph.combatKeys.combatKeymap(key),
+        dorment = true,
+        label = L["In Combat"] .. ": " .. (keymap ~= nil and keymap:getLabel() or key),
+        inputs = {},
+    })
+end
