@@ -39,7 +39,6 @@ local function loadSpeech(path)
                 end,
             },
             speechInterrupt = { handOver = function(text) return text end },
-            speechChannel = { ready = function() end },
             ttsCacheBust = {
                 bust = function(text) return text end,
                 bustForeign = function(text) return text end,

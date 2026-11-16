@@ -82,8 +82,6 @@ function tts:onFire(message)
         if voice == nil then
             voice = self.voice
         end
-        -- with the Speech Queue off this goes straight to the engine (core/speechChannel.lua)
-        WowVision.speechChannel.ready()
         C_VoiceChat.SpeakText(voice, WowVision.ttsCacheBust.bust(text), settings.speechRate, volume, false)
         return
     end

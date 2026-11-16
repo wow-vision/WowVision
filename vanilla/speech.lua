@@ -19,8 +19,6 @@ function SpeechStyle:output(text, voice)
     elseif volume > 100 then
         volume = 100
     end
-    -- another addon may hold the channel the speech plays on switched off (core/speechChannel.lua)
-    WowVision.speechChannel.ready()
     C_VoiceChat.SpeakText(
         voice or self.module.settings.voiceID,
         -- after a stop it cuts a screen reader bridge voice (core/speechInterrupt.lua)

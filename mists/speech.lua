@@ -30,8 +30,6 @@ local function pollQueue()
     -- Mark busy immediately so a poll triggered before PLAYBACK_STARTED arrives
     -- does not dispatch a second utterance on top of this one.
     module.speaking = true
-    -- another addon may hold the channel the speech plays on switched off (core/speechChannel.lua)
-    WowVision.speechChannel.ready()
     oldSpeak(item.voice, handOver(item.text), item.rate, item.volume, true)
 end
 
@@ -162,7 +160,6 @@ function module:speak(text, voice)
     if C_VoiceChat.SpeakText ~= queuedSpeak then
         -- (without the queue this is the hand-over)
         text = handOver(text)
-        WowVision.speechChannel.ready()
     end
     C_VoiceChat.SpeakText(voice or self.settings.voiceID, text, self.settings.speechRate, volume, false)
 end

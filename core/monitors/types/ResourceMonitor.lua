@@ -413,8 +413,6 @@ function ResourceMonitor:say(text)
         voice = settings ~= nil and settings.voiceID or 0
     end
     self._lastSpoke = GetTime()
-    -- with the Speech Queue off this goes straight to the engine (core/speechChannel.lua)
-    WowVision.speechChannel.ready()
     C_VoiceChat.SpeakText(voice, WowVision.ttsCacheBust.bust(text), self.speechRate or 0, self.speechVolume or 100, false)
 end
 
