@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/NavNetwork.lua at
--- 3684248), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 52c6c83), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- NavNetwork (schema 7, concept chapters 7, 7a and 8): loader/decoder, continent graph, attachment cells and the
 -- A* search. Replaces the graph, funnel, guidance and zone-by-zone world travel of the old core.
@@ -68,7 +68,8 @@ do
 end
 local BASE = 92
 
-local function Chars(text)
+-- pause (optional, also in PrefixSum and Decode): called between pieces of the work; it may yield (N.LoadZoneInSteps).
+local function Chars(text, pause)
     local n, result, i = #text, {}, 1
     while i <= n do
         local j = min(n, i + 3999)
@@ -79,6 +80,7 @@ local function Chars(text)
             result[i + k - 1] = value
         end
         i = j + 1
+        if pause then pause() end
     end
     return result
 end
@@ -323,11 +325,12 @@ end
 -- ---------------------------------------------------------------------------
 -- Decoder
 -- ---------------------------------------------------------------------------
-local function PrefixSum(values, factor)
+local function PrefixSum(values, factor, pause)
     local sum, result = 0, {}
     for i = 1, #values do
         sum = sum + values[i]
         result[i] = sum * factor
+        if pause and i % 4096 == 0 then pause() end
     end
     return result
 end
@@ -338,11 +341,13 @@ end
 
 local CELL_SIZES = { [0] = 16, [1] = 8, [2] = 32 }
 
-local function Decode(raw)
+-- pause (optional): called every few hundred steps of the long loops, so a caller that runs the decoding in a coroutine
+-- can spread it over several frames (N.LoadZoneInSteps). The result is the same with and without it.
+local function Decode(raw, pause)
     local n = raw.nodeCount
     local zone = { id = raw.zoneId, base = raw.zoneId * ZONE_BASE, mapId = raw.mapId, n = n,
         fingerprint = raw.fingerprint, raw = raw }
-    zone.x, zone.y, zone.z = PrefixSum(raw.x, 0.1), PrefixSum(raw.y, 0.1), PrefixSum(raw.z, 0.1)
+    zone.x, zone.y, zone.z = PrefixSum(raw.x, 0.1, pause), PrefixSum(raw.y, 0.1, pause), PrefixSum(raw.z, 0.1, pause)
     if #zone.x ~= n or #zone.y ~= n or #zone.z ~= n then error("coordinate fields have the wrong length") end
     local dictionary = {}
     for i, code in ipairs(raw.codes) do
@@ -353,24 +358,29 @@ local function Decode(raw)
             noExit = floor(code / 1048576) % 2 == 1,     -- 4.27: water component without a checked exit
         }
     end
-    local codes = Chars(raw.c)
+    local codes = Chars(raw.c, pause)
     if #codes ~= n then error("code field has the wrong length") end
     zone.bits, zone.area, zone.radius, zone.noExit = {}, {}, {}, {}
     for i = 1, n do
         local entry = dictionary[codes[i]]
         if not entry then error("code outside the dictionary") end
         zone.bits[i], zone.area[i], zone.radius[i], zone.noExit[i] = entry.bits, entry.area, entry.radius, entry.noExit
+        if pause and i % 1024 == 0 then pause() end
     end
-    zone.layer = Chars(raw.s)
+    zone.layer = Chars(raw.s, pause)
     -- Links (CSR, K6/K7)
-    local counts, offsets, flags = Chars(raw.lo), raw.lt, Chars(raw.lf)
+    local counts, offsets, flags = Chars(raw.lo, pause), raw.lt, Chars(raw.lf, pause)
     local linkCount = raw.linkCount
     if #counts ~= n or #offsets ~= linkCount or #flags ~= linkCount then error("link fields have the wrong length") end
     zone.lu, zone.lv, zone.lflag, zone.ldir, zone.llen = {}, {}, {}, {}, {}
     zone.adj = {}
-    for i = 1, n do zone.adj[i] = {} end
+    for i = 1, n do
+        zone.adj[i] = {}
+        if pause and i % 1024 == 0 then pause() end
+    end
     local k = 0
     for u = 0, n - 1 do
+        if pause and u % 64 == 0 then pause() end
         for _ = 1, counts[u + 1] do
             k = k + 1
             local v = u + offsets[k]
@@ -459,8 +469,8 @@ local function Decode(raw)
     zone.seam = {}
     -- Attachment cells (K10)
     local cx, cy, cz, ch = raw.cx, raw.cy, raw.cz, raw.ch
-    local classes, layers, attachmentCounts = Chars(raw.cc), Chars(raw.cl), Chars(raw.an)
-    local references, masks = raw.ar, Chars(raw.aq)
+    local classes, layers, attachmentCounts = Chars(raw.cc, pause), Chars(raw.cl, pause), Chars(raw.an, pause)
+    local references, masks = raw.ar, Chars(raw.aq, pause)
     local m = raw.cellCount
     if #cx ~= m or #cy ~= m or #cz ~= m or #ch ~= m or #classes ~= m or #layers ~= m
         or #attachmentCounts ~= m or #masks ~= 3 * #references then
@@ -476,6 +486,7 @@ local function Decode(raw)
     zone.cellMap = { {}, {}, {} }
     local ox, oy, mz, previous, a = 0, 0, 0, 0, 0
     for i = 1, m do
+        if pause and i % 256 == 0 then pause() end
         ox, oy, mz = ox + cx[i], oy + cy[i], mz + cz[i]
         local kind = classes[i]
         local size = CELL_SIZES[kind]
@@ -510,11 +521,12 @@ local function Decode(raw)
     -- Floor of the cells (F10, optional field cm): 16-bit mask per cell, bit 4 * row + column of the 4 x 4 fields. Data without the field
     -- (older exports) leave zone.cellFloor nil: every cell then covers its whole square.
     if raw.cm ~= nil then
-        local floors = Chars(raw.cm)
+        local floors = Chars(raw.cm, pause)
         if #floors ~= 3 * m then error("cell floor field has the wrong length") end
         zone.cellFloor = {}
         for i = 1, m do
             zone.cellFloor[i] = (floors[3 * i - 2] * BASE + floors[3 * i - 1]) * BASE + floors[3 * i]
+            if pause and i % 4096 == 0 then pause() end
         end
     end
     return zone
@@ -666,11 +678,58 @@ function N.LoadZone(zoneId)
     return zone
 end
 
+-- WowVision: decodes a zone over several calls, for work in the background (the zones prepared around the player). The
+-- result is the one N.LoadZone gives; the decoding runs in a coroutine that yields once a call has used `budget` on
+-- `clock` (clock() in the budget's unit; debugprofilestop: ms). Returns true when nothing is left to do for the zone
+-- (decoded and attached; decoded meanwhile by N.LoadZone; or not decodable, which N.LoadZone reports when asked), false
+-- while more remains. One zone at a time: another zone drops the unfinished one. Compiling the packed text is one piece
+-- and takes as long as it takes; the call after it goes on with the decoding.
+N.loading = nil       -- the unfinished zone: { zoneId, source, thread, pause, budget, clock, started, steps }
+
+function N.LoadZoneInSteps(zoneId, budget, clock)
+    local source = ZoneSource(zoneId)
+    local ready = N.zones[zoneId] or N.decoded[zoneId]
+    if source == nil or (ready and (N.zones[zoneId] or ready.source == source)) then
+        -- nothing to decode, or N.LoadZone was faster (a route needed the zone): its copy is the zone
+        if N.loading and N.loading.zoneId == zoneId then N.loading = nil end
+        return true
+    end
+    local job = N.loading
+    if not job or job.zoneId ~= zoneId or job.source ~= source then
+        job = { zoneId = zoneId, source = source, steps = 0 }
+        job.pause = function()
+            if job.clock() - job.started >= job.budget then coroutine.yield() end
+        end
+        -- (no pcall around the decoding: Lua 5.1 cannot yield through one; resume reports an error instead)
+        job.thread = coroutine.create(function()
+            local raw = Unpacked("WVN7", "WVN7Src", zoneId)
+            if type(raw) ~= "table" then return nil end
+            job.pause()
+            return Decode(raw, job.pause)
+        end)
+        N.loading = job
+    end
+    job.budget, job.clock, job.started, job.steps = budget, clock, clock(), job.steps + 1
+    local ok, decoded = coroutine.resume(job.thread)
+    if ok and coroutine.status(job.thread) ~= "dead" then return false end
+    N.loading = nil
+    if not ok or type(decoded) ~= "table" then return true end
+    if type(source) == "string" then
+        _G.WVN7[zoneId] = nil
+        decoded.raw = nil
+    end
+    decoded.source = source
+    N.decoded[zoneId] = decoded
+    N.LoadZone(zoneId)      -- attaches the decoded copy (seams, callback), as a decode in one piece does
+    return true
+end
+
 -- Drops a decoded zone, attached or only kept in N.decoded (it is decoded again on demand, from the packed source if there
 -- is one). Virtual points on its links go with it. The other zones need no update: their seams point at waypoint IDs, and
 -- the search decodes a zone behind a seam when it gets there. Never call this while a route job of that zone is running.
 -- N.onZoneUnloaded(zone) (optional) lets the core drop what it derived from the zone (resolutions, lists).
 function N.UnloadZone(zoneId)
+    if N.loading and N.loading.zoneId == zoneId then N.loading = nil end
     local zone = N.zones[zoneId] or N.decoded[zoneId]
     if not zone then return false end
     N.decoded[zoneId] = nil
@@ -826,6 +885,113 @@ function N.NodesWithin(zoneId, x, y, radius)
 end
 
 -- ---------------------------------------------------------------------------
+-- The node of a logical target (Weg B, user decision 10.11.2026)
+-- ---------------------------------------------------------------------------
+-- Every logical target of a zone built with Weg B has a fixed node of the network: the build puts it on the target's access point and
+-- links it like every other node. The core finds it by the target's coordinates: a node whose x and y lie within TARGET_XY_TOLERANCE of
+-- the target's (half the export resolution of the node coordinates, 0.1 yd; a tolerance, never an equality, because the build rounds
+-- in Python and the decoder sums in Lua), of those the one with the smallest height difference within the height band (a water node:
+-- the target not more than the band above it). Where that does not find it the catalog row carries the node number (n, see
+-- TargetCatalog.lua). tools/wegenetz/target_nodes.py is the twin of this rule in the pipeline.
+N.TARGET_XY_TOLERANCE = 0.05   -- yd: half the export resolution of the node coordinates (K2, 0.1 yd)
+local XY_EPSILON = 1e-6        -- the noise of the prefix sums (0.1 * integer)
+local POINT_OFFSET, POINT_SPAN = 1000000, 2000000
+local NEAR_CELL = 10.0         -- yd: raster of the search for the nearest nodes (speed only)
+
+local function PointKey(kx, ky)
+    return (kx + POINT_OFFSET) * POINT_SPAN + (ky + POINT_OFFSET)
+end
+
+-- The nodes of a zone on the 0.1 yd raster of the export (built on first use, kept with the decoded zone).
+local function PointMap(zone)
+    if zone.pointMap then return zone.pointMap end
+    local map = {}
+    for i = 1, zone.n do
+        local key = PointKey(floor(zone.x[i] * 10 + 0.5), floor(zone.y[i] * 10 + 0.5))
+        local list = map[key]
+        if not list then list = {}; map[key] = list end
+        list[#list + 1] = i
+    end
+    zone.pointMap = map
+    return map
+end
+
+local function FitsNode(zone, i, z, tolerance)
+    if z == nil then return true end
+    if zone.area[i] == 2 then return z <= zone.z[i] + tolerance end          -- a water node holds everything under its surface
+    return abs(zone.z[i] - z) <= tolerance
+end
+N.FitsNode = FitsNode
+
+-- The node of a target by its coordinates: the local index (1-based) or nil.
+function N.TargetNodeAt(zone, x, y, z, tolerance)
+    tolerance = tolerance or N.HEIGHT_TOLERANCE
+    local map = PointMap(zone)
+    local kx, ky = floor(x * 10 + 0.5), floor(y * 10 + 0.5)
+    local limit = N.TARGET_XY_TOLERANCE + XY_EPSILON
+    local best, bestDifference
+    for dx = -1, 1 do
+        for dy = -1, 1 do
+            for _, i in ipairs(map[PointKey(kx + dx, ky + dy)] or {}) do
+                if abs(zone.x[i] - x) <= limit and abs(zone.y[i] - y) <= limit and FitsNode(zone, i, z, tolerance) then
+                    local difference = z and abs(zone.z[i] - z) or 0
+                    if not best or difference < bestDifference or (difference == bestDifference and i < best) then
+                        best, bestDifference = i, difference
+                    end
+                end
+            end
+        end
+    end
+    return best
+end
+
+-- A node as the binding of a target (choice: "target_node" by the coordinates, "target_node_id" by n, "nearest_node" the fallback).
+function N.NodeTargetBinding(zone, i, x, y, choice)
+    local nx, ny, nz = zone.x[i], zone.y[i], zone.z[i]
+    return { zone = zone, type = "node", id = zone.base + i - 1, x = nx, y = ny, z = nz, choice = choice, node = i,
+        cellDistance = 0, approach = false, airDistance = sqrt((nx - x) ^ 2 + (ny - y) ^ 2) }
+end
+
+local function NearMap(zone)
+    if zone.nearMap then return zone.nearMap end
+    local map = {}
+    for i = 1, zone.n do
+        local key = PointKey(floor(zone.x[i] / NEAR_CELL), floor(zone.y[i] / NEAR_CELL))
+        local list = map[key]
+        if not list then list = {}; map[key] = list end
+        list[#list + 1] = i
+    end
+    zone.nearMap = map
+    return map
+end
+
+-- The fallback of a target without its node (a target that came with a target update after the build): the physical nodes of the zone
+-- within radius in the plane that fit its height, nearest first (a water node without an exit is left out). The last straight from such
+-- a node to the target is not checked: the route says so ("approximate").
+function N.NearestNodeBindings(zone, x, y, z, radius, tolerance)
+    tolerance = tolerance or N.HEIGHT_TOLERANCE
+    local map = NearMap(zone)
+    local reach = floor(radius / NEAR_CELL) + 1
+    local gx, gy = floor(x / NEAR_CELL), floor(y / NEAR_CELL)
+    local found = {}
+    for dx = -reach, reach do
+        for dy = -reach, reach do
+            for _, i in ipairs(map[PointKey(gx + dx, gy + dy)] or {}) do
+                local d = sqrt((zone.x[i] - x) ^ 2 + (zone.y[i] - y) ^ 2)
+                if d <= radius and FitsNode(zone, i, z, tolerance) and not zone.noExit[i] then
+                    found[#found + 1] = N.NodeTargetBinding(zone, i, x, y, "nearest_node")
+                end
+            end
+        end
+    end
+    table.sort(found, function(p, q)
+        if p.airDistance ~= q.airDistance then return p.airDistance < q.airDistance end
+        return p.id < q.id
+    end)
+    return found
+end
+
+-- ---------------------------------------------------------------------------
 -- Virtual points
 -- ---------------------------------------------------------------------------
 local function NewVirtual(data)
@@ -960,6 +1126,7 @@ end
 
 -- Bands at most 2 yd apart belong to the same layer (chapter 4.1).
 local SAME_LAYER_GAP = 2.0
+N.SAME_LAYER_GAP = SAME_LAYER_GAP   -- read by Guidance.ArrivalFloor (level grouping)
 
 local function MiddleOf(hit)
     return (hit.zone.cellZMin[hit.cell] + hit.zone.cellZMax[hit.cell]) / 2
@@ -1235,6 +1402,38 @@ function N.CellBindings(zone, cell, x, y, cellDistance)
     return list
 end
 
+-- The checked attachments of a cell for a point (cost comparison K): those whose field mask holds the field of the point (the
+-- pool of ChooseAttachment "own_field"), the field-mask choice first, then the others by distance. When the choice had to fall
+-- back to a neighbouring field or to the nearest attachment, the point has no checked attachment and the list holds only that
+-- one: a comparison never offers an unchecked attachment, and never one of a neighbouring cell. A point outside the cell (an
+-- approach) has no field of its own, so its list holds only the choice, too. noExit water nodes are left out.
+function N.CertifiedBindings(zone, cell, x, y, cellDistance)
+    local first = N.BindCell(zone, cell, x, y, cellDistance)
+    if not first then return {} end
+    local list = { first }
+    if first.choice ~= "own_field" or (cellDistance or 0) > 0 then return list end
+    local size = zone.cellSize[cell]
+    local fx = min(FIELDS - 1, max(0, floor((x - zone.cellX[cell]) / (size / FIELDS))))
+    local fy = min(FIELDS - 1, max(0, floor((y - zone.cellY[cell]) / (size / FIELDS))))
+    local ownBit = FIELDS * fy + fx
+    local seen, others = { [first.id] = true }, {}
+    for a = zone.cellStart[cell], zone.cellStart[cell] + zone.cellCount[cell] - 1 do
+        if BitSet(zone.attMask[a], ownBit) then
+            local binding = BindingOfAttachment(zone, cell, a, "own_field", x, y, cellDistance)
+            if not seen[binding.id] and not (binding.type == "node" and N.NoExit(binding.id)) then
+                seen[binding.id] = true
+                others[#others + 1] = binding
+            end
+        end
+    end
+    table.sort(others, function(p, q)
+        if p.airDistance ~= q.airDistance then return p.airDistance < q.airDistance end
+        return p.id < q.id
+    end)
+    for _, binding in ipairs(others) do list[#list + 1] = binding end
+    return list
+end
+
 -- Start while swimming or diving (opts.swimming): only water points are start attachments, i.e. nodes of a WATER area and
 -- points on swimming links, never a land attachment on the lake floor or on the shore above. Without a water point in reach
 -- the nearest water exit (code EXIT) is the start.
@@ -1410,10 +1609,10 @@ function N.BindingFromId(id)
 end
 
 -- Route between two IDs (bindings, link points or real nodes). Result as N.Route.
-function N.RouteIds(startId, targetId, penalties, footOnly)
+function N.RouteIds(startId, targetId, penalties, footOnly, startPool, targetPool)
     local start, target = N.BindingFromId(startId), N.BindingFromId(targetId)
     if not start or not target then return nil, "invalid_point" end
-    return N.Route(start, target, penalties, footOnly)
+    return N.Route(start, target, penalties, footOnly, startPool, targetPool)
 end
 
 -- ---------------------------------------------------------------------------
@@ -1564,17 +1763,20 @@ local function BindingEnds(binding)
 end
 
 -- nil without avoidance (off, no faction known); else { faction, open = {group key = true}, targetInside = bool }
-local function AvoidanceFor(startBinding, targetBinding)
+-- startBindings/targetBindings: lists (one binding each, or the checked attachments of a cost comparison, K)
+local function AvoidanceFor(startBindings, targetBindings)
     if not N.avoidOutposts then return nil end
     local faction = N.PlayerFaction()
     if not faction then return nil end
     local avoid = { faction = faction, open = {}, targetInside = false }
-    for _, binding in ipairs({ startBinding, targetBinding }) do
-        for _, id in ipairs(BindingEnds(binding)) do
-            local group = HostileGroup(id, faction)
-            if group then
-                avoid.open[group] = true
-                if binding == targetBinding then avoid.targetInside = true end
+    for side, bindings in ipairs({ startBindings, targetBindings }) do
+        for _, binding in ipairs(bindings) do
+            for _, id in ipairs(BindingEnds(binding)) do
+                local group = HostileGroup(id, faction)
+                if group then
+                    avoid.open[group] = true
+                    if side == 2 then avoid.targetInside = true end
+                end
             end
         end
     end
@@ -1596,17 +1798,99 @@ local reachCache = nil
 -- counters for WowVision's trail: whole searches that missed (kept as sets) and targets answered from those sets
 N.wholeMisses, N.knownMissAnswers = 0, 0
 
--- true when a search from startBinding can be told without searching that it cannot reach targetBinding
-local function KnownUnreachable(sets, startBinding, targetBinding)
-    local starts, targets = Options(startBinding, false, true), Options(targetBinding, false, false)
+-- WowVision: closed water. S10b keeps the water nodes of a water body without a checked exit (flag noExit, 4.27) for
+-- the announcement only, without links; no search can arrive at such a node. N.Route drops it as a goal, and answers
+-- "no route" at once when no goal is left, instead of searching the whole continent first (a corpse run in the Wetlands
+-- marsh: the cell under the corpse offered such a node first, 72 s in the game). Only a node with no way in or out
+-- counts: noExit, no link in its zone in either direction, no seam, no action from it. An action of another zone that
+-- ended on it would not be seen here; in data 1f8530e none does (1,265 such nodes, all noExit water, none an action's end).
+N.closedWaterGoals = 0      -- goals dropped, for WowVision's trail
+
+-- The nodes of a zone that a link enters, built once per decoded zone.
+local function Inbound(zone)
+    if not zone.inbound then
+        local set = {}
+        for i = 1, zone.n do
+            local adj = zone.adj[i]
+            for j = 1, #adj, 2 do set[adj[j]] = true end
+        end
+        zone.inbound = set
+    end
+    return zone.inbound
+end
+
+function N.ClosedWater(id)
+    if id == nil or id >= VIRT_BASE then return false end
+    local zone = ZoneOf(id)
+    if not zone then return false end
+    local localId = id - zone.base
+    return zone.noExit[localId + 1] == true and #zone.adj[localId + 1] == 0 and not Inbound(zone)[localId]
+        and not zone.seam[localId] and not zone.seamLinkEnds[localId] and not zone.actionsFrom[localId]
+end
+
+-- The goals a search can arrive at: those in closed water leave, unless a start is that node itself.
+local function OpenGoals(starts, goals)
+    local open = {}
+    for _, entry in ipairs(goals) do
+        local id, own = entry.binding.id, false
+        for _, start in ipairs(starts) do own = own or start.binding.id == id end
+        if own or not N.ClosedWater(id) then open[#open + 1] = entry end
+    end
+    N.closedWaterGoals = N.closedWaterGoals + #goals - #open
+    return open
+end
+
+-- B1: start and target are link points of the same link. Walking along the link between the two points is the route (the
+-- piece lies on the checked link; no run to a link end and back). Returns cost, geometric length, edge | nil when the points
+-- are not on one link, the link direction forbids the way between them (the search decides then), or the link carries a penalty.
+local function DirectOnLink(startBinding, targetBinding, road, penalties)
+    if startBinding.type ~= "link" or targetBinding.type ~= "link"
+        or startBinding.zone ~= targetBinding.zone or startBinding.link ~= targetBinding.link then
+        return nil
+    end
+    local zone, k = startBinding.zone, startBinding.link
+    local t1, t2 = startBinding.t, targetBinding.t
+    if t1 == t2 then return 0, 0, nil end
+    local direction = zone.ldir[k]
+    if t2 > t1 then
+        if direction ~= 0 and direction ~= 1 then return nil end      -- u -> v
+    elseif direction ~= 0 and direction ~= 2 then
+        return nil                                                    -- v -> u
+    end
+    if penalties then
+        local u, v = zone.base + zone.lu[k], zone.base + zone.lv[k]
+        if (penalties[u] and penalties[u][v]) or (penalties[v] and penalties[v][u]) then return nil end
+    end
+    local fraction = abs(t2 - t1) / 256
+    local length = Distance3(startBinding.x, startBinding.y, startBinding.z, targetBinding.x, targetBinding.y, targetBinding.z)
+    return zone.llen[k] * LinkFactor(zone.lflag[k], road) * fraction, length,
+        { zone = zone, link = k, flag = zone.lflag[k], partial = true }
+end
+
+-- true when a search from the starts can be told without searching that it cannot reach any of the goals (lists of
+-- { binding, ... }, see SideEntries). A pair on one link is never told so: the piece of the link joins it without a waypoint,
+-- and on a link walked one way its start only leads to the far end, from which the near end may be out of reach.
+local function KnownUnreachable(sets, starts, goals, penalties)
+    for _, s in ipairs(starts) do
+        for _, t in ipairs(goals) do
+            if DirectOnLink(s.binding, t.binding, false, penalties) then return false end
+        end
+    end
+    local startOptions, goalOptions = {}, {}
+    for _, entry in ipairs(starts) do
+        for _, option in ipairs(Options(entry.binding, false, true)) do startOptions[#startOptions + 1] = option end
+    end
+    for _, entry in ipairs(goals) do
+        for _, option in ipairs(Options(entry.binding, false, false)) do goalOptions[#goalOptions + 1] = option end
+    end
     for _, reached in ipairs(sets) do
         local inside = true
-        for _, option in ipairs(starts) do
+        for _, option in ipairs(startOptions) do
             if reached[option.id] == nil then inside = false; break end
         end
         if inside then
             local hit = false
-            for _, option in ipairs(targets) do
+            for _, option in ipairs(goalOptions) do
                 if reached[option.id] ~= nil then hit = true; break end
             end
             if not hit then return true end
@@ -1615,36 +1899,63 @@ local function KnownUnreachable(sets, startBinding, targetBinding)
     return false
 end
 
--- One pass. road = with road factor. Returns { path = {global IDs}, edges = {link refs}, length = geometric length
--- of the links walked, cost }
-local function Pass(startBinding, targetBinding, road, penalties, footOnly, avoid)
-    local starts = Options(startBinding, road, true)
-    local targets = Options(targetBinding, road, false)
+-- One pass. road = with road factor. starts/goals: lists of { binding, extra } (extra = approach length added to the cost: from the
+-- player to the start attachment, from the goal attachment to the target point; 0 without a cost comparison). The search starts
+-- from all starts at once (initial cost = extra + part of the link) and ends at the cheapest goal (K). Returns
+-- { path = {global IDs}, edges = {link refs}, length = geometric length of the links walked, cost = network cost,
+-- total = cost with the approach lengths, startBinding, targetBinding }
+local function Pass(starts, goals, road, penalties, footOnly, avoid)
     local targetMap = {}
-    for _, option in ipairs(targets) do
-        local list = targetMap[option.id] or {}
-        list[#list + 1] = option
-        targetMap[option.id] = list
+    for _, entry in ipairs(goals) do
+        for _, option in ipairs(Options(entry.binding, road, false)) do
+            local list = targetMap[option.id] or {}
+            list[#list + 1] = { cost = option.cost + entry.extra, entry = entry }
+            targetMap[option.id] = list
+        end
     end
     local hmin = road and N.ROAD_FACTOR or 1.0
-    local tx, ty, tz = targetBinding.x, targetBinding.y, targetBinding.z
-    local g, previous = {}, {}
+    local g, previous, startEntry = {}, {}, {}
     local heap = HeapNew()
     local useStraightLine = N.actionCount == 0   -- cheap teleports make the straight line inadmissible
     local function estimate(id)
         if not useStraightLine then return 0 end
         local x, y, z = N.Position(id)
-        return Distance3(x, y, z, tx, ty, tz) * hmin
+        local nearest = math.huge
+        for _, entry in ipairs(goals) do
+            local b = entry.binding
+            local d = Distance3(x, y, z, b.x, b.y, b.z)
+            if d < nearest then nearest = d end
+        end
+        return nearest * hmin
     end
-    for _, option in ipairs(starts) do
-        if option.cost < (g[option.id] or math.huge) then
-            g[option.id] = option.cost
-            previous[option.id] = false
-            HeapPush(heap, option.cost + estimate(option.id), option.id, option.cost)
+    for _, entry in ipairs(starts) do
+        for _, option in ipairs(Options(entry.binding, road, true)) do
+            local cost = option.cost + entry.extra
+            if cost < (g[option.id] or math.huge) then
+                g[option.id] = cost
+                previous[option.id] = false
+                startEntry[option.id] = entry
+                HeapPush(heap, cost + estimate(option.id), option.id, cost)
+            end
         end
     end
-    local bestSum, bestEnd = math.huge, nil
+    local function RootRank(id)
+        while previous[id] do id = previous[id][1] end
+        return startEntry[id].rank
+    end
+    local bestSum, bestEnd, bestGoal = math.huge, nil, nil
+    local direct
+    for _, s in ipairs(starts) do
+        for _, t in ipairs(goals) do
+            local cost, length, edge = DirectOnLink(s.binding, t.binding, road, penalties)
+            if cost and cost + s.extra + t.extra < bestSum then
+                bestSum = cost + s.extra + t.extra
+                direct = { start = s, goal = t, cost = cost, length = length, edge = edge }
+            end
+        end
+    end
     local expansions = 0
+    local single = #starts == 1 and #goals == 1       -- one pair: nothing to compare, a tie ends the search
     local function relax(vid, new, from)
         if new < (g[vid] or math.huge) then
             g[vid] = new
@@ -1673,7 +1984,7 @@ local function Pass(startBinding, targetBinding, road, penalties, footOnly, avoi
     while true do
         local f, id, cost = HeapPop(heap)
         if not f then break end
-        if f >= bestSum then break end
+        if f > bestSum or (f == bestSum and single) then break end
         if cost <= (g[id] or math.huge) then
             expansions = expansions + 1
             -- time slice (N.RouteJob): only inside a job's coroutine, never in a plain N.Route call
@@ -1683,7 +1994,13 @@ local function Pass(startBinding, targetBinding, road, penalties, footOnly, avoi
             local atTarget = targetMap[id]
             if atTarget then
                 for _, option in ipairs(atTarget) do
-                    if cost + option.cost < bestSum then bestSum, bestEnd = cost + option.cost, id end
+                    local total = cost + option.cost
+                    -- equal cost: the pair that comes first in the pool order (field-mask choice, then nearest) wins
+                    if total < bestSum or (total == bestSum and bestEnd
+                        and (option.entry.rank < bestGoal.rank
+                            or (option.entry.rank == bestGoal.rank and RootRank(id) < RootRank(bestEnd)))) then
+                        bestSum, bestEnd, bestGoal, direct = total, id, option.entry, nil
+                    end
                 end
             end
             local zone = ZoneOf(id)
@@ -1781,6 +2098,11 @@ local function Pass(startBinding, targetBinding, road, penalties, footOnly, avoi
             end
         end
     end
+    if direct then
+        return { path = {}, edges = direct.edge and { direct.edge } or {}, length = direct.length, cost = direct.cost,
+            total = bestSum, direct = true, startBinding = direct.start.binding, targetBinding = direct.goal.binding,
+            expansions = expansions }
+    end
     if not bestEnd then return nil, expansions, g end
     local path, edges, length = { bestEnd }, {}, 0
     local id = bestEnd
@@ -1809,33 +2131,44 @@ local function Pass(startBinding, targetBinding, road, penalties, footOnly, avoi
         end
         id = step[1]
     end
-    return { path = path, edges = edges, length = length, cost = bestSum, expansions = expansions }
-end
-
--- WowVision: start and target on one link are joined by that link. The search below only goes from waypoint to waypoint,
--- so it walked to an end of the link and back, even from a point to itself. Nil where the search has to decide: another
--- link, a link walked only the other way, a link with a penalty (the manual new route).
-local function SameLinkRoute(startBinding, targetBinding, penalties)
-    if startBinding.type ~= "link" or targetBinding.type ~= "link" then return nil end
-    if startBinding.zone ~= targetBinding.zone or startBinding.link ~= targetBinding.link then return nil end
-    local zone, k = startBinding.zone, startBinding.link
-    local u, v = zone.base + zone.lu[k], zone.base + zone.lv[k]
-    local row = penalties and penalties[u]
-    if row and row[v] then return nil end
-    local forward, direction = targetBinding.t >= startBinding.t, zone.ldir[k]
-    if not (direction == 0 or (forward and direction == 1) or (not forward and direction == 2)) then return nil end
-    local length = zone.llen[k] * math.abs(targetBinding.t - startBinding.t) / 256
-    local path = { startBinding.id }
-    if targetBinding.id ~= startBinding.id then path[2] = targetBinding.id end
-    return { path = path, edges = {}, length = length, cost = length * LinkFactor(zone.lflag[k], false), pass = "a",
-        lengthA = length, expansions = 0 }
+    local first = startEntry[id]       -- the root of the chain is a start option
+    return { path = path, edges = edges, length = length, cost = bestSum - first.extra - bestGoal.extra, total = bestSum,
+        startBinding = first.binding, targetBinding = bestGoal.binding, expansions = expansions }
 end
 
 -- Two passes: (a) comfort costs, (b) with the road factor 1/r; (b) wins when its geometric length is at most r x that
 -- of (a) (r = 1 + comfort/100, default 1.5; comfort 0 has no pass (b)). Start and target are bindings from N.Bind.
-function N.Route(startBinding, targetBinding, penalties, footOnly)
-    local sameLink = SameLinkRoute(startBinding, targetBinding, penalties)
-    if sameLink then return sameLink end
+-- The start or target side of a search: the binding alone, or (K) its checked attachments when `pool` (N.CertifiedBindings)
+-- holds the binding and offers a choice. Each attachment carries its approach length (binding.airDistance) as extra cost.
+local function SideEntries(binding, pool)
+    if pool and #pool > 1 then
+        for _, member in ipairs(pool) do
+            if member.id == binding.id then
+                local entries = {}
+                for i, other in ipairs(pool) do entries[i] = { binding = other, extra = other.airDistance or 0, rank = i } end
+                return entries
+            end
+        end
+    end
+    return { { binding = binding, extra = 0, rank = 1 } }
+end
+
+local function BindingsOf(entries)
+    local list = {}
+    for i, entry in ipairs(entries) do list[i] = entry.binding end
+    return list
+end
+
+-- Two passes: (a) comfort costs, (b) with the road factor 1/r; (b) wins when its geometric length is at most r x that
+-- of (a) (r = 1 + comfort/100, default 1.5; comfort 0 has no pass (b)). Start and target are bindings from N.Bind.
+-- startPool/targetPool (optional, N.CertifiedBindings): the route runs between the pair of checked attachments with the lowest
+-- sum of approach length + network cost + approach length (one search from all starts to all goals); the result names the pair
+-- (startBinding, targetBinding). Start and target on one link: the piece of the link between them (B1).
+function N.Route(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+    local starts, goals = SideEntries(startBinding, startPool), SideEntries(targetBinding, targetPool)
+    -- WowVision: goals in closed water (N.ClosedWater) are never reached
+    goals = OpenGoals(starts, goals)
+    if #goals == 0 then return nil, "no_route" end
     -- WowVision: inside a job, a plain search that ran out without its target knows every waypoint it reaches; a later
     -- target outside that set, from a start inside it, has no route: the same answer without the whole search again
     -- (the floor check routes every candidate of a band, each a search of the whole continent)
@@ -1844,20 +2177,20 @@ function N.Route(startBinding, targetBinding, penalties, footOnly)
         local key = footOnly and "foot" or "all"
         sets = reachCache[key] or {}
         reachCache[key] = sets
-        if KnownUnreachable(sets, startBinding, targetBinding) then
+        if KnownUnreachable(sets, starts, goals, penalties) then
             N.knownMissAnswers = N.knownMissAnswers + 1
             return nil, "no_route"
         end
     end
-    local avoid = AvoidanceFor(startBinding, targetBinding)
+    local avoid = AvoidanceFor(BindingsOf(starts), BindingsOf(goals))
     local exhausted
     local function passes(avoidance)
-        local a, _, reached = Pass(startBinding, targetBinding, false, penalties, footOnly, avoidance)
+        local a, _, reached = Pass(starts, goals, false, penalties, footOnly, avoidance)
         if not a then
             if not avoidance then exhausted = reached end
             return nil
         end
-        return a, N.comfort > 0 and Pass(startBinding, targetBinding, true, penalties, footOnly, avoidance) or nil
+        return a, N.comfort > 0 and Pass(starts, goals, true, penalties, footOnly, avoidance) or nil
     end
     local a, b = passes(avoid)
     if not a and avoid then a, b = passes(nil) end     -- Z2: no route without a hostile outpost: through it, never no route
@@ -1870,11 +2203,13 @@ function N.Route(startBinding, targetBinding, penalties, footOnly)
     end
     local chosen, pass = a, "a"
     if b and b.length <= N.ROAD_MAX_RATIO * a.length then chosen, pass = b, "b" end
+    local from, to = chosen.startBinding, chosen.targetBinding
     local path = {}
     -- virtual link-point attachments at the start and end (steering targets, chapter 7 point 2)
-    if startBinding.type == "link" then path[#path + 1] = startBinding.id end
+    if from.type == "link" then path[#path + 1] = from.id end
     for _, id in ipairs(chosen.path) do path[#path + 1] = id end
-    if targetBinding.type == "link" then path[#path + 1] = targetBinding.id end
+    if to.type == "link" and not (chosen.direct and to.id == from.id) then path[#path + 1] = to.id end
+    if avoid and (#starts > 1 or #goals > 1) then avoid = AvoidanceFor({ from }, { to }) or avoid end
     local outpost
     if avoid then
         for _, id in ipairs(path) do
@@ -1882,8 +2217,9 @@ function N.Route(startBinding, targetBinding, penalties, footOnly)
         end
         if not outpost and avoid.targetInside then outpost = "target" end
     end
-    return { path = path, edges = chosen.edges, length = chosen.length, cost = chosen.cost, pass = pass,
-        lengthA = a.length, lengthB = b and b.length or nil, expansions = chosen.expansions, outpost = outpost }
+    return { path = path, edges = chosen.edges, length = chosen.length, cost = chosen.cost, total = chosen.total, pass = pass,
+        lengthA = a.length, lengthB = b and b.length or nil, expansions = chosen.expansions, outpost = outpost,
+        startBinding = from, targetBinding = to, direct = chosen.direct }
 end
 
 -- Any work that searches routes, in time slices (WowVision): fn runs inside a coroutine, and every N.Route /

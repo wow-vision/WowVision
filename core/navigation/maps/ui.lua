@@ -30,6 +30,12 @@ local kinds = graph.kinds
 -- destinations, and Enter on a destination sets exactly that point -- a
 -- straight beacon, no route (WowNav's /vn direct). The destinations are the
 -- same, a route engine's without its reachability check.
+--
+-- Shift-F10 on a destination or an entry point offers its auto chains: Auto
+-- Direct and Auto Route lead on, one after the other, to every unvisited
+-- destination of its name (navigation/visited.lua).
+-- Backspace on a destination always sets the direct point, checkbox or not
+-- (Enter routes, Backspace goes straight; user's wish 2026-11-06).
 
 local function entryLabel(entry)
     local wp = entry.waypoint
@@ -68,7 +74,7 @@ local function ensureData(screen)
     end
     -- only the engine's points know water: swimming without one nearby is said
     if noWater and screen._engine ~= nil then
-        WowVision:speak(L["No water point nearby"])
+        WowVision:notify(L["No water point nearby"])
     end
     screen._search = ""
     local target = module.pendingTarget
@@ -102,7 +108,7 @@ end
 -- hits (its own search, nearest first). Cached until the search changes --
 -- the full-continent sort runs once, not per tick. An engine that cut its
 -- hits leaves a notice that the next spoken entry starts with.
-local function destinations(screen)
+local function allDestinations(screen)
     if screen._destinations ~= nil then
         return screen._destinations
     end
@@ -144,6 +150,11 @@ local function destinations(screen)
     return found
 end
 
+-- What the cursor walks: the whole list, or while letters filter it a Filter line and the matches (listCursor).
+local function destinations(screen)
+    return screen._filterRows or allDestinations(screen)
+end
+
 -- The entry point the player selected (or the preselected one), nil without any.
 local function selectedEntry(screen)
     for _, entry in ipairs(screen._entries) do
@@ -152,6 +163,28 @@ local function selectedEntry(screen)
         end
     end
     return nil
+end
+
+-- Shift-F10 on a destination or an entry point: the auto chains of its name (navigation/visited.lua).
+-- waypointOf returns the focused row's waypoint, nil on an empty list; startOf (destinations only) the entry point
+-- the first leg starts at, as Enter would.
+local function autoActions(waypointOf, startOf)
+    return function(add)
+        local visited = WowVision.base.navigation.visited
+        local wp = waypointOf()
+        if wp == nil or wp.n == nil or visited == nil then
+            return
+        end
+        local function auto(mode)
+            return function()
+                local start = startOf ~= nil and startOf() or nil
+                WowVision.UIHost:closeWindow("atlas")
+                visited:startAuto(wp, mode, start)
+            end
+        end
+        add({ label = L["Auto Direct"], onActivate = auto("direct") })
+        add({ label = L["Auto Route"], onActivate = auto("route") })
+    end
 end
 
 local function destinationCursor(screen)
@@ -173,6 +206,9 @@ local function destinationCursor(screen)
     -- in the last minutes says so first (navigation/visited.lua)
     local visited = WowVision.base.navigation.visited
     local function labelOf(entry)
+        if entry.filterLine ~= nil then
+            return entry.filterLine
+        end
         local text = string.format("%s, %d %s", entry.waypoint.n, entry.distance, L["yards"])
         if entry.waypoint.detail ~= nil then
             text = text .. ", " .. entry.waypoint.detail
@@ -216,6 +252,47 @@ local function destinationCursor(screen)
         speak()
     end
 
+    -- Enter routes there (or a direct point while the Direct checkbox is on), Backspace always sets a direct point.
+    local function go(direct)
+        local list, index = clampedIndex()
+        local entry = list[index]
+        if entry == nil or entry.filterLine ~= nil then
+            return
+        end
+        WowVision.UIHost:closeWindow("atlas")
+        local wp = entry.waypoint
+        -- the picked destination (not a waypoint on the way) is remembered as visited once reached
+        module.lastDestination = wp
+        local onArrive = module:arrivalFor(wp)
+        if direct then
+            module:directTo(wp.x, wp.y, wp.n, onArrive)
+            return
+        end
+        if screen._engine ~= nil then
+            -- the engine's own row is its target data; the window's target brings its source's (scanner)
+            local data = wp
+            if wp.virtual then
+                data = wp.routeData
+            end
+            local start = selectedEntry(screen)
+            if module:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, data, start and start.waypoint) then
+                return
+            end
+            if wp.virtual then
+                module:beaconTo(wp.x, wp.y, wp.n, onArrive)
+            else
+                WowVision:notify(L["No route found"])
+            end
+            return
+        end
+        local routed = module:navigateTo(wp.id, screen._waypoints, { entryId = screen._entryId, onArrive = onArrive })
+        -- A target too far from the network for a last leg still gets a
+        -- straight beacon, as the scanner gave before.
+        if not routed and wp.virtual then
+            module:beaconTo(wp.x, wp.y, wp.n, onArrive)
+        end
+    end
+
     return {
         controlType = graph.controlTypes.button,
         announcements = {
@@ -240,45 +317,59 @@ local function destinationCursor(screen)
                 live = false,
             },
         },
-        onActivate = function()
-            local list, index = clampedIndex()
-            local entry = list[index]
-            if entry == nil then
-                return
-            end
-            WowVision.UIHost:closeWindow("atlas")
-            local wp = entry.waypoint
-            -- the picked destination (not a waypoint on the way) is remembered as visited once reached
-            module.lastDestination = wp
-            local onArrive = module:arrivalFor(wp)
-            if screen._direct then
-                module:directTo(wp.x, wp.y, wp.n, onArrive)
-                return
-            end
-            if screen._engine ~= nil then
-                -- the engine's own row is its target data; the window's target brings its source's (scanner)
-                local data = wp
-                if wp.virtual then
-                    data = wp.routeData
+        listCursor = {
+            labels = function()
+                local names = {}
+                for i, entry in ipairs(allDestinations(screen)) do
+                    names[i] = entry.waypoint.n
                 end
-                local start = selectedEntry(screen)
-                if module:routeTo(wp.x, wp.y, wp.n, onArrive, wp.z, data, start and start.waypoint) then
+                return names
+            end,
+            index = function()
+                local _, index = clampedIndex()
+                return index
+            end,
+            go = function(index)
+                screen._destIndex = index
+                speak()
+            end,
+            show = function(matches, text)
+                local all = allDestinations(screen)
+                if matches == nil then
+                    local list, index = clampedIndex()
+                    local entry = list[index]
+                    screen._filterRows = nil
+                    screen._destIndex = 1
+                    for i, row in ipairs(all) do
+                        if row == entry then
+                            screen._destIndex = i
+                            break
+                        end
+                    end
                     return
                 end
-                if wp.virtual then
-                    module:beaconTo(wp.x, wp.y, wp.n, onArrive)
-                else
-                    WowVision:speak(L["No route found"])
+                local rows = { { filterLine = L["Filter"] .. ": " .. text } }
+                for _, index in ipairs(matches) do
+                    tinsert(rows, all[index])
                 end
-                return
-            end
-            local routed = module:navigateTo(wp.id, screen._waypoints, { entryId = screen._entryId, onArrive = onArrive })
-            -- A target too far from the network for a last leg still gets a
-            -- straight beacon, as the scanner gave before.
-            if not routed and wp.virtual then
-                module:beaconTo(wp.x, wp.y, wp.n, onArrive)
-            end
+                screen._filterRows = rows
+                screen._destIndex = 1
+            end,
+        },
+        onActivate = function()
+            go(screen._direct)
         end,
+        -- Backspace: a direct point to the destination, whatever the checkbox says
+        onSecondary = function()
+            go(true)
+        end,
+        contextActions = autoActions(function()
+            local list, index = clampedIndex()
+            local entry = list[index]
+            return entry ~= nil and entry.waypoint or nil
+        end, function()
+            return selectedEntry(screen)
+        end),
         bindings = {
             {
                 binding = "up",
@@ -345,6 +436,9 @@ local function renderEntries(builder, screen)
                     kind = kinds.selected,
                 },
             },
+            contextActions = autoActions(function()
+                return captured.waypoint
+            end),
             onActivate = function()
                 screen._entryId = captured.waypoint.id
             end,
@@ -367,6 +461,7 @@ local function render(builder, screen)
         end,
         set = function(value)
             screen._direct = value == true
+            WowVision.graphHost:clearListFilter(screen, false)
             -- an engine's list depends on the mode (its reachability check)
             if screen._engine ~= nil then
                 screen._destinations = nil
@@ -388,6 +483,7 @@ local function render(builder, screen)
                 return screen._search
             end,
             set = function(value)
+                WowVision.graphHost:clearListFilter(screen, false)
                 screen._search = value or ""
                 screen._destinations = nil
                 screen._destIndex = 1
@@ -406,6 +502,7 @@ end
 module:registerWindow({
     type = "ManualWindow",
     name = "atlas",
+    letterSettings = WowVision.base.navigation,
     graphScreen = { render = render, captureClose = true },
 })
 

@@ -70,7 +70,7 @@ All in UI, Combat.
 | Enemy Count Alert, Enabled | On | Switches the enemy count on or off |
 | Enemy Count Alert, TTS Alert | On | Speaks the number |
 | Enemy Count Alert, Voice Alert | Off | Plays a recorded number from your voice pack instead |
-| Count Enemies | Attacking You or Your Group | Attacking You or Your Group counts every enemy that you, your pet or a group member is fighting. Attacking You counts only enemies that have you as their main target (those whose aggro you hold) |
+| Count Enemies | Attacking You or Your Group | Attacking You or Your Group counts every enemy that you, your pet or a group member is fighting; in a group, while you, your pet or a group member is in combat, also every enemy in combat that no one outside your group has tapped, so a fight your group starts without you counts at once. Attacking You counts only enemies that have you as their main target (those whose aggro you hold) |
 | Count Elite Enemies Only | Off | Leaves out normal monsters. Elites, rare elites and world bosses still count |
 | Announce Crowd Control | Off | Experimental. With Spell Names or Without Names, the number counts only the enemies still free to fight and crowd control is said apart (see below). Off keeps the plain count |
 | Crowd Control Ended Alert, Sound Alert | On | The short sound for a crowd control that ends, with Announce Crowd Control on |
@@ -84,7 +84,9 @@ Some more things to know:
 - An enemy counts only while its nameplate exists, which means within the game's nameplate range (about 45 yards on WoW: Forever).
 - Turning on the Minor and Minions nameplate options in the game also counts small trash monsters and enemy pets.
 - Only enemies that are hostile to you, alive and in combat count. Neutral monsters count once they are fighting.
-- A new number is announced only after it has held for half a second, so an enemy that flickers out of range and back is not spoken twice. The count is also re-checked every second during a fight, which catches monsters that die or give up quietly.
+- Enemy players count too. In a group, while you, your pet or a group member is in combat, every enemy player in combat near you counts, also one who is fighting someone outside your group: the game never marks a player as tapped. In PvP this gives you the wider picture, all enemy players fighting around you, as the nameplates show it to a sighted player.
+- A number that other speech threw away before it was spoken (an interrupting alert such as a target change empties the speech queue) is said again once, when no newer number came within 5 seconds and the count did not change in the meantime. Only the spoken number is repeated: a voice pack number plays at once and is never thrown away. A number that was cut off while it was already being spoken is not repeated. Not on Vanilla.
+- A new number is announced only after it has held for 0.3 seconds, so an enemy that flickers out of range and back is not spoken twice. The wait starts again at every change, so a pack that comes in one after another is said as one number, 0.3 seconds after the last enemy. The count is also re-checked every second during a fight, which catches monsters that die or give up quietly.
 
 ### Announce Crowd Control
 

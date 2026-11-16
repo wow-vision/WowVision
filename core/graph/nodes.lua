@@ -270,7 +270,8 @@ end
 -- showing the value it edits). An optional selected function marks the
 -- button as the current pick, read like proxyFoundButton's (a tab drawn
 -- by plain frames).
--- config: { label = string|function, onActivate = function, value = string|function?, onSecondary = function?, stateText = function?, selected = function? }
+-- opensLevel: Enter opens the next level of a menu, so the right arrow does too.
+-- config: { label = string|function, onActivate = function, value = string|function?, onSecondary = function?, stateText = function?, selected = function?, opensLevel = boolean? }
 function nodes.button(config)
     if config.label == nil then
         error("button requires a label")
@@ -296,6 +297,7 @@ function nodes.button(config)
         onActivate = config.onActivate,
         onSecondary = config.onSecondary,
         stateText = config.stateText,
+        opensLevel = config.opensLevel,
     }
 end
 
@@ -458,6 +460,7 @@ function nodes.choice(config)
             { text = config.label, kind = kinds.label },
             { text = valueText, kind = kinds.value, live = "focus" },
         },
+        opensLevel = true,
         onActivate = function()
             local host = WowVision.graphHost
             local stack = host:focusedStack()
@@ -724,6 +727,7 @@ function nodes.pushConfirm(config)
     end
     host:push(stack, {
         key = "confirm",
+        noLevelBack = true,
         render = function(builder)
             builder:addItem(ControlId.structural("prompt"), nodes.text({ label = config.prompt }))
             builder:addItem(
@@ -820,6 +824,21 @@ end
 -- drag does, so the game's rules decide what lands on the cursor (locked
 -- bars, unlearned spells, revoked pets). target is a frame, or a function
 -- returning the frame that shows the entry now.
+-- The drag key on a real frame, as the mouse would have it: with something
+-- held on the cursor the frame's drop script runs (a bag slot takes the held
+-- bag, where its drag script would only pick up the bag in it); otherwise,
+-- or on a frame without a drop script, its drag script.
+function nodes.runDrag(frame)
+    local script = nil
+    if GetCursorInfo ~= nil and GetCursorInfo() ~= nil and (frame.HasScript == nil or frame:HasScript("OnReceiveDrag")) then
+        script = frame:GetScript("OnReceiveDrag")
+    end
+    script = script or frame:GetScript("OnDragStart")
+    if script ~= nil then
+        script(frame)
+    end
+end
+
 function nodes.dragScript(target)
     return function()
         WowVision.cursor = WowVision.cursor or {}
@@ -833,10 +852,7 @@ function nodes.dragScript(target)
         if type(frame) ~= "table" or frame.GetScript == nil then
             return
         end
-        local script = frame:GetScript("OnDragStart")
-        if script ~= nil then
-            script(frame)
-        end
+        nodes.runDrag(frame)
     end
 end
 
@@ -928,14 +944,58 @@ function nodes.proxyFoundButton(config)
     return vtable
 end
 
+-- Page Up and Page Down over a paged list or text: every node of the current
+-- stop (call it right after the content, before the next beginStop) presses
+-- the game's own Previous and Next Page buttons, a true click as Enter does
+-- (a page number written from addon code would taint the secure spell
+-- buttons it feeds). A turned page lands on the stop's first entry (Host
+-- landAfterPageTurn). config: { prev = button, next = button, page =
+-- function returning the shown page }. A direction whose button is hidden
+-- (a book's first page has no Previous) clicks nothing but still owns its
+-- key, so it never scrolls the chat instead; the target resolves each tick
+-- (Host click drift), so the key works once the button shows.
+function nodes.pageKeys(builder, config)
+    local stopKey = builder.stopKey
+    local ok, page = pcall(config.page)
+    if ok and page ~= nil then
+        builder:setStopPage(page)
+    end
+    local function spec(button, keymap)
+        return {
+            binding = keymap,
+            type = "Click",
+            emulatedKey = "LeftButton",
+            target = function()
+                if button ~= nil and button:IsShown() then
+                    return button
+                end
+                return nil
+            end,
+            postClick = function()
+                WowVision.graphHost:landAfterPageTurn(stopKey)
+            end,
+        }
+    end
+    builder:addStopBindings({ spec(config.prev, "scrollUp"), spec(config.next, "scrollDown") })
+    return builder
+end
+
 -- A page row for Blizzard paging controls (the collections paging frame, the
 -- modern spellbook's paging controls: both carry PrevPageButton, PageText,
 -- NextPageButton): previous page, the page text, next page. Nothing while
--- the controls are hidden or there is a single page.
+-- the controls are hidden or there is a single page. Call it right after the
+-- paged content: Page Up and Page Down on that content turn the pages too.
 function nodes.pagingRow(builder, key, paging)
     if paging == nil or not paging:IsShown() or (paging.GetMaxPages ~= nil and paging:GetMaxPages() <= 1) then
         return builder
     end
+    nodes.pageKeys(builder, {
+        prev = paging.PrevPageButton,
+        next = paging.NextPageButton,
+        page = function()
+            return paging:GetCurrentPage()
+        end,
+    })
     builder:beginStop(key .. "Paging")
     builder:startRow()
     builder:addItem(

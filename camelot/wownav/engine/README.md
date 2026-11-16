@@ -35,13 +35,24 @@ Keep this list current; everything else is his text, line for line (line endings
   on a miss). Same answers, measured on the real data: his floor check (`Prepare`, and our bands of cells) routes every
   candidate of a band, and since data 5b8b5f2 joins the zones, each miss searched the whole continent (Stormwind,
   a target over three floors: 990 misses of 376,767 waypoints each, 1.94 million test slices; with the sets 3,025).
+  Since his cost comparison the check covers all starts and goals of a search and runs after the same-link check: a pair
+  on one link is never answered from a set (on a one-way link the near end may be out of reach of the far end).
   `N.wholeMisses` and `N.knownMissAnswers` count both for the module's trail.
+- `NavNetwork.lua`, closed water: `N.Route` drops a goal on a node that nothing can enter (`N.ClosedWater`: his flag
+  `noExit`, no link in its zone in either direction, no seam, no action from it) and answers "no route" at once when
+  no goal is left. His S10b keeps such nodes without links for the announcement; the field-mask choice of a cell may
+  still offer one first (`ChooseAttachment`; `CellBindings` leaves noExit out of the others only), and each such goal
+  searched the whole continent: a corpse run in the Wetlands marsh took 72 s in the game, 0.03 s offline with the
+  check. In data 1f8530e: 1,265 such nodes, 911 of them a cell's attachment. `N.closedWaterGoals` counts them for
+  the module's trail.
 - `NavNetwork.lua`, memory: `N.UnloadZone`, `N.KeepZones` and the hook `N.onZoneUnloaded` drop decoded zones again
   (his core keeps every decoded zone for the session).
-- `NavNetwork.lua`, same link: `SameLinkRoute` answers `N.Route` when start and target are link points of one link. The
-  search only goes from waypoint to waypoint, so it walked to an end of the link and back, even from a point to itself
-  (Northshire, Deputy Willem to himself: 4 waypoints, 40.7 yd). A link walked only the other way, or with a penalty,
-  still goes through the search.
+- `NavNetwork.lua`, decoding in steps: `N.LoadZoneInSteps(zoneId, budget, clock)` decodes a zone over several calls
+  (a coroutine around `Unpacked` and `Decode`; `Chars`, `PrefixSum` and `Decode` take a `pause` function they call
+  in their long loops) and answers true once the zone is attached. `N.loading` holds the unfinished zone;
+  `N.UnloadZone` lets it go. The module's preloader uses it with 4 ms a frame: since data a9bf246 a big zone decodes
+  in up to half a second (the Barrens: 693,671 links), which stopped the game at every zone border. The compile of
+  the packed text cannot be split (about 75 ms for the Barrens). `N.LoadZone` still decodes in one piece.
 - `NavNetwork.lua`, time slices: `N.Job(fn, ...)` runs any work that searches routes in a coroutine; the A* loop of
   `Pass` yields every 64 expansions once the frame's budget is used. `N.RouteJob` is `N.Job(N.Route, ...)`. No
   `pcall` may stand between a job and the search (Lua 5.1 cannot yield across it).

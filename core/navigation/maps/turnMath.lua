@@ -133,4 +133,6 @@ function turnMath.leadPoint(px, py, x, y, direction, distance)
     return px + math.cos(direction) * distance, py + math.sin(direction) * distance
 end
 
+turnMath.wrap = wrap
+
 WowVision.turnMath = turnMath

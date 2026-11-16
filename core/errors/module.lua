@@ -112,6 +112,10 @@ local function lookupMessageInfo(messageType)
     return errorName, template
 end
 
+-- The game message name (ERR_QUEST_ADD_KILL_SII) and its template, for
+-- modules that speak some messages with alerts of their own.
+WowVision.errors.lookupMessageInfo = lookupMessageInfo
+
 local throttle = utils.newThrottle()
 local dedupe = utils.newFrameDedupe()
 
@@ -135,6 +139,10 @@ function module.handleMessage(messageType, message)
         return
     end
     local errorName, template = lookupMessageInfo(messageType)
+    -- A claimed message is spoken by the module that claimed it.
+    if errorName ~= nil and WowVision.errors.claimed[errorName] then
+        return
+    end
     local key, label = utils.identify(errorName, template, message)
     if not throttle:allow(key, now, module.settings.repeatDelay) then
         return
@@ -201,11 +209,13 @@ end
 local function filterEntries()
     local labels = {}
     for key, entry in pairs(getStore() or {}) do
-        labels[key] = entry.label or key
+        if not WowVision.errors.claimed[key] then
+            labels[key] = entry.label or key
+        end
     end
     if showAll then
         for key, label in pairs(getKnownErrors()) do
-            if labels[key] == nil then
+            if labels[key] == nil and not WowVision.errors.claimed[key] then
                 labels[key] = label
             end
         end
@@ -279,6 +289,7 @@ local function renderFilter(builder)
                 value = function()
                     return entryState(key)
                 end,
+                opensLevel = true,
                 onActivate = function()
                     local errorAlert = getAlert(key, label)
                     if errorAlert == nil then
@@ -299,6 +310,7 @@ function module:getGraphMenuItems(builder)
         ControlId.structural("errorFilter"),
         graph.nodes.button({
             label = L["Per-Error Filter"],
+            opensLevel = true,
             onActivate = function()
                 graph.settings.pushScreen("errorFilter", renderFilter)
             end,
@@ -331,8 +343,10 @@ function module:clearLuaErrors()
 end
 local previousHandler = nil
 local inHandler = false
-local lastSpokenError = nil
-local lastSpokenAt = 0
+-- message -> GetTime() it was last spoken; emptied when it grows past 50.
+local spokenAt = {}
+local spokenCount = 0
+local SPEAK_AGAIN_AFTER = 5
 
 local function onLuaError(message)
     if inHandler then
@@ -348,10 +362,20 @@ local function onLuaError(message)
     if #module.luaErrors > MAX_LUA_ERRORS then
         table.remove(module.luaErrors, 1)
     end
-    -- A recurring per-frame error must not flood TTS.
-    if message ~= lastSpokenError or GetTime() - lastSpokenAt > 5 then
-        lastSpokenError = message
-        lastSpokenAt = GetTime()
+    -- A recurring per-frame error must not flood TTS: each message is spoken
+    -- at most once per 5 seconds, also when two errors take turns (checking
+    -- only the last message let them both through on every frame).
+    local now = GetTime()
+    local key = tostring(message)
+    local last = spokenAt[key]
+    if last == nil or now - last > SPEAK_AGAIN_AFTER then
+        if last == nil then
+            spokenCount = spokenCount + 1
+            if spokenCount > 50 then
+                spokenAt, spokenCount = {}, 1
+            end
+        end
+        spokenAt[key] = now
         pcall(function()
             alert:fire({ text = L["Lua error"] .. ": " .. message })
         end)

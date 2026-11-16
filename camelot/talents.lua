@@ -147,13 +147,13 @@ function module.renderClassTalents(builder, talentsFrame)
     renderSpecTabs(builder, talentsFrame)
     renderUnspentPoints(builder, talentsFrame)
 
-    builder:beginStop("search")
-    builder:addItem(ControlId.structural("search"), spellSearch.node(talentsFrame.SearchBox))
     builder:beginStop("searchOptions")
     builder:addItem(
         ControlId.forObject(talentsFrame.SearchOptionsDropdown),
         nodes.proxyDropdown({ target = talentsFrame.SearchOptionsDropdown, label = L["Options"] })
     )
+    builder:beginStop("search")
+    builder:addItem(ControlId.structural("search"), spellSearch.node(talentsFrame.SearchBox))
 
     -- The specializations sit right under the page: the game shows all
     -- three side by side at once, a stop each, with nothing to switch.

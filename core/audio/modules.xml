@@ -2,6 +2,7 @@
 ..\FrameXML\UI.xsd">
 
   <Script file="audio.lua" />
+  <Script file="channels.lua" />
   <Script file="AudioDataSource.lua" />
   <Script file="AudioPack.lua" />
   <Script file="BeaconDataSource.lua" />

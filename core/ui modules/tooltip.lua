@@ -28,6 +28,30 @@ module:registerBinding({
 
 module:registerBinding({
     type = "Function",
+    key = "tooltip/previousBlock",
+    inputs = { "CTRL-SHIFT-UP" },
+    label = L["Previous Tooltip Block"],
+    interruptSpeech = true,
+    conflictingAddons = { "Sku" },
+    func = function()
+        WowVision.UIHost.tooltip:previousBlock()
+    end,
+})
+
+module:registerBinding({
+    type = "Function",
+    key = "tooltip/nextBlock",
+    inputs = { "CTRL-SHIFT-DOWN" },
+    label = L["Next Tooltip Block"],
+    interruptSpeech = true,
+    conflictingAddons = { "Sku" },
+    func = function()
+        WowVision.UIHost.tooltip:nextBlock()
+    end,
+})
+
+module:registerBinding({
+    type = "Function",
     key = "tooltip/readLeft",
     inputs = { "SHIFT-LEFT" },
     label = L["Read Tooltip Left"],

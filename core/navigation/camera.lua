@@ -58,6 +58,13 @@ function camera.align()
     pcall(SetView, camera.VIEW_SLOT)
 end
 
+-- Switch to first person: view 1 is always first person and cannot be
+-- saved over (warcraft.wiki.gg, API_SetView); with instant view switching
+-- (SETTINGS above) it is there in the next frame. camera.align() goes back.
+function camera.firstPerson()
+    pcall(SetView, 1)
+end
+
 -- Turn the character to where the camera looks (the mouselook pulse).
 function camera.transfer()
     MouselookStart()

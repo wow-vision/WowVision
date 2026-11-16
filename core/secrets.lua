@@ -86,3 +86,21 @@ function secrets.join(list, separator)
     end
     return text
 end
+
+-- A yes or no from a game function that may hide its answer (a secret) or
+-- refuse the call (the restricted unit APIs throw). true or false when the
+-- answer can be read; otherwise nil and why: "missing" (no such function),
+-- "refused" or "hidden". Only a plain true counts as yes.
+function secrets.readBool(fn, ...)
+    if fn == nil then
+        return nil, "missing"
+    end
+    local ok, value = pcall(fn, ...)
+    if not ok then
+        return nil, "refused"
+    end
+    if secrets.isSecret(value) then
+        return nil, "hidden"
+    end
+    return value == true
+end

@@ -28,7 +28,7 @@ Alert settings are account-wide, so an alert you change on one character changes
 
 Alerts sit at the bottom of the screen of the module they belong to, after its settings, each as a button. (The Chat module lists its tab alerts right after Enabled, and Targeting keeps the three target alerts inside Hard Target.)
 
-1. Open the WowVision menu with Shift+F1 and go into the module, for example Navigation, then Compass.
+1. Open the WowVision menu with Shift+F1 and go into the module, for example Navigation, then Environmental Alerts.
 2. Move down to the alert, for example Zone Changed Alert, and press Enter.
 3. The alert's screen opens with an Enabled checkbox at the top, followed by one button per output. Alerts that have a setting of their own (such as Speak Messages for chat) show it here too.
 4. Press Enter on an output, for example Sound Alert, to open its settings.
@@ -45,7 +45,8 @@ Every output screen starts with Enabled. After that, depending on the kind of ou
 | Message | TTS | Only on TTS outputs that take their text from elsewhere, such as Announce Errors and the TTS Alert of a monitor rule. Alerts with wording of their own (combat started, a zone name, a chat message and so on) do not have it. When you type text here, it is spoken every time instead of the usual text. Leave it empty to hear the usual text. |
 | Sound | Sound | A button that opens the sound browser. It reads the current file's name. See [Picking a sound](./menu-and-settings.md#picking-a-sound). Some sound alerts have a fixed sound and only the Enabled checkbox. |
 | Voice Pack | Voice | Choose between the recorded voices Matthew and Joanna. |
-| Beacon Sound | Beacon | A browser like the sound browser, for the beacon sounds. Moving onto one plays a sample. |
+| Beacon Sound | Beacon | A browser like the sound browser, for the beacon sounds. Moving onto one plays a sample at the chosen Beacon Volume. |
+| Beacon Volume | Beacon | How loud the beacon pings are, 10 to 100 in steps of 10 (100 by default). Each 10 below 100 plays the pings one loudness level quieter; near and far targets still sound different. To silence the beacon, turn its Enabled off. |
 
 Example: have your target's name spoken by a different voice.
 
@@ -56,7 +57,7 @@ Example: have your target's name spoken by a different voice.
 
 Example: put the compass on TTS instead of recorded voice.
 
-1. Shift+F1, N (Navigation), Enter, then C for Compass, Enter.
+1. Shift+F1, N (Navigation), Enter, then E for Environmental Alerts, Enter.
 2. Open Speak Compass Direction. Open Voice Alert and turn Enabled off. Go back and open TTS Alert, turn Enabled on.
 
 ## The alerts, module by module
@@ -75,18 +76,19 @@ Menu paths read from the first level of the WowVision menu. The state in bracket
 
 | Alert | Menu path | When it fires | Outputs |
 |---|---|---|---|
-| Speak Compass Direction | Navigation, Compass | The direction you face changes (north, northeast, east and so on). | Voice Alert (on; recorded directions), TTS Alert (off) |
-| Zone Changed Alert | Navigation, Compass | You enter a new zone. Speaks the zone's name. | TTS, Sound Alert (off) |
-| Subzone Changed Alert | Navigation, Compass | You enter a new subzone, such as a town district or a cave. Speaks its name. | TTS, Sound Alert (off) |
-| Outdoors Alert | Navigation, Compass | You step outside. Says "outdoors". | TTS, Sound Alert (off) |
-| Indoors Alert | Navigation, Compass | You go inside. Says "indoors". | TTS, Sound Alert (off) |
-| Flying Started Alert | Navigation, Compass | You take off on a flying mount. Says "flying". | TTS, Sound Alert (off) |
-| Flying Ended Alert | Navigation, Compass | You land. Says "flying ended". | TTS, Sound Alert (off) |
-| Swimming Alert | Navigation, Compass | You enter water. Says "swimming". | TTS, Sound Alert (off) |
-| Diving Alert | Navigation, Compass | You go under water. Says "diving". | TTS, Sound Alert (off) |
+| Speak Compass Direction | Navigation, Environmental Alerts | The direction you face changes (north, northeast, east and so on). | Voice Alert (on; recorded directions), TTS Alert (off) |
+| Zone Changed Alert | Navigation, Environmental Alerts | You enter a new zone. Speaks the zone's name. | TTS, Sound Alert (off) |
+| Subzone Changed Alert | Navigation, Environmental Alerts | You enter a new subzone, such as a town district or a cave. Speaks its name. | TTS, Sound Alert (off) |
+| Outdoors Alert | Navigation, Environmental Alerts | You step outside. Says "outdoors". | TTS, Sound Alert (off) |
+| Indoors Alert | Navigation, Environmental Alerts | You go inside. Says "indoors". | TTS, Sound Alert (off) |
+| Flying Started Alert | Navigation, Environmental Alerts | You take off on a flying mount. Says "flying". | TTS, Sound Alert (off) |
+| Flying Ended Alert | Navigation, Environmental Alerts | You land. Says "flying ended". | TTS, Sound Alert (off) |
+| Swimming Alert | Navigation, Environmental Alerts | You enter water. Says "swimming". | TTS, Sound Alert (off) |
+| Diving Alert | Navigation, Environmental Alerts | You go under water. Says "diving". | TTS, Sound Alert (off) |
+| Breath Alert | Navigation, Environmental Alerts | A breath, fatigue or feign death bar runs down by one step (Breath Step, default 10 percent). Says the bar's name and percent, "Breath 80". | TTS (game voice), Voice Alert (off), Sound Alert (off) |
 | Fall Detection | Navigation, Fall Detection | You fall. The announcement is said once when the falling sounds start. | Falling Sound (a rising series of sounds; the longer the fall, the higher the sound), Falling Announcement (TTS "Falling") |
 | Wall Detection | Navigation, Wall Detection | You are moving but something holds you back. | Five sounds for five degrees of blocking: Blocked, Mostly Blocked, Impeded, Slowed and Slightly Slowed. |
-| Beacon | Navigation, Maps | A route or beacon is active. | Beacon Sound (a directional ping that speeds up as you turn towards the target), Beacon Aligned (a click when you face it), Beacon Off Course (when you turn away), Waypoint Reached (when you arrive) |
+| Beacon | Navigation, Beacon and Routes | A route or beacon is active. | Beacon Sound (a directional ping that speeds up as you turn towards the target), Beacon Aligned (a click when you face it), Beacon Off Course (when you turn away), Waypoint Reached (when you arrive) |
 
 Inside instances the game does not report which way you face, so Speak Compass Direction stays silent there while the other compass alerts keep working. The settings of Fall Detection (Delay (milliseconds), Ignore Jumps) are in the module's screen, see [Movement](../world/movement.md). The arrival settings of Beacon are in [Navigation](../world/navigation.md).
 
@@ -118,7 +120,7 @@ A message that reaches several tabs that speak is spoken only once. Temporary ch
 | Alert | Menu path | When it fires | Outputs |
 |---|---|---|---|
 | Announce Errors | Errors | The master switch for game error and info messages ("Ability is not ready yet", "Out of range"). It also voices Lua errors and messages the filter cannot sort. | TTS Alert |
-| One entry for each message you have seen | Errors, Per-Error Filter | That message appears. | TTS Alert (on), Sound Alert (off) |
+| One entry for each message you have seen | Errors, Per-Error Filter | That message appears. Quest progress messages are left to the quest progress alerts of the Quests module. | TTS Alert (on), Sound Alert (off) |
 
 The Per-Error Filter lists each message with its state read after its name: "Speech", "Sound", "Speech and Sound" or "Muted". Open one to change it. The Show All Known Errors checkbox at the top lists every message the game knows, including ones you have not met yet. Repeat Delay (2 seconds, 0 to 30) stops the same error from being spoken again while you hold a key. See [Combat](../world/combat.md).
 
@@ -128,6 +130,12 @@ The Per-Error Filter lists each message with its state read after its name: "Spe
 |---|---|---|---|
 | New Minimap Dot Alert | Minimap Scanner | While you walk, a named dot comes onto the minimap. Speaks its name, level, whether it is indoors, and its kind. Needs Announce Tracked Dots While Walking (on). | TTS (spoken by the game's voice 0 unless you choose another voice), Sound Alert (off) |
 | Quest Area Alert | Quests | You enter or leave the area of a quest. Says "Entering area: " or "Leaving area: " followed by the quest title. | TTS, Sound Alert (off) |
+| Quest Progress Alert | Quests | The game shows a quest count moving. Says the game's message, for example "Kobold Vermin slain: 3/8". | TTS, Sound Alert (on) |
+| Objective Complete Alert | Quests | The game shows an objective done, as "... (Complete)" or "Objective Complete.". Says the game's message. | TTS, Sound Alert (on) |
+| Quest Complete Alert | Quests | Every objective of a quest is done, read from your quest log. Plays in place of the objective's sound; its speech says the quest's title and "Complete". | TTS (off), Sound Alert (on) |
+| Available Quest Sound | Quests, Nearby | A quest you can accept has its giver near you. Plays a directional ping and says, for example, "Quest available: A Threat Within, 30 yards". Needs Questie. | Beacon Sound (on), TTS Alert (off) |
+| Turn-In Quest Sound | Quests, Nearby | A complete quest in your log has the person to hand it in to near you. Plays a directional ping and says "Quest to turn in: " and the quest. Needs Questie. | Beacon Sound (on), TTS Alert (off) |
+| Quest Objective Sound | Quests, Nearby | A quest in your log has an open objective near you. Plays a directional ping and says "Quest objective: " and the quest. Needs Questie. | Beacon Sound (on), TTS Alert (off) |
 | Item Selected | Windows, Auction House | You select an auction in the browse list. Says "Selected: " and the item's name. (The Burning Crusade only.) | TTS |
 
 See [Minimap](../world/minimap.md) and [Quests](../world/quests.md).

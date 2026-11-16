@@ -218,6 +218,7 @@ Everything for chat is in the WowVision menu under Chat.
 | Whisper Tabs | see above | The shared alert for all whisper tabs, same settings, but Speak Messages is Always by default. |
 | Chat Box Opened | On | Sound when the chat box takes the keyboard. Has Enabled and a Sound Alert with Enabled and Sound. |
 | Chat Box Closed | On | Sound when the chat box lets go of the keyboard. Same settings. |
+| Addon Messages in Chat | Off | Also writes WowVision's messages to your main chat tab, with "WowVision:" in front: for example that a route has started, how far an auction house scan is, or why something does not work. What is read out, such as menus, your target or tooltips, does not appear there, and neither do alerts. These lines are not spoken again. They are in the tab's history like any other line. |
 
 Both chat box sounds work on every chat window, in the classic chat style (where the box stays on screen while idle) as well as in the modern style. They are about the keyboard focus, not about the box being visible.
 

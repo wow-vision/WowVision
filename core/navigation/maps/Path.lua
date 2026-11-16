@@ -35,6 +35,14 @@ function Path:start()
     end
 end
 
+-- A started path goes on at this waypoint, without an arrival cue (a reversed
+-- route takes over the waypoint its predecessor led to).
+function Path:resumeAt(index)
+    self.currentIndex = index
+    self.currentWaypoint = self.waypoints[index]
+    self.beacon = self.currentWaypoint ~= nil and module.Beacon:new(self.currentWaypoint) or nil
+end
+
 -- Manually shift the active waypoint (Sku's next/previous waypoint keys,
 -- for when you are displaced or realigning after a mistake). Treated
 -- exactly like arriving: the arrival cue fires and the beacon retargets.

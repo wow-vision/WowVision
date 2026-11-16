@@ -360,6 +360,29 @@ function Module:registerWindow(config)
     end
     self.registeredWindows = self.registeredWindows or {}
     self.registeredWindows[window.name] = window
+    -- Every window has its switch for letters and filtering in a module's menu, its own unless it names another.
+    local owner = window.letterSettings or self
+    owner:addWindowLetterSetting()
+    window._letterOwner = owner
+end
+
+-- The Letter Navigation switch of this module's windows: their lists take letters (graph/Host.lua). Off by default:
+-- with it on the letter keys belong to the list while the window is open, so walking and the game's letter keys stop.
+function Module:addWindowLetterSetting()
+    if self._hasWindowLetterSetting then
+        return
+    end
+    self._hasWindowLetterSetting = true
+    self:hasSettings():add({
+        type = "Bool",
+        key = "windowLetterNavigation",
+        label = WowVision:getLocale()["Letter Navigation"],
+        default = false,
+    })
+end
+
+function Module:windowLettersOn()
+    return self.settings ~= nil and self.settings.windowLetterNavigation == true
 end
 
 function Module:unregisterWindow(name)
@@ -541,20 +564,23 @@ function Module.rebuildAllUpdateHandlers()
 end
 
 -- Run all registered update handlers (called from WowVision:OnUpdate)
--- Each module's profiler automatically times its update when profiling is enabled
+-- Each module's profiler automatically times its update when profiling is enabled.
+-- Each handler runs on its own (utils.guardedCall): one that throws is
+-- reported through the game's error handler, once per message, and the rest
+-- of the frame goes on. Without this, one module's error ended the whole
+-- frame and the menus never updated (2026-11-11: a range check failing
+-- every frame in a dungeon left a quest window dead).
 function Module.runAllUpdates()
     if updateHandlersDirty then
         Module.rebuildAllUpdateHandlers()
     end
+    local guardedCall = WowVision.utils.guardedCall
     for _, handler in ipairs(moduleUpdateHandlers) do
+        -- start and stop return at once while profiling is off
         local profiler = handler.module.profiler
-        if profiler.enabled then
-            profiler:start("update")
-            handler.func(handler.module)
-            profiler:stop("update")
-        else
-            handler.func(handler.module)
-        end
+        profiler:start("update")
+        guardedCall(handler.module, handler.func, handler.module)
+        profiler:stop("update")
     end
 end
 

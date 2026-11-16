@@ -12,6 +12,22 @@ local function isWatched(part)
     return part.live ~= false
 end
 
+-- Whether a watched text changed since the last tick. A text the game keeps
+-- secret (a hidden name in a dungeon) cannot be compared: comparing it
+-- throws. Two secret reads in a row count as unchanged, or a polled secret
+-- would be spoken every tick (secrets.changed leaves polling callers to
+-- another signal); a text that turns secret, or stops being secret, did
+-- change and is spoken once.
+local function liveChanged(old, new)
+    local isSecret = WowVision.secrets.isSecret
+    local oldSecret, newSecret = isSecret(old), isSecret(new)
+    if oldSecret or newSecret then
+        return oldSecret ~= newSecret
+    end
+    return old ~= new
+end
+GraphHost._liveChanged = liveChanged
+
 -- Watch the focused node's parts and speak a part when its resolved text
 -- changes. Baselines silently whenever focus lands on a new identity (the
 -- focus announcement already spoke the initial state). Arrays cannot hold nil,
@@ -44,11 +60,11 @@ function GraphHost:_watchLive(screen, node)
             end
             if baseline then
                 screen._liveValues[i] = cached
-            elseif screen._liveValues[i] ~= cached then
+            elseif liveChanged(screen._liveValues[i], cached) then
                 screen._liveValues[i] = cached
-                if value ~= nil and value ~= "" then
-                    self:_speak(value)
-                end
+                self:_speak(value)
+            else
+                screen._liveValues[i] = cached
             end
         end
     end
@@ -97,10 +113,8 @@ function GraphHost:_watchAlways(screen, focusedNode)
                     if
                         oldByNode ~= nil
                         and oldByNode[i] ~= nil
-                        and oldByNode[i] ~= cached
-                        and value ~= nil
-                        and value ~= ""
                         and node.id.key ~= focusedKey
+                        and liveChanged(oldByNode[i], cached)
                     then
                         self:_speak(value)
                     end

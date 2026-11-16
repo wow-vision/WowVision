@@ -187,3 +187,31 @@ testRunner:addSuite("GeneralBufferLines", {
         end
     ),
 })
+
+testRunner:addSuite("ObjectsUpdate", {
+    ["a type whose update throws does not stop the types after it"] = function(t)
+        local ran, reported = {}, {}
+        local function objectType(key, broken)
+            return {
+                onUpdate = function()
+                    if broken then
+                        error("broken type", 0)
+                    end
+                    tinsert(ran, key)
+                end,
+            }
+        end
+        local saved = geterrorhandler
+        geterrorhandler = function()
+            return function(message)
+                tinsert(reported, tostring(message))
+            end
+        end
+        local fake = { types = { items = { objectType("a"), objectType("b", true), objectType("c") } } }
+        local ok, err = pcall(WowVision.objects.update, fake)
+        geterrorhandler = saved
+        t:assertTrue(ok, tostring(err))
+        t:assertEqual(table.concat(ran, ","), "a,c")
+        t:assertEqual(table.concat(reported, ","), "broken type")
+    end,
+})

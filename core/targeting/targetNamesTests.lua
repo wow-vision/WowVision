@@ -363,6 +363,36 @@ testRunner:addSuite("TargetNames", {
         t:assertEqual(targetNames.compose(api, "b", "outOfCombat", only("npc", { "title" })), "")
     end,
 
+    ["WoW: Forever lines: only the name typed, the title found by the level"] = function(t)
+        -- As a WoW: Forever capture shows them: no UnitLevel line type.
+        local innkeeper = {
+            name = "Donaal Downbreeze",
+            level = 10,
+            reaction = 5,
+            lines = {
+                { type = 2, text = "Donaal Downbreeze" },
+                { type = 0, text = "Gastwirt" },
+                { type = 0, text = "Stufe 10" },
+                { type = 0, text = "PvP" },
+            },
+        }
+        local questMob = {
+            attackable = true,
+            name = "Kobold",
+            level = 2,
+            lines = {
+                { type = 2, text = "Kobold" },
+                { type = 0, text = "Stufe 2" },
+                { type = 0, text = "Humanoid" },
+                { type = 17, text = "Kobolde" },
+                { type = 8, text = "Kobold getötet: 2/8" },
+            },
+        }
+        local api = fakeApi({ a = innkeeper, b = questMob })
+        t:assertEqual(targetNames.compose(api, "a", "outOfCombat", only("npc", { "title" })), "Gastwirt")
+        t:assertEqual(targetNames.compose(api, "b", "outOfCombat", only("mob", { "title" })), "")
+    end,
+
     ["a skull level"] = function(t)
         local boss = { attackable = true, name = "Onyxia", level = -1, classification = "worldboss" }
         local text = targetNames.compose(fakeApi({ target = boss }), "target", "inCombat", nil)
@@ -477,6 +507,41 @@ testRunner:addSuite("TargetNames", {
         local mob = { attackable = true, name = secret("Hogger"), level = 11, classification = "elite" }
         local text = targetNames.compose(fakeApi({ target = mob }), "target", "inCombat", nil)
         t:assertEqual(reveal(text), "Hogger, Level 11 Elite")
+    end),
+
+    ["a quest objective whose finished flag is secret is read, never compared"] = withSecrets(function(t)
+        -- A table never equals true in Lua, so a plain "~= true" on the fake
+        -- would pass without a word; the game's secret throws instead. The
+        -- flag must be asked about with issecretvalue before it is compared.
+        local flag = secret(false)
+        local flagChecked = false
+        local isSecretValue = issecretvalue
+        issecretvalue = function(value)
+            if rawequal(value, flag) then
+                flagChecked = true
+            end
+            return isSecretValue(value)
+        end
+        local mob = {
+            attackable = true,
+            name = "Defias Pillager",
+            lines = {
+                { type = 2, text = "Defias Pillager" },
+                { type = 8, text = secret("Defias Pillager slain: 3/10"), completed = flag },
+                { type = 8, text = "Done already: 1/1", completed = true },
+            },
+        }
+        local ok, text = pcall(
+            targetNames.compose,
+            fakeApi({ target = mob }),
+            "target",
+            "inCombat",
+            only("mob", { "name", "questProgress" })
+        )
+        issecretvalue = isSecretValue
+        t:assertTrue(ok, tostring(text))
+        t:assertTrue(flagChecked, "the secret finished flag was never checked with issecretvalue")
+        t:assertEqual(reveal(text), "Defias Pillager, Defias Pillager slain: 3/10")
     end),
 
     ["a secret answer to a yes-or-no question is skipped"] = withSecrets(function(t)

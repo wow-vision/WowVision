@@ -38,7 +38,6 @@ scanner:registerProvider({
     key = "gathering",
     label = L["Gathering"],
     order = 30,
-    optional = true,
     build = function(ctx)
         local out, seen = {}, {}
         for _, entry in ipairs(module.store.entries) do
@@ -68,7 +67,6 @@ scanner:registerProvider({
     key = "poi",
     label = L["Points of Interest"],
     order = 25,
-    optional = true,
     build = function()
         local out = {}
         for _, name in ipairs(module.places) do

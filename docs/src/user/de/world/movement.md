@@ -6,8 +6,8 @@ Alles hier steht im WowVision-Menü (tippe /wv) unter Navigation. Die Routen- un
 
 | Menüeintrag | Was er enthält |
 |-------------|----------------|
-| Navigation | Drei Einstellungen: Automatisch zum Interaktionsziel bewegen (Auto-move to Interact Target), Automatisch zur Leiche navigieren (Automatically Navigate to Corpse) und Verbleibende Wegpunkte ansagen (Announce Remaining Waypoints, beschrieben auf der Seite [Navigation und Routen](navigation.md#was-du-hörst)). Die anderen Einträge unter Navigation (Karten, besuchte Orte, Signal und so weiter) werden auf der Seite [Navigation und Routen](navigation.md) beschrieben |
-| Navigation, Kompass | Alarme für Blickrichtung, Gebiet, drinnen/draußen, Fliegen, Schwimmen und Tauchen |
+| Navigation | Drei Einstellungen: Automatisch zum Interaktionsziel bewegen (Auto-move to Interact Target), Automatisch zur Leiche navigieren (Automatically Navigate to Corpse) und Verbleibende Wegpunkte ansagen (Announce Remaining Waypoints, beschrieben auf der Seite [Navigation und Routen](navigation.md#was-du-hörst)). Die anderen Einträge unter Navigation (Karten, besuchte Orte, Beacon und so weiter) werden auf der Seite [Navigation und Routen](navigation.md) beschrieben |
+| Navigation, Umwelt-Alarme | Alarme für Blickrichtung, Gebiet, drinnen/draußen, Fliegen, Schwimmen, Tauchen und Atem |
 | Navigation, Fallerkennung | Fallgeräusche und Ansage |
 | Navigation, Wanderkennung | Kollisionsgeräusche |
 | Navigation, Benennen, wogegen ich laufe | Nennt den Gegenstand oder die Wand, die dich aufhält |
@@ -16,9 +16,9 @@ Alles hier steht im WowVision-Menü (tippe /wv) unter Navigation. Die Routen- un
 
 Jedes dieser Untermenüs hat oben einen Schalter Aktiviert, sodass sich jede Funktion komplett ausschalten lässt.
 
-## Kompass und Umgebung
+## Umwelt-Alarme
 
-Das Modul Kompass beobachtet deinen Charakter und spricht, wenn sich etwas an deiner Umgebung ändert. Jeder seiner Einträge ist ein Alarm (siehe [Alarme](../basics/alerts.md)): Er hat einen Schalter Aktiviert und eine oder mehrere Ausgaben, meist TTS-Alarm (Sprache) und Soundalarm.
+Das Modul Umwelt-Alarme beobachtet deinen Charakter und spricht, wenn sich etwas an deiner Umgebung ändert. Jeder seiner Einträge ist ein Alarm (siehe [Alarme](../basics/alerts.md)): Er hat einen Schalter Aktiviert und eine oder mehrere Ausgaben, meist TTS-Alarm (Sprache) und Soundalarm.
 
 | Alarm | Was ihn auslöst | Standardausgabe |
 |-------|-----------------|-----------------|
@@ -31,6 +31,7 @@ Das Modul Kompass beobachtet deinen Charakter und spricht, wenn sich etwas an de
 | Flug-beendet-Alarm (Flying Ended Alert) | Du landest | TTS-Alarm an, Soundalarm aus |
 | Schwimm-Alarm (Swimming Alert) | Du gehst ins Wasser | TTS-Alarm an, Soundalarm aus |
 | Tauch-Alarm (Diving Alert) | Dein Charakter taucht unter die Oberfläche | TTS-Alarm an, Soundalarm aus |
+| Atem-Alarm (Breath Alert) | Eine Atem-, Erschöpfungs- oder Totstellen-Leiste sinkt um einen Schritt | TTS-Alarm an, Stimmenalarm aus, Soundalarm aus |
 
 ### Kompassrichtung
 
@@ -48,13 +49,19 @@ Der "Gebietsänderungs-Alarm" spricht den Gebietsnamen, wenn du in ein neues Geb
 
 Du hörst "draußen" oder "drinnen", wenn das Spiel entscheidet, dass du von einem zum anderen gewechselt hast, "fliegen", wenn du auf einem Flugreittier abhebst, "Flug beendet", wenn du landest, "schwimmen", wenn du ins Wasser gehst, und "tauchen", wenn du unter die Oberfläche gehst. Wenn du wieder aus dem Wasser läufst, wird nichts gesagt.
 
+### Atem und Erschöpfung
+
+Unter Wasser zeigt das Spiel eine Atemleiste, die sinkt, solange du die Luft anhältst. Schwimmst du zu weit ins tiefe Wasser hinaus, erscheint eine Erschöpfungsleiste. Jäger sehen eine Leiste, während sie sich tot stellen. Der Atem-Alarm sagt den Namen der Leiste und wie voll sie ist, eine Zeile pro Schritt nach unten: "Atem 90", "Atem 80" und so weiter bis "Atem 0", wenn du zu ertrinken beginnst. Während sich die Leiste nach dem Auftauchen wieder füllt, wird nichts gesagt; tauchst du wieder ab, zählen die Schritte von dort herunter, wo die Leiste gerade steht.
+
+Die Schritte sind standardmäßig 10 Prozent. Ändere sie mit Atem-Schritt (5, 10, 20 oder 25 Prozent) im Bildschirm Umwelt-Alarme. Das Spiel zeigt nur die Leiste, nicht die verbleibenden Sekunden, darum sagt WowVision ebenfalls Prozent. Der Atem-Alarm spricht mit einer Spielstimme, damit Bewegungstasten ihn nicht abschneiden.
+
 ### Das ändern
 
 Jeder Alarm der Tabelle außer Kompassrichtung ansagen hat einen Soundalarm, und der ist standardmäßig aus. Um statt der Sprache oder zusätzlich dazu einen Ton zu bekommen, öffne den Alarm, schalte Soundalarm ein und wähle mit seiner Einstellung Sound einen Ton.
 
 Beispiel: Du willst einen Ton, wenn du nach drinnen trittst, und keine Sprache.
 
-1. Drücke Umschalt+F1 (oder tippe /wv), gehe zu Navigation, dann Kompass, dann Drinnen-Alarm.
+1. Drücke Umschalt+F1 (oder tippe /wv), gehe zu Navigation, dann Umwelt-Alarme, dann Drinnen-Alarm.
 2. Schalte TTS-Alarm aus.
 3. Schalte Soundalarm ein und wähle mit Sound einen Ton.
 
@@ -97,6 +104,7 @@ Worum es sich kümmert:
 - Es folgt deinen Bewegungsbefehlen, egal welche Tasten du zum Bewegen belegt hast. Automatisches Laufen zählt auch als Bewegung.
 - Es deckt auch Wege ab, die das Spiel für dich geht: wenn du die Interaktionstaste drückst und das Spiel dich zu einem NPC laufen lässt, oder wenn du Klicken-zum-Bewegen benutzt. Endet ein solcher Weg, bevor er sein Ziel erreicht (du bist an etwas hängen geblieben), wird der Ton Blockiert einmal gespielt.
 - Betäubt, festgewurzelt, in Furcht versetzt oder anderweitig die Kontrolle verloren zu haben wird nie als Wand gemeldet, und solange du auf einem Flugweg bist, wird nichts eingestuft.
+- Greifst du mit der Interaktionstaste an, läuft dein Charakter dem Gegner den ganzen Kampf über hinterher. Sobald du im Kampf bist, bleibt die Wanderkennung dabei still, solange dein automatischer Angriff läuft und du keine Bewegungstaste drückst. Auf dem Weg zum Gegner, bevor der Kampf beginnt, warnt sie bei einem Hindernis wie immer, und ebenso, wenn du eine Bewegungstaste drückst.
 - Beim Schwimmen wird deine Schwimmgeschwindigkeit zum Vergleich benutzt.
 - (Nur Retail und WoW: Forever) Im Kampf verbirgt das Spiel deine Bewegungsgeschwindigkeit, sodass nur ein völliger Stillstand bemerkt werden kann: Du hörst den Ton Blockiert, aber keine der langsameren Stufen.
 
@@ -148,7 +156,7 @@ Wenn du stirbst und deinen Geist freilässt, kann WowVision beginnen, dich zu de
 |-------------|----------|-------------|
 | Automatisch zur Leiche navigieren | An | Nachdem du deinen Geist freigelassen hast, beginnt sofort eine Route zu deiner Leiche |
 
-Das passiert: Du lässt deinen Geist frei; WowVision schlägt nach, wo deine Leiche ist, zuerst auf deiner aktuellen Karte und dann auf den größeren Karten darum herum (so wird eine Leiche gefunden, die im Gebiet neben dem Friedhof liegt, an dem du erwacht bist), und sagt "Leiche". Dann beginnt es eine Route dorthin, genau so, als hättest du die Leiche im Navigationsfenster ausgewählt. Wo WowNav-Routendaten verfügbar sind (WoW: Forever), wird eine Leiche, die über mehrere Ebenen liegt, zur niedrigsten erreichbaren Ebene geroutet. Findet sich keine Route, zeigt stattdessen ein Signal direkt auf die Leiche. Der Route wird wie jeder anderen gefolgt; siehe [Navigation und Routen](navigation.md), wie Routen und die Signaltöne funktionieren.
+Das passiert: Du lässt deinen Geist frei; WowVision schlägt nach, wo deine Leiche ist, zuerst auf deiner aktuellen Karte und dann auf den größeren Karten darum herum (so wird eine Leiche gefunden, die im Gebiet neben dem Friedhof liegt, an dem du erwacht bist), und sagt "Leiche". Dann beginnt es eine Route dorthin, genau so, als hättest du die Leiche im Navigationsfenster ausgewählt. Wo WowNav-Routendaten verfügbar sind (WoW: Forever), wird eine Leiche, die über mehrere Ebenen liegt, zur niedrigsten erreichbaren Ebene geroutet. Findet sich keine Route, zeigt stattdessen ein Beacon direkt auf die Leiche. Der Route wird wie jeder anderen gefolgt; siehe [Navigation und Routen](navigation.md), wie Routen und die Beacon-Töne funktionieren.
 
 Details:
 
@@ -188,6 +196,6 @@ Keine dieser Funktionen hat einen Befehl, aber wenn eine Bewegungstaste nach dem
 
 ## Verwandte Seiten
 
-- [Navigation und Routen](navigation.md): Routen, Wegpunkte, das Signal und das Drehen zu Wegpunkten.
+- [Navigation und Routen](navigation.md): Routen, Wegpunkte, das Beacon und das Drehen zu Wegpunkten.
 - [Kampf](combat.md): was im Kampf mit den Tasten von WowVision passiert.
 - [Alarme](../basics/alerts.md): Ausgaben, Töne und Stimmen.

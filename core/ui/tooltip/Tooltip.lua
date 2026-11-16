@@ -10,6 +10,7 @@ function Tooltip:initialize(name)
     self.widget = nil
     self.tooltipData = nil
     self.currentLine = nil
+    self.comparisonCache = nil
 end
 
 function Tooltip:set(widget, data)
@@ -41,6 +42,7 @@ function Tooltip:reset()
     self.widget = nil
     self.tooltipData = nil
     self.currentLine = nil
+    self.comparisonCache = nil
 end
 
 function Tooltip:onFocus()
@@ -55,15 +57,85 @@ function Tooltip:onUnfocus()
     end
 end
 
+-- The link of the item a tooltip frame shows, for the comparison; nil for
+-- none or a secret one. Classic tooltips answer GetItem; Retail and WoW:
+-- Forever dropped it for TooltipUtil.GetDisplayedItem (their GameTooltip
+-- data mixin).
+local function shownItemLink(frame)
+    local ok, _, link
+    if frame.GetItem ~= nil then
+        ok, _, link = pcall(frame.GetItem, frame)
+    elseif TooltipUtil ~= nil and TooltipUtil.GetDisplayedItem ~= nil and frame.IsTooltipType ~= nil then
+        ok, _, link = pcall(TooltipUtil.GetDisplayedItem, frame)
+    end
+    if not ok or link == nil or WowVision.isSecret(link) then
+        return nil
+    end
+    return link
+end
+
 -- The lines as read: { left, right } pairs from the frame, plus the item
 -- quality and item level when the tooltip shows an item (see
--- WowVision.items.augmentTooltipLines).
-function Tooltip:collectLines()
+-- WowVision.items.augmentTooltipLines), then Pawn's upgrade summary and
+-- WowVision's own comparison (see WowVision.items.augmentComparisonLines),
+-- then the equipped items the game compares it with (see addComparison)
+-- unless withComparison is false.
+function Tooltip:collectLines(withComparison)
     local frame = self.activeFrame
-    local lines = {}
     if not frame then
-        return lines
+        return {}
     end
+    local lines = self:frameLines(frame)
+    -- Only the shown item: a comparison box is not compared in turn.
+    local link = WowVision.items ~= nil and WowVision.items.augmentComparisonLines ~= nil and shownItemLink(frame)
+        or nil
+    if link ~= nil then
+        local augmented, augmentErr = pcall(WowVision.items.augmentComparisonLines, lines, link)
+        if not augmented then
+            geterrorhandler()(augmentErr)
+        end
+    end
+    if withComparison ~= false then
+        local compared, err = pcall(self.addComparison, self, frame, lines)
+        if not compared then
+            geterrorhandler()(err)
+        end
+    end
+    return lines
+end
+
+-- The equipped items the game compares the shown item with (the shopping
+-- tooltips sighted players get on Shift), each as a block after the item's
+-- own lines: the header, the equipped item, the stat changes. The version
+-- folders fill comparison.fill; every block line is marked compare, so
+-- reading the whole tooltip at once stays with the item itself. The
+-- blocks are built once per shown item (walking the lines reads them again
+-- and again) and dropped when the tooltip is set again.
+function Tooltip:addComparison(frame, lines)
+    local comparison = WowVision.tooltips.comparison
+    if comparison.fill == nil or not comparison.isEnabled() then
+        return
+    end
+    local link = shownItemLink(frame)
+    if link == nil then
+        return
+    end
+    local cache = self.comparisonCache
+    if cache == nil or cache.link ~= link then
+        cache = { link = link, blocks = {} }
+        for _, block in ipairs(comparison.fill(frame, link) or {}) do
+            tinsert(cache.blocks, { header = block.header, lines = self:frameLines(block.frame) })
+            block.frame:Hide()
+        end
+        self.comparisonCache = cache
+    end
+    for _, block in ipairs(cache.blocks) do
+        comparison.append(lines, block.header, block.lines)
+    end
+end
+
+function Tooltip:frameLines(frame)
+    local lines = {}
     for index = 1, frame:NumLines() do
         local left, right = self.reader:getLine(frame, index)
         tinsert(lines, { left, right })
@@ -145,11 +217,14 @@ function Tooltip:getText(lineNumber)
     if not self.activeFrame then
         return ""
     end
-    local lines = self:readLines()
+    -- The whole tooltip at once leaves the comparison out, so it is not built.
+    local lines = self:readLines(lineNumber ~= nil)
     local result = {}
     if lineNumber == nil then
         for _, line in ipairs(lines) do
-            tinsert(result, self.reader:formatLine(line[1], line[2]))
+            if not line.compare then
+                tinsert(result, self.reader:formatLine(line[1], line[2]))
+            end
         end
     elseif lines[lineNumber] ~= nil then
         tinsert(result, self.reader:formatLine(lines[lineNumber][1], lines[lineNumber][2]))
@@ -187,9 +262,9 @@ function Tooltip:finishRead()
 end
 
 -- Fill the tooltip (immediate mode), collect its lines, and release it.
-function Tooltip:readLines()
+function Tooltip:readLines(withComparison)
     self:prepareRead()
-    local lines = self:collectLines()
+    local lines = self:collectLines(withComparison)
     self:finishRead()
     return lines
 end
@@ -252,6 +327,51 @@ function Tooltip:previousLine()
     self:moveLine(-1)
 end
 
+-- Move to the start of the next or previous block (the item, then each
+-- equipped item it is compared with and its stat changes) and speak that
+-- line. The item's block
+-- starts at its first non-blank line. At either end the current block's
+-- start is read again.
+function Tooltip:moveBlock(direction)
+    if not self.activeFrame then
+        return
+    end
+    local lines = self:readLines()
+    local starts = {}
+    for index, line in ipairs(lines) do
+        if line.blockStart or (#starts == 0 and not self:isBlank(line)) then
+            tinsert(starts, index)
+        end
+    end
+    if #starts == 0 then
+        return
+    end
+
+    -- The block the current line is in; before any line, none.
+    local current = 0
+    for i, start in ipairs(starts) do
+        if self.currentLine ~= nil and start <= self.currentLine then
+            current = i
+        end
+    end
+    local target = math.max(1, math.min(#starts, current + direction))
+    self.currentLine = starts[target]
+
+    local line = lines[self.currentLine]
+    local text = self.reader:formatLine(line[1], line[2])
+    if WowVision.secrets.hasText(text) then
+        WowVision:speak(text)
+    end
+end
+
+function Tooltip:nextBlock()
+    self:moveBlock(1)
+end
+
+function Tooltip:previousBlock()
+    self:moveBlock(-1)
+end
+
 -- Speak one side (1 left, 2 right) of the current line.
 function Tooltip:speakCurrentSide(side)
     if not self.activeFrame then
@@ -279,9 +399,65 @@ function Tooltip:speakCurrentRight()
     self:speakCurrentSide(2)
 end
 
+-- Comparison with equipped items. fill(frame, link) returns a list of
+-- { frame, header } blocks, filled by the game; nil where a game version
+-- has none. isEnabled is the tooltip/compare module's switch.
+local comparison = {
+    fill = nil,
+    isEnabled = function()
+        return true
+    end,
+}
+
+-- The two boxes the version folders fill: our own frames, so the game's
+-- ShoppingTooltip1 and 2 stay untouched.
+local compareFrames = nil
+function comparison.frames()
+    if compareFrames == nil then
+        compareFrames = {
+            CreateFrame("GameTooltip", "WowVisionCompareTooltip1", nil, "ShoppingTooltipTemplate"),
+            CreateFrame("GameTooltip", "WowVisionCompareTooltip2", nil, "ShoppingTooltipTemplate"),
+        }
+    end
+    return compareFrames
+end
+
+-- The game's heading over the stat changes in a comparison box ("If you
+-- replace this item, the following stat changes will occur:"): a block of
+-- its own for nextBlock/previousBlock.
+local function isStatChangeHeading(text)
+    return text ~= nil
+        and not WowVision.secrets.isSecret(text)
+        and (text == ITEM_DELTA_DESCRIPTION or text == ITEM_DELTA_MULTIPLE_COMPARISON_DESCRIPTION)
+end
+
+-- One block after the tooltip lines: the header unless the game's own
+-- first line already says it, then the block lines, all marked compare.
+-- The block's first line, and the stat change heading, are marked
+-- blockStart for nextBlock/previousBlock.
+function comparison.append(lines, header, blockLines)
+    local first = #lines + 1
+    local firstText = blockLines[1] ~= nil and blockLines[1][1] or nil
+    -- A secret first line cannot be compared: the header goes in.
+    if header ~= nil and (firstText == nil or WowVision.secrets.isSecret(firstText) or firstText ~= header) then
+        tinsert(lines, { header, nil, compare = true })
+    end
+    for _, line in ipairs(blockLines) do
+        line.compare = true
+        if isStatChangeHeading(line[1]) then
+            line.blockStart = true
+        end
+        tinsert(lines, line)
+    end
+    if lines[first] ~= nil then
+        lines[first].blockStart = true
+    end
+end
+
 local tooltips = {
     Tooltip = Tooltip,
     types = WowVision.Registry:new(),
+    comparison = comparison,
 }
 
 function tooltips:createType(key)

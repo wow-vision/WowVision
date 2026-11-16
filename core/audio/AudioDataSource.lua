@@ -13,17 +13,18 @@ function AudioDataSource:play(channel)
     if not path then
         return nil
     end
-    local channel = channel or "SFX"
+    local channel = channel or WowVision.audio.channel()
     return PlaySoundFile(path, channel)
 end
 
-function AudioDataSource:preview(channel)
+-- Further arguments go to play (a beacon source takes a level).
+function AudioDataSource:preview(channel, ...)
     -- Stop previous preview sound
     if WowVision.audio._previewHandle then
         StopSound(WowVision.audio._previewHandle, 0)
         WowVision.audio._previewHandle = nil
     end
-    local willPlay, soundHandle = self:play(channel)
+    local willPlay, soundHandle = self:play(channel, ...)
     if willPlay then
         WowVision.audio._previewHandle = soundHandle
     end

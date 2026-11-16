@@ -2,7 +2,7 @@
 
 Monitore beobachten das Spiel für dich und sprechen oder spielen einen Sound ab, wenn sich etwas ändert: Ein Debuff, den du gewirkt hast, läuft gleich aus, eine Abklingzeit ist wieder abgelaufen, ein Proc leuchtet auf. Während dir [Puffer](buffers.md) die Antwort geben, wenn du fragst, sagen dir Monitore Bescheid, ohne dass du fragst.
 
-Welche Monitore du hast, hängt von deiner Spielversion ab. Classic Era, The Burning Crusade und Mists of Pandaria haben einen Aura-Monitor (im Menü Aura genannt) und einen Abklingzeit-Monitor (im Menü Cooldown genannt). Retail und WoW: Forever haben Auren des Abklingzeitmanagers (Cooldown Manager Auras) und Zauber-Abklingzeiten (Spell Cooldowns), weil das Spiel dort im Kampf Aura- und Abklingzeitzahlen vor Addons verbirgt. Die Auren des Abklingzeitmanagers lesen den Abklingzeitmanager von Blizzard. Die Zauber-Abklingzeiten nutzen die wenigen Fakten, die das Spiel noch herausgibt, und borgen sich vom Abklingzeitmanager nur die Liste der Zauber zum Auswählen.
+Welche Monitore du hast, hängt von deiner Spielversion ab. Classic Era, The Burning Crusade und Mists of Pandaria haben einen Aura-Monitor (im Menü Aura genannt) und einen Abklingzeit-Monitor (im Menü Cooldown genannt). Retail und WoW: Forever haben Auren des Abklingzeitmanagers (Cooldown Manager Auras) und Zauber-Abklingzeiten (Spell Cooldowns), weil das Spiel dort im Kampf Aura- und Abklingzeitzahlen vor Addons verbirgt. Die Auren des Abklingzeitmanagers lesen den Abklingzeitmanager von Blizzard. Die Zauber-Abklingzeiten nutzen die wenigen Fakten, die das Spiel noch herausgibt, und borgen sich vom Abklingzeitmanager nur die Liste der Zauber zum Auswählen. Jede Version hat außerdem den [Ressourcen-Monitor](#ressourcen-monitor) für deine eigenen Kombopunkte, dein Mana, deine Energie und Ähnliches.
 
 ## So funktionieren Monitore
 
@@ -64,6 +64,10 @@ Monitore, die du hinzufügst, werden standardmäßig accountweit gespeichert, al
 
 Beim Wechseln des Bereichs wird nichts gelöscht.
 
+### Einen Monitor oder eine Regel kopieren
+
+Um einen zweiten Monitor wie einen vorhandenen zu bauen, gehe in der Monitorliste zu ihm, drücke Umschalt+F10 und wähle Kopie. Du hörst den neuen Namen, zum Beispiel „Mondfeuer Kopie 1“; die Kopie steht direkt hinter dem Original, mit denselben Einstellungen, Alarmen und Regeln, im selben Bereich. Benenne sie um und ändere, was anders sein soll. Kopie funktioniert genauso bei einer Regel in einem Monitor.
+
 ### Einstellungen, die jeder Monitor und jede Regel hat
 
 | Einstellung | Standard | Was sie bewirkt |
@@ -113,7 +117,7 @@ Im Menü heißt dieser Monitortyp Aura. Er beobachtet Buffs und Debuffs auf eine
 | Einstellung | Standard | Was sie bewirkt |
 |---|---|---|
 | Einheit | target | Welche Einheit beobachtet wird, als Text eingegeben: `target`, `player`, `focus`, `pet`, `mouseover`, `party1` und so weiter |
-| Bei Zielwechsel ansagen | Aus | Wenn du das Ziel wechselst (oder sich die Einheit ändert), sagt jede Regel den Zustand an, den sie auf der neuen Einheit findet, einschließlich Fehlend |
+| Bei Zielwechsel ansagen | Nur Änderungen | Was die Regeln sagen, wenn du das Ziel wechselst (oder sich die Einheit ändert). Nur Änderungen: Eine Regel spricht nur, wenn sich der Zustand des neuen Ziels von ihrem bisherigen unterscheidet. Immer: Jede Regel sagt den Zustand an, den sie auf der neuen Einheit findet, einschließlich Fehlend. Nie: Die Regeln übernehmen den Zustand des neuen Ziels still; spätere Änderungen auf diesem Ziel werden wie gewohnt gesprochen |
 
 Regeltyp: Aura-Zustandsregel. Sie verfolgt einen Zauber durch sein Leben auf der Einheit.
 
@@ -138,8 +142,8 @@ Gut zu wissen:
 - Läuft ab braucht beide Bedingungen: innerhalb des Pandemic-Fensters und unter der Ablaufschwelle. Bei einer kurzen Aura (sagen wir 6 Sekunden) ist das Pandemic-Fenster so klein, dass die Aura direkt von Aktiv zu Läuft ab geht.
 - Auren ohne Dauer bleiben bei Aktiv.
 - Wenn mehr als eine passende Aura vorhanden ist (wenn Vom Spieler gewirkt aus ist und mehrere Leute sie aufgelegt haben), meldet die Regel die gesündeste.
-- Fehlend wird gesprochen, wenn eine Aura, die verfolgt wurde, verschwindet. Wenn der Monitor startet (zum Beispiel bei der Anmeldung) und die Aura nie da war, wird Fehlend nicht gesprochen. Nimm Bei Zielwechsel ansagen, wenn du bei jedem neuen Ziel „Mondfeuer Fehlend“ oder „Mondfeuer Aktiv“ hören willst.
-- Ohne Bei Zielwechsel ansagen spricht ein Zielwechsel trotzdem, wenn sich der Zustand des neuen Ziels von dem unterscheidet, den die Regel hatte (zum Beispiel von Aktiv zu Fehlend).
+- Fehlend wird gesprochen, wenn eine Aura, die verfolgt wurde, verschwindet. Wenn der Monitor startet (zum Beispiel bei der Anmeldung) und die Aura nie da war, wird Fehlend nicht gesprochen. Stelle Bei Zielwechsel ansagen auf Immer, wenn du bei jedem neuen Ziel „Mondfeuer Fehlend“ oder „Mondfeuer Aktiv“ hören willst.
+- Mit Bei Zielwechsel ansagen auf Nur Änderungen (der Standard) spricht ein Zielwechsel trotzdem, wenn sich der Zustand des neuen Ziels von dem unterscheidet, den die Regel hatte (zum Beispiel von Aktiv zu Fehlend). Stelle es auf Nie, um beim Zielwechsel nichts zu hören, nur die Änderungen, die danach auf dem neuen Ziel folgen.
 - Vom Spieler gewirkt muss für Effekte ohne Wirker ausgeschaltet werden, etwa viele Procs von Schmuckstücken.
 - Eine Regel erkennt die Aura an ihrer eigenen Zaubernummer. Wenn der Zauber, den du wirkst, und die Aura, die er auf das Ziel legt, verschiedene Nummern haben (bei den Classic-Versionen kann das vom Zauberrang abhängen), wähle die Aura aus den Schnellauswahlen, statt den Namen zu tippen. Die Aura erscheint dort, sobald dein Monitor sie auf der Einheit gesehen hat.
 
@@ -181,10 +185,10 @@ Auf Retail verbirgt das Spiel Aura-Informationen im Kampf und in Instanzen vor A
 Bevor du ihn benutzen kannst, muss die Aura einer der verfolgten Buffs oder Leisten des Abklingzeitmanagers sein:
 
 - Nur Auren in den Kategorien Verfolgte Buffs und Verfolgte Leisten können beobachtet werden. Die Kategorien Essential (essenzielle Zauber) und Utility (Hilfszauber) enthalten Zauber, keine Auren. (Die Kategorienamen sind hier so geschrieben, wie sie in der englischen Spieloberfläche heißen; auf einem deutschen Client können sie anders lauten.)
-- Nur zwei Einheiten können beobachtet werden: Ziel und Spieler, die beiden, denen der Abklingzeitmanager folgt.
+- Nur zwei Einheiten können beobachtet werden: Ziel und Spieler, die beiden, denen der Abklingzeitmanager folgt. Wenn du dich selbst als Ziel hast, hört ein Monitor für das Ziel die Auren auf dir. In Instanzen kann das Spiel verbergen, ob du selbst dein Ziel bist; WowVision richtet sich dann nach der letzten Antwort, die es seit deinem Zielwechsel lesen konnte, damit deine Aura nicht als Fehlend gemeldet wird, solange du dich weiter selbst als Ziel hast.
 - Der Abklingzeitmanager muss die Aura anzeigen. Eine Zeile des Abklingzeitmanagers, die du versteckt oder nur für den Kampf eingestellt hast, wird als leer gelesen, solange sie versteckt ist, und deine Regel meldet Fehlend. Wenn ein Alarm zur falschen Zeit ertönt, prüfe, ob die Zeilen angezeigt werden.
 
-Du richtest den Abklingzeitmanager in seinem Einstellungsfenster ein, das WowVision zugänglich macht. Öffne es mit `/cdm`. Das Fenster hat die Reiter Zauber, Auren und Group Buffs, ein Feld Suchen, ein Menü Einstellungen, jede Kategorie mit ihren Elementen, die Auswahlliste Layout und eine Schaltfläche Revert Changes (Änderungen zurücksetzen). Drücke Eingabe auf einem Element, um es aufzunehmen, und Eingabe auf einem anderen Element oder auf dem leeren Platz einer Kategorie, um es dort abzulegen. Drücke Rücktaste auf einem Element für sein Menü (Alarme, in eine andere Kategorie verschieben). Änderungen, die du mit der Tastatur machst, wirken erst, nachdem das Interface neu geladen wurde, weil das Spiel seine Abklingzeitdaten auf dem Bildschirm daraus neu aufbaut. Das Fenster sagt dir das beim ersten Mal und bietet am Ende eine Schaltfläche Interface neu laden an (oder gib `/reload` ein); wenn du das Fenster nach solchen Änderungen schließt, erinnert es dich noch einmal. Die Elemente werden mit ihrem Namen gelesen, „Nicht erlernt“ bei Zaubern, die du nicht erlernt hast, und der Zahl ihrer Alarme (zum Beispiel „1 Alarm“). Kategorien lassen sich mit Eingabe auf ihrer Überschrift einklappen und ausklappen. Auf dem Reiter Group Buffs liegen die Buffs in einem Abschnitt für angezeigte und einem für versteckte Buffs (Shown und Hidden): Eingabe nimmt einen Buff auf, und Eingabe auf einem Buff im anderen Abschnitt verschiebt ihn dorthin. Wenn du im Menü eines Elements einen Alarm wählst (Add New Alert, oder einen bestehenden bearbeiten), öffnet sich der Alarm-Editor des Spiels als eigenes Fenster namens Alarm-Editor: der Zauber, eine Auswahlliste für jede Wahl und die Schaltfläche, die den Alarm hinzufügt oder speichert, dann Schließen.
+Du richtest den Abklingzeitmanager in seinem Einstellungsfenster ein, das WowVision zugänglich macht. Öffne es mit `/cdm`. Das Fenster hat die Reiter Zauber, Auren und Group Buffs, ein Feld Suchen, ein Menü Einstellungen, jede Kategorie mit ihren Elementen, die Auswahlliste Layout und eine Schaltfläche Revert Changes (Änderungen zurücksetzen). Drücke Eingabe auf einem Element, um es aufzunehmen, und Eingabe auf einem anderen Element oder auf dem leeren Platz einer Kategorie, um es dort abzulegen. Drücke Rücktaste auf einem Element für sein Menü (Alarme, in eine andere Kategorie verschieben). Änderungen, die du mit der Tastatur machst, wirken erst, nachdem das Interface neu geladen wurde, weil das Spiel seine Abklingzeitdaten auf dem Bildschirm daraus neu aufbaut. Das Fenster sagt dir das beim ersten Mal und bietet am Ende eine Schaltfläche Interface neu laden an (oder gib `/reload` ein); wenn du das Fenster nach solchen Änderungen schließt, erinnert es dich noch einmal. Mach diese Änderungen, während keine Buffs auf dir sind, zumindest keine, die der Abklingzeitmanager verfolgt. Ist ein solcher Buff aktiv, während du ein Element verschiebst oder etwas in seinem Menü wählst, zeigt das Spiel einen Lua-Fehler. Der Fehler hält dich nicht auf: Die Änderung wird trotzdem gespeichert und wirkt nach dem Neuladen. Er kommt aus dem Code des Spiels selbst, der die Buffs auf dem Bildschirm nicht neu aufbaut, wenn eine Änderung nicht von einem echten Mausklick kommt. Lade das Interface neu, bevor du in einen Kampf gehst: Bis zum Neuladen tragen die Buffs auf dem Bildschirm noch die Änderung von der Tastatur, und der nächste Buff im Kampf bringt denselben Lua-Fehler, egal ob beim Ändern ein Buff auf dir war. Die Elemente werden mit ihrem Namen gelesen, „Nicht erlernt“ bei Zaubern, die du nicht erlernt hast, und der Zahl ihrer Alarme (zum Beispiel „1 Alarm“). Kategorien lassen sich mit Eingabe auf ihrer Überschrift einklappen und ausklappen. Auf dem Reiter Group Buffs liegen die Buffs in einem Abschnitt für angezeigte und einem für versteckte Buffs (Shown und Hidden): Eingabe nimmt einen Buff auf, und Eingabe auf einem Buff im anderen Abschnitt verschiebt ihn dorthin. Wenn du im Menü eines Elements einen Alarm wählst (Add New Alert, oder einen bestehenden bearbeiten), öffnet sich der Alarm-Editor des Spiels als eigenes Fenster namens Alarm-Editor: der Zauber, eine Auswahlliste für jede Wahl und die Schaltfläche, die den Alarm hinzufügt oder speichert, dann Schließen.
 
 Die Alarme des Spiels brauchst du aber selten: Die Monitore von WowVision können alles, was sie können, und das besser. Jeder Zustand einer Regel hat seinen eigenen Sound und seine eigene gesprochene Meldung, mit deinen eigenen Spracheinstellungen, und du kannst beides jederzeit ändern. Zauber-Abklingzeiten funktioniert außerdem für jeden Zauber, nicht nur für die im Abklingzeitmanager. Der Alarm-Editor des Spiels steht dir zur Verfügung, fang aber mit einem Monitor an.
 
@@ -193,7 +197,7 @@ Die Alarme des Spiels brauchst du aber selten: Die Monitore von WowVision könne
 | Einstellung | Standard | Was sie bewirkt |
 |---|---|---|
 | Einheit | Ziel | Ziel oder Spieler |
-| Bei Zielwechsel ansagen | Aus | Jede Regel sagt ihren aktuellen Zustand an, wenn du das Ziel wechselst (nur bei Ziel) |
+| Bei Zielwechsel ansagen | Nur Änderungen | Was die Regeln sagen, wenn du das Ziel wechselst (nur bei Ziel): Nur Änderungen spricht einen Zustand, der sich vom alten Ziel unterscheidet, Immer sagt den aktuellen Zustand jeder Regel an, Nie bleibt still und spricht nur spätere Änderungen auf dem neuen Ziel |
 | Timer mit einer Nachkommastelle | Aus | Der Countdown auf den verfolgten Symbolen zeigt unter zehn Minuten Zehntelsekunden („8.7“). Das ändert, was sehende Spieler auf dem Bildschirm sehen, deshalb ist es standardmäßig aus. Es ist auch das, was Verfolgte Auren ansagen liest |
 
 ### Regeltyp: Aura-Regel des Abklingzeitmanagers
@@ -279,6 +283,61 @@ Die Taste Verfolgte Abklingzeiten ansagen liest den Zustand jeder Regel jedes ak
 
 Die Taste ist standardmäßig nicht belegt. Du findest sie im Fenster für die Tastenbelegung unter Monitor.
 
+## Ressourcen-Monitor
+
+(Alle Versionen)
+
+Spielt einen Sound oder spricht, wenn eine deiner eigenen Ressourcen eine Stufe erreicht: jeder Kombopunkt, oder alle 20 Prozent deines Manas. Er folgt den Regeln der Kampf-Audiohinweise (Combat Audio Alerts) von Blizzard und ergänzt Sounds, die diese Hinweise nicht haben.
+
+Es gibt zwei Arten von Ressourcen:
+
+- Gezählte Ressourcen (Kombopunkte, Heilige Kraft, Chi, Seelensplitter, Arkane Aufladungen, Essenz, Runen): Jeder Punkt ist eine Stufe, von 0 (ausgegeben) bis zu deinem Maximum.
+- Leisten (Mana, Energie, Wut, Fokus, Runenmacht und ähnliche): Die Stufen gehen in der gewählten Größe von 100 abwärts. Alle 40 Prozent ergibt 100, 60 und 20.
+
+Auf Retail und WoW: Forever verbirgt das Spiel manche Leisten vor Addons, auch außerhalb des Kampfes: sicher Mana und Energie. Einer verborgenen Leiste kann der Monitor nicht folgen, deshalb lässt die Liste Ressource alles weg, was das Spiel bei deinem Charakter verbirgt. Gezählte Ressourcen wie Kombopunkte bleiben lesbar. Eine verborgene Leiste hörst du auf Abruf mit der Taste [Hauptressource sprechen](#hauptressource-sprechen).
+
+### Monitoreinstellungen
+
+| Einstellung | Standard | Was sie bewirkt |
+|---|---|---|
+| Ressource | Deine Hauptressource | Die Ressource, der der Monitor folgt. Die Liste zeigt die Ressourcen, die dein Charakter gerade hat und die das Spiel nicht verbirgt (und die schon gewählte). Verbirgt das Spiel deine Hauptressource, beginnt ein neuer Monitor mit der ersten, der er folgen kann, etwa Kombopunkte |
+| Stufen (Leisten) | Alle 20% | Die Stufengröße für Leisten: alle 10, 20, 30, 40 oder 50 Prozent. Gezählte Ressourcen beachten sie nicht |
+| Stufenklänge | Glas | Die Klangreihe, mit der die Stufen beginnen: Glas, Blech, Wassertropfen oder Hängenbleiben (je fünf steigende Klänge) oder Steigende Töne. Bei mehr als fünf Stufen nehmen die Stufen Steigende Töne. Die Zahl 0 bekommt ein Klicken |
+| Klang auf jeder Stufe | An | Ob die Stufen mit eingeschaltetem Klang beginnen |
+| Sprache auf jeder Stufe | An | Ob die Stufen mit eingeschalteter Sprache beginnen |
+| Sprachformat | Name und Zahl (Mana 40) | Die sechs Formate von Blizzard: Name und Prozent, Name und Zahl, Name und Zehntel („Mana 4“), nur Prozent, nur Zahl, nur Zehntel. Eine gezählte Ressource wird immer als Zahl gesprochen |
+| Stimme | Folgt deiner Einstellung Sprachstimme | Die Spielstimme, mit der die Stufen sprechen |
+| Sprachgeschwindigkeit | 0 | Von -10 bis 10 |
+| Sprachlautstärke | 100 | Von 0 bis 100 |
+| Mindestabstand zwischen Meldungen (Sekunden) | 0 | Von 0 bis 5. Eine Meldung, die früher kommt, wartet, und nur die neueste wartende wird gesprochen. Sounds werden nicht zurückgehalten |
+| Stufen | wird für dich gebaut | Das Untermenü mit einem Alarm je Stufe, siehe unten. Es sagt „Noch keine Stufen“, solange der Monitor aus ist oder die Ressource nicht lesbar ist |
+
+Wenn du Ressource, Stufen (Leisten), Stufenklänge, Klang auf jeder Stufe oder Sprache auf jeder Stufe änderst, werden die Stufen mit diesen Vorgaben neu gebaut. Was du an einzelnen Stufen geändert hast, geht dabei verloren, also stelle diese Einstellungen zuerst ein. Erhöht ein Talent dein Maximum (ein Kombopunkt mehr), kommt die neue Stufe dazu, und die anderen bleiben, wie sie sind.
+
+### Die Stufen
+
+Das Untermenü Stufen („Stufen (6)“ bei fünf Kombopunkten) hat eine Schaltfläche je Stufe, benannt nach ihrem Wert: „0“ bis „5“ oder „20%“ bis „100%“. Jede öffnet den Alarm der Stufe, wie jeder Alarm in WowVision: Aktiviert, Soundalarm (Aktiviert und die Soundauswahl) und TTS-Alarm (nur Aktiviert; was und wie gesprochen wird, kommt aus den Einstellungen des Monitors).
+
+### Wann eine Stufe auslöst
+
+- Gezählte Ressourcen: Bei jeder Änderung löst die Stufe der neuen Zahl aus. Bekommst du zwei Punkte auf einmal, spielt die Stufe, bei der du landest.
+- Leisten, wie bei Blizzard: Fällt der Wert auf oder unter eine Stufe, löst sie aus; steigt er über eine Stufe, löst sie aus. Überspringt eine Änderung mehrere Stufen, spielt beim Fallen die niedrigste und beim Steigen die höchste. 100 spielt, wenn du voll bist, nie beim Verlassen.
+- Eine Stufe, deren Alarm aus ist oder deren Klang und Sprache beide aus sind, wird übergangen: Eine Änderung über sie hinweg spielt die nächste Stufe, die zu hören ist.
+- Der erste Wert nach dem Einloggen, dem Neuladen oder dem Wiedereinschalten des Monitors wird still übernommen.
+- Solange das Spiel den Wert verbirgt, bleibt der Monitor still und beginnt still neu, wenn der Wert wieder lesbar ist.
+
+### Hauptressource sprechen
+
+Die Taste Hauptressource sprechen (Speak Main Resource) sagt die Ressource, die das Spiel gerade für dich zeigt: „Energie 80%“ in Katzengestalt, „Mana 43%“ in Normalgestalt, „Wut 20%“ oder die Zahl, etwa „Kombopunkte 3“. Sie funktioniert in jeder Version, auch dort, wo das Spiel den Wert vor Addons verbirgt: Das Spiel lässt WowVision ihn weiterhin sprechen, nur nicht vergleichen. Die Taste ist standardmäßig nicht belegt; du findest sie unter Monitore im Fenster für die Tastenbelegung.
+
+### Beispiel: Kombopunkte mit Glasklängen
+
+1. Monitore, Monitore (0), Hinzufügen, Ressource.
+2. Stelle Ressource auf Kombopunkte. Lass Stufenklänge auf Glas und schalte Sprache auf jeder Stufe aus.
+3. Die Stufen werden gebaut, sobald der Monitor deine Kombopunkte liest (er muss Aktiviert sein). Öffne Stufen, um „0“ bis „5“ zu hören; bis dahin sagt es „Noch keine Stufen“.
+
+Jeder Kombopunkt spielt jetzt Glas 1 bis 5, und das Ausgeben der Punkte spielt das Klicken.
+
 ## Verfügbarkeit
 
 | Funktion | Classic Era | The Burning Crusade | Mists of Pandaria | Retail | WoW: Forever |
@@ -288,6 +347,9 @@ Die Taste ist standardmäßig nicht belegt. Du findest sie im Fenster für die T
 | Auren des Abklingzeitmanagers | Nein | Nein | Nein | Ja | Ja |
 | Zauber-Abklingzeiten (Abklingzeit- und Proc-Regeln) | Nein | Nein | Nein | Ja | Ja |
 | Zustand Pandemic der Auren des Abklingzeitmanagers | Nein | Nein | Nein | Ja | Nein |
+| Ressourcen-Monitor für gezählte Ressourcen (Kombopunkte und Ähnliches) | Ja | Ja | Ja | Ja | Ja |
+| Ressourcen-Monitor für Leisten (Mana, Energie, Wut und Ähnliches) | Ja | Ja | Ja | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) |
+| Hauptressource sprechen | Ja | Ja | Ja | Ja | Ja |
 | Alle Monitore ein- oder ausschalten | Ja | Ja | Ja | Ja | Ja |
 | Verfolgte Auren ansagen, Verfolgte Abklingzeiten ansagen, `/wv cdmlog` | Nein | Nein | Nein | Ja | Ja |
 
@@ -300,6 +362,7 @@ Die vollständige Funktionsübersicht findest du unter [Funktionen nach Spielver
 | Alle Monitore ein- oder ausschalten | nicht belegt | Ist mindestens ein Monitor an, schaltet die Taste alle Monitore aus und sagt „Monitore aus“. Sind alle aus, schaltet sie alle ein und sagt „Monitore an“ |
 | Verfolgte Auren ansagen | nicht belegt | Liest alle verfolgten Auren (Retail und WoW: Forever) |
 | Verfolgte Abklingzeiten ansagen | nicht belegt | Liest alle verfolgten Zauber-Abklingzeiten und Procs (Retail und WoW: Forever) |
+| Hauptressource sprechen | nicht belegt | Sagt die Ressource, die das Spiel gerade für dich zeigt, etwa „Energie 80%“ (alle Versionen) |
 
 Belege sie im Fenster für die Tastenbelegung, siehe [Tastenbelegung](../basics/keybindings.md). Alle Monitore ein- oder ausschalten wirkt als Stummschaltung: Drücke die Taste einmal, um alle Monitore stumm zu schalten, und noch einmal, um alle wieder einzuschalten. Dabei gehen auch Monitore an, die du vorher einzeln ausgeschaltet hattest.
 

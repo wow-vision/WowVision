@@ -18,21 +18,22 @@ function module.namedDropdown(dropdown, name)
     })
 end
 
--- A search box and a filter dropdown, each its own stop (an edit box
--- cannot share a stop with anything after it).
+-- A filter dropdown and a search box, each its own stop (an edit box
+-- cannot share a stop with anything after it). The search box comes last:
+-- callers render it right before the content it searches.
 function module.renderSearchAndFilter(builder, key, searchBox, filterDropdown)
-    if searchBox ~= nil then
-        builder:beginStop(key .. "Search")
-        builder:addItem(
-            ControlId.structural(key .. "Search"),
-            nodes.proxyEditBox({ editBox = searchBox, label = L["Search"] })
-        )
-    end
     if filterDropdown ~= nil then
         builder:beginStop(key .. "Filter")
         builder:addItem(
             ControlId.forObject(filterDropdown),
             nodes.proxyDropdown({ target = filterDropdown, label = L["Filter"] })
+        )
+    end
+    if searchBox ~= nil then
+        builder:beginStop(key .. "Search")
+        builder:addItem(
+            ControlId.structural(key .. "Search"),
+            nodes.proxyEditBox({ editBox = searchBox, label = L["Search"] })
         )
     end
 end

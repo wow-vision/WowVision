@@ -20,7 +20,7 @@ local function removeInput(set, binding, input)
         return
     end
     if #binding.inputs == 1 and binding.vital then
-        WowVision:speak(L["Cannot remove; Binding must have at least one input."])
+        WowVision:notify(L["Cannot remove; Binding must have at least one input."])
         return
     end
     binding:removeInput(input)
@@ -31,11 +31,11 @@ local function completeMapping(set, binding, mapping)
     local conflicting = binding:doesInputConflict(mapping)
     if conflicting ~= nil then
         if conflicting == binding then
-            WowVision:speak(L["This input already exists for this binding."])
+            WowVision:notify(L["This input already exists for this binding."])
             return
         end
         if conflicting.vital and #conflicting.inputs <= 1 then
-            WowVision:speak(L["Cannot replace this binding as it requires at least one input."])
+            WowVision:notify(L["Cannot replace this binding as it requires at least one input."])
             return
         end
         nodes.pushConfirm({
@@ -62,7 +62,7 @@ local function completePadMapping(set, binding, mapping)
     local conflicting = binding:doesPadInputConflict(mapping)
     if conflicting ~= nil then
         if conflicting == binding then
-            WowVision:speak(L["This input already exists for this binding."])
+            WowVision:notify(L["This input already exists for this binding."])
             return
         end
         nodes.pushConfirm({
@@ -161,6 +161,7 @@ module.renderGraphBindings = renderBindings
 function module:getGraphMenuItems(builder)
     local vtable = nodes.button({
         label = L["Bindings"],
+        opensLevel = true,
         onActivate = function()
             local host = WowVision.graphHost
             local stack = host:focusedStack()

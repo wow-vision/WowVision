@@ -7,7 +7,7 @@ Everything here is in the WowVision menu (type /wv) under Navigation. The route 
 | Menu entry | What it holds |
 |------------|---------------|
 | Navigation | Three settings: Auto-move to Interact Target, Automatically Navigate to Corpse and Announce Remaining Waypoints (described on the [Navigation](navigation.md#what-you-hear) page). The other entries under Navigation (maps, visited places, beacon and so on) are described on the [Navigation](navigation.md) page |
-| Navigation, Compass | Facing, zone, indoors/outdoors, flying, swimming and diving alerts |
+| Navigation, Environmental Alerts | Facing, zone, indoors/outdoors, flying, swimming, diving and breath alerts |
 | Navigation, Fall Detection | Falling sounds and announcement |
 | Navigation, Wall Detection | Collision sounds |
 | Navigation, Name What I Bump Into | Names the object or wall you are blocked by |
@@ -16,9 +16,9 @@ Everything here is in the WowVision menu (type /wv) under Navigation. The route 
 
 Each of these sub-menus has an Enabled switch at the top, so any feature can be turned off completely.
 
-## Compass and surroundings
+## Environmental alerts
 
-The Compass module watches your character and speaks when something about your surroundings changes. Each of its entries is an alert (see [Alerts](../basics/alerts.md)): it has an Enabled switch and one or more outputs, usually TTS Alert (speech) and Sound Alert.
+The Environmental Alerts module watches your character and speaks when something about your surroundings changes. Each of its entries is an alert (see [Alerts](../basics/alerts.md)): it has an Enabled switch and one or more outputs, usually TTS Alert (speech) and Sound Alert.
 
 | Alert | What triggers it | Default output |
 |-------|------------------|----------------|
@@ -31,6 +31,7 @@ The Compass module watches your character and speaks when something about your s
 | Flying Ended Alert | You land | TTS Alert on, Sound Alert off |
 | Swimming Alert | You enter the water | TTS Alert on, Sound Alert off |
 | Diving Alert | Your character goes under the surface | TTS Alert on, Sound Alert off |
+| Breath Alert | A breath, fatigue or feign death bar runs down by one step | TTS Alert on, Voice Alert off, Sound Alert off |
 
 ### Compass direction
 
@@ -48,13 +49,19 @@ Inside some instances the game does not tell addons which way you face; the comp
 
 You hear "outdoors" or "indoors" when the game decides that you changed from one to the other, "flying" when you take off on a flying mount, "flying ended" when you land, "swimming" when you enter water, and "diving" when you go under the surface. Walking back out of water does not say anything.
 
+### Breath and fatigue
+
+Under water the game shows a breath bar that runs down while you hold your breath. Swim too far out into deep water and a fatigue bar appears. Hunters see a bar while they feign death. Breath Alert speaks the bar's name and how full it is, one line per step down: "Breath 90", "Breath 80", and so on to "Breath 0", when you start to drown. Nothing is said while the bar fills up again after you surface; dive again and the steps count down from wherever the bar is.
+
+The steps are 10 percent by default. Change them with Breath Step (5, 10, 20 or 25 percent) on the Environmental Alerts screen. The game shows only the bar, not the seconds left, so WowVision says the percent too. Breath Alert speaks with a game voice, so movement keys do not cut it off.
+
 ### Changing these
 
 Every alert in the table except Speak Compass Direction has a Sound Alert, and it is off by default. To get a sound instead of or in addition to speech, open the alert, turn Sound Alert on and pick a sound with its Sound setting.
 
 Example: you want a sound when you step indoors and no speech.
 
-1. Press Shift+F1 (or type /wv), go to Navigation, then Compass, then Indoors Alert.
+1. Press Shift+F1 (or type /wv), go to Navigation, then Environmental Alerts, then Indoors Alert.
 2. Turn TTS Alert off.
 3. Turn Sound Alert on and choose a sound with Sound.
 
@@ -97,6 +104,7 @@ Things it takes care of:
 - It follows your movement commands, no matter which keys you have bound for moving. Autorun counts as movement too.
 - It also covers walks that the game makes for you: when you press the interact key and the game walks you to an NPC, or you use click to move. If such a walk ends before it reaches its goal (you got stuck on something), the Blocked sound plays once.
 - Being stunned, rooted, feared or otherwise out of control is never reported as a wall, and nothing is graded while you are on a flight path.
+- When you attack with the interact key, your character follows the enemy for the whole fight. Once you are in combat, wall detection stays quiet while your auto-attack is on and you press no movement key. On the way to the enemy, before the fight begins, it warns about an obstacle as usual, and so it does when you press a movement key.
 - While swimming, your swimming speed is used for comparison.
 - (Retail and WoW: Forever only) In combat the game hides your movement speed, so only a complete standstill can be noticed: you hear the Blocked sound but none of the slower grades.
 

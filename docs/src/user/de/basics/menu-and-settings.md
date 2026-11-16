@@ -8,6 +8,8 @@ Im WowVision-Menü konfigurierst du das Addon: Sprache, Alarme, Navigation, Puff
 |---|---|
 | Umschalt+F1 | Öffnet das Menü (die Belegung WowVision-Menü). |
 | /wv | Öffnet das Menü. Auch /wv gefolgt von etwas, das WowVision nicht kennt, öffnet es. |
+| Pfeil rechts | Öffnet die nächste Ebene, wenn der Eintrag eine hat. |
+| Pfeil links | Geht eine Ebene zurück. Auf der ersten Ebene passiert nichts, das Menü bleibt offen. |
 | Esc | Geht eine Ebene zurück. Auf der ersten Ebene schließt es das Menü. |
 | /wv close | Schließt zwangsweise alle WowVision-Fenster. |
 
@@ -23,8 +25,8 @@ Den Bildschirm eines Moduls mit eigenen Einstellungen erreichst du direkt mit /w
 | /wv gsettings ui | Benutzeroberfläche |
 | /wv gsettings ui.tooltip.quality | Benutzeroberfläche, Tooltip, Qualität |
 | /wv gsettings ui.combat | Benutzeroberfläche, Kampf |
-| /wv gsettings navigation.compass | Navigation, Kompass |
-| /wv gsettings navigation.maps | Navigation, Karten |
+| /wv gsettings navigation.compass | Navigation, Umwelt-Alarme |
+| /wv gsettings navigation.maps | Navigation, Beacon und Routen |
 | /wv gsettings chat | Chat |
 | /wv gsettings targeting | Zielerfassung |
 | /wv gsettings errors | Fehler |
@@ -54,17 +56,17 @@ Die Einträge stehen in der alphabetischen Reihenfolge, in der du sie auf einem 
 
 | Eintrag | Spielversionen | Was er enthält | Mehr |
 |---|---|---|---|
-| Auktionspreise (Auction Prices) | The Burning Crusade | Preisverlauf und zusätzliche Preiszeilen in Gegenstands-Tooltips. | [Tooltips](./tooltips.md#preise-in-tooltips-nur-the-burning-crusade) |
+| Auktionspreise (Auction Prices) | The Burning Crusade | Preisverlauf und zusätzliche Preiszeilen in Gegenstands-Tooltips. | [Tooltips](./tooltips.md#preise-in-tooltips) |
 | Benutzeroberfläche (UI) | Alle | Fensterverhalten, Belegungen, Kampf, Cursor, Tooltips. | unten |
 | Chat | Alle | Ein Alarm pro Chat-Reiter, Flüster-Reiter, Sounds des Chat-Eingabefelds. | [Chat](../windows/chat.md) |
 | Fehler (Errors) | Alle | Wie Fehler- und Infomeldungen des Spiels gesprochen werden. | [Kampf](../world/combat.md) |
 | Fenster (Windows) | Alle | Ein Eintrag pro Spielfenster, das WowVision zugänglich macht. | [Spielfenster](../windows/overview.md) |
 | Minikarten-Scanner (Minimap Scanner) | Alle | Minikarten-Scan und die Ansagen beim Laufen. | [Minikarte](../world/minimap.md) |
 | Monitor (Monitors) | Alle | Aura-, Abklingzeit- und andere Monitore. | [Monitore](../information/monitors.md) |
-| Navigation | Alle | Atlas, Kompass, Fallerkennung, Folgen, Karten, Neigungssperre, Besuchte Wegpunkte, Wanderkennung und mehr. | [Bewegung und Orientierung](../world/movement.md), [Navigation und Routen](../world/navigation.md) |
+| Navigation | Alle | Atlas, Beacon und Routen, Umwelt-Alarme, Fallerkennung, Folgen, Neigungssperre, Besuchte Wegpunkte, Wanderkennung und mehr. | [Bewegung und Orientierung](../world/movement.md), [Navigation und Routen](../world/navigation.md) |
 | Puffer (Buffers) | Alle | Deine Puffergruppen und Puffer und die Einstellung Elementrichtung umkehren. | [Puffer](../information/buffers.md) |
 | Quests | Alle | Werkzeuge für das Questlog, Alarme für Questgebiete. | [Quests](../world/quests.md) |
-| Scanner | Alle | Der Scanner (F9). | [Scanner](../world/scanner.md) |
+| Scanner | Alle | Der Scanner (F9): Scan-Radius, Einträge pro Kategorie und Scanner als Baum, um zwischen Baum und Menü zu wählen. | [Scanner](../world/scanner.md) |
 | Sprache (Speech) | Alle | Stimme, Geschwindigkeit, Lautstärke und Sprachverhalten. | [Sprache und Ton](./speech.md) |
 | Zielerfassung (Targeting) | Alle | Zielansagen, weiche Zielerfassung, Fokusziele. | [Zielerfassung](../world/targeting.md) |
 
@@ -81,7 +83,11 @@ Drücke im Hauptmenü B, dann Eingabe. Es enthält:
 | Tooltip, dann Qualität | | Welche Farben der Gegenstandsqualität gesprochen werden, siehe [Tooltips](./tooltips.md#gegenstandsqualität-in-namen). |
 | Tastenbelegung | | Der Tastenbelegungs-Bildschirm, siehe [Tastenbelegung](./keybindings.md). |
 | Sprache beim Schließen des Fensters unterbrechen | Aus | Die Sprache abschneiden, sobald sich ein Fenster schließt. |
+| Töne beim Öffnen und Schließen von WowVision-Menüs | An | Einen kurzen Ton spielen, wenn sich ein WowVision-Fenster öffnet, und einen anderen, wenn es sich schließt: das WowVision-Menü, der Scanner, das Navigationsfenster, die Aktionsleisten und der Chat. Die Fenster des Spiels machen ihre eigenen Töne und bekommen keine von WowVision. |
+| Ton am Anfang und Ende von Listen | An | Pfeil nach oben auf dem ersten oder Pfeil nach unten auf dem letzten Eintrag einer Liste spielt einen kurzen Ton und liest den Eintrag noch einmal vor. Schalte es aus, wenn die Pfeiltaste am Rand nichts tun soll. |
+| Ausstehende Fenster (Pending Windows) | Escape und die Taste Alle Fenster schließen | Wann ein Kasten, der auf eine Antwort wartet (eine Gruppeneinladung, eine Beschwörung, der Tod, der Bereitschaftscheck), nach Ausstehend im WowVision-Menü beiseitegelegt wird, auf dem Bildschirm und unbeantwortet. Siehe [Ausstehend](../windows/system.md#ausstehend-eine-frage-die-wartet). |
 | Buchstaben-Navigation in Menüs | An | Buchstabentasten zu Einträgen in Menüs springen lassen. Schalte sie aus, wenn deine Buchstabentasten auch bei geöffnetem Menü weiter funktionieren sollen. |
+| WowVision-Soundkanal | Soundeffekte | Der Soundkanal des Spiels, auf dem jeder WowVision-Sound spielt: Alarmsounds, Stimmenpakete, das Beacon und die Beispiele in den Sound-Browsern. Die Einträge heißen wie die Lautstärkeregler in den Soundoptionen des Spiels, dieser Regler ist dann die Lautstärke von WowVision. Ein Kanal, den du sonst kaum nutzt, gibt WowVision eine eigene Lautstärke. Retail und WoW: Forever bieten zusätzlich Gameplay-Soundeffekte. |
 
 ### Das Modul Fenster
 
@@ -98,7 +104,7 @@ Jedes Spielfenster, das WowVision behandelt, hat hier einen eigenen Eintrag, zum
 | Dauer | „(Name), Zahl, 1 Minute 5 Sekunden“ | Wie eine Zahl. Pfeil links und Pfeil rechts gehen jeweils eine Sekunde; beim Tippen gibst du Sekunden ein. |
 | Stimme | „Stimme, Dropdown, Microsoft Zira Desktop“ | Eine Auswahl unter deinen installierten TTS-Stimmen. |
 | Stimmenpaket | „Stimmenpaket, Dropdown, Matthew“ | Eine Auswahl unter den aufgenommenen Stimmenpaketen. Siehe [Sprache und Ton](./speech.md#aufgenommene-stimmenpakete). |
-| Sound- oder Signal-Auswahl | „Sound, Schalter, chat.mp3“ | Siehe [Einen Sound auswählen](#einen-sound-auswählen). |
+| Sound- oder Beacon-Auswahl | „Sound, Schalter, chat.mp3“ | Siehe [Einen Sound auswählen](#einen-sound-auswählen). |
 | Zauber | „Zauber, Schalter, Sternensog (78674)“ | Siehe [Einen Zauber auswählen](#einen-zauber-auswählen). |
 | Vorlage | „Vorlage, Schalter, Standard“ | Siehe [Eine Vorlage bearbeiten](#eine-vorlage-bearbeiten). |
 | Alarm | der Name des Alarms, als Schalter | Öffnet den Bildschirm des Alarms, siehe [Alarme](./alerts.md). |
@@ -108,7 +114,7 @@ Jedes Spielfenster, das WowVision behandelt, hat hier einen eigenen Eintrag, zum
 
 ### Einen Sound auswählen
 
-Die Einstellung Sound der Soundausgabe eines Alarms und die Einstellung Signalton eines Signals öffnen einen Browser für Audiodateien.
+Die Einstellung Sound der Soundausgabe eines Alarms und die Einstellung Beacon-Ton eines Beacons öffnen einen Browser für Audiodateien.
 
 1. Drücke Eingabe auf Sound. Du landest in einer Liste von Ordnern.
 2. Gehe in Sound, dann in WowVision für die Sounds, die mit WowVision geliefert werden, oder in LibSharedMedia für die Sounds, die andere Addons registriert haben. In WowVision heißen die Ordner alerts, errors, notes und falling.
@@ -117,7 +123,7 @@ Die Einstellung Sound der Soundausgabe eines Alarms und die Einstellung Signalto
 
 Esc geht einen Ordner zurück, ohne etwas auszuwählen. Oben im Browser siehst du außerdem die Ordner Voice und Beacon, die Dateien für andere Arten von Ausgaben enthalten. (Die Namen der Ordner und der Sounds werden auf Englisch angesagt.)
 
-Signal-Auswahlen funktionieren genauso, nur wählst du einen der Signaltöne (Notification, Probe (Deep), Probe (Mid), Steel Gong, Beacon 6), und beim Daraufgehen wird ein Beispiel-Signal abgespielt.
+Beacon-Auswahlen funktionieren genauso, nur wählst du einen der Beacon-Töne (Notification, Probe (Deep), Probe (Mid), Steel Gong, Beacon 6), und beim Daraufgehen wird ein Beispiel-Beacon abgespielt.
 
 ### Einen Zauber auswählen
 

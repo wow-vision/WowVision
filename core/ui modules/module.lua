@@ -12,6 +12,25 @@ settings:add({
     default = false,
 })
 
+-- A short sound when a WowVision window opens and another when it closes
+-- (the WowVision menu, the scanner, navigation, the action bars, chat), as
+-- Sku plays for its menu. The game's own windows make their own sounds.
+settings:add({
+    type = "Bool",
+    key = "menuSounds",
+    label = L["Sounds on Opening and Closing WowVision Menus"],
+    default = true,
+})
+
+-- Up or Down on the first or last entry of a list plays a short sound and reads the entry again, as Sku does
+-- (graph/Host.lua).
+settings:add({
+    type = "Bool",
+    key = "edgeSound",
+    label = L["Sound at the Start and End of Lists"],
+    default = true,
+})
+
 -- Letters jump to the next entry starting with them in the lists that own the keyboard: the WowVision menu, context
 -- and dropdown menus (graph/typeAhead.lua, graph/Host.lua).
 settings:add({
@@ -19,6 +38,46 @@ settings:add({
     key = "letterNavigation",
     label = L["Letter Navigation in Menus"],
     default = true,
+})
+
+-- The game sound channel every WowVision sound and beacon plays on
+-- (core/audio/channels.lua): its volume is that channel's game slider,
+-- so a channel the player keeps for WowVision alone gives WowVision a volume of
+-- its own. The list and the default live in WowVision.audio (a version adds
+-- the channels its sound options have a slider for).
+local soundChannel = settings:add({
+    type = "Choice",
+    key = "soundChannel",
+    label = L["WowVision Sound Channel"],
+    default = WowVision.audio.defaultChannel,
+    choices = WowVision.audio.channels,
+    validate = WowVision.audio.validateChannel,
+})
+soundChannel.events.valueChange:subscribe(module, function(_, _, _, _, value)
+    WowVision.audio.selectedChannel = value
+end)
+
+-- The same arrow pressed twice quickly skips the empty slots of a bag or action bar (graph/doublePress.lua).
+settings:add({
+    type = "Bool",
+    key = "skipEmptySlots",
+    label = L["Skip Empty Slots on Double Arrow"],
+    default = false,
+})
+
+-- Pending windows (windows/pending.lua): a window that waits for an answer and ignores Escape in the game (a group
+-- invitation, a summon, death, the ready check) is put aside to Pending in the WowVision menu, left on screen and not
+-- answered. On: by Escape and by Close All Windows. Close All Windows: only by that. Off: they wait in front.
+settings:add({
+    type = "Choice",
+    key = "pendingWindows",
+    label = L["Pending Windows"],
+    default = "on",
+    choices = {
+        { label = L["Escape and the Close All Windows Key"], value = "on" },
+        { label = L["Only the Close All Windows Key"], value = "closeAll" },
+        { label = L["Off"], value = "off" },
+    },
 })
 
 -- Chasing stuck movement keys with testers: prints when windows take, wait
@@ -348,6 +407,19 @@ module:registerBindings({
         interruptSpeech = true,
         func = function()
             WowVision.graph.settings.openMenu()
+        end,
+    },
+    -- Closes every WowVision window and every window of the game at once.
+    {
+        type = "Function",
+        key = "wowvision/closeAll",
+        label = L["Close All Windows"],
+        inputs = { "SHIFT-ESCAPE" },
+        interruptSpeech = true,
+        func = function()
+            if WowVision.UIHost:closeAllWindows("closeAllKey") then
+                WowVision:notify(L["All windows closed"])
+            end
         end,
     },
 })

@@ -18,6 +18,12 @@
 -- its position (scanner, places list) is that dock; a dock
 -- of the other line at the same far stop is taken as that line's own dock (the Deeprun Tram has two lines with a
 -- dock each at both ends); and near the noted dock it is said once that the turn key faces it.
+-- The dock model of his data from 11/2026 (so far Stormwind's harbour): a boat or zeppelin landing without a waiting
+-- circle, proof or boarding straight is an ordinary point on its own fixed node (dock.isVesselRow). The route ends there
+-- with the normal arrival; his Dock:Arrival says where the ship waits and names the point on board ("On the ship to
+-- Auberdine", a place of its own that is walked to on foot), the module starts the route to it, and its arrival sets the
+-- dock reached again (dock.boardingArrival) so that the other dock of the line can be noted. No boarding beacon.
+--
 -- Where the dock's waiting node lies outside its waiting circle (the Deeprun Tram in data 9423773: the waiting point
 -- is at track level, the route ends on the platform about 7 yd away), his circle rule could never end the route: there
 -- the route ends at the waiting node as any route does, standing at that node counts as standing at the dock, and the
@@ -83,8 +89,8 @@ local LAST_DROP = 3.0
 
 -- The dock's waiting node: x, y and whether it lies inside the waiting circle; nil without a node.
 local function waitingNode(N, target)
-    if target.nodeId == nil then
-        return nil
+    if target.nodeId == nil or target.waitingRadius == nil then
+        return nil          -- a dock of the dock model has no waiting circle
     end
     local x, y = N.Position(target.nodeId)
     if x == nil then
@@ -97,9 +103,30 @@ local function stopKey(target)
     return type(target.transportStopId) == "string" and target.transportStopId:match("^(.*):[^:]*$") or nil
 end
 
--- A list row is a dock when its target waits for a vehicle.
+-- A list row is a dock when its target waits for a vehicle: a waiting point (manual_wait), or a boat or zeppelin landing
+-- of the dock model (his user decision of 10.11.2026: an ordinary point on its own node, no waiting circle, no waiting
+-- proof; the engine's vesselDock decides on the full target).
 function dock.isDockRow(row)
-    return type(row) == "table" and row.interactionMode == "manual_wait"
+    return type(row) == "table"
+        and (row.interactionMode == "manual_wait" or dock.isVesselRow(row))
+end
+
+-- A boat or zeppelin landing of the dock model, by what its list row says.
+function dock.isVesselRow(row)
+    return type(row) == "table" and row.interactionMode == nil and row.facilityRole == "waiting"
+        and (row.facilityKind == "boat" or row.facilityKind == "zeppelin")
+end
+
+-- The point on board of such a dock ("On the ship to ..."): a place of its own, walked to from its dock.
+function dock.isBoardingRow(row)
+    return type(row) == "table" and row.facilityRole == "onboard" and row.dockId ~= nil
+        and (row.facilityKind == "boat" or row.facilityKind == "zeppelin")
+end
+
+-- Whether a full target is a boat or zeppelin landing of the dock model (his Dock:IsVesselDock).
+function dock.isVesselTarget(target)
+    local Dock = D()
+    return Dock ~= nil and Dock:IsVesselDock(target, catalog.activeNav() or {}) == true
 end
 
 -- The full target of a list row (his list entry), resolved.
@@ -155,6 +182,7 @@ local function adoptStanding(N, x, y)
         Dock.reached = {
             id = best.id, zoneId = zoneNav.zoneId, navFingerprint = zoneNav.exportFingerprint,
             waitpointFingerprint = zoneNav.waitpointFingerprint, lastX = x, lastY = y,
+            vessel = Dock:IsVesselDock(best, zoneNav) or nil,      -- his context of a dock of the dock model
         }
     end
     return best, math.sqrt(bestD2)
@@ -172,7 +200,8 @@ function dock.rowAt(N, x, y)
         return nil
     end
     for _, target in ipairs(facilities(nav)) do
-        if target.interactionMode == "manual_wait" and (x - target.x) ^ 2 + (y - target.y) ^ 2 <= 9 then
+        if (target.interactionMode == "manual_wait" or dock.isVesselTarget(target))
+            and (x - target.x) ^ 2 + (y - target.y) ^ 2 <= 9 then
             return dock.rowOf(target)
         end
     end
@@ -200,6 +229,11 @@ function dock.rowOf(target)
         tid = target.id, x = target.x, y = target.y, z = target.z, zoneId = target.zoneId,
         kind = target.kind, nameEn = target.nameEn, interactionMode = target.interactionMode,
         n = WowVisionNavigationTargetName(target),
+        -- the dock model, and his Weg B (what catalog.lua's rows carry)
+        facilityRole = target.facilityRole, facilityKind = target.facilityKind, dockId = target.dockId,
+        boardingPointId = target.boardingPointId, navFingerprint = target.navFingerprint,
+        targetNode = target.targetNode, dynNode = target.dynNode, waitingRadius = target.waitingRadius,
+        activationCaptureRadius = target.activationCaptureRadius,
     }
 end
 
@@ -217,7 +251,7 @@ function dock.rideFor(N, px, py, tx, ty)
     local nav = dock.nav(N, nil)
     local best, bestD2
     for _, target in ipairs(facilities(nav)) do
-        if target.interactionMode == "manual_wait" and target.id ~= source.id
+        if (target.interactionMode == "manual_wait" or dock.isVesselTarget(target)) and target.id ~= source.id
             and target.transportRouteId == source.transportRouteId then
             local d2 = (tx - target.x) ^ 2 + (ty - target.y) ^ 2
             if d2 <= STATION_REACH * STATION_REACH and (best == nil or d2 < bestD2) then
@@ -346,6 +380,9 @@ end
 -- His WaypointIsReached for a waiting target: the last waypoint counts only inside the proven waiting circle. nil
 -- when the waiting node lies outside that circle (the route then ends at the node like any route).
 function dock.waitAreaCheck(N, target)
+    if dock.isVesselTarget(target) then
+        return nil          -- the route to a dock of the dock model ends on its node like any route
+    end
     local _, _, inside = waitingNode(N, target)
     if inside == false then
         return nil
@@ -362,6 +399,12 @@ function dock.arrived(N, target, x, y)
     if nav == nil or not D():IsDock(target, nav) then
         WowVisionNavigationPrint(WowVisionNavigationText("wait_proof_invalid"))
         return nil
+    end
+    -- a dock of the dock model: the normal arrival says where the ship waits and names the point on board, the route
+    -- to which the module starts (no boarding beacon). Returns nil and that point's full target (or nil).
+    if D():IsVesselDock(target, nav) then
+        local arrived, ship = D():Arrival(target, nav, x, y)
+        return nil, arrived and ship or nil
     end
     D():Arrival(target, nav, x, y)
     -- the boarding beacon only where his rule gives a point (it would forget the dock otherwise)
@@ -388,6 +431,25 @@ function dock.alignment(N, x, y)
         return nil
     end
     return px, py, id
+end
+
+-- The full target of a point on board and the nav of its zone (the chosen row), or nil.
+function dock.boardingTarget(N, row)
+    local target, nav = dock.target(N, row)
+    if target ~= nil and D():IsBoardingPoint(target, nav) then
+        return target, nav
+    end
+    return nil, nav
+end
+
+-- Arrival at the point on board: the context of its dock is "reached" again (his Dock:BoardingArrival), so that the
+-- other dock of the line can be noted from here.
+function dock.boardingArrival(N, target, x, y)
+    local nav = dock.nav(N, target.zoneId)
+    if nav == nil then
+        return false
+    end
+    return D():BoardingArrival(target, nav, x, y)
 end
 
 -- The boarding points of the docks as list entries (his Dock:BoardingTargets), with their distance.

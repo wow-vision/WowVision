@@ -98,6 +98,7 @@ Rules the render function must follow:
 - `onActivate` / `onSecondary` — Enter and Backspace handlers for synthetic controls. The host binds them automatically unless the node declares explicit `leftClick`/`rightClick` bindings.
 - `onAdjust(sign, large)` — slider adjustment; when present, left/right adjust instead of navigating.
 - `stateText` — a function returning the control's state line, spoken immediately after an activation or adjust the user caused. Asynchronous changes ride live parts instead.
+- `isEmpty` — a function returning true while the control is an empty slot. The same arrow pressed twice within `graph.doublePress.WINDOW` (`core/graph/doublePress.lua`) runs `KeyGraph:moveSkippingEmpty`, which steps once and then on past every empty node to the first filled one (or the last node that way). Bag item slots (`containers.renderSlots`) and action buttons (`bars.actionButtonNode`) declare it; any list of slots can opt in.
 - `bindings` — input declarations activated while the node is focused; see Input below.
 - `onFocus` / `onUnfocus` — lifecycle hooks (scroll adapters bringing rows into view, edit boxes taking keyboard focus).
 - `onExpand` / `onCollapse`, `speaksOwnExpansion`, `speaksOwnPosition` — group and readout overrides, rarely needed.

@@ -2,7 +2,7 @@
 
 Monitors watch the game for you and speak or play a sound when something changes: a debuff you applied is about to run out, a cooldown is ready again, a proc lights up. While [Buffers](buffers.md) answer the question when you ask it, monitors tell you without being asked.
 
-Which monitors you have depends on your game version. Classic Era, The Burning Crusade and Mists of Pandaria have an Aura monitor and a Cooldown monitor. Retail and WoW: Forever have Cooldown Manager Auras and Spell Cooldowns, because the game hides aura and cooldown numbers from addons there during combat. Cooldown Manager Auras reads Blizzard's cooldown manager. Spell Cooldowns uses the few facts the game still gives out, and only borrows the cooldown manager for its list of spells to pick from.
+Which monitors you have depends on your game version. Classic Era, The Burning Crusade and Mists of Pandaria have an Aura monitor and a Cooldown monitor. Retail and WoW: Forever have Cooldown Manager Auras and Spell Cooldowns, because the game hides aura and cooldown numbers from addons there during combat. Cooldown Manager Auras reads Blizzard's cooldown manager. Spell Cooldowns uses the few facts the game still gives out, and only borrows the cooldown manager for its list of spells to pick from. Every version also has the [Resource monitor](#resource-monitor) for your own combo points, mana, energy and the like.
 
 ## How monitors work
 
@@ -64,6 +64,10 @@ Monitors you add are stored account-wide by default, so all your characters shar
 
 Nothing is deleted when you change scope.
 
+### Copying a monitor or a rule
+
+To build a second monitor like one you already have, move to it in the monitors list, press Shift+F10 and choose Copy. You hear the new name, for example "Moonfire Copy 1"; the copy sits right after the original, with the same settings, alerts and rules, in the same scope. Rename it and change what differs. Copy works the same on a rule inside a monitor.
+
 ### Settings that every monitor and rule has
 
 | Setting | Default | What it does |
@@ -113,7 +117,7 @@ Watches buffs and debuffs on one unit.
 | Setting | Default | What it does |
 |---|---|---|
 | Unit | target | Which unit to watch, typed as text: `target`, `player`, `focus`, `pet`, `mouseover`, `party1` and so on |
-| Announce on Target Change | Off | When you change target (or the unit changes), every rule announces the state it finds on the new unit, including Missing |
+| Announce on Target Change | Only Changes | What the rules say when you change target (or the unit changes). Only Changes: a rule speaks only when the new target's state differs from what it had. Always: every rule announces the state it finds on the new unit, including Missing. Never: the rules take the new target's state in silence; later changes on that target speak as usual |
 
 Rule type: Aura State Rule. It follows one spell through its life on the unit.
 
@@ -138,8 +142,8 @@ Details worth knowing:
 - Expiring needs both conditions: inside the pandemic window and under the expiry threshold. For a short aura (say 6 seconds) the pandemic window is so small that the aura goes straight from Applied to Expiring.
 - Auras with no duration stay at Applied.
 - If more than one matching aura is present (when Applied by Player is off and several people applied it), the rule reports the healthiest one.
-- Missing is spoken when an aura that was being tracked disappears. When the monitor starts (at login, say) and the aura was never there, Missing is not spoken. Use Announce on Target Change if you want to hear "Moonfire Missing" or "Moonfire Applied" every time you target something new.
-- Without Announce on Target Change, changing target still speaks when the new target's state differs from what the rule had (for example from Applied to Missing).
+- Missing is spoken when an aura that was being tracked disappears. When the monitor starts (at login, say) and the aura was never there, Missing is not spoken. Set Announce on Target Change to Always if you want to hear "Moonfire Missing" or "Moonfire Applied" every time you target something new.
+- With Announce on Target Change at Only Changes (the default), changing target still speaks when the new target's state differs from what the rule had (for example from Applied to Missing). Set it to Never to hear nothing at a target change, only the changes that follow on the new target.
 - Applied by Player must be turned off for effects with no caster, such as many trinket procs.
 - A rule matches the aura by its own spell number. When the spell you cast and the aura it puts on the target have different numbers (on the classic versions this can depend on the spell rank), choose the aura from the quick picks instead of typing the name. The aura appears there once your monitor has seen it on the unit.
 
@@ -181,10 +185,10 @@ On Retail the game hides aura information from addons in combat and in instances
 Before you can use it, the aura must be one of the cooldown manager's tracked buffs or bars:
 
 - Only auras in the Tracked Buffs and Tracked Bars categories can be watched. The Essential and Utility categories hold spells, not auras.
-- Only two units can be watched: Target and Player, the two the cooldown manager follows.
+- Only two units can be watched: Target and Player, the two the cooldown manager follows. While you target yourself, a Target monitor hears the auras on you. In instances the game may hide whether you are your own target; WowVision then goes by the last answer it could read since your target changed, so your aura is not reported Missing while you still target yourself.
 - The cooldown manager must be showing the aura. A cooldown manager row that you have hidden, or set to appear only in combat, reads as empty while it is hidden, and your rule will report Missing. If an alert plays at the wrong time, check that the rows are shown.
 
-You arrange the cooldown manager in its settings window, which WowVision makes accessible. Open it with `/cdm`. The window has the Spells, Auras and Group Buffs tabs, a Search box, a Settings menu, each category with its items, the Layout dropdown and a Revert Changes button. Press Enter on an item to pick it up and Enter on another item, or on the empty slot of a category, to drop it there. Press Backspace on an item for its menu (alerts, move to another category). Changes made with the keyboard take effect after the interface reloads, because the game rebuilds its on-screen cooldown data from them. The window tells you so the first time and offers a Reload Interface button at its end (or type `/reload`); when you close the window after such changes it reminds you again. The items are read with their name, "Unlearned" for spells you have not learned, and the number of alerts they have (for example "1 alert"). Categories can be collapsed and expanded with Enter on their heading. On the Group Buffs tab the buffs sit in a Shown and a Hidden section: Enter picks a buff up, and Enter on a buff in the other section moves it there. Choosing an alert in the item's menu (Add New Alert, or editing an existing one) opens the game's alert editor as a window of its own, called Alert Editor: the spell, one dropdown for each choice, and the button that adds or saves the alert, then Close.
+You arrange the cooldown manager in its settings window, which WowVision makes accessible. Open it with `/cdm`. The window has the Spells, Auras and Group Buffs tabs, a Search box, a Settings menu, each category with its items, the Layout dropdown and a Revert Changes button. Press Enter on an item to pick it up and Enter on another item, or on the empty slot of a category, to drop it there. Press Backspace on an item for its menu (alerts, move to another category). Changes made with the keyboard take effect after the interface reloads, because the game rebuilds its on-screen cooldown data from them. The window tells you so the first time and offers a Reload Interface button at its end (or type `/reload`); when you close the window after such changes it reminds you again. Make these changes with no buffs on you, at least none that the cooldown manager tracks. If such a buff is active while you move an item or pick something in its menu, the game shows a Lua error. The error does not stop you: the change is still saved and works after the reload. It comes from the game's own code, which refuses to rebuild the on-screen buffs for a change that did not come from a real mouse click. Reload before you go into combat: until the reload, the on-screen buffs still carry the keyboard change, and the next buff in combat brings the same Lua error, whether or not a buff was on you while you made the change. The items are read with their name, "Unlearned" for spells you have not learned, and the number of alerts they have (for example "1 alert"). Categories can be collapsed and expanded with Enter on their heading. On the Group Buffs tab the buffs sit in a Shown and a Hidden section: Enter picks a buff up, and Enter on a buff in the other section moves it there. Choosing an alert in the item's menu (Add New Alert, or editing an existing one) opens the game's alert editor as a window of its own, called Alert Editor: the spell, one dropdown for each choice, and the button that adds or saves the alert, then Close.
 
 You rarely need the game's alerts, though: WowVision's monitors do everything they do, and do it better. Each state of a rule has its own sound and its own spoken message, in your own speech settings, and you can change both at any time. Spell Cooldowns also works for any spell, not only those in the cooldown manager. The game's alert editor is there if you want it, but start with a monitor.
 
@@ -193,7 +197,7 @@ You rarely need the game's alerts, though: WowVision's monitors do everything th
 | Setting | Default | What it does |
 |---|---|---|
 | Unit | Target | Target or Player |
-| Announce on Target Change | Off | Every rule announces its current state when you change target (only for Target) |
+| Announce on Target Change | Only Changes | What the rules say when you change target (only for Target): Only Changes speaks a state that differs from the old target's, Always announces every rule's current state, Never stays silent and speaks only later changes on the new target |
 | One Decimal Timer | Off | The countdown drawn on the tracked icons shows tenths of a second ("8.7") below ten minutes. It changes what sighted players see on the screen, which is why it is off by default. It is also what Speak Tracked Auras reads |
 
 ### Rule type: Cooldown Manager Aura Rule
@@ -279,6 +283,61 @@ The Speak Tracked Cooldowns key reads the state of every rule of every enabled S
 
 The key is unbound by default. You find it under Monitors in the keybinding window.
 
+## Resource monitor
+
+(All versions)
+
+Plays a sound or speaks when one of your own resources reaches a step: every combo point, or every 20 percent of your mana. It follows the conventions of Blizzard's Combat Audio Alerts, and adds sounds, which those alerts do not have.
+
+Resources come in two kinds:
+
+- Counted resources (combo points, holy power, chi, soul shards, arcane charges, essence, runes): every point is a step, from 0 (spent) to your maximum.
+- Bars (mana, energy, rage, focus, runic power and the like): the steps go down from 100 in the size you choose. Every 40 percent gives 100, 60 and 20.
+
+On Retail and WoW: Forever the game hides some bars from addons, even out of combat: mana and energy for sure. The monitor cannot follow a hidden bar, so the Resource list leaves out whatever the game hides on your character. Counted resources such as combo points stay readable. To hear a hidden bar on demand, use the [Speak Main Resource](#speak-main-resource) key.
+
+### Monitor settings
+
+| Setting | Default | What it does |
+|---|---|---|
+| Resource | Your main resource | The resource to follow. The list shows the resources your character has right now and the game does not hide (and the one already chosen). When the game hides your main resource, a new monitor starts on the first one it can follow, such as combo points |
+| Steps (Bars) | Every 20% | The step size for bars: every 10, 20, 30, 40 or 50 percent. Counted resources ignore it |
+| Step Sounds | Glass | The sound series the steps start with: Glass, Brass, Water Drop or Stuck (five rising sounds each), or Rising Notes. With more than five steps the steps use Rising Notes. A count of 0 gets a click |
+| Sound on Every Step | On | Whether the steps start with their sound on |
+| Speech on Every Step | On | Whether the steps start with their speech on |
+| Speech Format | Name and Number (Mana 40) | Blizzard's six formats: name and percent, name and number, name and tenths ("Mana 4"), percent only, number only, tenths only. A count is always spoken as its number |
+| Voice | Follows your Speech Voice setting | The game voice the steps speak with |
+| Speech Rate | 0 | From -10 to 10 |
+| Speech Volume | 100 | From 0 to 100 |
+| Minimum Time Between Messages (seconds) | 0 | From 0 to 5. A message that comes sooner waits, and only the newest waiting one is spoken. Sounds are not held back |
+| Steps | built for you | The submenu with one alert per step, see below. It says "No steps yet" while the monitor is off or the resource cannot be read |
+
+Changing Resource, Steps (Bars), Step Sounds, Sound on Every Step or Speech on Every Step builds the steps anew with those defaults. Changes you made to single steps are lost then, so set these first. When a talent raises your maximum (one more combo point), the new step is added and the others stay as they are.
+
+### The steps
+
+The Steps submenu ("Steps (6)" for five combo points) lists one button per step, named by its value: "0" to "5", or "20%" to "100%". Each opens the step's alert, like every alert in WowVision: Enabled, Sound Alert (Enabled and the Sound picker) and TTS Alert (Enabled only; what is spoken and how comes from the monitor's settings).
+
+### When a step fires
+
+- Counted resources: the step of the new count fires, at every change. Gaining two points at once plays the step you land on.
+- Bars, like Blizzard's alerts: falling to or below a step fires it, rising above a step fires it. When one change crosses several steps, falling plays the lowest and rising the highest. 100 plays when you reach full, never when you leave it.
+- A step whose alert is off, or whose sound and speech are both off, is skipped: a change that crosses it plays the next step that can be heard.
+- The first value after login, a reload, or switching the monitor back on is taken in silence.
+- While the game hides the value the monitor stays silent, and it starts again in silence when the value is back.
+
+### Speak Main Resource
+
+The Speak Main Resource key says the resource the game shows for you now: "energy 80%" in cat form, "mana 43%" in caster form, "rage 20%", or the count, such as "combo points 3". It works on every version, also where the game hides the value from addons: the game still lets WowVision speak it, only not compare it. The key is unbound by default; you find it under Monitors in the keybinding window.
+
+### Example: combo points with glass sounds
+
+1. Monitors, Monitors (0), Add, Resource.
+2. Set Resource to combo points. Leave Step Sounds at Glass and turn Speech on Every Step off.
+3. The steps are built as soon as the monitor reads your combo points (it must be Enabled). Open Steps to hear "0" to "5"; until then it says "No steps yet".
+
+Each combo point now plays glass 1 to 5, and spending them plays the click.
+
 ## Availability
 
 | Feature | Classic Era | The Burning Crusade | Mists of Pandaria | Retail | WoW: Forever |
@@ -288,6 +347,9 @@ The key is unbound by default. You find it under Monitors in the keybinding wind
 | Cooldown Manager Auras | No | No | No | Yes | Yes |
 | Spell Cooldowns (cooldown and proc rules) | No | No | No | Yes | Yes |
 | Pandemic state of Cooldown Manager Auras | No | No | No | Yes | No |
+| Resource monitor for counted resources (combo points and the like) | Yes | Yes | Yes | Yes | Yes |
+| Resource monitor for bars (mana, energy, rage and the like) | Yes | Yes | Yes | Only bars the game does not hide (not mana or energy) | Only bars the game does not hide (not mana or energy) |
+| Speak Main Resource | Yes | Yes | Yes | Yes | Yes |
 | Toggle All Monitors | Yes | Yes | Yes | Yes | Yes |
 | Speak Tracked Auras, Speak Tracked Cooldowns, `/wv cdmlog` | No | No | No | Yes | Yes |
 
@@ -300,6 +362,7 @@ See [Versions](../reference/versions.md) for the full feature matrix.
 | Toggle All Monitors | unbound | If any monitor is on, turns all monitors off and says "Monitors off". If all are off, turns them all on and says "Monitors on" |
 | Speak Tracked Auras | unbound | Reads all tracked auras (Retail and WoW: Forever) |
 | Speak Tracked Cooldowns | unbound | Reads all tracked spell cooldowns and procs (Retail and WoW: Forever) |
+| Speak Main Resource | unbound | Says the resource the game shows for you now, such as "energy 80%" (all versions) |
 
 Bind them in the keybinding window, see [Keybindings](../basics/keybindings.md). Toggle All Monitors works as a mute: press it once to silence all monitors and again to turn them all back on. Monitors you had switched off one by one are turned on as well.
 

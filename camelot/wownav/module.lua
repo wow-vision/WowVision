@@ -50,6 +50,12 @@ settings:add({
 })
 settings:add({ key = "targetTolerance", type = "Number", label = L["Height Tolerance of a Floor (Yards)"], default = 3,
     min = 0, max = 20 })
+-- creatures and objects named in the game language from Questie's database where it knows them (text.lua); the
+-- catalogues themselves only have English and German
+settings:add({ key = "localNames", type = "Bool", label = L["Names in Your Language"], default = true })
+function WowVision.wownavText.localNamesEnabled()
+    return module.settings.localNames ~= false
+end
 -- his /vn rueckfall: one step back at a gate when the player drifted sideways
 settings:add({ key = "chokeFallback", type = "Bool", label = L["Step Back at Gates"], default = true })
 -- his preload: the player's zone and its neighbours are decoded ahead
@@ -197,7 +203,7 @@ function engine:startHere(px, py, map)
     local start, why = self:startAt(px, py, map)
     if start == nil then
         -- WowVision:speak, not say: this file's say is declared further down
-        WowVision:speak(why == "ambiguous" and L["Your floor is not clear here"] or L["No WowNav network here"])
+        WowVision:notify(why == "ambiguous" and L["Your floor is not clear here"] or L["No WowNav network here"])
     end
     return start
 end
@@ -248,11 +254,16 @@ function engine:search(text, px, py, map, opts)
     return module:search(text, px, py, map, opts)
 end
 
+-- Auto Route (maps:routeToNearestWalk): of several targets, the one the shortest walk reaches.
+function engine:routeToNearest(targets)
+    return module:routeToNearest(targets)
+end
+
 maps:setRouteEngine(engine)
 
 -- ---- speech
 local function say(text)
-    WowVision:speak(text)
+    WowVision:notify(text)
 end
 -- what his dock module says (WowVisionNavigationPrint)
 WowVision.wownavText.say = say
@@ -453,6 +464,31 @@ local function keepRouteZones(N, path, px, py, map, targetNodeId)
     N.KeepZones(keep)
 end
 
+-- His height hint (Guidance.HeightHint): the target lies clearly above or below where the route ends. The target's
+-- height is the row's, else the level the resolver chose (queryZ); the route's end is its last network point (before an
+-- unchecked end point). Nothing for a water target, for a route that ends at a transit (the entrance is not the target)
+-- or without any height. Returns the text or nil.
+local function heightHintText(N, request, outcome)
+    local plan, contract, result = outcome.plan, request.contract, outcome.result
+    if contract == nil or route.path == nil or #route.path == 0 or plan == nil or plan.pendingAction ~= nil then
+        return nil
+    end
+    if result ~= nil and result.endpointSurface == "water" then
+        return nil
+    end
+    local targetZ = type(contract.z) == "number" and contract.z or (result ~= nil and result.queryZ or nil)
+    local endId = route.logicalPrepoint or route.path[#route.path]
+    if endId == nil or not N.Exists(endId) then
+        return nil
+    end
+    local _, _, endZ = N.Position(endId)
+    local hint = route.G.HeightHint(targetZ, endZ)
+    if hint == nil then
+        return nil
+    end
+    return WowVisionNavigationText("height_hint_" .. hint.direction, hint.yards)
+end
+
 local function startRoute(self, request, outcome)
     local N = self:network()
     local trimmed = false
@@ -482,10 +518,16 @@ local function startRoute(self, request, outcome)
     end
     -- start and target on the same spot: nothing to walk on the network
     local sameSpot = fromStart and Route.sameSpot(start, request.contract) and route:dropToEnd()
+    -- Ctrl-Shift-R: walked back from where the player is, at the waypoint the previous route led to
+    if reversed ~= nil then
+        route:resumeAt(reversed.resume)
+    end
     if request.dockTarget ~= nil and not trimmed then
         route.waitCheck = dock.waitAreaCheck(N, request.dockTarget)
     end
-    route.activation = request.activationTarget
+    -- a walk-in target's activation belongs to the leg that ends at it: a leg that ends at the pre-point of a portal on
+    -- the way has none (his StartNavigationToNode: pendingAction carries it to the leg after the teleport)
+    route.activation = route.pendingAction == nil and request.activationTarget or nil
     do
         local lastX, lastY, lastZ = N.Position(route.path[#route.path])
         logLine(string.format("route %s: %d waypoints, ends %.1f %.1f %.1f%s%s", tostring(request.label), #route.path,
@@ -500,8 +542,16 @@ local function startRoute(self, request, outcome)
     self.path = path
     self.request = request
     maps:pathfind(path)
+    -- once per request: a transit's continuation comes back here with the same one
+    if not request.windowsClosed and not request.chainLeg then
+        maps:closeWindowsForGuidance(true)
+    end
+    request.windowsClosed = true
 
     local count = #route.path
+    if reversed ~= nil then
+        count = count - route.pathIndex + 1
+    end
     local yards = px ~= nil and routeLength(N, route.path, route.pathIndex, px, py) or 0
     -- standing on it: the arrival of the first update says all there is
     if sameSpot and yards <= route.G.EffectiveRadius(Route.ARRIVAL_TARGET_RADIUS) then
@@ -528,6 +578,10 @@ local function startRoute(self, request, outcome)
         text = reversed.text .. ". " .. text
     end
     say(text)
+    self.heightHint = heightHintText(N, request, outcome)
+    if self.heightHint ~= nil then
+        say(self.heightHint)
+    end
 end
 
 -- The network point of the request's start (request.startOverride, catalog.startNode): a waypoint's own or a target's
@@ -542,6 +596,12 @@ local function bindStart(self, request)
     end
     request.startOverride, request.startZ = id, z
     return true
+end
+
+-- A job planning in time slices, as every search (stepJob runs it).
+local function newJob(N, request, work)
+    return { request = request, startedAt = GetTime(), job = work, frames = 0, misses = N.wholeMisses or 0,
+        answers = N.knownMissAnswers or 0, closed = N.closedWaterGoals or 0 }
 end
 
 -- Starts the search for a request. request: { contract or nodeId, label, onArrive, start }; start: the entry point the
@@ -563,51 +623,35 @@ local function search(self, request)
     else
         work = N.Job(route.prepare, route, request.contract, { nativeMapId = map }, request.startOverride)
     end
-    job = { request = request, startedAt = GetTime(), job = work, frames = 0, misses = N.wholeMisses or 0,
-        answers = N.knownMissAnswers or 0 }
+    job = newJob(N, request, work)
 end
 
--- A route request from maps: { x, y, z, label, onArrive, data, start } (data: a row of the WowNav list; start: the
--- entry point picked in F10, a row of catalog.entryPoints). True when WowNav took it.
-function module:routeTo(target)
-    local N = ready(self)
-    if N == nil then
-        return false
-    end
-    local px, py, map = route.env.position()
-    local data = type(target.data) == "table" and target.data or nil
-    logLine(string.format("request %s at %.1f %.1f from %s %s map %s: %s", tostring(target.label), target.x or 0,
-        target.y or 0, px and string.format("%.1f", px) or "?", py and string.format("%.1f", py) or "?", tostring(map),
-        data == nil and "a position" or (data.boardingTargetId and "a boarding point") or (data.nodeId and "a waypoint")
-            or string.format("%s %s", tostring(data.tid), tostring(data.interactionMode or data.kind))))
-    if px == nil or not catalog.covers(N, map) then
-        logLine("not taken: no WowNav data here")
-        return false
-    end
-    N.activeMapId = map
-    if #N.ZonesForPoint(px, py) == 0 then
-        return false
-    end
-    -- every route starts at the entry point the player picked; none: nothing of the network near enough to list
+-- The contract of a target maps hands over as a position (scanner, places list, /beacon to, the route data's points).
+local function positionContract(target, map)
+    return {
+        id = "wowvision:" .. tostring(target.label or "target"), kind = "live", nameEn = target.label or "?",
+        nativeMapId = map, coordinateSpace = "world", x = target.x, y = target.y, z = target.z,
+        zStatus = target.z == nil and "unknown" or "known",
+    }
+end
+
+-- The request for one target maps hands over ({ x, y, z, label, onArrive, data, start, reversed }; data: a row of the
+-- WowNav list; start: the entry point picked in F10, a row of catalog.entryPoints): { nodeId or contract, label,
+-- onArrive, start, dockTarget, activationTarget, approx, lowestFloor, reversed }. Nil when there is nothing to walk
+-- to, with why: "fail" and the text to say, or "passive", the dock the player waits at and its source (routeTo says
+-- it; a nearest pick leaves the target out).
+local function targetRequest(N, target, px, py, map)
     local start = type(target.start) == "table" and target.start or nil
     if type(target.data) == "table" and target.data.nodeId ~= nil then
         -- an automatic waypoint: straight to it, no target to resolve
-        if start == nil then
-            say(L["No WowNav network here"])
-            return true
-        end
-        local request = { nodeId = target.data.nodeId, label = target.label, onArrive = target.onArrive, start = start,
+        return { nodeId = target.data.nodeId, label = target.label, onArrive = target.onArrive, start = start,
             reversed = target.reversed }
-        if bindStart(self, request) then
-            self:stopRoute()
-            search(self, request)
-        end
-        return true
     end
     -- a boarding point ("At the vehicle") picked as a route's destination is a place like any other: routed to on the
     -- network, never taken for its dock (it lies a few yards from the dock's waiting point); F10's Direct leads
     -- straight to it instead
-    local boarding = type(target.data) == "table" and target.data.boardingTargetId ~= nil
+    local boarding = type(target.data) == "table"
+        and (target.data.boardingTargetId ~= nil or dock.isBoardingRow(target.data))
     local dockTarget
     local dockRow = not boarding and dock.isDockRow(target.data) and target.data or nil
     if dockRow == nil and not boarding then
@@ -626,14 +670,8 @@ function module:routeTo(target)
         if why ~= nil then
             logLine(why)
         end
-        if outcome == "fail" then
-            say(value)
-            return true
-        elseif outcome == "passive" then
-            self:stopRoute(nil, true)
-            passive = { name = WowVisionNavigationTargetName(value), near = false }
-            say(dock.passiveText(source, value))
-            return true
+        if outcome == "fail" or outcome == "passive" then
+            return nil, outcome, value, source
         end
         dockTarget = value
     end
@@ -642,8 +680,7 @@ function module:routeTo(target)
     if dockTarget == nil and type(target.data) == "table" and target.data.activationMode == "walk_into_trigger" then
         local outcome, value = dock.activation(N, target.data)
         if outcome == "fail" then
-            say(value)
-            return true
+            return nil, outcome, value
         end
         activationTarget = value
     end
@@ -652,36 +689,174 @@ function module:routeTo(target)
         -- a group member (his GroupMember): a live target that expires after 30 s, read again on a new route
         contract = module.unitContract(target.data.unit, map)
         if contract == nil then
-            say(WowVisionNavigationText("no_live_coordinates"))
-            return true
+            return nil, "fail", WowVisionNavigationText("no_live_coordinates")
         end
     elseif type(target.data) == "table" and target.data.tid ~= nil then
         contract = catalog.contract(target.data, map)
     else
-        contract = {
-            id = "wowvision:" .. tostring(target.label or "target"), kind = "live", nameEn = target.label or "?",
-            nativeMapId = map, coordinateSpace = "world", x = target.x, y = target.y, z = target.z,
-            zStatus = target.z == nil and "unknown" or "known",
-        }
+        contract = positionContract(target, map)
     end
-    if start == nil then
-        say(L["No WowNav network here"])
-        return true
+    -- the point on board of a dock of the dock model is walked to on foot, from its dock (his LayerTargetStart)
+    local boardingTarget
+    if type(target.data) == "table" and dock.isBoardingRow(target.data) then
+        boardingTarget = dock.boardingTarget(N, target.data)
+        contract.boardingPoint = boardingTarget ~= nil or nil
     end
-    local request = { contract = contract, label = target.label, onArrive = target.onArrive, dockTarget = dockTarget,
+    return { contract = contract, label = target.label, onArrive = target.onArrive, dockTarget = dockTarget,
+        boardingTarget = boardingTarget,
         activationTarget = activationTarget, approx = type(target.data) == "table" and target.data.approx == true,
         lowestFloor = type(target.data) == "table" and target.data.lowestFloor == true, start = start,
         reversed = target.reversed }
+end
+
+-- The network maps routes on here: N, the player's position and map; nil (logged) where WowNav has no data.
+local function routable(self, label)
+    local N = ready(self)
+    if N == nil then
+        return nil
+    end
+    local px, py, map = route.env.position()
+    if px == nil or not catalog.covers(N, map) then
+        logLine(string.format("not taken: no WowNav data here (%s)", tostring(label)))
+        return nil
+    end
+    N.activeMapId = map
+    if #N.ZonesForPoint(px, py) == 0 then
+        return nil
+    end
+    return N, px, py, map
+end
+
+-- A route request from maps (see targetRequest). True when WowNav took it.
+function module:routeTo(target)
+    local px, py, map = route.env.position()
+    local data = type(target.data) == "table" and target.data or nil
+    logLine(string.format("request %s at %.1f %.1f from %s %s map %s: %s", tostring(target.label), target.x or 0,
+        target.y or 0, px and string.format("%.1f", px) or "?", py and string.format("%.1f", py) or "?", tostring(map),
+        data == nil and "a position" or (data.boardingTargetId and "a boarding point") or (data.nodeId and "a waypoint")
+            or string.format("%s %s", tostring(data.tid), tostring(data.interactionMode or data.kind))))
+    local N
+    N, px, py, map = routable(self, target.label)
+    if N == nil then
+        return false
+    end
+    local request, why, value, source = targetRequest(N, target, px, py, map)
+    if request == nil then
+        if why == "passive" then
+            self:stopRoute(nil, true)
+            passive = { name = WowVisionNavigationTargetName(value), near = false }
+            say(dock.passiveText(source, value))
+        else
+            say(value)
+        end
+        return true
+    end
+    -- every route starts at the entry point the player picked; none: nothing of the network near enough to list
+    if request.start == nil then
+        say(L["No WowNav network here"])
+        return true
+    end
     if bindStart(self, request) then
         self:stopRoute()
+        -- the search answers later, outside the chain's own call
+        request.chainLeg = maps.chainLeg
         search(self, request)
     end
     return true
 end
 
--- Ctrl-Shift-R: the running route turned around. The new route starts at the waypoint the beacon leads to now (the
--- next real network point when that one is virtual: a picked target before its network point) and leads back to
--- where the previous route started: the target or waypoint picked as its entry point in F10, else its start node.
+-- How far the walk to a planned target is: the whole route on the network (a transit is ridden, not walked; the plan's
+-- path itself stops at the first one) and the stretch from its end to the target.
+local function walkLength(N, outcome)
+    local whole = outcome.plan.result and outcome.plan.result.length or N.PathLength(outcome.plan.path)
+    local off = outcome.result and (outcome.result.delta3D or outcome.result.deltaXY) or 0
+    return whole + off
+end
+
+-- Auto Route (navigation/visited.lua): of several targets of the same name, requests as for routeTo with the same
+-- start, the one the shortest walk reaches. One job plans a route to each, in time slices like every search, and the
+-- shortest becomes the request (its onChosen runs first); a target whose floor is not clear is left out unless no
+-- other has a route, and one with nothing to walk to (a dock the player waits at) is left out. True when WowNav took
+-- it. The search line of the log says how long the planning took.
+function module:routeToNearest(targets)
+    local first = targets[1]
+    if first == nil then
+        return false
+    end
+    local N, px, py, map = routable(self, first.label)
+    if N == nil then
+        return false
+    end
+    local start = type(first.start) == "table" and first.start or nil
+    if start == nil then
+        say(L["No WowNav network here"])
+        return true
+    end
+    local candidates = {}
+    for _, target in ipairs(targets) do
+        local candidate = targetRequest(N, target, px, py, map)
+        if candidate ~= nil then
+            candidate.onChosen = target.onChosen
+            candidate.chainLeg = maps.chainLeg
+            tinsert(candidates, candidate)
+        end
+    end
+    if #candidates == 0 then
+        say(L["No route found"])
+        return true
+    end
+    logLine(string.format("nearest by walk of %d %s from %.1f %.1f map %s", #candidates, tostring(first.label), px, py,
+        tostring(map)))
+    local request = { label = first.label, start = start }
+    if not bindStart(self, request) then
+        return true
+    end
+    self:stopRoute()
+    route.anchor.last = request.startZ
+    local function plan()
+        local best, bestLength, firstChoice, lastFail
+        for _, candidate in ipairs(candidates) do
+            local outcome
+            if candidate.nodeId ~= nil then
+                outcome = route:prepareNode(candidate.nodeId, request.startOverride)
+            else
+                outcome = route:prepare(candidate.contract, { nativeMapId = map }, request.startOverride)
+            end
+            if outcome.kind == "start" then
+                local length = walkLength(N, outcome)
+                if bestLength == nil or length < bestLength then
+                    best, bestLength = { candidate = candidate, outcome = outcome }, length
+                end
+            elseif outcome.kind == "choose" then
+                firstChoice = firstChoice or { candidate = candidate, outcome = outcome }
+            else
+                lastFail = outcome
+            end
+        end
+        local pick = best or firstChoice
+        if pick == nil then
+            return lastFail or { kind = "fail", reason = "no_route_found" }
+        end
+        -- the request becomes the picked one's: the route, its arrival and a floor question are about it
+        for key, value in pairs(pick.candidate) do
+            if key ~= "onChosen" and key ~= "start" then
+                request[key] = value
+            end
+        end
+        if pick.candidate.onChosen ~= nil then
+            pick.candidate.onChosen()
+        end
+        say(pick.candidate.label)
+        return pick.outcome
+    end
+    job = newJob(N, request, N.Job(plan))
+    return true
+end
+
+-- Ctrl-Shift-R: the running route turned around. The new route starts at the previous route's destination (its last
+-- real network point: a logical target stands behind it) and leads back to where the previous route started: the
+-- target or waypoint picked as its entry point in F10, else its start node. It goes on at the waypoint the beacon
+-- leads to now (startRoute, Route:resumeAt), so the player walks back from where they are.
 -- Nil when no WowNav route runs; true when the request was made.
 function module:reverseRoute()
     local request, path = self.request, self.path
@@ -691,7 +866,7 @@ function module:reverseRoute()
         return nil
     end
     local from
-    for i = route.pathIndex or 1, #route.path do
+    for i = #route.path, 1, -1 do
         local id = route.path[i]
         if N.virt[id] == nil then
             from = id
@@ -701,7 +876,11 @@ function module:reverseRoute()
     if from == nil then
         return nil
     end
-    local _, _, fromZ = N.Position(from)
+    local fromX, fromY, fromZ = N.Position(from)
+    -- read now: the search below ends the running route, and with it its virtual points
+    local active = route.path[route.pathIndex or 1]
+    local activeX, activeY, activeZ = N.Position(active)
+    local resume = { id = N.virt[active] == nil and active or nil, x = activeX, y = activeY, z = activeZ }
     local start = request.start
     local data, x, y, z
     if type(start) == "table" and (start.tid ~= nil or start.nodeId ~= nil) and start.x ~= nil then
@@ -716,9 +895,11 @@ function module:reverseRoute()
         data.n = label
     end
     -- the search answers later: said and remembered when the route starts (startRoute), a failed one says why
-    local reversed = { text = string.format(L["Route reversed, back to %s"], label), destination = data }
-    if self:routeTo({ x = x, y = y, z = z, label = label, data = data, start = { nodeId = from, z = fromZ },
-        reversed = reversed }) then
+    local reversed = { text = string.format(L["Route reversed, back to %s"], label), destination = data,
+        resume = resume }
+    -- named and placed like a picked waypoint: turned around once more, this route leads back to it by name
+    local newStart = { nodeId = from, x = fromX, y = fromY, z = fromZ, n = request.label }
+    if self:routeTo({ x = x, y = y, z = z, label = label, data = data, start = newStart, reversed = reversed }) then
         return true
     end
     say(L["No route found"])
@@ -785,6 +966,7 @@ function module:stopRoute(keepPenalties, keepDock)
         self.path = nil
     end
     routeMap = nil
+    self.heightHint = nil
 end
 
 local function onOutcome(self, request, outcome)
@@ -817,11 +999,14 @@ local function stepJob(self)
     local done, outcome, failure = j.job:Step(BUDGET_MS, debugprofilestop)
     j.frames = j.frames + 1
     if done then
-        -- how long the search took, and the whole searches that missed (the floor check) and what they answered
+        -- how long the search took, the whole searches that missed (the floor check) and what they answered, and the
+        -- goals in closed water that no search was spent on
         local N = self:network()
-        logLine(string.format("search %s: %s after %.1f s in %d frames, %d whole misses, %d targets answered from them",
+        logLine(string.format("search %s: %s after %.1f s in %d frames, %d whole misses, %d targets answered from them, "
+            .. "%d closed water goals left out",
             tostring(j.request.label), type(outcome) == "table" and tostring(outcome.kind) or tostring(failure),
-            GetTime() - j.startedAt, j.frames, (N.wholeMisses or 0) - j.misses, (N.knownMissAnswers or 0) - j.answers))
+            GetTime() - j.startedAt, j.frames, (N.wholeMisses or 0) - j.misses, (N.knownMissAnswers or 0) - j.answers,
+            (N.closedWaterGoals or 0) - j.closed))
     end
     if not done then
         if not j.noticed and GetTime() - j.startedAt >= SLOW_NOTICE then
@@ -858,16 +1043,25 @@ function module:onRouteEvent(path, event)
         path:finish()
         maps:stopPath()
         self.path = nil
+        local endNode = route.logicalPrepoint or (route.path ~= nil and route.path[#route.path]) or nil
         route:reset()
         local x, y = route.env.position()
         logLine(string.format("arrived at the dock %s at %.1f %.1f", tostring(request.label), x or 0, y or 0))
-        local boarding = dock.arrived(self:network(), request.dockTarget, x, y)
+        local boarding, ship = dock.arrived(self:network(), request.dockTarget, x, y)
         if boarding ~= nil then
             self.dockPath = boarding
             maps:pathfind(boarding)
         end
         if request.onArrive ~= nil then
             request.onArrive()
+        end
+        -- a dock of the dock model: the route goes on to the point on board, from the node this one ended on
+        if ship ~= nil and endNode ~= nil then
+            local N = self:network()
+            local ex, ey, ez = N.Position(endNode)
+            local row = dock.rowOf(ship)
+            self:routeTo({ x = ship.x, y = ship.y, z = ship.z, label = row.n, data = row,
+                start = { nodeId = endNode, x = ex, y = ey, z = ez, n = request.label } })
         end
     elseif kind == "arrived" then
         local request = self.request
@@ -879,6 +1073,11 @@ function module:onRouteEvent(path, event)
         local x, y = route.env.position()
         local N = self:network()
         local radius = route.G.EffectiveRadius(Route.ARRIVAL_TARGET_RADIUS)
+        local hint = self.heightHint
+        if request ~= nil and request.boardingTarget ~= nil then
+            -- the point on board: the context of its dock is "reached" again (his Dock:BoardingArrival)
+            dock.boardingArrival(N, request.boardingTarget, x, y)
+        end
         if request ~= nil and fishing.arrived(N, request.contract, x, y, radius) then
             -- at a fishing spot: his Arrival says where the water lies; the beacon sounds from it
             logLine(string.format("arrived at the fishing spot %s at %.1f %.1f", tostring(label), x or 0, y or 0))
@@ -889,7 +1088,7 @@ function module:onRouteEvent(path, event)
             end
         elseif Route.reachesTarget(result, radius) then
             -- an approximate result whose network ends at the target is an arrival too (Route.reachesTarget)
-            say(L["Arrived"] .. (label ~= nil and (" " .. label) or ""))
+            say(L["Arrived"] .. (label ~= nil and (" " .. label) or "") .. (hint ~= nil and (". " .. hint) or ""))
         elseif result.normalizedWater then
             -- his stop_water_net_ends / stop_net_ends: how far the network ends from the target
             say(WowVisionNavigationText("stop_water_net_ends", result.delta3D or result.deltaXY or 0,
@@ -978,11 +1177,7 @@ local function checkAction(self)
             say(L["The route goes on"])
             local N = self:network()
             N.activeMapId = map
-            job = {
-                request = request, startedAt = GetTime(),
-                job = N.Job(route.continueTo, route, toNode, targetNodeId, result),
-                frames = 0, misses = N.wholeMisses or 0, answers = N.knownMissAnswers or 0,
-            }
+            job = newJob(N, request, N.Job(route.continueTo, route, toNode, targetNodeId, result))
         end
     end
 end
@@ -1097,6 +1292,9 @@ end
 -- (ActivatePackage and PreloadNeighbours), the player's zones and the zones that share a seam with them are decoded,
 -- one per step. Zones the player walks into later get their neighbours prepared the same way.
 local PRELOAD_CHECK = 1.0      -- seconds between two looks at the player's zones
+-- Decoding time per frame (N.LoadZoneInSteps): a big zone decoded in one piece froze the game for about half a second
+-- (the Barrens: 0.45 s in the tests' Lua), and a zone change decodes several in a row.
+local PRELOAD_BUDGET_MS = 4
 local preloadCheckAt = 0
 
 local function stepPreload(N, px, py, map)
@@ -1127,15 +1325,26 @@ local function stepPreload(N, px, py, map)
                     end
                 end
             end
+            -- a zone that is half decoded goes on first, so its work is not thrown away; one that is no longer wanted
+            -- is let go (its half-built tables are large)
+            local loading = N.loading and N.loading.zoneId
+            if loading ~= nil and not keep[loading] then
+                N.loading = nil
+            end
+            for i, zoneId in ipairs(pending) do
+                if zoneId == loading then
+                    table.remove(pending, i)
+                    table.insert(pending, 1, zoneId)
+                    break
+                end
+            end
             preload = { key = key, pending = pending, index = 0, keep = keep }
         end
     end
+    -- one zone after the other, each over as many frames as it needs
     local zoneId = preload.pending[preload.index + 1]
-    if zoneId ~= nil then
+    if zoneId ~= nil and (N.decoded[zoneId] or N.LoadZoneInSteps(zoneId, PRELOAD_BUDGET_MS, debugprofilestop)) then
         preload.index = preload.index + 1
-        if not N.decoded[zoneId] then
-            N.LoadZone(zoneId)
-        end
     end
 end
 

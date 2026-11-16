@@ -48,10 +48,47 @@ testRunner:addSuite("SoftTargeting", {
         t:assertEqual(matchLocked, 1)
     end,
 
-    ["attackable mode rests at 0 with no target"] = function(t)
+    ["no hard target mode allows soft targeting with no target"] = function(t)
+        local withLocked, matchLocked = soft.lockValues("noHardTarget", false, false, false)
+        t:assertEqual(withLocked, 2)
+        t:assertEqual(matchLocked, 1)
+    end,
+
+    ["no hard target mode allows soft targeting with a target the game set"] = function(t)
+        local withLocked, matchLocked = soft.lockValues("noHardTarget", true, true, false, true)
+        t:assertEqual(withLocked, 2)
+        t:assertEqual(matchLocked, 1)
+    end,
+
+    ["no hard target mode suppresses for a target you chose"] = function(t)
+        t:assertEqual(soft.lockValues("noHardTarget", true, true, false, false), 0)
+    end,
+
+    ["always mode ignores whether the game set the target"] = function(t)
+        local withLocked, matchLocked = soft.lockValues("always", true, true, false, true)
+        t:assertEqual(withLocked, 2)
+        t:assertEqual(matchLocked, 0)
+    end,
+
+    ["the game default mode leaves the game alone with a target the game set"] = function(t)
+        t:assertNil(soft.lockValues(soft.GAME_DEFAULT, true, true, false, true))
+    end,
+
+    ["attackable mode allows soft targeting with no target"] = function(t)
         local withLocked, matchLocked = soft.lockValues("noAttackableHardTarget", false, false, false)
-        t:assertEqual(withLocked, 0)
+        t:assertEqual(withLocked, 2)
         t:assertEqual(matchLocked, 2)
+    end,
+
+    ["attackable mode allows soft targeting with an enemy the game set"] = function(t)
+        local withLocked, matchLocked = soft.lockValues("noAttackableHardTarget", true, true, false, true)
+        t:assertEqual(withLocked, 2)
+        t:assertEqual(matchLocked, 2)
+    end,
+
+    ["attackable mode allows soft targeting with a friend or corpse the game set"] = function(t)
+        t:assertEqual(soft.lockValues("noAttackableHardTarget", true, false, false, true), 2)
+        t:assertEqual(soft.lockValues("noAttackableHardTarget", true, true, true, true), 2)
     end,
 
     ["attackable mode suppresses for a living enemy"] = function(t)

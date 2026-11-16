@@ -89,14 +89,14 @@ local function emitCategory(list)
 end
 
 local function renderCategories(builder, list)
-    builder:beginStop("search")
-    builder:addItem(ControlId.structural("search"), nodes.proxyEditBox({ editBox = list.SearchBox, label = L["Search"] }))
-
     builder:beginStop("filter")
     builder:addItem(
         ControlId.forObject(list.FilterDropdown),
         nodes.proxyDropdown({ target = list.FilterDropdown, label = L["Filter"] })
     )
+
+    builder:beginStop("search")
+    builder:addItem(ControlId.structural("search"), nodes.proxyEditBox({ editBox = list.SearchBox, label = L["Search"] }))
 
     builder:beginStop("categories")
     if list.NoResultsText:IsShown() then

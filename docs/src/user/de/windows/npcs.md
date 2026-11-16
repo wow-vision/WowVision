@@ -112,6 +112,12 @@ Beispiel: einen neuen Zauber lernen.
 4. Drücke Tab bis „Details“ und lies die Kosten. Drücke dann Tab bis Trainieren.
 5. Drücke Eingabe. Das Spiel bringt dir den Zauber bei, und dein Geld sinkt.
 
+### Die Tierausbildung deines Begleiters
+
+Auf WoW: Forever öffnet die Fähigkeit Tierausbildung des Jägers die Fertigkeiten deines Begleiters im selben Ausbilderfenster, ohne dass du einen Ausbilder ansprichst. WowVision liest es wie den Klassenlehrer. Das Fenster trägt den Namen deines Begleiters, die Stationen sind dieselben: Filter, Ausbildung und die Schaltfläche Trainieren. Eine Station ist neu, ganz oben: Trainingspunkte; sie liest, wie viele Punkte dein Begleiter noch hat, zum Beispiel "Trainingspunkte: 19".
+
+Eine Fertigkeit kostet Trainingspunkte, kein Geld, und sagt das auch: "Natürliche Rüstung Rang 1, Kosten in Trainingspunkten: 1, Benötigt: Stufe 8". Drücke Eingabe auf einer Fertigkeit, um sie auszuwählen, dann Tab zu Trainieren und Eingabe, um sie beizubringen. Die Punkte sinken, und du hörst die neue Summe.
+
 ## Flugmeister
 
 Ein Flugmeisterfenster listet auf, wohin du fliegen kannst. Es hat einen Stopp, benannt mit dem Titel der Karte (meist der Ort des Flugmeisters oder der Kontinent), und einen Eintrag pro Ziel.

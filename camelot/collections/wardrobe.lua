@@ -344,11 +344,11 @@ end
 local function renderWardrobe(builder)
     local frame = WardrobeCollectionFrame
     renderSubTabs(builder, frame)
-    module.renderSearchAndFilter(builder, "wardrobe", frame.SearchBox, frame.FilterButton)
     if frame.ClassDropdown:IsShown() then
         builder:beginStop("wardrobeClass")
         builder:addItem(ControlId.forObject(frame.ClassDropdown), module.namedDropdown(frame.ClassDropdown, CLASS))
     end
+    module.renderSearchAndFilter(builder, "wardrobe", frame.SearchBox, frame.FilterButton)
 
     local items, sets = frame.ItemsCollectionFrame, frame.SetsCollectionFrame
     if items:IsShown() then

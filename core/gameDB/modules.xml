@@ -4,6 +4,8 @@
   <Script file="gameDB.lua" />
   <Script file="powers.lua" />
   <Script file="itemQuality.lua" />
+  <Script file="itemCompare.lua" />
+  <Script file="itemCompareTests.lua" />
   <Script file="items.lua" />
 
 </Ui>

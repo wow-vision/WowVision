@@ -9,10 +9,17 @@ local graph = WowVision.graph
 --   render          function(builder, screen) -- add nodes; no return needed
 --   wrap            tab wraps between stops (default true)
 --   captureClose    hold the close key while this stack is focused (frameless
---                   windows the game cannot close for us)
---   onRequestClose  function(stack) -- close/escape pressed on the last screen;
+--                   windows the game cannot close for us); a function asked
+--                   every update (a popup waiting for an answer, pending.lua)
+--   closeClick      function() -- a button of the game that steps back a view
+--                   inside the window, or nil; while it returns one the close
+--                   key clicks it instead of going to the game
+--   onRequestClose  function(stack, reason) -- close/escape pressed on the last screen
+--                   (reason "escape"), or every window closing (WindowManager:closeAll);
 --                   the owner (window bridge) closes the real UI. Absent = the
 --                   host just closes the stack.
+--   noLevelBack     the left arrow does not go back from this pushed screen
+--                   (a yes/no question)
 local Screen = WowVision.Class("GraphScreen")
 graph.Screen = Screen
 
@@ -36,6 +43,10 @@ end
 
 function Screen:buildRender()
     local builder = graph.Builder:new(self.state.expanded)
+    -- a list behind one node (listCursor, Host.lua) filters itself
+    if self.listFilter ~= nil and self.listFilter.cursor == nil then
+        builder.listFilter = self.listFilter
+    end
     -- xpcall keeps the failing render's stack; a plain pcall would leave the
     -- error handler only this frame's stack to record.
     local ok, err = xpcall(self.config.render, function(message)
@@ -50,7 +61,13 @@ function Screen:buildRender()
         end
         return nil
     end
-    return builder:build()
+    local render = builder:build()
+    if self.listFilter ~= nil and self.listFilter.stale then
+        -- the filtered list is gone from the screen: so is its filter
+        self.listFilter = nil
+        WowVision.graphHost._bindingsDirty = true
+    end
+    return render
 end
 
 -- Reset the differ so the next update announces the landing in full.

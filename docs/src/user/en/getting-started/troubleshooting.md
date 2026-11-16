@@ -119,6 +119,20 @@ Soft targeting changes game console variables, and some of them cannot change du
 
 Controller support is for Retail and WoW: Forever. In the game options under Gamepad, Enable Gamepad and Enable Gamepad UI must both be on. In combat, WowVision gives the window buttons back to the game. See [Controller](../controller.md) for everything else, including how to start a fresh log with /wv padlog for a bug report.
 
+## I am stuck on a route
+
+The beacon leads you somewhere you cannot get through, or a waypoint never counts as reached. Try these, one after the other:
+
+- Jump forward. A small edge, a step or a root on the ground often stops you, and a jump gets you over it.
+- Walk a few steps to the left or right, then turn toward the waypoint again. The direct line can run into a post, a corner or a crate.
+- Skip the waypoint: Ctrl+W moves the beacon to the next waypoint.
+- Go back one waypoint: Ctrl+S moves the beacon to the previous waypoint. Walk to it and try the stretch again.
+- Change the arrival distance with Alt+P. A shorter distance leads you more precisely through a door or a narrow passage. A longer distance counts a waypoint as reached sooner, which helps when you cannot stand on its exact spot.
+- Talk to the NPC you are looking for. Sometimes the NPC stands right in front of you, but a counter or a table is in between, as at the bank in Stormwind. You can never reach the last waypoint there. Target the NPC and press your interact key; the game walks you as close as it can and opens the window.
+- On a WowNav route, press the key you bound to New WowNav Route Around a Blocked Spot. It searches a way around the spot you are stuck at. See [WowNav](../world/wownav.md#a-blocked-spot).
+
+You can put Next Waypoint, Previous Waypoint and Cycle Arrival Distance on other keys in the keybinding window: WowVision menu, UI, Bindings. See [Navigation](../world/navigation.md#next-and-previous-waypoint) for the route keys.
+
 ## Reporting a bug
 
 Please report problems on GitHub: [the WowVision project](https://github.com/wow-vision/WowVision). Open an issue and describe:

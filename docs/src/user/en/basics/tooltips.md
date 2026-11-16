@@ -9,10 +9,12 @@ Almost everything in WoW has a tooltip: item stats, spell descriptions, button e
 | Space | Read Tooltip | Reads the whole tooltip of the focused control, from the first line to the last. |
 | Shift+Down | Next Tooltip Line | Moves to the next line of the tooltip and reads it. |
 | Shift+Up | Previous Tooltip Line | Moves to the previous line and reads it. |
+| Ctrl+Shift+Down | Next Tooltip Block | Jumps to the start of the next block (an item you wear, see [Comparing with what you wear](#comparing-with-what-you-wear)) and reads its first line. |
+| Ctrl+Shift+Up | Previous Tooltip Block | Jumps to the start of the previous block and reads its first line. |
 | Shift+Right | Read Tooltip Right | Reads only the right-hand column of the current line. |
 | Shift+Left | Read Tooltip Left | Reads only the left-hand column of the current line. |
 
-All five can be changed in the [keybinding screen](./keybindings.md). Press Ctrl at any time to stop the speech if a long tooltip is too much.
+All seven can be changed in the [keybinding screen](./keybindings.md). Press Ctrl at any time to stop the speech if a long tooltip is too much.
 
 ## How reading works
 
@@ -41,6 +43,42 @@ When the tooltip belongs to an item, WowVision adds two lines the game does not 
 
 Money in a tooltip is read with its coins. The game shows gold, silver and copper as small coin pictures, which speech would leave out. WowVision reads the sell price and other amounts as "Sell Price: 1 Gold, 23 Silver, 45 Copper". An item worth only a few coins reads, for example, "Sell Price: 7 Copper".
 
+## Pawn's upgrades
+
+If the Pawn addon is installed and says an item is an upgrade, WowVision adds one line per Pawn scale it upgrades at the end of the tooltip: "Pawn: Hunter: Marksmanship, upgrade of 12 percent, over Rusty Helm". "Big upgrade" replaces the percentage when Pawn gives none (an empty slot, a huge gain). Nothing is said when Pawn sees no upgrade. These lines replace the upgrade lines Pawn writes into the tooltip itself, so you do not hear each upgrade twice; Pawn's other lines stay. Space reads them with the rest of the tooltip.
+
+To switch them off, open the [WowVision menu](./menu-and-settings.md) with Shift+F1, then UI, Tooltip, Compare, and uncheck Pawn Summary. It is on by default.
+
+## Comparing with what you wear
+
+When the tooltip shows an item you could wear, the tooltip goes on after the item with a comparison with what you have on. The setting Compare With Equipped Item, under UI, Tooltip, Compare in the [WowVision menu](./menu-and-settings.md), picks which one: Game (the default), WowVision or None. The Enabled checkbox at the top of that screen switches the comparison and Pawn's lines off together.
+
+Space reads only the item itself. Press Shift+Down past the item's last line to walk into the comparison, or Ctrl+Shift+Down to jump straight to the next block; Ctrl+Shift+Up jumps back a block, up to the item's first line.
+
+### Game
+
+This is the comparison a sighted player gets by holding Shift over an item (or always, with the game's "Always compare items" option), and the game decides what it compares:
+
+- One block for each item you wear there: two for rings, trinkets and one-handed weapons, both hands when you hold a two-handed weapon.
+- Each block starts with the game's own header ("Currently Equipped" or "Equipped"), then the lines of the item you wear.
+- On WoW: Forever and Retail the first block ends with the stat changes: "If you replace this item, the following stat changes will occur:", then one line per stat, for example "+12 Stamina". On the classic versions you hear whatever the game puts into its comparison box.
+
+Each item you wear starts a block, and so does the game's heading over the stat changes.
+
+Example: you are on a pair of boots in your bags. Space reads the boots. Shift+Down line by line goes through the boots, then "Equipped", the boots you wear, and the stat changes.
+
+### WowVision
+
+WowVision's own comparison says only what differs, in one block: "Compared to equipped: Rusty Helm", then the item level difference, then every stat that differs: armor and damage first, then the main stats, then the others by name. For example "Item level: 5 more", "Armor: 10 more", "Intellect: 4 less".
+
+- Rings and trinkets are compared with both slots ("Slot 1 of 2: ...").
+- A one-hand weapon is compared with the off hand only when that holds a weapon.
+- A two-hander adds "Also takes off the off hand: ...".
+- An empty slot says "Nothing equipped in this slot".
+- The item you already wear is not compared with itself.
+
+Amounts are spelled out ("5 more", "3 less") rather than "+5" and "-3", which speech engines read inconsistently. The stats come from the item itself, its suffix and bonuses included, and do not count gems or enchantments.
+
 ## Item quality in names
 
 In lists and slots, item names carry the quality as the colour a sighted player sees the name in, so you hear "Fur Boots, White" or "Thunderfury, Orange". This only affects names. The tooltip always reads the quality name ("Common", "Legendary") whatever you choose below.
@@ -60,7 +98,7 @@ To change them, open the [WowVision menu](./menu-and-settings.md) with Shift+F1,
 
 Example: you find too many "White" and "Grey" items cluttering your bag readout. Turn off White (Common) and Grey (Poor). Names now read "Linen Cloth" for those, while "Fur Boots, Green" keeps its colour.
 
-## Prices in tooltips (The Burning Crusade only)
+## Prices in tooltips
 
 On The Burning Crusade, item tooltips can carry extra price lines, read like any other line:
 
@@ -71,6 +109,8 @@ On The Burning Crusade, item tooltips can carry extra price lines, read like any
 
 These come from the price database WowVision builds as you use the auction house. A line only appears when WowVision has that price: an item you never saw at the auction house gets no auction lines, and one you never saw at a merchant gets no Vendor Buy line. The Tooltip Prices checkbox in the Auction Prices menu (on by default) switches the extra lines off or on. The same menu has History Days (21), Mean Days (7) and Auto Scan (off), see [Auction House](../windows/auction-house.md).
 
+On Retail and WoW: Forever, item tooltips end with Vendor price per item, Auction minimum, Auction average, Auction maximum and Vendor Buy once you turn on Full Scan in the WowVision menu under Windows, then Auction House. See [Auction House](../windows/auction-house.md#full-scan-and-prices-in-tooltips-retail-and-wow-forever).
+
 ## Controls without a tooltip
 
 Not every control has a tooltip. Where there is none, Space is left alone for the game, which means it makes your character jump if you are not typing. The Shift+arrow keys do nothing in that case.
@@ -79,7 +119,7 @@ Not every control has a tooltip. Where there is none, Space is left alone for th
 
 - An item the game has not loaded yet can have an empty tooltip at first. WowVision asks again when you press Space, by which time the information has usually arrived. Press Space once more if you heard nothing.
 - The tooltip keys read what belongs to the control you have focus on. They have nothing to read when no window is open.
-- If you also run the addon Sku, WowVision leaves the four Shift+arrow tooltip keys unbound so that the two addons do not fight over them. Space still works.
+- If you also run the addon Sku, WowVision leaves the Shift+arrow and Ctrl+Shift+arrow tooltip keys unbound so that the two addons do not fight over them. Space still works.
 
 ## Diagnostic command
 

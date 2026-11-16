@@ -27,6 +27,7 @@ function quests.questieBackend()
     local ZoneDB = importModule("ZoneDB")
     local AvailableQuests = importModule("AvailableQuests")
     local Phasing = importModule("Phasing")
+    local QuestieEvent = importModule("QuestieEvent")
     if QuestieDB == nil or ZoneDB == nil then
         return nil
     end
@@ -201,6 +202,42 @@ function quests.questieBackend()
     function backend.isDoable(id)
         local ok, doable = pcall(QuestieDB.IsDoable, id)
         return ok and doable == true
+    end
+
+    -- Holiday quests. IsDoable alone lets some through: it leans on Questie's
+    -- hidden-quest list, and 23 of its 1002 event quests are missing from it
+    -- (20 Darkmoon Faire, 3 Winter Veil). So the event is asked directly.
+    -- Questie only knows which quests are event quests once it has read the
+    -- calendar (QuestieEvent:Load); until then eventQuests is the plain list
+    -- of { name, questId, ... } and afterwards nil. Until it has read the
+    -- calendar every listed event quest counts as inactive.
+    local pendingEventIds, pendingCount = nil, 0
+    function backend.eventInactive(id)
+        if QuestieEvent == nil then
+            return false
+        end
+        local pending = QuestieEvent.eventQuests
+        if pending ~= nil then
+            -- the list may still grow while Questie loads
+            if pendingEventIds == nil or pendingCount ~= #pending then
+                pendingEventIds, pendingCount = {}, #pending
+                for _, entry in pairs(pending) do
+                    pendingEventIds[entry[2]] = true
+                end
+            end
+            return pendingEventIds[id] == true
+        end
+        if QuestieEvent.IsEventQuest == nil or not QuestieEvent.IsEventQuest(id) then
+            return false
+        end
+        return QuestieEvent.IsEventActiveForQuest(id) ~= true
+    end
+
+    -- A holiday quest already in the log may be handed in after its event.
+    function backend.canTurnInOutsideEvent(id)
+        return QuestieEvent ~= nil
+            and QuestieEvent.CanQuestBeTurnedInOutsideOfEvent ~= nil
+            and QuestieEvent.CanQuestBeTurnedInOutsideOfEvent(id) == true
     end
 
     function backend.availableQuestIds()

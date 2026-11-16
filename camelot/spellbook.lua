@@ -118,7 +118,9 @@ end
 -- them (both page halves, in display order). Pooled frames carry stale
 -- data while released, so only frames holding valid data are read.
 local function renderSpells(builder, book)
+    -- A fresh open lands on the spells.
     builder:beginStop("spells")
+    builder:setStartStop("spells")
     builder:pushContext("spells", L["Spells"])
     local inHeader = false
     local emitted = 0
@@ -151,8 +153,13 @@ local function renderSpells(builder, book)
     builder:popContext()
 end
 
+-- The tabs, the spells, then the search box and the options: Shift-Tab from
+-- the spells (where a fresh open lands) reaches the tabs, Tab the search.
 local function renderSpellBook(builder, book)
     renderCategoryTabs(builder, book)
+
+    renderSpells(builder, book)
+    nodes.pagingRow(builder, "spells", book.PagedSpellsFrame.PagingControls)
 
     builder:beginStop("search")
     -- No clear button stop, like the other search boxes: emptying the box and
@@ -164,9 +171,6 @@ local function renderSpellBook(builder, book)
         ControlId.forObject(book.SettingsDropdown),
         nodes.proxyDropdown({ target = book.SettingsDropdown, label = L["Options"] })
     )
-
-    renderSpells(builder, book)
-    nodes.pagingRow(builder, "spells", book.PagedSpellsFrame.PagingControls)
 end
 
 local function render(builder, screen)

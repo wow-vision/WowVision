@@ -91,6 +91,19 @@ local function renderInbox(builder)
     end
     builder:popContext()
 
+    if
+        (InboxPrevPageButton ~= nil and InboxPrevPageButton:IsShown())
+        or (InboxNextPageButton ~= nil and InboxNextPageButton:IsShown())
+    then
+        nodes.pageKeys(builder, {
+            prev = InboxPrevPageButton,
+            next = InboxNextPageButton,
+            page = function()
+                return InboxFrame.pageNum
+            end,
+        })
+    end
+
     if InboxPrevPageButton ~= nil and InboxPrevPageButton:IsShown() then
         builder:beginStop("prevPage")
         builder:addItem(
@@ -226,3 +239,13 @@ module:registerWindow({
     interactionType = Enum.PlayerInteractionType.MailInfo,
     graphScreen = { render = module.renderMail },
 })
+
+-- Sending money or items to a stranger makes the game ask for its security confirmation (Blizzard_SecureTransferUI), a
+-- dialog addons cannot touch and the keyboard cannot answer: Send then seems to do nothing. Said, as for a trade.
+module:registerEvent("event", "SECURE_TRANSFER_CONFIRM_SEND_MAIL")
+
+function module:onEvent(event)
+    if event == "SECURE_TRANSFER_CONFIRM_SEND_MAIL" then
+        WowVision:notify(L["The game asks for a security confirmation for this mail that WowVision cannot reach"])
+    end
+end

@@ -219,6 +219,62 @@ local function dropOldArrivalDefaults(db)
     end
 end
 
+-- The game's quest progress messages left the errors module's per-error
+-- filter for alerts of their own in the quests module. A player who had
+-- silenced them there -- Announce Errors off, or the message's entry muted
+-- or its speech off -- keeps them silent: the matching quest alert starts
+-- off. Errors are account-wide, alerts may live in either store.
+local questMessageAlerts = {
+    ERR_QUEST_ADD_KILL_SII = "questProgress",
+    ERR_QUEST_ADD_ITEM_SII = "questProgress",
+    ERR_QUEST_ADD_FOUND_SII = "questProgress",
+    ERR_QUEST_ADD_PLAYER_KILL_SII = "questProgress",
+    ERR_QUEST_OBJECTIVE_COMPLETE_S = "objectiveComplete",
+    ERR_QUEST_UNKNOWN_COMPLETE = "objectiveComplete",
+}
+
+local function silenced(saved)
+    if saved == nil then
+        return false
+    end
+    if saved.enabled == false then
+        return true
+    end
+    local tts = saved.outputs and saved.outputs.tts
+    return tts ~= nil and tts.enabled == false
+end
+
+local function carryQuestMessageMutes(db)
+    local submodules = db.submodules
+    local errors = submodules and submodules.errors
+    if errors == nil then
+        return
+    end
+    local allOff = silenced(errors.alerts and errors.alerts.announce)
+    local entries = errors.data and errors.data.errors or {}
+    local off = {}
+    -- no message of its own: a finished quest is read from the log
+    if allOff then
+        off.questComplete = true
+    end
+    for name, key in pairs(questMessageAlerts) do
+        local entry = entries[name]
+        if allOff or silenced(entry and entry.alert) then
+            off[key] = true
+        end
+    end
+    if next(off) == nil then
+        return
+    end
+    submodules.quests = submodules.quests or {}
+    local alerts = submodules.quests.alerts or {}
+    submodules.quests.alerts = alerts
+    for key in pairs(off) do
+        alerts[key] = alerts[key] or {}
+        alerts[key].enabled = false
+    end
+end
+
 local migrations = {
     {
         version = 1,
@@ -263,6 +319,10 @@ local migrations = {
     {
         version = 8,
         migrate = dropOldArrivalDefaults,
+    },
+    {
+        version = 9,
+        migrate = carryQuestMessageMutes,
     },
 }
 
@@ -311,6 +371,10 @@ local globalMigrations = {
     {
         version = 6,
         migrate = dropOldArrivalDefaults,
+    },
+    {
+        version = 7,
+        migrate = carryQuestMessageMutes,
     },
 }
 

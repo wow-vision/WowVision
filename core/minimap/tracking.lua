@@ -163,7 +163,6 @@ scanner:registerProvider({
     key = "tracking",
     label = L["Tracking"],
     order = 1000,
-    optional = true,
     expanded = false,
     build = function()
         if not available() then

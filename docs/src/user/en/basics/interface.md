@@ -32,7 +32,7 @@ All of these can be changed in the [keybinding screen](./keybindings.md). Most a
 | Shift+F10 | Context Menu | Open the actions menu for the focused control. |
 | Ctrl+Tab / Ctrl+Shift+Tab | Next Window, Previous Window | Switch between open windows. |
 | Escape | Close | Close the window (the game closes game windows itself). |
-| Page Up / Page Down | Scroll Up, Scroll Down | Scroll a long list by a page, on the lists that need it (see [Long lists](#long-lists-and-scrolling)). |
+| Page Up / Page Down | Scroll Up, Scroll Down | Scroll a long list by a page on the lists that need it, or turn the page of a paged list or text (see [Long lists](#long-lists-and-scrolling)). |
 | \\ or Ctrl+D | Drag | Pick up whatever is in the focused slot onto the cursor. |
 | Delete or Alt+Ctrl+\\ | Destroy Cursor Item | Get rid of the item or assignment on the cursor. |
 | Shift+F1 | WowVision Menu | Open the WowVision menu (same as typing /wv). |
@@ -80,7 +80,11 @@ While a control has focus, WowVision watches it. If its text, its checked state 
 
 Up and Down move through the controls in the order they appear. Where controls sit side by side in a row, Left and Right move along the row. Moving up or down from a row lands on the first control of the next row, except in grids and tables that are laid out in columns, where you stay in the same column.
 
-If you press an arrow key at the edge of a list, nothing happens and nothing is said. Windows do not wrap around with arrow keys.
+If you press Up on the first entry of a list or Down on the last one, you hear a short sound and the entry is read again, as in Sku. The Sound at the Start and End of Lists setting (UI menu, on by default) turns this off; the arrow key then does nothing and nothing is said. Left and Right at the edge stay silent, and so do the chat messages. Windows do not wrap around with arrow keys.
+
+### Skipping empty slots
+
+With the Skip Empty Slots on Double Arrow setting switched on (UI menu, off by default), in your bags, the bank and the action bars you can press the same arrow key twice quickly (within a quarter of a second) to skip the empty slots: you land on the next slot that holds something. Keep tapping quickly to hop from item to item. If nothing follows in that direction, you land on the last slot, which reads "Empty". Two different arrow keys in a row never count as a double press.
 
 ### Tab stops
 
@@ -166,6 +170,8 @@ You never have to scroll yourself. When you arrow onto an entry that is off scre
 
 Page Up and Page Down scroll a list by a full page and put you on the nearest entry that came into view. They are only needed on the long lists whose scrolling the game protects: the friends, ignore and who lists and the guild roster on Classic Era, The Burning Crusade and Mists of Pandaria. On those lists Home and End do nothing, because the game does not allow a jump of that size.
 
+Some windows show their content in pages: the spellbook, the merchant, the mailbox, books and letters, and on WoW: Forever the toy box, heirlooms and appearances. While you are on that content, Page Up and Page Down press the window's Previous Page and Next Page buttons and put you on the first entry of the new page. On the first or last page nothing happens. In a book the new page's text is read when it arrives. The page buttons are also reachable with Tab.
+
 ## Letter navigation in menus
 
 In lists that own the keyboard, you can press a letter to jump to the next entry whose name starts with it. This works in:
@@ -174,17 +180,18 @@ In lists that own the keyboard, you can press a letter to jump to the next entry
 - context menus,
 - the game's dropdown menus.
 
-It does not work in windows you play with open, such as the navigation window.
+Every other window has its own Letter Navigation switch, off by default: the navigation window in the Navigation menu, the Scanner in the Scanner menu, and each game window in its own entry of the Windows menu. Switched on, every list in that window works the same way.
 
 How it behaves:
 
 - Press a letter to move to the next entry starting with it. Press the same letter again to move to the one after, wrapping around at the end.
-- Type several letters quickly (within half a second) to search for a longer start: G then O finds "Goldshire".
-- Accents are ignored, so U finds "Übersicht". Leading numbers and punctuation in a name are skipped.
-- If nothing starts with what you typed, you hear "No results".
+- Type two different letters quickly (within half a second) to filter the list. You land on a line that says Filter and what you typed; below it are only the entries containing those letters anywhere in their name. Every further letter narrows the list, however slowly you type it.
+- While a list is filtered, Backspace or Left Arrow brings the whole list back. Enter on an entry, or going one level deeper, also ends the filter.
+- Accents are ignored, so U finds "Übersicht". Pressing an umlaut key finds only entries with that umlaut, so Ü finds "Übersicht" but not "Ultra". Leading numbers and punctuation in a name are skipped.
+- If nothing matches what you typed, you hear "No results".
 - If you press the same single letter again and the entry you are on is the only one that starts with it, that entry is read again.
 
-While such a list is open, letter keys do not move your character. You can turn this off with the Letter Navigation in Menus setting (UI menu, on by default). The keys are also released whenever you enter combat or close the list.
+While such a list is open, every letter key belongs to it: W, A, S and D do not move your character, and letter keys of the game such as B for the bags do nothing. For the menus, you can turn this off with the Letter Navigation in Menus setting (UI menu, on by default). The keys are also released whenever you enter combat or close the list.
 
 Example: at the top of the WowVision menu, press S once to reach Scanner, S again for Speech, then T for Targeting.
 
@@ -194,6 +201,7 @@ Shift+F10 opens a menu of extra actions for the control you are on. You hear "Me
 
 - On a real game button you usually get Left Click, Right Click and Drag. Some windows add what the click does, for example "Sell, Right Click", and window-specific actions such as linking an item in chat or inviting a player.
 - On a setting in the WowVision menu you get a Scope submenu (see [per-character and account-wide settings](./menu-and-settings.md#per-character-and-account-wide-settings)).
+- On an entry in a list you build yourself in the WowVision menu (a monitor, a rule, a buffer group, a buffer) you get Copy: it adds a full copy right after the entry, named "<name> Copy 1" (or the next free number), and speaks that name. The copy lives where the original lives (account or character), and a copied monitor brings its rules along.
 - If a control has no actions, you hear "Menu Empty".
 
 Inside the menu use Up and Down, Enter to run an entry (the menu closes afterwards, except for entries that act on the game directly), and Escape to close it. Submenus read as "Dropdown" and open with Enter. Entries with a Checked or Unchecked state read as radio buttons. Letters jump to entries, as described above.

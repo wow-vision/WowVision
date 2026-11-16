@@ -5,6 +5,8 @@
   <Script file="linkTests.lua" />
   <Script file="tabs.lua" />
   <Script file="tabTests.lua" />
+  <Script file="echo.lua" />
+  <Script file="echoTests.lua" />
   <Script file="module.lua" />
     <Script file="ui.lua" />
 

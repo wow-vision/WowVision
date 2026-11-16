@@ -9,6 +9,9 @@
   <Script file="routerTests.lua" />
   <Script file="turnMath.lua" />
   <Script file="turnTests.lua" />
+  <Script file="unitAim.lua" />
+  <Script file="unitAimTests.lua" />
   <Script file="turnTo.lua" />
+  <Script file="turnToUnit.lua" />
   
 </Ui>

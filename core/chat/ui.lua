@@ -245,6 +245,22 @@ local function messagesNode(screen)
 
     return {
         controlType = graph.controlTypes.text,
+        -- letters jump between the lines (Host.lua); the chat is not filtered, its tabs and new lines go on underneath
+        listCursor = {
+            labels = function()
+                local buffer = currentBuffer()
+                local lines = {}
+                for i, item in ipairs(buffer ~= nil and buffer.items or {}) do
+                    lines[i] = item:getFocusString()
+                end
+                return lines
+            end,
+            index = function()
+                local _, index = clampedIndex()
+                return index
+            end,
+            go = moveTo,
+        },
         tooltip = {
             type = "Hyperlink",
             link = function()
