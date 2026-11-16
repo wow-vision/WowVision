@@ -12,6 +12,9 @@ Reactive alert system that watches game state and fires sound/TTS alerts on chan
 - `core/monitors/types/AuraMonitor.lua` — Aura monitoring + AuraStateRule
 - `core/monitors/types/CooldownMonitor.lua` — Cooldown monitoring + CooldownStateRule
 - `core/monitors/module.lua` — Module setup and update registration
+- `core/monitors/types/ResourceMonitor.lua` — Resource monitoring (all versions) + ResourceStepRule
+- `core/monitors/types/resourceSteps.lua` — The Resource monitor's step rules, pure Lua (headless tests in `resourceTests.lua`)
+- `core/monitors/types/resourceKey.lua` — The Speak Main Resource binding
 
 ## Architecture
 
@@ -178,6 +181,14 @@ function CooldownStateRule:getTrackingFields()
     return { "spell" }
 end
 ```
+
+## ResourceMonitor
+
+Watches one of the player's own resources (`powerType`, a key of the Power game DB) and fires an alert per step. It reads `UnitPower`/`UnitPowerMax` in `update()` instead of an ObjectTracker. Counted resources (`resourceSteps.COUNTED`: combo points, holy power, ...) step on every count; bars step every `stepSize` percent down from 100 and fire the threshold they cross the way Blizzard's Combat Audio Alerts announce it (`resourceSteps.crossed`).
+
+Each step is a `ResourceStepRule` in the monitor's `rules` array, with a hidden `value` and one Alert field (`Sound` + `ResourceSpeech`, an output that is only on or off; the monitor speaks with its own format, voice, rate, volume and minimum gap). The rules field is hidden: `renderGraphSettings` shows the monitor's fields and a Steps submenu with one alert button per step. The steps are built in `update()` when `builtFor` differs from `buildKey()` (resource, step size, sound series, the two defaults); a counted resource that grows gets the missing steps.
+
+Retail and WoW: Forever hide some of the player's bar values (mana and energy measured; `C_Secrets.ShouldUnitPowerBeSecret`), so the Resource list leaves those out, a new monitor starts on a resource it can follow, and `read()` returns nothing while a value is secret. A step whose alert cannot be heard does not take a crossing (`isAudible`); switching the monitor off makes it settle in silence when it comes back on. `resourceKey.lua` speaks the shown resource on demand: a secret value is only concatenated into the text, and a bar's percent comes from `UnitPowerPercent` through a step curve.
 
 ## ComponentRegistry Integration
 

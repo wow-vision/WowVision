@@ -395,6 +395,77 @@ if haveNetwork then
         end
     end
 
+    local WETLANDS = 1437
+
+    suite["a goal in closed water (noExit, no link at all) is no route at once, without a whole search"] = function(t)
+        setup()
+        local game = newGame()
+        local route = Route.new(game.env)
+        local x, y = bindablePosition(WETLANDS, game, route)
+        local start = route:startBinding(x, y)
+        t:assertNotNil(start, "a bindable Wetlands waypoint")
+        local zone = N.LoadZone(WETLANDS)
+        local closed, open
+        for i = 0, zone.n - 1 do
+            local id = zone.base + i
+            if closed == nil and N.ClosedWater(id) then
+                closed = id
+            end
+            -- a noExit node that keeps a link is not closed water
+            if open == nil and N.NoExit(id) and #N.Neighbors(id) > 0 then
+                open = id
+            end
+        end
+        t:assertNotNil(closed, "the Wetlands have closed water")
+        t:assertEqual(#N.Neighbors(closed), 0, "no link out")
+        if open ~= nil then
+            t:assertFalse(N.ClosedWater(open), "a linked noExit node stays a goal")
+        end
+        local misses, dropped = N.wholeMisses, N.closedWaterGoals
+        local result, why, slices = runJob(N.Job(function()
+            return N.RouteIds(start, closed)
+        end))
+        t:assertNil(result)
+        t:assertEqual(why, "no_route")
+        t:assertEqual(slices, 1, "answered in the first slice")
+        t:assertEqual(N.wholeMisses, misses, "no whole search")
+        t:assertEqual(N.closedWaterGoals, dropped + 1, "counted for the trail")
+        t:assertNotNil(N.RouteIds(start, zone.base + zone.n - 1) or N.RouteIds(start, zone.base),
+            "other goals still route")
+    end
+
+    suite["the corpse run in the Wetlands marsh routes without a whole search (water cell under the corpse)"] = function(t)
+        setup()
+        local game = newGame()
+        local route = Route.new(game.env)
+        N.LoadZone(WETLANDS)
+        -- 2026-11-14: the spirit healer of Menethil to a corpse in the marsh, no height; the cell of a puddle under the
+        -- corpse offered a closed water node first, and that one miss searched the whole continent (72 s in the game)
+        local gx, gy = -3289.1, -2436.0
+        local startId, best
+        for _, id in ipairs(N.NodesWithin(WETLANDS, gx, gy, 20)) do
+            local x, y = N.Position(id)
+            local d = Route.distance(x, y, gx, gy)
+            if best == nil or d < best then
+                startId, best = id, d
+            end
+        end
+        t:assertNotNil(startId, "a waypoint at the graveyard")
+        game.x, game.y = gx, gy
+        local _, _, z = N.Position(startId)
+        route.anchor.last = z
+        local contract = { id = "wowvision:corpse", kind = "live", nameEn = "Corpse", nativeMapId = 0,
+            coordinateSpace = "world", x = -3356.7, y = -1639.7, zStatus = "unknown" }
+        local misses = N.wholeMisses
+        local outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = 0 }, startId))
+        if outcome.kind == "choose" then
+            contract.heightBand = 1
+            outcome = runJob(N.Job(route.prepare, route, contract, { nativeMapId = 0 }, startId))
+        end
+        t:assertEqual(outcome.kind, "start", tostring(outcome.reason))
+        t:assertEqual(N.wholeMisses, misses, "no whole search")
+    end
+
     suite["the continent catalogue lists both layers with categories and zone"] = function(t)
         setup()
         local rows = zoneRows(STORMWIND)

@@ -333,6 +333,37 @@ loadAddonFile("core/scanner/nearest.lua")
 loadAddonFile("core/scanner/nearestTests.lua")
 loadAddonFile("core/secrets.lua")
 loadAddonFile("core/secretsTests.lua")
+-- The group health monitor's module: loaded against a stand-in module whose settings are a real settings class (as
+-- Module:hasSettings makes them), so a setting's change reaches the module as in the game. The suite stubs the
+-- game's unit functions per test.
+do
+    local savedBase = WowVision.base
+    local stub = { key = "groupHealth", L = WowVision:getLocale() }
+    local noop = function() end
+    stub.setLabel, stub.registerEvent, stub.registerBinding, stub.hasUpdate = noop, noop, noop, noop
+    function stub:hasSettings()
+        if self.settingsFacade == nil then
+            local settingsClass = WowVision.Class("Settings:groupHealthTest")
+            self.settings = settingsClass:new()
+            self.settingsFacade = {
+                add = function(_, def)
+                    settingsClass:addFields({ def })
+                    return settingsClass:getField(def.key)
+                end,
+            }
+        end
+        return self.settingsFacade
+    end
+    WowVision.base = {
+        createModule = function()
+            return stub
+        end,
+    }
+    loadAddonFile("retail/groupHealth/module.lua")
+    WowVision.base = savedBase
+    WowVision.groupHealth._moduleTestHarness = stub
+end
+loadAddonFile("retail/groupHealth/moduleTests.lua")
 loadAddonFile("camelot/petTraining.lua")
 loadAddonFile("camelot/petTrainingTests.lua")
 loadAddonFile("core/gameDB/itemQuality.lua")
@@ -956,6 +987,18 @@ WowVision.testing.testRunner:addSuite("BufferConstruction", {
 loadAddonFile("core/monitors/Rule.lua")
 loadAddonFile("core/monitors/Monitor.lua")
 loadAddonFile("core/monitors/rules/StateRule.lua")
+-- The Resource monitor reads the powers list (core/gameDB/powers.lua), which
+-- takes its ids from the game's Enum.PowerType.
+do
+    local savedEnum = Enum
+    Enum = { PowerType = { Mana = 0, Rage = 1, Focus = 2, Energy = 3, ComboPoints = 4 } }
+    loadAddonFile("core/gameDB/gameDB.lua")
+    loadAddonFile("core/gameDB/powers.lua")
+    Enum = savedEnum
+end
+loadAddonFile("core/monitors/types/resourceSteps.lua")
+loadAddonFile("core/monitors/types/ResourceMonitor.lua")
+loadAddonFile("core/monitors/types/resourceTests.lua")
 WowVision.testing.testRunner:addSuite("MonitorConstruction", {
     ["a monitor with a state rule round-trips its db"] = function(t)
         local StateRule = WowVision.monitors.ruleRegistry.types:get("State")
@@ -2308,6 +2351,7 @@ do
         function stub:setLabel() end
         function stub:registerCommand() end
         function stub:registerBinding() end
+        function stub:registerEvent() end
         function stub:registerWindow(def)
             harness.windows[def.name] = def
         end
@@ -2326,10 +2370,13 @@ do
     ACCEPT, DECLINE = "Accept", "Decline"
     loadAddonFile("core/windows/pending.lua")
     loadAddonFile("core/windows/RolePoll.lua")
+    loadAddonFile("core/windows/trade.lua")
     harness.popups = WowVision.base.windows.popups
+    harness.trade = WowVision.base.windows.trade
     WowVision.base = savedBase
     WowVision._popupsTestHarness = harness
     loadAddonFile("core/windows/popupsTests.lua")
+    loadAddonFile("core/windows/tradeTests.lua")
     loadAddonFile("core/windows/pendingTests.lua")
     WowVision._popupsTestHarness = nil
     StaticPopupDialogs, ACCEPT, DECLINE = savedDialogs, savedAccept, savedDecline

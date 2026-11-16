@@ -2,7 +2,7 @@
 
 Monitors watch the game for you and speak or play a sound when something changes: a debuff you applied is about to run out, a cooldown is ready again, a proc lights up. While [Buffers](buffers.md) answer the question when you ask it, monitors tell you without being asked.
 
-Which monitors you have depends on your game version. Classic Era, The Burning Crusade and Mists of Pandaria have an Aura monitor and a Cooldown monitor. Retail and WoW: Forever have Cooldown Manager Auras and Spell Cooldowns, because the game hides aura and cooldown numbers from addons there during combat. Cooldown Manager Auras reads Blizzard's cooldown manager. Spell Cooldowns uses the few facts the game still gives out, and only borrows the cooldown manager for its list of spells to pick from.
+Which monitors you have depends on your game version. Classic Era, The Burning Crusade and Mists of Pandaria have an Aura monitor and a Cooldown monitor. Retail and WoW: Forever have Cooldown Manager Auras and Spell Cooldowns, because the game hides aura and cooldown numbers from addons there during combat. Cooldown Manager Auras reads Blizzard's cooldown manager. Spell Cooldowns uses the few facts the game still gives out, and only borrows the cooldown manager for its list of spells to pick from. Every version also has the [Resource monitor](#resource-monitor) for your own combo points, mana, energy and the like.
 
 ## How monitors work
 
@@ -283,6 +283,61 @@ The Speak Tracked Cooldowns key reads the state of every rule of every enabled S
 
 The key is unbound by default. You find it under Monitors in the keybinding window.
 
+## Resource monitor
+
+(All versions)
+
+Plays a sound or speaks when one of your own resources reaches a step: every combo point, or every 20 percent of your mana. It follows the conventions of Blizzard's Combat Audio Alerts, and adds sounds, which those alerts do not have.
+
+Resources come in two kinds:
+
+- Counted resources (combo points, holy power, chi, soul shards, arcane charges, essence, runes): every point is a step, from 0 (spent) to your maximum.
+- Bars (mana, energy, rage, focus, runic power and the like): the steps go down from 100 in the size you choose. Every 40 percent gives 100, 60 and 20.
+
+On Retail and WoW: Forever the game hides some bars from addons, even out of combat: mana and energy for sure. The monitor cannot follow a hidden bar, so the Resource list leaves out whatever the game hides on your character. Counted resources such as combo points stay readable. To hear a hidden bar on demand, use the [Speak Main Resource](#speak-main-resource) key.
+
+### Monitor settings
+
+| Setting | Default | What it does |
+|---|---|---|
+| Resource | Your main resource | The resource to follow. The list shows the resources your character has right now and the game does not hide (and the one already chosen). When the game hides your main resource, a new monitor starts on the first one it can follow, such as combo points |
+| Steps (Bars) | Every 20% | The step size for bars: every 10, 20, 30, 40 or 50 percent. Counted resources ignore it |
+| Step Sounds | Glass | The sound series the steps start with: Glass, Brass, Water Drop or Stuck (five rising sounds each), or Rising Notes. With more than five steps the steps use Rising Notes. A count of 0 gets a click |
+| Sound on Every Step | On | Whether the steps start with their sound on |
+| Speech on Every Step | On | Whether the steps start with their speech on |
+| Speech Format | Name and Number (Mana 40) | Blizzard's six formats: name and percent, name and number, name and tenths ("Mana 4"), percent only, number only, tenths only. A count is always spoken as its number |
+| Voice | Follows your Speech Voice setting | The game voice the steps speak with |
+| Speech Rate | 0 | From -10 to 10 |
+| Speech Volume | 100 | From 0 to 100 |
+| Minimum Time Between Messages (seconds) | 0 | From 0 to 5. A message that comes sooner waits, and only the newest waiting one is spoken. Sounds are not held back |
+| Steps | built for you | The submenu with one alert per step, see below. It says "No steps yet" while the monitor is off or the resource cannot be read |
+
+Changing Resource, Steps (Bars), Step Sounds, Sound on Every Step or Speech on Every Step builds the steps anew with those defaults. Changes you made to single steps are lost then, so set these first. When a talent raises your maximum (one more combo point), the new step is added and the others stay as they are.
+
+### The steps
+
+The Steps submenu ("Steps (6)" for five combo points) lists one button per step, named by its value: "0" to "5", or "20%" to "100%". Each opens the step's alert, like every alert in WowVision: Enabled, Sound Alert (Enabled and the Sound picker) and TTS Alert (Enabled only; what is spoken and how comes from the monitor's settings).
+
+### When a step fires
+
+- Counted resources: the step of the new count fires, at every change. Gaining two points at once plays the step you land on.
+- Bars, like Blizzard's alerts: falling to or below a step fires it, rising above a step fires it. When one change crosses several steps, falling plays the lowest and rising the highest. 100 plays when you reach full, never when you leave it.
+- A step whose alert is off, or whose sound and speech are both off, is skipped: a change that crosses it plays the next step that can be heard.
+- The first value after login, a reload, or switching the monitor back on is taken in silence.
+- While the game hides the value the monitor stays silent, and it starts again in silence when the value is back.
+
+### Speak Main Resource
+
+The Speak Main Resource key says the resource the game shows for you now: "energy 80%" in cat form, "mana 43%" in caster form, "rage 20%", or the count, such as "combo points 3". It works on every version, also where the game hides the value from addons: the game still lets WowVision speak it, only not compare it. The key is unbound by default; you find it under Monitors in the keybinding window.
+
+### Example: combo points with glass sounds
+
+1. Monitors, Monitors (0), Add, Resource.
+2. Set Resource to combo points. Leave Step Sounds at Glass and turn Speech on Every Step off.
+3. The steps are built as soon as the monitor reads your combo points (it must be Enabled). Open Steps to hear "0" to "5"; until then it says "No steps yet".
+
+Each combo point now plays glass 1 to 5, and spending them plays the click.
+
 ## Availability
 
 | Feature | Classic Era | The Burning Crusade | Mists of Pandaria | Retail | WoW: Forever |
@@ -292,6 +347,9 @@ The key is unbound by default. You find it under Monitors in the keybinding wind
 | Cooldown Manager Auras | No | No | No | Yes | Yes |
 | Spell Cooldowns (cooldown and proc rules) | No | No | No | Yes | Yes |
 | Pandemic state of Cooldown Manager Auras | No | No | No | Yes | No |
+| Resource monitor for counted resources (combo points and the like) | Yes | Yes | Yes | Yes | Yes |
+| Resource monitor for bars (mana, energy, rage and the like) | Yes | Yes | Yes | Only bars the game does not hide (not mana or energy) | Only bars the game does not hide (not mana or energy) |
+| Speak Main Resource | Yes | Yes | Yes | Yes | Yes |
 | Toggle All Monitors | Yes | Yes | Yes | Yes | Yes |
 | Speak Tracked Auras, Speak Tracked Cooldowns, `/wv cdmlog` | No | No | No | Yes | Yes |
 
@@ -304,6 +362,7 @@ See [Versions](../reference/versions.md) for the full feature matrix.
 | Toggle All Monitors | unbound | If any monitor is on, turns all monitors off and says "Monitors off". If all are off, turns them all on and says "Monitors on" |
 | Speak Tracked Auras | unbound | Reads all tracked auras (Retail and WoW: Forever) |
 | Speak Tracked Cooldowns | unbound | Reads all tracked spell cooldowns and procs (Retail and WoW: Forever) |
+| Speak Main Resource | unbound | Says the resource the game shows for you now, such as "energy 80%" (all versions) |
 
 Bind them in the keybinding window, see [Keybindings](../basics/keybindings.md). Toggle All Monitors works as a mute: press it once to silence all monitors and again to turn them all back on. Monitors you had switched off one by one are turned on as well.
 

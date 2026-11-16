@@ -28,7 +28,8 @@ function WowNavPath:sync()
     local waypoints = {}
     for i, id in ipairs(route.path or {}) do
         local x, y, z = N.Position(id)
-        waypoints[i] = { id = id, x = x, y = y, z = z }
+        -- physical: a point of the network itself, not a virtual one made for this route (maps remembers its height)
+        waypoints[i] = { id = id, x = x, y = y, z = z, physical = id < N.VIRT_BASE }
     end
     if #waypoints > 0 then
         waypoints[#waypoints].n = self.label
