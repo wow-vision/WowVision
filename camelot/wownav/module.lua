@@ -64,6 +64,9 @@ settings:add({ key = "preload", type = "Bool", label = L["Prepare Neighbouring Z
 -- the radius Alt-P picks (navigation/maps) is the minimum over the data's own radius of each waypoint
 
 local BUDGET_MS = 8          -- search time per frame (his chapter 7 point 4 allows 30)
+-- while the player stands still out of combat, waiting for the route: his limit. On a slow computer a frame outside the
+-- search takes 30 ms or more, and with 8 ms a frame a search of 20 s took over a minute to answer.
+local BUDGET_STILL_MS = 30
 local SLOW_NOTICE = 1.0      -- seconds before "calculating route" is said
 local RECALC_DELAY = 1.0     -- seconds after the last change of the road preference before the route is searched again
 
@@ -601,7 +604,7 @@ end
 -- A job planning in time slices, as every search (stepJob runs it).
 local function newJob(N, request, work)
     return { request = request, startedAt = GetTime(), job = work, frames = 0, misses = N.wholeMisses or 0,
-        answers = N.knownMissAnswers or 0, closed = N.closedWaterGoals or 0 }
+        answers = N.knownMissAnswers or 0, closed = N.closedWaterGoals or 0, repeated = N.repeatedSearches or 0 }
 end
 
 -- Starts the search for a request. request: { contract or nodeId, label, onArrive, start }; start: the entry point the
@@ -996,17 +999,19 @@ local function stepJob(self)
     if j == nil then
         return
     end
-    local done, outcome, failure = j.job:Step(BUDGET_MS, debugprofilestop)
+    local still = route ~= nil and route.env.moving ~= nil and not route.env.moving()
+        and not (InCombatLockdown ~= nil and InCombatLockdown())
+    local done, outcome, failure = j.job:Step(still and BUDGET_STILL_MS or BUDGET_MS, debugprofilestop)
     j.frames = j.frames + 1
     if done then
         -- how long the search took, the whole searches that missed (the floor check) and what they answered, and the
         -- goals in closed water that no search was spent on
         local N = self:network()
         logLine(string.format("search %s: %s after %.1f s in %d frames, %d whole misses, %d targets answered from them, "
-            .. "%d closed water goals left out",
+            .. "%d closed water goals left out, %d repeated searches answered from the first",
             tostring(j.request.label), type(outcome) == "table" and tostring(outcome.kind) or tostring(failure),
             GetTime() - j.startedAt, j.frames, (N.wholeMisses or 0) - j.misses, (N.knownMissAnswers or 0) - j.answers,
-            (N.closedWaterGoals or 0) - j.closed))
+            (N.closedWaterGoals or 0) - j.closed, (N.repeatedSearches or 0) - j.repeated))
     end
     if not done then
         if not j.noticed and GetTime() - j.startedAt >= SLOW_NOTICE then

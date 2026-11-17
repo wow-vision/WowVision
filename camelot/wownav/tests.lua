@@ -2144,6 +2144,115 @@ if haveNetwork then
         until N.LoadZoneInSteps(id, 20, clock) or steps > 100000
         t:assertNotNil(N.zones[id])
     end
+
+    -- A route as positions and cost: virtual points are numbered in the order they are made, which the search order
+    -- decides, so two searches of the same route compare by where their points lie.
+    local function routeShape(result)
+        if result == nil then
+            return "none"
+        end
+        local parts = { string.format("%.9f", result.cost) }
+        for _, id in ipairs(result.path) do
+            if id >= N.VIRT_BASE then
+                parts[#parts + 1] = string.format("%.4f/%.4f/%.4f", N.Position(id))
+            else
+                parts[#parts + 1] = string.format("%.0f", id)
+            end
+        end
+        return table.concat(parts, ",")
+    end
+
+    local TELDRASSIL, DARNASSUS = 57, 1457
+
+    suite["the action ends of the packed data are the decoded actions' waypoints"] = function(t)
+        setup()
+        local ends = _G.WVN7ActionEnds
+        t:assertNotNil(ends, "tools/wownav-pack.lua writes actions.lua")
+        local count = 0
+        for _, entry in ipairs(ends) do
+            local zone = N.zones[math.floor(entry.from / N.ZONE_BASE)] or N.LoadZone(math.floor(entry.from / N.ZONE_BASE))
+            local found
+            for _, action in ipairs(zone.actions) do
+                if action.fromNode == entry.from and action.toNode == entry.to and action.cost == entry.cost then
+                    found = action
+                end
+            end
+            t:assertNotNil(found, string.format("action %.0f -> %.0f", entry.from, entry.to))
+            N.LoadZone(math.floor(entry.to / N.ZONE_BASE))
+            local fx, fy, fz = N.Position(entry.from)
+            local tx, ty, tz = N.Position(entry.to)
+            t:assertEqual(string.format("%.6f %.6f %.6f %.6f %.6f %.6f", fx, fy, fz, tx, ty, tz),
+                string.format("%.6f %.6f %.6f %.6f %.6f %.6f", entry.fx, entry.fy, entry.fz, entry.tx, entry.ty, entry.tz))
+            count = count + 1
+        end
+        t:assertTrue(count > 40, "every action of the data: " .. count)
+    end
+
+    suite["the estimate with actions finds the routes of the search without an estimate"] = function(t)
+        -- Stormwind has a tram into another map and portals; Teldrassil and Darnassus a portal far cheaper than its
+        -- straight line. Without the action ends his rule turns the estimate off there (a search around the start).
+        setup()
+        local ends = _G.WVN7ActionEnds
+        t:assertNotNil(ends)
+        N.LoadZone(STORMWIND)
+        N.LoadZone(TELDRASSIL)
+        N.LoadZone(DARNASSUS)
+        t:assertTrue(N.actionCount > 0, "zones with actions are decoded")
+        local pairsToRoute = {
+            { STORMWIND * N.ZONE_BASE + 8390, STORMWIND * N.ZONE_BASE + 2959 },
+            { STORMWIND * N.ZONE_BASE + 7278, STORMWIND * N.ZONE_BASE + 5903 },
+            { STORMWIND * N.ZONE_BASE + 3149, ELWYNN * N.ZONE_BASE + 7703 },
+            { TELDRASSIL * N.ZONE_BASE + 20076, DARNASSUS * N.ZONE_BASE + 1419 },
+            { DARNASSUS * N.ZONE_BASE + 1921, TELDRASSIL * N.ZONE_BASE + 24255 },
+        }
+        for _, pair in ipairs(pairsToRoute) do
+            local with = N.RouteIds(pair[1], pair[2])
+            _G.WVN7ActionEnds = nil
+            local without = N.RouteIds(pair[1], pair[2])
+            _G.WVN7ActionEnds = ends
+            t:assertNotNil(with, string.format("a route %.0f -> %.0f", pair[1], pair[2]))
+            t:assertEqual(routeShape(with), routeShape(without))
+            t:assertTrue(with.expansions <= without.expansions, "no more waypoints searched than without the estimate")
+        end
+    end
+
+    suite["a route on foot into another map is no route at once, without a whole search"] = function(t)
+        setup()
+        local tramZone
+        for id, entry in pairs(N.index) do
+            if entry.dir == "DeeprunTram" then
+                tramZone = id
+            end
+        end
+        t:assertNotNil(tramZone)
+        N.LoadZone(STORMWIND)
+        N.LoadZone(tramZone)
+        local result, why, slices = runJob(N.Job(function()
+            return N.RouteIds(STORMWIND * N.ZONE_BASE + 1, tramZone * N.ZONE_BASE + 1, nil, true)
+        end))
+        t:assertNil(result)
+        t:assertEqual(why, "no_route")
+        t:assertEqual(slices, 1, "answered in the first slice")
+    end
+
+    suite["a search repeated inside a job is answered from the first, as a copy"] = function(t)
+        setup()
+        N.LoadZone(STORMWIND)
+        local from, to = STORMWIND * N.ZONE_BASE + 8390, STORMWIND * N.ZONE_BASE + 2959
+        local repeated = N.repeatedSearches
+        local first, second = runJob(N.Job(function()
+            local a = N.RouteIds(from, to)
+            local b = N.RouteIds(from, to)
+            return a, b
+        end))
+        t:assertNotNil(first)
+        t:assertEqual(N.repeatedSearches, repeated + 1, "the second search was not run again")
+        t:assertEqual(routeShape(second), routeShape(first))
+        t:assertTrue(second.path ~= first.path, "a copy: a caller changing it changes nothing else")
+        -- outside a job every search runs
+        N.RouteIds(from, to)
+        t:assertEqual(N.repeatedSearches, repeated + 1)
+    end
 end
 
 testRunner:addSuite("WowNav routes", suite)
