@@ -8,8 +8,10 @@
 --   WVN7LogicalSrc[zoneId] = [[ <logical_targets.lua> ]]
 --   WVN7DynSrc[zoneId]     = [[ <dyn_targets.lua> ]]
 --
--- The continent indexes stay as they are (small, read at login). The output goes to mapdata/WowNavPacked/ (not in
--- git) with a data.xml that loads it, included from camelot/modules.xml. Until the data repo ships packed files, run
+-- The continent indexes stay as they are (small, read at login). actions.lua (WVN7ActionEnds) lists every action of the
+-- data with the exact positions of its two waypoints, decoded here with the engine, for the engine's estimate (see
+-- camelot/wownav/engine/README.md). The output goes to mapdata/WowNavPacked/ (not in git) with a data.xml that loads
+-- it, included from camelot/modules.xml. Until the data repo ships packed files, run
 -- this after every update of the submodule:
 --
 --   luajit tools/wownav-pack.lua            (from the repo root)
@@ -137,10 +139,13 @@ local xml = {
     "       zone files of WowNav's navigation data. Not in git; run the tool after updating the submodule. -->",
 }
 local changed, files = 0, 0
+-- the navigation data of every zone by zone id (for the action ends below) and the continent indexes
+local navTexts, indexTexts = {}, {}
 for _, continent in ipairs(listDirs(SOURCE)) do
     local indexPath = SOURCE .. "/" .. continent .. "/index.lua"
     local indexText = read(indexPath)
     if indexText ~= nil then
+        indexTexts[#indexTexts + 1] = indexText
         mkdir(TARGET .. "/" .. continent)
         local outIndex = TARGET .. "/" .. continent .. "/index.lua"
         if read(outIndex) ~= indexText then
@@ -156,6 +161,9 @@ for _, continent in ipairs(listDirs(SOURCE)) do
                 local rel = continent .. "/" .. zone.dir .. "/" .. kind
                 local text = assert(read(SOURCE .. "/" .. rel), "missing " .. rel)
                 local packed = pack(text, kind, rel)
+                if kind == "navdata.lua" then
+                    navTexts[tonumber(text:match(KINDS[kind][1]))] = text
+                end
                 files = files + 1
                 if read(TARGET .. "/" .. rel) ~= packed then
                     changed = changed + 1
@@ -168,6 +176,68 @@ for _, continent in ipairs(listDirs(SOURCE)) do
         end
     end
 end
+-- The action ends (actions.lua, WVN7ActionEnds): every action of the data with the exact positions of its two waypoints,
+-- its cost and the maps of both ends. The engine's estimate (NavNetwork.lua, Pass) needs them for the whole data before
+-- any zone is decoded: an action that costs less than the straight line between its ends (a tram into another map,
+-- the portal between Teldrassil and Darnassus) makes the straight line too high for a waypoint behind it. Only the
+-- zones with actions and the zones they lead into are decoded here, with the engine itself.
+local function actionEnds()
+    local saved = { WVN7Src = _G.WVN7Src, WVN7Index = _G.WVN7Index, WVN7 = _G.WVN7 }
+    _G.WVN7Src, _G.WVN7Index, _G.WVN7 = navTexts, {}, nil
+    for _, text in ipairs(indexTexts) do
+        assert(loadstring(text, "=index"))()
+    end
+    local engine = assert(loadfile("camelot/wownav/engine/NavNetwork.lua"))
+    local previousEngine = _G.WowVisionNavigationNavNetwork
+    _G.WowVisionNavigationNavNetwork = nil
+    engine("WowVision", {})
+    local N = _G.WowVisionNavigationNavNetwork
+    N.LoadIndex()
+    local function mapOf(zoneId)
+        local entry = N.index[zoneId]
+        return entry and entry.mapId
+    end
+    local zoneIds = {}
+    for zoneId, text in pairs(navTexts) do
+        -- every action record has an activation; a zone without one has no actions
+        if text:find('["activation"]', 1, true) then
+            zoneIds[#zoneIds + 1] = zoneId
+        end
+    end
+    table.sort(zoneIds)
+    local lines = {}
+    for _, zoneId in ipairs(zoneIds) do
+        local zone = assert(N.LoadZone(zoneId), "zone " .. zoneId .. " does not decode")
+        for _, action in ipairs(zone.actions) do
+            local toZone = math.floor(action.toNode / N.ZONE_BASE)
+            assert(N.zones[toZone] or N.LoadZone(toZone), "zone " .. toZone .. " does not decode")
+            local fx, fy, fz = N.Position(action.fromNode)
+            local tx, ty, tz = N.Position(action.toNode)
+            lines[#lines + 1] = string.format(
+                "    { from = %.0f, to = %.0f, cost = %.17g, fromMap = %s, toMap = %s, fx = %.17g, fy = %.17g, fz = %.17g, "
+                    .. "tx = %.17g, ty = %.17g, tz = %.17g },",
+                action.fromNode, action.toNode, action.cost, tostring(mapOf(zoneId)), tostring(mapOf(toZone)),
+                fx, fy, fz, tx, ty, tz)
+        end
+        -- keep the tool's memory small: a zone is not needed once its actions are read
+        N.UnloadZone(zoneId)
+    end
+    _G.WowVisionNavigationNavNetwork = previousEngine
+    _G.WVN7Src, _G.WVN7Index, _G.WVN7 = saved.WVN7Src, saved.WVN7Index, saved.WVN7
+    return "-- WVN7 action ends, written by tools/wownav-pack.lua from mapdata/WoW_NavigationData (the engine's estimate,\n"
+        .. "-- NavNetwork.lua Pass): every action with the positions of its waypoints, its cost and the maps of both ends.\n"
+        .. "WVN7ActionEnds = {\n" .. table.concat(lines, "\n") .. "\n}\n", #lines
+end
+
+local actionsText, actionCount = actionEnds()
+if read(TARGET .. "/actions.lua") ~= actionsText then
+    changed = changed + 1
+    if not check then
+        write(TARGET .. "/actions.lua", actionsText)
+    end
+end
+table.insert(xml, 4, '  <Script file="actions.lua" />')
+
 xml[#xml + 1] = "</Ui>"
 local xmlText = table.concat(xml, "\n") .. "\n"
 if read(TARGET .. "/data.xml") ~= xmlText then
@@ -176,7 +246,8 @@ if read(TARGET .. "/data.xml") ~= xmlText then
         write(TARGET .. "/data.xml", xmlText)
     end
 end
-print(string.format("%d zone files; %d file(s) %s", files, changed, check and "stale" or "written"))
+print(string.format("%d zone files, %d actions; %d file(s) %s", files, actionCount, changed,
+    check and "stale" or "written"))
 if check and changed > 0 then
     os.exit(1)
 end

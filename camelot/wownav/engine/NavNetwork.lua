@@ -1797,6 +1797,12 @@ local SLICE_CHECK = 64     -- expansions between clock reads
 local reachCache = nil
 -- counters for WowVision's trail: whole searches that missed (kept as sets) and targets answered from those sets
 N.wholeMisses, N.knownMissAnswers = 0, 0
+-- WowVision: the answers of the running job's searches by their arguments. Planning a route asks the same search twice:
+-- the resolver routes to the target's attachment (context.route), then Route:planToNode routes the same pair again.
+-- Inside one job nothing a search depends on changes (zones, virtual points, penalties, comfort), so the second is
+-- answered from the first. N.repeatedSearches counts them for the module's trail.
+local routeCache = nil
+N.repeatedSearches = 0
 
 -- WowVision: closed water. S10b keeps the water nodes of a water body without a checked exit (flag noExit, 4.27) for
 -- the announcement only, without links; no search can arrive at such a node. N.Route drops it as a goal, and answers
@@ -1904,6 +1910,57 @@ end
 -- from all starts at once (initial cost = extra + part of the link) and ends at the cheapest goal (K). Returns
 -- { path = {global IDs}, edges = {link refs}, length = geometric length of the links walked, cost = network cost,
 -- total = cost with the approach lengths, startBinding, targetBinding }
+-- WowVision: the straight-line estimate with actions. His rule turns the estimate off while any decoded zone has an
+-- action (cheap teleports make the straight line too high); the search then expands everything around the start, in
+-- every capital with a portal, a tram or a lift. Most actions cost at least the straight line between their two
+-- waypoints (lifts, dives, the portals of Zephra's Isle): behind such an action the straight line is still a lower
+-- bound. Only a shortcut breaks it: an action into another map (the tram) or one cheaper than its straight line (the
+-- portal between Teldrassil and Darnassus; a lift whose cost is rounded below its straight line). A route from a
+-- waypoint either takes no shortcut, or walks to the start of its first shortcut (on the waypoint's map) and walks
+-- from the end of its last one (on the goals' map) to a goal. So it costs at least
+--   hmin x min(straight line to the nearest goal, straight line to the nearest shortcut start + E),
+-- E = the straight line from the nearest shortcut end on the goals' map to the nearest goal; on another map than the
+-- goals only the second term. Both terms never drop by more than a link or an action costs, so the estimate stays
+-- consistent. The action ends of the whole data come from tools/wownav-pack.lua (actions.lua, WVN7ActionEnds: exact
+-- positions, before any zone is decoded). Without them, or with goals on two maps, his rule stays.
+-- Returns E (math.huge: no shortcut onto the goals' map), the goals' map and the shortcut starts by map
+-- ({ [map] = { x, y, z, x, y, z, ... } }), or math.huge, nil when his rule applies.
+local function ActionBound(goals, hmin, footOnly)
+    local ends = _G.WVN7ActionEnds
+    if type(ends) ~= "table" then return math.huge, nil, nil end
+    local goalMap
+    for _, entry in ipairs(goals) do
+        local binding = entry.binding
+        local zone = binding.zone or ZoneOf(binding.id)
+        local index = zone and N.index[zone.id]
+        local map = index and index.mapId
+        if map == nil or (goalMap ~= nil and map ~= goalMap) then return math.huge, nil, nil end
+        goalMap = map
+    end
+    if goalMap == nil then return math.huge, nil, nil end
+    local nearest, startsByMap = math.huge, {}
+    -- a route on foot takes no action
+    if not footOnly then
+        for _, action in ipairs(ends) do
+            local shortcut = action.fromMap ~= action.toMap
+                or action.cost < hmin * Distance3(action.fx, action.fy, action.fz, action.tx, action.ty, action.tz)
+            if shortcut then
+                local list = startsByMap[action.fromMap] or {}
+                list[#list + 1], list[#list + 2], list[#list + 3] = action.fx, action.fy, action.fz
+                startsByMap[action.fromMap] = list
+                if action.toMap == goalMap then
+                    for _, entry in ipairs(goals) do
+                        local binding = entry.binding
+                        local d = Distance3(action.tx, action.ty, action.tz, binding.x, binding.y, binding.z)
+                        if d < nearest then nearest = d end
+                    end
+                end
+            end
+        end
+    end
+    return nearest, goalMap, startsByMap
+end
+
 local function Pass(starts, goals, road, penalties, footOnly, avoid)
     local targetMap = {}
     for _, entry in ipairs(goals) do
@@ -1914,33 +1971,99 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
         end
     end
     local hmin = road and N.ROAD_FACTOR or 1.0
-    local g, previous, startEntry = {}, {}, {}
+    -- WowVision, speed: the way a waypoint was reached in two flat tables instead of a new table per improvement (a
+    -- search made up to a few hundred thousand of them, and the garbage collector then walked all decoded zones over
+    -- and over): previous[id] = the waypoint before it (false at a start), via[id] = the link k of that waypoint's zone,
+    -- -k for part of a link up to or from a seam point (4.37; the link lies in the zone of the waypoint before, or of
+    -- that virtual point), the action, or false for a seam
+    local g, previous, via, startEntry = {}, {}, {}, {}
     local heap = HeapNew()
     local useStraightLine = N.actionCount == 0   -- cheap teleports make the straight line inadmissible
+    -- WowVision, speed: the goals' positions in plain arrays and the estimate from a position, so a waypoint of a zone
+    -- is estimated from the zone's own arrays (no N.Position call); the same arithmetic as Distance3 over the goals
+    local goalX, goalY, goalZ, goalCount = {}, {}, {}, #goals
+    for i, entry in ipairs(goals) do
+        local b = entry.binding
+        goalX[i], goalY[i], goalZ[i] = b.x, b.y, b.z
+    end
+    local huge = math.huge
+    -- WowVision: the estimate with actions (ActionBound). shortcutEnd: E (huge: no shortcut onto the goals' map);
+    -- goalMap: the map of the goals (nil: his rule, no shortcut terms); startsByMap: the shortcut starts by map
+    local shortcutEnd, goalMap, startsByMap = ActionBound(goals, hmin, footOnly)
+    if goalMap ~= nil then useStraightLine = true end
+    -- onGoal: the position lies on the goals' map; starts: the shortcut starts of its map (nil: none)
+    local function estimateAt(x, y, z, onGoal, starts)
+        local nearest = huge
+        if onGoal then
+            for i = 1, goalCount do
+                local dx, dy, dz = x - goalX[i], y - goalY[i], z - goalZ[i]
+                local d = sqrt(dx * dx + dy * dy + dz * dz)
+                if d < nearest then nearest = d end
+            end
+        end
+        if starts and shortcutEnd < huge then
+            local first = huge
+            for i = 1, #starts, 3 do
+                local dx, dy, dz = x - starts[i], y - starts[i + 1], z - starts[i + 2]
+                local d = sqrt(dx * dx + dy * dy + dz * dz)
+                if d < first then first = d end
+            end
+            if first + shortcutEnd < nearest then nearest = first + shortcutEnd end
+        end
+        -- no way to the goals' map from here: nothing to estimate (the search still sees everything it reaches)
+        if nearest == huge then return 0 end
+        return nearest * hmin
+    end
+    -- per zone: on the goals' map, and the shortcut starts of its map
+    local zoneOnGoal, zoneStarts = {}, {}
+    local function zoneBound(zone)
+        if goalMap == nil or zone == nil then return true, nil end
+        local onGoal = zoneOnGoal[zone]
+        if onGoal == nil then
+            local entry = N.index[zone.id]
+            local map = entry and entry.mapId
+            onGoal = map == goalMap
+            zoneOnGoal[zone], zoneStarts[zone] = onGoal, map ~= nil and startsByMap[map] or false
+        end
+        return onGoal, zoneStarts[zone] or nil
+    end
     local function estimate(id)
         if not useStraightLine then return 0 end
-        local x, y, z = N.Position(id)
-        local nearest = math.huge
-        for _, entry in ipairs(goals) do
-            local b = entry.binding
-            local d = Distance3(x, y, z, b.x, b.y, b.z)
-            if d < nearest then nearest = d end
+        local zone
+        if id >= VIRT_BASE then
+            local point = N.virt[id]
+            zone = point and point.zone
+        else
+            zone = ZoneOf(id)
         end
-        return nearest * hmin
+        local onGoal, starts = zoneBound(zone)
+        local x, y, z = N.Position(id)
+        return estimateAt(x, y, z, onGoal, starts)
+    end
+    -- WowVision, speed: LinkFactor per flag once per pass (the same values, without a call per link)
+    local hop = N.HOP_COST
+    local factors = {}
+    local function factorOf(flag)
+        local factor = factors[flag + 1]
+        if factor == nil then
+            factor = LinkFactor(flag, road)
+            factors[flag + 1] = factor
+        end
+        return factor
     end
     for _, entry in ipairs(starts) do
         for _, option in ipairs(Options(entry.binding, road, true)) do
             local cost = option.cost + entry.extra
             if cost < (g[option.id] or math.huge) then
                 g[option.id] = cost
-                previous[option.id] = false
+                previous[option.id], via[option.id] = false, false
                 startEntry[option.id] = entry
                 HeapPush(heap, cost + estimate(option.id), option.id, cost)
             end
         end
     end
     local function RootRank(id)
-        while previous[id] do id = previous[id][1] end
+        while previous[id] do id = previous[id] end
         return startEntry[id].rank
     end
     local bestSum, bestEnd, bestGoal = math.huge, nil, nil
@@ -1956,10 +2079,10 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
     end
     local expansions = 0
     local single = #starts == 1 and #goals == 1       -- one pair: nothing to compare, a tie ends the search
-    local function relax(vid, new, from)
+    local function relax(vid, new, from, edge)
         if new < (g[vid] or math.huge) then
             g[vid] = new
-            previous[vid] = from
+            previous[vid], via[vid] = from, edge
             HeapPush(heap, new + estimate(vid), vid, new)
         end
     end
@@ -2007,18 +2130,28 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
             if zone then
                 local localId = id - zone.base
                 local adj = zone.adj[localId + 1]
+                -- WowVision, speed: the zone's arrays, the penalty row and the hostile table (Blocked) looked up once
+                -- per waypoint instead of once per link; the same values and the same order
+                local base, llen, lflag = zone.base, zone.llen, zone.lflag
+                local zx, zy, zz = zone.x, zone.y, zone.z
+                local row = penalties and penalties[id]
+                local hostile = avoid and zone.hasFactions and HostileTable(zone, avoid.faction) or nil
+                local open = avoid and avoid.open
+                local onGoal, starts = zoneBound(zone)
                 for j = 1, #adj, 2 do
                     local v, k = adj[j], adj[j + 1]
-                    local new = cost + (zone.llen[k] + N.HOP_COST) * LinkFactor(zone.lflag[k], road)
-                    local vid = zone.base + v
-                    if penalties then
-                        local row = penalties[id]
-                        if row and row[vid] then new = new + row[vid] end
-                    end
-                    if new < (g[vid] or math.huge) and not (avoid and Blocked(avoid, vid)) then
-                        g[vid] = new
-                        previous[vid] = { id, zone, k }
-                        HeapPush(heap, new + estimate(vid), vid, new)
+                    local new = cost + (llen[k] + hop) * (factors[lflag[k] + 1] or factorOf(lflag[k]))
+                    local vid = base + v
+                    if row and row[vid] then new = new + row[vid] end
+                    if new < (g[vid] or huge) then
+                        local group = hostile and hostile[v + 1]
+                        if not (group ~= nil and not open[group]) then
+                            g[vid] = new
+                            previous[vid], via[vid] = id, k
+                            local i = v + 1
+                            HeapPush(heap, new + (useStraightLine and estimateAt(zx[i], zy[i], zz[i], onGoal, starts) or 0),
+                                vid, new)
+                        end
                     end
                 end
                 local actions = (not footOnly) and zone.actionsFrom[localId] or nil
@@ -2031,7 +2164,7 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
                             local new = cost + action.cost
                             if new < (g[action.toNode] or math.huge) then
                                 g[action.toNode] = new
-                                previous[action.toNode] = { id, false, false, action }
+                                previous[action.toNode], via[action.toNode] = id, action
                                 HeapPush(heap, new + estimate(action.toNode), action.toNode, new)
                             end
                         end
@@ -2047,7 +2180,7 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
                         if (atU and (direction == 0 or direction == 1)) or (not atU and (direction == 0 or direction == 2)) then
                             local point = SeamPoint(zone.id, entry.seamId)
                             if point then
-                                relax(point, cost + length * (atU and t or 256 - t) / 256, { id, zone, k, false, true })
+                                relax(point, cost + length * (atU and t or 256 - t) / 256, id, -k)
                             end
                         end
                     end
@@ -2057,7 +2190,7 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
                     for _, seam in ipairs(seams) do
                         if seam.link then
                             local point = SeamPoint(seam.zoneId, seam.seamId)
-                            if point then relax(point, cost + seam[2] * (seam.water and N.SWIM_COMFORT or 1), { id, false, false }) end
+                            if point then relax(point, cost + seam[2] * (seam.water and N.SWIM_COMFORT or 1), id, false) end
                         else
                             local otherZone = floor(seam[1] / ZONE_BASE)
                             if not N.zones[otherZone] then N.LoadZone(otherZone) end
@@ -2066,7 +2199,7 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
                                 local new = cost + seam[2] * (seam.water and N.SWIM_COMFORT or 1)
                                 if new < (g[seam[1]] or math.huge) then
                                     g[seam[1]] = new
-                                    previous[seam[1]] = { id, false, false }
+                                    previous[seam[1]], via[seam[1]] = id, false
                                     HeapPush(heap, new + estimate(seam[1]), seam[1], new)
                                 end
                             end
@@ -2081,18 +2214,18 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
                     local otherZone = floor(partner.gid / ZONE_BASE)
                     if not N.zones[otherZone] then N.LoadZone(otherZone) end
                     local oz = N.zones[otherZone]
-                    if oz and not oz.seamBad[partner.seamId] and not (avoid and Blocked(avoid, partner.gid)) then relax(partner.gid, cost + partner.cost * (partner.water and N.SWIM_COMFORT or 1), { id, false, false }) end
+                    if oz and not oz.seamBad[partner.seamId] and not (avoid and Blocked(avoid, partner.gid)) then relax(partner.gid, cost + partner.cost * (partner.water and N.SWIM_COMFORT or 1), id, false) end
                 end
-                local came = previous[id]
-                if not (came and came[5]) then
+                local came = via[id]
+                if not (type(came) == "number" and came < 0) then
                     local zoneOfLink, k, t = virtual.zone, virtual.link, virtual.t
                     local direction = zoneOfLink.ldir[k]
                     local length = zoneOfLink.llen[k] * LinkFactor(zoneOfLink.lflag[k], road)
                     if direction == 0 or direction == 2 then      -- point -> u needs the direction v -> u
-                        relax(zoneOfLink.base + zoneOfLink.lu[k], cost + length * t / 256, { id, zoneOfLink, k, false, true })
+                        relax(zoneOfLink.base + zoneOfLink.lu[k], cost + length * t / 256, id, -k)
                     end
                     if direction == 0 or direction == 1 then      -- point -> v
-                        relax(zoneOfLink.base + zoneOfLink.lv[k], cost + length * (256 - t) / 256, { id, zoneOfLink, k, false, true })
+                        relax(zoneOfLink.base + zoneOfLink.lv[k], cost + length * (256 - t) / 256, id, -k)
                     end
                 end
             end
@@ -2107,29 +2240,31 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
     local path, edges, length = { bestEnd }, {}, 0
     local id = bestEnd
     while previous[id] do
-        local step = previous[id]
-        local zone, k = step[2], step[3]
-        table.insert(path, 1, step[1])
-        if step[4] then
-            table.insert(edges, 1, { action = step[4] })
+        local from, edge = previous[id], via[id]
+        table.insert(path, 1, from)
+        if type(edge) == "table" then
+            table.insert(edges, 1, { action = edge })
             length = length + 0
-        elseif k and step[5] then
-            -- part of a link up to or from a seam point (4.37)
+        elseif edge and edge < 0 then
+            -- part of a link up to or from a seam point (4.37): the link of the waypoint's zone, or of the virtual point
+            local k = -edge
+            local zone = ZoneOf(from) or N.virt[from].zone
             table.insert(edges, 1, { zone = zone, link = k, flag = zone.lflag[k], partial = true })
-            local ax, ay, az = N.Position(step[1])
+            local ax, ay, az = N.Position(from)
             local bx, by, bz = N.Position(id)
             length = length + Distance3(ax, ay, az, bx, by, bz)
-        elseif k then
+        elseif edge then
+            local zone, k = ZoneOf(from), edge
             table.insert(edges, 1, { zone = zone, link = k, flag = zone.lflag[k] })
             length = length + zone.llen[k]
         else
             table.insert(edges, 1, { seam = true })
             -- a seam link counts with the geometric distance of its two ends (its cost may carry the swimming factor)
-            local ax, ay, az = N.Position(step[1])
+            local ax, ay, az = N.Position(from)
             local bx, by, bz = N.Position(id)
             length = length + Distance3(ax, ay, az, bx, by, bz)
         end
-        id = step[1]
+        id = from
     end
     local first = startEntry[id]       -- the root of the chain is a start option
     return { path = path, edges = edges, length = length, cost = bestSum - first.extra - bestGoal.extra, total = bestSum,
@@ -2164,11 +2299,78 @@ end
 -- startPool/targetPool (optional, N.CertifiedBindings): the route runs between the pair of checked attachments with the lowest
 -- sum of approach length + network cost + approach length (one search from all starts to all goals); the result names the pair
 -- (startBinding, targetBinding). Start and target on one link: the piece of the link between them (B1).
+-- WowVision: the key of a search for routeCache: the bindings by id, the pools by their members' ids and approach
+-- lengths, the foot-only switch and the penalty table by identity (it is not changed while a job runs).
+local function SearchKey(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+    local parts = { tostring(startBinding.id), tostring(targetBinding.id), footOnly and "foot" or "all",
+        penalties and tostring(penalties) or "-" }
+    for _, pool in ipairs({ startPool or false, targetPool or false }) do
+        if pool then
+            for _, member in ipairs(pool) do
+                parts[#parts + 1] = string.format("%s/%.17g", tostring(member.id), member.airDistance or 0)
+            end
+        end
+        parts[#parts + 1] = "|"
+    end
+    return table.concat(parts, ":")
+end
+
+-- A copy of an answer, so no caller changes what the cache holds.
+local function CopyAnswer(result)
+    local copy = {}
+    for key, value in pairs(result) do copy[key] = value end
+    local path, edges = {}, {}
+    for i, id in ipairs(result.path) do path[i] = id end
+    for i, edge in ipairs(result.edges or {}) do edges[i] = edge end
+    copy.path, copy.edges = path, result.edges and edges or nil
+    return copy
+end
+
+local RouteSearch
+
+-- True when a start and a goal lie on one map (index mapId), or a map is unknown.
+local function MapOfBinding(binding)
+    local zone = binding.zone or ZoneOf(binding.id)
+    local index = zone and N.index[zone.id]
+    return index and index.mapId
+end
+
+local function SharesMap(starts, goals)
+    for _, s in ipairs(starts) do
+        local a = MapOfBinding(s.binding)
+        for _, t in ipairs(goals) do
+            local b = MapOfBinding(t.binding)
+            if a == nil or b == nil or a == b then return true end
+        end
+    end
+    return false
+end
+
 function N.Route(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+    if not routeCache then
+        return RouteSearch(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+    end
+    local key = SearchKey(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+    local known = routeCache[key]
+    if known then
+        N.repeatedSearches = N.repeatedSearches + 1
+        if known.result then return CopyAnswer(known.result) end
+        return nil, known.reason
+    end
+    local cache = routeCache
+    local result, reason = RouteSearch(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+    cache[key] = { result = result and CopyAnswer(result), reason = reason }
+    return result, reason
+end
+
+RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
     local starts, goals = SideEntries(startBinding, startPool), SideEntries(targetBinding, targetPool)
     -- WowVision: goals in closed water (N.ClosedWater) are never reached
     goals = OpenGoals(starts, goals)
     if #goals == 0 then return nil, "no_route" end
+    -- WowVision: only an action changes the map (no seam joins two maps: 0 of 3,042 in data a9bf246); a route on foot
+    -- from one map to another has no way, said at once instead of after a search of the whole continent
+    if footOnly and not SharesMap(starts, goals) then return nil, "no_route" end
     -- WowVision: inside a job, a plain search that ran out without its target knows every waypoint it reaches; a later
     -- target outside that set, from a start inside it, has no route: the same answer without the whole search again
     -- (the floor check routes every candidate of a band, each a search of the whole continent)
@@ -2230,15 +2432,15 @@ end
 -- pending, do not drop zones or virtual points it may use (N.UnloadZone, N.KeepVirtual, N.DiscardVirtual, N.Reset).
 function N.Job(fn, ...)
     local args, count = { ... }, select("#", ...)
-    local job = { done = false, reach = {} }
+    local job = { done = false, reach = {}, answers = {} }
     job.thread = coroutine.create(function()
         return fn(unpack(args, 1, count))
     end)
     function job:Step(budget, clock)
         if self.done then return true, self.result, self.reason end
-        slicing, reachCache = { clock = clock, deadline = clock() + budget }, self.reach
+        slicing, reachCache, routeCache = { clock = clock, deadline = clock() + budget }, self.reach, self.answers
         local ok, result, reason = coroutine.resume(self.thread)
-        slicing, reachCache = nil, nil
+        slicing, reachCache, routeCache = nil, nil, nil
         if not ok then
             self.done, self.result, self.reason = true, nil, tostring(result)
         elseif coroutine.status(self.thread) == "dead" then
