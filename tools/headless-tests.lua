@@ -413,6 +413,8 @@ loadAddonFile("core/ui/tooltip/comparisonTests.lua")
 loadAddonFile("core/ui/tooltip/TooltipType.lua")
 loadAddonFile("core/ui/tooltip/types/GameTooltip.lua")
 loadAddonFile("core/ui/tooltip/types/gameTooltipTests.lua")
+loadAddonFile("retail/questLogTooltip.lua")
+loadAddonFile("retail/questLogTooltipTests.lua")
 
 -- Object types read the game on demand: their spoken lines run here with
 -- stand-ins for the game functions they call.
@@ -2343,6 +2345,7 @@ do
     announcer.positionText, announcer.expandedStateText = savedPosition, savedExpanded
     WowVision.graphHost = nil
 end
+loadAddonFile("core/graph/hostTooltipTests.lua")
 loadAddonFile("core/scanner/menuTests.lua")
 -- Group invitations: the popups window and the role popups load against a stand-in window module (the
 -- windows they register and the popups module come back to the suite); the game's frames are per test.

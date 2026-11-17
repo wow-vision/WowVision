@@ -17,9 +17,6 @@ end
 
 testRunner:addSuite("GameTooltipType", {
     ["afterEnter runs after the frame's OnEnter, on the tooltip frame"] = function(t)
-        if CreateFrame ~= nil then
-            return -- headless-only: fake frames cannot pass the real ExecuteFrameScript
-        end
         local seen = {}
         local tooltipFrame = { name = "fake tooltip" }
         local gameType, frame, tooltip = nil, nil, nil
@@ -40,9 +37,6 @@ testRunner:addSuite("GameTooltipType", {
     end,
 
     ["a failing afterEnter is reported and the read goes on"] = function(t)
-        if CreateFrame ~= nil then
-            return
-        end
         local savedHandler = geterrorhandler
         local reported = nil
         geterrorhandler = function()
@@ -62,6 +56,43 @@ testRunner:addSuite("GameTooltipType", {
         geterrorhandler = savedHandler
         t:assertTrue(ok, "the error does not escape")
         t:assertTrue(reported ~= nil and tostring(reported):find("boom", 1, true) ~= nil)
+    end,
+
+    ["afterEnter is skipped when nothing filled the tooltip"] = function(t)
+        local ran = false
+        local gameType, frame = newType({
+            mode = "immediate",
+            frame = {},
+            afterEnter = function()
+                ran = true
+            end,
+        })
+        frame.HasScript = function()
+            return false
+        end
+        gameType:beforeRead()
+        t:assertEqual(ran, false)
+    end,
+
+    ["afterEnter also follows populate"] = function(t)
+        local order = {}
+        local tooltipFrame = {
+            SetOwner = function() end,
+        }
+        local gameType, frame = newType({
+            mode = "immediate",
+            frame = tooltipFrame,
+            populate = function()
+                tinsert(order, "populate")
+            end,
+            afterEnter = function()
+                tinsert(order, "afterEnter")
+            end,
+        })
+        gameType:beforeRead()
+        t:assertEqual(#frame._scripts, 0, "populate replaces OnEnter")
+        t:assertEqual(order[1], "populate")
+        t:assertEqual(order[2], "afterEnter")
     end,
 
     ["deactivate drops the afterEnter step"] = function(t)

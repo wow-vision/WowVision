@@ -15,9 +15,9 @@ function GameTooltipType:activate(widget, data)
     -- running the frame's OnEnter (which would run as the addon and taint
     -- whatever it writes; see nodes.proxyButton).
     self.populate = data.populate
-    -- afterEnter(tooltipFrame, frame): a step of the game's own run after the
-    -- frame's OnEnter (e.g. the quest log's party progress call made again
-    -- with the player in it).
+    -- afterEnter(tooltipFrame, frame): a step after the tooltip is filled
+    -- (by populate, else the frame's OnEnter); skipped when neither ran. The
+    -- quest log uses it to put the player's progress back in a group.
     self.afterEnter = data.afterEnter
     self.widget = widget
 end
@@ -53,28 +53,31 @@ function GameTooltipType:afterRead()
     end
 end
 
+-- A config step (populate, afterEnter) under pcall: a failing step is
+-- reported and the read goes on.
+local function runStep(step, ...)
+    local ok, err = pcall(step, ...)
+    if not ok then
+        geterrorhandler()(err)
+    end
+end
+
 function GameTooltipType:executeOnEnter()
     local frame = self.widget and self.widget.frame or nil
     if frame == nil then
         return
     end
+    local tooltip = self.tooltip.activeFrame
     if self.populate ~= nil then
-        local tooltip = self.tooltip.activeFrame or GameTooltip
         tooltip:SetOwner(frame, "ANCHOR_NONE")
-        local ok, err = pcall(self.populate, tooltip, frame)
-        if not ok then
-            geterrorhandler()(err)
-        end
+        runStep(self.populate, tooltip, frame)
+    elseif frame:HasScript("OnEnter") then
+        ExecuteFrameScript(frame, "OnEnter")
+    else
         return
     end
-    if frame:HasScript("OnEnter") then
-        ExecuteFrameScript(frame, "OnEnter")
-    end
     if self.afterEnter ~= nil then
-        local ok, err = pcall(self.afterEnter, self.tooltip.activeFrame or GameTooltip, frame)
-        if not ok then
-            geterrorhandler()(err)
-        end
+        runStep(self.afterEnter, tooltip, frame)
     end
 end
 
@@ -84,8 +87,7 @@ function GameTooltipType:executeOnLeave()
         return
     end
     if self.populate ~= nil then
-        local tooltip = self.tooltip.activeFrame or GameTooltip
-        tooltip:Hide()
+        self.tooltip.activeFrame:Hide()
         return
     end
     if frame:HasScript("OnLeave") then

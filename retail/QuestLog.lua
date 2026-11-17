@@ -245,23 +245,14 @@ local function toggleTracking(questID)
     end
 end
 
--- In a group the game's quest tooltip loses the player's progress: its hover
--- script adds the objectives, then SetQuestPartyProgress(questID, true, true)
--- clears the tooltip (a Set call, not an append) and fills it with the other
--- members only. The same call made again with the player kept in (title
--- still left out) puts the player's progress back next to the group's. The
--- call is one of the game's secure tooltip delegates, so it adds no taint;
--- it only runs when a group member is on the quest, as the game's does.
-local function partyProgressWithPlayer(questID)
-    return function(tooltip)
-        if QuestUtils_GetNumPartyMembersOnQuest == nil or tooltip.SetQuestPartyProgress == nil then
-            return
-        end
-        if QuestUtils_GetNumPartyMembersOnQuest(questID) > 0 then
-            tooltip:SetQuestPartyProgress(questID, true, false)
-        end
-    end
-end
+-- A quest row's tooltip is the game's own (its hover script), plus one step
+-- after it that puts the player's progress back in a group
+-- (retail/questLogTooltip.lua). One table for every row: it is only read.
+local questRowTooltip = {
+    type = "Game",
+    mode = "immediate",
+    afterEnter = WowVision.questLogTooltip.restorePlayerProgress,
+}
 
 -- One row: the quest, its checkbox on the right arrow, then its objective
 -- lines (present when the game's Show Objectives setting is on).
@@ -286,7 +277,7 @@ local function emitQuest(builder, kid, objectives)
         live = "focus",
     })
     vtable.tooltipFrame = find
-    vtable.tooltip = { type = "Game", mode = "immediate", afterEnter = partyProgressWithPlayer(questID) }
+    vtable.tooltip = questRowTooltip
 
     builder:startRow()
     builder:addItem(questRowId(questID), vtable)
