@@ -463,6 +463,30 @@ combatKeys.OPENER = [[
     owner:RunAttribute("_enter", mode, 1, "open")
 ]]
 
+-- The wrapper on a game window's opener button (the game's own quest log key in a fight). The window toggles by its
+-- own button's click (the opener's /click runs after this). Whether it is open the secure side cannot see in a fight
+-- (the window is no protected frame), so it keeps its own word, <key>-open: written out of combat from what addon code
+-- sees, flipped here on every press. Closed, the press opens it and takes the menu keys; open, the press closes it and
+-- the keys go back. Escape gives the keys back and leaves the window on screen (an addon cannot close it in a fight):
+-- the word stays open, so the next press closes it. Closed by the game's own Escape after that, the word is wrong
+-- once: the next press opens the window without the keys, the one after closes it with the keys, and Escape gives
+-- them back.
+combatKeys.GAME_OPENER = [[
+    if owner:GetAttribute("fighting") ~= 1 then
+        return
+    end
+    local key = self:GetAttribute("gamewindow")
+    if owner:GetAttribute(key .. "-open") == 1 then
+        owner:SetAttribute(key .. "-open", 0)
+        owner:RunAttribute("_leave")
+        owner:RunAttribute("_release")
+        return
+    end
+    owner:SetAttribute(key .. "-open", 1)
+    owner:RunAttribute("_leave")
+    owner:RunAttribute("_take")
+]]
+
 -- The wrapper on the use button and the pick buttons: run from the context menu, the menu closes (Enter is the slot's
 -- own click again) and addon code reads the entry on. owner is the secure frame.
 combatKeys.CONTEXT_DONE = [[
@@ -576,10 +600,8 @@ local function watch(keys, driver)
             -- fired for every override too (WowVision's own keys on each focus move): restaged only when the game's
             -- keys for the openers moved
             local keys = {}
-            for _, def in ipairs(combatKeys.mirrors) do
-                for _, command in ipairs(def.commands) do
-                    tinsert(keys, table.concat({ command, GetBindingKey(command) }, "="))
-                end
+            for _, command in ipairs(combatKeys.openerCommands()) do
+                tinsert(keys, table.concat({ command, GetBindingKey(command) }, "="))
             end
             local signature = table.concat(keys, ",")
             if signature ~= openerKeys then
@@ -600,6 +622,7 @@ local function watch(keys, driver)
             end
         else
             log("fight ends: " .. stateLine())
+            combatKeys.clearUnkeyed()
         end
     end)
 end
@@ -780,6 +803,61 @@ local function updateOpener(def)
     end
 end
 
+-- ---- game windows ----
+--
+-- registerGameWindow(def): a game window that its own key opens in a fight the game's way, with the menu keys handed
+-- to WowVision in the same press (the quest log). No mirrored list: moving in it is addon code, as for any window.
+-- def:
+--   key        the window's name ("questlog")
+--   commands   the game's key bindings that toggle it (TOGGLEQUESTLOG): their keys are bound in a fight to its
+--              opener, a /click of button
+--   button     the name of the game's own button whose click toggles the window (QuestLogMicroButton)
+--   isOpen()   whether the window is open (read out of combat)
+--   available()  optional: whether WowVision reads the window at all; without it the game's keys stay the game's
+combatKeys.gameWindows = {}
+local gameOpeners = {}
+
+function combatKeys.registerGameWindow(def)
+    tinsert(combatKeys.gameWindows, def)
+    mirrorsDirty = true
+end
+
+local function gameOpener(def)
+    local button = gameOpeners[def.key]
+    if button == nil then
+        button = CreateFrame("Button", "WowVisionCombatOpen_" .. def.key, UIParent, "SecureActionButtonTemplate")
+        button:RegisterForClicks("AnyDown")
+        button:SetAttribute("useOnKeyDown", true)
+        button:SetAttribute("type", "macro")
+        button:SetAttribute("macrotext", "/click " .. def.button)
+        button:SetAttribute("gamewindow", def.key)
+        SecureHandlerWrapScript(button, "OnClick", keysFrame, combatKeys.GAME_OPENER)
+        local key = def.key
+        button:HookScript("PostClick", function()
+            log(key .. " key, open " .. tostring(keysFrame:GetAttribute(key .. "-open")))
+        end)
+        gameOpeners[def.key] = button
+    end
+    return button
+end
+
+-- The game's keys of every opener command (mirrors and game windows), for UPDATE_BINDINGS.
+local function openerCommands()
+    local commands = {}
+    for _, def in ipairs(combatKeys.mirrors) do
+        for _, command in ipairs(def.commands) do
+            tinsert(commands, command)
+        end
+    end
+    for _, def in ipairs(combatKeys.gameWindows) do
+        for _, command in ipairs(def.commands) do
+            tinsert(commands, command)
+        end
+    end
+    return commands
+end
+combatKeys.openerCommands = openerCommands
+
 local function writeMirrors()
     mirrorsDirty = false
     local openKeys = {}
@@ -802,6 +880,16 @@ local function writeMirrors()
         local name = opener(def):GetName()
         -- a window WowVision does not read (its module off, Sku loaded) leaves the game's keys to the game
         if def.available == nil or def.available() then
+            for _, command in ipairs(def.commands) do
+                for _, key in ipairs({ GetBindingKey(command) }) do
+                    tinsert(openKeys, { key = key, opener = name })
+                end
+            end
+        end
+    end
+    for _, def in ipairs(combatKeys.gameWindows) do
+        if _G[def.button] ~= nil and (def.available == nil or def.available()) then
+            local name = gameOpener(def):GetName()
             for _, command in ipairs(def.commands) do
                 for _, key in ipairs({ GetBindingKey(command) }) do
                     tinsert(openKeys, { key = key, opener = name })
@@ -893,6 +981,13 @@ local function tickMirrors()
     end
     if keysFrame:GetAttribute("startmode") ~= startMode then
         keysFrame:SetAttribute("startmode", startMode)
+    end
+    -- the game windows' open word: what addon code sees, until the fight (GAME_OPENER)
+    for _, def in ipairs(combatKeys.gameWindows) do
+        local open = def.isOpen() and 1 or 0
+        if keysFrame:GetAttribute(def.key .. "-open") ~= open then
+            keysFrame:SetAttribute(def.key .. "-open", open)
+        end
     end
     local now = GetTime()
     if now >= nextPick then
@@ -1053,6 +1148,10 @@ function combatKeys.onKey(action)
         if #remaining > 0 then
             log("still open: " .. #remaining)
         end
+        -- The game's windows stay on screen; the menu key takes them up again.
+        for _, stack in ipairs(host.stacks) do
+            combatKeys.markUnkeyed(stack, true)
+        end
         return
     end
     if not host:isOpen() then
@@ -1157,11 +1256,12 @@ function combatKeys.clearUnwalkedHint()
 end
 
 -- A popup in front opened in a fight while the menu keys are the game's: say which key lands on it, a moment after
--- the popup itself is read.
-function combatKeys.hintMenuKey()
+-- the popup itself is read. textKey: the locale key of the hint, "To answer, press" when nil.
+function combatKeys.hintMenuKey(textKey)
     if not combatKeys.active() or combatKeys.taken() then
         return
     end
+    textKey = textKey or "To answer, press"
     local binding = WowVision.input:getBinding("wowvision/menu")
     local input = binding ~= nil and binding.inputs[1] or nil
     if input == nil then
@@ -1170,9 +1270,30 @@ function combatKeys.hintMenuKey()
     local keyText = GetBindingText ~= nil and GetBindingText(input) or input
     C_Timer.After(1.5, function()
         if not combatKeys.taken() then
-            WowVision:notify(WowVision:getLocale()["To answer, press"] .. " " .. keyText)
+            WowVision:notify(WowVision:getLocale()[textKey] .. " " .. keyText)
         end
     end)
+end
+
+-- A window open in a fight that cannot take the menu keys by itself: a game window the game's own key opened (the
+-- quest log), or one Escape left on screen as it gave the keys back (an addon cannot close a game window in a
+-- fight). The menu key lands on it first (graph/settings.lua openMenu). Mirrored windows are not marked: their
+-- own keys walk them again.
+function combatKeys.markUnkeyed(stack, quiet)
+    if not combatKeys.active() or combatKeys.taken() or combatKeys.isMirrorStack(stack) then
+        return
+    end
+    stack.combatUnkeyed = true
+    if not quiet then
+        combatKeys.hintMenuKey("To read, press")
+    end
+end
+
+-- The menu key landed on the window, or the fight ended: it is an ordinary window again.
+function combatKeys.clearUnkeyed()
+    for _, stack in ipairs(WowVision.graphHost.stacks) do
+        stack.combatUnkeyed = nil
+    end
 end
 
 -- The secure side moved in a mirrored list, or handed a key over there (from the secure frame).

@@ -128,6 +128,10 @@ function GraphHost:open(config)
     -- A popup in front opened by itself in a fight: the key that lands on it is named (graph/combatKeys.lua).
     if combat then
         graph.combatKeys.hintMenuKey()
+    elseif graph.combatKeys ~= nil and InCombatLockdown ~= nil and InCombatLockdown() then
+        -- A game window opened in a fight by the game's own key (the quest log): the menu keys stay the game's, so
+        -- the menu key lands on it and is named.
+        graph.combatKeys.markUnkeyed(stack)
     end
     return stack
 end
