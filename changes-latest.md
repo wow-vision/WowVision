@@ -10,7 +10,6 @@
 * Menus in Combat: a game window you open in a fight with the game's own key, such as the quest log, says "To read, press" with your WowVision Menu key (Shift+F1); that key lands on it and hands WowVision the keys, the next press opens the menu. After Escape has given the keys back, the menu key lands on a game window still on screen first.
 
 ### Modern
-* Quest log: Space on a quest reads the game's tooltip for that quest without running the log's own mouse-over script, and the buttons on a quest's details skip theirs too. Those scripts ran as WowVision and marked parts of the map and the log as WowVision's; the game's own code could then refuse to run later, in a fight.
 * Group health: Include Yourself, Watch Party, Watch Raid and the Raid Groups switches now take effect at once. Before, a change waited for someone to join or leave the group, or a reload.
 
 ### Forever
