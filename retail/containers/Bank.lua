@@ -137,13 +137,19 @@ local function renderTabs(builder)
 
     -- Page tabs (Forever: plain frames reacting to mouse up, one per page
     -- and bank type; the label names both). Enter runs the frame's own
-    -- mouse-up script, which is what a click does.
+    -- mouse-up script, which is what a click does. A single page tab and no
+    -- other is left out: it is the page already shown, so it can neither
+    -- turn a page nor switch the bank type (a bank without a warband shows
+    -- just "Page 1").
     local pages = sortedActive(BankFrame.bankPageTabPool, function(a, b)
         if a.bankType ~= b.bankType then
             return (a.bankType or 0) < (b.bankType or 0)
         end
         return (a.pageNumber or 0) < (b.pageNumber or 0)
     end)
+    if #pages == 1 then
+        pages = {}
+    end
     for _, tab in ipairs(pages) do
         local bankType, pageNumber = tab.bankType, tab.pageNumber
         add(
