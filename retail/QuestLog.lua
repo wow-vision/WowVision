@@ -182,20 +182,7 @@ local function emitHeader(builder, kid)
             return row.CollapseButton ~= nil and rowText(row) == title
         end)
     end
-    -- The game's header tooltip (ListHeaderMixin:CheckUpdateTooltip) is the
-    -- title and the header's note, filled here directly instead of running
-    -- its OnEnter as the addon.
-    local vtable = nodes.proxyFoundButton({
-        find = find,
-        label = rowText,
-        tooltip = function(tooltip, row)
-            tooltip:SetText(rowText(row) or title)
-            if row.tooltipText ~= nil then
-                tooltip:AddLine(row.tooltipText, 1, 1, 1, true)
-            end
-            tooltip:Show()
-        end,
-    })
+    local vtable = nodes.proxyFoundButton({ find = find, label = rowText })
     vtable.announcements[1].live = "focus"
     tinsert(vtable.announcements, {
         text = function()
@@ -205,6 +192,7 @@ local function emitHeader(builder, kid)
         kind = kinds.value,
         live = "focus",
     })
+    vtable.tooltipFrame = find
     builder:addItem(headerRowId(title), vtable)
 end
 
@@ -264,21 +252,11 @@ local function emitQuest(builder, kid, objectives)
     local function find()
         return findQuestRow(questID)
     end
-    -- The tooltip is the game's own quest tooltip, filled from the quest's
-    -- link: the row's OnEnter would run as the addon and taint what it
-    -- writes (the map's highlighted quest, the row, the shared
-    -- QuestMapLogTitleButton.OnEnter event), in a fight too.
     local vtable = nodes.proxyFoundButton({
         find = find,
         label = questLabel,
         selected = function()
             return C_QuestLog.GetSelectedQuest ~= nil and C_QuestLog.GetSelectedQuest() == questID
-        end,
-        tooltip = function(tooltip)
-            local link = GetQuestLink ~= nil and GetQuestLink(questID) or nil
-            if link ~= nil then
-                tooltip:SetHyperlink(link)
-            end
         end,
     })
     vtable.announcements[1].live = "focus"
@@ -289,6 +267,7 @@ local function emitQuest(builder, kid, objectives)
         kind = kinds.value,
         live = "focus",
     })
+    vtable.tooltipFrame = find
 
     builder:startRow()
     builder:addItem(questRowId(questID), vtable)
@@ -590,14 +569,8 @@ local function renderActions(builder, detailsFrame)
     end
     builder:beginStop("actions")
     builder:startRow()
-    -- No hover scripts (they run as the addon and taint what they write; see
-    -- proxyButton): their tooltips only repeat the caption or tooltipText,
-    -- which is the label.
     for _, entry in ipairs(buttons) do
-        builder:addItem(
-            ControlId.forObject(entry.button),
-            nodes.proxyButton({ target = entry.button, label = entry.label, hover = false })
-        )
+        builder:addItem(ControlId.forObject(entry.button), nodes.proxyButton({ target = entry.button, label = entry.label }))
     end
     builder:endRow()
 end
