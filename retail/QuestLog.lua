@@ -245,6 +245,15 @@ local function toggleTracking(questID)
     end
 end
 
+-- A quest row's tooltip is the game's own (its hover script), plus one step
+-- after it that puts the player's progress back in a group
+-- (retail/questLogTooltip.lua). One table for every row: it is only read.
+local questRowTooltip = {
+    type = "Game",
+    mode = "immediate",
+    afterEnter = WowVision.questLogTooltip.restorePlayerProgress,
+}
+
 -- One row: the quest, its checkbox on the right arrow, then its objective
 -- lines (present when the game's Show Objectives setting is on).
 local function emitQuest(builder, kid, objectives)
@@ -268,6 +277,7 @@ local function emitQuest(builder, kid, objectives)
         live = "focus",
     })
     vtable.tooltipFrame = find
+    vtable.tooltip = questRowTooltip
 
     builder:startRow()
     builder:addItem(questRowId(questID), vtable)

@@ -580,7 +580,16 @@ function GraphHost:_setTooltipFor(node)
     end
     local data = node.vtable.tooltip
     local frameRef = node.vtable.tooltipFrame
-    local frame = type(frameRef) == "function" and frameRef() or frameRef
+    local frame = frameRef
+    if type(frameRef) == "function" then
+        frame = frameRef()
+    end
+    -- A game tooltip is filled by its frame; with the frame not found now
+    -- (a list mid-refresh, a quest just turned in) the reader would speak
+    -- whatever the game tooltip held before, so there is none.
+    if frameRef ~= nil and frame == nil and (data == nil or data.type == "Game") then
+        return
+    end
     if data == nil and frame ~= nil then
         data = { type = "Game", mode = "immediate" }
     end
