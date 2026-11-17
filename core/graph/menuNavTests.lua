@@ -483,41 +483,79 @@ testRunner:addSuite("MenuNavigation", {
 
     ["closing all closes every stack and the game's windows; in combat the game's stay"] = function(t)
         withHost(function(host)
-            local savedClose = CloseAllWindows
-            local gameCloses, gameResult = 0, false
-            CloseAllWindows = function()
+            local saved = {
+                CloseWindows = CloseWindows,
+                CloseAllWindows = CloseAllWindows,
+                CloseAllBags = CloseAllBags,
+                CloseBackpack = CloseBackpack,
+                CloseBag = CloseBag,
+                ContainerFrame1 = ContainerFrame1,
+            }
+            local gameCloses, gameResult, forbidden, bagCloses = 0, false, 0, 0
+            CloseWindows = function()
                 gameCloses = gameCloses + 1
                 return gameResult
             end
+            -- addon code calling these writes the game's "which window opened the bags" value (taint)
+            CloseAllWindows = function()
+                forbidden = forbidden + 1
+            end
+            CloseAllBags = CloseAllWindows
+            local bagShown = false
+            ContainerFrame1 = {
+                IsShown = function()
+                    return bagShown
+                end,
+            }
+            CloseBackpack = function()
+                bagCloses = bagCloses + 1
+                bagShown = false
+            end
+            CloseBag = function() end
             local manager = WowVision.WindowManager:new()
             local requested = 0
 
-            host:open({ key = "plain", render = list({ "One" }) })
-            host:open({
-                key = "framed",
-                render = list({ "Two" }),
-                onRequestClose = function()
-                    requested = requested + 1
-                end,
-            })
-            t:assertTrue(manager:closeAll(), "something was open")
-            t:assertEqual(requested, 1, "a window bound to a frame is asked to close")
-            t:assertEqual(#host.stacks, 1, "a plain stack closes at once; the other waits for its frame")
-            t:assertEqual(gameCloses, 1)
-            t:assertTrue(manager.quietCloseUntil > GetTime(), "closing does not cut off what is said next")
-            host.stacks = {}
+            local ok, err = pcall(function()
+                host:open({ key = "plain", render = list({ "One" }) })
+                host:open({
+                    key = "framed",
+                    render = list({ "Two" }),
+                    onRequestClose = function()
+                        requested = requested + 1
+                    end,
+                })
+                t:assertTrue(manager:closeAll(), "something was open")
+                t:assertEqual(requested, 1, "a window bound to a frame is asked to close")
+                t:assertEqual(#host.stacks, 1, "a plain stack closes at once; the other waits for its frame")
+                t:assertEqual(gameCloses, 1)
+                t:assertEqual(bagCloses, 0, "no bag open, none closed")
+                t:assertTrue(manager.quietCloseUntil > GetTime(), "closing does not cut off what is said next")
+                host.stacks = {}
 
-            t:assertFalse(manager:closeAll(), "nothing open, nothing to say")
-            gameResult = true
-            t:assertTrue(manager:closeAll(), "a window of the game was open")
+                t:assertFalse(manager:closeAll(), "nothing open, nothing to say")
+                gameResult = true
+                t:assertTrue(manager:closeAll(), "a window of the game was open")
+                gameResult = false
+                bagShown = true
+                t:assertTrue(manager:closeAll(), "an open bag counts")
+                t:assertEqual(bagCloses, 1, "the bags close one by one")
+                t:assertEqual(forbidden, 0, "never CloseAllWindows or CloseAllBags")
 
-            InCombatLockdown = function()
-                return true
+                InCombatLockdown = function()
+                    return true
+                end
+                gameCloses = 0
+                bagShown = true
+                manager:closeAll()
+                t:assertEqual(gameCloses, 0, "the game's protected windows cannot close in combat")
+                t:assertEqual(bagCloses, 1, "nor the bags")
+            end)
+            for name, value in pairs(saved) do
+                _G[name] = value
             end
-            gameCloses = 0
-            manager:closeAll()
-            t:assertEqual(gameCloses, 0, "the game's protected windows cannot close in combat")
-            CloseAllWindows = savedClose
+            if not ok then
+                error(err, 0)
+            end
         end)
     end,
 })

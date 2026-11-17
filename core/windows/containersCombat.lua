@@ -244,9 +244,8 @@ WowVision.graph.combatKeys.registerMirror({
         land(index, why)
     end,
     onClose = function()
-        if CloseAllBags ~= nil then
-            CloseAllBags()
-        end
+        -- bag by bag, never CloseAllBags (WindowManager.closeGameBags says why)
+        WowVision.WindowManager.closeGameBags()
     end,
 })
 
