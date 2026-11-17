@@ -12,5 +12,6 @@
 * Group health: Include Yourself, Watch Party, Watch Raid and the Raid Groups switches now take effect at once. Before, a change waited for someone to join or leave the group, or a reload.
 
 ### Forever
+* Bank: a bank with a single page no longer lists that page ("Page 1") among its tabs. It was the page already shown and did nothing. With more pages, or a second bank type, the page tabs stay.
 * WowNav: a new route starts at the entry point at the height you came from. WowVision remembers the height of the last waypoint of the network you walked to; the entry point selected for you is then the closest one at about that height (within 4 yards), not simply the closest one, so the road under a bridge or another floor of a building no longer wins just because it lies nearer. While you swim or dive, the nearest water point is still selected. The setting Guess the Start From the Last Height (Navigation menu, on by default) turns it off.
 * WowNav: a route to a place whose nearest point lies in closed water (a pond without a way out) is now found at once. Before, the search covered the whole continent first; a corpse run in the Wetlands took 72 seconds.
