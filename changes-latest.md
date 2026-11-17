@@ -9,6 +9,7 @@
 * Menus in Combat: new setting in the UI menu, off by default. On, WowVision's menus keep their keys in a fight. The keys that open a WowVision window work there, and a window that is open as the fight begins goes on. Your bags (your game key for the bags) and your equipment (your Character Info key) read as lists: Backspace uses an item, Enter picks it up, Space reads its tooltip. The buttons of group invitations, summons, resurrections, the death box and the delete questions can be pressed; a popup that opens by itself in a fight goes to Pending. Escape gives every key back to the game. Each menu key can have a key of its own for fights ("In Combat: Up" and so on in the keybinding window). Let go of the arrows and Space before you open a menu in a fight: a key that is held at that moment keeps moving your character, and on Retail and WoW: Forever WowVision then tells you which key to tap. The Combat page of the manual has the details. Tried in game on WoW: Forever only so far. /wv combatkeys prints the state of the combat keys for troubleshooting.
 
 ### Modern
+* Quest log: in a group, a quest's tooltip (Space) now has your own progress again, next to the progress of the group members on that quest. The game's tooltip drops yours as soon as a group member has the quest.
 * Group health: Include Yourself, Watch Party, Watch Raid and the Raid Groups switches now take effect at once. Before, a change waited for someone to join or leave the group, or a reload.
 
 ### Forever

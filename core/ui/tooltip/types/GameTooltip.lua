@@ -15,12 +15,17 @@ function GameTooltipType:activate(widget, data)
     -- running the frame's OnEnter (which would run as the addon and taint
     -- whatever it writes; see nodes.proxyButton).
     self.populate = data.populate
+    -- afterEnter(tooltipFrame, frame): a step of the game's own run after the
+    -- frame's OnEnter (e.g. the quest log's party progress call made again
+    -- with the player in it).
+    self.afterEnter = data.afterEnter
     self.widget = widget
 end
 
 function GameTooltipType:deactivate()
     self.mode = nil
     self.populate = nil
+    self.afterEnter = nil
     self.widget = nil
 end
 
@@ -64,6 +69,12 @@ function GameTooltipType:executeOnEnter()
     end
     if frame:HasScript("OnEnter") then
         ExecuteFrameScript(frame, "OnEnter")
+    end
+    if self.afterEnter ~= nil then
+        local ok, err = pcall(self.afterEnter, self.tooltip.activeFrame or GameTooltip, frame)
+        if not ok then
+            geterrorhandler()(err)
+        end
     end
 end
 

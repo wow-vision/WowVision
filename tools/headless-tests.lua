@@ -410,6 +410,9 @@ end
 loadAddonFile("core/ui/tooltip/TooltipReader.lua")
 loadAddonFile("core/ui/tooltip/Tooltip.lua")
 loadAddonFile("core/ui/tooltip/comparisonTests.lua")
+loadAddonFile("core/ui/tooltip/TooltipType.lua")
+loadAddonFile("core/ui/tooltip/types/GameTooltip.lua")
+loadAddonFile("core/ui/tooltip/types/gameTooltipTests.lua")
 
 -- Object types read the game on demand: their spoken lines run here with
 -- stand-ins for the game functions they call.
