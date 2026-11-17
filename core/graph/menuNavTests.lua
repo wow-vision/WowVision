@@ -949,3 +949,112 @@ testRunner:addSuite("CombatPending", {
         end)
     end,
 })
+
+-- A game window the game's own key opens in a fight (the quest log): the menu keys stay the game's, so the window is
+-- marked, the menu key is named ("To read, press"), and the menu key lands on it before it opens the menu.
+local function withUnkeyed(fn)
+    inFight(function(host)
+        local combatKeys = WowVision.graph.combatKeys
+        local saved = {
+            active = combatKeys.active,
+            taken = combatKeys.taken,
+            mirror = combatKeys.isMirrorStack,
+            hint = combatKeys.hintMenuKey,
+            graphHost = WowVision.graphHost,
+            uiHost = WowVision.UIHost,
+        }
+        local state = { taken = false, hints = {}, menus = 0 }
+        combatKeys.active = function()
+            return true
+        end
+        combatKeys.taken = function()
+            return state.taken
+        end
+        combatKeys.isMirrorStack = function(stack)
+            return stack.config.key == "bags"
+        end
+        combatKeys.hintMenuKey = function(textKey)
+            tinsert(state.hints, textKey or "To answer, press")
+        end
+        WowVision.graphHost = host
+        WowVision.UIHost = {
+            openTemporaryWindow = function()
+                state.menus = state.menus + 1
+            end,
+        }
+        local ok, err = pcall(fn, host, state)
+        combatKeys.active, combatKeys.taken, combatKeys.isMirrorStack, combatKeys.hintMenuKey =
+            saved.active, saved.taken, saved.mirror, saved.hint
+        WowVision.graphHost, WowVision.UIHost = saved.graphHost, saved.uiHost
+        if not ok then
+            error(err, 0)
+        end
+    end)
+end
+
+testRunner:addSuite("CombatUnkeyedWindows", {
+    ["a game window opened in a fight is marked and the menu key named"] = function(t)
+        withUnkeyed(function(host, state)
+            local log = host:open({ key = "QuestLog", render = list({ "Quest" }) })
+            t:assertTrue(log.combatUnkeyed == true)
+            t:assertEqual(state.hints[1], "To read, press")
+        end)
+    end,
+
+    ["a window opened with the keys taken is not marked"] = function(t)
+        withUnkeyed(function(host, state)
+            state.taken = true
+            local menu = host:open({ key = "menu", render = list({ "Speech" }) })
+            t:assertNil(menu.combatUnkeyed)
+            t:assertNil(state.hints[1])
+        end)
+    end,
+
+    ["the menu key lands on the window first, then opens the menu"] = function(t)
+        withUnkeyed(function(host, state)
+            local settings = WowVision.graph.settings
+            local moduleScreen = settings.moduleScreen
+            settings.moduleScreen = function()
+                return {}
+            end
+            local ok, err = pcall(function()
+                local log = host:open({ key = "QuestLog", render = list({ "Quest" }) })
+                host:open({ key = "chat", render = list({ "Line" }) })
+                settings.openMenu()
+                t:assertEqual(host:focusedStack(), log)
+                t:assertEqual(state.menus, 0)
+                t:assertNil(log.combatUnkeyed)
+                settings.openMenu()
+                t:assertEqual(state.menus, 1)
+            end)
+            settings.moduleScreen = moduleScreen
+            if not ok then
+                error(err, 0)
+            end
+        end)
+    end,
+
+    ["escape leaves a game window marked again, quietly, but not the bags"] = function(t)
+        withUnkeyed(function(host, state)
+            local combatKeys = WowVision.graph.combatKeys
+            local bags = host:open({ key = "bags", render = list({ "Slot" }) })
+            local log = host:open({ key = "QuestLog", render = list({ "Quest" }) })
+            log.combatUnkeyed = nil
+            state.hints = {}
+            for _, stack in ipairs(host.stacks) do
+                combatKeys.markUnkeyed(stack, true)
+            end
+            t:assertTrue(log.combatUnkeyed == true)
+            t:assertNil(bags.combatUnkeyed)
+            t:assertNil(state.hints[1])
+        end)
+    end,
+
+    ["the fight's end clears the marks"] = function(t)
+        withUnkeyed(function(host)
+            local log = host:open({ key = "QuestLog", render = list({ "Quest" }) })
+            WowVision.graph.combatKeys.clearUnkeyed()
+            t:assertNil(log.combatUnkeyed)
+        end)
+    end,
+})

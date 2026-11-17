@@ -605,13 +605,16 @@ end
 -- The graph version of the WowVision menu. Parallel to the old menu until
 -- parity; opened by /wv gmenu.
 function settings.openMenu()
-    -- In combat, with Menus in Combat on, a popup that waits for an answer (a group invitation, a summon) is open but
-    -- cannot take the keys by itself (graph/combatKeys.lua): the menu key lands on it first.
+    -- In combat, with Menus in Combat on, a popup that waits for an answer (a group invitation, a summon) or a game
+    -- window opened by the game's own key (the quest log) is open but cannot take the keys by itself
+    -- (graph/combatKeys.lua): the menu key lands on it first. Landed, the window is an ordinary one: the next press
+    -- opens the menu.
     local combatKeys = WowVision.graph.combatKeys
     local lands = InCombatLockdown() and combatKeys ~= nil and combatKeys.active()
     if lands and WowVision.graphHost:focusStack(function(stack)
-        return stack.config ~= nil and stack.config.waits == true
+        return stack.combatUnkeyed == true or (stack.config ~= nil and stack.config.waits == true)
     end) then
+        combatKeys.clearUnkeyed()
         return
     end
     WowVision.UIHost:openTemporaryWindow({ graphScreen = settings.moduleScreen(WowVision.base) })

@@ -45,6 +45,8 @@ The keys that open a WowVision window work in a fight as they do outside: the Wo
 
 Escape closes WowVision's own windows and gives every key back to the game at once. The game's windows (the quest log, the character pane) cannot be closed by an addon in a fight; they stay on screen and are there again after the fight.
 
+A game window you open in a fight with the game's own key, such as the quest log (L), does not take the keys by itself: you hear its name and "To read, press" with your WowVision Menu key (Shift+F1). That key lands on the window and hands WowVision the keys; pressed again, it opens the WowVision menu. After Escape has given the keys back, a game window still on screen is the menu key's first stop again. In the quest log, the arrows and Tab move through the quests and Space reads a quest's tooltip: its objectives and how far along you are. Opening a quest's details is a click of the game's and says "Not available in combat".
+
 Moving, reading, tabs and levels work as outside combat. Enter and Backspace work on WowVision's own entries (settings, the menu, chat, waypoints). On an entry whose click is a click of a game button, they say "Not available in combat", except where this page names them.
 
 ### Your bags (B)

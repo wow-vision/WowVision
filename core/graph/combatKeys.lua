@@ -600,6 +600,7 @@ local function watch(keys, driver)
             end
         else
             log("fight ends: " .. stateLine())
+            combatKeys.clearUnkeyed()
         end
     end)
 end
@@ -1053,6 +1054,10 @@ function combatKeys.onKey(action)
         if #remaining > 0 then
             log("still open: " .. #remaining)
         end
+        -- The game's windows stay on screen; the menu key takes them up again.
+        for _, stack in ipairs(host.stacks) do
+            combatKeys.markUnkeyed(stack, true)
+        end
         return
     end
     if not host:isOpen() then
@@ -1157,11 +1162,12 @@ function combatKeys.clearUnwalkedHint()
 end
 
 -- A popup in front opened in a fight while the menu keys are the game's: say which key lands on it, a moment after
--- the popup itself is read.
-function combatKeys.hintMenuKey()
+-- the popup itself is read. textKey: the locale key of the hint, "To answer, press" when nil.
+function combatKeys.hintMenuKey(textKey)
     if not combatKeys.active() or combatKeys.taken() then
         return
     end
+    textKey = textKey or "To answer, press"
     local binding = WowVision.input:getBinding("wowvision/menu")
     local input = binding ~= nil and binding.inputs[1] or nil
     if input == nil then
@@ -1170,9 +1176,30 @@ function combatKeys.hintMenuKey()
     local keyText = GetBindingText ~= nil and GetBindingText(input) or input
     C_Timer.After(1.5, function()
         if not combatKeys.taken() then
-            WowVision:notify(WowVision:getLocale()["To answer, press"] .. " " .. keyText)
+            WowVision:notify(WowVision:getLocale()[textKey] .. " " .. keyText)
         end
     end)
+end
+
+-- A window open in a fight that cannot take the menu keys by itself: a game window the game's own key opened (the
+-- quest log), or one Escape left on screen as it gave the keys back (an addon cannot close a game window in a
+-- fight). The menu key lands on it first (graph/settings.lua openMenu). Mirrored windows are not marked: their
+-- own keys walk them again.
+function combatKeys.markUnkeyed(stack, quiet)
+    if not combatKeys.active() or combatKeys.taken() or combatKeys.isMirrorStack(stack) then
+        return
+    end
+    stack.combatUnkeyed = true
+    if not quiet then
+        combatKeys.hintMenuKey("To read, press")
+    end
+end
+
+-- The menu key landed on the window, or the fight ended: it is an ordinary window again.
+function combatKeys.clearUnkeyed()
+    for _, stack in ipairs(WowVision.graphHost.stacks) do
+        stack.combatUnkeyed = nil
+    end
 end
 
 -- The secure side moved in a mirrored list, or handed a key over there (from the secure frame).

@@ -45,6 +45,8 @@ Die Tasten, die ein WowVision-Fenster öffnen, wirken im Kampf wie außerhalb: d
 
 Esc schließt die eigenen Fenster von WowVision und gibt sofort alle Tasten an das Spiel zurück. Die Fenster des Spiels (das Questlog, die Charakteransicht) darf ein Addon im Kampf nicht schließen; sie bleiben auf dem Bildschirm und sind nach dem Kampf wieder da.
 
+Ein Fenster des Spiels, das du im Kampf mit der Taste des Spiels öffnest, etwa das Questlog (L), übernimmt die Tasten nicht von selbst: Du hörst seinen Namen und „Zum Lesen drücke“ mit deiner Taste für das WowVision-Menü (Umschalt+F1). Diese Taste landet auf dem Fenster und gibt WowVision die Tasten; ein zweiter Druck öffnet das WowVision-Menü. Hat Esc die Tasten zurückgegeben, landet die Menütaste wieder zuerst auf einem Fenster des Spiels, das noch offen ist. Im Questlog gehen die Pfeiltasten und Tab durch die Quests, und Leertaste liest den Tooltip einer Quest: ihre Ziele und wie weit du bist. Die Details einer Quest öffnen ist ein Klick des Spiels und sagt „Im Kampf nicht verfügbar“.
+
 Bewegen, Lesen, Reiter und Ebenen funktionieren wie außerhalb des Kampfes. Eingabe und Rücktaste wirken auf die eigenen Einträge von WowVision (Einstellungen, das Menü, Chat, Wegpunkte). Auf einem Eintrag, dessen Klick ein Klick auf einen Knopf des Spiels ist, sagen sie „Im Kampf nicht verfügbar“, außer wo diese Seite sie nennt.
 
 ### Deine Taschen (B)
