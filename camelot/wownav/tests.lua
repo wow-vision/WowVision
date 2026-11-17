@@ -1183,6 +1183,38 @@ if haveNetwork then
         end)
     end
 
+    suite["Auberdine: standing at one ship dock, another dock of the harbour is walked to"] = function(t)
+        -- 2026-11-17: at the dock to Stormwind, the dock to Menethil (162 yd away, another line) said "The dock has no
+        -- valid waiting point proof": the same-line rule took the point on board of the ship to Stormwind for its
+        -- counterpart, since every ship's stop id ("TaxiPathNode:<node>") has the same stop key
+        setup()
+        N.activeMapId = 1
+        local Dock = _G.WowVisionNavigationDockNavigation
+        local x, y = 6420, 500
+        local docks = {}
+        for _, r in ipairs(catalog.search(N, C, 1, "", x, y, { german = false })) do
+            if dock.isVesselRow(r) and Route.distance(r.x, r.y, x, y) < 700 then
+                docks[#docks + 1] = r
+            end
+        end
+        t:assertTrue(#docks >= 2, "Auberdine has ship docks of several lines: " .. #docks)
+        local pairsTried = 0
+        for _, from in ipairs(docks) do
+            for _, to in ipairs(docks) do
+                if from.tid ~= to.tid then
+                    Dock:Reset(false)
+                    local outcome, target, why = dock.choose(N, to, from.x, from.y)
+                    t:assertEqual(outcome, "route", string.format("%s -> %s: %s", from.n, to.n, tostring(why)))
+                    t:assertEqual(type(target) == "table" and target.id, to.tid, "the chosen dock itself")
+                    pairsTried = pairsTried + 1
+                end
+            end
+        end
+        Dock:Reset(false)
+        N.activeMapId = 0
+        t:assertTrue(pairsTried >= 2)
+    end
+
     suite["Menethil: the dock to Auberdine is walked to from beside the dock to the Southshore ferry"] = function(t)
         setup()
         -- where the walk test of 2026-11-02 stood: 32 yd from the Southshore ferry dock, which shares its position

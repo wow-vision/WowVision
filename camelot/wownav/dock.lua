@@ -281,8 +281,15 @@ local function sameLine(N, nav, target)
     if source == nil or source.transportRouteId == target.transportRouteId then
         return target
     end
+    -- the counterpart is a dock (not the point on board of the line) at the chosen dock's own stop: the stop key alone
+    -- does not say so, a ship's stop id is "TaxiPathNode:<node>" and its key "TaxiPathNode" for every ship of the data
+    -- (in Auberdine the dock to Menethil became the point on board of the ship to Stormwind: "no valid waiting point
+    -- proof")
     for _, candidate in ipairs(facilities(nav)) do
         if candidate.transportRouteId == source.transportRouteId and candidate.id ~= source.id
+            and (candidate.interactionMode == "manual_wait" or dock.isVesselTarget(candidate))
+            and candidate.x ~= nil and target.x ~= nil
+            and (candidate.x - target.x) ^ 2 + (candidate.y - target.y) ^ 2 <= STATION_REACH * STATION_REACH
             and stopKey(candidate) ~= nil and stopKey(candidate) == stopKey(target) then
             counterpart = candidate
         end
