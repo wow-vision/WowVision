@@ -139,6 +139,15 @@ On a card:
 - Backspace opens the game's menu for it.
 - Shift+F10 opens the context menu, which lists the card's own buttons as entries: Invite (friends, recent allies), Summon (Recruit a Friend), Accept and Decline (friend requests; decline opens a menu), then the left and right click.
 
+The Friends page works a little differently. On this list, a scroll done by an addon makes the game refuse its own friend search a moment later, which empties the list until a reload. So WowVision reads the Friends page from the list's data and never scrolls it. Every friend is read, wherever it is in the list, but only the friends at the top, the ones that fit on screen, have their real card under them.
+
+- Space on a friend reads more: race, faction and realm of the character (or what another game reports), the note, the tags and the broadcast.
+- On a friend that is on screen, the keys are as above.
+- On a friend further down, Enter and Backspace both open the game's menu for that friend. WowVision opens it there, so an entry the game keeps for its own code can fail with a "Blocked" message. Shift+F10 offers Invite if the friend has exactly one character you can invite.
+- A header that is further down cannot be folded.
+
+To get the full menu for a friend further down, bring the card on screen: type part of the name in Search, or fold the Favorites header.
+
 Example: invite a friend to your group from the Social window.
 
 1. Press O and make sure the Friends tab is selected (check the tab row with Tab).
