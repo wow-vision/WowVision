@@ -165,6 +165,40 @@ end
 -- what is said next (a route's summary) is not cut off by Interrupt Speech on Window Close.
 local CLOSE_ALL_QUIET = 0.5
 
+-- True when one of the game's bag frames is on screen.
+local function anyBagShown()
+    local frames = { rawget(_G, "ContainerFrameCombinedBags") }
+    for index = 1, (NUM_CONTAINER_FRAMES or 13) do
+        tinsert(frames, rawget(_G, "ContainerFrame" .. index))
+    end
+    for _, frame in ipairs(frames) do
+        if frame.IsShown ~= nil and frame:IsShown() then
+            return true
+        end
+    end
+    return false
+end
+
+-- Close every open bag the way the game's CloseAllBags does (the backpack, each bag, the keyring), but never through
+-- CloseAllBags: its first step writes the game's private "which window opened the bags" value, and written by addon
+-- code that value is WowVision's. The next window that opens the bags (bank, merchant, auction house) reads it and
+-- runs as WowVision from then on: on WoW: Forever the bank's bank type is then WowVision's, every bag click reads it
+-- after the bank closed (BankFrame:GetActiveBankType), and the use of an item that casts is refused ("UseContainerItem"
+-- forbidden, 2026-11-17). CloseBackpack and CloseBag only hide the frames. True when a bag was open.
+function WindowManager.closeGameBags()
+    if CloseBackpack == nil or CloseBag == nil or not anyBagShown() then
+        return false
+    end
+    CloseBackpack()
+    for id = 1, (NUM_TOTAL_BAG_FRAMES or NUM_BAG_FRAMES or 4) do
+        CloseBag(id)
+    end
+    if KEYRING_CONTAINER ~= nil and IsBagOpen ~= nil and IsBagOpen(KEYRING_CONTAINER) then
+        CloseBag(KEYRING_CONTAINER)
+    end
+    return true
+end
+
 -- Close every open WowVision window and every window of the game. Popups that wait for an answer stay on screen. The
 -- reason goes to every window's close request: "closeAllKey" from the Close All Windows key, which with Pending
 -- Windows puts their windows aside (windows/pending.lua); none from a route start, which leaves them in front. In
@@ -188,8 +222,14 @@ function WindowManager:closeAll(reason)
             host:close(stack)
         end
     end
-    if CloseAllWindows ~= nil and not InCombatLockdown() and CloseAllWindows() then
-        closed = true
+    if not InCombatLockdown() then
+        -- The game's windows first: a window that opened the bags (bank, merchant) closes them itself.
+        if CloseWindows ~= nil and CloseWindows() then
+            closed = true
+        end
+        if WindowManager.closeGameBags() then
+            closed = true
+        end
     end
     return closed
 end
