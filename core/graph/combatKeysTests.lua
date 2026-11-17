@@ -615,3 +615,84 @@ testRunner:addSuite("CombatMirror", {
         t:assertNil(handle.attributes.mode)
     end,
 })
+
+-- A game window's own key in a fight (the quest log, registerGameWindow): its opener's wrapper with the secure frame
+-- as owner; nil lets the opener's /click of the game's button run (it toggles the window).
+local function questLogFight(open)
+    local handle = newHandle()
+    stage(handle, MENU, false)
+    handle.attributes["ok-n"] = 1
+    handle.attributes["ok-k1"] = "L"
+    handle.attributes["ok-o1"] = "WowVisionCombatOpen_questlog"
+    handle.attributes["questlog-open"] = open and 1 or 0
+    fight(handle, true)
+    return handle
+end
+
+local function questLogKey(handle)
+    local opener = newHandle("WowVisionCombatOpen_questlog")
+    opener.attributes.gamewindow = "questlog"
+    return opener:run(combatKeys.GAME_OPENER, "button, down, owner", "LeftButton", true, handle)
+end
+
+testRunner:addSuite("CombatGameWindow", {
+    ["the fight binds the quest log key to its opener"] = function(t)
+        local handle = questLogFight(false)
+        t:assertEqual(handle.bindings.L, "WowVisionCombatOpen_questlog:LeftButton")
+        t:assertNil(handle.bindings.DOWN, "no menu keys before the key")
+    end,
+
+    ["the key opens a closed log and takes the menu keys, its click runs"] = function(t)
+        local handle = questLogFight(false)
+        t:assertNotEqual(questLogKey(handle), false, "the click toggles the log open")
+        t:assertEqual(handle.attributes["questlog-open"], 1)
+        t:assertEqual(handle.attributes.taken, 1)
+        t:assertEqual(handle.bindings.DOWN, "down")
+        t:assertEqual(handle.bindings.ESCAPE, "close")
+        t:assertEqual(handle.bindings.L, "WowVisionCombatOpen_questlog:LeftButton", "the key stays the opener")
+    end,
+
+    ["the key on an open log closes it and gives the keys back"] = function(t)
+        local handle = questLogFight(false)
+        questLogKey(handle)
+        t:assertNotEqual(questLogKey(handle), false, "the click toggles the log closed")
+        t:assertEqual(handle.attributes["questlog-open"], 0)
+        t:assertEqual(handle.attributes.taken, 0)
+        t:assertNil(handle.bindings.DOWN)
+        t:assertEqual(handle.bindings.L, "WowVisionCombatOpen_questlog:LeftButton")
+    end,
+
+    ["escape gives the keys back and the next key press closes the log"] = function(t)
+        local handle = questLogFight(false)
+        questLogKey(handle)
+        click(handle, "close")
+        t:assertEqual(handle.attributes.taken, 0)
+        t:assertEqual(handle.attributes["questlog-open"], 1, "the log stays on screen")
+        questLogKey(handle)
+        t:assertEqual(handle.attributes["questlog-open"], 0)
+        t:assertEqual(handle.attributes.taken, 0, "closing takes no keys")
+    end,
+
+    ["a log open as the fight begins: the key closes it"] = function(t)
+        local handle = questLogFight(true)
+        questLogKey(handle)
+        t:assertEqual(handle.attributes["questlog-open"], 0)
+        t:assertEqual(handle.attributes.taken, 0)
+    end,
+
+    ["the key does nothing of its own outside a fight"] = function(t)
+        local handle = questLogFight(false)
+        fight(handle, false)
+        t:assertNil(questLogKey(handle))
+        t:assertEqual(handle.attributes["questlog-open"], 0)
+        t:assertEqual(handle.attributes.taken, 0)
+    end,
+
+    ["the key leaves a walked bag list first"] = function(t)
+        local handle = questLogFight(false)
+        handle.attributes.mode = "bags"
+        questLogKey(handle)
+        t:assertEqual(handle.attributes.mode, "", "the bags are left")
+        t:assertEqual(handle.attributes.taken, 1)
+    end,
+})

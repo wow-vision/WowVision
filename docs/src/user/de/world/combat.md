@@ -45,7 +45,7 @@ Die Tasten, die ein WowVision-Fenster öffnen, wirken im Kampf wie außerhalb: d
 
 Esc schließt die eigenen Fenster von WowVision und gibt sofort alle Tasten an das Spiel zurück. Die Fenster des Spiels (das Questlog, die Charakteransicht) darf ein Addon im Kampf nicht schließen; sie bleiben auf dem Bildschirm und sind nach dem Kampf wieder da.
 
-Ein Fenster des Spiels, das du im Kampf mit der Taste des Spiels öffnest, etwa das Questlog (L), übernimmt die Tasten nicht von selbst: Du hörst seinen Namen und „Zum Lesen drücke“ mit deiner Taste für das WowVision-Menü (Umschalt+F1). Diese Taste landet auf dem Fenster und gibt WowVision die Tasten; ein zweiter Druck öffnet das WowVision-Menü. Hat Esc die Tasten zurückgegeben, landet die Menütaste wieder zuerst auf einem Fenster des Spiels, das noch offen ist. Im Questlog gehen die Pfeiltasten und Tab durch die Quests, und Leertaste liest den Tooltip einer Quest: ihre Ziele und wie weit du bist. Die Details einer Quest öffnen ist ein Klick des Spiels und sagt „Im Kampf nicht verfügbar“.
+Ein anderes Fenster des Spiels, das du im Kampf mit der Taste des Spiels öffnest, übernimmt die Tasten nicht von selbst: Du hörst seinen Namen und „Zum Lesen drücke“ mit deiner Taste für das WowVision-Menü (Umschalt+F1). Diese Taste landet auf dem Fenster und gibt WowVision die Tasten; ein zweiter Druck öffnet das WowVision-Menü. Hat Esc die Tasten zurückgegeben, landet die Menütaste wieder zuerst auf einem Fenster des Spiels, das noch offen ist.
 
 Bewegen, Lesen, Reiter und Ebenen funktionieren wie außerhalb des Kampfes. Eingabe und Rücktaste wirken auf die eigenen Einträge von WowVision (Einstellungen, das Menü, Chat, Wegpunkte). Auf einem Eintrag, dessen Klick ein Klick auf einen Knopf des Spiels ist, sagen sie „Im Kampf nicht verfügbar“, außer wo diese Seite sie nennt.
 
@@ -60,6 +60,14 @@ Deine Spieltaste für Alle Taschen öffnen oder Rucksack öffnen öffnet im Kamp
 - Noch einmal B oder Esc schließt die Taschen und gibt die Tasten zurück.
 
 Beginnt ein Kampf, während du auf einem Taschenplatz stehst, geht es von diesem Platz aus weiter. Kommst du aus einem anderen Fenster zu deinen offenen Taschen zurück, ohne durch sie zu gehen, werden sie gelesen, aber die Tasten gehören ihnen noch nicht: du hörst „Zum Benutzen von Gegenständen drücke“ mit deiner Taschentaste, und diese Taste geht wieder durch sie, von dort, wo du warst.
+
+### Dein Questlog (L)
+
+Deine Taste des Spiels für das Questlog öffnet es im Kampf wie außerhalb und gibt WowVision im selben Druck die Tasten, wie die Taschentaste. Die Pfeiltasten und Tab gehen durch die Quests, Leertaste liest den Tooltip einer Quest: ihre Ziele und wie weit du bist. Die Details einer Quest öffnen ist ein Klick des Spiels und sagt „Im Kampf nicht verfügbar“.
+
+- Esc gibt die Tasten zurück. Das Questlog bleibt auf dem Bildschirm (ein Addon darf es im Kampf nicht schließen); dein nächster Druck auf die Questlog-Taste schließt es, oder das Esc des Spiels.
+- Die Questlog-Taste auf einem offenen Questlog schließt es und gibt die Tasten zurück.
+- WowVision kann im Kampf nicht sehen, ob das Questlog offen ist, und zählt deshalb deine Drücke auf die Questlog-Taste. Hat das Esc des Spiels das Questlog zwischendurch geschlossen, öffnet es der nächste Druck ohne die Tasten; drück sie noch einmal zum Schließen und dann wieder zum Öffnen mit den Tasten, oder Esc, um die Tasten zurückzugeben.
 
 ### Deine Ausrüstung (C)
 

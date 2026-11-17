@@ -45,7 +45,7 @@ The keys that open a WowVision window work in a fight as they do outside: the Wo
 
 Escape closes WowVision's own windows and gives every key back to the game at once. The game's windows (the quest log, the character pane) cannot be closed by an addon in a fight; they stay on screen and are there again after the fight.
 
-A game window you open in a fight with the game's own key, such as the quest log (L), does not take the keys by itself: you hear its name and "To read, press" with your WowVision Menu key (Shift+F1). That key lands on the window and hands WowVision the keys; pressed again, it opens the WowVision menu. After Escape has given the keys back, a game window still on screen is the menu key's first stop again. In the quest log, the arrows and Tab move through the quests and Space reads a quest's tooltip: its objectives and how far along you are. Opening a quest's details is a click of the game's and says "Not available in combat".
+Another game window you open in a fight with the game's own key does not take the keys by itself: you hear its name and "To read, press" with your WowVision Menu key (Shift+F1). That key lands on the window and hands WowVision the keys; pressed again, it opens the WowVision menu. After Escape has given the keys back, a game window still on screen is the menu key's first stop again.
 
 Moving, reading, tabs and levels work as outside combat. Enter and Backspace work on WowVision's own entries (settings, the menu, chat, waypoints). On an entry whose click is a click of a game button, they say "Not available in combat", except where this page names them.
 
@@ -60,6 +60,14 @@ Your game key for Open All Bags or Toggle Backpack opens all your bags in a figh
 - B again, or Escape, closes the bags and gives the keys back.
 
 A fight that begins while you are on a bag slot goes on from that slot. When you come back to your open bags from another window without walking them, they are read but the keys are not theirs yet: you hear "To use items, press" with your bags key, and that key walks them again from where you were.
+
+### Your quest log (L)
+
+Your game key for the quest log opens it in a fight as it does outside, and hands WowVision the keys in the same press, like the bags key. The arrows and Tab move through the quests, Space reads a quest's tooltip: its objectives and how far along you are. Opening a quest's details is a click of the game's and says "Not available in combat".
+
+- Escape gives the keys back. The log stays on screen (an addon cannot close it in a fight); your next press of the quest log key closes it, or the game's own Escape does.
+- The quest log key on an open log closes it and gives the keys back.
+- WowVision cannot see in a fight whether the log is open, so it counts your presses of the quest log key. If the game's Escape closed the log in between, the next press opens it without the keys; press it once more to close it, then again to open it with the keys, or press Escape to give the keys back.
 
 ### Your equipment (C)
 

@@ -641,3 +641,20 @@ module:registerWindow({
     conflictingAddons = { "Sku" },
     graphScreen = { render = render, closeClick = detailsBackButton },
 })
+
+-- In a fight the game's quest log key opens the log the game's way (a click of
+-- the quest log micro button, which runs ToggleQuestLog as the key does) and
+-- hands WowVision the menu keys in the same press, as the bags key does
+-- (graph/combatKeys.lua registerGameWindow).
+WowVision.graph.combatKeys.registerGameWindow({
+    key = "questlog",
+    commands = { "TOGGLEQUESTLOG" },
+    button = "QuestLogMicroButton",
+    isOpen = function()
+        return QuestMapFrame ~= nil and QuestMapFrame:IsVisible()
+    end,
+    available = function()
+        local window = WowVision.UIHost.windowManager:getWindow("QuestLog")
+        return window ~= nil and window:canOpen() and module:getEnabled()
+    end,
+})
