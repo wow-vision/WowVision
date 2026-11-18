@@ -33,7 +33,7 @@ Every voice sounds a little different, so the pitch steps are tuned per voice. M
 
 ## What you hear
 
-Three things speak.
+Four things speak.
 
 ### The repeat
 
@@ -55,6 +55,16 @@ Setting Repeat Every to 0 turns the repeat off for that role.
 ### Deaths
 
 When a member dies, you hear their number and "dead", once. Someone who is already dead when you join the group is not announced.
+
+### Dispellable debuffs
+
+When a watched member gets a debuff that you can dispel, you hear the debuff's type and the member's number, for example "Poison 3". Only debuffs your class and talents can dispel count: the game decides this. A druid who removes curses and poisons hears only curses and poisons. This is off until you turn on Announce Dispellable Debuffs, under Dispellable Debuffs in the monitor's settings.
+
+- A member is said when they get a new debuff, at once.
+- While the debuff stays on them, they are said again at the interval of Repeat Every, as long as WowVision has nothing else to say. The repeat only starts after a new debuff, and it stops as soon as the member carries none.
+- Nothing is ever said for a member who carries no debuff you can dispel. A debuff that is removed or runs out is not announced.
+- The type is the game's own word, the same in and out of combat. In combat the game lets addons speak this word but not shorten it, so there is no one-letter form.
+- With several debuffs on the same member, the type said is the one listed last, usually the newest.
 
 ### The snapshot key
 
@@ -81,6 +91,7 @@ All of these are on the screen of the Group Health Monitor in the WowVision menu
 | Announce Deaths | On | A death is announced |
 | Silent Out of Combat | Off | No repeat and no deaths out of combat. The snapshot key still works |
 | Repeat Only After a Change | Off | See below |
+| Dispellable Debuffs | | Announce Dispellable Debuffs (Off): the announcements above. Repeat Every (seconds, 0 is off) (3), from 0 to 60. Number First (Off): "3 Poison" instead of "Poison 3" |
 | Raid Groups | All on | One checkbox per raid group, Group 1 to Group 8. Switch off the groups you do not need, for example to watch only the groups you heal |
 | Tanks, Healers, Damage Dealers, No Role | See the table above | Each has Repeat Below (percent), from 0 to 100, and Repeat Every (seconds, 0 is off), from 0 to 300 |
 
@@ -96,6 +107,7 @@ Mind what silence means with this setting on: it means nothing changed, not that
 
 - The monitor does not follow health changes as they happen and cannot say a percentage or count incoming heals. The repeat and the snapshot are its only voice.
 - Every member costs a turn, heard or not, so a large raid takes a while to go round. Watch only the raid groups you heal, or set Repeat Every to 0 for the roles you do not need.
+- If the game refuses to let addons read your group members' debuffs, the monitor says so once ("Dispellable debuffs unavailable here") instead of staying silent.
 - In battlegrounds and arenas the game does not let addons see your group members. The monitor then says once that it is unavailable ("Group health monitor unavailable here").
 
 ## Example

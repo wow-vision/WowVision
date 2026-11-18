@@ -27,6 +27,8 @@ local settings = module:hasSettings()
 -- - "<number> dead" once (whether a member is dead is not secret).
 -- - The snapshot key: everyone once, in number order, a member at full
 --   health as "<number> full".
+-- - Dispellable debuffs (dispel.lua): "<number> <type>" when a member gets
+--   a debuff the player can dispel.
 -- All of it goes through the speech queue (retail/speech.lua) with the
 -- monitor's own voice, rate and volume: pitch needs a real SAPI voice,
 -- which an NVDA bridge voice is not.
@@ -331,6 +333,7 @@ local function newMember(unit, number, role, old)
         member.lastRepeat = old.lastRepeat
         member.dead = old.dead
         member.changed = old.changed
+        member.dispel = old.dispel
     end
     return member
 end
@@ -408,6 +411,8 @@ function module:rebuild()
     self.rosterDirty = false
     self.raidMode = raid
     self.members, self.aliases = self:collect()
+    -- new members carry no dispel state yet: read them (dispel.lua)
+    self:markAllDispel()
 end
 
 function module:memberFor(unit)
@@ -598,6 +603,7 @@ end
 -- Wiring ------------------------------------------------------------------------
 
 module:registerEvent("event", "UNIT_HEALTH")
+module:registerEvent("event", "UNIT_AURA")
 module:registerEvent("event", "GROUP_ROSTER_UPDATE")
 module:registerEvent("event", "PLAYER_ROLES_ASSIGNED")
 module:registerEvent("event", "PLAYER_REGEN_ENABLED")
@@ -606,12 +612,15 @@ module:registerEvent("event", "PLAYER_ENTERING_WORLD")
 function module:onEvent(event, ...)
     if event == "UNIT_HEALTH" then
         self:onHealth(...)
+    elseif event == "UNIT_AURA" then
+        self:onAura(...)
     elseif event == "PLAYER_REGEN_ENABLED" then
         if self.rosterDirty then
             self:rebuild()
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         self.unavailableSaid = false
+        self.dispelUnavailableSaid = false
         self:rebuild()
         -- The game lists its voices only in the world, so the voice name is
         -- knowable now: warn here if the chosen voice is the NVDA bridge.
@@ -644,6 +653,7 @@ end
 function module:onEnable()
     self:hasUpdate(function(self)
         self:checkRepeats()
+        self:checkDispels()
     end)
     self:rebuild()
     self:warnBridgeVoice()
@@ -652,6 +662,7 @@ end
 function module:onDisable()
     self.members = {}
     self.aliases = {}
+    self.dispelDirty = {}
 end
 
 -- Choosing the bridge voice while already enabled warns too.

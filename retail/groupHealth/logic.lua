@@ -346,3 +346,61 @@ function GroupHealth.mostOverdue(members, now, intervalOf)
     end
     return best
 end
+
+-- Dispellable debuffs -------------------------------------------------------------
+--
+-- Per member, how many debuffs the player can dispel they carry (a plain
+-- count, see dispel.lua) and whether their announcement is running. A
+-- member is announced only when the count goes UP: a new debuff. The repeat
+-- runs from that announcement on, for as long as the member still carries
+-- one, and stops for good when the count reaches 0. It never says that a
+-- member carries nothing, and a count that only drops never speaks.
+
+-- A member's dispel state before anything is known: nothing carried.
+function GroupHealth.newDispelState()
+    return { count = 0, active = false, lastSaid = nil }
+end
+
+-- The new count for a member; true when it went up (announce now). An
+-- unknown count (nil) changes nothing.
+function GroupHealth.dispelStep(state, count, now)
+    if count == nil then
+        return false
+    end
+    local rose = count > state.count
+    state.count = count
+    if count == 0 then
+        state.active = false
+        state.lastSaid = nil
+        return false
+    end
+    if rose then
+        state.active = true
+        state.lastSaid = now
+    end
+    return rose
+end
+
+-- Whether the member's repeat is due: running (started by a rise), still
+-- carrying a debuff, and the interval (seconds, 0 or nil: no repeat)
+-- passed since they were last said.
+function GroupHealth.dispelRepeatDue(state, now, interval)
+    if not state.active or state.count == 0 or interval == nil or interval <= 0 then
+        return false
+    end
+    return state.lastSaid == nil or now - state.lastSaid >= interval
+end
+
+-- What is said: the member's number and the game's word for the debuff's
+-- type, in the chosen order. The word may be secret (in combat): it is
+-- only joined, never looked at. Without a word the number alone.
+function GroupHealth.dispelText(number, word, numberFirst)
+    number = tostring(number)
+    if word == nil then
+        return number
+    end
+    if numberFirst then
+        return number .. " " .. word
+    end
+    return word .. " " .. number
+end

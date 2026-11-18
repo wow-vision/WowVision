@@ -33,7 +33,7 @@ Jede Stimme klingt etwas anders, deshalb sind die Tonhöhenstufen für jede Stim
 
 ## Was du hörst
 
-Drei Dinge werden gesprochen.
+Vier Dinge werden gesprochen.
 
 ### Die Wiederholung
 
@@ -55,6 +55,16 @@ Setzt du Wiederholen alle auf 0, ist die Wiederholung für diese Rolle aus.
 ### Tode
 
 Stirbt ein Mitglied, hörst du einmal seine Nummer und „tot“. Wer schon tot ist, wenn du der Gruppe beitrittst, wird nicht angesagt.
+
+### Bannbare Schwächungszauber
+
+Bekommt ein beobachtetes Mitglied einen Schwächungszauber, den du bannen kannst, hörst du die Art des Zaubers und die Nummer des Mitglieds, zum Beispiel „Gift 3“. Es zählen nur Schwächungszauber, die deine Klasse und deine Talente bannen können: Das entscheidet das Spiel. Ein Druide, der Flüche und Gifte entfernt, hört nur Flüche und Gifte. Die Ansage ist aus, bis du Bannbare Schwächungszauber ansagen unter Bannbare Schwächungszauber in den Einstellungen des Monitors einschaltest.
+
+- Ein Mitglied wird sofort gesagt, wenn es einen neuen Schwächungszauber bekommt.
+- Solange der Zauber auf ihm bleibt, wird es im Abstand von Wiederholen alle erneut gesagt, sofern WowVision sonst nichts zu sagen hat. Die Wiederholung beginnt nur nach einem neuen Zauber und endet, sobald das Mitglied keinen mehr trägt.
+- Für ein Mitglied ohne bannbaren Zauber wird nie etwas gesagt. Ein Zauber, der gebannt wird oder ausläuft, wird nicht angesagt.
+- Die Art ist das Wort des Spiels selbst, im Kampf und außerhalb gleich. Im Kampf lässt das Spiel Addons dieses Wort sprechen, aber nicht kürzen, deshalb gibt es keine Ein-Buchstaben-Form.
+- Trägt ein Mitglied mehrere Zauber, wird die Art des zuletzt aufgelisteten gesagt, meist des neuesten.
 
 ### Die Schnappschuss-Taste
 
@@ -81,6 +91,7 @@ Alle stehen auf dem Bildschirm des Gruppen-Gesundheitsmonitors im WowVision-Men�
 | Tode ansagen | An | Ein Tod wird angesagt |
 | Außerhalb des Kampfes still | Aus | Außerhalb des Kampfes keine Wiederholung und keine Tode. Die Schnappschuss-Taste funktioniert weiter |
 | Nur nach einer Änderung wiederholen | Aus | Siehe unten |
+| Bannbare Schwächungszauber | | Bannbare Schwächungszauber ansagen (Aus): die Ansagen oben. Wiederholen alle (Sekunden, 0 ist aus) (3), von 0 bis 60. Nummer zuerst (Aus): „3 Gift“ statt „Gift 3“ |
 | Schlachtzugsgruppen | Alle an | Ein Kontrollkästchen pro Schlachtzugsgruppe, Gruppe 1 bis Gruppe 8. Schalte die Gruppen aus, die du nicht brauchst, zum Beispiel um nur die Gruppen zu beobachten, die du heilst |
 | Tanks, Heiler, Schadensverursacher, Ohne Rolle | Siehe Tabelle oben | Jede hat Wiederholen unter (Prozent), von 0 bis 100, und Wiederholen alle (Sekunden, 0 ist aus), von 0 bis 300 |
 
@@ -96,6 +107,7 @@ Achte darauf, was Stille bei eingeschalteter Einstellung bedeutet: Sie heißt, d
 
 - Der Monitor verfolgt Gesundheitsänderungen nicht im Moment, in dem sie passieren, und kann weder einen Prozentwert nennen noch eingehende Heilung zählen. Die Wiederholung und der Schnappschuss sind seine einzige Stimme.
 - Jedes Mitglied kostet einen Durchgang, ob du ihn hörst oder nicht, ein großer Schlachtzug braucht also eine Weile für eine Runde. Beobachte nur die Schlachtzugsgruppen, die du heilst, oder setze Wiederholen alle für die Rollen, die du nicht brauchst, auf 0.
+- Verweigert das Spiel Addons das Lesen der Schwächungszauber deiner Gruppenmitglieder, sagt der Monitor das einmal („Bannbare Schwächungszauber hier nicht verfügbar“), statt still zu bleiben.
 - In Schlachtfeldern und Arenen lässt das Spiel Addons deine Gruppenmitglieder nicht sehen. Der Monitor sagt dann einmal, dass er nicht verfügbar ist („Gruppen-Gesundheitsmonitor hier nicht verfügbar“).
 
 ## Beispiel
