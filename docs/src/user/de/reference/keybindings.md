@@ -50,6 +50,8 @@ Im Kampf gibt WowVision die Fenstertasten ans Spiel zurück (siehe [Kampf](../wo
 |---|---|
 | Vorherige Tooltipzeile (Previous Tooltip Line) | Umschalt+Pfeil hoch |
 | Nächste Tooltipzeile (Next Tooltip Line) | Umschalt+Pfeil runter |
+| Vorheriger Tooltipblock (Previous Tooltip Block) | Strg+Umschalt+Pfeil hoch |
+| Nächster Tooltipblock (Next Tooltip Block) | Strg+Umschalt+Pfeil runter |
 | Tooltip links vorlesen (Read Tooltip Left) | Umschalt+Pfeil links |
 | Tooltip rechts vorlesen (Read Tooltip Right) | Umschalt+Pfeil rechts |
 
@@ -209,7 +211,8 @@ Siehe [Chat](../windows/chat.md), [Navigation und Routen](../world/navigation.md
 
 Einige WowVision-Belegungen erfüllen dieselbe Aufgabe wie Tasten von Sku, dem älteren Barrierefreiheits-Addon. Solange Sku geladen ist, aktiviert WowVision diese Belegungen gar nicht und überlässt die Tasten Sku:
 
-- die vier Tasten für Tooltipzeilen (Umschalt+Pfeil hoch, Umschalt+Pfeil runter, Umschalt+Pfeil links, Umschalt+Pfeil rechts)
+- die sechs Tooltip-Tasten (Umschalt+Pfeil hoch, Umschalt+Pfeil runter, Strg+Umschalt+Pfeil hoch, Strg+Umschalt+Pfeil runter, Umschalt+Pfeil links, Umschalt+Pfeil rechts)
+- Handel annehmen (Alt+Strg+T)
 - die Umschalter der weichen Zielerfassung (Umschalt+I, Umschalt+P, Umschalt+O)
 - Zielfokus 1 bis Zielfokus 5 (und die Befehle `/focus1` bis `/focus5`)
 

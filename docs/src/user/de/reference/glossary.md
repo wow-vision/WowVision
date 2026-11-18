@@ -112,6 +112,19 @@ Fast jede Ansage ist ein Alarm, den du ausschalten oder auf einen Sound umstelle
 
 Spring, geh zur Seite, überspring den Wegpunkt mit Strg+W, geh mit Strg+S einen zurück, oder ändere die Ankunftsdistanz mit Alt+P. Steht der NPC, den du suchst, hinter einem Tresen, sprich ihn direkt an. Siehe [Fehlerbehebung](../getting-started/troubleshooting.md#ich-hänge-auf-einer-route-fest).
 
+### Wie fahre ich am besten mit Schiffen oder Zeppelinen?
+
+WowNav (WoW: Forever) führt dich zum Anleger, aber nicht auf das Fahrzeug, und es kann nicht erkennen, wann das Schiff angekommen ist. So klappt es am besten. Die Namen unten sind die deutschen; auf einem englischen Client lauten sie "Ship dock to ...", "Zeppelin dock to ...", "On the ship" und "On the zeppelin". Einzelheiten stehen unter [WowNav](../world/wownav.md#anleger).
+
+1. Drücke F10, suche das Ziel, zum Beispiel "Auberdine", und wähle den Anleger deiner Linie, "Schiffsanleger nach Auberdine" (bei Zeppelinen: "Zeppelinturm nach Grom'gol"). Eingabe startet die Route wie üblich.
+2. Wenn du ankommst, hörst du, dass du den Anleger erreicht hast, und ein Richtungspunkt (Beacon in gerader Linie) zum Einsteigpunkt "Am Schiff" (bei Zeppelinen: "Am Zeppelin") startet meist von selbst.
+3. Startet er nicht, setze ihn von Hand, und auf keinen Fall als Route. Drücke F10, drücke einmal Umschalt+Tab, um zum Kontrollkästchen Direkt zu kommen, und setze mit Eingabe den Haken. Direkt ist bei jedem Öffnen des Fensters wieder aus, du musst das also jedes Mal tun. Drücke dann Tab, bis du bei den Zielen bist, suche auf Wunsch nach "Am Schiff", wähle den Eintrag "Am Schiff" deines Anlegers und drücke Eingabe.
+4. Gehe zu diesem Punkt und warte dort. Wenn das Schiff kommt, hörst du seine Glocke.
+5. Bleibe an Bord, bis das Schiff in der neuen Zone ist: Der Ladebildschirm ist vorbei und du hörst die Ansage der neuen Zone. Drücke dann sofort wieder F10, setze wieder den Haken bei Direkt und wähle den Anleger des Stegs, an dem du angekommen bist ("Schiffsanleger nach ...").
+6. Drücke immer wieder Alt Gr, um zu hören, wie weit der Anleger noch entfernt ist. Wenn die Glocke ertönt, nur noch wenige Meter fehlen oder die Entfernung nicht mehr kleiner wird, gehe oder springe zum Anleger. Manchmal musst du beim Aussteigen etwas kreativ sein, weil der Anleger auf der anderen Seite des Schiffes liegt.
+
+Vorsicht bei Theramore: Dort ertönt die Schiffsglocke nicht (ein Fehler). Wirf beim Warten immer wieder eine Angel in Richtung des Schiffsliegeplatzes aus. Solange der Wurf klappt, ist das Schiff nicht da. Geht er nicht mehr, ist das Schiff angekommen.
+
 ### Wo sehe ich jede Taste?
 
 In der [Tastenreferenz](../reference/keybindings.md) und im Spiel im Fenster für die Tastenbelegung: WowVision-Menü, Benutzeroberfläche, Tastenbelegung.

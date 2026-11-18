@@ -46,6 +46,8 @@ In combat, WowVision hands the window keys back to the game (see [Combat](../wor
 |---|---|
 | Previous Tooltip Line | Shift+Up |
 | Next Tooltip Line | Shift+Down |
+| Previous Tooltip Block | Ctrl+Shift+Up |
+| Next Tooltip Block | Ctrl+Shift+Down |
 | Read Tooltip Left | Shift+Left |
 | Read Tooltip Right | Shift+Right |
 
@@ -205,7 +207,8 @@ See [Chat](../windows/chat.md), [Navigation and Routes](../world/navigation.md),
 
 Some WowVision bindings do the same job as keys of Sku, the older accessibility addon. While Sku is loaded, WowVision does not activate these bindings at all and leaves the keys to Sku:
 
-- the four tooltip line keys (Shift+Up, Shift+Down, Shift+Left, Shift+Right)
+- the six tooltip keys (Shift+Up, Shift+Down, Ctrl+Shift+Up, Ctrl+Shift+Down, Shift+Left, Shift+Right)
+- Accept Trade (Alt+Ctrl+T)
 - the soft targeting switches (Shift+I, Shift+P, Shift+O)
 - Target Focus 1 to Target Focus 5 (and the `/focus1` to `/focus5` commands)
 

@@ -110,6 +110,19 @@ Almost every announcement is an alert you can turn off or change to a sound. Fin
 
 Jump, step aside, skip the waypoint with Ctrl+W, go back one with Ctrl+S, or change the arrival distance with Alt+P. If the NPC you are looking for stands behind a counter, talk to them directly. See [Troubleshooting](../getting-started/troubleshooting.md#i-am-stuck-on-a-route).
 
+### How do I travel by ship or zeppelin?
+
+WowNav (WoW: Forever) guides you to the dock but not onto the vehicle, and it cannot tell when the ship has arrived. This is the way that works best. The names below are the English ones; on a German client they read "Schiffsanleger nach ...", "Zeppelinturm nach ...", "Am Schiff" and "Am Zeppelin". See [WowNav](../world/wownav.md#docks) for the details.
+
+1. Press F10, search for the destination, for example "Auberdine", and choose the dock of your line, "Ship dock to Auberdine" (zeppelins: "Zeppelin dock to Grom'gol"). Enter starts the route as usual.
+2. When you arrive you hear that you reached the dock, and a straight beacon to the boarding point, "On the ship" (zeppelins: "On the zeppelin"), usually starts by itself.
+3. If it does not start, set it by hand, and never as a route. Press F10, press Shift+Tab once to reach the Direct checkbox, and press Enter to tick it. Direct is off every time the window opens, so you have to do this each time. Then press Tab until you reach Destinations, search for "On the ship" if you like, choose the "On the ship" entry of your dock and press Enter.
+4. Walk to that point and wait there. When the ship arrives you hear its bell.
+5. Stay on board until the ship has reached the new zone: the loading screen is over and you hear the announcement of the new zone. Then press F10 again, tick Direct again, and choose the dock of the pier where you have arrived ("Ship dock to ...").
+6. Press Alt Gr as often as you like to hear how far the dock is. When the bell rings, when only a few yards are left, or when the distance stops getting smaller, walk or jump to the dock. Sometimes you have to be a little creative getting off, because the dock lies on the other side of the ship.
+
+Beware of Theramore Isle: there the ship's bell does not ring (a bug). While you wait, cast a fishing line towards the ship's berth again and again. As long as the cast works, the ship is not there. When it no longer works, the ship has arrived.
+
 ### Where can I see every key?
 
 In the [Keybinding Reference](../reference/keybindings.md), and in the game in the keybinding window: WowVision menu, UI, Bindings.
