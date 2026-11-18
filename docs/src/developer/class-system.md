@@ -4,7 +4,7 @@
 
 `core/Class.lua` is WowVision's object system: classes with native fields — declared properties that validate, store, persist, and emit change events through plain Lua assignment. It replaced middleclass and the old InfoClass/InfoManager stack in July 2026. All metatable machinery lives in this one file (plus the complex field types in `core/fieldTypes.lua`); code everywhere else reads and writes fields like ordinary attributes.
 
-The whole system is pure Lua with no WoW API dependencies: `lua tools/headless-tests.lua` runs its full suite, plus construction smokes for alerts, buffers, and monitors.
+The whole system is pure Lua with no WoW API dependencies: `luajit tools/headless-tests.lua` runs its full suite, plus construction smokes for alerts, buffers, and monitors. See [Graph UI](graph-ui.md) for why it needs LuaJIT.
 
 ## Classes
 
