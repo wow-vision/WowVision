@@ -28,11 +28,31 @@ settings:add({
 
 -- After each waypoint reached, the waypoints left on the route: the cue,
 -- then "3 remaining" (maps/module.lua), classic and WowNav routes alike.
+-- A dropdown: at every waypoint, only on the last stretch (from there on at
+-- every waypoint), every round ten counted from the end, or never
+-- (remainingAnnounce.lua). It replaced a checkbox; db.lua carries an old
+-- "off" over as Never.
+local remainingModeLabels = {
+    always = L["Always"],
+    last10 = L["The Last 10"],
+    last5 = L["The Last 5"],
+    last1 = L["The Last One"],
+    lastTenPercent = L["The Last 10 Percent"],
+    every10 = L["Every 10"],
+    never = L["Never"],
+}
 settings:add({
-    key = "announceRemaining",
-    type = "Bool",
+    key = "announceRemainingMode",
+    type = "Choice",
     label = L["Announce Remaining Waypoints"],
-    default = true,
+    default = WowVision.remainingAnnounce.DEFAULT,
+    choices = (function()
+        local choices = {}
+        for _, mode in ipairs(WowVision.remainingAnnounce.modes) do
+            tinsert(choices, { label = remainingModeLabels[mode], value = mode })
+        end
+        return choices
+    end)(),
 })
 
 -- The height of the last network point reached is remembered; a new route then starts at the nearest entry point at about

@@ -113,7 +113,7 @@ When the route starts, WowVision speaks the summary and the beacon begins to pin
 - The beacon pings towards the current waypoint. The ping changes with the direction and the distance to the waypoint. It pings faster the more directly you face the waypoint, about every 0.7 seconds when off course and about every 0.3 seconds when you are aimed at it. Distance is heard in steps of about 6 yards and works out to roughly 180 yards.
 - Aligned (a clack) plays when you turn to within 10 degrees of the waypoint. Off course (a click) plays when you turn away again. These only play when you cross that line by turning.
 - Waypoint reached (a success sound) plays every time you get close enough to a waypoint, including the last one.
-- Right after the sound, WowVision says how many waypoints are left, for example "3 remaining". The waypoint the beacon now leads to counts too. At the last waypoint you hear Arrived instead, and at a portal, the tram or an elevator on a WowNav route you hear WowNav's own guidance. This works on classic routes and WowNav routes alike. The setting Announce Remaining Waypoints in the Navigation module (on by default) turns it off.
+- Right after the sound, WowVision says how many waypoints are left, for example "3 remaining". The waypoint the beacon now leads to counts too. At the last waypoint you hear Arrived instead, and at a portal, the tram or an elevator on a WowNav route you hear WowNav's own guidance. This works on classic routes and WowNav routes alike. The setting Announce Remaining Waypoints in the Navigation module chooses when: Always (the default, after every waypoint), The Last 10, The Last 5, The Last One, The Last 10 Percent (rounded up, so even a short route says its last one), Every 10 or Never. With The Last 10, The Last 5, The Last One and The Last 10 Percent nothing is said until that many waypoints are left, then the count follows at every waypoint up to the end. Every 10 counts from the end: on a route of 55 waypoints you hear nothing for four waypoints, then "50 remaining", "40 remaining" and so on down to "10 remaining", and "1 remaining" at the waypoint before the last. Stepping with Ctrl+W and Ctrl+S always says the count.
 - Arrived is spoken at the end of a route, followed by the name of the destination.
 - Beacon stopped is spoken when you cancel.
 
@@ -322,7 +322,7 @@ The Visited Waypoints module (under Navigation) has one setting:
 
 Close All Windows When a Route Starts (Navigation module, on by default) closes every open window as soon as you start a route or a beacon, so your keys are free for walking; the legs an Auto chain starts by itself leave your windows alone.
 
-Three settings of the Navigation module are related: Announce Remaining Waypoints (on by default) says how many waypoints are left after each one you reach, Automatically Navigate to Corpse (on by default) starts a route to your body as soon as you are a ghost, and Auto-move to Interact Target is explained with the movement features. See [Movement](./movement.md) for those, for the compass and for following a player.
+Three settings of the Navigation module are related: Announce Remaining Waypoints (Always by default) chooses when WowVision says how many waypoints are left after one you reach, Automatically Navigate to Corpse (on by default) starts a route to your body as soon as you are a ghost, and Auto-move to Interact Target is explained with the movement features. See [Movement](./movement.md) for those, for the compass and for following a player.
 
 ## Diagnostic commands
 

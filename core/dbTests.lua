@@ -159,7 +159,7 @@ testRunner:addSuite("DB migrations", {
         local db = { someKey = 1 }
         local ok, err = pcall(dbManager.beginReconcile, dbManager, {}, db)
         t:assertTrue(ok, err)
-        t:assertEqual(db._version, 9)
+        t:assertEqual(db._version, 10)
         t:assertType(db.bindings, "table")
     end,
 
@@ -234,6 +234,41 @@ testRunner:addSuite("DB migrations", {
         t:assertEqual(settings.arrivalShort, 1)
         t:assertEqual(settings.arrivalMedium, 3)
         t:assertEqual(settings.arrivalLong, 8)
+    end,
+
+    ["Announce Remaining Waypoints saved off becomes Never, in both stores"] = function(t)
+        local function saved()
+            return { submodules = { navigation = { settings = { announceRemaining = false, autoCorpse = false } } } }
+        end
+        local default = { submodules = { navigation = { settings = { announceRemainingMode = "always", autoCorpse = true } } } }
+        local char = saved()
+        char._version = 9
+        dbManager:beginReconcile(default, char)
+        local global = saved()
+        global._version = 7
+        dbManager:beginReconcileGlobal(default, global)
+        for _, db in ipairs({ char, global }) do
+            local settings = db.submodules.navigation.settings
+            t:assertEqual(settings.announceRemainingMode, "never")
+            t:assertNil(settings.announceRemaining)
+            t:assertEqual(settings.autoCorpse, false)
+        end
+    end,
+
+    ["Announce Remaining Waypoints saved on takes the default mode"] = function(t)
+        local db = { _version = 9, submodules = { navigation = { settings = { announceRemaining = true } } } }
+        dbManager:beginReconcile({}, db)
+        local settings = db.submodules.navigation.settings
+        t:assertNil(settings.announceRemaining)
+        t:assertNil(settings.announceRemainingMode, "no mode saved: the field's default, Always")
+    end,
+
+    ["a remaining mode already chosen is kept"] = function(t)
+        local db = { _version = 9, submodules = { navigation = { settings = {
+            announceRemaining = false, announceRemainingMode = "last5",
+        } } } }
+        dbManager:beginReconcile({}, db)
+        t:assertEqual(db.submodules.navigation.settings.announceRemainingMode, "last5")
     end,
 
     ["muted quest messages in the errors filter mute their quest alert, in both stores"] = function(t)
@@ -425,6 +460,6 @@ testRunner:addSuite("DB migrations", {
         dbManager:beginReconcileGlobal({}, db)
         t:assertEqual(#general.items, 7)
         t:assertEqual(general.items[7].object.type, "GameClock")
-        t:assertEqual(db._version, 7)
+        t:assertEqual(db._version, 8)
     end,
 })
