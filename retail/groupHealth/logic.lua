@@ -383,12 +383,20 @@ end
 
 -- Whether the member's repeat is due: running (started by a rise), still
 -- carrying a debuff, and the interval (seconds, 0 or nil: no repeat)
--- passed since they were last said.
+-- passed since they were last said; or never said since the rise (held
+-- back while the monitor was silent), whatever the interval.
 function GroupHealth.dispelRepeatDue(state, now, interval)
-    if not state.active or state.count == 0 or interval == nil or interval <= 0 then
+    if not state.active or state.count == 0 then
         return false
     end
-    return state.lastSaid == nil or now - state.lastSaid >= interval
+    -- Held back while silenced: said once speaking is allowed, repeat or not.
+    if state.lastSaid == nil then
+        return true
+    end
+    if interval == nil or interval <= 0 then
+        return false
+    end
+    return now - state.lastSaid >= interval
 end
 
 -- What is said: the member's number and the game's word for the debuff's

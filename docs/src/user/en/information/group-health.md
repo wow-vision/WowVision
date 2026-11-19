@@ -60,7 +60,7 @@ When a member dies, you hear their number and "dead", once. Someone who is alrea
 
 When a watched member gets a debuff that you can dispel, you hear the debuff's type and the member's number, for example "Poison 3". Only debuffs your class and talents can dispel count: the game decides this. A druid who removes curses and poisons hears only curses and poisons. This is off until you turn on Announce Dispellable Debuffs, under Dispellable Debuffs in the monitor's settings.
 
-Who is watched for debuffs has its own Watch Party (on) and Watch Raid (off) switches under Dispellable Debuffs, independent of the monitor's. Include Yourself and the raid groups are the monitor's, and the numbers are the same.
+Who is watched for debuffs has its own Watch Party (on) and Watch Raid (off) switches under Dispellable Debuffs, independent of the monitor's. Include Yourself and the raid groups are the monitor's, and the numbers are the same. In a raid with only Watch Party on, your own raid group is watched under its raid numbers, so a number names the same person for both.
 
 - A member is said when they get a new debuff, at once.
 - While the debuff stays on them, they are said again at the interval of Repeat Every, as long as WowVision has nothing else to say. The repeat only starts after a new debuff, and it stops as soon as the member carries none.

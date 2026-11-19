@@ -205,6 +205,42 @@ testRunner:addSuite("GroupHealthDispel", {
         end)
     end,
 
+    ["held back while silent, it is said once speaking is allowed even without a repeat"] = function(t)
+        withDispel({ party1 = 2 }, function(spoken, advance, debuffs)
+            module.settings.silentOutOfCombat = true
+            module.settings.dispellable.repeatInterval = 0
+            debuffs.party1 = { "Curse" }
+            auraEvent("party1")
+            InCombatLockdown = function()
+                return true
+            end
+            advance(0.2)
+            module:checkDispels()
+            advance(10)
+            module:checkDispels()
+            t:assertEqual(#spoken, 1)
+            t:assertEqual(spoken[1], "Curse 2")
+        end)
+    end,
+
+    ["a read refused on the repeat says unavailable too"] = function(t)
+        withDispel({ party1 = 2 }, function(spoken, advance, debuffs, refuse)
+            local notified = {}
+            local savedNotify = WowVision.notify
+            WowVision.notify = function(_, text)
+                tinsert(notified, text)
+            end
+            debuffs.party1 = { "Poison" }
+            auraEvent("party1")
+            refuse()
+            advance(5)
+            module:checkDispels()
+            WowVision.notify = savedNotify
+            t:assertEqual(#notified, 1)
+            t:assertEqual(#spoken, 1)
+        end)
+    end,
+
     ["a refused read says unavailable once, never a debuff"] = function(t)
         withDispel({ party1 = 2 }, function(spoken, advance, debuffs, refuse)
             local notified = {}

@@ -101,11 +101,7 @@ module.dispelSetting = dispelSetting
 local WATCH_KEYS = { enabled = true, watchParty = true, watchRaid = true }
 for _, subField in ipairs(dispelField:getSubFields()) do
     if WATCH_KEYS[subField.key] then
-        subField.events.valueChange:subscribe(module, function(subscriber)
-            if subscriber.enabled then
-                subscriber:rebuild()
-            end
-        end)
+        module.decidesWhoIsWatched(subField)
     end
 end
 
@@ -168,7 +164,7 @@ function module:countDispellable(unit)
     if read == nil then
         return nil
     end
-    local count = 0
+    local count, word = 0, nil
     for index = 1, MAX_INDEX do
         local lines = read.fill(unit, index)
         if lines == nil then
@@ -178,14 +174,9 @@ function module:countDispellable(unit)
             break
         end
         count = index
+        word = read.word()
     end
-    if count == 0 then
-        return 0
-    end
-    if read.fill(unit, count) == nil then
-        return count
-    end
-    return count, read.word()
+    return count, word
 end
 
 -- Members --------------------------------------------------------------------------
@@ -201,7 +192,13 @@ function module:rebuildDispel(inCombat)
         self.dispelRaidMode = nil
         return
     end
-    local raid = IsInRaid() and dispelSetting("watchRaid")
+    -- In a raid the members carry the monitor's raid numbers: with only
+    -- Watch Party on, the player's own raid group by those numbers, so a
+    -- number names the same person in both. Only when the monitor watches
+    -- no raid either does the party keep its party numbers.
+    local watchRaid = dispelSetting("watchRaid")
+    local ownGroupOnly = not watchRaid and dispelSetting("watchParty") and self.settings.watchRaid
+    local raid = IsInRaid() and (watchRaid or ownGroupOnly)
     if raid and inCombat and self.dispelRaidMode then
         self.rosterDirty = true
         return
@@ -210,7 +207,8 @@ function module:rebuildDispel(inCombat)
     self.dispelMembers, self.dispelAliases = self:collect(self.dispelMembers, {
         includeSelf = self.settings.includeSelf,
         party = dispelSetting("watchParty"),
-        raid = dispelSetting("watchRaid"),
+        raid = watchRaid or ownGroupOnly,
+        ownGroupOnly = ownGroupOnly,
     })
     -- new members carry no dispel state yet: read them
     self:markAllDispel()
@@ -335,6 +333,7 @@ function module:checkDispels()
     local state = due.dispel
     if count == nil then
         state.lastSaid = now
+        self:dispelUnavailable()
         return
     end
     GroupHealth.dispelStep(state, count, now)

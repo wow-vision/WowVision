@@ -60,7 +60,7 @@ Stirbt ein Mitglied, hörst du einmal seine Nummer und „tot“. Wer schon tot 
 
 Bekommt ein beobachtetes Mitglied einen Schwächungszauber, den du bannen kannst, hörst du die Art des Zaubers und die Nummer des Mitglieds, zum Beispiel „Gift 3“. Es zählen nur Schwächungszauber, die deine Klasse und deine Talente bannen können: Das entscheidet das Spiel. Ein Druide, der Flüche und Gifte entfernt, hört nur Flüche und Gifte. Die Ansage ist aus, bis du Bannbare Schwächungszauber ansagen unter Bannbare Schwächungszauber in den Einstellungen des Monitors einschaltest.
 
-Wer auf Schwächungszauber beobachtet wird, hat unter Bannbare Schwächungszauber eigene Schalter Gruppe beobachten (an) und Schlachtzug beobachten (aus), unabhängig von denen des Monitors. Dich selbst einbeziehen und die Schlachtzugsgruppen gelten wie beim Monitor, und die Nummern sind dieselben.
+Wer auf Schwächungszauber beobachtet wird, hat unter Bannbare Schwächungszauber eigene Schalter Gruppe beobachten (an) und Schlachtzug beobachten (aus), unabhängig von denen des Monitors. Dich selbst einbeziehen und die Schlachtzugsgruppen gelten wie beim Monitor, und die Nummern sind dieselben. Im Schlachtzug mit nur Gruppe beobachten an wird deine eigene Schlachtzugsgruppe unter ihren Schlachtzugsnummern beobachtet, sodass eine Nummer bei beiden dieselbe Person meint.
 
 - Ein Mitglied wird sofort gesagt, wenn es einen neuen Schwächungszauber bekommt.
 - Solange der Zauber auf ihm bleibt, wird es im Abstand von Wiederholen alle erneut gesagt, sofern WowVision sonst nichts zu sagen hat. Die Wiederholung beginnt nur nach einem neuen Zauber und endet, sobald das Mitglied keinen mehr trägt.

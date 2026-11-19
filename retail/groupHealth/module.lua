@@ -91,6 +91,7 @@ local function decidesWhoIsWatched(field)
     end)
     return field
 end
+module.decidesWhoIsWatched = decidesWhoIsWatched
 
 decidesWhoIsWatched(settings:add({
     key = "includeSelf",
@@ -338,10 +339,11 @@ local function newMember(unit, number, role, old)
     return member
 end
 
--- `watch` says who a list holds: { includeSelf, party, raid }. The monitor's
--- list follows its own switches, the dispel list (dispel.lua) its own
--- party and raid switches; both take Include Yourself and the raid groups
--- from here.
+-- `watch` says who a list holds: { includeSelf, party, raid, ownGroupOnly }.
+-- The monitor's list follows its own switches, the dispel list (dispel.lua)
+-- its own party and raid switches; both take Include Yourself and the raid
+-- groups from here. ownGroupOnly: a raid list of the player's own group
+-- only (by raid numbers, the raid groups not applying).
 function module:buildRaid(members, aliases, previous, watch)
     local roster = {}
     local rosterRoles = {}
@@ -353,10 +355,24 @@ function module:buildRaid(members, aliases, previous, watch)
         end
     end
     local numbers = GroupHealth.raidNumbers(roster, MAX_RAID_MEMBERS or 40)
+    local ownGroup = nil
+    if watch.ownGroupOnly then
+        for index in pairs(numbers) do
+            if sameUnit("raid" .. index, "player") then
+                ownGroup = roster[index]
+            end
+        end
+    end
     for index, number in pairs(numbers) do
         local unit = "raid" .. index
         local isSelf = sameUnit(unit, "player")
-        if raidGroupWatched(roster[index]) and (watch.includeSelf or not isSelf) then
+        local inGroup
+        if watch.ownGroupOnly then
+            inGroup = roster[index] == ownGroup
+        else
+            inGroup = raidGroupWatched(roster[index])
+        end
+        if inGroup and (watch.includeSelf or not isSelf) then
             members[unit] = newMember(unit, number, roleOf(unit, rosterRoles[index]), previous(unit))
             -- Events may name the same person by another token.
             if isSelf then
@@ -673,8 +689,10 @@ end
 function module:onDisable()
     self.members = {}
     self.aliases = {}
+    self.raidMode = nil
     self.dispelMembers = {}
     self.dispelAliases = {}
+    self.dispelRaidMode = nil
     self.dispelDirty = {}
 end
 

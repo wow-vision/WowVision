@@ -200,8 +200,10 @@ testRunner:addSuite("GroupHealthModule", {
         withGroup("raid", 10, false, function()
             module.enabled = true
             setDispel("enabled", true)
-            t:assertNil(module.dispelMembers.raid2)
-            t:assertEqual(count(module.members), 10)
+            -- Watch Party alone: the player's own raid group, by raid numbers
+            t:assertEqual(count(module.dispelMembers), 5)
+            t:assertNil(module.dispelMembers.raid6)
+            t:assertEqual(module.dispelMembers.raid2.number, module.members.raid2.number)
             setDispel("watchRaid", true)
             t:assertEqual(count(module.dispelMembers), 10)
             setRaidGroup(2, false)
@@ -209,6 +211,16 @@ testRunner:addSuite("GroupHealthModule", {
             t:assertNil(module.dispelMembers.raid6)
             module.settings.watchRaid = false
             t:assertEqual(count(module.dispelMembers), 5)
+        end)
+    end,
+
+    ["in a raid the monitor watches no raid in, the dispel party keeps party numbers"] = function(t)
+        withGroup("raid", 10, false, function()
+            module.settings.watchRaid = false
+            module.enabled = true
+            setDispel("enabled", true)
+            t:assertEqual(count(module.dispelMembers), 1)
+            t:assertEqual(module.dispelMembers.player.number, 1)
         end)
     end,
 
