@@ -47,7 +47,9 @@ Drücke die Leertaste für den vollständigen Tooltip des Gegenstands.
 | Rücktaste | Rechtsklick. Er benutzt, legt an, öffnet oder verschiebt den Gegenstand, je nachdem, was offen ist (siehe unten). |
 | \\ oder Strg+D (Ziehen) | Nimmt den Gegenstand auf deinen Cursor, wie beim Ziehen mit der Maus. |
 | Entf oder Alt+Strg+\\ (Cursorgegenstand zerstören) | Zerstört den Gegenstand auf deinem Cursor, nach einer Rückfrage. Das funktioniert überall im Spiel, nicht nur in den Taschen. |
-| Umschalt+F10 | Das Kontextmenü des Platzes. Es führt Linksklick, Rechtsklick und Ziehen auf und sagt, was jeder Klick gerade bewirkt. |
+| Umschalt+Rücktaste (Favorit auswählen, Select Favorite) | Markiert den Gegenstand als Favorit oder nimmt die Markierung weg. Siehe [Favoriten](#favoriten) unten. Die Rücktaste allein bleibt der Rechtsklick. |
+| Umschalt+Eingabe (Plunder auswählen, Select Junk) | Markiert den Gegenstand als Plunder oder nimmt die Markierung weg. Siehe [Plunder](#plunder) weiter unten. |
+| Umschalt+F10 | Das Kontextmenü des Platzes. Es führt Linksklick, Rechtsklick und Ziehen auf, sagt, was jeder Klick gerade bewirkt, und enthält Als Favorit markieren und Als Plunder markieren (oder Favoritenmarkierung entfernen und Plundermarkierung entfernen). |
 
 (\\ liegt auf deutschen Tastaturen auf Alt Gr+ß; belege die Aktion bei Bedarf um.)
 
@@ -75,6 +77,35 @@ Der Linksklick-Eintrag sagt Aufnehmen, oder Gegenstand ablegen, solange du etwas
 ### Einen Stapel teilen
 
 Um einen Stapel zu teilen, drücke Umschalt+Eingabe auf dem Platz. Das Spiel öffnet ein kleines Feld, das fragt, wie viele Gegenstände du nehmen willst; WowVision liest es nicht vor. Tippe die Menge, drücke Eingabe und lege den neuen Stapel mit Eingabe auf einem leeren Platz ab.
+
+Umschalt+Eingabe ist auch die Standardtaste von Plunder auswählen (siehe [Plunder](#plunder)). Auf den Gegenstandsplätzen deiner Taschen und der Bank hat Plunder auswählen Vorrang: Umschalt+Eingabe markiert dort Plunder und teilt keinen Stapel mehr und legt auch keinen Gegenstandslink ins Chatfeld. Willst du den Umschaltklick zurück, gib Plunder auswählen eine andere Taste im Fenster für die Tastenbelegung (Tastenbelegung unter Benutzeroberfläche im WowVision-Menü); Umschalt+Eingabe tut dann wieder, was es vorher tat.
+
+## Plunder
+
+Du kannst Gegenstände als Plunder markieren. WowVision verkauft dann jeden markierten Gegenstand für dich, sobald sich ein Händler öffnet, und sagt, was verkauft wurde.
+
+- Stelle dich in deinen Taschen auf den Gegenstand und drücke Plunder auswählen (standardmäßig Umschalt+Eingabe). WowVision sagt zum Beispiel „Leinenstoff: als Plunder markiert“. Drückst du die Taste noch einmal, sagt es „Leinenstoff: ist kein Plunder mehr“, und die Markierung ist weg. Das Kontextmenü des Platzes (Umschalt+F10) hat dieselbe Aktion, benannt Als Plunder markieren oder Plundermarkierung entfernen.
+- Ein markierter Gegenstand wird mit „[Plunder]“ vor dem Namen gelesen, zum Beispiel „[Plunder] Leinenstoff, Weiß, 12“. Das Etikett verschwindet, sobald du die Markierung wegnimmst.
+- Die Markierung gehört zum Gegenstand, nicht zum Platz oder Stapel: Jeder Stapel Leinenstoff in deinen Taschen und in der Bank wird mit „[Plunder]“ gelesen, und alle werden verkauft. Gegenstände, die in zufälligen Varianten vorkommen, etwa „Handschuhe des Affen“ und „Handschuhe des Adlers“, werden Variante für Variante markiert; markierst du die Affen-Handschuhe, bleiben die Adler-Handschuhe unberührt. Verzauberungen, Edelsteine und die Stufe des Gegenstands ändern nichts daran, um welchen Gegenstand es sich handelt.
+- Ein Gegenstand, den kein Händler kauft, etwa ein Questgegenstand oder der Ruhestein, lässt sich nicht markieren: WowVision sagt das. Eine schon vorhandene Markierung lässt sich immer wegnehmen.
+- Die Markierungen bleiben zwischen den Sitzungen erhalten, für jeden Charakter einzeln. Eine Markierung auf einem Charakter verkauft nie etwas auf einem anderen.
+- Unter Fenster, dann Plunder im WowVision-Menü gibt es Alle Plundermarkierungen vergessen, das nach einer Rückfrage jede Markierung wegnimmt, und einen Schalter Aktiviert. Ist das Modul aus, gibt es keine Etiketten, keine Taste und keinen Verkauf.
+
+In Retail und WoW: Forever führt die Kategorie Plunder des Stopps Gegenstandslisten (siehe [Gegenstandslisten](#gegenstandslisten)) jeden markierten Gegenstand der offenen Taschen auf, in Taschenreihenfolge, sodass dein ganzer Plunder an einem Ort liegt. Jeder Eintrag ist derselbe Platz wie in den Taschen: Eingabe nimmt den Gegenstand auf, Rücktaste klickt ihn mit rechts an, die Leertaste liest seinen Tooltip, und Plunder auswählen nimmt die Markierung weg, woraufhin der Gegenstand aus der Liste verschwindet.
+
+Was verkauft wird und wann, stellst du in den Händler-Einstellungen ein: siehe [Händler-Einstellungen](./npcs.md#händler-einstellungen). Kurz gesagt: Der Verkauf geschieht einmal, wenn sich das Händlerfenster öffnet. Er verkauft die Gegenstände, die du markiert hast, und nichts sonst (auch graue Gegenstände, wenn du diese Einstellung eingeschaltet hast), nur aus deinen Taschen, nie aus der Bank und nie etwas, das du trägst. Gesperrte Gegenstände und Gegenstände, die kein Händler kauft, werden übersprungen. Danach sagt WowVision, was verkauft wurde, zum Beispiel „Markierter Plunder für 3 Silber 20 Kupfer verkauft: Leinenstoff, Abgenutztes Kurzschwert.“ Bis zu fünf Namen werden vorgelesen, dann „und N weitere“. Was du aus Versehen verkauft hast, kannst du im Reiter Rückkauf des Händlers zurückkaufen.
+
+## Favoriten
+
+Du kannst Gegenstände als Favoriten markieren, um sie leicht wiederzufinden. Anders als Plunder wird ein Favorit nie verkauft.
+
+- Stelle dich in deinen Taschen auf den Gegenstand und drücke Favorit auswählen (standardmäßig Umschalt+Rücktaste; die Rücktaste allein ist der Rechtsklick). WowVision sagt zum Beispiel „Leinenstoff: als Favorit markiert“. Drückst du die Taste noch einmal, sagt es „Leinenstoff: ist kein Favorit mehr“, und die Markierung ist weg. Das Kontextmenü des Platzes (Umschalt+F10) hat dieselbe Aktion, benannt Als Favorit markieren oder Favoritenmarkierung entfernen.
+- Ein Favorit wird mit „[Favorit]“ vor dem Namen gelesen, vor „[Plunder]“, wenn der Gegenstand auch als Plunder markiert ist: „[Favorit] [Plunder] Leinenstoff, Weiß, 12“.
+- Wie bei Plunder gehört die Markierung zum Gegenstand, nicht zum Platz oder Stapel, und Gegenstände in zufälligen Varianten werden einzeln pro Variante markiert. Jeder Gegenstand kann ein Favorit sein, auch einer, den kein Händler kauft, wie der Ruhestein.
+- Die Markierungen bleiben zwischen den Sitzungen erhalten, für jeden Charakter getrennt.
+- In Retail und WoW: Forever führt die Kategorie Favoriten des Stopps Gegenstandslisten (siehe [Gegenstandslisten](#gegenstandslisten)) jeden Favoriten der offenen Taschen auf, in Taschenreihenfolge. Jeder Eintrag ist derselbe Platz wie in den Taschen, und Favorit auswählen nimmt dort die Markierung weg, woraufhin der Gegenstand aus der Liste verschwindet.
+- Der Verkauf beim Händler verkauft nie einen Favoriten, auch nicht, wenn er zusätzlich als Plunder markiert oder grau ist, und auch nicht bei ausgeschaltetem Modul Favoriten: Ausschalten blendet die Markierungen nur aus.
+- Unter Fenster, dann Favoriten im WowVision-Menü gibt es Alle Favoriten vergessen, das nach einer Rückfrage jede Markierung wegnimmt, und einen Schalter Aktiviert. Ist das Modul aus, gibt es keine Etiketten und keine Taste.
 
 ## Der Cursor
 
@@ -127,6 +158,14 @@ Um Gegenstände zwischen deinen Taschen und der Bank zu verschieben, öffnest du
 
 Diese Versionen haben zwei Taschenansichten, die du im Taschenmenü des Spiels wählst. WowVision folgt dem, was das Spiel zeigt.
 
+### Gegenstandslisten
+
+Gibt es etwas anzusehen, bekommen die Taschen einen zusätzlichen Stopp namens Gegenstandslisten. Er kommt direkt nach den Taschen, und beim Öffnen der Taschen werden weiterhin ihre Gegenstände zuerst gelesen. Er enthält Kategorien wie die des Scanners, jede liest ihren Namen und wie viele Gegenstände sie hat, zum Beispiel „Neue Gegenstände (2)“. Pfeil rechts öffnet eine Kategorie, Pfeil links schließt sie. Ihre Gegenstände werden wie Taschenplätze gelesen, und du kannst sie von dort wie gewohnt benutzen, anlegen oder verschieben. Dieselben Gegenstände liegen weiterhin in ihren Plätzen in den Taschen. Eine leere Kategorie fehlt, und sind alle leer, ist der Stopp weg und die Taschen öffnen sich wie bisher.
+
+- Plunder: jeder Gegenstand, den du als Plunder markiert hast, mit dem Zusatz, in Taschenreihenfolge (siehe [Plunder](#plunder)). Die Kategorie ist zu Beginn geschlossen.
+- Favoriten: jeder Gegenstand, den du als Favorit markiert hast, in Taschenreihenfolge (siehe [Favoriten](#favoriten)). Die Kategorie ist zu Beginn geschlossen.
+- Neue Gegenstände: was du seit deinem letzten Blick bekommen hast, etwa Erbeutetes, Gekauftes oder Zugeschicktes und die Belohnungen von Quests. Die Kategorie ist zu Beginn offen. Das Spiel markiert manche neuen Gegenstände selbst, und WowVision listet diese. Aber das Spiel markiert nicht immer alles (die Belohnung einer Quest blieb in WoW: Forever unmarkiert), deshalb zählt WowVision nach jeder Änderung auch, was deine Taschen von jedem Gegenstand enthalten. Ein Gegenstand, von dem du jetzt mehr hast als vorher, ist neu, auf jedem Platz, der ihn enthält. Gegenstände zu verschieben, zu sortieren oder zu teilen oder einen Teil eines Stapels zu benutzen macht nichts neu, und auch nicht die Gegenstände, die du beim Einloggen oder Neuladen schon bei dir hattest. Das Spiel nimmt seine Neu-Markierung von einem Gegenstand, sobald du den Cursor darauf bewegst, und WowVision tut dasselbe, wenn du auf einem Platz landest; ein Gegenstand würde also verschwinden, sobald du ihn erreichst. WowVision behält deshalb die neuen Gegenstände in der Liste, bis du die Taschen geöffnet und wieder geschlossen hast. Ein Gegenstand, der ankommt, während die Taschen geschlossen sind, wartet auf dich.
+
 ### Zusammengefasste Taschen
 
 Alle deine Taschen werden als ein großes Raster gezeichnet, und WowVision liest es genauso: zuerst der Rucksack, dann die anderen Taschen, ohne Taschengrenzen. Das Fenster öffnet sich auf dem Stopp Taschen. Die Stopps sind:
@@ -135,6 +174,7 @@ Alle deine Taschen werden als ein großes Raster gezeichnet, und WowVision liest
 2. Suchen (Search): ein Textfeld. Gehe mit Tab hinein und tippe. Solange Text darin steht, listen die Taschen (und die Bank) nur die Gegenstände auf, die passen, als einfache Liste in Platzreihenfolge, egal welche Form du gewählt hast; leere Plätze und Gegenstände, die nicht passen, fehlen, und eine Tasche ohne Treffer sagt „Keine Ergebnisse“. Mit Tab verlässt du das Feld, und wenn du es leerst, sind alle Plätze wieder da. Das Spiel leert es von selbst, wenn du die Taschen schließt.
 3. Taschen (Bags): die Plätze in der Form, die du gewählt hast (ein Raster ist zehn Plätze breit, die erste Zeile kann kürzer sein). In der Listenform stehen die Plätze in Platzreihenfolge, der Rucksack zuerst.
 4. Taschenplätze (Bag Slots): eine Zeile mit den Taschenplatz-Schaltflächen des Rucksacks und deiner vier Taschen. Jede liest „Taschenplatz“ und den Namen der Tasche. Die Reagenzientasche und, in WoW: Forever, der Schlüsselbund zeichnet das Spiel auch in der zusammengefassten Ansicht als eigene Rahmen. Sie stehen nicht in dieser Zeile. Jede bekommt einen eigenen Stopp, mit ihrem Taschenplatz zuerst, wie in der Einzelansicht weiter unten.
+5. Gegenstandslisten (Item Lists): die oben beschriebenen Kategorien, wenn etwas darin ist.
 
 Ein Rucksack eines Accounts ohne Authenticator zeigt vier zusätzliche Plätze, die nichts aufnehmen können. WowVision liest diese nicht als Plätze. Die Schaltfläche Plätze hinzufügen bleibt in der Taschensteuerung.
 
@@ -151,6 +191,7 @@ Jede Tasche ist ein eigenes Fenster, wie in Classic. Jede offene Tasche ist ein 
 
 - Der erste Eintrag ist der Taschenplatz: „Taschenplatz“ und der Taschenname. Beide Klicks darauf sagen Tasche schließen, oder Gegenstand ablegen, solange du eine Tasche hältst. Das eigene Menü der Tasche (Filter, Aufräumen, Taschenansicht wechseln) liegt im Kontextmenü des Platzes, als Taschenmenü.
 - Taschen sortieren, Geld und Plätze hinzufügen gehören zum Rucksack. Sie erscheinen vor den Taschen in einem Stopp namens Taschensteuerung, gefolgt vom Stopp Suchen. Das Fenster öffnet sich auf der ersten Tasche.
+- Der Stopp Gegenstandslisten (siehe oben) kommt zuletzt, nach den Taschen, wenn etwas darin ist.
 
 ## Bank in Retail und WoW: Forever
 
