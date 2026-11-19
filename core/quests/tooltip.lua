@@ -30,9 +30,17 @@ local function call(fn, ...)
     return a, b
 end
 
--- The quest colour by level, the five classic words. GetQuestDifficultyColor
--- returns one of the QuestDifficultyColors tables itself, so the word comes
+-- The quest colour, the five classic words. The game's colour functions
+-- return one of the QuestDifficultyColors tables itself, so the word comes
 -- from that identity, never from guessing at RGB values.
+--
+-- Two ways to the colour. The classic quest log works it out from the quest's
+-- level (GetQuestDifficultyColor). The modern one asks the game how hard the
+-- quest is for this player, and the formula by level it still carries gives
+-- other colours; a client with that log sets
+-- WowVision.quests.ratedDifficultyColor(questId) -> one of the
+-- QuestDifficultyColors tables or nil (retail/questDifficulty.lua), and that
+-- answer wins.
 local DIFFICULTY_WORDS = {
     trivial = "Grey",
     standard = "Green",
@@ -41,11 +49,17 @@ local DIFFICULTY_WORDS = {
     impossible = "Red",
 }
 
-function WowVision.quests.difficultyColorWord(level)
-    if type(level) ~= "number" or level <= 0 or GetQuestDifficultyColor == nil or QuestDifficultyColors == nil then
+function WowVision.quests.difficultyColorWord(level, questId)
+    if QuestDifficultyColors == nil then
         return nil
     end
-    local color = call(GetQuestDifficultyColor, level)
+    local color
+    if questId ~= nil then
+        color = call(WowVision.quests.ratedDifficultyColor, questId)
+    end
+    if color == nil and type(level) == "number" and level > 0 then
+        color = call(GetQuestDifficultyColor, level)
+    end
     if color == nil then
         return nil
     end
@@ -73,8 +87,8 @@ function api.difficultyLevel(questId)
     return nil
 end
 
-function api.colorWord(level)
-    return WowVision.quests.difficultyColorWord(level)
+function api.colorWord(level, questId)
+    return WowVision.quests.difficultyColorWord(level, questId)
 end
 
 -- The game's tag: Elite, Group, Dungeon, Raid, PvP ... (already localized).
@@ -174,7 +188,7 @@ function WowVision.quests.tooltipLines(entry, kind, reads)
     local level = reads.difficultyLevel(questId) or entry.level
     if type(level) == "number" and level > 0 then
         local text = L["Level"] .. " " .. tostring(level)
-        local color = reads.colorWord(level)
+        local color = reads.colorWord(level, questId)
         if color ~= nil then
             text = text .. ", " .. color
         end

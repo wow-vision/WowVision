@@ -38,6 +38,24 @@ local function joined(lines)
     return table.concat(lines, " | ")
 end
 
+-- The game's colour tables and its colour by level, with the modern
+-- client's rating of a quest (or none), for one check.
+local function withColors(rated, check)
+    local savedColors, savedByLevel, savedRated =
+        QuestDifficultyColors, GetQuestDifficultyColor, WowVision.quests.ratedDifficultyColor
+    QuestDifficultyColors = { trivial = {}, standard = {}, difficult = {}, verydifficult = {}, impossible = {} }
+    GetQuestDifficultyColor = function(level)
+        return level >= 20 and QuestDifficultyColors.difficult or QuestDifficultyColors.trivial
+    end
+    WowVision.quests.ratedDifficultyColor = rated
+    local ok, err = pcall(check)
+    QuestDifficultyColors, GetQuestDifficultyColor = savedColors, savedByLevel
+    WowVision.quests.ratedDifficultyColor = savedRated
+    if not ok then
+        error(err, 0)
+    end
+end
+
 testRunner:addSuite("QuestTooltip", {
     ["a nearby quest: title, level with colour, kind, giver with place, text"] = function(t)
         local lines = WowVision.quests.tooltipLines({
@@ -69,6 +87,43 @@ testRunner:addSuite("QuestTooltip", {
             "Kobold Camp Cleanup | Level 3, Green | Required Level 1 | Elite, Daily, 3 players"
                 .. " | Quest Giver: Marshal McBride, Northshire Abbey | Kill 10 Kobold Vermin."
         )
+    end,
+
+    ["the colour is asked for the quest, not only for its level"] = function(t)
+        local asked
+        WowVision.quests.tooltipLines({ questId = 7, name = "Q", level = 3 }, "nearby", reads({
+            colorWord = function(_, questId)
+                asked = questId
+            end,
+        }))
+        t:assertEqual(asked, 7)
+    end,
+
+    ["colour word: by level where the client does not rate the quest"] = function(t)
+        withColors(nil, function()
+            t:assertEqual(WowVision.quests.difficultyColorWord(21, 7), "Yellow")
+            t:assertEqual(WowVision.quests.difficultyColorWord(5, 7), "Grey")
+            t:assertEqual(WowVision.quests.difficultyColorWord(nil, 7), nil)
+        end)
+    end,
+
+    ["colour word: the client's rating of the quest wins over its level"] = function(t)
+        withColors(function(questId)
+            return questId == 7 and QuestDifficultyColors.standard or nil
+        end, function()
+            t:assertEqual(WowVision.quests.difficultyColorWord(5, 7), "Green", "rated")
+            t:assertEqual(WowVision.quests.difficultyColorWord(nil, 7), "Green", "rated, no level known")
+            t:assertEqual(WowVision.quests.difficultyColorWord(5, 8), "Grey", "no rating: by level")
+            t:assertEqual(WowVision.quests.difficultyColorWord(5), "Grey", "no quest: by level")
+        end)
+    end,
+
+    ["colour word: a rating that throws falls back to the level"] = function(t)
+        withColors(function()
+            error("refused")
+        end, function()
+            t:assertEqual(WowVision.quests.difficultyColorWord(21, 7), "Yellow")
+        end)
     end,
 
     ["the game's scaled level wins over the data's"] = function(t)

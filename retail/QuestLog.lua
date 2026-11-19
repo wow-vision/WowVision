@@ -81,39 +81,18 @@ local function rowText(kid)
     return nil
 end
 
--- QuestDifficultyColors keys don't spell out the five classic quest-color
--- names, but GetQuestDifficultyColor(level) returns the exact same table
--- object as one of these entries (checked with rawequal), so the mapping is
--- reliable rather than guessed from RGB values.
-local difficultyColorLabels = {
-    trivial = "Grey",
-    standard = "Green",
-    difficult = "Yellow",
-    verydifficult = "Orange",
-    impossible = "Red",
-}
-
+-- The colour word of a quest row (Grey, Green, Yellow, Orange, Red): the
+-- game's own rating of the quest, as the row is coloured
+-- (retail/questDifficulty.lua), else by the quest's level.
 local function questDifficultyWord(questID)
-    if C_QuestLog == nil or C_QuestLog.GetQuestDifficultyLevel == nil then
+    if questID == nil then
         return nil
     end
-    if GetQuestDifficultyColor == nil or QuestDifficultyColors == nil then
-        return nil
+    local level
+    if C_QuestLog ~= nil and C_QuestLog.GetQuestDifficultyLevel ~= nil then
+        level = C_QuestLog.GetQuestDifficultyLevel(questID)
     end
-    local level = C_QuestLog.GetQuestDifficultyLevel(questID)
-    if level == nil then
-        return nil
-    end
-    local ok, color = pcall(GetQuestDifficultyColor, level)
-    if not ok or color == nil then
-        return nil
-    end
-    for key, labelKey in pairs(difficultyColorLabels) do
-        if rawequal(color, QuestDifficultyColors[key]) then
-            return L[labelKey]
-        end
-    end
-    return nil
+    return WowVision.quests.difficultyColorWord(level, questID)
 end
 
 local function questScrollChild()

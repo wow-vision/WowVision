@@ -415,6 +415,8 @@ loadAddonFile("core/ui/tooltip/types/GameTooltip.lua")
 loadAddonFile("core/ui/tooltip/types/gameTooltipTests.lua")
 loadAddonFile("retail/questLogTooltip.lua")
 loadAddonFile("retail/questLogTooltipTests.lua")
+loadAddonFile("retail/questDifficulty.lua")
+loadAddonFile("retail/questDifficultyTests.lua")
 
 -- Object types read the game on demand: their spoken lines run here with
 -- stand-ins for the game functions they call.

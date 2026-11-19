@@ -1,2 +1,5 @@
 ### All Versions
 * Bags and bank: while the search box holds text, only the items that match are listed, as a plain list in slot order. Before, every slot stayed in the list and the ones that did not match said "Filtered", so a search still meant stepping through the whole bag. A bag without a match says "No results". Empty the box to get every slot back.
+
+### Modern
+* Quest colors: the color word of a quest (Grey, Green, Yellow, Orange, Red) in the quest log and in the quest tooltips of the scanner is now the one the game's quest log shows. It was worked out from the quest's level with a formula the game no longer uses for its log, which on WoW: Forever called a quest grey that the game shows green (a level 21 quest at level 27, for example).
