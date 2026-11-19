@@ -217,6 +217,38 @@ function module.visualRows(buttons)
     return rows
 end
 
+-- The text in the game's bag search box. The bag and bank boxes hold the
+-- same text (the game copies one into the others as it is typed), and the
+-- game clears it when the last of them hides.
+function module.searchText()
+    local box = BagItemSearchBox
+    if box == nil or box.GetText == nil then
+        return ""
+    end
+    return box:GetText() or ""
+end
+
+-- With a search typed, only the slots that hold a matching item, in the
+-- order given. The game dims the others and leaves them where they are;
+-- read out, that is a bag full of "Filtered" to step through, so they are
+-- left out, and the empty slots with them. Returns the slots to read and
+-- whether a search is on.
+function module.searchMatches(buttons)
+    if module.searchText() == "" then
+        return buttons, false
+    end
+    local matches = {}
+    for _, itemButton in ipairs(buttons) do
+        if itemButton:IsShown() then
+            local info = C_Container.GetContainerItemInfo(module.slotLocation(itemButton))
+            if info ~= nil and not info.isFiltered then
+                tinsert(matches, itemButton)
+            end
+        end
+    end
+    return matches, true
+end
+
 -- Emit a bag's item slots in the configured shape. Grid rows share the
 -- "grid" row key, so up and down follow POSITION in the row rather than
 -- the screen column: the combined bag fills from the bottom-right and a
@@ -224,9 +256,27 @@ end
 -- in SLOT order (the order the buttons are given in: slot 1 first), the way
 -- older addons do; screen order would start at the top-left cell, which is
 -- the LAST slot, and read the bag backwards. Returns the visual row count.
+-- While a bag search is typed, only the matching items are emitted, as a
+-- list in slot order whatever the shape (what is left of a grid has holes);
+-- a bag without a match says No results.
 function module.renderSlots(builder, buttons)
+    local all = buttons
+    local searching
+    buttons, searching = module.searchMatches(buttons)
+    if searching and #buttons == 0 then
+        local first = all[1]
+        if first ~= nil then
+            local bagID, slotID = module.slotLocation(first)
+            builder:addItem(
+                ControlId.structural("noMatch:" .. tostring(bagID) .. ":" .. tostring(slotID)),
+                nodes.text({ label = L["No results"] })
+            )
+            return 1
+        end
+        return 0
+    end
     local rows = module.visualRows(buttons)
-    local grid = module.settings.shape == "grid"
+    local grid = module.settings.shape == "grid" and not searching
     if not grid then
         for _, itemButton in ipairs(buttons) do
             if itemButton:IsShown() then

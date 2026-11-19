@@ -31,7 +31,7 @@ Home and End jump to the first or last slot (in a grid, of the current row). Cha
 An empty slot says "Empty". A slot with an item says the item's name followed by its quality colour as a word, and the stack count.
 
 - Classic Era, TBC and Mists: "Linen Cloth, White 12", "Heavy Leather Ball, White".
-- Retail and WoW: Forever: "Linen Cloth, White, 12". After the count the slot may add Quest Item, New, Locked (the item is in use, for example on the cursor) and Filtered (the slot does not match the bag search). While the game has not yet sent an item's name, the slot says Loading.
+- Retail and WoW: Forever: "Linen Cloth, White, 12". After the count the slot may add Quest Item, New, Locked (the item is in use, for example on the cursor) and, in the list of the bags in a fight, Filtered (the slot does not match the bag search). While the game has not yet sent an item's name, the slot says Loading.
 
 The colour word follows the game's quality colours: Grey (poor), White (common), Green (uncommon), Blue (rare), Purple (epic), Orange (legendary), Light Gold (artifact), Light Blue (heirloom). You can switch individual colours off in the Tooltip settings under Quality. See [Tooltips](../basics/tooltips.md).
 
@@ -130,7 +130,7 @@ These versions have two bag views, which you pick in the game's bag menu. WowVis
 All your bags are drawn as one big grid, and WowVision reads it the same way: the backpack first, then the other bags, no bag boundaries. The window opens on the Bags stop. The stops are:
 
 1. Bag Controls: Bag Menu, a dropdown with one submenu per bag (filters, clean up, switch bag view); Sort Bags; Money, which reads your gold, for example "Money, 12 Gold 5 Silver"; and Add Slots when the game offers it.
-2. Search: a text box. Tab into it and type, and slots that do not match read Filtered. Tab out to leave it.
+2. Search: a text box. Tab into it and type. While it holds text, the bags (and the bank) list only the items that match, as a plain list in slot order whatever shape you chose; empty slots and items that do not match are left out, and a bag without a match says "No results". Tab out to leave the box, and empty it to get every slot back. The game empties it by itself when you close the bags.
 3. Bags: the slots, in the shape you chose (a grid is ten slots wide, with the first row possibly shorter). In the list shape the slots are in slot order, backpack first.
 4. Bag Slots: a row with the bag slot buttons of the backpack and your four bags. Each reads "Bag Slot" and the bag's name. The reagent bag and, on WoW: Forever, the keyring are drawn by the game as their own frames even in combined view. They are not in this row. Each gets a stop of its own, with its bag slot first, as in the individual view below.
 
@@ -140,8 +140,8 @@ Example: find your Hearthstone with the search.
 
 1. Open the bags with B. Press Ctrl+Tab if you are inside another window.
 2. The window opens on Bags. Press Shift+Tab once to reach "Search".
-3. Type `hearth`. The slots that do not match now read Filtered.
-4. Press Tab to the Bags stop and read slots with Down.
+3. Type `hearth`.
+4. Press Tab to the Bags stop. Only the items that match are listed, so the Hearthstone is the first entry.
 
 ### Individual bags
 

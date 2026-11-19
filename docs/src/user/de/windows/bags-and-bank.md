@@ -31,7 +31,7 @@ Pos1 und Ende springen zum ersten oder letzten Platz (im Raster der aktuellen Ze
 Ein leerer Platz sagt „Leer“. Ein Platz mit einem Gegenstand sagt den Namen des Gegenstands, gefolgt von seiner Qualitätsfarbe als Wort und der Stapelgröße.
 
 - Classic Era, TBC und Mists: „Leinenstoff, Weiß 12“, „Schwerer Lederball, Weiß“.
-- Retail und WoW: Forever: „Leinenstoff, Weiß, 12“. Nach der Anzahl kann der Platz Questgegenstand, Neu, Gesperrt (der Gegenstand ist in Benutzung, zum Beispiel auf dem Cursor) und Gefiltert (der Platz passt nicht zur Taschensuche) ergänzen. Solange das Spiel den Namen eines Gegenstands noch nicht geschickt hat, sagt der Platz Lädt.
+- Retail und WoW: Forever: „Leinenstoff, Weiß, 12“. Nach der Anzahl kann der Platz Questgegenstand, Neu, Gesperrt (der Gegenstand ist in Benutzung, zum Beispiel auf dem Cursor) und, in der Liste der Taschen im Kampf, Gefiltert (der Platz passt nicht zur Taschensuche) ergänzen. Solange das Spiel den Namen eines Gegenstands noch nicht geschickt hat, sagt der Platz Lädt.
 
 Das Farbwort folgt den Qualitätsfarben des Spiels: Grau (schlecht), Weiß (gewöhnlich), Grün (ungewöhnlich), Blau (selten), Violett (episch), Orange (legendär), Hellgold (Artefakt), Hellblau (Erbstück). Einzelne Farben kannst du in den Tooltip-Einstellungen unter Qualität ausschalten. Siehe [Tooltips](../basics/tooltips.md).
 
@@ -132,7 +132,7 @@ Diese Versionen haben zwei Taschenansichten, die du im Taschenmenü des Spiels w
 Alle deine Taschen werden als ein großes Raster gezeichnet, und WowVision liest es genauso: zuerst der Rucksack, dann die anderen Taschen, ohne Taschengrenzen. Das Fenster öffnet sich auf dem Stopp Taschen. Die Stopps sind:
 
 1. Taschensteuerung (Bag Controls): Taschenmenü (Bag Menu), ein Dropdown mit einem Untermenü pro Tasche (Filter, Aufräumen, Taschenansicht wechseln); Taschen sortieren; Geld, das dein Gold liest, zum Beispiel „Geld, 12 Gold 5 Silber“; und Plätze hinzufügen, wenn das Spiel das anbietet.
-2. Suchen (Search): ein Textfeld. Gehe mit Tab hinein und tippe, und Plätze, die nicht passen, lesen Gefiltert. Mit Tab verlässt du das Feld.
+2. Suchen (Search): ein Textfeld. Gehe mit Tab hinein und tippe. Solange Text darin steht, listen die Taschen (und die Bank) nur die Gegenstände auf, die passen, als einfache Liste in Platzreihenfolge, egal welche Form du gewählt hast; leere Plätze und Gegenstände, die nicht passen, fehlen, und eine Tasche ohne Treffer sagt „Keine Ergebnisse“. Mit Tab verlässt du das Feld, und wenn du es leerst, sind alle Plätze wieder da. Das Spiel leert es von selbst, wenn du die Taschen schließt.
 3. Taschen (Bags): die Plätze in der Form, die du gewählt hast (ein Raster ist zehn Plätze breit, die erste Zeile kann kürzer sein). In der Listenform stehen die Plätze in Platzreihenfolge, der Rucksack zuerst.
 4. Taschenplätze (Bag Slots): eine Zeile mit den Taschenplatz-Schaltflächen des Rucksacks und deiner vier Taschen. Jede liest „Taschenplatz“ und den Namen der Tasche. Die Reagenzientasche und, in WoW: Forever, der Schlüsselbund zeichnet das Spiel auch in der zusammengefassten Ansicht als eigene Rahmen. Sie stehen nicht in dieser Zeile. Jede bekommt einen eigenen Stopp, mit ihrem Taschenplatz zuerst, wie in der Einzelansicht weiter unten.
 
@@ -142,8 +142,8 @@ Beispiel: deinen Ruhestein mit der Suche finden.
 
 1. Öffne die Taschen mit B. Drücke Strg+Tab, wenn du in einem anderen Fenster bist.
 2. Das Fenster öffnet sich auf Taschen. Drücke einmal Umschalt+Tab, um „Suchen“ zu erreichen.
-3. Tippe `ruhe`. Die Plätze, die nicht passen, lesen jetzt Gefiltert.
-4. Gehe mit Tab zum Stopp Taschen und lies die Plätze mit Pfeil runter.
+3. Tippe `ruhe`.
+4. Gehe mit Tab zum Stopp Taschen. Dort stehen nur die Gegenstände, die passen, der Ruhestein ist also der erste Eintrag.
 
 ### Einzelne Taschen
 
