@@ -112,6 +112,19 @@ Fast jede Ansage ist ein Alarm, den du ausschalten oder auf einen Sound umstelle
 
 Spring, geh zur Seite, überspring den Wegpunkt mit Strg+W, geh mit Strg+S einen zurück, oder ändere die Ankunftsdistanz mit Alt+P. Steht der NPC, den du suchst, hinter einem Tresen, sprich ihn direkt an. Siehe [Fehlerbehebung](../getting-started/troubleshooting.md#ich-hänge-auf-einer-route-fest).
 
+### Wie fahre ich am besten mit Schiffen oder Zeppelinen?
+
+WowNav (WoW: Forever) führt dich zum Anleger, aber nicht auf das Fahrzeug, und es kann nicht erkennen, wann das Schiff angekommen ist. So klappt es am besten. Die Namen unten sind die deutschen; auf einem englischen Client lauten sie "Ship dock to ...", "Zeppelin dock to ...", "On the ship" und "On the zeppelin". Einzelheiten stehen unter [WowNav](../world/wownav.md#anleger).
+
+1. Drücke F10, suche das Ziel, zum Beispiel "Auberdine", und wähle den Anleger deiner Linie, "Schiffsanleger nach Auberdine" (bei Zeppelinen: "Zeppelinturm nach Grom'gol"). Eingabe startet die Route wie üblich.
+2. Wenn du am Anleger ankommst, startet meist von selbst ein gerades Beacon (Richtungspunkt) zum Einsteigpunkt "Am Schiff" (bei Zeppelinen: "Am Zeppelin"). Gehe noch nicht hin: Der Einsteigpunkt liegt dort, wo das Schiff anlegt, und ist es nicht da, fällst du ins Wasser (bei Zeppelinen: von der Plattform). An manchen Anlegern, bisher dem im Hafen von Sturmwind, startet WowNav stattdessen eine Route zum Punkt an Bord. Warte auch dort auf das Schiff.
+3. Startet nichts von selbst, starte das Beacon von Hand, und auf keinen Fall als Route. Drücke F10, drücke einmal Umschalt+Tab, um zum Kontrollkästchen Direkt zu kommen, und setze mit Eingabe den Haken. Direkt ist bei jedem Öffnen des Fensters wieder aus, du musst das also jedes Mal tun. Drücke dann Tab, bis du bei den Zielen bist, wähle den Eintrag "Am Schiff" deines Anlegers (die Suche nach "Am Schiff" hilft) und drücke Eingabe.
+4. Warte am Anleger, bis das Schiff da ist. Du hörst seine Glocke. Erst dann gehe, dem Beacon folgend, zum Punkt "Am Schiff" und warte an Bord. Zu Theramore siehe den Hinweis unter den Schritten.
+5. Ist das Schiff in der neuen Zone (der Ladebildschirm ist vorbei und du hörst die Ansage der neuen Zone), handle sofort und wiederhole Schritt 3: Drücke F10, drücke einmal Umschalt+Tab, setze mit Eingabe den Haken bei Direkt und drücke Tab, bis du bei den Zielen bist. Wähle diesmal den Anleger des Stegs, an dem das Schiff anlegen wird. Du bist noch nicht dort. Gemeint ist der Punkt, an dem du ankommen wirst. Die Daten benennen einen Anleger nach dem Ziel seiner Linie, also nennt der Name am Zielsteg wahrscheinlich den Ort, von dem du kommst, zum Beispiel "Schiffsanleger nach Menethil Harbor", wenn du in Auberdine ankommst. Die Suche nach dem Namen deines Startorts hilft.
+6. Drücke immer wieder Alt Gr, um zu hören, wie weit dieser Anleger noch entfernt ist. Wenn die Glocke ertönt, nur noch wenige Meter fehlen oder die Entfernung nicht mehr kleiner wird, gehe oder springe zu diesem Punkt. Manchmal musst du beim Aussteigen etwas kreativ sein, weil der Anleger auf der anderen Seite des Schiffes liegt.
+
+Hinweis zu Theramore: Dort ertönt die Schiffsglocke nicht (ein Fehler). Wirf beim Warten am Anleger in Schritt 4 immer wieder eine Angel in Richtung des Liegeplatzes des Schiffes aus. Solange der Wurf klappt, ist das Schiff nicht da. Geht er nicht mehr, ist das Schiff angekommen, und du kannst zum Einsteigpunkt gehen.
+
 ### Wo sehe ich jede Taste?
 
 In der [Tastenreferenz](../reference/keybindings.md) und im Spiel im Fenster für die Tastenbelegung: WowVision-Menü, Benutzeroberfläche, Tastenbelegung.

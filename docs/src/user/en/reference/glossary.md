@@ -110,6 +110,19 @@ Almost every announcement is an alert you can turn off or change to a sound. Fin
 
 Jump, step aside, skip the waypoint with Ctrl+W, go back one with Ctrl+S, or change the arrival distance with Alt+P. If the NPC you are looking for stands behind a counter, talk to them directly. See [Troubleshooting](../getting-started/troubleshooting.md#i-am-stuck-on-a-route).
 
+### How do I travel by ship or zeppelin?
+
+WowNav (WoW: Forever) guides you to the dock but not onto the vehicle, and it cannot tell when the ship has arrived. This is the way that works best. The names below are the English ones; on a German client they read "Schiffsanleger nach ...", "Zeppelinturm nach ...", "Am Schiff" and "Am Zeppelin". See [WowNav](../world/wownav.md#docks) for the details.
+
+1. Press F10, search for the destination, for example "Auberdine", and choose the dock of your line, "Ship dock to Auberdine" (zeppelins: "Zeppelin dock to Grom'gol"). Enter starts the route as usual.
+2. When you arrive at the dock, a straight beacon to the boarding point, "On the ship" (zeppelins: "On the zeppelin"), usually starts by itself. Do not walk to it yet: the boarding point is where the ship berths, and if the ship is not there you fall into the water (zeppelins: off the platform). At some docks, so far Stormwind's harbour, WowNav starts a route to the point on board instead. Wait for the ship there as well.
+3. If nothing starts by itself, start the beacon by hand, and never as a route. Press F10, press Shift+Tab once to reach the Direct checkbox, and press Enter to tick it. Direct is off every time the window opens, so you have to do this each time. Then press Tab until you reach Destinations, choose the "On the ship" entry of your dock (searching for "On the ship" helps) and press Enter.
+4. Wait at the dock until the ship is there. You hear its bell. Only then walk to the "On the ship" point, following the beacon, and wait on board. On Theramore Isle, see the note below the steps.
+5. When the ship has reached the new zone (the loading screen is over and you hear the announcement of the new zone), act at once and repeat step 3: press F10, press Shift+Tab once, tick Direct with Enter, press Tab until you reach Destinations. This time choose the dock of the pier where the ship is going to land. You are not there yet. It is the point you will arrive at. The data names a dock after where its line goes, so at the landing pier the name probably says where you came from, for example "Ship dock to Menethil Harbor" when you land in Auberdine. Searching for the name of your starting place helps.
+6. Press Alt Gr as often as you like to hear how far that dock is. When the bell rings, when only a few yards are left, or when the distance stops getting smaller, walk or jump to that point. Sometimes you have to be a little creative getting off, because the dock lies on the other side of the ship.
+
+Note for Theramore Isle: there the ship's bell does not ring (a bug). While you wait at the dock in step 4, cast a fishing line towards where the ship berths, again and again. As long as the cast works, the ship is not there. When it no longer works, the ship has arrived and you can walk to the boarding point.
+
 ### Where can I see every key?
 
 In the [Keybinding Reference](../reference/keybindings.md), and in the game in the keybinding window: WowVision menu, UI, Bindings.
