@@ -4,6 +4,7 @@
   <Script file="logic.lua" />
   <Script file="voices.lua" />
   <Script file="module.lua" />
+  <Script file="dispel.lua" />
   <Script file="tests.lua" />
 
 </Ui>

@@ -27,6 +27,8 @@ local settings = module:hasSettings()
 -- - "<number> dead" once (whether a member is dead is not secret).
 -- - The snapshot key: everyone once, in number order, a member at full
 --   health as "<number> full".
+-- - Dispellable debuffs (dispel.lua): "<number> <type>" when a member gets
+--   a debuff the player can dispel.
 -- All of it goes through the speech queue (retail/speech.lua) with the
 -- monitor's own voice, rate and volume: pitch needs a real SAPI voice,
 -- which an NVDA bridge voice is not.
@@ -89,6 +91,7 @@ local function decidesWhoIsWatched(field)
     end)
     return field
 end
+module.decidesWhoIsWatched = decidesWhoIsWatched
 
 decidesWhoIsWatched(settings:add({
     key = "includeSelf",
@@ -331,11 +334,17 @@ local function newMember(unit, number, role, old)
         member.lastRepeat = old.lastRepeat
         member.dead = old.dead
         member.changed = old.changed
+        member.dispel = old.dispel
     end
     return member
 end
 
-function module:buildRaid(members, aliases, previous)
+-- `watch` says who a list holds: { includeSelf, party, raid, ownGroupOnly }.
+-- The monitor's list follows its own switches, the dispel list (dispel.lua)
+-- its own party and raid switches; both take Include Yourself and the raid
+-- groups from here. ownGroupOnly: a raid list of the player's own group
+-- only (by raid numbers, the raid groups not applying).
+function module:buildRaid(members, aliases, previous, watch)
     local roster = {}
     local rosterRoles = {}
     for index = 1, MAX_RAID_MEMBERS or 40 do
@@ -346,10 +355,24 @@ function module:buildRaid(members, aliases, previous)
         end
     end
     local numbers = GroupHealth.raidNumbers(roster, MAX_RAID_MEMBERS or 40)
+    local ownGroup = nil
+    if watch.ownGroupOnly then
+        for index in pairs(numbers) do
+            if sameUnit("raid" .. index, "player") then
+                ownGroup = roster[index]
+            end
+        end
+    end
     for index, number in pairs(numbers) do
         local unit = "raid" .. index
         local isSelf = sameUnit(unit, "player")
-        if raidGroupWatched(roster[index]) and (self.settings.includeSelf or not isSelf) then
+        local inGroup
+        if watch.ownGroupOnly then
+            inGroup = roster[index] == ownGroup
+        else
+            inGroup = raidGroupWatched(roster[index])
+        end
+        if inGroup and (watch.includeSelf or not isSelf) then
             members[unit] = newMember(unit, number, roleOf(unit, rosterRoles[index]), previous(unit))
             -- Events may name the same person by another token.
             if isSelf then
@@ -364,11 +387,11 @@ function module:buildRaid(members, aliases, previous)
     end
 end
 
-function module:buildParty(members, previous)
-    if self.settings.includeSelf then
+function module:buildParty(members, previous, watch)
+    if watch.includeSelf then
         members.player = newMember("player", 1, roleOf("player"), previous("player"))
     end
-    if IsInGroup() and self.settings.watchParty then
+    if IsInGroup() and watch.party then
         for party = 1, 4 do
             local unit = "party" .. party
             if UnitExists(unit) then
@@ -378,9 +401,10 @@ function module:buildParty(members, previous)
     end
 end
 
-function module:collect()
+-- A list for `watch`; `old` is the list before, whose members carry over.
+function module:collect(old, watch)
     local byGuid = {}
-    for _, member in pairs(self.members) do
+    for _, member in pairs(old) do
         if member.guid ~= nil then
             byGuid[member.guid] = member
         end
@@ -390,24 +414,32 @@ function module:collect()
         return guid ~= nil and byGuid[guid] or nil
     end
     local members, aliases = {}, {}
-    if IsInRaid() and self.settings.watchRaid then
-        self:buildRaid(members, aliases, previous)
+    if IsInRaid() and watch.raid then
+        self:buildRaid(members, aliases, previous, watch)
     else
-        self:buildParty(members, previous)
+        self:buildParty(members, previous, watch)
     end
     return members, aliases
 end
 
 -- Raid numbers change only out of combat; a party's follow its tokens.
+-- Each list waits on its own: a raid list keeps its numbers until the fight
+-- ends, while a party list follows at once.
 function module:rebuild()
-    local raid = IsInRaid() and self.settings.watchRaid
-    if raid and InCombatLockdown() and self.raidMode then
-        self.rosterDirty = true
-        return
-    end
+    local inCombat = InCombatLockdown()
     self.rosterDirty = false
-    self.raidMode = raid
-    self.members, self.aliases = self:collect()
+    local raid = IsInRaid() and self.settings.watchRaid
+    if raid and inCombat and self.raidMode then
+        self.rosterDirty = true
+    else
+        self.raidMode = raid
+        self.members, self.aliases = self:collect(self.members, {
+            includeSelf = self.settings.includeSelf,
+            party = self.settings.watchParty,
+            raid = self.settings.watchRaid,
+        })
+    end
+    self:rebuildDispel(inCombat)
 end
 
 function module:memberFor(unit)
@@ -598,6 +630,7 @@ end
 -- Wiring ------------------------------------------------------------------------
 
 module:registerEvent("event", "UNIT_HEALTH")
+module:registerEvent("event", "UNIT_AURA")
 module:registerEvent("event", "GROUP_ROSTER_UPDATE")
 module:registerEvent("event", "PLAYER_ROLES_ASSIGNED")
 module:registerEvent("event", "PLAYER_REGEN_ENABLED")
@@ -606,12 +639,15 @@ module:registerEvent("event", "PLAYER_ENTERING_WORLD")
 function module:onEvent(event, ...)
     if event == "UNIT_HEALTH" then
         self:onHealth(...)
+    elseif event == "UNIT_AURA" then
+        self:onAura(...)
     elseif event == "PLAYER_REGEN_ENABLED" then
         if self.rosterDirty then
             self:rebuild()
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         self.unavailableSaid = false
+        self.dispelUnavailableSaid = false
         self:rebuild()
         -- The game lists its voices only in the world, so the voice name is
         -- knowable now: warn here if the chosen voice is the NVDA bridge.
@@ -644,6 +680,7 @@ end
 function module:onEnable()
     self:hasUpdate(function(self)
         self:checkRepeats()
+        self:checkDispels()
     end)
     self:rebuild()
     self:warnBridgeVoice()
@@ -652,6 +689,11 @@ end
 function module:onDisable()
     self.members = {}
     self.aliases = {}
+    self.raidMode = nil
+    self.dispelMembers = {}
+    self.dispelAliases = {}
+    self.dispelRaidMode = nil
+    self.dispelDirty = {}
 end
 
 -- Choosing the bridge voice while already enabled warns too.

@@ -363,15 +363,18 @@ do
         return self.settingsFacade
     end
     WowVision.base = {
+        groupHealth = stub,
         createModule = function()
             return stub
         end,
     }
     loadAddonFile("retail/groupHealth/module.lua")
+    loadAddonFile("retail/groupHealth/dispel.lua")
     WowVision.base = savedBase
     WowVision.groupHealth._moduleTestHarness = stub
 end
 loadAddonFile("retail/groupHealth/moduleTests.lua")
+loadAddonFile("retail/groupHealth/dispelTests.lua")
 loadAddonFile("camelot/petTraining.lua")
 loadAddonFile("camelot/petTrainingTests.lua")
 loadAddonFile("core/gameDB/itemQuality.lua")
@@ -2536,6 +2539,7 @@ local parseOnly = {
     "core/minimap/scanner.lua",
     "core/minimap/tracking.lua",
     "retail/groupHealth/module.lua",
+    "retail/groupHealth/dispel.lua",
     "core/scanner/module.lua",
     "core/scanner/ui.lua",
     "core/scanner/providers.lua",

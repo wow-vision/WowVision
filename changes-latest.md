@@ -4,3 +4,4 @@
 
 ### Modern
 * Quest colors: the color word of a quest (Grey, Green, Yellow, Orange, Red) in the quest log and in the quest tooltips of the scanner is now the one the game's quest log shows. It was worked out from the quest's level with a formula the game no longer uses for its log, which on WoW: Forever called a quest grey that the game shows green (a level 21 quest at level 27, for example).
+* Group health: new Dispellable Debuffs settings. With Announce Dispellable Debuffs on (off by default), a watched group member who gets a debuff you can dispel is said with the debuff's type and the member's number, for example "Poison 3", and again every few seconds while the debuff stays on them. It has its own Watch Party and Watch Raid switches, a Repeat Every setting and Number First ("3 Poison"). It works in combat. If the game refuses the read, you hear "Dispellable debuffs unavailable here" once.
