@@ -29,20 +29,17 @@ function BeaconDataSource:getFile(angle, distance)
     return self.filePath .. "/" .. self.beaconName .. ";" .. angle .. ";" .. distance .. ".mp3"
 end
 
-function BeaconDataSource:play(angle, distance, channel)
-    local path = self:getFile(angle, distance)
-    return PlaySoundFile(path, channel or "SFX")
+-- A beacon file for a direction and loudness level, on WowVision's channel
+-- unless one is given (the Beacon output plays the pings this way).
+function BeaconDataSource:playAt(angle, level, channel)
+    local path = self:getFile(angle, level)
+    return PlaySoundFile(path, channel or WowVision.audio.channel())
 end
 
--- Preview plays a sample so users can hear the beacon (angle 0 = facing it)
-function BeaconDataSource:preview(channel)
-    if WowVision.audio._previewHandle then
-        StopSound(WowVision.audio._previewHandle, 0)
-        WowVision.audio._previewHandle = nil
-    end
-    local willPlay, soundHandle = self:play(0, 5, channel)
-    if willPlay then
-        WowVision.audio._previewHandle = soundHandle
-    end
-    return willPlay, soundHandle
+-- play(channel) as every audio source has it, so a beacon file picked where
+-- a sound plays works too: a sample straight ahead (angle 0), at level 5 or
+-- the level given. preview is AudioDataSource's, over this play.
+local SAMPLE_LEVEL = 5
+function BeaconDataSource:play(channel, level)
+    return self:playAt(0, level or SAMPLE_LEVEL, channel)
 end

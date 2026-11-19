@@ -133,20 +133,40 @@ end
 
 -- Route from a start attachment; when it finds no way, the other start attachments of the cell and of the cells next
 -- to it are tried before "no network path" (his 4.41, from a game test on a slope). Runs inside a job.
+-- Cost comparison (his K): with a position, a start that is a checked attachment of the start cell is compared with the
+-- other checked attachments of that cell; endPool (optional) does the same for the target side. The pair with the lowest
+-- approach + network + approach cost wins; usedStartId and result.targetBinding name it. Unchecked attachments and those of
+-- neighbouring cells only serve as alternatives when no route exists.
 -- Returns path, edges, result, usedStartId | nil, reason.
-function Route:routeFromStart(startId, endId, footOnly, x, y)
+function Route:routeFromStart(startId, endId, footOnly, x, y, endPool)
     local N = self.N
-    local result, reason = N.RouteIds(startId, endId, self.penalties, footOnly)
+    local options, startPool
+    if x then
+        options = self:startOptions()
+        if not options.swimming then
+            local primary = N.Bind(x, y, self:estimatedHeight(), options)
+            if primary then
+                local pool = N.CertifiedBindings(primary.zone, primary.cell, x, y, primary.cellDistance)
+                for _, member in ipairs(pool) do
+                    if member.id == startId then
+                        startPool = pool
+                        break
+                    end
+                end
+            end
+        end
+    end
+    local result, reason = N.RouteIds(startId, endId, self.penalties, footOnly, startPool, endPool)
     if result or not x then
         if result then
-            return result.path, result.edges, result, startId
+            return result.path, result.edges, result, result.startBinding and result.startBinding.id or startId
         end
         return nil, reason
     end
-    local list = N.StartBindings(x, y, self:estimatedHeight(), self:startOptions())
+    local list = N.StartBindings(x, y, self:estimatedHeight(), options)
     for _, binding in ipairs(list or {}) do
         if binding.id ~= startId then
-            local alternative = N.RouteIds(binding.id, endId, self.penalties, footOnly)
+            local alternative = N.RouteIds(binding.id, endId, self.penalties, footOnly, nil, endPool)
             if alternative then
                 return alternative.path, alternative.edges, alternative, binding.id
             end
@@ -440,6 +460,12 @@ function Route:appendLogicalTarget(source, result)
         and (source.interactionMode == "manual_wait" or source.activationMode == "walk_into_trigger") then
         return
     end
+    -- his Weg B for the dyn layer (a dock of the dock model, its point on board, a dungeon entrance with its node): the
+    -- route ends exactly on the fixed node of the row and the arrival is the normal one there; no unchecked end point
+    -- behind it
+    if source.dynNode and (result.targetNode == "target_node" or result.targetNode == "target_node_id") then
+        return
+    end
     if type(source.x) ~= "number" or type(source.y) ~= "number" then
         return
     end
@@ -503,6 +529,27 @@ function Route:dropToEnd()
     return true
 end
 
+-- A reversed route (Ctrl-Shift-R) goes on at the waypoint its predecessor led to: point = { id, x, y, z }, the id only
+-- for a real network point (a virtual one's id may have been given away). The way back need not hold that waypoint
+-- (other steering targets, one-way links), then its nearest one takes over. Main thread, after Route:begin.
+function Route:resumeAt(point)
+    local N = self.N
+    local waypoints = {}
+    for i, id in ipairs(self.path or {}) do
+        local x, y, z = N.Position(id)
+        waypoints[i] = { id = id, x = x, y = y, z = z }
+    end
+    local index = WowVision.Router.resumeIndex(waypoints, point)
+    if index == nil then
+        return nil
+    end
+    self.pathIndex = index
+    self:setRouteState(self.path[index - 1], self.path[index])
+    self:resetApproach()
+    self:setHeightAnchor(waypoints[index].z)
+    return index
+end
+
 -- Makes a plan the running route (main thread). source/result: the target and its resolution.
 function Route:begin(plan, source, result, name)
     local N = self.N
@@ -553,13 +600,15 @@ function Route:targetContext(startOverride, footOnly)
         return nil
     end
     local context = { startNodeId = startId, footOnly = footOnly }
-    context.route = function(endId)
-        local path, _, result, used = self:routeFromStart(context.startNodeId, endId, footOnly, px, py)
+    -- endPool (optional): the checked attachments of the target cell; the third result is the target attachment of the
+    -- cheapest pair
+    context.route = function(endId, endPool)
+        local path, _, result, used = self:routeFromStart(context.startNodeId, endId, footOnly, px, py, endPool)
         if not path then
             return nil
         end
         context.startNodeId = used
-        return path, result.cost
+        return path, result.cost, result.targetBinding
     end
     return context
 end
@@ -570,8 +619,11 @@ end
 --   { kind = "choose", result, reachable = { [band] = bool } }  (floors to choose from; his /vn ebene)
 --   { kind = "fail", reason = key or text }
 function Route:prepare(target, nav, startOverride)
-    -- a dock or a walk-in target is reached on foot (his LayerTargetContext)
-    local footOnly = target.interactionMode == "manual_wait" or target.activationMode == "walk_into_trigger"
+    -- a waiting point and the point on board of the dock model are reached on foot (his LayerTargetStart). A walk-in
+    -- target is not: portals and lifts are parts of a route (his chapter 02 rule 11), and the pre-point of a trigger may
+    -- lie where only another action leads (the room of Stormwind's portal 702 is reached through portal 704); the route
+    -- then ends at the pre-point of that action and the trigger's own activation follows after it
+    local footOnly = target.interactionMode == "manual_wait" or target.boardingPoint == true
     local context = self:targetContext(startOverride, footOnly)
     if not context then
         local x, y = self.env.position()
@@ -590,7 +642,11 @@ function Route:prepare(target, nav, startOverride)
         -- so every such band would read "no path").
         local reachable = {}
         for i, band in ipairs(result.bands) do
-            for _, candidate in ipairs(band.candidates) do
+            -- since his 12.11.2026 the resolver itself marks the bands the start can reach (band.selectable)
+            if band.selectable ~= nil then
+                reachable[i] = band.selectable == true
+            end
+            for _, candidate in ipairs(reachable[i] ~= nil and {} or band.candidates) do
                 local id = candidate.id
                 if id == nil and candidate.zone ~= nil then
                     local binding = self.N.BindCell(candidate.zone, candidate.cell, target.x, target.y, candidate.distance)
@@ -908,6 +964,30 @@ function Route:cancelAction()
     self.action = nil
 end
 
+-- The volume that proves the arrival of an action: its arrival volume; an action record without one (his DemoAddon,
+-- 11/2026) has the position of its exit node, the start of the next leg, within the arrival radius of that node.
+function Route:arrivalVolumeOf(action)
+    if type(action.arrivalVolume) == "table" then
+        return action.arrivalVolume
+    end
+    local N = self.N
+    local toNode = action.toNode
+    if type(toNode) ~= "number" then
+        return nil
+    end
+    if not N.Exists(toNode) then
+        N.LoadZone(action.toZoneId or math.floor(toNode / N.ZONE_BASE))
+        if not N.Exists(toNode) then
+            return nil
+        end
+    end
+    local x, y = N.Position(toNode)
+    if x == nil then
+        return nil
+    end
+    return { x = x, y = y, radius = self.G.ArrivalRadius(toNode) or Route.ARRIVAL_TARGET_RADIUS }
+end
+
 -- His Actions:Observe without a height: the arrival volume in the plane, after the source volume was left (lift,
 -- portal on the same map) or after the map changed (tram entrance, portal to another map); the nearer of the two
 -- volumes counts, so a widened circle never proves an arrival at the source. widen: the minimum radius of both
@@ -947,7 +1027,8 @@ function Route:observeAction(x, y, map, widen)
         end
     end
     current.lastX, current.lastY = x, y
-    if map ~= toMap or not inVolume2D(action.arrivalVolume, x, y, widen) then
+    local arrival = self:arrivalVolumeOf(action)
+    if map ~= toMap or not inVolume2D(arrival, x, y, widen) then
         return nil
     end
     local mode = action.arrival and action.arrival.mode
@@ -960,7 +1041,7 @@ function Route:observeAction(x, y, map, widen)
         if fromMap == toMap and not current.sourceLeft and not through then
             return nil
         end
-        local sv, av = action.sourceVolume, action.arrivalVolume
+        local sv, av = action.sourceVolume, arrival
         if not through and type(sv) == "table" and type(sv.x) == "number" and fromMap == toMap
             and distance(x, y, sv.x, sv.y) <= distance(x, y, av.x, av.y) then
             return nil

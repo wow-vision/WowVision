@@ -66,6 +66,86 @@ function utils.groupUnits(inRaid, inGroup)
     return SOLO_UNITS
 end
 
+-- Whether you or your group (pets included) are fighting a unit, for the
+-- "Target in Combat" sound. Only a unit you can attack counts: yourself, a
+-- group member or another friendly unit is never a fight, even when its
+-- target is one of you. Then three signs, any one is enough:
+--   1. a group unit is on its threat list (UnitThreatSituation not nil; a
+--      secret answer is not nil either, so it counts);
+--   2. it targets a group unit (its "target" unit is one of them);
+--   3. in a group: it is in combat, attackable and not tapped by anyone
+--      else (UnitIsTapDenied false), so the fight is your group's.
+-- The threat list of a mob you have not hit yet reaches the client only
+-- after you target it, so on a target change sign 1 misses a fight only
+-- your group is in; signs 2 and 3 are known at once. A secret answer to
+-- signs 2 and 3 (Forever and Retail hide identities in combat) counts as
+-- no, and so does a secret answer to whether you can attack it. api: the game reads (tests pass fakes), the globals by default.
+local function plainTrue(value)
+    if issecretvalue ~= nil and issecretvalue(value) then
+        return false
+    end
+    return value == true or value == 1
+end
+
+-- Sign 3 on its own, shared with the enemy count: a unit in combat
+-- (UnitAffectingCombat) that nobody outside the group has tapped
+-- (UnitIsTapDenied false) is the group's fight. A missing or secret answer
+-- to either counts as no. isSecret: the secret check to use (the globals'
+-- issecretvalue by default; tests pass their own).
+function utils.groupTapped(inCombat, tapDenied, isSecret)
+    isSecret = isSecret or function(value)
+        return issecretvalue ~= nil and issecretvalue(value)
+    end
+    if isSecret(inCombat) or not (inCombat == true or inCombat == 1) then
+        return false
+    end
+    return tapDenied ~= nil and not isSecret(tapDenied) and not tapDenied
+end
+
+function utils.groupFighting(unit, api)
+    api = api or _G
+    local function read(name, ...)
+        local fn = api[name]
+        if fn == nil then
+            return nil
+        end
+        local ok, result = pcall(fn, ...)
+        if not ok then
+            return nil
+        end
+        return result
+    end
+    local inRaid = plainTrue(read("IsInRaid"))
+    local inGroup = plainTrue(read("IsInGroup"))
+    local members = utils.groupUnits(inRaid, inGroup)
+    if not plainTrue(read("UnitExists", unit)) or not plainTrue(read("UnitCanAttack", "player", unit)) then
+        return false
+    end
+    local existing = {}
+    for _, member in ipairs(members) do
+        if plainTrue(read("UnitExists", member)) then
+            tinsert(existing, member)
+            if read("UnitThreatSituation", member, unit) ~= nil then
+                return true
+            end
+        end
+    end
+    local victim = unit .. "target"
+    if plainTrue(read("UnitExists", victim)) then
+        for _, member in ipairs(existing) do
+            if plainTrue(read("UnitIsUnit", victim, member)) then
+                return true
+            end
+        end
+    end
+    if inGroup or inRaid then
+        if utils.groupTapped(read("UnitAffectingCombat", unit), read("UnitIsTapDenied", unit)) then
+            return true
+        end
+    end
+    return false
+end
+
 -- Money in tooltip text. The game writes coins as an amount followed by a
 -- coin texture ("12 |T...UI-GoldIcon...|t 5 |T...UI-SilverIcon...|t"), and
 -- speech drops the textures, leaving bare numbers. Some lines carry only a
@@ -135,6 +215,45 @@ function utils.moneyLineText(text, sellLabel, coinText)
         end
     end
     return nil
+end
+
+-- Runs func(...) so that an error in it never stops the caller: one failing
+-- part of the frame (a module's update, an object type, the windows) must
+-- not leave the rest dead. The error still goes to the game's error handler
+-- (BugGrabber, WowVision's error list and its spoken alert), called from
+-- inside the failing call so its stack is kept, but once per part and
+-- message: a part that fails every frame would otherwise report 60 times a
+-- second and bury every other line of speech (Screen:buildRender reports a
+-- failing render once the same way). key names the part; any value works.
+-- Returns xpcall's results.
+local reportedErrors = setmetatable({}, { __mode = "k" })
+local errorReporters = setmetatable({}, { __mode = "k" })
+local MAX_MESSAGES_PER_PART = 20
+
+local function reporterFor(key)
+    local reporter = errorReporters[key]
+    if reporter == nil then
+        reporter = function(message)
+            local seen = reportedErrors[key]
+            if seen == nil then
+                seen = { count = 0 }
+                reportedErrors[key] = seen
+            end
+            local text = tostring(message)
+            if not seen[text] and seen.count < MAX_MESSAGES_PER_PART then
+                seen[text] = true
+                seen.count = seen.count + 1
+                geterrorhandler()(message)
+            end
+            return message
+        end
+        errorReporters[key] = reporter
+    end
+    return reporter
+end
+
+function utils.guardedCall(key, func, ...)
+    return xpcall(func, reporterFor(key), ...)
 end
 
 WowVision.utils = utils

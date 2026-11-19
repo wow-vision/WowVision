@@ -3,6 +3,14 @@ local L = module.L
 module:setLabel(L["Chat"])
 local settings = module:hasSettings()
 local chatTabs = WowVision.chatTabs
+local chatEcho = WowVision.chatEcho
+
+settings:add({
+    key = "addonMessagesInChat",
+    type = "Bool",
+    label = L["Addon Messages in Chat"],
+    default = false,
+})
 
 local speakChoices = {
     { value = "shown", label = L["When the Tab Is Shown"] },
@@ -152,6 +160,13 @@ local function classify(ref)
     end
 end
 
+-- The addon reported text: a line in the main chat tab, if that is wanted.
+function module:echoSpoken(text)
+    if self.settings.addonMessagesInChat and self:getEnabled() then
+        chatEcho.send(DEFAULT_CHAT_FRAME, text)
+    end
+end
+
 function module.onMessage(frame, message, r, g, b, typeID, accessID, lineTypeID, event, eventArgs)
     local ref = module.frames ~= nil and module.frames[frame:GetID()] or nil
     if ref == nil then
@@ -168,8 +183,9 @@ function module.onMessage(frame, message, r, g, b, typeID, accessID, lineTypeID,
     }
     ref.store:add(data)
     -- Lines already in a tab when it is picked up, or copied in as the game
-    -- opens a whisper tab, were heard (or missed) before: keep them quiet.
-    if ref.silent then
+    -- opens a whisper tab, were heard (or missed) before: keep them quiet. So
+    -- are the addon's own messages: stored to be read, but already spoken.
+    if ref.silent or chatEcho.active then
         return
     end
     if ref.whisper then
@@ -339,6 +355,7 @@ end
 local function alertButton(alert, label)
     return WowVision.graph.nodes.button({
         label = label,
+        opensLevel = true,
         onActivate = function()
             alert.parameters.label = label
             WowVision.graph.settings.pushScreen("settings:chatAlert:" .. alert.key, function(builder)

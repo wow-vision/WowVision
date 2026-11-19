@@ -15,8 +15,8 @@ This is most likely when you enter a quantity of a commodity. There are often a 
 | Classic Era | Not available |
 | The Burning Crusade (TBC) | Yes: the classic three-tab window (Browse, Bids, Auctions), with the extra scanning tools and the price database |
 | Mists of Pandaria (Mists) | Yes: the modern window (Buy, Sell, Auctions) |
-| Retail | Yes: the same modern window as Mists (it loads the same reader) |
-| WoW: Forever | Yes: the same modern window as Mists |
+| Retail | Yes: the same modern window as Mists (it loads the same reader), with Full Scan and prices in tooltips |
+| WoW: Forever | Yes: the same modern window as Mists, with Full Scan and prices in tooltips |
 
 The two windows work quite differently, so they have separate sections below: [TBC](#the-burning-crusade-auction-house) and [Mists, Retail and WoW: Forever](#the-modern-auction-house-mists-retail-and-wow-forever).
 
@@ -252,6 +252,7 @@ Stops in order:
 3. Search: an edit box. Type a name and press Enter.
 4. The game's Search button.
 5. Results: the list of items found.
+6. Full Scan: on Retail and WoW: Forever, once you have turned it on (see [Full Scan and prices in tooltips](#full-scan-and-prices-in-tooltips-retail-and-wow-forever)).
 
 Each result reads the item name, the lowest price, and how many are available, for example:
 
@@ -305,6 +306,37 @@ Auctions sub-tab: a list named "Auctions" with your current sales, then Cancel A
 Bids sub-tab: a list named "Bids" with the auctions you bid on. Each reads item name, "Bidder" (who is highest), "Bid Amount", "Minimum Bid" and the time left group. After selecting one: the Bid Frame with Gold, Silver and Copper boxes and a Bid button to raise your bid, and a Buyout Frame with the price and a Buyout button.
 
 Item names in all these lists are read from the game as each row comes into view. When a name has not loaded yet the row is read without it; move away and back, or Shift+Tab and Tab, and it appears.
+
+### Full Scan and prices in tooltips (Retail and WoW: Forever)
+
+Full Scan asks the server for the entire auction house in one request and remembers the prices of every item. It is off until you turn it on: open the WowVision menu with Shift+F1, go to Windows, then Auction House, and check Full Scan. The Full Scan button then is the last stop on the Buy tab. The server allows one scan every 15 minutes. The button changes with the state of the scan:
+
+| You hear | Meaning |
+|---|---|
+| "Full Scan" | You can start a scan; Enter starts it |
+| "Full Scan, Cooldown active" | You scanned less than 15 minutes ago; Enter tells you the time left, for example "12 min 30 sec" |
+| "Scanning, 12 sec" | The server is preparing the data; Enter stops the scan |
+| "Scanning, 40%" | WowVision is reading the data; Enter stops the scan |
+
+Spoken progress: "Scanning" when you press the button, "Full scan started, 45000 auctions" when the data arrives, "Scanning, 25%" at every quarter, and "Full scan complete, 3200 items updated" at the end. Closing the auction house stops the scan.
+
+Item tooltips then end with these lines, read like any other line:
+
+- Vendor price per item, what a vendor pays for one item. Where the game shows its own Sell Price, which counts the whole stack, this line follows it,
+- Auction minimum, the lowest price per item, with how many days ago the item was last seen (left out when it was seen today),
+- Auction average, the average price per item, counting every item of every stack,
+- Auction maximum, the highest price per item,
+- Vendor Buy, what a vendor charges, once you have seen the item at a merchant.
+
+The three auction prices cover every day on which a scan saw the item, at most the last 30 days. Each of these lines names the number of days before the price, for example "Auction minimum 3 days: 5 Silver".
+
+The settings are in the WowVision menu under Windows, then Auction House:
+
+| Setting | Default | What it does |
+|---|---|---|
+| Full Scan | Off | Shows the Full Scan button and the price lines in item tooltips |
+| History Days | 30 | How many days of prices are kept and counted, at most 30 |
+| Tooltip Prices | On | Adds the price lines to item tooltips while Full Scan is on |
 
 ### Example: find the cheapest Copper Ore and buy 20 (Mists, Retail, Forever)
 

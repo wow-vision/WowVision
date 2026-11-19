@@ -293,6 +293,43 @@ testRunner:addSuite("QuestAdapter", {
         t:assertEqual(names(adapter:nearbyQuests({ levelRange = 5 })), "Scout the Ridge,Candles")
     end,
 
+    ["nearby leaves out a holiday quest whose event is not running"] = function(t)
+        local backend = fakeBackend()
+        backend.eventInactive = function(id)
+            return id == 1
+        end
+        local adapter = Adapter:new(backend)
+        t:assertEqual(names(adapter:nearbyQuests({ levelRange = 5 })), "Scout the Ridge,Candles")
+    end,
+
+    ["nearby keeps a holiday quest whose event is running"] = function(t)
+        local backend = fakeBackend()
+        backend.eventInactive = function()
+            return false
+        end
+        local adapter = Adapter:new(backend)
+        t:assertEqual(names(adapter:nearbyQuests({ levelRange = 5 })), "Kobold Camp Cleanup,Scout the Ridge,Candles")
+    end,
+
+    ["availableEntry gives the data nearbyQuests lists, nil for a quest it leaves out"] = function(t)
+        local backend = fakeBackend()
+        local adapter = Adapter:new(backend)
+        local ctx = adapter:playerContext()
+        local entry = adapter:availableEntry(2, { levelRange = 5 }, ctx)
+        local listed = adapter:nearbyQuests({ levelRange = 5 })[3]
+        t:assertEqual(entry.questId, listed.questId)
+        t:assertEqual(entry.name, "Candles")
+        t:assertEqual(entry.level, 4)
+        t:assertEqual(entry.distance, listed.distance)
+        t:assertEqual(entry.starter.name, "Wanted Poster")
+        t:assertNil(adapter:availableEntry(4, { levelRange = 5 }, ctx), "too low")
+        t:assertNil(adapter:availableEntry(3, { levelRange = 5 }, ctx), "another continent")
+        backend.eventInactive = function()
+            return true
+        end
+        t:assertNil(adapter:availableEntry(2, { levelRange = 5 }, ctx), "event not running")
+    end,
+
     ["zone scan is cached per area and cleared by invalidate"] = function(t)
         local backend = fakeBackend()
         local scans = 0
@@ -446,6 +483,46 @@ testRunner:addSuite("QuestAdapter", {
         t:assertEqual(names(list), "Wanted Poster")
         t:assertEqual(#adapter:placeTargets("object", { 200 }, { radius = 100 }), 0)
         t:assertEqual(names(adapter:placeTargets("npc", { 103, 100 }, {})), "Marshal McBride,Deputy Willem")
+    end,
+
+    ["the player context is the backend's player"] = function(t)
+        local adapter = Adapter:new(fakeBackend())
+        local player = adapter:playerContext()
+        t:assertEqual(player.x, 100)
+        t:assertEqual(player.y, 100)
+        t:assertEqual(player.continent, 0)
+    end,
+
+    ["nodes sort nearest first, unplaced ones last, ties in order"] = function(t)
+        local function keys(list)
+            local out = {}
+            for _, node in ipairs(list) do
+                tinsert(out, node.key)
+            end
+            return table.concat(out, ",")
+        end
+        local nodes = {
+            { key = "a", x = 500, y = 100 }, -- 400 yards
+            { key = "b" }, -- nothing to walk to
+            { key = "c", x = 110, y = 100 }, -- 10 yards
+            { key = "d", x = 100, y = 600 }, -- 500 yards
+            { key = "e" },
+            { key = "f", x = 100, y = 500 }, -- 400 yards, like a: a came first
+        }
+        local sorted = Adapter.sortByProximity(nodes, { x = 100, y = 100 })
+        t:assertEqual(keys(sorted), "c,a,f,d,b,e")
+        t:assertEqual(keys(nodes), "a,b,c,d,e,f", "the list given is not changed")
+    end,
+
+    ["without a player position the order stays"] = function(t)
+        local nodes = { { key = "far", x = 900, y = 900 }, { key = "near", x = 1, y = 1 } }
+        t:assertEqual(Adapter.sortByProximity(nodes, nil), nodes)
+        t:assertEqual(Adapter.sortByProximity(nodes, {}), nodes)
+        t:assertEqual(Adapter.sortByProximity(nodes, { x = 1 }), nodes)
+    end,
+
+    ["an empty list sorts to an empty list"] = function(t)
+        t:assertEqual(#Adapter.sortByProximity({}, { x = 0, y = 0 }), 0)
     end,
 
     ["unknown phase errors"] = function(t)

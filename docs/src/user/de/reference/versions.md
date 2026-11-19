@@ -44,6 +44,9 @@ Das funktioniert überall gleich (kleine Unterschiede werden auf den einzelnen S
 | Abklingzeit-Monitor | Ja | Ja | Ja | Nein | Nein |
 | Monitor Auren des Abklingzeitmanagers | Nein | Nein | Nein | Ja | Ja |
 | Monitor Zauber-Abklingzeiten (mit Proc-Regeln) | Nein | Nein | Nein | Ja | Ja |
+| Ressourcen-Monitor für gezählte Ressourcen (Kombopunkte und Ähnliches) | Ja | Ja | Ja | Ja | Ja |
+| Ressourcen-Monitor für Leisten (Mana, Energie, Wut und Ähnliches) | Ja | Ja | Ja | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) |
+| Taste Hauptressource sprechen | Ja | Ja | Ja | Ja | Ja |
 | Gruppen-Gesundheitsmonitor (spricht die Gesundheit deiner Gruppe als Zahlen mit Tonhöhe, standardmäßig aus) | Nein | Nein | Nein | Ja | Ja |
 | Fenster des Abklingzeitmanagers (`/cdm`) | Nein | Nein | Nein | Ja | Ja |
 
@@ -101,7 +104,7 @@ Einzelheiten zum Questlog pro Version stehen auf der Seite [Quests](../world/que
 | Vermächtnis (Belohnungsleiste, Herausforderungen, Bäume) | Nein | Nein | Nein | Nein | Ja |
 | Gruppensuche | Nein | Ja | Nein | Ja (Dungeonbrowser; andere Reiter noch nicht) | Ja |
 | Tierstall | Nein | Ja | Nein | Nein | Nein |
-| Auktionshaus | Nein | Ja (mit Preisdatenbank und Komplett-Scan) | Ja | Ja | Ja |
+| Auktionshaus | Nein | Ja (mit Preisdatenbank und Komplett-Scan) | Ja | Ja (mit Preisdatenbank und Komplett-Scan) | Ja (mit Preisdatenbank und Komplett-Scan) |
 
 Siehe [Sammlungen und Vermächtnis](../windows/collections.md), [Gruppensuche](../windows/group-finder.md) und [Auktionshaus](../windows/auction-house.md).
 

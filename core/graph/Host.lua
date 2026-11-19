@@ -49,18 +49,24 @@ local NAV_KEYMAPS = {
     "contextMenu",
 }
 
--- Letter navigation (typeAhead.lua): only where the focused stack or screen opts in with letterNavigation (the
--- WowVision menu, context and dropdown menus -- lists that own the keyboard; never a window the player walks or
--- fights with open, such as F10). While engaged the letters do nothing in the game, so they wait for every letter
--- key to be up and release with the navigation keys (combat, all stacks closed). Plain letters only, and the
--- umlauts of a German keyboard as Sku binds them; an edit box with the keyboard gets its letters as before.
+-- Letter navigation (typeAhead.lua): where the focused stack or screen opts in with letterNavigation (the WowVision
+-- menu, context and dropdown menus -- lists that own the keyboard) and in a window whose own switch is on (Letter
+-- Navigation in its menu, off by default: Module:addWindowLetterSetting). While engaged the letters do nothing in the
+-- game, so they wait for every letter key to be up and release with the navigation keys (combat, all stacks closed).
+-- Plain letters only, and the umlauts of a German keyboard as Sku binds them; an edit box with the keyboard gets its
+-- letters as before.
 local LETTER_KEYS = {}
 for code = string.byte("A"), string.byte("Z") do
     tinsert(LETTER_KEYS, string.char(code))
 end
+local UMLAUT_KEYS = {}
 for _, key in ipairs({ "Ä", "Ö", "Ü", "ä", "ö", "ü", "ß" }) do
     tinsert(LETTER_KEYS, key)
+    UMLAUT_KEYS[key] = true
 end
+
+-- An umlaut can reach the list twice for one press (its key binding and the typed character): the second is dropped.
+local UMLAUT_ONCE = 0.05
 
 function GraphHost:initialize()
     self.stacks = {}
@@ -68,6 +74,7 @@ function GraphHost:initialize()
     self._navHandles = {}
     self._letterHandles = {}
     self._typeAheadState = graph.typeAhead.newState()
+    self._doublePressState = graph.doublePress.newState()
     self._nodeHandles = {}
     self._focusNodeId = nil
     self._focusNode = nil
@@ -96,6 +103,19 @@ function GraphHost:open(config)
     local screen = graph.Screen:new(config)
     local stack = { screens = { screen }, config = config }
     tinsert(self.stacks, stack)
+    -- A popup opened by itself in a fight that goes straight to Pending (graph/combatKeys.lua) takes no focus.
+    local combat = config.waits and InCombatLockdown() and graph.combatKeys ~= nil
+    if combat and graph.combatKeys.putsAsideOnOpen(stack) then
+        return stack
+    end
+    -- While the secure side walks a mirrored list in a fight (the bags) a window that opens stays behind: the
+    -- secure side would go on walking the list under it. Ctrl-Tab reaches it (graph/combatKeys.lua).
+    if graph.combatKeys ~= nil and graph.combatKeys.walking() ~= nil and InCombatLockdown() then
+        if config.waits then
+            graph.combatKeys.hintOtherWindow(stack)
+        end
+        return stack
+    end
     -- Background stacks (bags auto-opening at a vendor) never steal focus
     -- from an already-open stack; they are still reachable by stack cycling.
     if config.background and self.focusedIndex ~= nil and self.focusedIndex >= 1 and #self.stacks > 1 then
@@ -105,6 +125,14 @@ function GraphHost:open(config)
     screen:resetAnnouncement()
     self._bindingsDirty = true
     WowVision.base.speech:uiStop()
+    -- A popup in front opened by itself in a fight: the key that lands on it is named (graph/combatKeys.lua).
+    if combat then
+        graph.combatKeys.hintMenuKey()
+    elseif graph.combatKeys ~= nil and InCombatLockdown ~= nil and InCombatLockdown() then
+        -- A game window opened in a fight by the game's own key (the quest log): the menu keys stay the game's, so
+        -- the menu key lands on it and is named.
+        graph.combatKeys.markUnkeyed(stack)
+    end
     return stack
 end
 
@@ -127,6 +155,8 @@ function GraphHost:close(stack)
 end
 
 function GraphHost:push(stack, config)
+    -- going one level deeper ends a filter, as in Sku's menu
+    self:clearListFilter(stack.screens[#stack.screens], false)
     local screen = graph.Screen:new(config)
     tinsert(stack.screens, screen)
     screen:resetAnnouncement()
@@ -161,18 +191,55 @@ function GraphHost:isOpen()
     return #self.stacks > 0
 end
 
+-- What a stack is called: the outermost level of its focused entry (the window's own context, "Bags"), or nil.
+function GraphHost:stackTitle(stack)
+    local screen = stack.screens[#stack.screens]
+    if screen == nil or not screen.keyGraph:rerender() then
+        return nil
+    end
+    local node = screen.keyGraph:currentNode()
+    while node ~= nil and node.parent ~= nil do
+        node = node.parent
+    end
+    return node ~= nil and announcer.firstPartText(node) or nil
+end
+
 -- ---- per-tick pull: rebuild, announce-once, live watch, binding sync ----
 
 function GraphHost:update()
+    local combat = InCombatLockdown()
+    local combatKeys = graph.combatKeys
     if #self.stacks == 0 then
+        if combat then
+            -- every binding was let go at combat start: only the focus goes
+            self:_dropNodeFocus()
+            return
+        end
         if #self._navHandles > 0 then
             self:_logKeys("released the navigation keys")
         end
         self:_releaseNavBindings()
         self:_dropNodeFocus()
+        if combatKeys ~= nil then
+            combatKeys.tick(false)
+        end
         return
     end
-    if InCombatLockdown() then
+    if combat then
+        -- Menus in combat (graph/combatKeys.lua): the secure frame holds the keys and hands them to onKey; the
+        -- screens render and speak as ever, only the bindings stay as they are until the fight ends.
+        if combatKeys == nil or not combatKeys.active() then
+            return
+        end
+        -- A mirrored window (the bags) in front while the secure side does not walk it (focus came back to it, or the
+        -- fight is just beginning on it): its keys would not act on what is read, so it reads quietly, and the key
+        -- that walks it again is named (graph/combatKeys.lua).
+        local stack = self:focusedStack()
+        local quiet = stack ~= nil and combatKeys.isMirrorStack(stack) and combatKeys.walking() == nil
+        if quiet then
+            combatKeys.hintUnwalked(stack)
+        end
+        self:_renderFocused(quiet)
         return
     end
     if #self._navHandles == 0 then
@@ -187,11 +254,25 @@ function GraphHost:update()
             self._navWaitLogged = false
         end
     end
+    -- Menus in combat: the next fight's start takes the menu keys only while the host holds them here. While it
+    -- waits for a held key, the fight must not take that key either (graph/combatKeys.lua).
+    if combatKeys ~= nil then
+        combatKeys.tick(#self._navHandles > 0)
+    end
     self:_syncCloseKey()
     self:_syncLetterKeys()
+    self:_renderFocused()
+end
 
+-- Rebuild the focused screen, announce a focus change once, watch it live and keep its node focus current. quiet: the
+-- focus is taken as heard without speaking it.
+function GraphHost:_renderFocused(quiet)
     local stack = self:focusedStack()
     local screen = self:focusedScreen()
+    -- only background stacks are open (a popup gone to Pending in a fight)
+    if screen == nil then
+        return
+    end
     if not screen.keyGraph:rerender() then
         -- The render produced nothing: the screen closed itself.
         if #stack.screens > 1 then
@@ -206,7 +287,9 @@ function GraphHost:update()
     if node ~= nil then
         if screen._lastSpokenKey == nil or screen._lastSpokenKey ~= node.id then
             local from = screen._lastSpokenNode
-            self:_speak(announcer.compose(from, node))
+            if not quiet then
+                self:_speak(announcer.compose(from, node))
+            end
             screen._lastSpokenKey = node.id
             screen._lastSpokenNode = node
         end
@@ -250,8 +333,10 @@ function GraphHost:_checkClickDrift(node)
     end
 end
 
+-- A label the game keeps secret (a hidden name in a dungeon) cannot be
+-- compared, but speech takes it as it is.
 function GraphHost:_speak(text)
-    if text ~= nil and text ~= "" then
+    if WowVision.secrets.hasText(text) then
         WowVision:speak(text)
     end
 end
@@ -266,12 +351,12 @@ end
 -- ---- focused-node lifecycle: onFocus/onUnfocus + per-node bindings ----
 
 function GraphHost:_syncNodeFocus(screen)
-    if InCombatLockdown() then
-        self._bindingsDirty = true
-        return
-    end
     local node = screen ~= nil and screen.keyGraph:currentNode() or nil
     local newId = node ~= nil and node.id or nil
+    if InCombatLockdown() then
+        self:_syncFocusInCombat(node, newId)
+        return
+    end
 
     if not self._bindingsDirty and newId ~= nil and self._focusNodeId ~= nil and self._focusNodeId == newId then
         self._focusNode = node
@@ -318,6 +403,170 @@ function GraphHost:_syncNodeFocus(screen)
     end
 end
 
+-- In combat a node's bindings cannot engage: focus moves (onUnfocus, onFocus, the tooltip) and the bindings wait,
+-- marked as a deferred engage, so after the fight the focused node only takes its keys.
+function GraphHost:_syncFocusInCombat(node, newId)
+    self._bindingsDirty = true
+    if newId ~= nil and self._focusNodeId ~= nil and self._focusNodeId == newId then
+        self._focusNode = node
+        self._engageDeferred = true
+        return
+    end
+    local previous = self._focusNode
+    if previous ~= nil and previous.vtable.onUnfocus ~= nil then
+        pcall(previous.vtable.onUnfocus, previous)
+    end
+    self._focusNodeId = newId
+    self._focusNode = node
+    if node ~= nil and node.vtable.onFocus ~= nil then
+        pcall(node.vtable.onFocus, node)
+    end
+    self._engageDeferred = newId ~= nil
+    self:_setTooltipFor(node)
+end
+
+-- A menu key in combat (graph/combatKeys.lua). As out of combat, the focused entry's own binding for the key wins
+-- (a list behind one node walks itself on the arrows, chat switches its tabs on Left and Right); without one the host
+-- handles it. Addon code can run a Function binding, and a click marked combatClick (a game button that is not
+-- protected and whose own click script needs no secure call: the chat tabs). Any other secure click cannot be
+-- pointed at its frame in combat: on Enter or Backspace that says so; an arrow falls back to the host's own move.
+function GraphHost:combatKey(key)
+    local spec = nil
+    local screen = self:focusedScreen()
+    if screen ~= nil and screen.keyGraph:rerender() then
+        local node = screen.keyGraph:currentNode()
+        if node ~= nil then
+            for _, candidate in ipairs(self:_nodeBindingSpecs(node)) do
+                if candidate.binding == key then
+                    spec = candidate
+                    break
+                end
+            end
+        end
+    end
+    if spec ~= nil and spec.type == "Function" then
+        self:_runInCombat(spec, spec.func)
+        return
+    end
+    if spec ~= nil and spec.type == "Click" and spec.combatClick then
+        local target = spec.target
+        if type(target) == "function" then
+            target = target()
+        end
+        if target ~= nil then
+            self:_runInCombat(spec, function()
+                target:Click(spec.emulatedKey or "LeftButton")
+            end)
+        end
+        return
+    end
+    if key == "leftClick" or key == "rightClick" then
+        if spec ~= nil then
+            self:_speak(WowVision:getLocale()["Not available in combat"])
+        end
+        return
+    end
+    if key == "tooltip" then
+        return
+    end
+    self:onKey(key)
+end
+
+-- Focus the next stack after the focused one (or after from) that passes the test, going the direction (1, -1 back),
+-- and read it afresh (Ctrl-Tab in combat from a mirrored window to the others, graph/combatKeys.lua). False when none
+-- does.
+function GraphHost:focusStack(test, direction, from)
+    local count = #self.stacks
+    direction = direction or 1
+    -- counted from the stack from (when still open), else from the focused one
+    local start = self.focusedIndex or 0
+    for i, stack in ipairs(self.stacks) do
+        if stack == from then
+            start = i
+        end
+    end
+    for step = 1, count do
+        local index = (start - 1 + direction * step) % count + 1
+        if test(self.stacks[index]) then
+            self.focusedIndex = index
+            self._bindingsDirty = true
+            local screen = self:focusedScreen()
+            if screen ~= nil then
+                WowVision.base.speech:uiStop()
+                screen:resetAnnouncement()
+            end
+            return true
+        end
+    end
+    return false
+end
+
+-- A mirrored list in combat (graph/combatKeys.lua) moved its position, which the secure side owns there: focus the
+-- stack and land on the entry, spoken as an arrow would speak it. why "open" reads the window afresh, "resume" (the
+-- fight began on it) says nothing new, "reread" reads the entry again; Up or Down that did not move sounds the list's
+-- edge.
+function GraphHost:landMirror(stack, id, why)
+    for i, open in ipairs(self.stacks) do
+        if open == stack and self.focusedIndex ~= i then
+            self.focusedIndex = i
+            self._bindingsDirty = true
+        end
+    end
+    local screen = stack.screens[#stack.screens]
+    if screen == nil or not screen.keyGraph:rerender() then
+        return
+    end
+    local keyGraph = screen.keyGraph
+    local from = keyGraph:currentNode()
+    keyGraph:focus(id)
+    local to = keyGraph:currentNode()
+    if to == nil then
+        return
+    end
+    if why == "resume" then
+        -- the fight began on it: nothing new to say
+        screen._lastSpokenKey = to.id
+        screen._lastSpokenNode = to
+        return
+    end
+    WowVision.base.speech:uiStop()
+    if why == "open" then
+        screen:resetAnnouncement()
+    elseif why == "reread" then
+        self:_announceMove(screen, { from = to, to = to })
+    elseif from ~= nil and from.id.key ~= to.id.key then
+        self:_announceMove(screen, { from = from, to = to })
+    elseif (why == "up" or why == "down") and self:_playsEdgeSound() then
+        if PlaySound ~= nil then
+            PlaySound(GraphHost.EDGE_SOUND)
+        end
+        self:_announceMove(screen, { from = to, to = to })
+    end
+end
+
+-- Run a binding's action the way its secure button would: speech stopped first where it asks, after the TTS delay,
+-- then its postClick.
+function GraphHost:_runInCombat(spec, action)
+    local function run()
+        action()
+        if spec.postClick ~= nil then
+            spec.postClick()
+        end
+    end
+    if spec.interruptSpeech then
+        WowVision.base.speech:stop()
+    end
+    local delay = spec.delay
+    if delay == nil then
+        delay = WowVision.consts.UI_DELAY or 0
+    end
+    if delay > 0 then
+        C_Timer.After(delay, run)
+    else
+        run()
+    end
+end
+
 -- Point the tooltip reader (SPACE and the shift-arrow line keys) at the
 -- focused node's tooltip: an explicit vtable.tooltip config, or the game
 -- tooltip its hovered frame produced.
@@ -335,7 +584,16 @@ function GraphHost:_setTooltipFor(node)
     end
     local data = node.vtable.tooltip
     local frameRef = node.vtable.tooltipFrame
-    local frame = type(frameRef) == "function" and frameRef() or frameRef
+    local frame = frameRef
+    if type(frameRef) == "function" then
+        frame = frameRef()
+    end
+    -- A game tooltip is filled by its frame; with the frame not found now
+    -- (a list mid-refresh, a quest just turned in) the reader would speak
+    -- whatever the game tooltip held before, so there is none.
+    if frameRef ~= nil and frame == nil and (data == nil or data.type == "Game") then
+        return
+    end
     if data == nil and frame ~= nil then
         data = { type = "Game", mode = "immediate" }
     end
@@ -368,10 +626,35 @@ end
 function GraphHost:_nodeBindingSpecs(node)
     local specs = {}
     local has = {}
+    local screen = self:focusedScreen()
+    local filtering = screen ~= nil and screen.listFilter ~= nil
+    -- While a list is filtered Backspace takes the filter away, as in Sku's menu, and picking an entry ends it.
+    if filtering then
+        has.rightClick = true
+        tinsert(specs, {
+            binding = "rightClick",
+            type = "Function",
+            interruptSpeech = true,
+            func = function()
+                self:clearListFilter(screen, true)
+            end,
+        })
+    end
     if node.vtable.bindings ~= nil then
         for _, spec in ipairs(node.vtable.bindings) do
-            tinsert(specs, spec)
-            has[spec.binding] = true
+            if not (filtering and spec.binding == "rightClick") then
+                tinsert(specs, filtering and spec.binding == "leftClick" and self:_endsFilter(screen, spec) or spec)
+                has[spec.binding] = true
+            end
+        end
+    end
+    -- The stop's shared bindings (the page keys over a paged list): the node's own win.
+    if node.stopBindings ~= nil then
+        for _, spec in ipairs(node.stopBindings) do
+            if not has[spec.binding] then
+                tinsert(specs, spec)
+                has[spec.binding] = true
+            end
         end
     end
     if node.vtable.onActivate ~= nil and not has.leftClick then
@@ -405,6 +688,22 @@ function GraphHost:_nodeBindingSpecs(node)
         })
     end
     return specs
+end
+
+-- A copy of an activation spec that also ends the screen's filter, after its own action (a secure click stays secure).
+function GraphHost:_endsFilter(screen, spec)
+    local copy = {}
+    for key, value in pairs(spec) do
+        copy[key] = value
+    end
+    local own = spec.postClick
+    copy.postClick = function()
+        if own ~= nil then
+            own()
+        end
+        self:clearListFilter(screen, false)
+    end
+    return copy
 end
 
 function GraphHost:_engageNodeBindings(node, specs)
@@ -475,22 +774,48 @@ end
 -- the game cannot close for it: a pushed child screen, or a stack whose
 -- config opts in with captureClose (frameless temporary windows). Everywhere
 -- else Escape stays with the game.
+--
+-- A window whose frame shows a view inside itself with the game's own way
+-- back (the quest log's details) names that button through closeClick: while
+-- it returns one, the close key is a secure click of it, so Escape steps back
+-- a view before it closes the window.
 function GraphHost:_syncCloseKey()
     local stack = self:focusedStack()
-    local wants = stack ~= nil
-        and (#stack.screens > 1 or (stack.config ~= nil and stack.config.captureClose == true))
-    if wants and self._closeHandle == nil and not WowVision.inputActivator:anyInputHeld({ "close" }) then
-        self._closeHandle = WowVision.inputActivator:activate({
-            binding = "close",
-            type = "Function",
-            delay = 0,
-            func = function()
-                self:onKey("close")
-            end,
-        })
-    elseif not wants and self._closeHandle ~= nil then
+    local config = stack ~= nil and stack.config or nil
+    local capture = config ~= nil and config.captureClose or nil
+    if type(capture) == "function" then
+        capture = capture()
+    end
+    local owns = stack ~= nil and (#stack.screens > 1 or capture == true)
+    local target = nil
+    if stack ~= nil and not owns and config ~= nil and config.closeClick ~= nil then
+        target = config.closeClick()
+    end
+    local wants = owns or target ~= nil
+    -- What the key does changed (the view went back, another button): let go, then take it again.
+    if self._closeHandle ~= nil and (not wants or self._closeTarget ~= target) then
         self._closeHandle:release()
         self._closeHandle = nil
+    end
+    if wants and self._closeHandle == nil and not WowVision.inputActivator:anyInputHeld({ "close" }) then
+        if target ~= nil then
+            self._closeHandle = WowVision.inputActivator:activate({
+                binding = "close",
+                type = "Click",
+                emulatedKey = "LeftButton",
+                target = target,
+            })
+        else
+            self._closeHandle = WowVision.inputActivator:activate({
+                binding = "close",
+                type = "Function",
+                delay = 0,
+                func = function()
+                    self:onKey("close")
+                end,
+            })
+        end
+        self._closeTarget = target
     end
     -- The controller has no Escape key: where Escape stays with the game, the
     -- B button runs the game's own Escape command (gameClose keymap, no
@@ -508,15 +833,19 @@ function GraphHost:_syncCloseKey()
     end
 end
 
--- Whether the focused list takes letters: its stack or screen opts in, and the setting (UI module) is on.
+-- Whether the focused list takes letters: its window's own switch is on, or its stack or screen opts in and the
+-- setting for menus (UI module) is on.
 function GraphHost:_wantsLetters()
-    local ui = WowVision.base ~= nil and WowVision.base.ui or nil
-    if ui == nil or ui.settings == nil or ui.settings.letterNavigation == false then
-        return false
-    end
     local stack = self:focusedStack()
     local screen = self:focusedScreen()
     if stack == nil or screen == nil then
+        return false
+    end
+    if stack.config ~= nil and stack.config.windowLetters ~= nil and stack.config.windowLetters() then
+        return true
+    end
+    local ui = WowVision.base ~= nil and WowVision.base.ui or nil
+    if ui == nil or ui.settings == nil or ui.settings.letterNavigation == false then
         return false
     end
     return (stack.config ~= nil and stack.config.letterNavigation == true)
@@ -540,6 +869,7 @@ function GraphHost:_syncLetterKeys()
                 end,
             }))
         end
+        self:_umlautListener():Show()
         self:_logKeys("took the letter keys")
     elseif not wants and #self._letterHandles > 0 then
         self:_releaseLetterKeys()
@@ -554,10 +884,47 @@ function GraphHost:_releaseLetterKeys()
         handle:release()
     end
     self._letterHandles = {}
+    if self._umlautFrame ~= nil then
+        self._umlautFrame:Hide()
+    end
+end
+
+-- A key binding on an umlaut does not reach the list on every client and keyboard, so while the letters are taken a
+-- frame also listens for the typed character. It lets every key through to the game's bindings; shown only with the
+-- letter keys, and created here, out of combat.
+function GraphHost:_umlautListener()
+    if self._umlautFrame == nil then
+        local frame = CreateFrame("Frame")
+        frame:Hide()
+        frame:EnableKeyboard(true)
+        frame:SetPropagateKeyboardInput(true)
+        local function typed(_, key)
+            if UMLAUT_KEYS[key] and not IsControlKeyDown() and not IsAltKeyDown() and GetCurrentKeyBoardFocus() == nil then
+                self:_logKeys("heard the umlaut " .. key)
+                self:onLetter(key)
+            end
+        end
+        frame:SetScript("OnChar", typed)
+        frame:SetScript("OnKeyDown", typed)
+        self._umlautFrame = frame
+    end
+    return self._umlautFrame
+end
+
+-- Whether this press of an umlaut was already handled (see UMLAUT_ONCE).
+function GraphHost:_umlautRepeated(letter)
+    local umlaut, now = graph.typeAhead.typed(letter), GetTime()
+    local repeated = self._lastUmlaut == umlaut and now - self._lastUmlautAt < UMLAUT_ONCE
+    self._lastUmlaut, self._lastUmlautAt = umlaut, now
+    return repeated
 end
 
 -- A letter in a list that takes letters: stop speech first, as for the navigation keys.
 function GraphHost:onLetter(letter)
+    if UMLAUT_KEYS[letter] and self:_umlautRepeated(letter) then
+        return
+    end
+    graph.doublePress.reset(self._doublePressState)
     local stopped = WowVision.base.speech:uiStop()
     if stopped and (WowVision.consts.UI_DELAY or 0) > 0 then
         C_Timer.After(WowVision.consts.UI_DELAY, function()
@@ -568,15 +935,38 @@ function GraphHost:onLetter(letter)
     end
 end
 
--- The next entry of the focused list starting with the typed text (one letter cycles; letters typed quickly search
--- as one text). The only match being the focused entry reads it again; no match says so, like Sku's menu.
+-- One letter goes to the next entry of the focused list starting with it, repeated it cycles. Different letters typed
+-- quickly filter the list, as in Sku's menu, and from then on every letter adds to the filter however slowly it comes;
+-- a list that cannot be filtered searches for the typed start. The only match being the focused entry reads it again;
+-- no match says so, like Sku's menu.
 function GraphHost:_typeLetter(letter)
     local screen = self:focusedScreen()
     if screen == nil then
         return
     end
+    if screen.listFilter ~= nil then
+        self:_filterList(screen, screen.listFilter, screen.listFilter.text .. graph.typeAhead.typed(letter))
+        return
+    end
+    local rowList = screen.config ~= nil and screen.config.rowList == true
     local text, cycle = graph.typeAhead.feed(self._typeAheadState, letter, GetTime())
-    local move = screen.keyGraph:moveToText(text, cycle, screen.config ~= nil and screen.config.rowList == true)
+    local cursor = self:_focusedCursor(screen)
+    if cursor ~= nil then
+        if cycle or cursor.show == nil then
+            self:_cursorJump(cursor, text, cycle)
+        else
+            self:_filterList(screen, { cursor = cursor }, text)
+        end
+        return
+    end
+    if not cycle then
+        local scope = screen.keyGraph:filterScope(rowList)
+        if scope ~= nil then
+            self:_filterList(screen, scope, text)
+            return
+        end
+    end
+    local move = screen.keyGraph:moveToText(text, cycle, rowList)
     if move.moved then
         self:_announceMove(screen, move)
     elseif move.found then
@@ -588,36 +978,134 @@ function GraphHost:_typeLetter(letter)
     end
 end
 
+-- A list living behind one node (the destinations in F10, the chat lines): the node walks it with bindings of its own,
+-- so the graph sees a single entry and the list has to answer for itself. vtable.listCursor:
+--   labels()  -> the name of every entry of the whole list
+--   index()   -> the position shown now
+--   go(i)     moves to entry i of the whole list and reads it
+--   show(matches, text)  shows only these entries of the whole list (a list of indices) under a Filter line at
+--             position 1; show(nil) shows the whole list again, staying on the entry. Absent: letters only jump.
+function GraphHost:_focusedCursor(screen)
+    if not screen.keyGraph:rerender() then
+        return nil
+    end
+    local node = screen.keyGraph:currentNode()
+    return node ~= nil and node.vtable.listCursor or nil
+end
+
+local function cursorLabels(cursor, text)
+    local matchText, labels = graph.typeAhead.matcher(text), {}
+    for i, label in ipairs(cursor.labels()) do
+        labels[i] = matchText(label)
+    end
+    return labels
+end
+
+function GraphHost:_cursorJump(cursor, text, cycle)
+    local index = graph.typeAhead.find(cursorLabels(cursor, text), cursor.index(), text, cycle)
+    if index == nil then
+        self:_speak(WowVision:getLocale()["No results"])
+    else
+        cursor.go(index)
+    end
+end
+
+-- Filter the list to the entries containing text and land on the "Filter: text" line above them.
+function GraphHost:_filterList(screen, filter, text)
+    filter.text = text
+    screen.listFilter = filter
+    self._bindingsDirty = true
+    if filter.cursor ~= nil then
+        local matches = {}
+        for i, label in ipairs(cursorLabels(filter.cursor, text)) do
+            if graph.typeAhead.contains(label, text) then
+                tinsert(matches, i)
+            end
+        end
+        filter.matches = #matches
+        filter.cursor.show(matches, text)
+    else
+        screen.state.nextSuggestedMove = graph.LIST_FILTER_ID
+    end
+    if not screen.keyGraph:rerender() then
+        return
+    end
+    local node = screen.keyGraph:currentNode()
+    local spoken = announcer.leafText(node)
+    if filter.matches == 0 then
+        spoken = spoken .. ". " .. WowVision:getLocale()["No results"]
+    end
+    self:_speak(spoken)
+    screen._lastSpokenKey = node.id
+    screen._lastSpokenNode = node
+    screen._liveKey = nil
+end
+
+-- Back to the whole list, focus staying on the entry it was on (from the Filter line: the list's first entry).
+-- announce says so: Backspace and the left arrow; going on to an entry just ends the filter.
+function GraphHost:clearListFilter(screen, announce)
+    local filter = screen.listFilter
+    if filter == nil then
+        return
+    end
+    screen.listFilter = nil
+    self._typeAheadState = graph.typeAhead.newState()
+    self._bindingsDirty = true
+    if filter.cursor ~= nil then
+        filter.cursor.show(nil)
+    end
+    local current = screen.state.curKey
+    if current ~= nil and current.key == graph.LIST_FILTER_ID.key then
+        screen.state.nextSuggestedMove = filter.firstId
+    end
+    if announce and screen.keyGraph:rerender() then
+        local node = screen.keyGraph:currentNode()
+        self:_speak(WowVision:getLocale()["Filter removed"] .. ". " .. (announcer.leafText(node) or ""))
+        screen._lastSpokenKey = node.id
+        screen._lastSpokenNode = node
+        screen._liveKey = nil
+    end
+end
+
 -- Keymap inputs changed (a rebind): drop every handle and re-engage on the
 -- next update so override bindings pick up the new keys.
 function GraphHost:refreshBindings()
     self:_releaseNavBindings()
     self:_releaseNodeHandles()
     self._bindingsDirty = true
+    -- the combat keys follow the same keymaps
+    if graph.combatKeys ~= nil then
+        graph.combatKeys.stage()
+    end
 end
 
 -- Entry point for navigation keypresses. Mirrors UIHost's TTS sequencing: stop
 -- current speech first; on clients whose TTS needs it, delay the operation so
 -- the stop is processed before the next announcement.
+-- The press time is taken here, before the delay, so the delay never stretches a double press.
 function GraphHost:onKey(key)
+    local at = GetTime()
     local stopped = WowVision.base.speech:uiStop()
     if stopped and (WowVision.consts.UI_DELAY or 0) > 0 then
         C_Timer.After(WowVision.consts.UI_DELAY, function()
-            self:_dispatchKey(key)
+            self:_dispatchKey(key, at)
         end)
     else
-        self:_dispatchKey(key)
+        self:_dispatchKey(key, at)
     end
 end
 
-function GraphHost:_dispatchKey(key)
+function GraphHost:_dispatchKey(key, at)
     local screen = self:focusedScreen()
     if screen == nil then
         return
     end
     if key == "up" or key == "down" or key == "left" or key == "right" then
-        self:_arrow(screen, key)
-    elseif key == "next" or key == "previous" then
+        self:_arrow(screen, key, at)
+        return
+    end
+    graph.doublePress.reset(self._doublePressState)
+    if key == "next" or key == "previous" then
         self:_tab(screen, key)
     elseif key == "nextWindow" then
         self:_cycleStack(1)
@@ -634,14 +1122,29 @@ function GraphHost:_dispatchKey(key)
     end
 end
 
--- Arrows: a focused slider adjusts on left/right before any navigation;
--- edge-wired movement next; at an edge, left/right get tree semantics; a bump
--- with nothing to do re-reads the current node for orientation.
-function GraphHost:_arrow(screen, dir)
+-- Arrows: in a filtered list left takes the filter away and right into a group
+-- ends it; a focused slider adjusts on left/right before any navigation;
+-- edge-wired movement next; at an edge, a node's own onRight/onLeft (a Scanner
+-- entry opening its level, or going back), then right opens the entry's next
+-- level, left/right get tree semantics, and left goes back one level; an Up or
+-- Down bump at the first or last entry sounds and reads the entry again (the
+-- UI module's edgeSound setting), any other bump stays silent. The same
+-- arrow pressed twice quickly skips empty slots (doublePress.lua).
+function GraphHost:_arrow(screen, dir, at)
     local kg = screen.keyGraph
     local node = kg:currentNode()
     if node == nil then
         return
+    end
+    local double = graph.doublePress.press(self._doublePressState, dir, at or GetTime(), screen, node.id.key)
+
+    if screen.listFilter ~= nil then
+        if dir == "left" then
+            self:clearListFilter(screen, true)
+            return
+        elseif dir == "right" and node.expandable then
+            self:clearListFilter(screen, false)
+        end
     end
 
     if dir == "left" or dir == "right" then
@@ -650,9 +1153,29 @@ function GraphHost:_arrow(screen, dir)
         end
     end
 
-    local move = kg:move(dir)
+    local move
+    if double and self:_skipsEmptySlots() then
+        move = kg:moveSkippingEmpty(dir)
+    else
+        move = kg:move(dir)
+    end
+    local landed = kg:currentNode()
+    graph.doublePress.settle(self._doublePressState, landed ~= nil and landed.id.key or nil)
     if move.moved then
         self:_announceMove(screen, move)
+        return
+    end
+
+    if dir == "right" and node.vtable.onRight ~= nil then
+        node.vtable.onRight()
+        return
+    elseif dir == "left" and node.vtable.onLeft ~= nil then
+        node.vtable.onLeft()
+        return
+    end
+
+    if dir == "right" and node.vtable.opensLevel then
+        self:_activateFocused()
         return
     end
 
@@ -668,15 +1191,61 @@ function GraphHost:_arrow(screen, dir)
             self:_announceMove(screen, result.move)
             return
         elseif result.kind == "leaf" then
+            if dir == "left" then
+                self:_levelBack(screen, node)
+            end
+            return
+        end
+        if dir == "left" then
+            self:_levelBack(screen, node)
             return
         end
     end
 
-    -- Focus did not move: stay silent. Re-reading the same node on a
-    -- boundary bump is noise when arrowing quickly.
+    -- Focus did not move on Up or Down: the first or last entry. As in Sku, a
+    -- short sound and the entry read again (Left and Right bumps stay silent:
+    -- they are level and tree keys).
+    if (dir == "up" or dir == "down") and self:_playsEdgeSound() then
+        if PlaySound ~= nil then
+            PlaySound(GraphHost.EDGE_SOUND)
+        end
+        self:_announceMove(screen, { from = node, to = node })
+    end
+end
+
+-- The game's sound kit Sku plays when Up or Down hits the end of a list.
+GraphHost.EDGE_SOUND = 681
+
+-- The UI module's setting; on unless switched off.
+function GraphHost:_playsEdgeSound()
+    local ui = WowVision.base ~= nil and WowVision.base.ui or nil
+    return ui == nil or ui.settings == nil or ui.settings.edgeSound ~= false
+end
+
+-- The UI module's setting; on unless switched off.
+function GraphHost:_skipsEmptySlots()
+    local ui = WowVision.base ~= nil and WowVision.base.ui or nil
+    return ui == nil or ui.settings == nil or ui.settings.skipEmptySlots ~= false
+end
+
+-- The left arrow: one level back, never out of the menu. Only from a pushed screen; the first level of a context menu
+-- stays (it would leave the menu), a yes/no question stays, and in a row left only walks the row.
+function GraphHost:_levelBack(screen, node)
+    local stack = self:focusedStack()
+    if stack == nil or #stack.screens <= 1 or screen.config == nil or screen.config.noLevelBack then
+        return
+    end
+    if node.transitions.left ~= nil or node.transitions.right ~= nil then
+        return
+    end
+    if screen.config._contextMenu and not stack.screens[#stack.screens - 1].config._contextMenu then
+        return
+    end
+    self:pop(stack)
 end
 
 function GraphHost:_tab(screen, key)
+    self:clearListFilter(screen, false) -- a filter belongs to the list focus is leaving
     local kg = screen.keyGraph
     local move = kg:move(key)
     if move.moved then
@@ -737,7 +1306,7 @@ function GraphHost:_close(screen)
         return
     end
     if stack.config ~= nil and stack.config.onRequestClose ~= nil then
-        stack.config.onRequestClose(stack)
+        stack.config.onRequestClose(stack, "escape")
     else
         self:close(stack)
     end
@@ -771,15 +1340,23 @@ end
 -- synchronous feedback path, spoken immediately, with the live watch
 -- rebaselined so the same change isn't spoken twice.
 function GraphHost:_activateFocused()
+    graph.doublePress.reset(self._doublePressState)
     local screen = self:focusedScreen()
     if screen == nil then
         return
     end
+    -- the Filter line of a list behind one node is no entry to pick
+    local filter = screen.listFilter
+    if filter ~= nil and filter.cursor ~= nil and filter.cursor.index() == 1 then
+        return
+    end
     screen.keyGraph:activate()
     self:_speakStateText(screen)
+    self:clearListFilter(screen, false)
 end
 
 function GraphHost:_secondaryFocused()
+    graph.doublePress.reset(self._doublePressState)
     local screen = self:focusedScreen()
     if screen == nil then
         return
@@ -807,6 +1384,44 @@ function GraphHost:_speakStateText(screen)
     if ok and text ~= nil and text ~= "" then
         self:_speak(text)
         screen._liveKey = nil
+    end
+end
+
+-- After a page key's click (nodes.pageKeys): when the stop's page changed,
+-- land on the stop's first entry, as a fresh page is read from its top. The
+-- render from before the click still holds the old page. No change (the
+-- first or last page, or a page that arrives later): focus stays, and a
+-- text that changes under it is spoken by the live watch.
+function GraphHost:landAfterPageTurn(stopKey)
+    local screen = self:focusedScreen()
+    if screen == nil or screen.keyGraph.current == nil then
+        return
+    end
+    local keyGraph = screen.keyGraph
+    local function pageOf(render)
+        if render.stopPages == nil then
+            return nil
+        end
+        return render.stopPages[stopKey]
+    end
+    local before = pageOf(keyGraph.current)
+    if not keyGraph:rerender() then
+        return
+    end
+    local after = pageOf(keyGraph.current)
+    if after == nil or after == before then
+        return
+    end
+    for _, node in ipairs(keyGraph.current.order) do
+        if node.stopKey == stopKey and node.focusable ~= false then
+            WowVision.base.speech:uiStop()
+            keyGraph:focus(node.id)
+            -- The same control on a new page (a pooled item button) is news:
+            -- announce it, and let the live watch baseline the new page.
+            screen._lastSpokenKey = nil
+            screen._liveKey = nil
+            return
+        end
     end
 end
 

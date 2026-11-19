@@ -123,7 +123,7 @@ local function slotNode(radial, index)
         return nodes.button({
             label = label,
             onActivate = function()
-                WowVision:speak(L["Not supported yet"])
+                WowVision:notify(L["Not supported yet"])
             end,
         })
     end

@@ -6,14 +6,16 @@ The combat settings are in the WowVision menu (type /wv) under UI, then Combat. 
 
 ## What happens when combat starts
 
-WoW does not let addons change key bindings or use many of its functions during combat. WowVision therefore steps aside the moment a fight begins:
+WoW does not let addons change key bindings or use many of its functions during combat. With the Menus in Combat setting on (UI menu, off by default), WowVision's menus keep working in a fight anyway, through a secure frame that the game allows to hold keys; see [Menus in combat](#menus-in-combat) below. Without a WowVision window open, every key stays the game's: your movement keys, Tab for targeting and your action bars behave exactly as the game intends.
 
-- The keys WowVision takes over to navigate its windows (the arrow keys, Tab and Ctrl+Tab, Home and End, the context menu key, letter navigation in menus, and the keys of the element you were on) are handed back to the game. Your movement keys and action bar keys behave exactly as the game intends.
-- WowVision stops reading and updating its windows. No new windows are detected and no announcements about windows are made until combat is over.
+With Menus in Combat off, as it is until you switch it on, WowVision steps aside the moment a fight begins: the keys it took over for its windows go back to the game, and its windows are neither read nor updated until combat is over.
+
+Either way:
+
 - Keys that are not about windows, such as the soft targeting switches and the Target Focus keys, stay as they are. Some of them cannot do everything in combat; see below.
 - With a gamepad on Retail and WoW: Forever, only the keys needed for the world, such as the right stick press, stay with WowVision. See [Controller](../controller.md).
 
-When combat ends, WowVision takes its keys back as soon as none of the keys it needs is held down, and picks up where you were. Windows that were open stay open, and you are on the same element as before.
+When combat ends, WowVision takes its usual keys back as soon as none of the keys it needs is held down, and picks up where you were.
 
 If you ever find a WowVision window stuck after a fight, type /wv close. It closes every WowVision window.
 
@@ -34,6 +36,82 @@ If you ever find a WowVision window stuck after a fight, type /wv close. It clos
 - Buffs and debuffs are read from their tooltips in combat ([Buffers](../information/buffers.md)).
 
 Classic Era, The Burning Crusade and Mists of Pandaria do not have these limits.
+
+## Menus in combat
+
+### Opening and closing
+
+The keys that open a WowVision window work in a fight as they do outside: the WowVision menu (Shift+F1), chat (Shift+F3), the Scanner (F9), navigation (F10) and the action bars (Shift+F4). Opening one hands WowVision its menu keys: the arrows, Tab and Shift+Tab, Ctrl+Tab, Home and End, Enter and Backspace, Shift+F10, Space and Escape. A window that was already open as the fight began keeps them, unless you were holding one of them for the game at that moment (see [Keys you are holding as a menu opens](#keys-you-are-holding-as-a-menu-opens)).
+
+Escape closes WowVision's own windows and gives every key back to the game at once. The game's windows (the quest log, the character pane) cannot be closed by an addon in a fight; they stay on screen and are there again after the fight.
+
+Another game window you open in a fight with the game's own key does not take the keys by itself: you hear its name and "To read, press" with your WowVision Menu key (Shift+F1). That key lands on the window and hands WowVision the keys; pressed again, it opens the WowVision menu. After Escape has given the keys back, a game window still on screen is the menu key's first stop again.
+
+Moving, reading, tabs and levels work as outside combat. Enter and Backspace work on WowVision's own entries (settings, the menu, chat, waypoints). On an entry whose click is a click of a game button, they say "Not available in combat", except where this page names them.
+
+### Your bags (B)
+
+Your game key for Open All Bags or Toggle Backpack opens all your bags in a fight, as it does outside, and WowVision lands on the first slot of your backpack. In a fight the bags read as a list by bag and slot: every bag you carry, slot 1 first, empty slots included, so every position stays the same slot for the whole fight. The grid shape is a list here.
+
+- Up and Down move within a bag, Home and End to its first and last slot. Tab and Shift+Tab go to the next and previous bag.
+- Backspace uses the item, as its right click does: a potion, food, a bandage; equippable items are put on.
+- Enter picks the item up, places the item you hold, or swaps two items. This needs the game's own slot buttons, which WowVision learns while your bags are open outside combat: after a login or a reload, open your bags twice before your first fight. Until then Enter says "To pick up items in a fight, open your bags once more out of combat". If the game ever hands the slots other buttons in a fight, you hear "Bag layout changed, Enter may pick up the wrong item".
+- Space reads the slot's tooltip.
+- B again, or Escape, closes the bags and gives the keys back.
+
+A fight that begins while you are on a bag slot goes on from that slot. When you come back to your open bags from another window without walking them, they are read but the keys are not theirs yet: you hear "To use items, press" with your bags key, and that key walks them again from where you were.
+
+### Your quest log (L)
+
+Your game key for the quest log opens it in a fight as it does outside, and hands WowVision the keys in the same press, like the bags key. The arrows and Tab move through the quests, Space reads a quest's tooltip: its objectives and how far along you are. Opening a quest's details is a click of the game's and says "Not available in combat".
+
+- Escape gives the keys back. The log stays on screen (an addon cannot close it in a fight); your next press of the quest log key closes it, or the game's own Escape does.
+- The quest log key on an open log closes it and gives the keys back.
+- WowVision cannot see in a fight whether the log is open, so it counts your presses of the quest log key. If the game's Escape closed the log in between, the next press opens it without the keys; press it once more to close it, then again to open it with the keys, or press Escape to give the keys back.
+
+### Your equipment (C)
+
+The game does not let addons open the character pane in a fight, so your game key for Character Info opens a WowVision list of your equipment slots instead, in the order of the character pane.
+
+- Backspace uses the item in the slot, for example a trinket with a use effect.
+- Enter picks the item up or puts on the item you hold, as far as the game allows in combat (weapons yes, armor no).
+- Space reads the tooltip. C again, or Escape, closes the list; it also closes by itself when the fight ends.
+
+### The context menu in your bags and equipment (Shift+F10)
+
+Shift+F10 on a slot opens its two entries: the left click and the right click, with what they do, for example "Pick Up, Left Click" and "Use, Right Click". Up and Down choose, Enter runs the entry, Escape, Left or Shift+F10 close the menu and you are back on the slot.
+
+### Moving between windows (Ctrl+Tab)
+
+With your bags or equipment open, Ctrl+Tab goes from the bags to the equipment to your other windows and around; each list is taken up again on the slot you left. From the bags or equipment, each visit goes on to the next of your other windows, so they all come in turn; Ctrl+Shift+Tab goes the other way. Without another window you hear "No other window", and the next Ctrl+Tab goes on.
+
+A window that opens by itself while you walk your bags or equipment, such as the "delete this item?" question, stays behind so your keys are not taken from the list: you hear it and "To answer, press" with your Ctrl+Tab key. The Destroy Cursor Item key (Delete) is the exception: with an item on the cursor it brings the delete question to the front at once. With nothing on the cursor, Delete leaves your keys where they are.
+
+### Popups in a fight
+
+A popup that opens by itself in a fight and waits for an answer (a group invitation, also one that asks for your role, a summon, a resurrection, death, the ready check) does not take your keys: it goes straight to Pending and you hear its name, for example "Group Invitation, Pending". Open the WowVision menu (Shift+F1); the popup is its first entry, and Enter brings it to the front. The buttons of the invitations, summons, resurrections, the death box and the delete questions work there, because they call nothing the game protects in a fight; the buttons of every other popup, among them the ready check and the dungeon finder's role check, say "Not available in combat". The Accept Group Invitation key and /wv accept also still work. See [Pending](../windows/system.md#pending-a-question-that-waits).
+
+A popup that answers something you just did, such as "bind this item to you?", comes to the front. If WowVision did not hold the keys at that moment, you hear "To answer, press Shift+F1"; that key lands on it. Escape there does what the game's Escape does, in two steps: the first Escape gives the keys back to the game, and a second Escape is the game's own and cancels a popup that takes Escape. A popup that waits is put aside to Pending with the first Escape.
+
+### Trading in a fight
+
+In a fight the buttons of the trade window (Trade, Cancel and the trade slots) say "Not available in combat". Accept the trade with the Accept Trade key (Alt+Ctrl+T): it is a key binding of the game's own, so it works in a fight too. See [Key bindings](../reference/keybindings.md).
+
+### Keys you are holding as a menu opens
+
+The game hands a key's release to whatever holds that key at that moment. If a menu takes a key while you hold it for the game, an arrow you move or turn with, or Space while you swim up, the game never sees the release, and your character keeps moving or turning.
+
+WowVision guards against this where it can. A window that is open as a fight begins keeps its keys only if WowVision already held them. If it was still waiting for you to let go of a key, the keys stay the game's in that fight; a key that opens a window takes them once you have let go, and for a popup that waits you hear "To answer, press Shift+F1".
+
+It cannot guard a menu that you open inside a fight, because the game does not let the secure frame see whether a key is held. So let go of the arrows and Space before you press a key that opens a window, your bags key or your character key. (Retail and WoW: Forever only) If a held key was caught anyway, WowVision names it a moment later: "Up Arrow, held as the menu took the keys. Close the menu and tap the key once to stop moving". Press Escape, then tap that key once. The other versions cannot tell and say nothing; the way out is the same.
+
+If you move with the arrow keys, give the menu keys other keys for fights (the In Combat keys below), so the arrows stay with the game.
+
+### Settings and keys
+
+- Menus in Combat (UI menu, off): on, WowVision's menus work in fights as this section describes, and in a fight your game keys for Open All Bags, Toggle Backpack and Character Info open WowVision's lists. Off, WowVision steps aside in fights as described above.
+- Each menu key has a key of its own for fights in the keybinding window, named "In Combat:" and the key, for example "In Combat: Up". Left empty (the default), the fight uses the menu key's own keys; set one there if you want another key in fights, for example when you move with the arrow keys.
+- /wv combatkeys prints what the combat keys do right now, for troubleshooting. WowVision keeps a log of them by itself; see [Slash commands](../reference/commands.md).
 
 ## Your own health and resources
 
@@ -70,7 +148,7 @@ All in UI, Combat.
 | Enemy Count Alert, Enabled | On | Switches the enemy count on or off |
 | Enemy Count Alert, TTS Alert | On | Speaks the number |
 | Enemy Count Alert, Voice Alert | Off | Plays a recorded number from your voice pack instead |
-| Count Enemies | Attacking You or Your Group | Attacking You or Your Group counts every enemy that you, your pet or a group member is fighting. Attacking You counts only enemies that have you as their main target (those whose aggro you hold) |
+| Count Enemies | Attacking You or Your Group | Attacking You or Your Group counts every enemy that you, your pet or a group member is fighting; in a group, while you, your pet or a group member is in combat, also every enemy in combat that no one outside your group has tapped, so a fight your group starts without you counts at once. Attacking You counts only enemies that have you as their main target (those whose aggro you hold) |
 | Count Elite Enemies Only | Off | Leaves out normal monsters. Elites, rare elites and world bosses still count |
 | Announce Crowd Control | Off | Experimental. With Spell Names or Without Names, the number counts only the enemies still free to fight and crowd control is said apart (see below). Off keeps the plain count |
 | Crowd Control Ended Alert, Sound Alert | On | The short sound for a crowd control that ends, with Announce Crowd Control on |
@@ -84,7 +162,9 @@ Some more things to know:
 - An enemy counts only while its nameplate exists, which means within the game's nameplate range (about 45 yards on WoW: Forever).
 - Turning on the Minor and Minions nameplate options in the game also counts small trash monsters and enemy pets.
 - Only enemies that are hostile to you, alive and in combat count. Neutral monsters count once they are fighting.
-- A new number is announced only after it has held for half a second, so an enemy that flickers out of range and back is not spoken twice. The count is also re-checked every second during a fight, which catches monsters that die or give up quietly.
+- Enemy players count too. In a group, while you, your pet or a group member is in combat, every enemy player in combat near you counts, also one who is fighting someone outside your group: the game never marks a player as tapped. In PvP this gives you the wider picture, all enemy players fighting around you, as the nameplates show it to a sighted player.
+- A number that other speech threw away before it was spoken (an interrupting alert such as a target change empties the speech queue) is said again once, when no newer number came within 5 seconds and the count did not change in the meantime. Only the spoken number is repeated: a voice pack number plays at once and is never thrown away. A number that was cut off while it was already being spoken is not repeated. Not on Vanilla.
+- A new number is announced only after it has held for 0.3 seconds, so an enemy that flickers out of range and back is not spoken twice. The wait starts again at every change, so a pack that comes in one after another is said as one number, 0.3 seconds after the last enemy. The count is also re-checked every second during a fight, which catches monsters that die or give up quietly.
 
 ### Announce Crowd Control
 

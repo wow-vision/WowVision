@@ -73,7 +73,7 @@ The mount's description, source and the preview model on the right of the journa
 
 ## Pets (WoW: Forever)
 
-Stops in order: Search (edit box), Filter (a dropdown; Enter opens the game's filter menu), Pet Journal (the pet list), Details (the selected pet's card), and the Summon button.
+Stops in order: Filter (a dropdown; Enter opens the game's filter menu), Search (edit box), Pet Journal (the pet list), Details (the selected pet's card), and the Summon button.
 
 A pet row reads its name. If you gave the pet a custom name it reads the custom name first and the species in brackets, "Fluffy (Cat)". Pets you do not own yet add "Not Collected", and favorite pets add "Favorite". The pet whose card is open reads "selected".
 
@@ -87,7 +87,7 @@ Details reads, one line each: the pet's name (and species under a custom name), 
 
 ## Toy Box (WoW: Forever)
 
-Stops in order: Search, Filter, a progress line (the game's collected counter), the Toy Box list, and the paging row.
+Stops in order: a progress line (the game's collected counter), Filter, Search, the Toy Box list, and the paging row.
 
 The toy list shows only the current page, up to eighteen toys. Each toy reads its name, then "Not Collected" if you do not have it, then "Favorite" if you marked it. An empty page reads "Empty".
 
@@ -102,7 +102,7 @@ The paging row is Previous Page, the page number text and Next Page. It is left 
 
 ## Heirlooms (WoW: Forever)
 
-The heirloom tab appears only while the game offers heirlooms. Stops in order: Search, Filter, Class (a dropdown that reads "Class" and your current pick, for example "Class, All"), a Progress line, the Heirlooms list, and the paging row.
+The heirloom tab appears only while the game offers heirlooms. Stops in order: Class (a dropdown that reads "Class" and your current pick, for example "Class, All"), a Progress line, Filter, Search, the Heirlooms list, and the paging row.
 
 The list is grouped under headers, one per slot group, exactly as the journal page draws them. Each heirloom reads its name, the level it scales to (heirlooms you own), a PvP tag where the game shows one, and "Not Collected" for ones you lack.
 
@@ -113,7 +113,7 @@ Enter on an heirloom creates it in your bags if you own it. With an upgrade item
 This is the wardrobe journal, not the transmogrifier. Stops in order:
 
 1. Tabs: Items and Sets, a row. The open one reads "selected".
-2. Search, Filter, and (while shown) Class, a dropdown that reads "Class" and your pick.
+2. (While shown) Class, a dropdown that reads "Class" and your pick, then Filter and Search.
 3. The body of the open sub-tab.
 
 Forever lists only the appearances you have collected in this journal, so "Not Collected" rarely shows on these rows.
@@ -164,8 +164,8 @@ Stops in order: a summary, then the Rewards list.
 Challenges are Forever's version of achievements, worth Legacy points. Stops in order:
 
 1. Points: your Legacy points earned, "Points 120/500".
-2. Search: an edit box.
-3. Filter: a dropdown for completed and incomplete challenges.
+2. Filter: a dropdown for completed and incomplete challenges.
+3. Search: an edit box.
 4. Categories: the category tree.
 5. Challenges: the list of the selected category, named "Challenges" followed by the category name.
 

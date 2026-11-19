@@ -48,7 +48,9 @@ function module.renderSpellBook(builder)
     end
 
     if SpellBookSpellIconsFrame ~= nil and SpellBookSpellIconsFrame:IsShown() then
+        -- A fresh open lands on the spells.
         builder:beginStop("spells")
+        builder:setStartStop("spells")
         builder:pushContext("spells", L["Spells"])
         local buttons = { SpellBookSpellIconsFrame:GetChildren() }
         table.sort(buttons, function(a, b)
@@ -82,6 +84,13 @@ function module.renderSpellBook(builder)
             builder:addItem(ControlId.structural("spellsEmpty"), nodes.text({ label = L["Empty"] }))
         end
         builder:popContext()
+        if SpellBookPageNavigationFrame ~= nil and SpellBookPageNavigationFrame:IsShown() then
+            nodes.pageKeys(builder, {
+                prev = SpellBookPrevPageButton,
+                next = SpellBookNextPageButton,
+                page = SpellBook_GetCurrentPage,
+            })
+        end
     end
 
     if SpellBookPageNavigationFrame ~= nil and SpellBookPageNavigationFrame:IsShown() then
@@ -131,7 +140,9 @@ function module.renderCoreAbilities(builder)
         builder:popContext()
     end
 
+    -- A fresh open lands on the abilities.
     builder:beginStop("coreAbilities")
+    builder:setStartStop("coreAbilities")
     builder:pushContext("coreAbilities", frame.SpecName ~= nil and frame.SpecName:GetText() or "")
     for i, button in ipairs(frame.Abilities or {}) do
         if button:IsShown() then

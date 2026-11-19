@@ -13,6 +13,8 @@
   <Script file="containers.lua" />
   <Script file="newItems.lua" />
   <Script file="newItemsTests.lua" />
+  <Script file="containersCombat.lua" />
+  <Script file="equipmentCombat.lua" />
 <Script file="GameMenu.lua" />
   <Script file="gossip.lua" />
   <Script file="itemText.lua" />
@@ -21,6 +23,7 @@
 <Script file="mail.lua" />
   <Script file="merchant.lua" />
 <Script file="popups.lua" />
+  <Script file="pending.lua" />
 <Script file="colorPicker.lua" />
   <Script file="RolePoll.lua" />
   <Script file="guildInvite.lua" />

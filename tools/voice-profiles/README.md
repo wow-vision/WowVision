@@ -42,8 +42,17 @@ py -m venv .venv
    the setup: its numbers should match the "Check" section below.
 
    ```
-   powershell -ExecutionPolicy Bypass -File render.ps1 -Voice "Katja,Hedda Desktop"
+   powershell -ExecutionPolicy Bypass -File render.ps1 -Voice "Katja,Hedda Desktop" -EndPause
    ```
+
+   `-EndPause` ends the LOW copy's number in the monitor's short pause
+   (`GroupHealth.END_PAUSE`, read from `logic.lua`), so the silent HIGH
+   copy behind it does not cut the number off. As in game, the silent LOW
+   copy in front of an audible HIGH copy carries the pause too. The pause
+   brings the two copies closer together; measure with it first, and only
+   when the voice is rejected for too small a range, render and measure
+   again without it (Zira's case; measure.py says so). The printed profile
+   says `endPause = true` when it was measured with the pause.
 
    This writes 63 short WAV files per voice into `render\` (the number 3
    at 21 pitches, three ways) and `render\voices.json`.
@@ -61,9 +70,10 @@ py -m venv .venv
    voices:register({
        key = "katja",
        match = "katja",
-       low = { 10, 8, 5, 3, 0, -2, -4, -6, -8, -10 },
+       endPause = true,
+       low = { 10, 7, 5, 3, 1, -1, -3, -5, -7, -9 },
        high = { -6, -8, -10 },
-       measured = { low = { 3.07, 0.506 }, high = { -0.21, 0.507 } },
+       measured = { low = { 2.21, 0.502 }, high = { -0.45, 0.510 } },
    })
    ```
 
@@ -113,21 +123,25 @@ The whole method is in the docstring at the top of `measure.py`. In short:
 
 ## Check
 
-Hedda Desktop rendered on 2026-10-03 measured: LOW copy about
-+5.1 + 0.50 x absmiddle, HIGH copy about -0.25 + 0.50 x absmiddle (5.3
-semitones apart), no points off the line. Values within a few tenths of
-these mean the setup works. Its published profile was chosen by ear and
-differs slightly from what measure.py designs; both have the same switch
-and the same smallest step. The same holds for Zira (LOW about
-+7.5 + 0.51 x absmiddle, HIGH about +1.9 + 0.51 x absmiddle).
+Hedda Desktop rendered with -EndPause on 2026-11-12 measured: LOW copy
++3.69 + 0.50 x absmiddle, HIGH copy -1.46 + 0.50 x absmiddle (5.15
+semitones apart). Values within a few tenths of these mean the setup
+works. Without the pause (2026-10-03): LOW about +5.1, HIGH about -0.25.
+Zira without the pause (2026-11-12): LOW +7.53 + 0.51 x absmiddle, HIGH
++1.94 + 0.51 x absmiddle; with it the copies are only 1.7 apart.
 
 ## Measured voices
 
-- Microsoft Hedda Desktop (the fallback), Microsoft Zira Desktop: profiles chosen by ear
-  in game on 2026-10-03 (the method was built on them).
+- Microsoft Hedda Desktop (the fallback): chosen by ear in game on
+  2026-10-03 (the method was built on it), kept with the end pause after
+  an ear test on 2026-11-11 (measure.py's even scale with the pause
+  sounded no better); measured with the pause 2026-11-12.
+- Microsoft Zira Desktop: chosen by ear in game on 2026-10-03, without
+  the end pause (rejected with it, 2026-11-12).
 - Microsoft Hedda (OneCore): the same sound as Hedda Desktop, byte for
   byte; uses Hedda's profile by name.
-- Microsoft Katja (OneCore): profile from measure.py, 2026-10-03.
+- Microsoft Katja (OneCore): profile from measure.py, 2026-10-03; with the
+  end pause 2026-11-12.
 - Microsoft Stefan (OneCore): rejected, creaky low pitch.
 - SAPI2SR (Nunosoft's screen reader bridge): rejected, renders no sound.
 

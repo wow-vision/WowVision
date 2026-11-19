@@ -56,6 +56,8 @@ loadAddonFile("core/navigation/atlas/MapDataset.lua")
 loadAddonFile("core/navigation/atlas/datasetTests.lua")
 loadAddonFile("core/navigation/stuckMath.lua")
 loadAddonFile("core/navigation/stuckTests.lua")
+loadAddonFile("core/navigation/breathSteps.lua")
+loadAddonFile("core/navigation/breathTests.lua")
 loadAddonFile("core/navigation/visitedStore.lua")
 loadAddonFile("core/navigation/visitedTests.lua")
 loadAddonFile("core/navigation/corpseFind.lua")
@@ -84,6 +86,7 @@ do
     end
 end
 loadAddonFile("camelot/wownav/text.lua")
+loadAddonFile("camelot/wownav/textTests.lua")
 loadAddonFile("camelot/wownav/catalog.lua")
 loadAddonFile("camelot/wownav/route.lua")
 loadAddonFile("camelot/wownav/dock.lua")
@@ -94,9 +97,12 @@ loadAddonFile("camelot/wownav/tests.lua")
 -- suite can play the game's side.
 do
     local hooks, eventFrame = {}, nil
-    local game = { moving = false, falling = false, now = 0 }
+    local game = { moving = false, falling = false, combat = false, now = 0 }
     function GetTime()
         return game.now
+    end
+    function UnitAffectingCombat(unit)
+        return unit == "player" and game.combat
     end
     function IsPlayerMoving()
         return game.moving
@@ -137,7 +143,8 @@ do
         for key in pairs(movement.flags) do
             movement.flags[key] = false
         end
-        game.moving, game.falling = false, false
+        game.moving, game.falling, game.combat = false, false, false
+        movement.attacking = false
     end
 
     WowVision.testing.testRunner:addSuite("Movement", {
@@ -202,6 +209,23 @@ do
             call("TurnLeftStop")
         end,
 
+        ["in combat, auto-attack with no key held is the game chasing the enemy"] = function(t)
+            reset()
+            t:assertFalse(movement:isChasing())
+            event("PLAYER_ENTER_COMBAT")
+            -- The walk up to the enemy, before the fight: obstacles count.
+            t:assertFalse(movement:isChasing())
+            game.combat = true
+            t:assertTrue(movement:isChasing())
+            -- A held key makes the movement yours again: walls still count.
+            call("MoveForwardStart")
+            t:assertFalse(movement:isChasing())
+            call("MoveForwardStop")
+            t:assertTrue(movement:isChasing())
+            event("PLAYER_LEAVE_COMBAT")
+            t:assertFalse(movement:isChasing())
+        end,
+
         ["a stale key flag does not count while the game says standing"] = function(t)
             reset()
             -- The Stop function never ran: the flag stays on.
@@ -217,14 +241,78 @@ loadAddonFile("core/navigation/camera.lua")
 loadAddonFile("core/navigation/cameraTests.lua")
 loadAddonFile("core/navigation/maps/turnMath.lua")
 loadAddonFile("core/navigation/maps/turnTests.lua")
+loadAddonFile("core/navigation/maps/unitAim.lua")
+loadAddonFile("core/navigation/maps/unitAimTests.lua")
 loadAddonFile("core/quests/Adapter.lua")
 loadAddonFile("core/quests/tests.lua")
+loadAddonFile("core/quests/completion.lua")
+loadAddonFile("core/quests/completionTests.lua")
+loadAddonFile("core/quests/nearbyEngine.lua")
+loadAddonFile("core/quests/nearbyEngineTests.lua")
+-- The quest scanner over a stand-in quest module: the snapshot it builds
+-- from and the live log it reads while open (core/quests/scannerLiveTests.lua).
+do
+    local harness = { providers = {}, snapshot = {}, log = {} }
+    local savedBase = WowVision.base
+    local questModule = { L = setmetatable({}, {
+        __index = function(_, key)
+            return key
+        end,
+    }) }
+    -- the module's settings as the scanner reads them (Sort Quests by Proximity off: the log's order)
+    questModule.settings = { sortByProximity = false }
+    function questModule:inProgress()
+        return harness.snapshot
+    end
+    function questModule:targets()
+        return {}
+    end
+    function questModule:objectiveTargets()
+        return {}
+    end
+    function questModule:markerTarget()
+        return nil
+    end
+    function questModule:gameMarkerTarget()
+        return nil
+    end
+    function questModule:hasSource()
+        return true
+    end
+    function questModule:isReady()
+        return true
+    end
+    WowVision.base = {
+        quests = questModule,
+        scanner = {
+            registerProvider = function(_, provider)
+                harness.providers[provider.key] = provider
+            end,
+        },
+    }
+    -- module.lua only parses headless; the stand-in log answers instead, put
+    -- in place by each live test and taken out after it
+    harness.gameQuestEntry = function(questId)
+        return harness.log[questId]
+    end
+    loadAddonFile("core/quests/scanner.lua")
+    WowVision.quests._scannerLiveHarness = harness
+    loadAddonFile("core/quests/scannerLiveTests.lua")
+    WowVision.base = savedBase
+end
+loadAddonFile("core/quests/tooltip.lua")
+loadAddonFile("core/quests/tooltipTests.lua")
+loadAddonFile("core/quests/zones.lua")
+loadAddonFile("core/quests/zonesTests.lua")
 loadAddonFile("core/minimap/logic.lua")
 loadAddonFile("core/minimap/gatheringNames.lua")
 loadAddonFile("core/minimap/tests.lua")
 loadAddonFile("retail/groupHealth/logic.lua")
 loadAddonFile("retail/groupHealth/voices.lua")
 loadAddonFile("retail/groupHealth/tests.lua")
+loadAddonFile("retail/auction/prices.lua")
+loadAddonFile("retail/auction/ReplicateScanner.lua")
+loadAddonFile("retail/auction/tests.lua")
 loadAddonFile("core/colors/names.lua")
 loadAddonFile("core/colors/colors.lua")
 loadAddonFile("core/colors/tests.lua")
@@ -236,16 +324,57 @@ loadAddonFile("core/targeting/softTargeting.lua")
 loadAddonFile("core/targeting/softTargetingTests.lua")
 loadAddonFile("core/ui modules/enemyCount.lua")
 loadAddonFile("core/ui modules/enemyCountTests.lua")
+loadAddonFile("core/ui modules/speechQueueTests.lua")
+loadAddonFile("core/ui modules/gameDefaults.lua")
+loadAddonFile("core/ui modules/gameDefaultsTests.lua")
 loadAddonFile("core/db.lua")
 loadAddonFile("core/dbTests.lua")
 loadAddonFile("core/utils.lua")
 loadAddonFile("core/utilsTests.lua")
+loadAddonFile("core/scanner/nearest.lua")
+loadAddonFile("core/scanner/nearestTests.lua")
 loadAddonFile("core/secrets.lua")
 loadAddonFile("core/secretsTests.lua")
 loadAddonFile("core/windows/bagLists.lua")
 loadAddonFile("core/windows/bagListsTests.lua")
 loadAddonFile("core/windows/newItems.lua")
 loadAddonFile("core/windows/newItemsTests.lua")
+-- The group health monitor's module: loaded against a stand-in module whose settings are a real settings class (as
+-- Module:hasSettings makes them), so a setting's change reaches the module as in the game. The suite stubs the
+-- game's unit functions per test.
+do
+    local savedBase = WowVision.base
+    local stub = { key = "groupHealth", L = WowVision:getLocale() }
+    local noop = function() end
+    stub.setLabel, stub.registerEvent, stub.registerBinding, stub.hasUpdate = noop, noop, noop, noop
+    function stub:hasSettings()
+        if self.settingsFacade == nil then
+            local settingsClass = WowVision.Class("Settings:groupHealthTest")
+            self.settings = settingsClass:new()
+            self.settingsFacade = {
+                add = function(_, def)
+                    settingsClass:addFields({ def })
+                    return settingsClass:getField(def.key)
+                end,
+            }
+        end
+        return self.settingsFacade
+    end
+    WowVision.base = {
+        createModule = function()
+            return stub
+        end,
+    }
+    loadAddonFile("retail/groupHealth/module.lua")
+    WowVision.base = savedBase
+    WowVision.groupHealth._moduleTestHarness = stub
+end
+loadAddonFile("retail/groupHealth/moduleTests.lua")
+loadAddonFile("camelot/petTraining.lua")
+loadAddonFile("camelot/petTrainingTests.lua")
+loadAddonFile("core/gameDB/itemQuality.lua")
+loadAddonFile("core/gameDB/itemCompare.lua")
+loadAddonFile("core/gameDB/itemCompareTests.lua")
 loadAddonFile("core/ui/input/heldKeys.lua")
 loadAddonFile("core/ui/input/heldKeysTests.lua")
 loadAddonFile("core/ui/input/padLogic.lua")
@@ -260,6 +389,8 @@ loadAddonFile("core/chat/links.lua")
 loadAddonFile("core/chat/linkTests.lua")
 loadAddonFile("core/chat/tabs.lua")
 loadAddonFile("core/chat/tabTests.lua")
+loadAddonFile("core/chat/echo.lua")
+loadAddonFile("core/chat/echoTests.lua")
 loadAddonFile("core/ClassTests.lua")
 loadAddonFile("core/ttsVoiceTests.lua")
 loadAddonFile("core/errors/utils.lua")
@@ -267,6 +398,9 @@ loadAddonFile("core/errors/tests.lua")
 
 -- The component registry and the systems above it, all on the class library.
 loadAddonFile("core/Registry.lua")
+loadAddonFile("core/ui/WindowManager.lua")
+loadAddonFile("core/ui/Window.lua")
+loadAddonFile("core/ui/windowTests.lua")
 loadAddonFile("core/templates/templates.lua")
 loadAddonFile("core/templates/tests.lua")
 loadAddonFile("core/components/components.lua")
@@ -274,6 +408,19 @@ loadAddonFile("core/components/RegistryType.lua")
 loadAddonFile("core/components/ClassRegistryType.lua")
 loadAddonFile("core/components/ComponentRegistry.lua")
 loadAddonFile("core/components/tests.lua")
+
+-- The tooltip reader's comparison blocks (the frames are the game's side).
+strtrim = strtrim or function(text)
+    return (text:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+loadAddonFile("core/ui/tooltip/TooltipReader.lua")
+loadAddonFile("core/ui/tooltip/Tooltip.lua")
+loadAddonFile("core/ui/tooltip/comparisonTests.lua")
+loadAddonFile("core/ui/tooltip/TooltipType.lua")
+loadAddonFile("core/ui/tooltip/types/GameTooltip.lua")
+loadAddonFile("core/ui/tooltip/types/gameTooltipTests.lua")
+loadAddonFile("retail/questLogTooltip.lua")
+loadAddonFile("retail/questLogTooltipTests.lua")
 
 -- Object types read the game on demand: their spoken lines run here with
 -- stand-ins for the game functions they call.
@@ -293,6 +440,8 @@ loadAddonFile("core/objects/types/tests.lua")
 -- catches recursion/typo failures the parse check cannot.
 loadAddonFile("core/alerts/alerts.lua")
 loadAddonFile("core/alerts/outputs.lua")
+loadAddonFile("core/audio/channelTests.lua")
+loadAddonFile("core/audio/beaconVolumeTests.lua")
 
 -- The real Module, for what it does with the stores. Its frames, bindings
 -- and profiler are the game's side: stand-ins, in place only while Module.lua
@@ -317,6 +466,9 @@ do
                 getDefaultDB = function()
                     return {}
                 end,
+                -- the profiler's side: off, as the game's starts
+                start = function() end,
+                stop = function() end,
             }
         end,
     }
@@ -336,6 +488,7 @@ do
         withStandIns(initialize, self, key)
     end
     loadAddonFile("core/module/alertScopeTests.lua")
+    loadAddonFile("core/module/updateTests.lua")
 end
 
 -- The buffer family on the new class system: construction and db round trip.
@@ -511,6 +664,133 @@ WowVision.testing.testRunner:addSuite("AuraBufferFilters", {
 })
 
 WowVision.testing.testRunner:addSuite("BufferConstruction", {
+    ["Always Start at Top lands a switched-to buffer on its first item"] = function(t)
+        local spoken = {}
+        local savedSpeak, savedStarts = WowVision.speak, WowVision.buffers.startsAtTop
+        WowVision.speak = function(_, text)
+            spoken[#spoken + 1] = text
+        end
+        local function filled(label, lines)
+            local buffer = WowVision.buffers:create("Static", { label = label })
+            for _, line in ipairs(lines) do
+                buffer:add(WowVision.buffers.MessageItem:new({ data = line }))
+            end
+            return buffer
+        end
+        local root = WowVision.buffers.RootBufferGroup:new({})
+        local first = WowVision.buffers:create("Group", { label = "One" })
+        local second = WowVision.buffers:create("Group", { label = "Two" })
+        root:addBuffer(first)
+        root:addBuffer(second)
+        local a = filled("A", { "a1", "a2", "a3" })
+        local b = filled("B", { "b1", "b2", "b3" })
+        local c = filled("C", { "c1", "c2" })
+        first:addBuffer(a)
+        first:addBuffer(b)
+        second:addBuffer(c)
+        root:getFocus()
+        first:getFocus()
+
+        -- Off: a buffer keeps its place
+        WowVision.buffers.startsAtTop = function()
+            return false
+        end
+        a:focusDirection(1)
+        a:focusDirection(1)
+        first:UIFocusDirection(1)
+        first:UIFocusDirection(-1)
+        local keptOff = a:getFocus():getFocusString()
+
+        -- On: between buffers
+        WowVision.buffers.startsAtTop = function()
+            return true
+        end
+        b:focusIndex(2)
+        first:UIFocusDirection(1)
+        local onB = spoken[#spoken]
+        local bIndex = b.index
+
+        -- On: between groups, the group keeps its buffer
+        c:focusIndex(2)
+        root:UIFocusDirection(1)
+        local onC = spoken[#spoken]
+        local cIndex = c.index
+
+        WowVision.speak, WowVision.buffers.startsAtTop = savedSpeak, savedStarts
+        t:assertEqual(keptOff, "a2")
+        t:assertEqual(onB, "B b1")
+        t:assertEqual(bIndex, 1)
+        t:assertEqual(onC, "Two C c1")
+        t:assertEqual(cIndex, 1)
+        t:assertEqual(first.index, 2, "the group stays on its buffer")
+    end,
+
+    ["a run opens with its first buffer key and closes once when Alt is let go"] = function(t)
+        local buffers = WowVision.buffers
+        buffers.endRun()
+        local savedStarted, savedEnded = buffers.runStarted, buffers.runEnded
+        local log = {}
+        buffers.runStarted = function()
+            log[#log + 1] = "open"
+        end
+        buffers.runEnded = function()
+            log[#log + 1] = "close"
+        end
+        buffers.endRun() -- Alt or another modifier changing with no run: nothing
+        buffers.takeNewRun()
+        buffers.takeNewRun() -- Alt held: the run goes on
+        buffers.endRun()
+        buffers.endRun() -- another modifier changing after the close: nothing
+        buffers.takeNewRun()
+        buffers.endRun()
+        buffers.runStarted, buffers.runEnded = savedStarted, savedEnded
+        t:assertEqual(table.concat(log, ","), "open,close,open,close")
+    end,
+
+    ["Always Start at Top: Alt let go, the next Alt-Down lands on the first item again"] = function(t)
+        local spoken = {}
+        local savedSpeak = WowVision.speak
+        WowVision.speak = function(_, text)
+            spoken[#spoken + 1] = text
+        end
+        local buffers = WowVision.buffers
+        local buffer = buffers:create("Static", { label = "A" })
+        for _, line in ipairs({ "health", "mana", "xp" }) do
+            buffer:add(buffers.MessageItem:new({ data = line }))
+        end
+        local function press(direction)
+            buffer:UIMoveItem(direction, buffers.takeNewRun())
+            return spoken[#spoken]
+        end
+
+        buffers.endRun()
+        local first = press(1)
+        buffers.endRun()
+        local again = press(1)
+        local held = press(1)
+        local heldOn = press(1)
+        buffers.endRun()
+        local backward = press(-1)
+        buffers.endRun()
+        local restarted = press(1)
+
+        -- A switch reads the first item: the run goes on from there.
+        local group = buffers:create("Group", { label = "G" })
+        group:addBuffer(buffer)
+        buffers.endRun()
+        group:UIFocusDirection(1)
+        local afterSwitch = buffers.takeNewRun()
+
+        WowVision.speak = savedSpeak
+        t:assertEqual(first, "health")
+        t:assertEqual(again, "health")
+        t:assertEqual(held, "mana", "Alt held walks on")
+        t:assertEqual(heldOn, "xp")
+        t:assertEqual(backward, "mana", "a backward press moves on from where the buffer stands")
+        t:assertEqual(restarted, "health")
+        t:assertEqual(afterSwitch, false)
+    end,
+
     ["Retail and Forever offer no tracked buffer, and saved ones still load"] = function(t)
         local groupTypes = WowVision.buffers.groupTypes
         local saved = {}
@@ -718,6 +998,18 @@ WowVision.testing.testRunner:addSuite("BufferConstruction", {
 loadAddonFile("core/monitors/Rule.lua")
 loadAddonFile("core/monitors/Monitor.lua")
 loadAddonFile("core/monitors/rules/StateRule.lua")
+-- The Resource monitor reads the powers list (core/gameDB/powers.lua), which
+-- takes its ids from the game's Enum.PowerType.
+do
+    local savedEnum = Enum
+    Enum = { PowerType = { Mana = 0, Rage = 1, Focus = 2, Energy = 3, ComboPoints = 4 } }
+    loadAddonFile("core/gameDB/gameDB.lua")
+    loadAddonFile("core/gameDB/powers.lua")
+    Enum = savedEnum
+end
+loadAddonFile("core/monitors/types/resourceSteps.lua")
+loadAddonFile("core/monitors/types/ResourceMonitor.lua")
+loadAddonFile("core/monitors/types/resourceTests.lua")
 WowVision.testing.testRunner:addSuite("MonitorConstruction", {
     ["a monitor with a state rule round-trips its db"] = function(t)
         local StateRule = WowVision.monitors.ruleRegistry.types:get("State")
@@ -732,14 +1024,15 @@ WowVision.testing.testRunner:addSuite("MonitorConstruction", {
                 return WowVision.monitors.registry:createTemporaryComponent(config)
             end,
             getTypeKey = function(instance)
-                return "Aura"
+                return "PlainStandIn"
             end,
         })
-        -- A plain Monitor stands in for the WoW-API-dependent types here.
-        WowVision.monitors.registry.types:register("Aura", WowVision.monitors.Monitor)
+        -- A plain Monitor stands in for the WoW-API-dependent types here
+        -- (under its own key: the classic Aura type is loaded further down).
+        WowVision.monitors.registry.types:register("PlainStandIn", WowVision.monitors.Monitor)
         field:setDB(container, db)
 
-        field:addElement(container, { type = "Aura", label = "Test Monitor" })
+        field:addElement(container, { type = "PlainStandIn", label = "Test Monitor" })
         t:assertEqual(db.monitors[1].label, "Test Monitor")
 
         local monitor = container.monitors[1]
@@ -933,7 +1226,7 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         t:assertEqual(#fired, 5)
 
         -- A target change holds the rule for two ticks, then announces when asked
-        monitor.announceOnUnitChange = true
+        monitor.announceOnUnitChange = "always"
         monitor:onTargetChanged()
         moonfireIcon.auraDataUnit, moonfireIcon.auraDataCached, moonfireIcon.active = "target", {}, true
         monitor:update()
@@ -944,7 +1237,7 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         moonfireIcon.auraDataUnit, moonfireIcon.auraDataCached, moonfireIcon.active = nil, nil, false
         monitor:update()
         t:assertEqual(fired[#fired], "Moonfire Missing")
-        monitor.announceOnUnitChange = false
+        monitor.announceOnUnitChange = "changes"
 
         -- The pandemic marker goes at expiry before the aura data does: the
         -- rule holds Pandemic across the gap and goes straight to Missing
@@ -1079,6 +1372,195 @@ WowVision.testing.testRunner:addSuite("CdmAuraMonitor", {
         monitor:update()
         GetTime = savedGetTime
     end,
+    ["a target monitor hears your own auras while you target yourself"] = function(t)
+        local saved = { UnitIsUnit = UnitIsUnit, UnitGUID = UnitGUID }
+        local selfTarget = false
+        UnitIsUnit = function(a, b)
+            return selfTarget and a == "target" and b == "player"
+        end
+        UnitGUID = nil
+        local ok, err = pcall(function()
+            local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
+            monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
+            local rule = monitor.rules[1]
+            monitor:update()
+            -- The viewers label an aura on you "player", whoever is targeted
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = "player", {}, true
+            monitor:update()
+            t:assertEqual(rule:currentText("target"), "Sunfire, Missing")
+            -- The first reading settles silently: never Applied, nothing said
+            t:assertEqual(rule:getCurrentState(), nil)
+
+            -- Targeting yourself, the target monitor takes it
+            selfTarget = true
+            monitor:update()
+            t:assertEqual(rule:currentText("target"), "Sunfire")
+            t:assertEqual(rule:getCurrentState(), "applied")
+        end)
+        UnitIsUnit, UnitGUID = saved.UnitIsUnit, saved.UnitGUID
+        sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = nil, nil, false
+        if not ok then
+            error(err, 0)
+        end
+    end,
+    ["a hidden or refused self-target answer never turns your aura Missing"] = function(t)
+        local saved = { UnitIsUnit = UnitIsUnit, UnitGUID = UnitGUID, issecretvalue = issecretvalue }
+        local hidden = { secretValue = true }
+        issecretvalue = function(value)
+            return value == hidden
+        end
+        local answer, guids = "yes", nil
+        UnitIsUnit = function()
+            if answer == "refused" then
+                error("restricted")
+            end
+            return answer == "hidden" and hidden or answer == "yes"
+        end
+        UnitGUID = function(unit)
+            return guids ~= nil and guids[unit] or hidden
+        end
+        local ok, err = pcall(function()
+            local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
+            monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
+            local rule = monitor.rules[1]
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = "player", {}, true
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "applied")
+
+            -- Hidden (and no readable GUIDs): the last readable answer holds
+            answer = "hidden"
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "applied")
+            t:assertEqual(rule:currentText("target"), "Sunfire")
+            answer = "refused"
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "applied")
+
+            -- A new target forgets it; the GUIDs answer when they are plain
+            monitor:onTargetChanged()
+            guids = { target = "Player-1", player = "Player-1" }
+            for _ = 1, 3 do
+                monitor:update()
+            end
+            t:assertEqual(rule:getCurrentState(), "applied")
+            guids = { target = "Player-2", player = "Player-1" }
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "missing")
+
+            -- A new target with nothing readable is not you
+            monitor:onTargetChanged()
+            guids = nil
+            for _ = 1, 3 do
+                monitor:update()
+            end
+            t:assertEqual(rule:currentText("target"), "Sunfire, Missing")
+        end)
+        UnitIsUnit, UnitGUID, issecretvalue = saved.UnitIsUnit, saved.UnitGUID, saved.issecretvalue
+        sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = nil, nil, false
+        if not ok then
+            error(err, 0)
+        end
+    end,
+    ["on a target change: only changes, always, or never"] = function(t)
+        local monitor = WowVision.monitors:create("CdmAura", { unit = "target" })
+        local field = monitor.class:getField("announceOnUnitChange")
+        t:assertEqual(monitor.announceOnUnitChange, "changes")
+        t:assertEqual(field:getValueString(monitor, "changes"), "Only Changes")
+        t:assertEqual(field:getValueString(monitor, "never"), "Never")
+        -- The field was a Bool: saved true and false keep their meaning
+        monitor.announceOnUnitChange = true
+        t:assertEqual(monitor.announceOnUnitChange, "always")
+        monitor.announceOnUnitChange = false
+        t:assertEqual(monitor.announceOnUnitChange, "changes")
+        local restored = WowVision.monitors:create("CdmAura", { unit = "target" })
+        restored:setDB({ global = { announceOnUnitChange = true } })
+        t:assertEqual(restored.announceOnUnitChange, "always")
+        restored:setDB({ global = { announceOnUnitChange = false } })
+        t:assertEqual(restored.announceOnUnitChange, "changes")
+        monitor.class:getField("rules"):addElement(monitor, { type = "CdmAuraState", spell = 93402 })
+        local rule = monitor.rules[1]
+        local fired = {}
+        for _, state in ipairs({ "applied", "missing" }) do
+            local alert = rule.class:getField(state):getAlert(rule)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(fired, message.text)
+                    end
+                end
+            end
+        end
+        local function up()
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = "target", {}, true
+        end
+        local function down()
+            sunfireIcon.auraDataUnit, sunfireIcon.auraDataCached, sunfireIcon.active = nil, nil, false
+        end
+        local function switchTo(present)
+            monitor:onTargetChanged()
+            if present then
+                up()
+            else
+                down()
+            end
+            for _ = 1, 3 do
+                monitor:update()
+            end
+        end
+        up()
+        monitor:update()
+        t:assertEqual(#fired, 0)
+
+        -- Only changes: a new target without the aura speaks Missing, one with it stays quiet
+        switchTo(false)
+        t:assertEqual(fired[#fired], "Sunfire Missing")
+        switchTo(true)
+        t:assertEqual(fired[#fired], "Sunfire Applied")
+        switchTo(true)
+        t:assertEqual(#fired, 2)
+
+        -- Always: the new target's state, even when it is the same
+        monitor.announceOnUnitChange = "always"
+        switchTo(true)
+        t:assertEqual(#fired, 3)
+        t:assertEqual(fired[3], "Sunfire Applied")
+
+        -- Never: switching speaks nothing, either way
+        monitor.announceOnUnitChange = "never"
+        switchTo(false)
+        switchTo(true)
+        switchTo(false)
+        t:assertEqual(#fired, 3)
+        -- ...but once the reading holds still for a tick, a change on the
+        -- new target speaks
+        monitor:update()
+        up()
+        monitor:update()
+        t:assertEqual(fired[#fired], "Sunfire Applied")
+        down()
+        monitor:update()
+        t:assertEqual(fired[#fired], "Sunfire Missing")
+        t:assertEqual(#fired, 5)
+
+        -- Never, with the viewer a tick late: the first reading is still the
+        -- old target's, the next one is the new target's; neither speaks
+        monitor:onTargetChanged()
+        down()
+        for _ = 1, 3 do
+            monitor:update()
+        end
+        up()
+        monitor:update()
+        monitor:update()
+        t:assertEqual(#fired, 5)
+        -- once the reading holds still, a change speaks again
+        down()
+        monitor:update()
+        t:assertEqual(fired[#fired], "Sunfire Missing")
+        t:assertEqual(#fired, 6)
+    end,
 })
 
 -- Spell Cooldowns monitor: the cooldown APIs as the game answers them,
@@ -1137,6 +1619,313 @@ C_CooldownViewer.GetValidAlertTypes = C_CooldownViewer.GetValidAlertTypes or fun
     return {}
 end
 loadAddonFile("retail/monitors/SpellCooldownMonitor.lua")
+WowVision.testing.testRunner:addSuite("ComponentCopy", {
+    ["a copied monitor carries its rules and alert settings, then lives on its own"] = function(t)
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return (instance.class.name:gsub("Monitor$", ""))
+            end,
+        })
+        field:setDB(container, { global = db })
+        field:addElement(container, { type = "CdmAura", label = "Dots", unit = "target" })
+        field:addElement(container, { type = "CdmAura", label = "Last", unit = "target" })
+        local original = container.monitors[1]
+        local rulesField = original.class:getField("rules")
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 8921 })
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 93402 })
+        local alert = original.rules[1].class:getField("applied"):getAlert(original.rules[1])
+        alert:setEnabled(true)
+
+        local copy = field:copyElement(container, original, function(config)
+            config.label = "Dots Copy 1"
+        end)
+        -- Lands right after its original, in memory and in the store
+        t:assertEqual(container.monitors[2], copy)
+        t:assertEqual(container.monitors[3].label, "Last")
+        t:assertEqual(db.monitors[2].label, "Dots Copy 1")
+        t:assertEqual(db.monitors[3].label, "Last")
+        t:assertEqual(original.label, "Dots")
+        -- Everything else comes along: unit, rules, spells, alert settings
+        t:assertEqual(copy.unit, "target")
+        t:assertEqual(#copy.rules, 2)
+        t:assertEqual(copy.rules[1].spell, 8921)
+        t:assertEqual(copy.rules[2].spell, 93402)
+        local copiedAlert = copy.rules[1].class:getField("applied"):getAlert(copy.rules[1])
+        t:assertEqual(copiedAlert:getEnabled(), true)
+
+        -- The copy is its own: changing it leaves the original alone
+        copy.unit = "player"
+        copiedAlert:setEnabled(false)
+        copy.rules[2].spell = 78674
+        t:assertEqual(original.unit, "target")
+        t:assertEqual(alert:getEnabled(), true)
+        t:assertEqual(original.rules[2].spell, 93402)
+
+        -- Both survive a reload as they are
+        local again = { monitors = {} }
+        field:setDB(again, { global = db })
+        t:assertEqual(#again.monitors, 3)
+        t:assertEqual(again.monitors[1].unit, "target")
+        t:assertEqual(again.monitors[2].unit, "player")
+        t:assertEqual(again.monitors[2].rules[2].spell, 78674)
+        t:assertEqual(again.monitors[1].rules[2].spell, 93402)
+        local reloadedAlert = again.monitors[1].rules[1].class:getField("applied"):getAlert(again.monitors[1].rules[1])
+        t:assertEqual(reloadedAlert:getEnabled(), true)
+
+        -- A single rule copies inside its monitor
+        local ruleCopy = rulesField:copyElement(again.monitors[1], again.monitors[1].rules[1])
+        t:assertEqual(#again.monitors[1].rules, 3)
+        t:assertEqual(again.monitors[1].rules[2], ruleCopy)
+        t:assertEqual(ruleCopy.spell, 8921)
+        t:assertEqual(db.monitors[1].rules[2].spell, 8921)
+        t:assertEqual(db.monitors[1].rules[3].spell, 93402)
+    end,
+    ["a copy needs a store; the store keeps memory's order"] = function(t)
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return (instance.class.name:gsub("Monitor$", ""))
+            end,
+        })
+        -- No store: nothing is copied, nothing pretends to be
+        local loose = { monitors = {} }
+        field:addElement(loose, { type = "CdmAura", label = "Loose" })
+        t:assertNil(field:copyElement(loose, loose.monitors[1]))
+        t:assertEqual(#loose.monitors, 1)
+
+        -- The original's config is gone from the array: the copy goes in
+        -- before the next element's config, as in memory
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        field:setDB(container, { global = db })
+        field:addElement(container, { type = "CdmAura", label = "First" })
+        field:addElement(container, { type = "CdmAura", label = "Second" })
+        field:addElement(container, { type = "CdmAura", label = "Third" })
+        table.remove(db.monitors, 1)
+        local copy = field:copyElement(container, container.monitors[1], function(config)
+            config.label = "First Copy 1"
+        end)
+        t:assertEqual(container.monitors[2], copy)
+        t:assertEqual(db.monitors[1].label, "First Copy 1")
+        t:assertEqual(db.monitors[2].label, "Second")
+        t:assertEqual(db.monitors[3].label, "Third")
+    end,
+    ["a copy builds its rules once"] = function(t)
+        local db = { monitors = { _type = "array" } }
+        local container = { monitors = {} }
+        local field = WowVision.classes.newField({
+            key = "monitors",
+            type = "ComponentArray",
+            persist = true,
+            factory = function(config)
+                return WowVision.monitors.registry:createTemporaryComponent(config)
+            end,
+            getTypeKey = function(instance)
+                return (instance.class.name:gsub("Monitor$", ""))
+            end,
+        })
+        field:setDB(container, { global = db })
+        field:addElement(container, { type = "CdmAura", label = "Dots", unit = "target" })
+        local original = container.monitors[1]
+        local rulesField = original.class:getField("rules")
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 8921 })
+        rulesField:addElement(original, { type = "CdmAuraState", spell = 93402 })
+        local registry = WowVision.monitors.ruleRegistry
+        local built = 0
+        local saved = registry.createTemporaryComponent
+        registry.createTemporaryComponent = function(...)
+            built = built + 1
+            return saved(...)
+        end
+        local ok, err = pcall(field.copyElement, field, container, original)
+        registry.createTemporaryComponent = saved
+        t:assertTrue(ok, tostring(err))
+        t:assertEqual(built, 2)
+        t:assertEqual(#container.monitors[2].rules, 2)
+    end,
+    ["Copy is offered on labeled components with a store only"] = function(t)
+        local Unnamed = WowVision.Class("CopyTestUnnamed")
+        Unnamed:addFields({ { key = "value", type = "Number", persist = true } })
+        local function arrayOf(factory)
+            return WowVision.classes.newField({
+                key = "things",
+                type = "ComponentArray",
+                persist = true,
+                factory = factory,
+                getTypeKey = function()
+                    return "Thing"
+                end,
+            })
+        end
+        local unnamedField = arrayOf(function(config)
+            return Unnamed:new(config)
+        end)
+        local unnamed = { things = {} }
+        unnamedField:setDB(unnamed, { global = { things = { _type = "array" } } })
+        unnamedField:addElement(unnamed, { value = 1 })
+        t:assertFalse(unnamedField:canCopy(unnamed, unnamed.things[1]))
+
+        local monitorField = arrayOf(function(config)
+            return WowVision.monitors.registry:createTemporaryComponent(config)
+        end)
+        local stored = { things = {} }
+        monitorField:setDB(stored, { global = { things = { _type = "array" } } })
+        monitorField:addElement(stored, { type = "CdmAura", label = "Dots" })
+        t:assertTrue(monitorField:canCopy(stored, stored.things[1]))
+        local loose = { things = {} }
+        monitorField:addElement(loose, { type = "CdmAura", label = "Loose" })
+        t:assertFalse(monitorField:canCopy(loose, loose.things[1]))
+    end,
+    ["copying a buffer before the focused one keeps the focus"] = function(t)
+        local group = WowVision.buffers:create("Group", { label = "Group" })
+        group:setDB({ global = {} })
+        for _, label in ipairs({ "A", "B", "C" }) do
+            group:addBuffer(WowVision.buffers:create("Static", { label = label }))
+        end
+        group:focusIndex(3)
+        t:assertEqual(group:getFocus().label, "C")
+        local field = group.class:getField("items")
+        local copy = field:copyElement(group, group.items[1], function(config)
+            config.label = "A Copy 1"
+        end)
+        t:assertEqual(group.items[2], copy)
+        t:assertEqual(group:getFocus().label, "C")
+        -- A copy after the focus leaves it alone
+        field:copyElement(group, group.items[4])
+        t:assertEqual(group:getFocus().label, "C")
+    end,
+})
+
+-- The classic Aura monitor (TBC, Mists, Vanilla) with a stand-in tracker:
+-- the harness has no Aura object type, so each test hands the monitor a
+-- tracker whose events it fires itself.
+loadAddonFile("classic/monitors/types/AuraMonitor.lua")
+local function classicAuraSetup(mode)
+    local tracker = {
+        items = {},
+        events = {
+            add = WowVision.Event:new("add"),
+            remove = WowVision.Event:new("remove"),
+            unitsChanged = WowVision.Event:new("unitsChanged"),
+        },
+        untrack = function() end,
+    }
+    local monitor = WowVision.monitors:create("Aura", { unit = "target", announceOnUnitChange = mode })
+    monitor.createTracker = function()
+        return tracker
+    end
+    monitor:setDB({ global = {} })
+    monitor.class:getField("rules"):addElement(monitor, { type = "AuraState", spell = 8921, playerOnly = false })
+    local fired = {}
+    local function listen(rule)
+        for _, state in ipairs({ "applied", "missing" }) do
+            local alert = rule.class:getField(state):getAlert(rule)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(fired, message.text)
+                    end
+                end
+            end
+        end
+    end
+    listen(monitor.rules[1])
+    local function aura()
+        local values = { spellId = 8921, duration = 0 }
+        return {
+            get = function(_, key)
+                return values[key]
+            end,
+        }
+    end
+    -- A new target: the game's order, the unit change first, then the old
+    -- target's auras go and the new one's come
+    local function switchTo(old, new)
+        tracker.events.unitsChanged:emit(tracker, "target", "guid")
+        if old ~= nil then
+            tracker.items[old] = nil
+            tracker.events.remove:emit(tracker, old)
+        end
+        if new ~= nil then
+            tracker.items[new] = true
+            tracker.events.add:emit(tracker, new)
+        end
+        monitor:update()
+    end
+    return monitor, tracker, fired, aura, switchTo, listen
+end
+
+WowVision.testing.testRunner:addSuite("ClassicAuraMonitor", {
+    ["on a target change: only changes, always, or never"] = function(t)
+        local monitor, tracker, fired, aura, switchTo = classicAuraSetup("changes")
+        local first = aura()
+        tracker.items[first] = true
+        monitor:update()
+        t:assertEqual(#fired, 0)
+        -- Only changes: a target without the aura speaks Missing, one with it Applied
+        switchTo(first, nil)
+        t:assertEqual(fired[#fired], "Moonfire Missing")
+        local second = aura()
+        switchTo(nil, second)
+        t:assertEqual(fired[#fired], "Moonfire Applied")
+        local third = aura()
+        switchTo(second, third)
+        t:assertEqual(#fired, 2)
+        -- Always: the new target's state, even when it is the same
+        monitor.announceOnUnitChange = "always"
+        local fourth = aura()
+        switchTo(third, fourth)
+        t:assertEqual(#fired, 3)
+        t:assertEqual(fired[3], "Moonfire Applied")
+        -- Never: switching speaks nothing, either way
+        monitor.announceOnUnitChange = "never"
+        switchTo(fourth, nil)
+        local fifth = aura()
+        switchTo(nil, fifth)
+        t:assertEqual(#fired, 3)
+        -- ...but a change on the new target still speaks
+        tracker.items[fifth] = nil
+        tracker.events.remove:emit(tracker, fifth)
+        monitor:update()
+        t:assertEqual(fired[#fired], "Moonfire Missing")
+        t:assertEqual(#fired, 4)
+    end,
+    ["copying a rule announces nothing"] = function(t)
+        local monitor, tracker, fired, aura, _, listen = classicAuraSetup("changes")
+        tracker.items[aura()] = true
+        monitor:update()
+        monitor:update()
+        t:assertEqual(#fired, 0)
+        local copy = monitor.class:getField("rules"):copyElement(monitor, monitor.rules[1])
+        listen(copy)
+        monitor:update()
+        monitor:update()
+        t:assertEqual(#monitor.rules, 2)
+        t:assertEqual(#fired, 0)
+        -- Changing what a rule tracks still starts over and announces
+        monitor.rules[1].spell = 8921
+        monitor.rules[1].playerOnly = true
+        monitor.rules[1].playerOnly = false
+        monitor:update()
+        t:assertEqual(fired[#fired], "Moonfire Applied")
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {
     ["the pickers list the Essential and Utility spells, cooldowns only for cooldown rules"] = function(t)
         -- An entry's linked spells are picks of their own, the base is not
@@ -1314,6 +2103,164 @@ WowVision.testing.testRunner:addSuite("ModuleSettings", {
     end,
 })
 
+-- The chat module's real hook, on a stand-in for the module frame around it.
+WowVision.testing.testRunner:addSuite("ChatEchoHistory", {
+    ["an addon message lands in the tab's history and is not spoken again"] = function(t)
+        local function noop() end
+        local chatModule = {
+            L = setmetatable({}, {
+                __index = function(_, key)
+                    return key
+                end,
+            }),
+            setLabel = noop,
+            addAlert = function()
+                return { addOutput = noop, parameters = { add = noop } }
+            end,
+            hasSettings = function()
+                return { add = noop, addRef = noop }
+            end,
+        }
+        local savedBase, savedDate = WowVision.base, date
+        WowVision.base = {
+            createModule = function()
+                return chatModule
+            end,
+        }
+        date = date or os.date
+        loadAddonFile("core/chat/module.lua")
+
+        local stored, fired = {}, 0
+        local frame = {
+            GetID = function()
+                return 1
+            end,
+            IsShown = function()
+                return true
+            end,
+        }
+        function frame:AddMessage(text)
+            chatModule.onMessage(self, text)
+        end
+        chatModule.frames = {
+            [1] = {
+                frame = frame,
+                store = {
+                    add = function(_, data)
+                        stored[#stored + 1] = data.message
+                    end,
+                },
+                alert = {
+                    enabled = true,
+                    parameters = {
+                        getFieldValue = function()
+                            return "always"
+                        end,
+                    },
+                    fire = function()
+                        fired = fired + 1
+                    end,
+                },
+            },
+        }
+
+        WowVision.chatEcho.send(frame, "Route started")
+        local firedAfterEcho = fired
+        frame:AddMessage("Someone says hello")
+        WowVision.base, date = savedBase, savedDate
+
+        t:assertEqual(stored[1], "WowVision: Route started")
+        t:assertEqual(firedAfterEcho, 0, "already spoken by notify")
+        t:assertEqual(stored[2], "Someone says hello")
+        t:assertEqual(fired, 1, "a normal line still speaks")
+    end,
+})
+
+WowVision.testing.testRunner:addSuite("NearbyQuestSounds", {
+    ["the three alerts construct with Sku's defaults and a ping plays the file for its level"] = function(t)
+        local alerts, refs, played = {}, {}, {}
+        local nearby = {
+            L = setmetatable({}, {
+                __index = function(_, key)
+                    return key
+                end,
+            }),
+        }
+        function nearby:setLabel() end
+        function nearby:registerEvent() end
+        function nearby:hasSettings()
+            return {
+                add = function() end,
+                addRef = function(_, key)
+                    tinsert(refs, key)
+                end,
+            }
+        end
+        function nearby:addAlert(info)
+            local alert = WowVision.alerts.Alert:new(info)
+            alerts[info.key] = alert
+            return alert
+        end
+        local directory = {
+            getPath = function(_, key)
+                return {
+                    maxDistance = 30,
+                    getFile = function(_, angle, level)
+                        return key .. ";" .. angle .. ";" .. level
+                    end,
+                }
+            end,
+        }
+        local audio = WowVision.audio
+        local savedBase, savedPlay = WowVision.base, PlaySoundFile
+        local savedGetPath, savedChannel = rawget(audio, "getPath"), rawget(audio, "channel")
+        WowVision.base = {
+            quests = {
+                createModule = function()
+                    return nearby
+                end,
+            },
+            speech = { settings = {} },
+        }
+        audio.getPath = function()
+            return directory
+        end
+        audio.channel = function()
+            return "SFX"
+        end
+        PlaySoundFile = function(path, channel)
+            tinsert(played, path .. "@" .. channel)
+        end
+        local ok, err = pcall(function()
+            loadAddonFile("core/quests/nearbySounds.lua")
+            t:assertEqual(#refs, 3)
+            local expected = {
+                availableQuest = { "WowVision/Notification_soft_100", 30 },
+                turnInQuest = { "WowVision/steel_gong", 40 },
+                questObjective = { "WowVision/probe_deep_1", 30 },
+            }
+            for key, want in pairs(expected) do
+                local db = alerts[key]:getDefaultDBRecursive()
+                t:assertEqual(db.outputs.beacon.beacon, want[1])
+                t:assertEqual(db.outputs.beacon.volume, want[2])
+                t:assertEqual(db.outputs.tts.enabled, false)
+                alerts[key]:setDB(db)
+            end
+            -- volume 30 is seven levels down; the file levels stop at 1 and 30
+            alerts.availableQuest:fire({ angle = 10, level = 4, text = "x" })
+            alerts.availableQuest:fire({ angle = 10, level = 29, text = "x" })
+            t:assertEqual(played[1], "WowVision/Notification_soft_100;10;11@SFX")
+            t:assertEqual(played[2], "WowVision/Notification_soft_100;10;30@SFX")
+            t:assertEqual(#played, 2, "the speech output starts off")
+        end)
+        WowVision.base, PlaySoundFile = savedBase, savedPlay
+        audio.getPath, audio.channel = savedGetPath, savedChannel
+        if not ok then
+            error(err, 0)
+        end
+    end,
+})
+
 WowVision.testing.testRunner:addSuite("AlertConstruction", {
     ["an alert with an output constructs enabled"] = function(t)
         local alert = WowVision.alerts.Alert:new({ key = "smoke", label = "Smoke" })
@@ -1366,6 +2313,7 @@ WowVision.testing.testRunner:addSuite("AlertConstruction", {
         C_VoiceChat = nil
         WowVision.base = nil
     end,
+
 })
 
 loadAddonFile("core/graph/ControlId.lua")
@@ -1374,6 +2322,7 @@ loadAddonFile("core/graph/Announcer.lua")
 loadAddonFile("core/graph/KeyGraph.lua")
 loadAddonFile("core/graph/typeAhead.lua")
 loadAddonFile("core/graph/typeAheadTests.lua")
+loadAddonFile("core/graph/doublePress.lua")
 loadAddonFile("core/graph/Builder.lua")
 loadAddonFile("core/graph/ControlTypes.lua")
 loadAddonFile("core/graph/nodes.lua")
@@ -1383,12 +2332,136 @@ loadAddonFile("core/graph/scrollBox.lua")
 loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
+loadAddonFile("core/graph/doublePressTests.lua")
 loadAddonFile("core/graph/controlTests.lua")
+-- The graph host, with its frame stubbed (its announcer words saved and restored so the graph suites keep their
+-- own), then the scanner window and the key-press suite on it and the window manager loaded further up.
+do
+    local announcer = WowVision.graph.announcer
+    local savedCreateFrame = CreateFrame
+    local savedPosition, savedExpanded = announcer.positionText, announcer.expandedStateText
+    CreateFrame = function()
+        return { RegisterEvent = function() end, SetScript = function() end }
+    end
+    loadAddonFile("core/graph/Screen.lua")
+    loadAddonFile("core/graph/Host.lua")
+    loadAddonFile("core/graph/liveWatch.lua")
+    loadAddonFile("core/graph/combatKeys.lua")
+    CreateFrame = savedCreateFrame
+    announcer.positionText, announcer.expandedStateText = savedPosition, savedExpanded
+    WowVision.graphHost = nil
+end
+loadAddonFile("core/graph/hostTooltipTests.lua")
+loadAddonFile("core/scanner/menuTests.lua")
+-- Group invitations: the popups window and the role popups load against a stand-in window module (the
+-- windows they register and the popups module come back to the suite); the game's frames are per test.
+do
+    local savedBase = WowVision.base
+    local harness = { windows = {} }
+    local function stubModule()
+        local stub = { L = WowVision:getLocale() }
+        function stub:setLabel() end
+        function stub:registerCommand() end
+        function stub:registerBinding() end
+        function stub:registerEvent() end
+        function stub:registerWindow(def)
+            harness.windows[def.name] = def
+        end
+        function stub:createModule(key)
+            local child = stubModule()
+            self[key] = child
+            return child
+        end
+        return stub
+    end
+    WowVision.base = { windows = stubModule() }
+    loadAddonFile("core/windows/popups.lua")
+    -- Pending windows: the game's dialog table and button words, as the game has them (restored below).
+    local savedDialogs, savedAccept, savedDecline = StaticPopupDialogs, ACCEPT, DECLINE
+    StaticPopupDialogs = {}
+    ACCEPT, DECLINE = "Accept", "Decline"
+    loadAddonFile("core/windows/pending.lua")
+    loadAddonFile("core/windows/RolePoll.lua")
+    loadAddonFile("core/windows/trade.lua")
+    harness.popups = WowVision.base.windows.popups
+    harness.trade = WowVision.base.windows.trade
+    WowVision.base = savedBase
+    WowVision._popupsTestHarness = harness
+    loadAddonFile("core/windows/popupsTests.lua")
+    loadAddonFile("core/windows/tradeTests.lua")
+    loadAddonFile("core/windows/pendingTests.lua")
+    WowVision._popupsTestHarness = nil
+    StaticPopupDialogs, ACCEPT, DECLINE = savedDialogs, savedAccept, savedDecline
+end
+loadAddonFile("core/windows/options/layoutPages.lua")
+loadAddonFile("core/windows/options/layoutPagesTests.lua")
+loadAddonFile("core/graph/menuNavTests.lua")
+loadAddonFile("core/graph/combatKeysTests.lua")
+loadAddonFile("core/graph/secretLabelTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
 
 -- The junk module and the merchant sale, against a stand-in for the game.
 loadAddonFile("tools/junkModuleTests.lua")
+-- Native quest source and the scanner's quest categories: the adapter and
+-- the provider load against stand-ins for the quest module and the scanner;
+-- the suite installs the game's map and quest log APIs per test and points
+-- the stand-in module at its own source.
+do
+    local savedBase = WowVision.base
+    local harness = { providers = {}, source = nil }
+    local questModule = { L = WowVision:getLocale() }
+    questModule.settings = { sortByProximity = false }
+    function questModule:hasSource()
+        return true
+    end
+    function questModule:isReady()
+        return true
+    end
+    function questModule:inProgress()
+        return harness.source:inProgress()
+    end
+    function questModule:targets(questId, phase)
+        return harness.source:targets(questId, phase)
+    end
+    function questModule:objectiveTargets(questId, index)
+        return harness.source:objectiveTargets(questId, index)
+    end
+    function questModule:quest(questId)
+        return harness.source:quest(questId)
+    end
+    function questModule:placeName()
+        return nil
+    end
+    -- the scanner's last resorts; like the real module, nil when the source
+    -- has no such lookup (the native source has neither)
+    function questModule:markerTarget(questId, index)
+        if harness.source.markerTarget == nil then
+            return nil
+        end
+        return harness.source:markerTarget(questId, index)
+    end
+    function questModule:gameMarkerTarget(questId)
+        if harness.source.gameMarkerTarget == nil then
+            return nil
+        end
+        return harness.source:gameMarkerTarget(questId)
+    end
+    WowVision.base = {
+        quests = questModule,
+        scanner = {
+            registerProvider = function(_, provider)
+                harness.providers[provider.key] = provider
+            end,
+        },
+    }
+    loadAddonFile("core/quests/Adapter.lua")
+    loadAddonFile("core/quests/native.lua")
+    loadAddonFile("core/quests/scanner.lua")
+    WowVision.quests._nativeTestHarness = harness
+    loadAddonFile("core/quests/nativeTests.lua")
+    WowVision.base = savedBase
+end
 
 -- Files that need the game client to run but should at least parse cleanly.
 local parseOnly = {
@@ -1396,8 +2469,6 @@ local parseOnly = {
     "tbc/speech.lua",
     "mists/speech.lua",
     "retail/speech.lua",
-    "core/graph/Screen.lua",
-    "core/graph/Host.lua",
     "core/graph/liveWatch.lua",
     "core/graph/textEntry.lua",
     "core/graph/keyCapture.lua",
@@ -1406,10 +2477,11 @@ local parseOnly = {
     "core/ui/input/pad.lua",
     "core/ui/input/tests.lua",
     "core/ui/Window.lua",
-    "core/ui/WindowManager.lua",
     "core/windows/GameMenu.lua",
     "core/errors/module.lua",
+    "core/quests/module.lua",
     "core/ui modules/graphBindings.lua",
+    "core/ui modules/gameDefaultsMenu.lua",
     "core/buffers/module.lua",
     "core/windows/options/ui.lua",
     "core/windows/options/Module.lua",
@@ -1417,7 +2489,6 @@ local parseOnly = {
     "mists/talents/glyphs.lua",
     "core/windows/gossip.lua",
     "core/windows/questWindow.lua",
-    "core/windows/popups.lua",
     "core/windows/colorPicker.lua",
     "camelot/character.lua",
     "camelot/spellbook.lua",
@@ -1455,6 +2526,7 @@ local parseOnly = {
     "classic/friends.lua",
     "classic/quests/questie.lua",
     "core/quests/module.lua",
+    "core/quests/nearbySounds.lua",
     "core/quests/scanner.lua",
     "core/quests/places.lua",
     "core/quests/native.lua",
@@ -1471,11 +2543,11 @@ local parseOnly = {
     "core/navigation/maps/module.lua",
     "core/navigation/maps/ui.lua",
     "core/navigation/visited.lua",
+    "camelot/wownav/module.lua",
     "core/navigation/corpse.lua",
     "core/navigation/targetRoute.lua",
     "core/windows/Macros.lua",
     "core/windows/itemText.lua",
-    "core/windows/RolePoll.lua",
     "core/windows/trade.lua",
     "core/windows/bars/bars.lua",
     "core/windows/bars/GenericActionBar.lua",
@@ -1496,8 +2568,10 @@ local parseOnly = {
     "core/chat/module.lua",
     "core/chat/ui.lua",
     "core/ui/tooltip/types/HyperlinkTooltip.lua",
+    "core/ui/tooltip/types/LinesTooltip.lua",
     "core/ui/tooltip/types/AuraTooltip.lua",
     "mists/auction.lua",
+    "retail/auction/module.lua",
     "tbc/QuestLog.lua",
     "tbc/socketing.lua",
     "tbc/spellbook.lua",
@@ -1516,7 +2590,9 @@ local parseOnly = {
     "core/movement.lua",
     "core/navigation/walls.lua",
     "core/navigation/falling.lua",
+    "core/navigation/compass.lua",
     "core/navigation/maps/turnTo.lua",
+    "core/navigation/maps/turnToUnit.lua",
     "core/navigation/maps/module.lua",
     "core/navigation/maps/Beacon.lua",
     "core/navigation/maps/Path.lua",

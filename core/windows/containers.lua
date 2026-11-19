@@ -37,22 +37,25 @@ end
 -- An item slot node: live label (bag contents change constantly under
 -- focus), real clicks for pickup, use, and split, and drag support.
 -- clickLabels (optional) name what the clicks do, for the context menu.
-function module.itemSlotNode(itemButton, label, clickLabels)
+-- isEmpty (optional) marks the slot as empty for the double arrow skip.
+function module.itemSlotNode(itemButton, label, clickLabels, isEmpty)
     local vtable = nodes.proxyButton({ target = itemButton, label = label, clickLabels = clickLabels })
     if vtable == nil then
         return nil
     end
     vtable.announcements[1].live = "focus"
+    vtable.isEmpty = isEmpty
+    -- where the slot is, for a fight that begins on it (containersCombat.lua)
+    vtable.bagSlot = function()
+        return module.slotLocation(itemButton)
+    end
     tinsert(vtable.bindings, {
         binding = "drag",
         type = "Function",
         func = function()
             WowVision.cursor = WowVision.cursor or {}
             WowVision.cursor.pickupIsActionBar = false
-            local script = itemButton:GetScript("OnDragStart")
-            if script ~= nil then
-                script(itemButton)
-            end
+            nodes.runDrag(itemButton)
         end,
     })
     return vtable
@@ -81,8 +84,15 @@ end
 -- UseContainerItem follow), so the label does too. nil means "nothing worth
 -- naming" and leaves the bare click name.
 function module.itemClickLabels(itemButton)
+    return module.slotClickLabels(function()
+        return module.slotLocation(itemButton)
+    end)
+end
+
+-- The same by bag and slot: locate() returns them (the bags in combat, containersCombat.lua).
+function module.slotClickLabels(locate)
     local function slotInfo()
-        local bagID, slotID = module.slotLocation(itemButton)
+        local bagID, slotID = locate()
         return bagID, slotID, C_Container.GetContainerItemInfo(bagID, slotID)
     end
     return {
@@ -143,6 +153,14 @@ function module.itemClickLabels(itemButton)
             return nil
         end,
     }
+end
+
+-- An item slot holding nothing: the same read its label makes.
+function module.slotIsEmpty(itemButton)
+    return function()
+        local bagID, slotID = module.slotLocation(itemButton)
+        return C_Container.GetContainerItemInfo(bagID, slotID) == nil
+    end
 end
 
 -- Bag shape: item slots read as the grid the frame draws (rows, with
@@ -213,10 +231,42 @@ local function slotNode(itemButton)
     local node = module.itemSlotNode(itemButton, function()
         local label = junk:tagLabel(module.getBagItemLabel(itemButton), locate())
         return favorites:tagLabel(label, locate())
-    end, module.itemClickLabels(itemButton))
+    end, module.itemClickLabels(itemButton), module.slotIsEmpty(itemButton))
     return junk:decorateSlot(favorites:decorateSlot(node, locate), locate)
 end
 module.slotNode = slotNode
+
+-- The text in the game's bag search box. The bag and bank boxes hold the
+-- same text (the game copies one into the others as it is typed), and the
+-- game clears it when the last of them hides.
+function module.searchText()
+    local box = BagItemSearchBox
+    if box == nil or box.GetText == nil then
+        return ""
+    end
+    return box:GetText() or ""
+end
+
+-- With a search typed, only the slots that hold a matching item, in the
+-- order given. The game dims the others and leaves them where they are;
+-- read out, that is a bag full of "Filtered" to step through, so they are
+-- left out, and the empty slots with them. Returns the slots to read and
+-- whether a search is on.
+function module.searchMatches(buttons)
+    if module.searchText() == "" then
+        return buttons, false
+    end
+    local matches = {}
+    for _, itemButton in ipairs(buttons) do
+        if itemButton:IsShown() then
+            local info = C_Container.GetContainerItemInfo(module.slotLocation(itemButton))
+            if info ~= nil and not info.isFiltered then
+                tinsert(matches, itemButton)
+            end
+        end
+    end
+    return matches, true
+end
 
 -- Emit a bag's item slots in the configured shape. Grid rows share the
 -- "grid" row key, so up and down follow POSITION in the row rather than
@@ -225,9 +275,27 @@ module.slotNode = slotNode
 -- in SLOT order (the order the buttons are given in: slot 1 first), the way
 -- older addons do; screen order would start at the top-left cell, which is
 -- the LAST slot, and read the bag backwards. Returns the visual row count.
+-- While a bag search is typed, only the matching items are emitted, as a
+-- list in slot order whatever the shape (what is left of a grid has holes);
+-- a bag without a match says No results.
 function module.renderSlots(builder, buttons)
+    local all = buttons
+    local searching
+    buttons, searching = module.searchMatches(buttons)
+    if searching and #buttons == 0 then
+        local first = all[1]
+        if first ~= nil then
+            local bagID, slotID = module.slotLocation(first)
+            builder:addItem(
+                ControlId.structural("noMatch:" .. tostring(bagID) .. ":" .. tostring(slotID)),
+                nodes.text({ label = L["No results"] })
+            )
+            return 1
+        end
+        return 0
+    end
     local rows = module.visualRows(buttons)
-    local grid = module.settings.shape == "grid"
+    local grid = module.settings.shape == "grid" and not searching
     if not grid then
         for _, itemButton in ipairs(buttons) do
             if itemButton:IsShown() then
@@ -247,6 +315,10 @@ function module.renderSlots(builder, buttons)
 end
 
 local function render(builder, screen)
+    -- in combat the list the secure side walks (containersCombat.lua)
+    if InCombatLockdown() and module.renderCombat ~= nil and module.renderCombat(builder) then
+        return
+    end
     builder:pushContext("bags", L["Bags"])
     containers:forEachComponent(function(container)
         if container.renderGraph ~= nil and (container.isOpen == nil or container:isOpen()) then

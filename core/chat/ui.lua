@@ -245,6 +245,22 @@ local function messagesNode(screen)
 
     return {
         controlType = graph.controlTypes.text,
+        -- letters jump between the lines (Host.lua); the chat is not filtered, its tabs and new lines go on underneath
+        listCursor = {
+            labels = function()
+                local buffer = currentBuffer()
+                local lines = {}
+                for i, item in ipairs(buffer ~= nil and buffer.items or {}) do
+                    lines[i] = item:getFocusString()
+                end
+                return lines
+            end,
+            index = function()
+                local _, index = clampedIndex()
+                return index
+            end,
+            go = moveTo,
+        },
         tooltip = {
             type = "Hyperlink",
             link = function()
@@ -376,6 +392,9 @@ local function messagesNode(screen)
             {
                 binding = "left",
                 type = "Click",
+                -- In combat the tab's own click script runs (graph/Host.lua combatKey): the tabs are not
+                -- protected and FCF_Tab_OnClick only selects the chat window.
+                combatClick = true,
                 emulatedKey = "LeftButton",
                 target = function()
                     return neighbourTab(-1)
@@ -385,6 +404,7 @@ local function messagesNode(screen)
             {
                 binding = "right",
                 type = "Click",
+                combatClick = true,
                 emulatedKey = "LeftButton",
                 target = function()
                     return neighbourTab(1)
@@ -474,6 +494,7 @@ module:registerWindow({
 module:registerBinding({
     type = "Script",
     key = "chat/openWindow",
+    opensWindow = true,
     label = L["Chat"],
     inputs = { "SHIFT-F3" },
     script = "/run WowVision.UIHost:openWindow('chat')",

@@ -199,7 +199,55 @@ function Beacon:initialize(info)
         default = function()
             return self.beacon
         end,
+        preview = function(_, source)
+            self:previewSource(source)
+        end,
     })
+    -- Base volume of the beacon, independent of every other WowVision sound
+    -- (Beacon.fileLevel). 10 is the quietest; the output's Enabled switch
+    -- turns the beacon off.
+    self:addParameter({
+        key = "volume",
+        type = "Number",
+        label = L["Beacon Volume"],
+        default = 100,
+        min = 10,
+        max = 100,
+        step = 10,
+    })
+end
+
+-- The beacon file level for a distance: the files come in loudness levels,
+-- 1 (loudest, nearest) to levels (quietest). The distance level is a
+-- compressed proximity bucket (~6 yards per step), not raw yards, so the
+-- beacon stays audible out to a long range. Beacon Volume turns the whole
+-- beacon down one level per 10 below 100, rounded to the nearest level (95
+-- is one level down, 10 is nine), as Sku's beacon volume does. The distance
+-- level is then scaled into the quieter levels that are left, so near and
+-- far still sound different at a low volume, in fewer steps.
+function Beacon.fileLevel(distance, volume, levels)
+    local level = floor((distance + 5) / 6)
+    if level < 1 then
+        level = 1
+    elseif level > levels then
+        level = levels
+    end
+    local offset = floor((100 - volume) / 10 + 0.5)
+    return offset + math.ceil(level * (levels - offset) / levels)
+end
+
+-- The Beacon Sound picker's preview: the sample straight ahead at the level
+-- a target 25 yards away plays at the chosen Beacon Volume.
+local PREVIEW_DISTANCE = 25
+function Beacon:previewSource(source)
+    if source.playAt == nil then
+        if source.preview ~= nil then
+            source:preview()
+        end
+        return
+    end
+    local volume = self.parameters:getFieldValue("volume") or 100
+    source:preview(nil, Beacon.fileLevel(PREVIEW_DISTANCE, volume, source.maxDistance))
 end
 
 function Beacon:onFire(message)
@@ -211,14 +259,9 @@ function Beacon:onFire(message)
         return
     end
     local source = directory:getPath(self.db.beacon)
-    if not source or not source.play then
+    if not source or not source.playAt then
         return
     end
-    -- The file's distance index is a compressed proximity bucket (~6 yards per
-    -- step), not raw yards, so the beacon stays audible out to a long range.
-    local fileDistance = floor((message.distance + 5) / 6)
-    if fileDistance < 1 then
-        fileDistance = 1
-    end
-    source:play(message.angle, fileDistance)
+    local volume = self.parameters:getFieldValue("volume") or 100
+    source:playAt(message.angle, Beacon.fileLevel(message.distance, volume, source.maxDistance))
 end

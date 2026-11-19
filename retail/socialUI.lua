@@ -26,6 +26,9 @@ local kinds = graph.kinds
 -- (select), Backspace a right click (the game's menu); the card's own
 -- buttons (invite, summon, accept, decline) are in its context menu.
 --
+-- The Friends page is the exception: it is read from its data alone and
+-- WowVision never scrolls it (see "The Friends page, from its data").
+--
 -- The side windows -- ignore list, broadcast, Battle.net notice, raid info --
 -- and Add Friend are windows of their own. Recruit a Friend's page is not
 -- read yet.
@@ -206,9 +209,241 @@ local function cardButton(target, key)
     end
 end
 
+-- A card's context menu: its own buttons where it shows them, then its clicks.
+local function cardActions(target)
+    local rowActions = nodes.proxyContextActions(target)
+    return function(add)
+        for _, entry in ipairs(CARD_BUTTONS) do
+            local button = cardButton(target, entry.key)
+            if button() ~= nil then
+                if entry.menu then
+                    add({
+                        label = entry.label(),
+                        onActivate = function()
+                            local frame = button()
+                            if frame ~= nil then
+                                nodes.openDropdown(frame)
+                            end
+                        end,
+                    })
+                else
+                    add({ label = entry.label(), click = { emulatedKey = "LeftButton", target = button } })
+                end
+            end
+        end
+        rowActions(add)
+    end
+end
+
+-- ---------------------------------------------------------------------------
+-- The Friends page, from its data
+-- ---------------------------------------------------------------------------
+-- A scroll of this list from addon code marks its scroll position as
+-- addon-written (ScrollToElementDataIndex does, even when nothing moves).
+-- The list's own refresh on the next friend update reads that position and
+-- refills its row height cache while marked; the refresh after that picks
+-- the mark up as it clears the cache, and its friend search
+-- (C_BattleNet.SearchFriends, protected) is refused: an error, and an
+-- empty list until a reload. The scroll bar's arrows answer only a real
+-- mouse press, so no key can scroll this list cleanly.
+--
+-- So this page is never scrolled and never hovered. Every row is still
+-- read, since the list's data holds all of them: name, status, character,
+-- place, and (on Space) note, tags and broadcast, from the game's own text
+-- builders. A row that is on screen keeps its real clicks and buttons. One
+-- that is not gets the same menu the card opens, opened by WowVision
+-- (entries the game keeps for its own code can be refused there), and
+-- Invite where the friend has one character to invite. A header folds only
+-- while it is on screen. Folding Favorites or typing in the search box
+-- brings other rows up.
+
+local function isFriendsList(frame)
+    return frame.InsertFriendsIntoDataProvider ~= nil
+end
+
+local function neverScroll()
+    return false
+end
+
+-- One of the game's text builders for a friend, or nil where it has nothing.
+local function friendText(name, accountInfo)
+    local build = FriendsListUtil[name]
+    if build == nil then
+        return nil
+    end
+    local ok, text = pcall(build, accountInfo)
+    if not ok or type(text) ~= "string" then
+        return nil
+    end
+    return plainText(text)
+end
+
+-- What the card shows under the name: character, level, class, place.
+local function friendDetails(accountInfo)
+    local builders = { "BuildLocationDisplayText" }
+    local game = accountInfo.gameAccountInfo
+    if game ~= nil and game.characterName ~= nil then
+        builders = {
+            "BuildCharacterNameDisplayText",
+            "BuildCharacterLevelDisplayText",
+            "BuildCharacterClassDisplayText",
+            "BuildLocationDisplayText",
+        }
+    end
+    local parts = {}
+    for _, name in ipairs(builders) do
+        local text = friendText(name, accountInfo)
+        if text ~= nil then
+            tinsert(parts, text)
+        end
+    end
+    if #parts == 0 then
+        return nil
+    end
+    return table.concat(parts, ", ")
+end
+
+-- What the card's tooltip adds: race, faction and realm of a character (or
+-- what another game reports), the note, the tags, the broadcast.
+local function friendTooltip(accountInfo)
+    local parts = {}
+    local function add(text)
+        if type(text) == "string" then
+            text = plainText(text)
+            if text ~= nil then
+                tinsert(parts, text)
+            end
+        end
+    end
+    local game = accountInfo.gameAccountInfo
+    if game ~= nil and game.isOnline then
+        local ok, richOnly = pcall(FriendsListUtil.ShouldShowRichPresenceOnly, accountInfo)
+        if ok and richOnly then
+            add(game.richPresence)
+        elseif game.characterName ~= nil then
+            add(game.raceName)
+            add(game.factionName)
+            add(game.realmName)
+        end
+    end
+    if type(accountInfo.note) == "string" and accountInfo.note ~= "" then
+        local noteFormat = SOCIAL_UI_FRIENDS_LIST_BATTLE_NET_FRIEND_NOTE_FORMAT
+        add(type(noteFormat) == "string" and noteFormat:format(accountInfo.note) or accountInfo.note)
+    end
+    for _, tag in ipairs(accountInfo.friendTags or {}) do
+        local ok, label = pcall(SocialUIUtil.GetLabelForBattleNetFriendTag, tag)
+        if ok then
+            add(label)
+        end
+    end
+    add(friendText("BuildTooltipBroadcastText", accountInfo))
+    return table.concat(parts, ", ")
+end
+
+-- A text tooltip whose text is built when the reader asks for it: the list
+-- is rebuilt every tick, and only the focused friend's tooltip is ever read.
+local function lazyTooltip(build)
+    return setmetatable({ type = "Text" }, {
+        __index = function(_, key)
+            if key == "text" then
+                return build()
+            end
+            return nil
+        end,
+    })
+end
+
+-- The menu a friend's card opens on a right click, for a card that is not
+-- on screen (FriendsListSocialCardMixin:OpenMenu, without its frame).
+local function openFriendMenu(accountInfo)
+    local game = accountInfo.gameAccountInfo
+    local online = game ~= nil and game.isOnline
+    UnitPopup_OpenMenu(online and "BN_FRIEND" or "BN_FRIEND_OFFLINE", {
+        battleTag = accountInfo.battleTag,
+        bnetIDAccount = accountInfo.bnetAccountID,
+        friendsList = true,
+        name = accountInfo.accountName,
+    })
+end
+
+-- The one character of a friend an invite can go to, as the card's invite
+-- button finds it; nil where there is none or a choice of several.
+local function inviteTarget(friendIndex)
+    local find = FriendsListUtil.GetBattleNetFriendGameAccountInfoIfExactlyOneDirectInviteTargetExists
+    if find == nil or friendIndex == nil then
+        return nil
+    end
+    local ok, info = pcall(find, friendIndex)
+    return ok and info or nil
+end
+
+local function emitFriendCard(builder, node, data, index, helpers)
+    local target = helpers.target
+    local accountInfo = data.accountInfo
+    local vtable = {
+        controlType = graph.controlTypes.button,
+        announcements = {
+            {
+                text = function()
+                    return cardInfo(data).name or UNKNOWN
+                end,
+                kind = kinds.label,
+            },
+            {
+                text = function()
+                    return cardInfo(data).favorite
+                end,
+                kind = kinds.value,
+            },
+            {
+                text = function()
+                    return cardInfo(data).status
+                end,
+                kind = kinds.value,
+            },
+            {
+                text = function()
+                    return friendDetails(accountInfo)
+                end,
+                kind = kinds.value,
+                live = "focus",
+            },
+            selectedPart(function()
+                return SelectionBehaviorMixin.IsElementDataIntrusiveSelected(node) == true
+            end),
+        },
+        tooltip = lazyTooltip(function()
+            return friendTooltip(accountInfo)
+        end),
+    }
+    if target() ~= nil then
+        vtable.bindings = clickBindings(target)
+        vtable.contextActions = cardActions(target)
+    else
+        local function menu()
+            openFriendMenu(accountInfo)
+        end
+        vtable.onActivate = menu
+        vtable.onSecondary = menu
+        vtable.contextActions = function(add)
+            if inviteTarget(data.friendIndex) ~= nil then
+                add({
+                    label = L["Invite"],
+                    onActivate = function()
+                        local info = inviteTarget(data.friendIndex)
+                        if info ~= nil then
+                            FriendsListUtil.InviteOrRequestToJoin(info.playerGuid, info.gameAccountID)
+                        end
+                    end,
+                })
+            end
+        end
+    end
+    builder:addItem(ControlId.structural(cardKey(data, index)), vtable)
+end
+
 local function emitCard(builder, node, data, index, helpers)
     local target = helpers.target
-    local rowActions = nodes.proxyContextActions(target)
     builder:addItem(ControlId.structural(cardKey(data, index)), {
         controlType = graph.controlTypes.button,
         announcements = {
@@ -253,27 +488,7 @@ local function emitCard(builder, node, data, index, helpers)
             end),
         },
         bindings = clickBindings(target),
-        contextActions = function(add)
-            for _, entry in ipairs(CARD_BUTTONS) do
-                local button = cardButton(target, entry.key)
-                if button() ~= nil then
-                    if entry.menu then
-                        add({
-                            label = entry.label(),
-                            onActivate = function()
-                                local frame = button()
-                                if frame ~= nil then
-                                    nodes.openDropdown(frame)
-                                end
-                            end,
-                        })
-                    else
-                        add({ label = entry.label(), click = { emulatedKey = "LeftButton", target = button } })
-                    end
-                end
-            end
-            rowActions(add)
-        end,
+        contextActions = cardActions(target),
         onFocus = helpers.onFocus,
         onFocusTick = helpers.onFocusTick,
         onUnfocus = helpers.onUnfocus,
@@ -281,7 +496,8 @@ local function emitCard(builder, node, data, index, helpers)
     })
 end
 
-local function emitListElement(builder, element, index, helpers)
+-- fromData: the Friends page, which is never scrolled or hovered.
+local function emitElement(builder, element, index, helpers, fromData)
     -- Tree lists hand out nodes, Quick Join's linear list its entries.
     local data = element
     if type(element) == "table" and element.GetData ~= nil then
@@ -292,6 +508,12 @@ local function emitListElement(builder, element, index, helpers)
     end
     if data.headerText ~= nil then
         -- A header ("Friends (3/10)"): a left click folds its cards.
+        local headerBindings = nil
+        if not fromData or helpers.target() ~= nil then
+            headerBindings = {
+                { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target },
+            }
+        end
         builder:addItem(ControlId.structural("header:" .. tostring(data.headerType or data.headerText:gsub("%d", ""))), {
             controlType = graph.controlTypes.button,
             announcements = {
@@ -312,11 +534,15 @@ local function emitListElement(builder, element, index, helpers)
                     live = "focus",
                 },
             },
-            bindings = { { binding = "leftClick", type = "Click", emulatedKey = "LeftButton", target = helpers.target } },
-            onFocus = helpers.onFocus,
-            onFocusTick = helpers.onFocusTick,
-            onUnfocus = helpers.onUnfocus,
+            bindings = headerBindings,
+            onFocus = not fromData and helpers.onFocus or nil,
+            onFocusTick = not fromData and helpers.onFocusTick or nil,
+            onUnfocus = not fromData and helpers.onUnfocus or nil,
         })
+        return
+    end
+    if fromData and data.accountInfo ~= nil then
+        emitFriendCard(builder, element, data, index, helpers)
         return
     end
     local isCard = data.accountInfo ~= nil
@@ -326,6 +552,14 @@ local function emitListElement(builder, element, index, helpers)
     if isCard then
         emitCard(builder, element, data, index, helpers)
     end
+end
+
+local function emitListElement(builder, element, index, helpers)
+    emitElement(builder, element, index, helpers, false)
+end
+
+local function emitFriendElement(builder, element, index, helpers)
+    emitElement(builder, element, index, helpers, true)
 end
 
 -- A list page: search box and filter, a notice where the page shows one
@@ -376,12 +610,16 @@ local function renderContacts(builder, frame, title)
     end
 
     if frame.ScrollBox ~= nil and frame.ScrollBox:IsShown() then
+        -- A fresh open lands on the list.
         builder:beginStop("list")
+        builder:setStartStop("list")
+        local fromData = isFriendsList(frame)
         nodes.scrollBoxList(builder, {
             scrollBox = frame.ScrollBox,
             key = "list",
             label = title,
-            emit = emitListElement,
+            emit = fromData and emitFriendElement or emitListElement,
+            placement = fromData and neverScroll or nil,
         })
     end
 

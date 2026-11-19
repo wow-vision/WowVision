@@ -10,6 +10,8 @@ Das Taschenfenster ist ein Hintergrundfenster. Es öffnet sich auch von selbst n
 
 Schließe die Taschen so, wie es das Spiel tut: Drücke die Taschentaste noch einmal.
 
+Im Kampf funktionieren die Taschen ebenfalls, als Liste nach Tasche und Platz: siehe [Menüs im Kampf](../world/combat.md#deine-taschen-b).
+
 Ist das Addon Sku geladen, überlässt WowVision die Taschen Sku und liest sie nicht.
 
 ## Form der Tasche: Raster oder Liste
@@ -29,7 +31,7 @@ Pos1 und Ende springen zum ersten oder letzten Platz (im Raster der aktuellen Ze
 Ein leerer Platz sagt „Leer“. Ein Platz mit einem Gegenstand sagt den Namen des Gegenstands, gefolgt von seiner Qualitätsfarbe als Wort und der Stapelgröße.
 
 - Classic Era, TBC und Mists: „Leinenstoff, Weiß 12“, „Schwerer Lederball, Weiß“.
-- Retail und WoW: Forever: „Leinenstoff, Weiß, 12“. Nach der Anzahl kann der Platz Questgegenstand, Neu, Gesperrt (der Gegenstand ist in Benutzung, zum Beispiel auf dem Cursor) und Gefiltert (der Platz passt nicht zur Taschensuche) ergänzen. Solange das Spiel den Namen eines Gegenstands noch nicht geschickt hat, sagt der Platz Lädt.
+- Retail und WoW: Forever: „Leinenstoff, Weiß, 12“. Nach der Anzahl kann der Platz Questgegenstand, Neu, Gesperrt (der Gegenstand ist in Benutzung, zum Beispiel auf dem Cursor) und, in der Liste der Taschen im Kampf, Gefiltert (der Platz passt nicht zur Taschensuche) ergänzen. Solange das Spiel den Namen eines Gegenstands noch nicht geschickt hat, sagt der Platz Lädt.
 
 Das Farbwort folgt den Qualitätsfarben des Spiels: Grau (schlecht), Weiß (gewöhnlich), Grün (ungewöhnlich), Blau (selten), Violett (episch), Orange (legendär), Hellgold (Artefakt), Hellblau (Erbstück). Einzelne Farben kannst du in den Tooltip-Einstellungen unter Qualität ausschalten. Siehe [Tooltips](../basics/tooltips.md).
 
@@ -158,7 +160,7 @@ Diese Versionen haben zwei Taschenansichten, die du im Taschenmenü des Spiels w
 
 ### Gegenstandslisten
 
-Gibt es etwas anzusehen, bekommen die Taschen einen zusätzlichen Stopp namens Gegenstandslisten. Er kommt direkt nach den Taschen, sodass beim Öffnen weiterhin ihre Gegenstände zuerst gelesen werden. Er enthält Kategorien wie die des Scanners, jede liest ihren Namen und wie viele Gegenstände sie hat, zum Beispiel „Neue Gegenstände (2)“. Pfeil rechts öffnet eine Kategorie, Pfeil links schließt sie. Ihre Gegenstände werden wie Taschenplätze gelesen, und du kannst sie von dort wie gewohnt benutzen, anlegen oder verschieben. Dieselben Gegenstände liegen weiterhin in ihren Plätzen in den Taschen. Eine leere Kategorie fehlt, und sind alle leer, ist der Stopp weg und die Taschen öffnen sich wie bisher.
+Gibt es etwas anzusehen, bekommen die Taschen einen zusätzlichen Stopp namens Gegenstandslisten. Er kommt direkt nach den Taschen, und beim Öffnen der Taschen werden weiterhin ihre Gegenstände zuerst gelesen. Er enthält Kategorien wie die des Scanners, jede liest ihren Namen und wie viele Gegenstände sie hat, zum Beispiel „Neue Gegenstände (2)“. Pfeil rechts öffnet eine Kategorie, Pfeil links schließt sie. Ihre Gegenstände werden wie Taschenplätze gelesen, und du kannst sie von dort wie gewohnt benutzen, anlegen oder verschieben. Dieselben Gegenstände liegen weiterhin in ihren Plätzen in den Taschen. Eine leere Kategorie fehlt, und sind alle leer, ist der Stopp weg und die Taschen öffnen sich wie bisher.
 
 - Plunder: jeder Gegenstand, den du als Plunder markiert hast, mit dem Zusatz, in Taschenreihenfolge (siehe [Plunder](#plunder)). Die Kategorie ist zu Beginn geschlossen.
 - Favoriten: jeder Gegenstand, den du als Favorit markiert hast, in Taschenreihenfolge (siehe [Favoriten](#favoriten)). Die Kategorie ist zu Beginn geschlossen.
@@ -166,30 +168,30 @@ Gibt es etwas anzusehen, bekommen die Taschen einen zusätzlichen Stopp namens G
 
 ### Zusammengefasste Taschen
 
-Alle deine Taschen werden als ein großes Raster gezeichnet, und WowVision liest es genauso: zuerst der Rucksack, dann die anderen Taschen, ohne Taschengrenzen. Die Stopps sind:
+Alle deine Taschen werden als ein großes Raster gezeichnet, und WowVision liest es genauso: zuerst der Rucksack, dann die anderen Taschen, ohne Taschengrenzen. Das Fenster öffnet sich auf dem Stopp Taschen. Die Stopps sind:
 
-1. Taschen (Bags): die Plätze in der Form, die du gewählt hast (ein Raster ist zehn Plätze breit, die erste Zeile kann kürzer sein). In der Listenform stehen die Plätze in Platzreihenfolge, der Rucksack zuerst.
-2. Taschenplätze (Bag Slots): eine Zeile mit den Taschenplatz-Schaltflächen des Rucksacks und deiner vier Taschen. Jede liest „Taschenplatz“ und den Namen der Tasche. Die Reagenzientasche und, in WoW: Forever, der Schlüsselbund zeichnet das Spiel auch in der zusammengefassten Ansicht als eigene Rahmen. Sie stehen nicht in dieser Zeile. Jede bekommt einen eigenen Stopp, mit ihrem Taschenplatz zuerst, wie in der Einzelansicht weiter unten.
-3. Gegenstandslisten (Item Lists): die oben beschriebenen Kategorien, wenn etwas darin ist.
-4. Suchen (Search): ein Textfeld. Gehe mit Tab hinein und tippe, und Plätze, die nicht passen, lesen Gefiltert. Mit Tab verlässt du das Feld.
-5. Taschensteuerung (Bag Controls): Taschenmenü (Bag Menu), ein Dropdown mit einem Untermenü pro Tasche (Filter, Aufräumen, Taschenansicht wechseln); Taschen sortieren; Geld, das dein Gold liest, zum Beispiel „Geld, 12 Gold 5 Silber“; und Plätze hinzufügen, wenn das Spiel das anbietet.
+1. Taschensteuerung (Bag Controls): Taschenmenü (Bag Menu), ein Dropdown mit einem Untermenü pro Tasche (Filter, Aufräumen, Taschenansicht wechseln); Taschen sortieren; Geld, das dein Gold liest, zum Beispiel „Geld, 12 Gold 5 Silber“; und Plätze hinzufügen, wenn das Spiel das anbietet.
+2. Suchen (Search): ein Textfeld. Gehe mit Tab hinein und tippe. Solange Text darin steht, listen die Taschen (und die Bank) nur die Gegenstände auf, die passen, als einfache Liste in Platzreihenfolge, egal welche Form du gewählt hast; leere Plätze und Gegenstände, die nicht passen, fehlen, und eine Tasche ohne Treffer sagt „Keine Ergebnisse“. Mit Tab verlässt du das Feld, und wenn du es leerst, sind alle Plätze wieder da. Das Spiel leert es von selbst, wenn du die Taschen schließt.
+3. Taschen (Bags): die Plätze in der Form, die du gewählt hast (ein Raster ist zehn Plätze breit, die erste Zeile kann kürzer sein). In der Listenform stehen die Plätze in Platzreihenfolge, der Rucksack zuerst.
+4. Taschenplätze (Bag Slots): eine Zeile mit den Taschenplatz-Schaltflächen des Rucksacks und deiner vier Taschen. Jede liest „Taschenplatz“ und den Namen der Tasche. Die Reagenzientasche und, in WoW: Forever, der Schlüsselbund zeichnet das Spiel auch in der zusammengefassten Ansicht als eigene Rahmen. Sie stehen nicht in dieser Zeile. Jede bekommt einen eigenen Stopp, mit ihrem Taschenplatz zuerst, wie in der Einzelansicht weiter unten.
+5. Gegenstandslisten (Item Lists): die oben beschriebenen Kategorien, wenn etwas darin ist.
 
 Ein Rucksack eines Accounts ohne Authenticator zeigt vier zusätzliche Plätze, die nichts aufnehmen können. WowVision liest diese nicht als Plätze. Die Schaltfläche Plätze hinzufügen bleibt in der Taschensteuerung.
 
 Beispiel: deinen Ruhestein mit der Suche finden.
 
 1. Öffne die Taschen mit B. Drücke Strg+Tab, wenn du in einem anderen Fenster bist.
-2. Drücke Tab, bis du „Suchen“ hörst.
-3. Tippe `ruhe`. Die Plätze, die nicht passen, lesen jetzt Gefiltert.
-4. Gehe mit Tab zurück zum Stopp Taschen und lies die Plätze mit Pfeil runter.
+2. Das Fenster öffnet sich auf Taschen. Drücke einmal Umschalt+Tab, um „Suchen“ zu erreichen.
+3. Tippe `ruhe`.
+4. Gehe mit Tab zum Stopp Taschen. Dort stehen nur die Gegenstände, die passen, der Ruhestein ist also der erste Eintrag.
 
 ### Einzelne Taschen
 
 Jede Tasche ist ein eigenes Fenster, wie in Classic. Jede offene Tasche ist ein Stopp, der mit dem Namen der Tasche angesagt wird. Die Rucksacktaste allein öffnet nur den Rucksack. Die Taste Alle Taschen öffnen (Open All Bags) des Spiels (standardmäßig Umschalt zusammen mit der Rucksacktaste) öffnet alles.
 
 - Der erste Eintrag ist der Taschenplatz: „Taschenplatz“ und der Taschenname. Beide Klicks darauf sagen Tasche schließen, oder Gegenstand ablegen, solange du eine Tasche hältst. Das eigene Menü der Tasche (Filter, Aufräumen, Taschenansicht wechseln) liegt im Kontextmenü des Platzes, als Taschenmenü.
-- Suche, Taschen sortieren, Geld und Plätze hinzufügen gehören zum Rucksack. Sie erscheinen nach den Taschen in einem Stopp namens Taschensteuerung.
-- Der Stopp Gegenstandslisten (siehe oben) kommt zuletzt, wenn etwas darin ist.
+- Taschen sortieren, Geld und Plätze hinzufügen gehören zum Rucksack. Sie erscheinen vor den Taschen in einem Stopp namens Taschensteuerung, gefolgt vom Stopp Suchen. Das Fenster öffnet sich auf der ersten Tasche.
+- Der Stopp Gegenstandslisten (siehe oben) kommt zuletzt, nach den Taschen, wenn etwas darin ist.
 
 ## Bank in Retail und WoW: Forever
 

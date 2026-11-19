@@ -14,6 +14,43 @@ settings:add({
     default = false,
 })
 
+-- The first Alt-Down after Alt was let go lands on the first item, and so does
+-- entering a buffer (Alt-Left/Right, Alt-Ctrl-Left/Right). With Alt held,
+-- Alt-Down walks on.
+settings:add({
+    type = "Bool",
+    key = "alwaysStartAtTop",
+    label = L["Always Start at Top"],
+    default = false,
+})
+
+function WowVision.buffers.startsAtTop()
+    return module.settings.alwaysStartAtTop
+end
+
+-- The first buffer key while Alt is held opens the buffers, letting go of Alt
+-- closes them. The two sounds of Sku's reading panel (SkuTTS), the same files.
+settings:add({
+    type = "Bool",
+    key = "openCloseSounds",
+    label = L["Sounds When Opening and Closing"],
+    default = true,
+})
+
+local function playRunSound(path)
+    if module.settings.openCloseSounds then
+        WowVision:play(path)
+    end
+end
+
+function WowVision.buffers.runStarted()
+    playRunSound("Sound/WowVision/alerts/on3_1.mp3")
+end
+
+function WowVision.buffers.runEnded()
+    playRunSound("Sound/WowVision/alerts/off2.mp3")
+end
+
 local function itemDirection(direction)
     if module.settings.invertItemDirection then
         return -direction
@@ -135,6 +172,24 @@ function module:getCurrentBuffer()
     return group and group:getFocus()
 end
 
+-- Letting go of Alt ends a run through the buffers (Always Start at Top).
+module:registerEvent("event", "MODIFIER_STATE_CHANGED")
+
+function module:onEvent(event)
+    if event == "MODIFIER_STATE_CHANGED" and not IsAltKeyDown() then
+        WowVision.buffers.endRun()
+    end
+end
+
+local function moveItem(direction)
+    local buffer = module:getCurrentBuffer()
+    if buffer then
+        local newRun = WowVision.buffers.takeNewRun()
+        buffer:UIMoveItem(itemDirection(direction), newRun and module.settings.alwaysStartAtTop)
+        module:syncTooltip()
+    end
+end
+
 -- Item navigation (Alt-Up/Down)
 module:registerBinding({
     type = "Function",
@@ -143,11 +198,7 @@ module:registerBinding({
     label = L["Previous Buffer Item"],
     interruptSpeech = true,
     func = function()
-        local buffer = module:getCurrentBuffer()
-        if buffer then
-            buffer:UIFocusDirection(itemDirection(-1))
-            module:syncTooltip()
-        end
+        moveItem(-1)
     end,
 })
 
@@ -158,11 +209,7 @@ module:registerBinding({
     label = L["Next Buffer Item"],
     interruptSpeech = true,
     func = function()
-        local buffer = module:getCurrentBuffer()
-        if buffer then
-            buffer:UIFocusDirection(itemDirection(1))
-            module:syncTooltip()
-        end
+        moveItem(1)
     end,
 })
 

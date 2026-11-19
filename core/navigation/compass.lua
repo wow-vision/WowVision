@@ -1,7 +1,10 @@
 local module = WowVision.base.navigation:createModule("compass")
 local L = module.L
-module:setLabel(L["Compass"])
+-- Named for what it holds: facing, zone, indoors, flying, water and breath
+-- alerts. The key stays "compass" so saved settings carry over.
+module:setLabel(L["Environmental Alerts"])
 local pi = math.pi
+local breathSteps = WowVision.breathSteps
 local settings = module:hasSettings()
 
 local directionAlert = module:addAlert({
@@ -202,9 +205,66 @@ divingAlert:addOutput({
     enabled = false,
 })
 
+-- The game's timer bars: breath underwater, fatigue in deep water, feign
+-- death. Spoken as the game's own bar name plus how full the bar is, one
+-- line per step down (breathSteps.lua). The game voice speaks it, as the
+-- player is pressing movement keys and NVDA cuts its voice on each.
+local breathAlert = module:addAlert({
+    key = "breath",
+    label = L["Breath Alert"],
+})
+
+breathAlert:addOutput({
+    type = "TTS",
+    key = "tts",
+    label = L["TTS Alert"],
+    voice = 0,
+    buildMessage = function(self, message)
+        return message.label .. " " .. message.percent
+    end,
+})
+
+breathAlert:addOutput({
+    type = "Voice",
+    key = "voice",
+    label = L["Voice Alert"],
+    enabled = false,
+    -- The voice pack's numbers start at 1: an empty bar is left to TTS.
+    shouldFire = function(self, message)
+        return message.percent > 0
+    end,
+    getPath = function(self, message)
+        return "Path", "numbers/" .. message.percent .. ".mp3"
+    end,
+})
+
+breathAlert:addOutput({
+    type = "Sound",
+    key = "sound",
+    label = L["Sound Alert"],
+    enabled = false,
+})
+
+settings:add({
+    key = "breathStep",
+    type = "Choice",
+    label = L["Breath Step"],
+    default = 10,
+    choices = {
+        { label = "5%", value = 5 },
+        { label = "10%", value = 10 },
+        { label = "20%", value = 20 },
+        { label = "25%", value = 25 },
+    },
+})
+
 module:registerEvent("event", "ZONE_CHANGED_NEW_AREA")
 module:registerEvent("event", "ZONE_CHANGED")
 module:registerEvent("event", "ZONE_CHANGED_INDOORS")
+module:registerEvent("event", "MIRROR_TIMER_START")
+module:registerEvent("event", "MIRROR_TIMER_STOP")
+module:registerEvent("event", "MIRROR_TIMER_PAUSE")
+module:registerEvent("event", "PLAYER_ENTERING_WORLD")
 
 settings:addRef("direction", directionAlert.parameters)
 settings:addRef("zoneChanged", zoneChanged.parameters)
@@ -215,6 +275,7 @@ settings:addRef("flyingStarted", flyingStartedAlert.parameters)
 settings:addRef("flyingEnded", flyingEndedAlert.parameters)
 settings:addRef("swimming", swimmingAlert.parameters)
 settings:addRef("diving", divingAlert.parameters)
+settings:addRef("breath", breathAlert.parameters)
 
 function module:getDirection(angle)
     if angle == nil then
@@ -304,10 +365,72 @@ function module:onEnable()
             divingAlert:fire({})
         end
         self.isSubmerged = isSubmerged
+
+        self:updateTimerBars()
     end)
+    self:loadTimerBars()
+end
+
+-- Timer bars running now, by the game's timer name (BREATH, EXHAUSTION,
+-- FEIGNDEATH, DEATH): { label, paused, steps }.
+module.timerBars = {}
+
+function module:startTimerBar(timer, value, maxValue, paused, label)
+    self.timerBars[timer] = {
+        label = label,
+        -- A number: above 0 means the bar stands still (Blizzard's own bar).
+        paused = paused ~= nil and paused > 0,
+        steps = breathSteps.new(value, maxValue, self.settings.breathStep),
+    }
+end
+
+-- Pick up bars that already run: after a reload or a loading screen while
+-- underwater no start event comes. The game has three bar slots.
+function module:loadTimerBars()
+    self.timerBars = {}
+    for index = 1, 3 do
+        local timer, value, maxValue, _, paused, label = GetMirrorTimerInfo(index)
+        if timer and timer ~= "UNKNOWN" then
+            self:startTimerBar(timer, value, maxValue, paused, label)
+        end
+    end
+end
+
+function module:updateTimerBars()
+    if next(self.timerBars) == nil then
+        return
+    end
+    local stepSize = self.settings.breathStep
+    for timer, bar in pairs(self.timerBars) do
+        if not bar.paused then
+            local percent = breathSteps.update(bar.steps, GetMirrorTimerProgress(timer), stepSize)
+            if percent then
+                breathAlert:fire({ timer = timer, label = bar.label, percent = percent })
+            end
+        end
+    end
 end
 
 function module:onEvent(event, ...)
+    if event == "MIRROR_TIMER_START" then
+        local timer, value, maxValue, _, paused, label = ...
+        self:startTimerBar(timer, value, maxValue, paused, label)
+        return
+    elseif event == "MIRROR_TIMER_STOP" then
+        local timer = ...
+        self.timerBars[timer] = nil
+        return
+    elseif event == "MIRROR_TIMER_PAUSE" then
+        local timer, paused = ...
+        local bar = self.timerBars[timer]
+        if bar then
+            bar.paused = paused ~= nil and paused > 0
+        end
+        return
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        self:loadTimerBars()
+        return
+    end
     if event == "ZONE_CHANGED_NEW_AREA" then
         zoneChanged:fire({
             zone = GetRealZoneText(),

@@ -22,6 +22,7 @@ A vtable:
   onActivate / onSecondary        primary/secondary activation
   onAdjust(sign, large)           horizontal value adjust; when set, left/right do not navigate
   stateText      function: synchronous feedback line after activate/adjust (host speaks, interrupting)
+  isEmpty        function: true while the node is an empty slot (a double arrow press skips it, doublePress.lua)
   onExpand / onCollapse           override how a group's expansion state changes
   speaksOwnExpansion / speaksOwnPosition   the announcements already include these
   bindings       input binding declarations activated while focused (host layer)

@@ -60,18 +60,20 @@ F10 works as described in [Navigation](./navigation.md): Direct, Entry Points, S
 
 The entry points are the 50 nearest entries: the places that sit on the network (the flight master in front of you, a door, a portal) and the network's own waypoints right beside you. You choose where your route starts, as with the classic routes. WowNav never works out your start by itself, except for Ctrl+Shift+N and the route to your target, which start where you stand if that is clear. When you choose a place as your start, your route begins at that place itself.
 
+- The entry point selected for you is the closest one at about the height of the last waypoint of the network you reached (see [Starting at the right height](./navigation.md#starting-at-the-right-height)).
 - The network's own waypoints within 10 yards of you are always in the list, so you can start right where you stand even when the nearest place is far away. With Show Automatic Waypoints on, the waypoints farther away join the list as well. A waypoint is read as "Auto, height 54": only its height in yards is said.
 - While you swim or dive, the nearest water point within 100 yards is always in the list and preselected. If there is none you hear "No water point nearby".
 - If there is nothing of the network near enough, the list says Empty, and a route request answers "No WowNav network here".
 
 ### Destinations
 
-Each destination reads its name, its distance, what it is and where it is, for example "Innkeeper Allison (Innkeeper), 85 yards, quest giver, vendor, innkeeper, Stormwind City". The extra words come from the categories of the place. They are: quest giver, trainer, vendor, flight master, innkeeper, banker, stable master, auctioneer, spirit healer, spirit guide, NPC or mob, chest, herb or ore, object, quest item, interaction object, mailbox, anvil, forge, door, book, chair, sign, fishing spot, switch, trap, spell focus, capture point, destructible building, guild bank, trapdoor, waypoint, orientation point, transport, live target, zone transition, transit, ship, tram, dungeon, portal, zeppelin, elevator and dive. You can search for any of these words, for the name or for a zone name: "banker", "mailbox", "Ironforge".
+Each destination reads its name, its distance, what it is and where it is, for example "Innkeeper Allison (Innkeeper), 85 yards, quest giver, vendor, innkeeper, Stormwind City". The extra words come from the categories of the place. They are: quest giver, trainer, vendor, flight master, innkeeper, banker, stable master, auctioneer, spirit healer, spirit guide, NPC or mob, herb or ore, object, quest item, interaction object, mailbox, anvil, forge, door, book, chair, sign, fishing spot, switch, trap, spell focus, capture point, destructible building, guild bank, trapdoor, waypoint, orientation point, transport, live target, zone transition, transit, ship, tram, dungeon, portal, zeppelin, elevator and dive. You can search for any of these words, for the name or for a zone name: "banker", "mailbox", "Ironforge".
 
 - The list shows at most the nearest 1000 matches. When it was cut, the first entry you hear starts with "The nearest 1000 of 4821 results".
 - A destination with no network point near it (see Target Radius Around the Network (Yards)) is left out. A place whose zone has not been prepared yet is offered unchecked, and checked when you choose it.
 - Extra information may come first, before the categories: "inexact +3.2 yards" (the place is not exactly on the network), "choose the floor" (the place is over several floors), "floor unknown", "no network point within the radius" or "water surface, diving depth 12 yards".
 - Places to get somewhere else have descriptive names: "Dungeon entrance: The Deadmines", "Portal to Orgrimmar", "Ship dock to Auberdine", "Zeppelin dock to Grom'gol", "Tram dock toward Ironforge", "Deeprun Tram entrance", "Elevator: Thunder Bluff", "Crossing to Westfall", "Dive here" and "Surface here". Where two places of a zone would sound the same, they get "(lower)", "(upper)", a height or a number added. The place words in these names come from the game client. On a German client the names are German.
+- Creatures and objects (NPCs, mobs, herbs, ores, mailboxes) are named in your game language when Questie knows them. The navigation data itself only has English and German names, so on any other client the name comes from Questie's database by the ID of the creature or object; where Questie does not know it, the English name stays. Titles written in parentheses, such as "(Innkeeper)", are translated too, so you can search for "aubergiste" or "cuisinier". Questie's own language has to be Auto, or the game's. English and German clients are not affected. The Names in Your Language setting turns this off.
 - Fishing spots are named after the water they cast into: "Fishing spot on the shore: Crystal Lake" or "Fishing spot on pier or quay: The Temple Gardens", with a number when several spots of a zone have the same name. Search for "fishing" or "fishing spot". See [Fishing spots](#fishing-spots).
 - A dungeon with several entrances names the wing: "Dungeon entrance: Scarlet Monastery, Graveyard".
 - The boarding points of docks are listed too: "On the ship", "On the zeppelin" and "At the vehicle", with the name of the dock as the extra words.
@@ -127,6 +129,7 @@ If you get stuck, WowNav tries to re-enter the route and step back at gates, but
 - On the network, or within 1.5 yards of its end: "Arrived" and the name of the place.
 - Close to the network but farther from its end: "The network ends 4.2 yards from the target; search the surroundings yourself. The last stretch is unchecked." If the data does not know the height, "horizontally" is added.
 - A water target: "The network ends 6.1 yards from the water surface position; diving depth 12.0 yards. The rest of the way and the diving are yours, the last stretch is unchecked."
+- When the target lies clearly above or below the end of the route, you also hear "Target is above, about 12 yards." or "Target is below, about 12 yards." That is said when the route starts and with the arrival.
 
 ### Route status and new route
 
@@ -146,6 +149,8 @@ A dock is a waiting place for a ship, zeppelin or tram stop. Choosing one in F10
 If you stand at a dock and choose the other end of the same line, nothing is walked. WowNav notes it and says where the ride goes and with what, for example "Ride to Ironforge with the Deeprun Tram: wait here, board by ear and get off at the last stop. Near it, I turns you toward the dock." When you come near that dock later, you hear its name followed by "is near; I turns you toward it", and I now faces that dock. Choose the dock again to walk the rest of the way. This only works for a line whose docks are on the same map, such as the Deeprun Tram: the list only holds places of the map you are on, so the dock at the far end of a sea crossing to another continent cannot be chosen from here.
 
 Being in a station (within about 100 yards of a dock) counts as having reached it, so you can choose the far dock without walking to the near one first. Choosing a dock of your own station, such as the other dock in Menethil Harbor, walks to it as usual.
+
+Some docks, so far the one in Stormwind's harbour, work without a waiting circle. Choosing one walks you to it like to any place. When you arrive you hear "Dock ... reached. Wait here for the ship. Board when you hear it arrive. Next point: On the ship to Auberdine." The route to that point on board then starts by itself, and when you reach it the dock counts as reached again, so you can choose the far dock of the line to note it. There is no boarding beacon at these docks.
 
 ### Portals, the tram entrance and walk-in places
 
@@ -195,6 +200,7 @@ Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
 | Height Tolerance of a Floor (Yards) | 3 | The height band that counts as one floor (0 to 20). |
 | Step Back at Gates | On | When you drift sideways at a gate, the beacon goes back one waypoint ("One waypoint back"). |
 | Prepare Neighbouring Zones | On | Prepares your zone and the zones next to it in the background, so the first route there does not wait. |
+| Names in Your Language | On | Names creatures and objects in your game language from Questie's database where it knows them; see [Destinations](#destinations). Has no effect on English and German clients. |
 
 ## Examples
 

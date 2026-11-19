@@ -10,6 +10,8 @@ The bags window is a background window. It also opens by itself next to a mercha
 
 Close the bags the way the game does, by pressing the bag key again.
 
+In a fight the bags work too, as a list by bag and slot: see [Menus in combat](../world/combat.md#your-bags-b).
+
 If the addon Sku is loaded, WowVision leaves the bags to Sku and does not read them.
 
 ## Bag shape: grid or list
@@ -29,7 +31,7 @@ Home and End jump to the first or last slot (in a grid, of the current row). Cha
 An empty slot says "Empty". A slot with an item says the item's name followed by its quality colour as a word, and the stack count.
 
 - Classic Era, TBC and Mists: "Linen Cloth, White 12", "Heavy Leather Ball, White".
-- Retail and WoW: Forever: "Linen Cloth, White, 12". After the count the slot may add Quest Item, New, Locked (the item is in use, for example on the cursor) and Filtered (the slot does not match the bag search). While the game has not yet sent an item's name, the slot says Loading.
+- Retail and WoW: Forever: "Linen Cloth, White, 12". After the count the slot may add Quest Item, New, Locked (the item is in use, for example on the cursor) and, in the list of the bags in a fight, Filtered (the slot does not match the bag search). While the game has not yet sent an item's name, the slot says Loading.
 
 The colour word follows the game's quality colours: Grey (poor), White (common), Green (uncommon), Blue (rare), Purple (epic), Orange (legendary), Light Gold (artifact), Light Blue (heirloom). You can switch individual colours off in the Tooltip settings under Quality. See [Tooltips](../basics/tooltips.md).
 
@@ -156,7 +158,7 @@ These versions have two bag views, which you pick in the game's bag menu. WowVis
 
 ### Item lists
 
-When there is something to look at, the bags get an extra stop called Item Lists. It comes right after the bags, so opening them still lands on their items. It holds categories like the scanner's, each reading its name and how many items it has, for example "New Items (2)". Right opens a category and Left closes it. Its items read like bag slots, and you can use, equip or move them from there as usual. The same items still sit in their slots in the bags. A category with nothing in it is left out, and with every category empty the stop is gone and the bags open as before.
+When there is something to look at, the bags get an extra stop called Item Lists. It comes right after the bags, and opening the bags still lands on their items. It holds categories like the scanner's, each reading its name and how many items it has, for example "New Items (2)". Right opens a category and Left closes it. Its items read like bag slots, and you can use, equip or move them from there as usual. The same items still sit in their slots in the bags. A category with nothing in it is left out, and with every category empty the stop is gone and the bags open as before.
 
 - Junk: every item you marked as junk, with the tag, in bag order (see [Junk](#junk)). It starts closed.
 - Favorites: every item you marked as a favorite, in bag order (see [Favorites](#favorites)). It starts closed.
@@ -164,30 +166,30 @@ When there is something to look at, the bags get an extra stop called Item Lists
 
 ### Combined bags
 
-All your bags are drawn as one big grid, and WowVision reads it the same way: the backpack first, then the other bags, no bag boundaries. The stops are:
+All your bags are drawn as one big grid, and WowVision reads it the same way: the backpack first, then the other bags, no bag boundaries. The window opens on the Bags stop. The stops are:
 
-1. Bags: the slots, in the shape you chose (a grid is ten slots wide, with the first row possibly shorter). In the list shape the slots are in slot order, backpack first.
-2. Bag Slots: a row with the bag slot buttons of the backpack and your four bags. Each reads "Bag Slot" and the bag's name. The reagent bag and, on WoW: Forever, the keyring are drawn by the game as their own frames even in combined view. They are not in this row. Each gets a stop of its own, with its bag slot first, as in the individual view below.
-3. Item Lists: the categories described under Item lists above, when there is something in them.
-4. Search: a text box. Tab into it and type, and slots that do not match read Filtered. Tab out to leave it.
-5. Bag Controls: Bag Menu, a dropdown with one submenu per bag (filters, clean up, switch bag view); Sort Bags; Money, which reads your gold, for example "Money, 12 Gold 5 Silver"; and Add Slots when the game offers it.
+1. Bag Controls: Bag Menu, a dropdown with one submenu per bag (filters, clean up, switch bag view); Sort Bags; Money, which reads your gold, for example "Money, 12 Gold 5 Silver"; and Add Slots when the game offers it.
+2. Search: a text box. Tab into it and type. While it holds text, the bags (and the bank) list only the items that match, as a plain list in slot order whatever shape you chose; empty slots and items that do not match are left out, and a bag without a match says "No results". Tab out to leave the box, and empty it to get every slot back. The game empties it by itself when you close the bags.
+3. Bags: the slots, in the shape you chose (a grid is ten slots wide, with the first row possibly shorter). In the list shape the slots are in slot order, backpack first.
+4. Bag Slots: a row with the bag slot buttons of the backpack and your four bags. Each reads "Bag Slot" and the bag's name. The reagent bag and, on WoW: Forever, the keyring are drawn by the game as their own frames even in combined view. They are not in this row. Each gets a stop of its own, with its bag slot first, as in the individual view below.
+5. Item Lists: the categories described under Item lists above, when there is something in them.
 
 A backpack of an account without an authenticator shows four extra slots that cannot hold anything. WowVision does not read these as slots. The Add Slots button is still in Bag Controls.
 
 Example: find your Hearthstone with the search.
 
 1. Open the bags with B. Press Ctrl+Tab if you are inside another window.
-2. Press Tab until you hear "Search".
-3. Type `hearth`. The slots that do not match now read Filtered.
-4. Press Tab back to the Bags stop and read slots with Down.
+2. The window opens on Bags. Press Shift+Tab once to reach "Search".
+3. Type `hearth`.
+4. Press Tab to the Bags stop. Only the items that match are listed, so the Hearthstone is the first entry.
 
 ### Individual bags
 
 Each bag is its own window, as on Classic. Each open bag is a stop, announced by the bag's name. The backpack key alone opens just the backpack. The game's Open All Bags key (by default Shift together with the backpack key) opens everything.
 
 - The first entry is the bag slot: "Bag Slot" and the bag name. Both clicks on it say Close Bag, or Place Item while you hold a bag. The bag's own menu (filters, clean up, switch bag view) is in the slot's context menu, as Bag Menu.
-- Search, Sort Bags, Money and Add Slots belong to the backpack. They appear in a stop called Bag Controls after the bags.
-- The Item Lists stop (see Item lists above) comes last, when there is something in it.
+- Sort Bags, Money and Add Slots belong to the backpack. They appear in a stop called Bag Controls before the bags, followed by the Search stop. The window opens on the first bag.
+- The Item Lists stop (see Item lists above) comes last, after the bags, when there is something in it.
 
 ## Retail and WoW: Forever bank
 

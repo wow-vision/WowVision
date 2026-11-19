@@ -154,27 +154,34 @@ function WowVision:OnDisable()
     self.base:disable()
 end
 
+-- The three parts run on their own (utils.guardedCall): an error in one is
+-- reported once through the game's error handler and the others still run,
+-- so a failing object or module update can never leave the menus dead
+-- (Module.runAllUpdates does the same per module).
 function WowVision:OnUpdate()
     self:adoptGlobalStoreIfReplaced("late load")
     local profiler = self.profiler
+    local guardedCall = WowVision.utils.guardedCall
     profiler:beginFrame()
 
     profiler:start("objects")
-    WowVision.objects:update()
+    guardedCall("objects", WowVision.objects.update, WowVision.objects)
     profiler:stop("objects")
 
     profiler:start("modules")
-    WowVision.Module.runAllUpdates()
+    guardedCall("modules", WowVision.Module.runAllUpdates)
     profiler:stop("modules")
 
     profiler:start("uihost")
-    self.UIHost:update()
+    guardedCall("uihost", self.UIHost.update, self.UIHost)
     profiler:stop("uihost")
 
     profiler:endFrame()
 end
 
 -- voice: a game voice id for this text; nil speaks with the Speech Voice.
+-- For reading things out; a message of the addon uses WowVision:notify
+-- (core/chat/echo.lua).
 function WowVision:speak(text, voice)
     self.base.speech:speak(text, voice)
 end
@@ -252,12 +259,11 @@ function WowVision:recursiveComp(a, b, level)
 end
 
 function WowVision:play(path, channel)
-    local channel = channel or "SFX"
     local resource = WowVision.audio.directory:getPath(path)
     if not resource then
         return nil
     end
-    resource:play()
+    resource:play(channel)
 end
 
 function WowVision:registerCommands()

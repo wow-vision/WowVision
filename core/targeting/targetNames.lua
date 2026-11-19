@@ -212,9 +212,10 @@ end
 
 -- An NPC's subtitle ("<Innkeeper>"): the line between the name and the
 -- level. With typed tooltip lines it is an untyped line right after the
--- UnitName line and before the UnitLevel line. Without types, the classic
--- shape: line 2 is the subtitle when line 3 carries the level and line 2
--- does not. Anything secret or unclear says nothing.
+-- UnitName line and before the UnitLevel line. Without types, or without a
+-- UnitLevel line (WoW: Forever), the classic shape: line 2 is the subtitle
+-- when line 3 carries the level and line 2 does not. Anything secret or
+-- unclear says nothing.
 local function npcTitle(ctx)
     local lines = ctx:tooltipLines()
     local first, second = lines[1], lines[2]
@@ -237,7 +238,8 @@ local function npcTitle(ctx)
                 return stripBrackets(second.text)
             end
         end
-        return nil
+        -- WoW: Forever types the name, quest, threat and owner lines but
+        -- never the level line: the untyped rule below decides.
     end
     local third = lines[3]
     if third == nil or isSecret(second.text) or not hasText(third.text) or isSecret(third.text) then
@@ -573,14 +575,17 @@ PARTS.quest = {
 }
 
 -- The quest objectives the tooltip lists for this unit ("Kobold Vermin
--- slain: 3/10"), finished ones left out.
+-- slain: 3/10"), finished ones left out. In a dungeon the game hides
+-- whether an objective is finished (a secret, which cannot be compared):
+-- such an objective is read, its count says how far it is.
 PARTS.questProgress = {
     label = L["Quest Progress"],
     requires = { "tooltipLines" },
     read = function(ctx)
         local list = {}
         for index, line in ipairs(ctx:tooltipLines()) do
-            if line.type == LINE_QUEST_OBJECTIVE and line.completed ~= true then
+            local finished = not isSecret(line.completed) and line.completed == true
+            if line.type == LINE_QUEST_OBJECTIVE and not finished then
                 tinsert(list, token("questProgress:" .. index, line.text))
             end
         end
@@ -895,7 +900,7 @@ function targetNames.report(api, unit, names)
         tinsert(
             lines,
             "tooltip line " .. index .. " type " .. tostring(line.type) .. ": " .. plain(line.text)
-                .. (line.completed and " (completed)" or "")
+                .. (isSecret(line.completed) and " (completed: secret)" or line.completed and " (completed)" or "")
         )
     end
     local text = targetNames.compose(api, unit, stateKey, stateTable)

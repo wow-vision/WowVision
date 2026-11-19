@@ -12,6 +12,25 @@ settings:add({
     default = false,
 })
 
+-- A short sound when a WowVision window opens and another when it closes
+-- (the WowVision menu, the scanner, navigation, the action bars, chat), as
+-- Sku plays for its menu. The game's own windows make their own sounds.
+settings:add({
+    type = "Bool",
+    key = "menuSounds",
+    label = L["Sounds on Opening and Closing WowVision Menus"],
+    default = true,
+})
+
+-- Up or Down on the first or last entry of a list plays a short sound and reads the entry again, as Sku does
+-- (graph/Host.lua).
+settings:add({
+    type = "Bool",
+    key = "edgeSound",
+    label = L["Sound at the Start and End of Lists"],
+    default = true,
+})
+
 -- Letters jump to the next entry starting with them in the lists that own the keyboard: the WowVision menu, context
 -- and dropdown menus (graph/typeAhead.lua, graph/Host.lua).
 settings:add({
@@ -19,6 +38,68 @@ settings:add({
     key = "letterNavigation",
     label = L["Letter Navigation in Menus"],
     default = true,
+})
+
+-- The game sound channel every WowVision sound and beacon plays on
+-- (core/audio/channels.lua): its volume is that channel's game slider,
+-- so a channel the player keeps for WowVision alone gives WowVision a volume of
+-- its own. The list and the default live in WowVision.audio (a version adds
+-- the channels its sound options have a slider for).
+local soundChannel = settings:add({
+    type = "Choice",
+    key = "soundChannel",
+    label = L["WowVision Sound Channel"],
+    default = WowVision.audio.defaultChannel,
+    choices = WowVision.audio.channels,
+    validate = WowVision.audio.validateChannel,
+})
+soundChannel.events.valueChange:subscribe(module, function(_, _, _, _, value)
+    WowVision.audio.selectedChannel = value
+end)
+
+-- The same arrow pressed twice quickly skips the empty slots of a bag or action bar (graph/doublePress.lua).
+settings:add({
+    type = "Bool",
+    key = "skipEmptySlots",
+    label = L["Skip Empty Slots on Double Arrow"],
+    default = false,
+})
+
+-- The menus keep working in combat (graph/combatKeys.lua). Off, the default: they fall silent at combat start, as
+-- before. On, it takes keys in a fight, among them the game's own bag and character keys, and a key held while a
+-- menu opens in a fight loses its release, so it is the player's choice.
+local combatMenus = settings:add({
+    type = "Bool",
+    key = "combatMenus",
+    label = L["Menus in Combat"],
+    default = false,
+})
+combatMenus.events.valueChange:subscribe(module, function()
+    WowVision.graph.combatKeys.stage()
+end)
+
+-- Menus in combat: the secure frame's state and what the game runs on each combat key now (graph/combatKeys.lua).
+module:registerCommand({
+    name = "combatkeys",
+    description = "Print the state of the menu keys in combat",
+    func = function()
+        WowVision.graph.combatKeys.report()
+    end,
+})
+
+-- Pending windows (windows/pending.lua): a window that waits for an answer and ignores Escape in the game (a group
+-- invitation, a summon, death, the ready check) is put aside to Pending in the WowVision menu, left on screen and not
+-- answered. On: by Escape and by Close All Windows. Close All Windows: only by that. Off: they wait in front.
+settings:add({
+    type = "Choice",
+    key = "pendingWindows",
+    label = L["Pending Windows"],
+    default = "on",
+    choices = {
+        { label = L["Escape and the Close All Windows Key"], value = "on" },
+        { label = L["Only the Close All Windows Key"], value = "closeAll" },
+        { label = L["Off"], value = "off" },
+    },
 })
 
 -- Chasing stuck movement keys with testers: prints when windows take, wait
@@ -343,6 +424,7 @@ module:registerBindings({
     {
         type = "Function",
         key = "wowvision/menu",
+        opensWindow = true,
         label = L["WowVision Menu"],
         inputs = { "SHIFT-F1" },
         interruptSpeech = true,
@@ -350,4 +432,30 @@ module:registerBindings({
             WowVision.graph.settings.openMenu()
         end,
     },
+    -- Closes every WowVision window and every window of the game at once.
+    {
+        type = "Function",
+        key = "wowvision/closeAll",
+        label = L["Close All Windows"],
+        inputs = { "SHIFT-ESCAPE" },
+        interruptSpeech = true,
+        func = function()
+            if WowVision.UIHost:closeAllWindows("closeAllKey") then
+                WowVision:notify(L["All windows closed"])
+            end
+        end,
+    },
 })
+
+-- Each menu key's own key in combat ("In Combat: Up"), for a player who wants a different key there (one who moves
+-- with the arrows in a fight). Empty, the menu key's own inputs apply (graph/combatKeys.lua).
+for _, key in ipairs(WowVision.graph.combatKeys.MENU_KEYS) do
+    local keymap = WowVision.input:getBinding(key)
+    module:registerBinding({
+        type = "Virtual",
+        key = WowVision.graph.combatKeys.combatKeymap(key),
+        dorment = true,
+        label = L["In Combat"] .. ": " .. (keymap ~= nil and keymap:getLabel() or key),
+        inputs = {},
+    })
+end

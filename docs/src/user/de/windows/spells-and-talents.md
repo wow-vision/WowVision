@@ -32,7 +32,7 @@ Tasten, die bei Zaubern und Talentschaltflächen funktionieren, neben den üblic
 
 ## The Burning Crusade: Zauberbuch
 
-Die Haltepunkte in dieser Reihenfolge:
+Das Fenster öffnet sich auf den Zaubern. Die Haltepunkte in dieser Reihenfolge:
 
 1. Reiter, eine Reihe, nur solange du einen Begleiter mit Zauberbuch hast: Zauberbuch und Begleiter. Der geöffnete liest „ausgewählt“.
 2. Seitenreiter, eine Reihe von Kontrollkästchen, eines pro Fertigkeitslinie des Buchs (Allgemein, deine Spezialisierungen und so weiter). Eingabe öffnet die Seite. Sie lesen „Aktiviert“ für die geöffnete.
@@ -47,7 +47,7 @@ Eingabe auf einem Zauber wirkt ihn, genauso wie ein Klick im Buch. Nimm ihn stat
 
 ## Mists of Pandaria: Zauberbuch
 
-Der Fenstertitel (normalerweise „Zauberbuch“) benennt das Fenster. Der erste Haltepunkt ist Reiter, eine Reihe mit den Buchseiten: Zauberbuch, Berufe, Kernfähigkeiten (Core Abilities) und Was sich geändert hat (What Has Changed), dazu alle weiteren Seitenreiter, die das Spiel zeigt. Die geöffnete Seite liest „ausgewählt“. Wähle eine Seite mit Pfeil links und Pfeil rechts und drücke Eingabe.
+Der Fenstertitel (normalerweise „Zauberbuch“) benennt das Fenster. Der erste Haltepunkt ist Reiter, eine Reihe mit den Buchseiten: Zauberbuch, Berufe, Kernfähigkeiten (Core Abilities) und Was sich geändert hat (What Has Changed), dazu alle weiteren Seitenreiter, die das Spiel zeigt. Die geöffnete Seite liest „ausgewählt“. Wähle eine Seite mit Pfeil links und Pfeil rechts und drücke Eingabe. Die Seite Zauberbuch öffnet sich auf ihren Zaubern.
 
 ### Die Seite Zauberbuch
 
@@ -79,13 +79,13 @@ Manche Fähigkeiten (Teleports und Portale der Magier, Rufe der Jäger-Begleiter
 
 ## WoW: Forever: Zauberbuch
 
-Forever benutzt das moderne Zauberbuch. Die Haltepunkte sind:
+Forever benutzt das moderne Zauberbuch. Es öffnet sich auf der Zauberliste; Umschalt+Tab von dort erreicht die Reiter, Tab die Suche. Die Haltepunkte sind:
 
 1. Reiter: die Kategorie-Reiter des Buchs mit ihren Namen (zum Beispiel deine Klasse, Allgemein und Begleiter). Der geöffnete liest „ausgewählt“.
-2. Suchen, ein Eingabefeld. Beim Tippen füllt sich eine Liste mit Vorschlägen, siehe Zaubersuche unten.
-3. Optionen, ein Dropdown-Menü mit den Anzeigeoptionen des Buchs.
-4. Zauber: die Zauber der aktuellen Seite, gruppiert unter den Überschriften des Spiels (eine Überschrift wird einmal gesprochen, wenn du in ihre Gruppe gehst). Ein Zauber liest seinen Namen und seinen Untertext (etwa den Rang) und bei Zaubern, die du noch nicht gelernt hast, die erforderliche Stufe.
-5. Eine Blätterzeile, nur wenn das Buch mehr als eine Seite hat: Vorherige Seite, der Seitentext („Seite 2/3“) und Nächste Seite.
+2. Zauber: die Zauber der aktuellen Seite, gruppiert unter den Überschriften des Spiels (eine Überschrift wird einmal gesprochen, wenn du in ihre Gruppe gehst). Ein Zauber liest seinen Namen und seinen Untertext (etwa den Rang) und bei Zaubern, die du noch nicht gelernt hast, die erforderliche Stufe.
+3. Eine Blätterzeile, nur wenn das Buch mehr als eine Seite hat: Vorherige Seite, der Seitentext („Seite 2/3“) und Nächste Seite.
+4. Suchen, ein Eingabefeld. Beim Tippen füllt sich eine Liste mit Vorschlägen, siehe Zaubersuche unten.
+5. Optionen, ein Dropdown-Menü mit den Anzeigeoptionen des Buchs.
 
 Eingabe wirkt den Zauber oder öffnet die Auswahl, wenn der Zauber eine Auswahl ist. Rücktaste bei einem Begleiterzauber schaltet seinen automatischen Zauber um. Die Ziehen-Taste nimmt den Zauber auf. Leertaste liest den Zauber-Tooltip.
 
@@ -164,7 +164,7 @@ Die Haltepunkte:
 1. Reiter: deine primäre Spezialisierung und, sobald du die doppelte Spezialisierung gelernt hast, die sekundäre. Der geöffnete Reiter liest „ausgewählt“. Ein Reiter liest außerdem „Aktiv“, wenn es die Spezialisierung ist, die du spielst, oder den Grund des Spiels, wenn er gesperrt ist.
 2. Der Zustand des Reiters: eine Schaltfläche Activate, wenn es nicht die Spezialisierung ist, die du gerade benutzt, sonst die Zeile „Aktiv“.
 3. Unspent Points: „Unspent Points, 5“.
-4. Suchen und Optionen, siehe Zaubersuche oben.
+4. Optionen und Suchen, siehe Zaubersuche oben.
 5. Ein Haltepunkt für jede Spezialisierung. Sein Kontext ist der Name der Spezialisierung und die Punkte, die du darin ausgegeben hast: „Waffen, 11 Punkte“ (oder „1 Punkt“).
 6. Der letzte Haltepunkt ist eine Reihe: Apply, Änderungen rückgängig machen und die Zurücksetzen-Schaltfläche, die ein Menü ist.
 

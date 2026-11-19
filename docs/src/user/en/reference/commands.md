@@ -27,6 +27,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv close | Closes every WowVision window | all |
 | /wv version | Prints the WowVision version | all |
 | /wv accept | Accepts a group invitation, also in combat | all |
+| /wv pendingtest | Shows a test box that waits like a group invitation | all |
 | /beacon | Sets a beacon, routes to a named place, or reads your position | all |
 | /focus1 to /focus5 | Sets a virtual focus target | all, not with Sku |
 | /pquit | Leaves your party | all, not with Sku |
@@ -40,7 +41,9 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv taint | Shows blocked protected calls | all |
 | /wv dbcheck | Reports saved variable state | all |
 | /wv turnlog | Lists the last turns to a waypoint | all |
+| /wv unitturnlog | Lists the last turns to a target or focus | all |
 | /wv keylog | Logs window key handling | all |
+| /wv combatkeys | Shows what the menu keys do in combat | all |
 | /wv padlog | Restarts the controller log | Retail and WoW: Forever (gamepad interface on) |
 | /wv cdmlog | Cooldown manager monitor log | Retail and WoW: Forever |
 
@@ -84,7 +87,11 @@ Prints the installed WowVision version to your chat window, for example V0.9.0, 
 
 ### /wv accept
 
-Accepts the group invitation that is shown and says "Group invitation accepted". It also works in combat, where WowVision cannot open the invitation popup. Without an invitation it says "No group invitation". The Accept Group Invitation key does the same; it is unbound. Versions: all. See [Group Finder](../windows/group-finder.md).
+Accepts the group invitation that is shown and says "Group invitation accepted". It also works in combat, where WowVision cannot open the invitation popup. Without an invitation it says "No group invitation". An invitation that asks for a role needs a checked role first, otherwise it says "Choose a role first". The Accept Group Invitation key does the same; it is unbound. Versions: all. See [Group Finder](../windows/group-finder.md).
+
+### /wv pendingtest
+
+Shows a test box that waits like a group invitation: it ignores Escape in the game and runs out after one minute; its Accept and Decline buttons only write to the chat. Use it to try Pending without a group. Being shown by WowVision, the test box makes an Escape that goes to the game report a blocked action while it is open, also once it is put aside; the command says so first. The game's own boxes do not do this. Versions: all. See [Pending](../windows/system.md#pending-a-question-that-waits).
 
 ### /beacon
 
@@ -152,7 +159,8 @@ The minimap scanner. Typed alone it scans now, the same as Ctrl+Shift+F. See [Mi
 | /wv mscan clear | Forgets every seen entry and the walking memory, and says "Seen entries cleared" |
 | /wv mscan log | Shows how the last scan and the walking check went (for bug reports) |
 | /wv mscan walk | Shows what the walking check remembers |
-| /wv mscan raw | Shows one unparsed read of the minimap (for bug reports) |
+| /wv mscan raw | Shows one unparsed read of the minimap; also saved for sending after /reload (for bug reports) |
+| /wv mscan sku | Measures the scanner's minimap searches on the spot where you stand (for bug reports) |
 
 Versions: the command exists everywhere, but scanning needs a game version whose minimap can be read; otherwise you hear "Minimap scanner not available on this client".
 
@@ -199,6 +207,14 @@ Prints a short report about your saved settings to the chat window. You do not n
 ### /wv turnlog
 
 Lists the last turns made by Turn to Waypoint, one line each with its error in degrees, in a window and in chat. It speaks a summary such as "12 turns, mean error 2.4 degrees", or "No turns yet".
+
+### /wv unitturnlog
+
+Lists the last presses of Turn to Target and Turn to Focus (up to 40), one line each with the time, the unit, what the press found and how far your character turned, in a window and in chat. It speaks how many presses there are. The lines are also saved with your settings, so they are there after a reload.
+
+### /wv combatkeys
+
+Prints the state of the menu keys in combat (whether the setting is on, whether a fight is on, whether the keys are taken, whether a menu is open) and, per combat key, what the game runs on it now, with the last lines of the combat key log. WowVision keeps that log by itself, in the WowVisionDump saved variable (the previous session's too). Versions: all. See [Menus in combat](../world/combat.md#menus-in-combat).
 
 ### /wv keylog
 

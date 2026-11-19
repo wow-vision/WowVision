@@ -88,6 +88,8 @@ local API_NAMES = {
     "UnitIsQuestBoss",
     "MapUtil.ShouldMapTypeShowQuests",
     "QuestPOIGetIconInfo",
+    "GetQuestUiMapID",
+    "C_Map.GetMapChildrenInfo",
     "GetNumQuestLogEntries",
     "GetQuestLogTitle",
 }
@@ -291,6 +293,28 @@ local function sectionLog(lines, mapId)
                     okText and tostring(text) or tostring(text)
                 )
             )
+            -- The map the quest log opens for the quest, and whether the
+            -- game draws its point there while the player is elsewhere.
+            local okUi, uiMap = call(GetQuestUiMapID, questId)
+            if okUi and type(uiMap) == "number" and uiMap ~= 0 then
+                local okOwn, ownPoints = call(C_QuestLog.GetQuestsOnMap, uiMap)
+                local found = "no point"
+                if not okOwn then
+                    found = "error " .. tostring(ownPoints)
+                elseif type(ownPoints) == "table" then
+                    for _, info in ipairs(ownPoints) do
+                        if info.questID == questId then
+                            found = info.isMapIndicatorQuest and "indicator only"
+                                or string.format("point %s %s", pct(info.x), pct(info.y))
+                            break
+                        end
+                    end
+                end
+                local mapInfo = C_Map.GetMapInfo(uiMap)
+                tinsert(lines, string.format("  quest map %s %s, %s", tostring(uiMap), tostring(mapInfo ~= nil and mapInfo.name or "?"), found))
+            else
+                tinsert(lines, "  quest map " .. tostring(uiMap))
+            end
             if QuestPOIGetIconInfo ~= nil then
                 local okIcon, completed, ix, iy, objective = call(QuestPOIGetIconInfo, questId)
                 if okIcon then

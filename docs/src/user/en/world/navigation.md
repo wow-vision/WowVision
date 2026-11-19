@@ -50,17 +50,31 @@ The entry point is where your route joins the network. WoW is fully three-dimens
 
 Each entry reads its name, its distance and the direction relative to where you are facing, for example "Innkeeper Allison (Innkeeper), 4 yards, ahead left". The directions are ahead, ahead right, right, behind right, behind, behind left, left and ahead left. The entry that is chosen is announced with selected.
 
-- The closest entry point is selected when the window opens.
+- The closest entry point is selected when the window opens. With WowNav, the closest one at about the height of the last waypoint you reached is selected instead, see "Starting at the right height" below.
 - Press Enter on another entry to select that one instead. You hear selected at once, and again whenever you move back onto it. Only one entry is selected at a time.
 - While you swim or dive, the nearest entry that lies in water is preselected instead, if the data knows about water points. With WowNav, if there is no water point nearby, you hear "No water point nearby". The classic data has no water points, so there the nearest entry stays selected.
 
 The route you get includes the walk from where you stand to the entry point. So choose an entry that you can really walk to.
+
+### Starting at the right height
+
+With WowNav, WowVision remembers the height of the last waypoint of the network that you walked to on a route. When you start the next route, the entry point selected for you is the closest one at about that height (within 4 yards), not simply the closest one. So after you came out of a building or crossed a bridge, the road under the bridge or the floor below you does not win just because it lies nearer.
+
+- Only waypoints you really reached count. Stepping on with Ctrl+W or Ctrl+S does not, and neither do the points a route adds for its start and its last stretch.
+- The height is remembered for the map you are on. On another continent or in an instance it is ignored, and after /reload it is forgotten.
+- If no entry point lies at that height, or no height is known yet, the closest entry point is selected as before.
+- While you swim or dive, the nearest water point is still selected, whatever the height.
+- The same choice is made wherever WowVision picks the start for you: /beacon to and the keys of the visited places.
+
+The setting Guess the Start From the Last Height (Navigation module, on by default) turns this off; the closest entry point is selected then.
 
 ### Direct
 
 Tick Direct (press Enter on the checkbox) if you do not want a route. The entry points disappear, and Enter on a destination sets a straight beacon to exactly that point. You hear, for example, "Direct: Innkeeper Allison (Innkeeper), 120 yards", and on arrival "Arrived" followed by the name. Use this when you are already close, when you are inside a building the network does not know, or when you want to go somewhere in a straight line.
 
 Direct is the first stop. To reach it, press Shift+Tab from the entry points.
+
+You do not need the checkbox for a single straight beacon: Backspace on a destination sets one at once, while Enter still routes. The checkbox is still useful with WowNav, because only with Direct on does the list also show places no route leads to.
 
 ### Searching for a destination
 
@@ -80,6 +94,7 @@ Press Tab again to reach Destinations. It is one long list, sorted by distance f
 | Up / Down | Previous / next destination. |
 | Home / End | First / last destination. |
 | Enter | Close the window and start the route (or the straight beacon, if Direct is on). |
+| Backspace | Close the window and set a straight beacon to the destination, without a route, whether Direct is on or not. |
 
 Each destination reads its name and its distance, then its position in the list. With WowNav, what the place is and where it is come after the distance, for example "Innkeeper Allison (Innkeeper), 85 yards, quest giver, vendor, innkeeper, Stormwind City, 1 / 342". A destination you reached in the last few minutes is announced with Visited first; see [Visited places](#visited-places). An empty list reads "Empty".
 
@@ -106,7 +121,7 @@ A waypoint counts as reached when you are within the arrival distance of it (see
 
 ### Beacon sounds
 
-All beacon sounds are one alert called Beacon in the Maps module (WowVision menu, Navigation, Maps, Beacon). The alert and each of its four sounds has its own Enabled switch and its own sound, so each cue can be turned off or changed on its own. See [Alerts](../basics/alerts.md) for how alerts work.
+All beacon sounds are one alert called Beacon in the Beacon and Routes module (WowVision menu, Navigation, Beacon and Routes, Beacon). The alert and each of its four sounds has its own Enabled switch and its own sound, so each cue can be turned off or changed on its own. See [Alerts](../basics/alerts.md) for how alerts work.
 
 | Sound | Default | When it plays |
 |-------|---------|---------------|
@@ -122,6 +137,8 @@ For Beacon Sound you choose one of the beacon sets: Notification, Probe (Deep), 
 | Key | Binding name | What it does |
 |-----|--------------|--------------|
 | I | Turn to Waypoint | Turns your character to face the current waypoint. See below. |
+| Ctrl+I | Turn to Target | Turns your character to face your target. See below. |
+| Ctrl+U | Turn to Focus | Turns your character to face your focus. See below. |
 | Alt Gr or Ctrl+Alt | (setting) | Speaks the distance to the current waypoint. Held, it repeats every second. |
 | Unbound by default | Announce Distance | The same distance announcement on a key of your choice. |
 | Alt+P | Cycle Arrival Distance | Switches between the short, medium and long arrival distance. |
@@ -147,6 +164,21 @@ Nothing is spoken when it works. A few things you should know:
 - On a controller, press the right stick instead of I.
 
 Turning needs two camera settings: the camera following style Always (the game option "Always adjust camera") and instant switching between saved camera views. WowVision sets both once on each character, at the first login where one of them had to be changed, and tells you in the chat: "WowVision set the camera to always follow behind your character, which turning to waypoints needs. You can change the camera following style in the game options under Controls." If you change the following style back later, turns will land in the wrong places. WowVision does not set it again. WowVision also uses saved camera view 5 for turning, so anything you saved there is overwritten. During a turn it briefly changes the game's mouse look speed and puts your own value back afterwards. With a gamepad, free look is switched off for the length of the turn.
+
+### Turn to target and focus (Ctrl+I, Ctrl+U)
+
+Ctrl+I turns your character to face your target, Ctrl+U to face your focus. It is meant for units you cannot click or follow, such as an escort NPC: put it on your focus (/focus) and keep your target free for the fight.
+
+The game tells addons nothing about where an NPC stands, but it does say whether a unit's nameplate is in front of the camera or behind it. So a press switches the camera to first person, turns it around you until the nameplate changes sides, works out the direction from that, and turns you with the same turn as Turn to Waypoint. A press takes about half a second. The camera moves first; your character turns once, at the end. You hear a click when you face the unit. When the unit stands close, or is off screen while offscreen nameplates are off, the press measures with the camera close behind you instead, which takes about a second longer. A unit within about 2 yards cannot be measured that way; you are standing at it then. Walking while you press works, but the result is most exact when you stand still.
+
+- The unit needs a nameplate. For NPCs, friendly NPC nameplates must be on: the game option, or Apply Recommended Game Settings (see [First login](../getting-started/first-login.md)).
+- If you already face the unit (within about 3 degrees), nothing turns; you only hear the click.
+- Without a target or focus you hear No target or No focus; without a nameplate, No nameplate.
+- In dungeons and other instances the game hides friendly nameplates from addons, so you hear Friendly nameplates are hidden here. Enemies still work.
+- If your target or focus changes during the press, you hear Lost the nameplate.
+- If the game refuses the camera changes the press needs, you hear Turning is not available here; if the nameplate gave no answer, Could not turn to it or Nameplate position is hidden here. Your character does not turn then.
+- Pressing a turn key yourself stops it. A press while Turn to Waypoint is still turning is ignored.
+- The press uses first person (camera view 1, which cannot be saved over) and puts the camera back behind you afterwards, as Turn to Waypoint does with view 5.
 
 ### Arrival distance
 
@@ -178,7 +210,7 @@ If you have strayed far from the route, press Ctrl+Shift+N. WowVision plans the 
 
 ### Reverse the route
 
-Halfway along a route you may remember that you have to go back. Press Ctrl+Shift+R. The route turns around: the waypoint the beacon leads to now becomes the start of a new route, and its destination is where the previous route started, the entry point you chose in the navigation window. You hear "Route reversed, back to" and the name of that place, then the summary of the new route. For example, on the way from Priestess Anetta to Marshal Dughan you press Ctrl+Shift+R and hear "Route reversed, back to Priestess Anetta". If the start has no name, you hear "back to the start of the previous route".
+Halfway along a route you may remember that you have to go back. Press Ctrl+Shift+R. The route turns around: the new route begins at the destination of the previous one, and its destination is where the previous route started, the entry point you chose in the navigation window. The waypoint the beacon was leading to stays active, so you walk back from where you are and do not go to the old destination first. You hear "Route reversed, back to" and the name of that place, then the summary of the new route with the waypoints and yards still ahead of you. For example, on the way from Priestess Anetta to Marshal Dughan you press Ctrl+Shift+R and hear "Route reversed, back to Priestess Anetta". If the start has no name, you hear "back to the start of the previous route".
 
 This works on classic routes and WowNav routes alike. Afterwards, Ctrl+Shift+N goes to that start again. Without a running route you hear "No route to reverse".
 
@@ -214,12 +246,27 @@ Two bindings, both unbound by default, lead you to the nearest unvisited destina
 
 | Binding | What it does |
 |---------|--------------|
-| Route to the Nearest Unvisited of the Same Name | Plans a route there, entering at the entry point the window would preselect. |
+| Route to the Nearest Unvisited of the Same Name | Plans a route, entering at the entry point the window would preselect. Of the nearest 8 by straight line it takes the one with the shortest walk, as Auto Route does. |
 | Direct to the Nearest Unvisited of the Same Name | Sets a straight beacon there. |
 
-"Same name" means the whole name with WowNav and the name before the first semicolon with classic routes ("Peacebloom"), ignoring capital letters. The spot you are already at, and the ones marked visited, are skipped. Chain the key and you walk through every spawn of that object, one after the other.
+"Same name" means the whole name with WowNav and the name before the first semicolon with classic routes ("Peacebloom"), ignoring capital letters. The spot you are already at, and the ones marked visited, are skipped. So are the spots the keys already led you to, even when you left one before reaching it, until you pick a destination another way. Chain the key and you walk through every spawn of that object, one after the other.
+
+While auto mode runs (below), either key steps the chain on to its next spawn, the same as Ctrl+W past the end of a leg.
 
 Without a destination picked earlier you hear Choose a destination in the navigation window first. If every spawn is visited you hear "No unvisited" and the name, for example "No unvisited Peacebloom found".
+
+### Auto mode
+
+Auto mode does that chaining for you. In the navigation window, press Shift+F10 on a destination or an entry point and choose one of two entries:
+
+- Auto Direct: a straight beacon to the destination. Each time you arrive, the next straight beacon goes to the nearest unvisited destination with the same name.
+- Auto Route: a route to the destination. Each time you arrive, the next route goes to the unvisited destination of that name that is the shortest walk away. WowVision checks the nearest 8 by straight line and picks the one with the shortest walk, so a herb across a river does not win over one a little further away on your side. With WowNav this is planned in the background, and you may hear Calculating route first.
+
+You hear "Auto Direct" or "Auto Route" when it starts, then the usual words of each beacon or route. The first leg starts at the entry point you selected in the window, as Enter does. The chain ends when every spawn is visited (you hear "No unvisited" and the name), when any other guidance starts (another destination, a beacon, /beacon, Ctrl+Shift+R), or when you stop the guidance with Shift+F12. Ctrl+Shift+N starts the current leg again and keeps the chain.
+
+Ctrl+W and Ctrl+S step through the chain the way they step through a route. Past the end of the current leg, Ctrl+W goes to the next spawn: with Auto Direct at once, since a straight beacon has only one point, with Auto Route after the route's last waypoint. It skips a spawn you cannot reach or that is empty, and the chain does not offer it again. When a leg finds no route, Ctrl+W moves on the same way. Ctrl+S before the start of a leg goes back to the spawn before. After stepping back, the chain goes on through the spawns it already led to, then to new ones. Before the first one you hear Start of route.
+
+Auto mode needs visited places switched on, because they are what it skips. With the Visited Waypoints module off, both entries only say "Auto mode needs Visited Waypoints switched on".
 
 ## Straight beacons and the /beacon command
 
@@ -255,23 +302,25 @@ When a destination is not on the link network (most creatures and objects are no
 
 ## Settings
 
-Open the WowVision menu (/wv), then Navigation, then Maps. Settings are shared by all your characters unless you change that in the module's context menu; see [Menu and settings](../basics/menu-and-settings.md).
+Open the WowVision menu (/wv), then Navigation, then Beacon and Routes. Settings are shared by all your characters unless you change that in the module's context menu; see [Menu and settings](../basics/menu-and-settings.md).
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| Enabled | On | Turns the whole Maps module off, including the keys and /beacon. |
+| Enabled | On | Turns the whole Beacon and Routes module off: not only the beacon but also routes, the keys and /beacon. |
 | Arrival Radius | Medium Range | Which arrival distance is active. Alt+P changes it too. |
 | Short Range | 0.3 yards | The short arrival distance (0.1 to 20 yards). |
 | Medium Range | 1 yard | The medium arrival distance (0.1 to 20 yards). |
 | Long Range | 3 yards | The long arrival distance (0.1 to 20 yards). |
 | Announce Distance with Alt Gr | On | Whether Alt Gr and Ctrl+Alt speak the distance. The Announce Distance binding works either way. |
-| Beacon | (see above) | The beacon alert and its four sounds: Beacon Sound, Beacon Aligned, Beacon Off Course, Waypoint Reached. Each has Enabled and a sound choice. |
+| Beacon | (see above) | The beacon alert and its four sounds: Beacon Sound, Beacon Aligned, Beacon Off Course, Waypoint Reached. Each has Enabled and a sound choice; Beacon Sound also has Beacon Volume. |
 
 The Visited Waypoints module (under Navigation) has one setting:
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
 | Visited For (Minutes) | 15 | How long a reached destination counts as visited (1 to 1440 minutes). |
+
+Close All Windows When a Route Starts (Navigation module, on by default) closes every open window as soon as you start a route or a beacon, so your keys are free for walking; the legs an Auto chain starts by itself leave your windows alone.
 
 Three settings of the Navigation module are related: Announce Remaining Waypoints (on by default) says how many waypoints are left after each one you reach, Automatically Navigate to Corpse (on by default) starts a route to your body as soon as you are a ghost, and Auto-move to Interact Target is explained with the movement features. See [Movement](./movement.md) for those, for the compass and for following a player.
 
@@ -280,6 +329,7 @@ Three settings of the Navigation module are related: Announce Remaining Waypoint
 | Command | What it does |
 |---------|--------------|
 | /wv turnlog | Lists the last turns made by the I key with their error in degrees, in a window and in the chat, and speaks a summary such as "10 turns, mean error 1.2 degrees". Include this in a bug report if turning goes wrong. |
+| /wv unitturnlog | Lists the last presses of Ctrl+I and Ctrl+U, one line each with what the press found and how far you turned, in a window and in the chat. The lines are also saved with your settings. Include this in a bug report if turning to a unit goes wrong. |
 
 ## Examples
 

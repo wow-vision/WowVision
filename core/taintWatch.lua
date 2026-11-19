@@ -38,7 +38,108 @@ local function focusDescription()
     return table.concat(parts, ", ")
 end
 
+-- Taint scan: a developer tool for the blocks whose stack names no addon
+-- code (the game's own refresh read something an addon wrote earlier).
+-- /wv taint scan <expression> watches the table or frame the expression
+-- gives, three levels deep, five times a second for two minutes, and logs
+-- every field that turns insecure (and who the game blames), with the
+-- seconds since the scan began and what the graph had focused. A block
+-- recorded meanwhile is logged between them. The log is
+-- WowVisionDump.taintScan, on disk after /reload. /wv taint scan stop ends it.
+local SCAN_INTERVAL = 0.2
+local SCAN_SECONDS = 120
+local SCAN_DEPTH = 3
+local MAX_SCAN_ENTRIES = 600
+
+local scan = { ticker = nil, state = {}, started = 0, log = nil, resolved = false }
+
+local function scanLog(path, by)
+    if scan.log == nil or #scan.log.entries >= MAX_SCAN_ENTRIES then
+        return
+    end
+    local okFocus, focus = pcall(focusDescription)
+    tinsert(scan.log.entries, {
+        t = floor((GetTime() - scan.started) * 100 + 0.5) / 100,
+        path = path,
+        by = by,
+        focus = okFocus and focus or nil,
+    })
+end
+
+local function scanFields(tbl, path, depth, seen, found)
+    if seen[tbl] then
+        return
+    end
+    seen[tbl] = true
+    for key, value in pairs(tbl) do
+        if type(key) == "string" then
+            local secure, by = issecurevariable(tbl, key)
+            local childPath = path .. "." .. key
+            if not secure then
+                found[childPath] = tostring(by)
+            end
+            if depth > 1 and type(value) == "table" then
+                pcall(scanFields, value, childPath, depth - 1, seen, found)
+            end
+        end
+    end
+end
+
+local function scanTick()
+    if GetTime() - scan.started > SCAN_SECONDS then
+        scan.stop("time up")
+        return
+    end
+    local ok, root = pcall(scan.resolve)
+    if not ok or type(root) ~= "table" then
+        return
+    end
+    if not scan.resolved then
+        scan.resolved = true
+        scanLog("(root found)", nil)
+    end
+    local found = {}
+    pcall(scanFields, root, "root", SCAN_DEPTH, {}, found)
+    for path, by in pairs(found) do
+        if scan.state[path] ~= by then
+            scanLog(path, by)
+        end
+    end
+    for path in pairs(scan.state) do
+        if found[path] == nil then
+            scanLog(path, "secure again or gone")
+        end
+    end
+    scan.state = found
+end
+
+function scan.stop(reason)
+    if scan.ticker ~= nil then
+        scan.ticker:Cancel()
+        scan.ticker = nil
+        WowVision:speak("Taint scan ended, " .. tostring(reason) .. ", " .. #scan.log.entries .. " entries")
+    end
+end
+
+function scan.start(expression)
+    local chunk, err = loadstring("return " .. expression)
+    if chunk == nil then
+        WowVision:speak("Taint scan: " .. tostring(err))
+        return
+    end
+    scan.stop("restarted")
+    WowVisionDump = WowVisionDump or {}
+    scan.log = { root = expression, time = date("%Y-%m-%d %H:%M:%S"), entries = {} }
+    WowVisionDump.taintScan = scan.log
+    scan.resolve, scan.state, scan.started, scan.resolved = chunk, {}, GetTime(), false
+    scan.ticker = C_Timer.NewTicker(SCAN_INTERVAL, scanTick)
+    WowVision:speak("Taint scan started")
+end
+
 local function record(event, addon, func)
+    if scan.ticker ~= nil then
+        scanLog("BLOCKED " .. tostring(func), tostring(addon))
+    end
     WowVisionDump = WowVisionDump or {}
     local list = WowVisionDump.taint or {}
     WowVisionDump.taint = list
@@ -56,7 +157,7 @@ local function record(event, addon, func)
     end
     local ours = addon == nil or addon == "WowVision"
     if ours and WowVision.base ~= nil and WowVision.base.speech ~= nil then
-        WowVision:speak("Blocked: " .. tostring(func))
+        WowVision:notify("Blocked: " .. tostring(func))
     end
 end
 
@@ -81,9 +182,18 @@ end)
 function WowVision:registerTaintCommand()
     self.base:registerCommand({
         name = "taint",
-        description = "Show blocked protected calls recorded in WowVisionDump ('clear' resets); /reload writes them to disk",
+        description = "Show blocked protected calls recorded in WowVisionDump ('clear' resets, 'scan <expression>' "
+            .. "logs the fields of a table that turn insecure, 'scan stop' ends it); /reload writes them to disk",
         func = function(args)
             WowVisionDump = WowVisionDump or {}
+            local expression = type(args) == "string" and args:match("^scan%s+(.+)$") or nil
+            if expression == "stop" then
+                scan.stop("stopped")
+                return
+            elseif expression ~= nil then
+                scan.start(expression)
+                return
+            end
             if args == "clear" then
                 WowVisionDump.taint = {}
                 print("Taint records cleared")

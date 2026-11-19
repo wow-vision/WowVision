@@ -8,6 +8,8 @@
   <Script file="stuckTests.lua" />
   <Script file="walls.lua" />
   <Script file="falling.lua" />
+  <Script file="breathSteps.lua" />
+  <Script file="breathTests.lua" />
   <Script file="compass.lua" />
   <Script file="follow.lua" />
   <Script file="pitchLock.lua" />

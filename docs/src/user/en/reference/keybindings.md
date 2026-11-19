@@ -29,6 +29,8 @@ In combat, WowVision hands the window keys back to the game (see [Combat](../wor
 | Previous Window | Ctrl+Shift+Tab | Switch to the previous open window |
 | Close | Escape | Goes back one level or closes WowVision's own screens and menus. On game windows the game's own Escape closes the window |
 
+Each of these keys, and Enter, Backspace, Shift+F10 and Space, also has a key of its own for fights, named "In Combat:" and the key ("In Combat: Up"). Unbound, the fight uses the key above. See [Menus in combat](../world/combat.md#menus-in-combat).
+
 ## Acting on elements
 
 | Action | Default key | Notes |
@@ -56,6 +58,7 @@ See [Tooltips](../basics/tooltips.md).
 | Action | Default key | Page |
 |---|---|---|
 | WowVision Menu | Shift+F1 (or type `/wv`) | [The WowVision Menu and Settings](../basics/menu-and-settings.md) |
+| Close All Windows | Shift+Escape | Closes every open WowVision window and every window of the game |
 | Chat | Shift+F3 | [Chat](../windows/chat.md) |
 | Action Bars | Shift+F4 | [Action Bars](../windows/action-bars.md) |
 | Scanner | F9 | [Scanner](../world/scanner.md) |
@@ -99,20 +102,22 @@ See [Junk](../windows/bags-and-bank.md#junk) and [Favorites](../windows/bags-and
 | Action | Default key | Notes |
 |---|---|---|
 | Turn to Waypoint | I | Faces the current waypoint of your route |
+| Turn to Target | Ctrl+I | Faces your target, found by its nameplate. See [Navigation](../world/navigation.md#turn-to-target-and-focus-ctrli-ctrlu) |
+| Turn to Focus | Ctrl+U | The same for your focus, for example an escort NPC you follow |
 | Next Waypoint | Ctrl+W | Skip ahead to the next waypoint. You hear how many waypoints remain, for example "12 remaining" |
 | Previous Waypoint | Ctrl+S | Go back to the previous waypoint, with the same count |
 | Start the Route Again From Here | Ctrl+Shift+N | Plans the route to your last destination again, starting from where you stand. You hear "No route to start again" if you have not chosen a destination yet |
-| Reverse Route | Ctrl+Shift+R | Turns the running route around: from the waypoint the beacon leads to now back to where the route started |
+| Reverse Route | Ctrl+Shift+R | Turns the running route around: from its destination back to its start, going on at the waypoint the beacon leads to now |
 | Cancel Navigation | Shift+F12 | Stops the active route or beacon |
 | Cycle Arrival Distance | Alt+P | Changes how close you must come before a waypoint counts as reached |
 | Announce Distance | Unbound | Speaks the distance to the waypoint. Alt Gr (or Ctrl+Alt) does the same out of the box |
 | Route to Your Target | Unbound | Starts a route to your current target |
-| Route to the Nearest Unvisited of the Same Name | Unbound | Routes to the nearest place with the same name you have not visited yet |
+| Route to the Nearest Unvisited of the Same Name | Unbound | Routes to the place with the same name you have not visited yet that is the shortest walk away |
 | Direct to the Nearest Unvisited of the Same Name | Unbound | The same as a straight beacon instead of a route |
 | WowNav Route Status | Unbound | (WoW: Forever) Speaks the state of the WowNav route |
 | New WowNav Route Around a Blocked Spot | Unbound | (WoW: Forever) Plans a new route that avoids the spot where you are stuck |
 
-Alt Gr is not a binding: it is read directly, stays silent while you type in an edit box, and can be turned off with the Announce Distance with Alt Gr setting in the Maps module. See [Navigation and Routes](../world/navigation.md) and [WowNav](../world/wownav.md).
+Alt Gr is not a binding: it is read directly, stays silent while you type in an edit box, and can be turned off with the Announce Distance with Alt Gr setting in the Beacon and Routes module (Navigation). See [Navigation and Routes](../world/navigation.md) and [WowNav](../world/wownav.md).
 
 ## Minimap
 
@@ -139,13 +144,21 @@ See [Targeting](../world/targeting.md).
 
 | Action | Default key | Notes |
 |---|---|---|
-| Roll Tooltip | Alt+Ctrl+Y | Says the name of the item up for a roll |
+| Roll Tooltip | Alt+Ctrl+Y | Reads the whole tooltip of the item up for a roll: name, quality, item level, stats and requirements |
 | Roll Need | Alt+Ctrl+U | |
 | Roll Greed | Alt+Ctrl+I | |
 | Roll Pass | Alt+Ctrl+O | |
 | Roll Bonus | Alt+Ctrl+P | Only exists on game versions that have bonus rolls |
 
 The roll keys act on the first roll window on screen. With none open you hear "No loot.".
+
+See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
+
+## Trade
+
+| Action | Default key | Notes |
+|---|---|---|
+| Accept Trade | Alt+Ctrl+T | Accepts the open trade, also in combat. Without one you hear "No trade open"; after your own acceptance "Already accepted, waiting for" and the other player |
 
 See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
 
@@ -164,6 +177,7 @@ See [Group Finder](../windows/group-finder.md).
 | Toggle All Monitors | Unbound | Mute for monitors: if any monitor is on, turns all off ("Monitors off"); if all are off, turns all on ("Monitors on") |
 | Speak Tracked Auras | Unbound | (Retail and WoW: Forever) Reads out every aura of your enabled Cooldown Manager Auras monitors, or says "No tracked auras" |
 | Speak Tracked Cooldowns | Unbound | (Retail and WoW: Forever) Reads out every spell of your enabled Spell Cooldowns monitors, or says "No tracked cooldowns" |
+| Speak Main Resource | Unbound | Says the resource the game shows for you now, such as "energy 80%" or "combo points 3" |
 | Speak Group Health | Alt+H | (Retail and WoW: Forever) Says every group member once, in number order, with the pitch of their health. On a controller: right trigger + right stick press. Only works while the Group Health Monitor is enabled |
 
 See [Monitors](../information/monitors.md) and [Group Health Monitor](../information/group-health.md).
@@ -193,6 +207,7 @@ These are not extra bindings. They are the window keys from the first sections, 
 | Scanner | Tab | Jumps between the list and the Refresh button |
 | Action bars (Shift+F4), bags and other slot windows | \\ or Ctrl+D, then Delete | Pick up a slot onto the cursor, then clear or destroy it |
 | Friends, ignore, who and guild lists (Classic Era, TBC and Mists) | Page Up, Page Down | Scroll the list a page; Home and End do nothing there |
+| Paged windows: spellbook, merchant, mailbox, books and letters, toy box, heirlooms, appearances | Page Up, Page Down | Turn to the previous or next page and land on its first entry |
 | WowVision menu, context menus, dropdown menus | Letters | Jump to the next entry that starts with the letter. Can be switched off with the Letter Navigation in Menus setting |
 | Edit boxes | Enter, Tab, Escape | Enter puts the cursor in a game box and accepts a WowVision box; Tab moves on; Escape cancels a WowVision box |
 

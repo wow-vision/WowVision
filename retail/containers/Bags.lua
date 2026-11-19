@@ -28,37 +28,25 @@ local ControlId = graph.ControlId
 -- puts on that frame: search, sort, money and Add Slots all live on the
 -- backpack, so the other bags add no stops of their own.
 --
+-- Before its bags each frame contributes its own stops when it has any: the
+-- frame's controls -- the combined frame's bag menu (one submenu per bag: a
+-- modern dropdown), the sort button, money, and the extra-slots purchase
+-- button when offered -- then the search box (an edit box, alone in its
+-- stop), right before the bags it searches. A fresh open still lands on the
+-- first bag.
+--
 -- Right after the bags comes the Item Lists stop, when some list has something
 -- in it: categories of items that belong together whichever bag they sit in
 -- (the items the game flags as new, the items the player marked as junk or as
--- favorites; see core/windows/bagLists.lua). It is after the bags so that
--- opening them lands on their items.
---
--- After the bags each frame contributes its own stops when it has any: the
--- search box (an edit box, alone in its stop), then the frame's controls --
--- the combined frame's bag menu (one submenu per bag: a modern dropdown),
--- the sort button, money, and the extra-slots purchase button when offered.
+-- favorites; see core/windows/bagLists.lua).
 --
 -- WoW: Forever adds the keyring as a held bag (bag id Enum.BagIndex.Keyring,
 -- its own frame in both modes) with KeyRingButton as its slot button.
 local Bags = WowVision.components.createType("containers", { key = "RetailBags" })
 
-local KEYRING_ID = KEYRING_CONTAINER or (Enum.BagIndex ~= nil and Enum.BagIndex.Keyring) or nil
-
-local BAG_SLOT_BUTTONS = {
-    [0] = "MainMenuBarBackpackButton",
-    [1] = "CharacterBag0Slot",
-    [2] = "CharacterBag1Slot",
-    [3] = "CharacterBag2Slot",
-    [4] = "CharacterBag3Slot",
-    [5] = "CharacterReagentBag0Slot",
-}
-
--- Every held bag, in bar order: backpack, bags, reagent bag, keyring.
-local HELD_BAG_IDS = { 0, 1, 2, 3, 4, 5 }
-if KEYRING_ID ~= nil then
-    tinsert(HELD_BAG_IDS, KEYRING_ID)
-end
+local KEYRING_ID = module.KEYRING_ID
+local BAG_SLOT_BUTTONS = module.BAG_SLOT_BUTTONS
+local HELD_BAG_IDS = module.HELD_BAG_IDS
 
 local function bagSlotButton(bagID)
     if KEYRING_ID ~= nil and bagID == KEYRING_ID then
@@ -258,17 +246,6 @@ local function renderGrid(builder, frame, frameKey, separateBags)
 end
 
 local function renderFrameControls(builder, frame, frameKey)
-    -- The search box is one shared edit box parented to the frame that
-    -- owns it; it gets a stop of its own so tabbing in starts typing.
-    local searchBox = BagItemSearchBox
-    if searchBox ~= nil and searchBox:GetParent() == frame and searchBox:IsShown() then
-        builder:beginStop(frameKey .. ":search")
-        builder:addItem(
-            ControlId.forObject(searchBox),
-            nodes.proxyEditBox({ editBox = searchBox, label = L["Search"] })
-        )
-    end
-
     -- Collected first: a frame with nothing to offer (an individual bag
     -- other than the backpack) contributes no stop at all.
     local items = {}
@@ -305,15 +282,26 @@ local function renderFrameControls(builder, frame, frameKey)
             nodes.proxyButton({ target = frame.AddSlotsButton, label = L["Add Slots"] })
         )
     end
-    if #items == 0 then
-        return
+    if #items > 0 then
+        builder:beginStop(frameKey .. ":controls")
+        builder:pushContext(frameKey .. ":controls", L["Bag Controls"])
+        for _, entry in ipairs(items) do
+            builder:addItem(entry.id, entry.node)
+        end
+        builder:popContext()
     end
-    builder:beginStop(frameKey .. ":controls")
-    builder:pushContext(frameKey .. ":controls", L["Bag Controls"])
-    for _, entry in ipairs(items) do
-        builder:addItem(entry.id, entry.node)
+
+    -- The search box is one shared edit box parented to the frame that
+    -- owns it; it gets a stop of its own so tabbing in starts typing. Last,
+    -- right before the bags it searches.
+    local searchBox = BagItemSearchBox
+    if searchBox ~= nil and searchBox:GetParent() == frame and searchBox:IsShown() then
+        builder:beginStop(frameKey .. ":search")
+        builder:addItem(
+            ControlId.forObject(searchBox),
+            nodes.proxyEditBox({ editBox = searchBox, label = L["Search"] })
+        )
     end
-    builder:popContext()
 end
 
 -- Item Lists: a stop of its own right after the bags, with one category per list (the items the game marks as
@@ -363,8 +351,8 @@ end
 
 function Bags:renderGraph(builder)
     local frames = shownContainerFrames()
-    -- Once, right after the bags: after the combined grid, or after the last bag when each bag is a frame (the
-    -- backpack's controls sit between those).
+    -- Once, right after the bags: after the combined grid and its bag slots, or after the last bag when each bag
+    -- is a frame.
     local listsShown = false
     local function lists()
         if listsShown then
@@ -383,18 +371,28 @@ function Bags:renderGraph(builder)
             separateBags[frame:GetID()] = true
         end
     end
+    local landed = false
     for _, frame in ipairs(frames) do
         local frameKey = "frame:" .. (frame:GetName() or tostring(frame:GetID()))
+        renderFrameControls(builder, frame, frameKey)
         if frame.IsCombinedBagContainer ~= nil and frame:IsCombinedBagContainer() then
+            -- A fresh open lands on the bags, not on the controls before them.
+            if not landed then
+                builder:setStartStop(frameKey .. ":grid")
+                landed = true
+            end
             renderGrid(builder, frame, frameKey, separateBags)
             lists()
         else
             local order, groups = slotsByBag(frame)
             for _, bagID in ipairs(order) do
+                if not landed then
+                    builder:setStartStop("bag:" .. bagID)
+                    landed = true
+                end
                 renderBag(builder, frame, bagID, groups[bagID])
             end
         end
-        renderFrameControls(builder, frame, frameKey)
     end
     lists()
 end

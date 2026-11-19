@@ -370,6 +370,7 @@ local function emitItem(builder, item, focus)
         builder:addItem(ControlId.forObject(item), withFocus(attachMenuTooltip({
             controlType = graph.controlTypes.dropdown,
             announcements = { { text = label, kind = kinds.label } },
+            opensLevel = true,
             onActivate = function()
                 local description = descriptionOf(captured)
                 if description == nil or description.ForceOpenSubmenu == nil then

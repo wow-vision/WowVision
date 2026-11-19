@@ -47,4 +47,25 @@ testRunner:addSuite("Secrets", {
         t:assertEqual(secrets.join({ "Star" }, ", "), "Star")
         t:assertEqual(secrets.join({ "Star", "Hogger", "1 of 3" }, ", "), "Star, Hogger, 1 of 3")
     end,
+    ["readBool: a plain answer, or nil and why"] = withSecrets(function(t)
+        local function answer(value)
+            return function()
+                return value
+            end
+        end
+        t:assertEqual(secrets.readBool(answer(true)), true)
+        t:assertEqual(secrets.readBool(answer(false)), false)
+        t:assertEqual(secrets.readBool(answer(nil)), false)
+        local value, why = secrets.readBool(answer(secret(true)))
+        t:assertEqual(value, nil)
+        t:assertEqual(why, "hidden")
+        value, why = secrets.readBool(function()
+            error("refused")
+        end)
+        t:assertEqual(value, nil)
+        t:assertEqual(why, "refused")
+        value, why = secrets.readBool(nil)
+        t:assertEqual(value, nil)
+        t:assertEqual(why, "missing")
+    end),
 })

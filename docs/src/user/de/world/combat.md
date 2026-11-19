@@ -6,20 +6,22 @@ Die Kampfeinstellungen findest du im WowVision-Menü (tippe /wv) unter Benutzero
 
 ## Was passiert, wenn der Kampf beginnt
 
-WoW erlaubt Addons nicht, im Kampf Tastenbelegungen zu ändern oder viele seiner Funktionen zu benutzen. WowVision tritt deshalb im selben Moment zur Seite, in dem ein Kampf beginnt:
+WoW erlaubt Addons nicht, im Kampf Tastenbelegungen zu ändern oder viele seiner Funktionen zu benutzen. Mit der Einstellung Menüs im Kampf (Menus in Combat, im Menü Benutzeroberfläche, standardmäßig aus) arbeiten die Menüs von WowVision im Kampf trotzdem weiter, über ein sicheres Fenster, dem das Spiel das Halten von Tasten erlaubt; siehe [Menüs im Kampf](#menüs-im-kampf) unten. Ohne offenes WowVision-Fenster bleiben alle Tasten beim Spiel: deine Bewegungstasten, Tab für die Zielerfassung und deine Aktionsleisten verhalten sich genau so, wie das Spiel es vorsieht.
 
-- Die Tasten, die WowVision zur Bedienung seiner Fenster übernimmt (die Pfeiltasten, Tab und Strg+Tab, Pos1 und Ende, die Kontextmenütaste, die Buchstabennavigation in Menüs und die Tasten des Elements, auf dem du gerade warst), werden an das Spiel zurückgegeben. Deine Bewegungstasten und Aktionsleistentasten verhalten sich genau so, wie das Spiel es vorsieht.
-- WowVision hört auf, seine Fenster zu lesen und zu aktualisieren. Es werden keine neuen Fenster erkannt, und es gibt keine Ansagen zu Fenstern, bis der Kampf vorbei ist.
+Mit ausgeschalteten Menüs im Kampf, also solange du sie nicht einschaltest, tritt WowVision im selben Moment zur Seite, in dem ein Kampf beginnt: die Tasten, die es für seine Fenster übernommen hat, gehen an das Spiel zurück, und seine Fenster werden bis zum Ende des Kampfes weder gelesen noch aktualisiert.
+
+In beiden Fällen:
+
 - Tasten, die nichts mit Fenstern zu tun haben, etwa die Schalter der weichen Zielerfassung und die Zielfokus-Tasten, bleiben, wie sie sind. Einige davon können im Kampf nicht alles; siehe unten.
 - Mit einem Gamepad in Retail und WoW: Forever bleiben nur die Tasten bei WowVision, die für die Spielwelt gebraucht werden, zum Beispiel der Druck auf den rechten Stick. Siehe [Controller](../controller.md).
 
-Wenn der Kampf endet, nimmt WowVision seine Tasten zurück, sobald keine der benötigten Tasten mehr gehalten wird, und macht dort weiter, wo du warst. Fenster, die offen waren, bleiben offen, und du bist auf demselben Element wie vorher.
+Wenn der Kampf endet, nimmt WowVision seine gewohnten Tasten zurück, sobald keine der benötigten Tasten mehr gehalten wird, und macht dort weiter, wo du warst.
 
 Sollte nach einem Kampf einmal ein WowVision-Fenster hängen bleiben, tippe /wv close. Der Befehl schließt jedes WowVision-Fenster.
 
 ### Was auf das Ende des Kampfes wartet
 
-- Das Ein- oder Ausschalten der weichen Zielerfassung und die Einstellung Weiches Ziel wird festes Ziel: WowVision sagt "nach dem Kampf" und übernimmt die Änderung, wenn der Kampf endet. Siehe [Zielerfassung](targeting.md).
+- Das Ein- oder Ausschalten der weichen Zielerfassung und die Einstellung Soft Target wird festes Ziel: WowVision sagt "nach dem Kampf" und übernimmt die Änderung, wenn der Kampf endet. Siehe [Zielerfassung](targeting.md).
 - Das Speichern eines virtuellen Fokus mit /focus1 bis /focus5: wird mit der Meldung "Virtueller Fokus kann im Kampf nicht gesetzt werden." abgelehnt.
 - Eine neue Taste im Fenster für die Tastenbelegung aufzunehmen: WowVision sagt "Nicht im Kampf".
 - Der Minikarten-Scan und ähnliche Aktionen: Auch sie sagen "Nicht im Kampf". Siehe [Minimap](minimap.md).
@@ -34,6 +36,82 @@ Sollte nach einem Kampf einmal ein WowVision-Fenster hängen bleiben, tippe /wv 
 - Buffs und Debuffs werden im Kampf aus ihren Tooltips gelesen ([Puffer](../information/buffers.md)).
 
 Classic Era, The Burning Crusade und Mists of Pandaria haben diese Einschränkungen nicht.
+
+## Menüs im Kampf
+
+### Öffnen und schließen
+
+Die Tasten, die ein WowVision-Fenster öffnen, wirken im Kampf wie außerhalb: das WowVision-Menü (Umschalt+F1), der Chat (Umschalt+F3), der Scanner (F9), die Navigation (F10) und die Aktionsleisten (Umschalt+F4). Öffnet eine davon ein Fenster, bekommt WowVision seine Menütasten: die Pfeiltasten, Tab und Umschalt+Tab, Strg+Tab, Pos1 und Ende, Eingabe und Rücktaste, Umschalt+F10, Leertaste und Esc. Ein Fenster, das schon offen war, als der Kampf begann, behält sie, außer du hast in dem Moment eine davon für das Spiel gehalten (siehe [Tasten, die du hältst, während sich ein Menü öffnet](#tasten-die-du-hältst-während-sich-ein-menü-öffnet)).
+
+Esc schließt die eigenen Fenster von WowVision und gibt sofort alle Tasten an das Spiel zurück. Die Fenster des Spiels (das Questlog, die Charakteransicht) darf ein Addon im Kampf nicht schließen; sie bleiben auf dem Bildschirm und sind nach dem Kampf wieder da.
+
+Ein anderes Fenster des Spiels, das du im Kampf mit der Taste des Spiels öffnest, übernimmt die Tasten nicht von selbst: Du hörst seinen Namen und „Zum Lesen drücke“ mit deiner Taste für das WowVision-Menü (Umschalt+F1). Diese Taste landet auf dem Fenster und gibt WowVision die Tasten; ein zweiter Druck öffnet das WowVision-Menü. Hat Esc die Tasten zurückgegeben, landet die Menütaste wieder zuerst auf einem Fenster des Spiels, das noch offen ist.
+
+Bewegen, Lesen, Reiter und Ebenen funktionieren wie außerhalb des Kampfes. Eingabe und Rücktaste wirken auf die eigenen Einträge von WowVision (Einstellungen, das Menü, Chat, Wegpunkte). Auf einem Eintrag, dessen Klick ein Klick auf einen Knopf des Spiels ist, sagen sie „Im Kampf nicht verfügbar“, außer wo diese Seite sie nennt.
+
+### Deine Taschen (B)
+
+Deine Spieltaste für Alle Taschen öffnen oder Rucksack öffnen öffnet im Kampf alle deine Taschen wie außerhalb, und WowVision landet auf dem ersten Platz deines Rucksacks. Im Kampf lesen sich die Taschen als Liste nach Tasche und Platz: jede Tasche, die du trägst, Platz 1 zuerst, leere Plätze eingeschlossen, so bleibt jede Position den ganzen Kampf lang derselbe Platz. Die Gitterform ist hier eine Liste.
+
+- Pfeil nach oben und unten bewegen innerhalb einer Tasche, Pos1 und Ende zu ihrem ersten und letzten Platz. Tab und Umschalt+Tab gehen zur nächsten und vorigen Tasche.
+- Die Rücktaste benutzt den Gegenstand wie sein Rechtsklick: einen Trank, Essen, einen Verband; anlegbare Gegenstände werden angelegt.
+- Eingabe nimmt den Gegenstand auf, legt den gehaltenen ab oder tauscht zwei Gegenstände. Dafür braucht es die eigenen Platzknöpfe des Spiels, die WowVision lernt, solange deine Taschen außerhalb des Kampfes offen sind: öffne nach einem Login oder Neuladen deine Taschen zweimal vor deinem ersten Kampf. Bis dahin sagt Eingabe „Um im Kampf Gegenstände aufzuheben, öffne deine Taschen außerhalb des Kampfes noch einmal“. Gibt das Spiel den Plätzen im Kampf einmal andere Knöpfe, hörst du „Taschenanordnung geändert, Enter hebt vielleicht den falschen Gegenstand auf“.
+- Die Leertaste liest den Tooltip des Platzes.
+- Noch einmal B oder Esc schließt die Taschen und gibt die Tasten zurück.
+
+Beginnt ein Kampf, während du auf einem Taschenplatz stehst, geht es von diesem Platz aus weiter. Kommst du aus einem anderen Fenster zu deinen offenen Taschen zurück, ohne durch sie zu gehen, werden sie gelesen, aber die Tasten gehören ihnen noch nicht: du hörst „Zum Benutzen von Gegenständen drücke“ mit deiner Taschentaste, und diese Taste geht wieder durch sie, von dort, wo du warst.
+
+### Dein Questlog (L)
+
+Deine Taste des Spiels für das Questlog öffnet es im Kampf wie außerhalb und gibt WowVision im selben Druck die Tasten, wie die Taschentaste. Die Pfeiltasten und Tab gehen durch die Quests, Leertaste liest den Tooltip einer Quest: ihre Ziele und wie weit du bist. Die Details einer Quest öffnen ist ein Klick des Spiels und sagt „Im Kampf nicht verfügbar“.
+
+- Esc gibt die Tasten zurück. Das Questlog bleibt auf dem Bildschirm (ein Addon darf es im Kampf nicht schließen); dein nächster Druck auf die Questlog-Taste schließt es, oder das Esc des Spiels.
+- Die Questlog-Taste auf einem offenen Questlog schließt es und gibt die Tasten zurück.
+- WowVision kann im Kampf nicht sehen, ob das Questlog offen ist, und zählt deshalb deine Drücke auf die Questlog-Taste. Hat das Esc des Spiels das Questlog zwischendurch geschlossen, öffnet es der nächste Druck ohne die Tasten; drück sie noch einmal zum Schließen und dann wieder zum Öffnen mit den Tasten, oder Esc, um die Tasten zurückzugeben.
+
+### Deine Ausrüstung (C)
+
+Das Spiel erlaubt Addons nicht, im Kampf die Charakteransicht zu öffnen, deshalb öffnet deine Spieltaste für Charakterinfo stattdessen eine WowVision-Liste deiner Ausrüstungsplätze, in der Reihenfolge der Charakteransicht.
+
+- Die Rücktaste benutzt den Gegenstand im Platz, zum Beispiel ein Schmuckstück mit Benutzen-Effekt.
+- Eingabe nimmt den Gegenstand auf oder legt den gehaltenen an, soweit das Spiel es im Kampf erlaubt (Waffen ja, Rüstung nein).
+- Die Leertaste liest den Tooltip. Noch einmal C oder Esc schließt die Liste; sie schließt sich auch von selbst, wenn der Kampf endet.
+
+### Das Kontextmenü in Taschen und Ausrüstung (Umschalt+F10)
+
+Umschalt+F10 auf einem Platz öffnet seine zwei Einträge: den Linksklick und den Rechtsklick, mit dem, was sie tun, zum Beispiel „Aufheben, Linksklick“ und „Benutzen, Rechtsklick“. Pfeil nach oben und unten wählen, Eingabe führt den Eintrag aus, Esc, Pfeil nach links oder Umschalt+F10 schließen das Menü, und du bist wieder auf dem Platz.
+
+### Zwischen Fenstern wechseln (Strg+Tab)
+
+Mit offenen Taschen oder offener Ausrüstung geht Strg+Tab von den Taschen zur Ausrüstung zu deinen anderen Fenstern und reihum; jede Liste wird auf dem Platz wieder aufgenommen, den du verlassen hast. Von Taschen oder Ausrüstung aus geht jeder Besuch zum nächsten deiner anderen Fenster weiter, so kommen alle der Reihe nach dran; Strg+Umschalt+Tab geht andersherum. Ohne anderes Fenster hörst du „Kein anderes Fenster“, und das nächste Strg+Tab geht weiter.
+
+Ein Fenster, das sich von selbst öffnet, während du durch Taschen oder Ausrüstung gehst, etwa die Frage „diesen Gegenstand zerstören?“, bleibt dahinter, damit deiner Liste die Tasten nicht genommen werden: du hörst es und „Zum Antworten drücke“ mit deiner Strg+Tab-Taste. Die Ausnahme ist die Taste Gegenstand am Mauszeiger zerstören (Entf): mit einem Gegenstand am Mauszeiger holt sie die Zerstören-Frage sofort nach vorn. Ohne etwas am Mauszeiger lässt Entf deine Tasten, wo sie sind.
+
+### Popups im Kampf
+
+Ein Popup, das sich im Kampf von selbst öffnet und auf eine Antwort wartet (eine Gruppeneinladung, auch eine, die nach deiner Rolle fragt, eine Beschwörung, eine Wiederbelebung, der Tod, der Bereitschaftscheck), nimmt dir die Tasten nicht: es geht sofort nach Ausstehend, und du hörst seinen Namen, zum Beispiel „Gruppeneinladung, Ausstehend“. Öffne das WowVision-Menü (Umschalt+F1); das Popup ist sein erster Eintrag, und Eingabe holt es nach vorn. Die Knöpfe der Einladungen, Beschwörungen, Wiederbelebungen, des Todes-Kastens und der Zerstören-Fragen funktionieren dort, weil sie nichts aufrufen, was das Spiel im Kampf schützt; die Knöpfe aller anderen Popups, darunter der Bereitschaftscheck und die Rollenabfrage der Dungeonsuche, sagen „Im Kampf nicht verfügbar“. Die Taste Gruppeneinladung annehmen und /wv accept funktionieren ebenfalls weiter. Siehe [Ausstehend](../windows/system.md#ausstehend-eine-frage-die-wartet).
+
+Ein Popup, das auf etwas antwortet, das du gerade getan hast, etwa „diesen Gegenstand an dich binden?“, kommt nach vorn. Hielt WowVision in dem Moment die Tasten nicht, hörst du „Zum Antworten drücke Umschalt-F1“; diese Taste landet darauf. Esc tut dort, was das Esc des Spiels tut, in zwei Schritten: das erste Esc gibt die Tasten an das Spiel zurück, ein zweites Esc ist das des Spiels und bricht ein Popup ab, das auf Esc hört. Ein Popup, das wartet, legt schon das erste Esc nach Ausstehend beiseite.
+
+### Handel im Kampf
+
+Im Kampf sagen die Knöpfe des Handelsfensters (Handel, Abbrechen und die Handelsplätze) „Im Kampf nicht verfügbar“. Nimm den Handel mit der Taste Handel annehmen (Alt+Strg+T) an: sie ist eine Tastenbelegung des Spiels selbst und wirkt deshalb auch im Kampf. Siehe [Tastenbelegung](../reference/keybindings.md).
+
+### Tasten, die du hältst, während sich ein Menü öffnet
+
+Das Spiel gibt das Loslassen einer Taste an den, der die Taste in diesem Moment hält. Nimmt ein Menü eine Taste, während du sie für das Spiel hältst, einen Pfeil, mit dem du läufst oder dich drehst, oder die Leertaste beim Auftauchen, dann sieht das Spiel das Loslassen nie, und dein Charakter läuft oder dreht sich weiter.
+
+WowVision schützt davor, wo es kann. Ein Fenster, das offen ist, wenn ein Kampf beginnt, behält seine Tasten nur, wenn WowVision sie schon hielt. Wartete es noch darauf, dass du eine Taste loslässt, bleiben die Tasten in diesem Kampf beim Spiel; eine Taste, die ein Fenster öffnet, übernimmt sie, sobald du losgelassen hast, und bei einem Popup, das wartet, hörst du „Zum Antworten drücke Umschalt+F1“.
+
+Ein Menü, das du im Kampf öffnest, kann es nicht schützen, weil das Spiel das sichere Fenster nicht sehen lässt, ob eine Taste gehalten wird. Lass also die Pfeiltasten und die Leertaste los, bevor du eine Taste drückst, die ein Fenster öffnet, deine Taschentaste oder deine Charaktertaste. (Nur Retail und WoW: Forever) Wurde trotzdem eine gehaltene Taste erwischt, nennt WowVision sie einen Moment später: „Pfeil nach oben, gehalten, als das Menü die Tasten übernahm. Schließe das Menü und tippe die Taste einmal an, um die Bewegung zu beenden“. Drücke Esc und tippe dann diese Taste einmal an. Die anderen Versionen können das nicht erkennen und sagen nichts; der Ausweg ist derselbe.
+
+Wenn du dich mit den Pfeiltasten bewegst, gib den Menütasten für den Kampf andere Tasten (die Tasten „Im Kampf“ unten), damit die Pfeile beim Spiel bleiben.
+
+### Einstellungen und Tasten
+
+- Menüs im Kampf (Menus in Combat, im Menü Benutzeroberfläche, aus): an arbeiten die Menüs von WowVision im Kampf, wie dieser Abschnitt es beschreibt, und im Kampf öffnen deine Spieltasten für Alle Taschen öffnen, Rucksack umschalten und Charakterinfo die Listen von WowVision. Aus tritt WowVision im Kampf zur Seite wie oben beschrieben.
+- Jede Menütaste hat im Fenster für die Tastenbelegung eine eigene Taste für den Kampf, benannt „Im Kampf:“ und die Taste, zum Beispiel „Im Kampf: Hoch“. Leer gelassen (die Vorgabe) benutzt der Kampf die Tasten der Menütaste selbst; lege dort eine fest, wenn du im Kampf eine andere Taste willst, zum Beispiel weil du dich mit den Pfeiltasten bewegst.
+- /wv combatkeys gibt aus, was die Kampftasten gerade tun, zur Fehlersuche. WowVision führt von selbst ein Protokoll darüber; siehe [Slash-Befehle](../reference/commands.md).
 
 ## Dein eigenes Leben und deine Ressourcen
 
@@ -70,7 +148,7 @@ Alle unter Benutzeroberfläche, Kampf.
 | Gegneranzahl-Alarm, Aktiviert (Enemy Count Alert) | An | Schaltet die Gegneranzahl ein oder aus |
 | Gegneranzahl-Alarm, TTS-Alarm | An | Spricht die Zahl |
 | Gegneranzahl-Alarm, Stimmenalarm | Aus | Spielt stattdessen eine aufgenommene Zahl aus deinem Stimmenpaket ab |
-| Gegner zählen (Count Enemies) | Die dich oder deine Gruppe angreifen | Die dich oder deine Gruppe angreifen zählt jeden Gegner, gegen den du, dein Begleiter oder ein Gruppenmitglied kämpft. Die dich angreifen zählt nur Gegner, die dich als Hauptziel haben (die, deren Aggro du hältst) |
+| Gegner zählen (Count Enemies) | Die dich oder deine Gruppe angreifen | Die dich oder deine Gruppe angreifen zählt jeden Gegner, gegen den du, dein Begleiter oder ein Gruppenmitglied kämpft; in einer Gruppe, solange du, dein Begleiter oder ein Gruppenmitglied im Kampf ist, auch jeden Gegner im Kampf, den niemand außerhalb deiner Gruppe angeschlagen hat. So zählt ein Kampf, den deine Gruppe ohne dich beginnt, sofort mit. Die dich angreifen zählt nur Gegner, die dich als Hauptziel haben (die, deren Aggro du hältst) |
 | Nur Elitegegner zählen (Count Elite Enemies Only) | Aus | Lässt normale Monster weg. Elites, seltene Elites und Weltbosse zählen weiterhin |
 | Kontrolleffekte ansagen (Announce Crowd Control) | Aus | Experimentell. Mit Zaubernamen oder Ohne Namen zählt die Zahl nur die Gegner, die noch frei kämpfen, und CC wird getrennt angesagt (siehe unten). Aus behält die einfache Zahl |
 | Kontrolle-beendet-Alarm, Klangalarm (Crowd Control Ended Alert) | An | Der kurze Klang, wenn ein CC endet, bei eingeschaltetem Kontrolleffekte ansagen |
@@ -84,7 +162,9 @@ Noch ein paar Dinge, die du wissen solltest:
 - Ein Gegner zählt nur, solange seine Namensplakette existiert, also innerhalb der Namensplaketten-Reichweite des Spiels (etwa 45 Yards in WoW: Forever).
 - Schaltest du die Namensplaketten-Optionen Minor und Minions im Spiel ein (Minor und Minions heißen sie im englischen Spiel; in der deutschen Oberfläche suche nach den entsprechenden Optionen für unwichtige Gegner und Diener), zählen auch kleine Trashmonster und gegnerische Begleiter.
 - Nur Gegner zählen, die dir feindlich gesinnt sind, leben und im Kampf sind. Neutrale Monster zählen, sobald sie kämpfen.
-- Eine neue Zahl wird erst angesagt, nachdem sie eine halbe Sekunde lang Bestand hatte. Ein Gegner, der aus der Reichweite und wieder zurück flackert, wird also nicht doppelt gesprochen. Während eines Kampfes wird die Zahl außerdem jede Sekunde neu geprüft, wodurch Monster erfasst werden, die leise sterben oder aufgeben.
+- Auch gegnerische Spieler zählen. In einer Gruppe, solange du, dein Begleiter oder ein Gruppenmitglied im Kampf ist, zählt jeder gegnerische Spieler im Kampf in deiner Nähe, auch einer, der gegen jemanden außerhalb deiner Gruppe kämpft: Das Spiel markiert Spieler nie als angeschlagen. Im PvP bekommst du so den weiteren Überblick, alle gegnerischen Spieler, die um dich herum kämpfen, so wie die Namensplaketten sie einem sehenden Spieler zeigen.
+- Eine Zahl, die andere Sprachausgabe verworfen hat, bevor sie gesprochen wurde (ein unterbrechender Alarm wie ein Zielwechsel leert die Sprachwarteschlange), wird einmal wiederholt, wenn innerhalb von 5 Sekunden keine neuere Zahl kam und sich die Zahl inzwischen nicht geändert hat. Wiederholt wird nur die gesprochene Zahl: Eine Zahl aus dem Sprachpaket wird sofort abgespielt und nie verworfen. Eine Zahl, die abgeschnitten wurde, während sie schon gesprochen wurde, wird nicht wiederholt. Nicht in Vanilla.
+- Eine neue Zahl wird erst angesagt, nachdem sie 0,3 Sekunden lang Bestand hatte. Ein Gegner, der aus der Reichweite und wieder zurück flackert, wird also nicht doppelt gesprochen. Die Wartezeit beginnt bei jeder Änderung neu, so wird eine Gruppe, die nacheinander dazukommt, als eine Zahl gesagt, 0,3 Sekunden nach dem letzten Gegner. Während eines Kampfes wird die Zahl außerdem jede Sekunde neu geprüft, wodurch Monster erfasst werden, die leise sterben oder aufgeben.
 
 ### Kontrolleffekte ansagen
 

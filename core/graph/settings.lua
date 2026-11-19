@@ -223,6 +223,7 @@ end
 settings.registerFieldControl("Category", function(field, owner)
     return nodes.button({
         label = field:getLabel(),
+        opensLevel = true,
         onActivate = function()
             local host = WowVision.graphHost
             local stack = host:focusedStack()
@@ -248,6 +249,7 @@ settings.registerFieldControl("Category", function(field, owner)
                             withAlertScope(
                                 nodes.button({
                                     label = ref.target.label,
+                                    opensLevel = true,
                                     onActivate = function()
                                         pushChildScreen(ref.target)
                                     end,
@@ -282,6 +284,7 @@ function settings.renderInto(builder, infoFrame)
             withAlertScope(
                 nodes.button({
                     label = target.label,
+                    opensLevel = true,
                     onActivate = function()
                         pushChildScreen(target)
                     end,
@@ -325,6 +328,20 @@ local function instanceLabel(instance)
         return label
     end
     return "item"
+end
+
+-- "<label> Copy 1", or the next free number among the array's labels.
+local function copyLabel(field, owner, instance)
+    local base = instanceLabel(instance)
+    local taken = {}
+    for _, current in ipairs(field:get(owner) or {}) do
+        taken[instanceLabel(current)] = true
+    end
+    local number = 1
+    while taken[base .. " " .. L["CopyName"] .. " " .. number] do
+        number = number + 1
+    end
+    return base .. " " .. L["CopyName"] .. " " .. number
 end
 
 local function pushComponentEditor(field, owner, instance)
@@ -398,15 +415,31 @@ local function pushComponentList(field, owner)
                 label = function()
                     return instanceLabel(captured)
                 end,
+                opensLevel = true,
                 onActivate = function()
                     pushComponentEditor(field, owner, captured)
                 end,
             })
-            -- A component's context menu moves it between the account and
-            -- this character (when both stores back the array).
+            -- A component's context menu copies it, and moves it between the
+            -- account and this character (when both stores back the array).
             local pair = rawget(owner, "_db")
-            if field.setComponentScope ~= nil and pair ~= nil and pair.global ~= nil then
-                vtable.contextActions = function(add)
+            local hasScope = field.setComponentScope ~= nil and pair ~= nil and pair.global ~= nil
+            vtable.contextActions = function(add)
+                if field:canCopy(owner, captured) then
+                    add({
+                        label = L["Copy"],
+                        onActivate = function()
+                            local label = copyLabel(field, owner, captured)
+                            local copy = field:copyElement(owner, captured, function(config)
+                                config.label = label
+                            end)
+                            if copy ~= nil then
+                                WowVision:notify(label)
+                            end
+                        end,
+                    })
+                end
+                if hasScope then
                     add(scopeSubmenu(function()
                         return field:scopeOf(captured) == "global"
                     end, function(scope)
@@ -436,6 +469,7 @@ settings.registerFieldControl("ComponentArray", function(field, owner)
         label = function()
             return (field:getLabel() or field.key) .. " (" .. field:getLength(owner) .. ")"
         end,
+        opensLevel = true,
         onActivate = function()
             pushComponentList(field, owner)
         end,
@@ -461,11 +495,25 @@ local function pushModuleScreen(module)
     end
 end
 
--- Emit one module's menu: enabled toggle (non-vital modules), sorted
--- submodule buttons pushing child screens, the module's own graph menu items
+-- Entries a module puts first in the WowVision menu's top level, each a render(builder) adding its own items or none
+-- (Pending, windows/pending.lua).
+local rootEntries = {}
+
+function settings.registerRootEntry(render)
+    tinsert(rootEntries, render)
+end
+
+-- Emit one module's menu: the root entries first on the top level (registerRootEntry), enabled toggle (non-vital
+-- modules), sorted submodule buttons pushing child screens, the module's own graph menu items
 -- (getGraphMenuItems), then its settings fields. Mirrors the old ModulePanel.
 function settings.renderModuleInto(builder, module)
     builder:pushContext("module:" .. tostring(module.key), module:getLabel() or tostring(module.key))
+
+    if module == WowVision.base then
+        for _, render in ipairs(rootEntries) do
+            render(builder)
+        end
+    end
 
     if not module:isVital() then
         builder:addItem(
@@ -492,6 +540,7 @@ function settings.renderModuleInto(builder, module)
     for _, submodule in ipairs(submodules) do
         local vtable = nodes.button({
             label = submodule:getLabel() or tostring(submodule.key),
+            opensLevel = true,
             onActivate = function()
                 pushModuleScreen(submodule)
             end,
@@ -526,6 +575,7 @@ function settings.renderModuleInto(builder, module)
                 withAlertScope(
                     nodes.button({
                         label = target.label,
+                        opensLevel = true,
                         onActivate = function()
                             pushChildScreen(target)
                         end,
@@ -555,6 +605,18 @@ end
 -- The graph version of the WowVision menu. Parallel to the old menu until
 -- parity; opened by /wv gmenu.
 function settings.openMenu()
+    -- In combat, with Menus in Combat on, a popup that waits for an answer (a group invitation, a summon) or a game
+    -- window opened by the game's own key (the quest log) is open but cannot take the keys by itself
+    -- (graph/combatKeys.lua): the menu key lands on it first. Landed, the window is an ordinary one: the next press
+    -- opens the menu.
+    local combatKeys = WowVision.graph.combatKeys
+    local lands = InCombatLockdown() and combatKeys ~= nil and combatKeys.active()
+    if lands and WowVision.graphHost:focusStack(function(stack)
+        return stack.combatUnkeyed == true or (stack.config ~= nil and stack.config.waits == true)
+    end) then
+        combatKeys.clearUnkeyed()
+        return
+    end
     WowVision.UIHost:openTemporaryWindow({ graphScreen = settings.moduleScreen(WowVision.base) })
 end
 

@@ -145,16 +145,16 @@ local function renderWhoTab(builder)
         return
     end
 
-    builder:beginStop("whoSearch")
-    builder:addItem(
-        ControlId.forObject(frame.EditBox),
-        nodes.proxyEditBox({ editBox = frame.EditBox, label = L["Search"] })
-    )
-
     builder:beginStop("whoFilter")
     builder:addItem(
         ControlId.forObject(frame.FilterDropdown),
         nodes.proxyDropdown({ target = frame.FilterDropdown, label = L["Filter"] })
+    )
+
+    builder:beginStop("whoSearch")
+    builder:addItem(
+        ControlId.forObject(frame.EditBox),
+        nodes.proxyEditBox({ editBox = frame.EditBox, label = L["Search"] })
     )
 
     builder:beginStop("whoList")

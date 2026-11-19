@@ -73,8 +73,6 @@ end
 
 local function renderHeirlooms(builder)
     local journal = HeirloomsJournal
-    module.renderSearchAndFilter(builder, "heirloom", journal.SearchBox, journal.FilterDropdown)
-
     builder:beginStop("heirloomClass")
     builder:addItem(ControlId.forObject(journal.ClassDropdown), module.namedDropdown(journal.ClassDropdown, CLASS))
 
@@ -90,6 +88,8 @@ local function renderHeirlooms(builder)
             })
         )
     end
+
+    module.renderSearchAndFilter(builder, "heirloom", journal.SearchBox, journal.FilterDropdown)
 
     builder:beginStop("heirlooms")
     builder:pushContext("heirlooms", HEIRLOOMS)

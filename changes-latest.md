@@ -1,37 +1,7 @@
-### Summary
-The first update since launch: a rebuilt quest log for Retail and WoW: Forever, a working bank and Send Mail tab on Forever, new WowNav data for the starting zones, and many fixes from launch reports.
-
-The full manual is online, in English and German: [WowVision documentation](https://wow-vision.github.io/WowVision/).
-
 ### All Versions
-* Buffers are now account-wide by default, so a group or buffer you add or change on one character is there on all of them. Press Shift+F10 on a group and use Scope to keep it on one character.
-* Targeting, Names: choose what a target announcement says, with separate choices for in combat and out of combat, and for players, NPCs, mobs, pets and totems. It is off by default, so you hear the full tooltip as before until you turn on Configured Target Announcement. /wv targetinfo lists what each fact says for your target.
-* Targeting: a new Target of Target binding makes your target's target your target. It works in combat and has no default key, because R stays the game's reply key.
-* Targeting: the Target in Combat sound when tabbing now works in a group.
-* Key bindings: letters jump to the next action whose name starts with them, and Home and End go to the first and last action.
-* Navigation: after the waypoint reached cue, WowVision says how many waypoints are left. The new Announce Remaining Waypoints setting turns it off.
-* Navigation: Reverse Route (Ctrl+Shift+R) turns the running route around.
-* Navigation: the three arrival distances (Alt+P) now default to 0.3, 1 and 3 yards, take values from 0.1 to 20, and also apply to WowNav routes.
-* Quests: when the quest data names nowhere to walk, the Scanner falls back to the game's quest marker, then Questie's.
-* Quest log: F9 opens the Scanner on the quest you are on, and F10 opens the navigation window aimed at that quest's next target.
-* Group invitations: /wv accept and a new unbound Accept Group Invitation binding accept an invitation, even in combat.
-* Fixed tooltip money lines failing on secret values.
+* Bags and bank: while the search box holds text, only the items that match are listed, as a plain list in slot order. Before, every slot stayed in the list and the ones that did not match said "Filtered", so a search still meant stepping through the whole bag. A bag without a match says "No results". Empty the box to get every slot back.
+* Junk: the new Select Junk binding (Shift+Enter by default, changed under UI, Bindings) marks the item you stand on in the bags or bank as junk, and takes the mark off again. WowVision says what happened, and a marked item reads "[Junk]" before its name. Marked items are sold when a merchant opens (the new Automatically Sell Items Marked as Junk setting of Merchant, on by default), together with the grey items if Automatically Sell Poor Items is on, and WowVision now says what it sold, naming the marked items, instead of printing it in the chat. The marks are kept for each character. On bag and bank slots Select Junk takes Shift+Enter from the shift click, so give it another key if you split stacks with Shift+Enter. The automatic sale now also covers the reagent bag. On Retail and WoW: Forever the Junk category of the new Item Lists stop in the bags lists everything you marked, so all of it is in one place.
+* Favorites: the new Select Favorite binding (Shift+Backspace by default, changed under UI, Bindings) marks the item you stand on in the bags or bank as a favorite, and takes the mark off again, the way Select Junk does for junk. A favorite reads "[Favorite]" before its name, is listed in the Favorites category of the Item Lists stop (Retail and WoW: Forever) and is never sold at a merchant, even if it is also marked as junk. Backspace alone is still the right click.
 
 ### Modern
-* The quest log is rebuilt to match the screen. The details replace the list, with a real Back button. The list gains search, settings, your quest count, quest tags, collapse state and the game's right click menus. Press Right on a quest for its Track Quest checkbox and its objectives. Details now read in the game's order and include the rewards, timer, required money and group size.
-* Aura buffers: new settings for the time remaining and the description.
-* Setting a raid marker from the target's menu (Alt+T) no longer fails with an addon error.
-* Dragging a spell or item off the action bars window now picks it up directly, which avoids action bar errors in combat.
-* Bags: combined bags read bag by bag, so a sorted bag now reads in order.
-* Social: the friend request confirmation after Add Friend is now read, so Send Request can be pressed.
-* Options: moving through the Social category no longer raises the Discord error. The Discord rows now only work from a search made right after a reload, because WowVision cannot scroll to them safely. The manual explains the steps.
-
-#### Forever
-* Bank: bank bag slots you have not bought now read their price, and Enter buys the next one, with the game's confirmation.
-* Mail: the Send Mail tab now works, with the recipient, subject, body, attachments, money and Send button. Enter in the recipient and subject boxes no longer jumps to the next box.
-* Fixed the Need, Greed and Pass keys failing with an error. The Greed key also presses Transmog on items that offer it in Greed's place, and a roll you can't make now says why.
-* WowNav data: Elwynn Forest, Dun Morogh, Teldrassil, Durotar, Mulgore, Tirisfal Glades and Zephras Isle are rebuilt with entry points and complete links.
-* WowNav routes: routes now start from the network's nearest point within 30 yards, instead of saying "No WowNav network here" a few steps off it.
-* WowNav routes: a start and target on one link no longer walk a detour, and most routes no longer end with the unchecked last stretch warning.
-* WowNav routes: reaching the last point now says Arrived and the target's name.
-* WowNav: the Scanner's Enter on an NPC or object WowNav knows now routes to WowNav's own entry, with its height.
+* Bags (Retail and WoW: Forever): a new stop right after the bags, Item Lists, holds categories you open with Right and close with Left, like the scanner's. The first, New Items, lists what you just got, so nothing is missed: the items the game marks as new and everything that arrives in your bags, such as the reward of a quest, which the game did not mark on WoW: Forever. Items stay in it until you have opened and closed the bags, even after the game clears their mark on hover. The stop only exists while some category has something in it.

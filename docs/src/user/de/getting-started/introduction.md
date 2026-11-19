@@ -14,7 +14,7 @@ Es hält Informationen für dich bereit. Puffer sind Listen, die du jederzeit mi
 
 Es beobachtet Dinge für dich. Monitore melden sich, wenn ein Debuff von deinem Ziel abfällt, ein Zauber wieder bereit ist oder ein Proc auslöst. Siehe [Monitore](../information/monitors.md).
 
-Es führt dich durch die Spielwelt. Das Navigationsfenster (F10) plant Routen entlang eines Netzes aus Wegpunkten und führt dich mit Signaltöne dorthin. Der Scanner (F9) listet Questgeber, Questziele und andere Dinge in der Nähe auf, und der Minimap-Scan findet Kräuter und Erz. Siehe [Navigation und Routen](../world/navigation.md), [Scanner](../world/scanner.md) und [Minimap](../world/minimap.md).
+Es führt dich durch die Spielwelt. Das Navigationsfenster (F10) plant Routen entlang eines Netzes aus Wegpunkten und führt dich mit Beacon-Tönen dorthin. Der Scanner (F9) listet Questgeber, Questziele und andere Dinge in der Nähe auf, und der Minimap-Scan findet Kräuter und Erz. Siehe [Navigation und Routen](../world/navigation.md), [Scanner](../world/scanner.md) und [Minimap](../world/minimap.md).
 
 Es gibt dir zusätzliche Steuerungsmöglichkeiten. Umschalter für die weiche Zielerfassung, fünf Fokusziele, ein Menü für dein Ziel, Tasten für Beutewürfe und in Retail und WoW: Forever Gamepad-Unterstützung. Siehe [Zielerfassung](../world/targeting.md) und [Controller](../controller.md).
 

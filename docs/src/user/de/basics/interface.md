@@ -82,7 +82,11 @@ Solange ein Steuerelement den Fokus hat, behält WowVision es im Blick. Ändert 
 
 Pfeil hoch und Pfeil runter gehen in der Reihenfolge durch die Steuerelemente, in der sie erscheinen. Wo Steuerelemente nebeneinander in einer Zeile stehen, gehen Pfeil links und Pfeil rechts an der Zeile entlang. Wenn du aus einer Zeile nach oben oder unten gehst, landest du auf dem ersten Steuerelement der nächsten Zeile. Ausnahme sind Raster und Tabellen, die in Spalten angeordnet sind: Dort bleibst du in derselben Spalte.
 
-Drückst du am Rand einer Liste eine Pfeiltaste, passiert nichts und es wird nichts gesagt. Die Pfeiltasten springen in Fenstern nicht von hinten nach vorn.
+Drückst du Pfeil nach oben auf dem ersten Eintrag einer Liste oder Pfeil nach unten auf dem letzten, hörst du einen kurzen Ton und der Eintrag wird noch einmal vorgelesen, wie in Sku. Mit der Einstellung Ton am Anfang und Ende von Listen (UI-Menü, standardmäßig an) schaltest du das aus; die Pfeiltaste tut dann nichts und es wird nichts gesagt. Pfeil links und rechts am Rand bleiben still, ebenso die Chat-Nachrichten. Die Pfeiltasten springen in Fenstern nicht von hinten nach vorn.
+
+### Leere Plätze überspringen
+
+Ist die Einstellung „Leere Plätze beim doppelten Pfeildruck überspringen“ eingeschaltet (Menü Benutzeroberfläche, standardmäßig aus), kannst du in deinen Taschen, der Bank und den Aktionsleisten dieselbe Pfeiltaste zweimal schnell hintereinander drücken (innerhalb einer Viertelsekunde), um die leeren Plätze zu überspringen: Du landest auf dem nächsten Platz, in dem etwas liegt. Tippst du weiter schnell, springst du von Gegenstand zu Gegenstand. Folgt in dieser Richtung nichts mehr, landest du auf dem letzten Platz, der „Leer“ sagt. Zwei verschiedene Pfeiltasten hintereinander zählen nie als Doppeldruck.
 
 ### Tabstopps
 
@@ -176,17 +180,18 @@ In Listen, die die Tastatur für sich haben, kannst du einen Buchstaben drücken
 - Kontextmenüs,
 - den Dropdown-Menüs des Spiels.
 
-In Fenstern, in denen du spielst, funktioniert es nicht, zum Beispiel im Navigationsfenster.
+Jedes andere Fenster hat einen eigenen Schalter Buchstaben-Navigation, standardmäßig aus: das Navigationsfenster im Menü Navigation, der Scanner im Menü Scanner und jedes Spielfenster in seinem eigenen Eintrag im Menü Fenster. Eingeschaltet funktioniert jede Liste in diesem Fenster genauso.
 
 So verhält es sich:
 
 - Drücke einen Buchstaben, um zum nächsten Eintrag zu gehen, der damit beginnt. Drückst du denselben Buchstaben noch einmal, geht es zum übernächsten, am Ende wieder von vorn.
-- Tippe mehrere Buchstaben schnell hintereinander (innerhalb einer halben Sekunde), um nach einem längeren Anfang zu suchen: G und dann O findet „Goldhain“.
-- Akzente werden ignoriert, also findet U auch „Übersicht“. Zahlen und Satzzeichen am Anfang eines Namens werden übersprungen.
-- Beginnt nichts mit dem, was du getippt hast, hörst du „Keine Ergebnisse“.
+- Tippe zwei verschiedene Buchstaben schnell hintereinander (innerhalb einer halben Sekunde), um die Liste zu filtern. Du landest auf einer Zeile, die Filter und das Getippte sagt; darunter stehen nur noch die Einträge, die diese Buchstaben irgendwo im Namen enthalten. Jeder weitere Buchstabe grenzt die Liste weiter ein, egal wie langsam du ihn tippst.
+- Solange eine Liste gefiltert ist, holt Rücktaste oder Pfeil links die ganze Liste zurück. Eingabe auf einem Eintrag oder der Wechsel eine Ebene tiefer beendet den Filter ebenfalls.
+- Akzente werden ignoriert, also findet U auch „Übersicht“. Eine Umlaut-Taste findet nur Einträge mit genau diesem Umlaut: Ü findet „Übersicht“, aber nicht „Ultra“. Zahlen und Satzzeichen am Anfang eines Namens werden übersprungen.
+- Passt nichts zu dem, was du getippt hast, hörst du „Keine Ergebnisse“.
 - Drückst du denselben einzelnen Buchstaben noch einmal und der Eintrag, auf dem du stehst, ist der einzige, der damit beginnt, wird dieser Eintrag noch einmal gelesen.
 
-Solange so eine Liste offen ist, bewegen die Buchstabentasten deinen Charakter nicht. Du kannst das mit der Einstellung Buchstaben-Navigation in Menüs abschalten (Menü Benutzeroberfläche, standardmäßig an). Die Tasten werden außerdem freigegeben, sobald du in den Kampf kommst oder die Liste schließt.
+Solange so eine Liste offen ist, gehört ihr jede Buchstabentaste: W, A, S und D bewegen deinen Charakter nicht, und Buchstabentasten des Spiels wie B für die Taschen tun nichts. Für die Menüs kannst du das mit der Einstellung Buchstaben-Navigation in Menüs abschalten (Menü Benutzeroberfläche, standardmäßig an). Die Tasten werden außerdem freigegeben, sobald du in den Kampf kommst oder die Liste schließt.
 
 Beispiel: Ganz oben im WowVision-Menü drückst du einmal S, um zu Scanner zu kommen, noch einmal S für Sprache, dann Z für Zielerfassung.
 
@@ -196,6 +201,7 @@ Umschalt+F10 öffnet ein Menü mit zusätzlichen Aktionen für das Steuerelement
 
 - Bei einem echten Spielschalter bekommst du meistens Linksklick, Rechtsklick und Ziehen. Manche Fenster ergänzen, was der Klick bewirkt, zum Beispiel „Verkaufen, Rechtsklick“, sowie fensterspezifische Aktionen wie einen Gegenstand im Chat verlinken oder einen Spieler einladen.
 - Bei einer Einstellung im WowVision-Menü bekommst du ein Untermenü Bereich (siehe [Einstellungen pro Charakter und accountweit](./menu-and-settings.md#einstellungen-pro-charakter-und-accountweit)).
+- Bei einem Eintrag in einer Liste, die du im WowVision-Menü selbst aufbaust (ein Monitor, eine Regel, eine Puffergruppe, ein Puffer), bekommst du Kopie: Sie fügt direkt hinter dem Eintrag eine vollständige Kopie ein, die „<Name> Kopie 1“ heißt (oder die nächste freie Nummer), und spricht diesen Namen. Die Kopie liegt dort, wo das Original liegt (Account oder Charakter), und ein kopierter Monitor bringt seine Regeln mit.
 - Hat ein Steuerelement keine Aktionen, hörst du „Menü Leer“.
 
 Im Menü benutzt du Pfeil hoch und Pfeil runter, Eingabe, um einen Eintrag auszuführen (danach schließt sich das Menü, außer bei Einträgen, die direkt auf das Spiel wirken), und Esc, um es zu schließen. Untermenüs werden als „Dropdown“ gelesen und mit Eingabe geöffnet. Einträge mit dem Zustand Aktiviert oder Deaktiviert werden als Optionsfelder gelesen. Buchstaben springen zu Einträgen, wie oben beschrieben.

@@ -47,7 +47,7 @@ local function markChanged()
     changes.made = true
     if not changes.announced then
         changes.announced = true
-        speak(L["Changes made here apply after the interface reloads. A Reload Interface button is at the end of the window."])
+        WowVision:notify(L["Changes made here apply after the interface reloads. A Reload Interface button is at the end of the window."])
     end
 end
 
@@ -106,7 +106,20 @@ end
 -- so a secure click cannot reach them; the handler's one call is made
 -- directly. A greyed-out tab (Group Buffs with too few buffs) reads
 -- Disabled and does nothing.
+local function anyTabShown(frame)
+    for _, tab in ipairs(frame.TabButtons or {}) do
+        if tab:IsShown() then
+            return true
+        end
+    end
+    return false
+end
+
 local function renderTabs(builder, frame)
+    -- No stop without a tab to stand on.
+    if not anyTabShown(frame) then
+        return
+    end
     builder:beginStop("tabs")
     builder:pushContext("tabs", L["Tabs"])
     for _, tab in ipairs(frame.TabButtons or {}) do
@@ -148,21 +161,21 @@ end
 
 -- Top bar --------------------------------------------------------------
 
--- The search box (an edit box cannot share a stop with anything after it)
--- and the gear dropdown.
+-- The gear dropdown and the search box (an edit box cannot share a stop with
+-- anything after it), the search box right before the content it searches.
 local function renderTopBar(builder, frame)
-    if frame.SearchBox ~= nil then
-        builder:beginStop("search")
-        builder:addItem(
-            ControlId.structural("search"),
-            nodes.proxyEditBox({ editBox = frame.SearchBox, label = L["Search"] })
-        )
-    end
     if frame.SettingsDropdown ~= nil then
         builder:beginStop("settingsMenu")
         builder:addItem(
             ControlId.forObject(frame.SettingsDropdown),
             nodes.proxyDropdown({ target = frame.SettingsDropdown, label = L["Settings"] })
+        )
+    end
+    if frame.SearchBox ~= nil then
+        builder:beginStop("search")
+        builder:addItem(
+            ControlId.structural("search"),
+            nodes.proxyEditBox({ editBox = frame.SearchBox, label = L["Search"] })
         )
     end
 end
@@ -551,7 +564,7 @@ function module:onFullEnable()
     self._hideHooked = true
     frame:HookScript("OnHide", function()
         if changes.made then
-            speak(L["Cooldown manager changes apply after you reload the interface. Type /reload when ready."])
+            WowVision:notify(L["Cooldown manager changes apply after you reload the interface. Type /reload when ready."])
         end
     end)
 end

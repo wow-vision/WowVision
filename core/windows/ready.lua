@@ -30,12 +30,36 @@ local function renderReadyCheck(builder, screen)
     builder:popContext()
 end
 
+-- The ready check ignores Escape in the game. With Pending Windows (pending.lua) Escape or the Close All Windows key
+-- puts it aside: it stays on screen until answered or finished; any other close hides it as any frame window does (a
+-- hidden ready check is not answered: ReadyCheck.lua OnHide only drops the initiator).
+local function requestClose(_, reason)
+    WowVision.pending.closeRequest("ReadyCheck", {
+        {
+            frame = ReadyCheckFrame,
+            title = L["Ready Check"],
+            label = function()
+                return WowVision.secrets.join({ L["Ready Check"], ReadyCheckFrameText:GetText() }, ", ")
+            end,
+        },
+    }, reason, function()
+        WowVision.UIHost.windowManager:getWindow("ReadyCheck"):requestClose()
+    end)
+end
+
 module:registerWindow({
     type = "FrameWindow",
     name = "ReadyCheck",
     frameName = "ReadyCheckFrame",
     conflictingAddons = { "Sku" },
-    graphScreen = { render = renderReadyCheck },
+    graphScreen = {
+        render = renderReadyCheck,
+        captureClose = function()
+            return WowVision.pending.holdsEscape()
+        end,
+        onRequestClose = requestClose,
+        waits = true,
+    },
 })
 
 --LFD Dungeon Ready

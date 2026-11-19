@@ -33,13 +33,24 @@ function UIHost:closeWindow(window)
     return self.windowManager:closeWindow(window)
 end
 
+-- reason: see WindowManager:closeAll ("closeAllKey" from the Close All Windows key).
+function UIHost:closeAllWindows(reason)
+    return self.windowManager:closeAll(reason)
+end
+
+-- The window detection, the dropdown watch and the graph host run on their
+-- own (utils.guardedCall): a window or dropdown check that throws every frame
+-- is reported once and the menus still update.
 function UIHost:update()
-    if self.inCombat then
+    -- In combat everything here pauses, unless Menus in Combat is on (graph/combatKeys.lua): then the windows are
+    -- still seen and the menus still speak; only the key bindings wait for the fight to end (graph/Host.lua).
+    if self.inCombat and not WowVision.graph.combatKeys.active() then
         return
     end
-    self.windowManager:update()
-    WowVision.graph.dropdown.update()
-    WowVision.graphHost:update()
+    local guardedCall = WowVision.utils.guardedCall
+    guardedCall(self.windowManager, self.windowManager.update, self.windowManager)
+    guardedCall(WowVision.graph.dropdown, WowVision.graph.dropdown.update)
+    guardedCall(WowVision.graphHost, WowVision.graphHost.update, WowVision.graphHost)
 end
 
 --Function hooks

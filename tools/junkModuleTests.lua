@@ -727,6 +727,10 @@ local function recordingBuilder()
     function builder:beginStop(key)
         tinsert(self.events, "stop:" .. key)
     end
+    -- the stop a fresh open lands on (the bags set it, see retail/containers/Bags.lua)
+    function builder:setStartStop(key)
+        tinsert(self.events, "start:" .. key)
+    end
     function builder:pushContext(key, label)
         tinsert(self.events, "push:" .. key .. "=" .. tostring(label))
     end
@@ -880,6 +884,9 @@ testRunner:addSuite("JunkWiring", {
             containers.getBagItemLabel = function()
                 return "label"
             end
+            -- what retail/containers/containers.lua gives Bags.lua: the held bags and their bar buttons (none exist here)
+            containers.BAG_SLOT_BUTTONS = {}
+            containers.HELD_BAG_IDS = { 0, 1, 2, 3, 4, 5 }
             local function combinedFrame(name, buttons)
                 return {
                     Items = buttons,
@@ -926,6 +933,15 @@ testRunner:addSuite("JunkWiring", {
                 end
                 return table.concat(stops, " ")
             end
+            local function startsOf(builder)
+                local starts = {}
+                for _, event in ipairs(builder.events) do
+                    if event:sub(1, 6) == "start:" then
+                        tinsert(starts, event:sub(7))
+                    end
+                end
+                return table.concat(starts, " ")
+            end
             local ok, err = pcall(function()
                 loadFile("retail/containers/Bags.lua")
                 mark(env, 25)
@@ -936,6 +952,8 @@ testRunner:addSuite("JunkWiring", {
                     stopsOf(builder),
                     "frame:FrameA:grid frame:FrameA:bagSlots lists frame:FrameB:grid frame:FrameB:bagSlots"
                 )
+                -- a fresh open still lands on the first bags, not on the Item Lists that come after them
+                t:assertEqual(startsOf(builder), "frame:FrameA:grid")
                 t:assertEqual(#game.errors, 0)
                 -- both marked items, from both frames, are in the one Junk category
                 local groups = {}

@@ -32,12 +32,17 @@ function Builder:initialize(expansion)
     self.rowOf = {} -- node -> its menu row (absent for raw nodes)
     self.ids = {} -- structural key -> true, for duplicate detection
     self.start = nil
+    self.startStop = nil
     self.stopKey = "stop#0"
     self.stopAuto = 1
     -- The parent stack: structural levels (pushContext) and group headers
     -- (beginGroup). A frame whose group is collapsed suppresses every
     -- declaration beneath it (the stack stays balanced regardless).
     self.parents = {}
+    -- Bindings every node of a stop carries (addStopBindings), and the page
+    -- each paged stop showed at this render (setStopPage).
+    self.stopBindings = {}
+    self.stopPages = {}
 end
 
 function Builder:_currentParent()
@@ -68,6 +73,29 @@ function Builder:beginStop(key)
     end
     self.stopKey = key
     self.stopAuto = self.stopAuto + 1
+    return self
+end
+
+-- Bindings every node of the current stop carries, after its own: a node's
+-- own binding for the same key wins (a scroll list's Page Up). The page keys
+-- over a paged list (nodes.pageKeys) use this.
+function Builder:addStopBindings(specs)
+    local list = self.stopBindings[self.stopKey]
+    if list == nil then
+        list = {}
+        self.stopBindings[self.stopKey] = list
+    end
+    for _, spec in ipairs(specs) do
+        tinsert(list, spec)
+    end
+    return self
+end
+
+-- The page the current stop shows at this render (any comparable value). The
+-- render keeps it, so a page key can tell afterwards whether its click
+-- turned the page.
+function Builder:setStopPage(page)
+    self.stopPages[self.stopKey] = page
     return self
 end
 
@@ -222,9 +250,19 @@ function Builder:isExpanded(id)
 end
 
 -- Focus starts here when the graph has no prior position (defaults to the
--- first node).
+-- first node). A named start is exact: only the default start yields to its
+-- stop's selected member.
 function Builder:setStart(id)
     self.start = id
+    return self
+end
+
+-- Focus starts in this tab stop (its first node) when the graph has no prior
+-- position: a window landing on its content, whatever ids the content's list
+-- helper gives its rows. An explicit setStart wins; a stop that declares
+-- nothing falls back to the first node.
+function Builder:setStartStop(stopKey)
+    self.startStop = stopKey
     return self
 end
 
@@ -340,6 +378,113 @@ function Builder:_makeNode(id, vtable)
     return node
 end
 
+-- ---- list filter (letters typed quickly, Host.lua) ----
+
+-- The "Filter: text" line a filtered list starts with: focus lands on it, the matches follow below it.
+graph.LIST_FILTER_ID = ControlId.structural("listFilter:header")
+
+local function matchesFilter(label, text)
+    local ok, found = pcall(function()
+        return graph.typeAhead.contains(graph.typeAhead.matcher(text)(label), text)
+    end)
+    return ok and found
+end
+
+local function rowMatches(row, filter)
+    if filter.rowList then
+        return matchesFilter(graph.KeyGraph.rowLabelOf(row.items[1]), filter.text)
+    end
+    for _, node in ipairs(row.items) do
+        if matchesFilter(graph.KeyGraph.labelOf(node), filter.text) then
+            return true
+        end
+    end
+    return false
+end
+
+local function underDropped(node, dropped)
+    local n = node
+    while n ~= nil do
+        if dropped[n] then
+            return true
+        end
+        n = n.parent
+    end
+    return false
+end
+
+-- Run before the edges are wired, so a filtered list navigates as if the other entries were never declared. The list
+-- is the rows of the filter's stop; in a tree, those under the filter's parent, a dropped group taking its children
+-- along. filter (Screen.listFilter): { text, stopKey, tree, parentKey, rowList }; the build leaves on it matches, the
+-- number of entries kept, and firstId, the list's first entry; stale when the list is gone.
+function Builder:_applyListFilter()
+    local filter = self.listFilter
+    if filter == nil then
+        return
+    end
+    local dropped, rows, firstRow = {}, {}, nil
+    local matches = 0
+    for _, row in ipairs(self.rows) do
+        local head = row.items[1]
+        local parentKey = head.parent ~= nil and head.parent.id.key or nil
+        local inList = row.stopKey == filter.stopKey and (not filter.tree or parentKey == filter.parentKey)
+        if underDropped(head, dropped) then
+            for _, node in ipairs(row.items) do
+                dropped[node] = true
+            end
+        elseif not inList then
+            tinsert(rows, row)
+        else
+            if firstRow == nil then
+                firstRow = row
+                filter.firstId = head.id
+                filter.headerRow = { items = {}, stopKey = row.stopKey }
+                tinsert(rows, filter.headerRow)
+            end
+            if rowMatches(row, filter) then
+                matches = matches + 1
+                tinsert(rows, row)
+            else
+                for _, node in ipairs(row.items) do
+                    dropped[node] = true
+                end
+            end
+        end
+    end
+    if firstRow == nil then
+        filter.stale = true
+        return
+    end
+    filter.matches = matches
+
+    local first = firstRow.items[1]
+    local header = {
+        id = graph.LIST_FILTER_ID,
+        vtable = graph.nodes.text({
+            label = WowVision:getLocale()["Filter"] .. ": " .. filter.text,
+        }),
+        transitions = {},
+        parent = first.parent,
+        stopKey = first.stopKey,
+        menuRow = true,
+    }
+    filter.headerRow.items[1] = header
+    self.rowOf[header] = filter.headerRow
+    filter.headerRow = nil
+
+    local declared = {}
+    for _, node in ipairs(self.declared) do
+        if node == first then
+            tinsert(declared, header)
+        end
+        if not underDropped(node, dropped) then
+            tinsert(declared, node)
+        end
+    end
+    self.declared = declared
+    self.rows = rows
+end
+
 -- ---- build ----
 
 -- Finalize into a render, or nil when nothing was declared (treat as closed).
@@ -352,12 +497,23 @@ function Builder:build()
     if self.rawCount == 0 and #self.rows == 0 then
         return nil
     end
+    for _, row in ipairs(self.rows) do
+        for _, node in ipairs(row.items) do
+            node.menuRow = true
+        end
+    end
+    self:_applyListFilter()
 
     local render = graph.newRender()
     for _, node in ipairs(self.declared) do
         render.nodes[node.id.key] = node
         tinsert(render.order, node)
+        local stopBindings = self.stopBindings[node.stopKey]
+        if stopBindings ~= nil then
+            node.stopBindings = stopBindings
+        end
     end
+    render.stopPages = self.stopPages
 
     self:_wireMenuEdges()
     for _, edge in ipairs(self.rawEdges) do
@@ -370,8 +526,18 @@ function Builder:build()
 
     if self.start ~= nil and render.nodes[self.start.key] ~= nil then
         render.startKey = self.start
+        render.startNamed = true
     else
         render.startKey = render.order[1].id
+        if self.startStop ~= nil then
+            for _, node in ipairs(render.order) do
+                if node.stopKey == self.startStop then
+                    render.startKey = node.id
+                    render.startNamed = true
+                    break
+                end
+            end
+        end
     end
     self:_stampPositions()
     return render

@@ -31,6 +31,8 @@ Im Kampf gibt WowVision die Fenstertasten ans Spiel zurück (siehe [Kampf](../wo
 | Vorheriges Fenster (Previous Window) | Strg+Umschalt+Tab | Zum vorherigen geöffneten Fenster wechseln |
 | Schließen (Close) | Esc | Geht eine Ebene zurück oder schließt die eigenen Bildschirme und Menüs von WowVision. In Spielfenstern schließt das Esc des Spiels das Fenster |
 
+Jede dieser Tasten, dazu Eingabe, Rücktaste, Umschalt+F10 und Leertaste, hat auch eine eigene Taste für den Kampf, benannt „Im Kampf:“ und die Taste („Im Kampf: Hoch“). Unbelegt benutzt der Kampf die Taste oben. Siehe [Menüs im Kampf](../world/combat.md#menüs-im-kampf).
+
 ## Auf Elemente einwirken
 
 | Aktion | Standardtaste | Hinweise |
@@ -60,6 +62,7 @@ Siehe [Tooltips](../basics/tooltips.md).
 | Aktion | Standardtaste | Seite |
 |---|---|---|
 | WowVision-Menü (WowVision Menu) | Umschalt+F1 (oder tippe `/wv`) | [Das WowVision-Menü und die Einstellungen](../basics/menu-and-settings.md) |
+| Alle Fenster schließen (Close All Windows) | Umschalt+Esc | Schließt jedes offene WowVision-Fenster und jedes Fenster des Spiels |
 | Chat | Umschalt+F3 | [Chat](../windows/chat.md) |
 | Aktionsleisten (Action Bars) | Umschalt+F4 | [Aktionsleisten](../windows/action-bars.md) |
 | Scanner | F9 | [Scanner](../world/scanner.md) |
@@ -103,20 +106,22 @@ Siehe [Plunder](../windows/bags-and-bank.md#plunder) und [Favoriten](../windows/
 | Aktion | Standardtaste | Hinweise |
 |---|---|---|
 | Zum Wegpunkt drehen (Turn to Waypoint) | I | Dreht dich zum aktuellen Wegpunkt deiner Route |
+| Zum Ziel drehen (Turn to Target) | Strg+I | Dreht dich zu deinem Ziel, gefunden über seine Namensplakette |
+| Zum Fokus drehen (Turn to Focus) | Strg+U | Dasselbe für deinen Fokus, zum Beispiel einen NPC, den du begleitest |
 | Nächster Wegpunkt (Next Waypoint) | Strg+W | Springt zum nächsten Wegpunkt vor. Du hörst, wie viele Wegpunkte noch übrig sind, zum Beispiel "12 verbleibend" |
 | Vorheriger Wegpunkt (Previous Waypoint) | Strg+S | Geht zum vorherigen Wegpunkt zurück, mit derselben Zählung |
 | Route von hier neu starten (Start the Route Again From Here) | Strg+Umschalt+N | Plant die Route zu deinem letzten Ziel noch einmal, beginnend dort, wo du stehst. Du hörst "Keine Route zum Neustarten", wenn du noch kein Ziel gewählt hast |
-| Route umkehren (Reverse Route) | Strg+Umschalt+R | Kehrt die laufende Route um: vom Wegpunkt, zu dem das Signal gerade führt, zurück zu ihrem Start |
-| Navigation abbrechen (Cancel Navigation) | Umschalt+F12 | Beendet die aktive Route oder das aktive Signal |
+| Route umkehren (Reverse Route) | Strg+Umschalt+R | Kehrt die laufende Route um: vom Ziel zurück zum Start, weiter ab dem Wegpunkt, zu dem das Beacon gerade führt |
+| Navigation abbrechen (Cancel Navigation) | Umschalt+F12 | Beendet die aktive Route oder das aktive Beacon |
 | Ankunftsdistanz wechseln (Cycle Arrival Distance) | Alt+P | Ändert, wie nah du an einen Wegpunkt herankommen musst, damit er als erreicht gilt |
 | Entfernung ansagen (Announce Distance) | Unbelegt | Spricht die Entfernung zum Wegpunkt. Alt Gr (oder Strg+Alt) tut von Haus aus dasselbe |
 | Route zu deinem Ziel (Route to Your Target) | Unbelegt | Startet eine Route zu deinem aktuellen Ziel |
-| Route zum nächsten unbesuchten gleichnamigen Ziel (Route to the Nearest Unvisited of the Same Name) | Unbelegt | Führt per Route zum nächsten Ort mit demselben Namen, den du noch nicht besucht hast |
-| Direkt zum nächsten unbesuchten gleichnamigen Ziel (Direct to the Nearest Unvisited of the Same Name) | Unbelegt | Dasselbe als gerades Signal statt als Route |
+| Route zum nächsten unbesuchten gleichnamigen Ziel (Route to the Nearest Unvisited of the Same Name) | Unbelegt | Führt per Route zu dem Ort mit demselben Namen, den du noch nicht besucht hast, der den kürzesten Fußweg entfernt ist |
+| Direkt zum nächsten unbesuchten gleichnamigen Ziel (Direct to the Nearest Unvisited of the Same Name) | Unbelegt | Dasselbe als gerades Beacon statt als Route |
 | WowNav-Routenstatus (WowNav Route Status) | Unbelegt | (WoW: Forever) Spricht den Zustand der WowNav-Route |
 | Neue WowNav-Route um eine versperrte Stelle (New WowNav Route Around a Blocked Spot) | Unbelegt | (WoW: Forever) Plant eine neue Route, die die Stelle meidet, an der du feststeckst |
 
-Alt Gr ist keine Belegung: Es wird direkt gelesen, bleibt stumm, während du in einem Eingabefeld tippst, und lässt sich mit der Einstellung Entfernung mit Alt Gr ansagen (Announce Distance with Alt Gr) im Modul Karten (Maps) ausschalten. Siehe [Navigation und Routen](../world/navigation.md) und [WowNav](../world/wownav.md).
+Alt Gr ist keine Belegung: Es wird direkt gelesen, bleibt stumm, während du in einem Eingabefeld tippst, und lässt sich mit der Einstellung Entfernung mit Alt Gr ansagen (Announce Distance with Alt Gr) im Modul Beacon und Routen (Beacon and Routes, unter Navigation) ausschalten. Siehe [Navigation und Routen](../world/navigation.md) und [WowNav](../world/wownav.md).
 
 ## Minimap
 
@@ -130,9 +135,9 @@ Siehe [Minimap](../world/minimap.md).
 
 | Aktion | Standardtaste | Hinweise |
 |---|---|---|
-| Weiches Ziel Feind (Soft Target Enemy) | Umschalt+I | Schaltet die weiche Zielerfassung für Feinde ein oder aus und sagt "Weiches Ziel Feind Aktiviert" oder "Deaktiviert" (mit "nach dem Kampf", wenn du die Taste im Kampf drückst) |
-| Weiches Ziel Freund (Soft Target Friend) | Umschalt+P | Dasselbe für die weiche Zielerfassung von Freunden |
-| Weiches Ziel Interaktion (Soft Target Interact) | Umschalt+O | Dasselbe für die weiche Zielerfassung zur Interaktion |
+| Soft Target Feind (Soft Target Enemy) | Umschalt+I | Schaltet die weiche Zielerfassung für Feinde ein oder aus und sagt "Soft Target Feind Aktiviert" oder "Deaktiviert" (mit "nach dem Kampf", wenn du die Taste im Kampf drückst) |
+| Soft Target Freund (Soft Target Friend) | Umschalt+P | Dasselbe für die weiche Zielerfassung von Freunden |
+| Soft Target Interaktion (Soft Target Interact) | Umschalt+O | Dasselbe für die weiche Zielerfassung zur Interaktion |
 | Ziel des Ziels (Target of Target) | Unbelegt | Macht das Ziel deines Ziels zu deinem Ziel, ohne einen Angriff zu beginnen |
 | Zielmenü öffnen (Open Target Menu) | Alt+T | Öffnet das Menü deines Ziels, wie ein Rechtsklick auf sein Porträt |
 | Zielfokus 1 bis Zielfokus 5 (Target Focus 1 bis 5) | Unbelegt | Erfasst eines der fünf WowVision-Fokusziele |
@@ -143,13 +148,21 @@ Siehe [Zielerfassung](../world/targeting.md).
 
 | Aktion | Standardtaste | Hinweise |
 |---|---|---|
-| Würfel-Tooltip (Roll Tooltip) | Alt+Strg+Y | Sagt den Namen des Gegenstands, um den gewürfelt wird |
+| Würfel-Tooltip (Roll Tooltip) | Alt+Strg+Y | Liest den ganzen Tooltip des Gegenstands vor, um den gewürfelt wird: Name, Qualität, Gegenstandsstufe, Werte und Voraussetzungen |
 | Bedarf würfeln (Roll Need) | Alt+Strg+U | |
 | Gier würfeln (Roll Greed) | Alt+Strg+I | |
 | Passen (Roll Pass) | Alt+Strg+O | |
 | Bonuswurf (Roll Bonus) | Alt+Strg+P | Gibt es nur in Spielversionen mit Bonuswürfen |
 
 Die Würfeltasten wirken auf das erste Würfelfenster auf dem Bildschirm. Ist keines offen, hörst du "Keine Beute.".
+
+Siehe [Beute, Handel und Post](../windows/loot-trade-mail.md).
+
+## Handel
+
+| Aktion | Standardtaste | Hinweise |
+|---|---|---|
+| Handel annehmen (Accept Trade) | Alt+Strg+T | Nimmt den offenen Handel an, auch im Kampf. Ist keiner offen, hörst du "Kein Handel offen"; nach deiner eigenen Zustimmung "Bereits angenommen, warte auf" und den anderen Spieler |
 
 Siehe [Beute, Handel und Post](../windows/loot-trade-mail.md).
 
@@ -168,6 +181,7 @@ Siehe [Gruppensuche](../windows/group-finder.md).
 | Alle Monitore ein- oder ausschalten (Toggle All Monitors) | Unbelegt | Stummschalter für Monitore: Ist mindestens einer an, gehen alle aus („Monitore aus“); sind alle aus, gehen alle an („Monitore an“) |
 | Verfolgte Auren ansagen (Speak Tracked Auras) | Unbelegt | (Retail und WoW: Forever) Liest jede Aura deiner aktivierten Monitore Auren des Abklingzeitmanagers (Cooldown Manager Auras) vor oder sagt "Keine verfolgten Auren" |
 | Verfolgte Abklingzeiten ansagen (Speak Tracked Cooldowns) | Unbelegt | (Retail und WoW: Forever) Liest jeden Zauber deiner aktivierten Monitore Zauber-Abklingzeiten (Spell Cooldowns) vor oder sagt "Keine verfolgten Abklingzeiten" |
+| Hauptressource sprechen (Speak Main Resource) | Unbelegt | Sagt die Ressource, die das Spiel gerade für dich zeigt, etwa „Energie 80%“ oder „Kombopunkte 3“ |
 | Gruppengesundheit ansagen (Speak Group Health) | Alt+H | (Retail und WoW: Forever) Sagt jedes Gruppenmitglied einmal an, in der Reihenfolge der Nummern, mit der Tonhöhe seiner Gesundheit. Auf dem Controller: rechter Trigger + Druck auf den rechten Stick. Funktioniert nur, solange der Gruppen-Gesundheitsmonitor aktiviert ist |
 
 Siehe [Monitore](../information/monitors.md) und [Gruppen-Gesundheitsmonitor](../information/group-health.md).
@@ -197,6 +211,7 @@ Das sind keine zusätzlichen Belegungen. Es sind die Fenstertasten aus den erste
 | Scanner | Tab | Springt zwischen der Liste und dem Schalter Aktualisieren (Refresh) |
 | Aktionsleisten (Umschalt+F4), Taschen und andere Platzfenster | \\ oder Strg+D, dann Entf | Einen Platz auf den Cursor nehmen, dann leeren oder zerstören |
 | Freunde-, Ignorier-, Wer- und Gildenlisten (Classic Era, TBC und Mists) | Bild auf, Bild ab | Die Liste eine Seite scrollen; Pos1 und Ende tun dort nichts |
+| Fenster mit Seiten: Zauberbuch, Händler, Briefkasten, Bücher und Briefe, Spielzeugkiste, Erbstücke, Vorlagen | Bild auf, Bild ab | Zur vorherigen oder nächsten Seite blättern und auf ihrem ersten Eintrag landen |
 | WowVision-Menü, Kontextmenüs, Dropdown-Menüs | Buchstaben | Zum nächsten Eintrag springen, der mit dem Buchstaben beginnt. Lässt sich mit der Einstellung Buchstaben-Navigation in Menüs (Letter Navigation in Menus) ausschalten |
 | Eingabefelder | Eingabe, Tab, Esc | Eingabe setzt den Cursor in ein Feld des Spiels und übernimmt ein WowVision-Feld; Tab geht weiter; Esc bricht ein WowVision-Feld ab |
 

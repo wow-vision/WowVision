@@ -171,6 +171,11 @@ function module.actionButtonNode(button, label, populate)
     })
     -- The context menu's Drag is the same pickup as the drag key.
     vtable.contextActions = nodes.proxyContextActions(button, nil, drag)
+    -- A slot without an action is skipped by a double arrow press; stance
+    -- and pet buttons hold no action slot and never read as empty.
+    vtable.isEmpty = function()
+        return button.action ~= nil and not HasAction(button.action)
+    end
     return vtable
 end
 
@@ -200,6 +205,7 @@ module:registerWindow({
 module:registerBinding({
     type = "Function",
     key = "bars/openWindow",
+    opensWindow = true,
     inputs = { "SHIFT-F4" },
     label = L["Action Bars"],
     interruptSpeech = true,

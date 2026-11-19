@@ -4,10 +4,12 @@
   <!-- The monitors framework: Monitor, Rule, the state rule base and the
        module. Monitor types load from the version folders: classic/monitors
        (auras and cooldowns through the aura and spell APIs), retail/monitors
-       (the cooldown manager). -->
+       (the cooldown manager). core/monitors/types holds the types every
+       version has (resources). -->
   <Script file="Rule.lua" />
   <Script file="Monitor.lua" />
   <Include file="rules/modules.xml" />
   <Script file="module.lua" />
+  <Include file="types/modules.xml" />
 
 </Ui>

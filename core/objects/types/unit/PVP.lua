@@ -25,7 +25,7 @@ pvp:addField({
         if UnitExists(params.unit) and UnitIsPVP(params.unit) then
             return L["Enabled"]
         end
-        return L["Disabled"]
+        return L["SettingDisabled"]
     end,
 })
 

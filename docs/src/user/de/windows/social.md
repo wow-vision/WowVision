@@ -139,6 +139,15 @@ Auf einer Karte:
 - Rücktaste öffnet das Menü des Spiels dafür.
 - Umschalt+F10 öffnet das Kontextmenü, das die eigenen Schaltflächen der Karte als Einträge auflistet: Einladen (Freunde, Letzte Verbündete), Herbeirufen (Freund werben), Annehmen und Ablehnen (Freundschaftsanfragen; Ablehnen öffnet ein Menü), dann den Links- und den Rechtsklick.
 
+Die Seite Freunde funktioniert etwas anders. Wenn ein Addon diese Liste scrollt, verweigert das Spiel kurz darauf seine eigene Freundessuche, und die Liste bleibt bis zum Neuladen leer. Deshalb liest WowVision die Seite Freunde aus den Daten der Liste und scrollt sie nie. Jeder Freund wird gelesen, egal wo er in der Liste steht, aber nur die Freunde ganz oben, die auf den Bildschirm passen, haben ihre echte Karte unter sich.
+
+- Leertaste auf einem Freund liest mehr: Volk, Fraktion und Realm des Charakters (oder was ein anderes Spiel meldet), die Notiz, die Tags und die Rundnachricht.
+- Bei einem Freund, der auf dem Bildschirm ist, gelten die Tasten wie oben.
+- Bei einem Freund weiter unten öffnen Eingabe und Rücktaste beide das Menü des Spiels für diesen Freund. Dort öffnet WowVision es, darum kann ein Eintrag, den das Spiel seinem eigenen Code vorbehält, mit der Meldung „Blocked“ fehlschlagen. Umschalt+F10 bietet Einladen an, wenn der Freund genau einen Charakter hat, den du einladen kannst.
+- Eine Überschrift weiter unten lässt sich nicht einklappen.
+
+Um für einen Freund weiter unten das volle Menü zu bekommen, hole die Karte auf den Bildschirm: Tippe einen Teil des Namens bei Suchen, oder klappe die Überschrift Favoriten ein.
+
 Beispiel: einen Freund aus dem Kontakte-Fenster in deine Gruppe einladen.
 
 1. Drücke O und stelle sicher, dass der Reiter Freunde ausgewählt ist (prüfe die Reiterzeile mit Tab).
