@@ -60,6 +60,8 @@ When a member dies, you hear their number and "dead", once. Someone who is alrea
 
 When a watched member gets a debuff that you can dispel, you hear the debuff's type and the member's number, for example "Poison 3". Only debuffs your class and talents can dispel count: the game decides this. A druid who removes curses and poisons hears only curses and poisons. This is off until you turn on Announce Dispellable Debuffs, under Dispellable Debuffs in the monitor's settings.
 
+Who is watched for debuffs has its own Watch Party (on) and Watch Raid (off) switches under Dispellable Debuffs, independent of the monitor's. Include Yourself and the raid groups are the monitor's, and the numbers are the same.
+
 - A member is said when they get a new debuff, at once.
 - While the debuff stays on them, they are said again at the interval of Repeat Every, as long as WowVision has nothing else to say. The repeat only starts after a new debuff, and it stops as soon as the member carries none.
 - Nothing is ever said for a member who carries no debuff you can dispel. A debuff that is removed or runs out is not announced.
@@ -91,7 +93,7 @@ All of these are on the screen of the Group Health Monitor in the WowVision menu
 | Announce Deaths | On | A death is announced |
 | Silent Out of Combat | Off | No repeat and no deaths out of combat. The snapshot key still works |
 | Repeat Only After a Change | Off | See below |
-| Dispellable Debuffs | | Announce Dispellable Debuffs (Off): the announcements above. Repeat Every (seconds, 0 is off) (3), from 0 to 60. Number First (Off): "3 Poison" instead of "Poison 3" |
+| Dispellable Debuffs | | Announce Dispellable Debuffs (Off): the announcements above. Watch Party (On) and Watch Raid (Off): who is watched for debuffs. Repeat Every (seconds, 0 is off) (3), from 0 to 60. Number First (Off): "3 Poison" instead of "Poison 3" |
 | Raid Groups | All on | One checkbox per raid group, Group 1 to Group 8. Switch off the groups you do not need, for example to watch only the groups you heal |
 | Tanks, Healers, Damage Dealers, No Role | See the table above | Each has Repeat Below (percent), from 0 to 100, and Repeat Every (seconds, 0 is off), from 0 to 300 |
 

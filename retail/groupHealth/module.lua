@@ -338,7 +338,11 @@ local function newMember(unit, number, role, old)
     return member
 end
 
-function module:buildRaid(members, aliases, previous)
+-- `watch` says who a list holds: { includeSelf, party, raid }. The monitor's
+-- list follows its own switches, the dispel list (dispel.lua) its own
+-- party and raid switches; both take Include Yourself and the raid groups
+-- from here.
+function module:buildRaid(members, aliases, previous, watch)
     local roster = {}
     local rosterRoles = {}
     for index = 1, MAX_RAID_MEMBERS or 40 do
@@ -352,7 +356,7 @@ function module:buildRaid(members, aliases, previous)
     for index, number in pairs(numbers) do
         local unit = "raid" .. index
         local isSelf = sameUnit(unit, "player")
-        if raidGroupWatched(roster[index]) and (self.settings.includeSelf or not isSelf) then
+        if raidGroupWatched(roster[index]) and (watch.includeSelf or not isSelf) then
             members[unit] = newMember(unit, number, roleOf(unit, rosterRoles[index]), previous(unit))
             -- Events may name the same person by another token.
             if isSelf then
@@ -367,11 +371,11 @@ function module:buildRaid(members, aliases, previous)
     end
 end
 
-function module:buildParty(members, previous)
-    if self.settings.includeSelf then
+function module:buildParty(members, previous, watch)
+    if watch.includeSelf then
         members.player = newMember("player", 1, roleOf("player"), previous("player"))
     end
-    if IsInGroup() and self.settings.watchParty then
+    if IsInGroup() and watch.party then
         for party = 1, 4 do
             local unit = "party" .. party
             if UnitExists(unit) then
@@ -381,9 +385,10 @@ function module:buildParty(members, previous)
     end
 end
 
-function module:collect()
+-- A list for `watch`; `old` is the list before, whose members carry over.
+function module:collect(old, watch)
     local byGuid = {}
-    for _, member in pairs(self.members) do
+    for _, member in pairs(old) do
         if member.guid ~= nil then
             byGuid[member.guid] = member
         end
@@ -393,26 +398,32 @@ function module:collect()
         return guid ~= nil and byGuid[guid] or nil
     end
     local members, aliases = {}, {}
-    if IsInRaid() and self.settings.watchRaid then
-        self:buildRaid(members, aliases, previous)
+    if IsInRaid() and watch.raid then
+        self:buildRaid(members, aliases, previous, watch)
     else
-        self:buildParty(members, previous)
+        self:buildParty(members, previous, watch)
     end
     return members, aliases
 end
 
 -- Raid numbers change only out of combat; a party's follow its tokens.
+-- Each list waits on its own: a raid list keeps its numbers until the fight
+-- ends, while a party list follows at once.
 function module:rebuild()
-    local raid = IsInRaid() and self.settings.watchRaid
-    if raid and InCombatLockdown() and self.raidMode then
-        self.rosterDirty = true
-        return
-    end
+    local inCombat = InCombatLockdown()
     self.rosterDirty = false
-    self.raidMode = raid
-    self.members, self.aliases = self:collect()
-    -- new members carry no dispel state yet: read them (dispel.lua)
-    self:markAllDispel()
+    local raid = IsInRaid() and self.settings.watchRaid
+    if raid and inCombat and self.raidMode then
+        self.rosterDirty = true
+    else
+        self.raidMode = raid
+        self.members, self.aliases = self:collect(self.members, {
+            includeSelf = self.settings.includeSelf,
+            party = self.settings.watchParty,
+            raid = self.settings.watchRaid,
+        })
+    end
+    self:rebuildDispel(inCombat)
 end
 
 function module:memberFor(unit)
@@ -662,6 +673,8 @@ end
 function module:onDisable()
     self.members = {}
     self.aliases = {}
+    self.dispelMembers = {}
+    self.dispelAliases = {}
     self.dispelDirty = {}
 end
 

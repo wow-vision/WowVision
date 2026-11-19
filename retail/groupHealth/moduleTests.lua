@@ -69,15 +69,23 @@ local function withGroup(kind, size, inCombat, test)
         watchParty = module.settings.watchParty,
         watchRaid = module.settings.watchRaid,
     }
+    local savedDispel = {}
+    for key, value in pairs(module.settings.dispellable) do
+        savedDispel[key] = value
+    end
     local ok, err = pcall(test)
     for key, value in pairs(savedSettings) do
         module.settings[key] = value
+    end
+    for key, value in pairs(savedDispel) do
+        module.settings.dispellable[key] = value
     end
     for key in pairs(module.settings.raidGroups) do
         module.settings.raidGroups[key] = true
     end
     module.enabled = false
     module.members, module.aliases, module.raidMode, module.rosterDirty = {}, {}, nil, false
+    module.dispelMembers, module.dispelAliases, module.dispelRaidMode, module.dispelDirty = {}, {}, nil, {}
     for _, name in ipairs(names) do
         _G[name] = saved[name]
     end
@@ -101,6 +109,16 @@ local function setRaidGroup(group, value)
     for _, subField in ipairs(category:getSubFields()) do
         if subField.key == "group" .. group then
             subField:set(module.settings.raidGroups, value)
+        end
+    end
+end
+
+-- A dispel switch as the settings screen sets it.
+local function setDispel(key, value)
+    local category = module.settings.class:getField("dispellable")
+    for _, subField in ipairs(category:getSubFields()) do
+        if subField.key == key then
+            subField:set(module.settings.dispellable, value)
         end
     end
 end
@@ -147,6 +165,62 @@ testRunner:addSuite("GroupHealthModule", {
             module.members = { raid1 = { unit = "raid1", number = 1 } }
             setRaidGroup(2, false)
             t:assertEqual(count(module.members), 1)
+            t:assertTrue(module.rosterDirty)
+        end)
+    end,
+
+    ["the dispel list watches the party by its own switch, on by default"] = function(t)
+        withGroup("party", 5, false, function()
+            module.settings.watchParty = false
+            module.enabled = true
+            module:rebuild()
+            t:assertEqual(count(module.dispelMembers), 0)
+            setDispel("enabled", true)
+            t:assertEqual(count(module.members), 1)
+            t:assertEqual(count(module.dispelMembers), 5)
+            t:assertEqual(module.dispelMembers.party4.number, 5)
+            setDispel("watchParty", false)
+            t:assertEqual(count(module.dispelMembers), 1)
+            t:assertEqual(count(module.members), 1)
+        end)
+    end,
+
+    ["the dispel list takes Include Yourself from the monitor"] = function(t)
+        withGroup("party", 3, false, function()
+            module.enabled = true
+            setDispel("enabled", true)
+            t:assertNotNil(module.dispelMembers.player)
+            module.settings.includeSelf = false
+            t:assertNil(module.dispelMembers.player)
+            t:assertEqual(count(module.dispelMembers), 2)
+        end)
+    end,
+
+    ["the dispel list watches a raid only by its own switch, in the monitor's raid groups"] = function(t)
+        withGroup("raid", 10, false, function()
+            module.enabled = true
+            setDispel("enabled", true)
+            t:assertNil(module.dispelMembers.raid2)
+            t:assertEqual(count(module.members), 10)
+            setDispel("watchRaid", true)
+            t:assertEqual(count(module.dispelMembers), 10)
+            setRaidGroup(2, false)
+            t:assertEqual(count(module.dispelMembers), 5)
+            t:assertNil(module.dispelMembers.raid6)
+            module.settings.watchRaid = false
+            t:assertEqual(count(module.dispelMembers), 5)
+        end)
+    end,
+
+    ["in a raid fight the dispel list waits for the fight's end too"] = function(t)
+        withGroup("raid", 10, true, function()
+            module.enabled = true
+            module.settings.dispellable.enabled = true
+            module.settings.dispellable.watchRaid = true
+            module.dispelRaidMode = true
+            module.dispelMembers = { raid1 = { unit = "raid1", number = 1 } }
+            setRaidGroup(2, false)
+            t:assertEqual(count(module.dispelMembers), 1)
             t:assertTrue(module.rosterDirty)
         end)
     end,

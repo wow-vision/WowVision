@@ -60,6 +60,8 @@ Stirbt ein Mitglied, hörst du einmal seine Nummer und „tot“. Wer schon tot 
 
 Bekommt ein beobachtetes Mitglied einen Schwächungszauber, den du bannen kannst, hörst du die Art des Zaubers und die Nummer des Mitglieds, zum Beispiel „Gift 3“. Es zählen nur Schwächungszauber, die deine Klasse und deine Talente bannen können: Das entscheidet das Spiel. Ein Druide, der Flüche und Gifte entfernt, hört nur Flüche und Gifte. Die Ansage ist aus, bis du Bannbare Schwächungszauber ansagen unter Bannbare Schwächungszauber in den Einstellungen des Monitors einschaltest.
 
+Wer auf Schwächungszauber beobachtet wird, hat unter Bannbare Schwächungszauber eigene Schalter Gruppe beobachten (an) und Schlachtzug beobachten (aus), unabhängig von denen des Monitors. Dich selbst einbeziehen und die Schlachtzugsgruppen gelten wie beim Monitor, und die Nummern sind dieselben.
+
 - Ein Mitglied wird sofort gesagt, wenn es einen neuen Schwächungszauber bekommt.
 - Solange der Zauber auf ihm bleibt, wird es im Abstand von Wiederholen alle erneut gesagt, sofern WowVision sonst nichts zu sagen hat. Die Wiederholung beginnt nur nach einem neuen Zauber und endet, sobald das Mitglied keinen mehr trägt.
 - Für ein Mitglied ohne bannbaren Zauber wird nie etwas gesagt. Ein Zauber, der gebannt wird oder ausläuft, wird nicht angesagt.
@@ -91,7 +93,7 @@ Alle stehen auf dem Bildschirm des Gruppen-Gesundheitsmonitors im WowVision-Men�
 | Tode ansagen | An | Ein Tod wird angesagt |
 | Außerhalb des Kampfes still | Aus | Außerhalb des Kampfes keine Wiederholung und keine Tode. Die Schnappschuss-Taste funktioniert weiter |
 | Nur nach einer Änderung wiederholen | Aus | Siehe unten |
-| Bannbare Schwächungszauber | | Bannbare Schwächungszauber ansagen (Aus): die Ansagen oben. Wiederholen alle (Sekunden, 0 ist aus) (3), von 0 bis 60. Nummer zuerst (Aus): „3 Gift“ statt „Gift 3“ |
+| Bannbare Schwächungszauber | | Bannbare Schwächungszauber ansagen (Aus): die Ansagen oben. Gruppe beobachten (An) und Schlachtzug beobachten (Aus): wer auf Schwächungszauber beobachtet wird. Wiederholen alle (Sekunden, 0 ist aus) (3), von 0 bis 60. Nummer zuerst (Aus): „3 Gift“ statt „Gift 3“ |
 | Schlachtzugsgruppen | Alle an | Ein Kontrollkästchen pro Schlachtzugsgruppe, Gruppe 1 bis Gruppe 8. Schalte die Gruppen aus, die du nicht brauchst, zum Beispiel um nur die Gruppen zu beobachten, die du heilst |
 | Tanks, Heiler, Schadensverursacher, Ohne Rolle | Siehe Tabelle oben | Jede hat Wiederholen unter (Prozent), von 0 bis 100, und Wiederholen alle (Sekunden, 0 ist aus), von 0 bis 300 |
 

@@ -6,8 +6,9 @@ local secrets = WowVision.secrets
 local isSecret = secrets.isSecret
 
 -- Dispellable debuffs: a watched member who gets a debuff the player can
--- dispel is said as their number and the debuff's type, "3 Poison" (the
--- idea comes from Sku's debuff monitor). Who is watched and the numbers,
+-- dispel is said as their number and the debuff's type, "Poison 3" (the
+-- idea comes from Sku's debuff monitor). Who is watched has its own party
+-- and raid switches here; Include Yourself, the raid groups, the numbers,
 -- voice, rate and volume are the group health monitor's.
 --
 -- In combat every aura read is closed to addons. What still works
@@ -36,7 +37,8 @@ local MAX_INDEX = 40
 -- How often the repeat looks for a due member.
 local REPEAT_CHECK = 0.1
 
-local DEFAULTS = { enabled = false, repeatInterval = 3, numberFirst = false }
+-- Watch Raid starts off: a raid is many members to read and to hear.
+local DEFAULTS = { enabled = false, watchParty = true, watchRaid = false, repeatInterval = 3, numberFirst = false }
 
 local dispelField = settings:add({
     key = "dispellable",
@@ -48,6 +50,18 @@ local dispelField = settings:add({
             type = "Bool",
             label = L["Announce Dispellable Debuffs"],
             default = DEFAULTS.enabled,
+        },
+        {
+            key = "watchParty",
+            type = "Bool",
+            label = L["Watch Party"],
+            default = DEFAULTS.watchParty,
+        },
+        {
+            key = "watchRaid",
+            type = "Bool",
+            label = L["Watch Raid"],
+            default = DEFAULTS.watchRaid,
         },
         {
             key = "repeatInterval",
@@ -82,12 +96,14 @@ local function dispelSetting(key)
 end
 module.dispelSetting = dispelSetting
 
--- Switched on: everyone is read at once, so a debuff already carried is said.
+-- The switches that decide who is watched rebuild the list at once, and
+-- everyone on it is read, so a debuff already carried is said.
+local WATCH_KEYS = { enabled = true, watchParty = true, watchRaid = true }
 for _, subField in ipairs(dispelField:getSubFields()) do
-    if subField.key == "enabled" then
+    if WATCH_KEYS[subField.key] then
         subField.events.valueChange:subscribe(module, function(subscriber)
             if subscriber.enabled then
-                subscriber:markAllDispel()
+                subscriber:rebuild()
             end
         end)
     end
@@ -172,6 +188,38 @@ function module:countDispellable(unit)
     return count, read.word()
 end
 
+-- Members --------------------------------------------------------------------------
+
+-- The dispel list: built like the monitor's (module.lua, collect), with
+-- this feature's party and raid switches. Empty while switched off.
+module.dispelMembers = {}
+module.dispelAliases = {}
+
+function module:rebuildDispel(inCombat)
+    if not dispelSetting("enabled") then
+        self.dispelMembers, self.dispelAliases = {}, {}
+        self.dispelRaidMode = nil
+        return
+    end
+    local raid = IsInRaid() and dispelSetting("watchRaid")
+    if raid and inCombat and self.dispelRaidMode then
+        self.rosterDirty = true
+        return
+    end
+    self.dispelRaidMode = raid
+    self.dispelMembers, self.dispelAliases = self:collect(self.dispelMembers, {
+        includeSelf = self.settings.includeSelf,
+        party = dispelSetting("watchParty"),
+        raid = dispelSetting("watchRaid"),
+    })
+    -- new members carry no dispel state yet: read them
+    self:markAllDispel()
+end
+
+function module:dispelMemberFor(unit)
+    return self.dispelMembers[unit] or self.dispelAliases[unit]
+end
+
 -- Announcing ----------------------------------------------------------------------
 
 -- Said once per world entry when the game refuses the read, so silence
@@ -223,7 +271,7 @@ function module:markDispel(member)
 end
 
 function module:markAllDispel()
-    for _, member in pairs(self.members) do
+    for _, member in pairs(self.dispelMembers) do
         self.dispelDirty[member] = true
     end
 end
@@ -236,7 +284,7 @@ function module:onAura(unit)
         self:markAllDispel()
         return
     end
-    local member = self:memberFor(unit)
+    local member = self:dispelMemberFor(unit)
     if member ~= nil then
         self:markDispel(member)
     end
@@ -255,7 +303,7 @@ function module:checkDispels()
         self.dispelDirty = {}
         for member in pairs(dirty) do
             -- a member dropped by a roster change since the mark is not read
-            if self:memberFor(member.unit) == member then
+            if self:dispelMemberFor(member.unit) == member then
                 self:checkDispel(member)
             end
         end
@@ -270,7 +318,7 @@ function module:checkDispels()
     end
     local interval = dispelSetting("repeatInterval")
     local due, dueSince
-    for _, member in pairs(self.members) do
+    for _, member in pairs(self.dispelMembers) do
         local state = member.dispel
         if state ~= nil and GroupHealth.dispelRepeatDue(state, now, interval) then
             local since = state.lastSaid or -math.huge

@@ -11,7 +11,7 @@ local function withDispel(numbers, test)
     local saved = {
         GetTime = GetTime,
         InCombatLockdown = InCombatLockdown,
-        speech = WowVision.base.speech,
+        base = WowVision.base,
         speak = module.speak,
         reader = module.dispelReader,
         settings = module.settings.dispellable,
@@ -28,10 +28,13 @@ local function withDispel(numbers, test)
     InCombatLockdown = function()
         return false
     end
-    WowVision.base.speech = {
-        idle = function()
-            return true
-        end,
+    -- A base of our own: other suites leave theirs, or none, behind.
+    WowVision.base = {
+        speech = {
+            idle = function()
+                return true
+            end,
+        },
     }
     module.speak = function(_, text)
         tinsert(spoken, text)
@@ -51,9 +54,9 @@ local function withDispel(numbers, test)
     }
     module.settings.dispellable = { enabled = true, repeatInterval = 3, numberFirst = false }
     module.settings.silentOutOfCombat = false
-    module.members, module.aliases = {}, {}
+    module.dispelMembers, module.dispelAliases = {}, {}
     for unit, number in pairs(numbers) do
-        module.members[unit] = { unit = unit, number = number }
+        module.dispelMembers[unit] = { unit = unit, number = number }
     end
     module.dispelDirty, module.nextDispelRepeat, module.dispelUnavailableSaid = {}, nil, false
     local function advance(seconds)
@@ -64,9 +67,9 @@ local function withDispel(numbers, test)
     end
     local ok, err = pcall(test, spoken, advance, debuffs, refuse)
     GetTime, InCombatLockdown = saved.GetTime, saved.InCombatLockdown
-    WowVision.base.speech, module.speak, module.dispelReader = saved.speech, saved.speak, saved.reader
+    WowVision.base, module.speak, module.dispelReader = saved.base, saved.speak, saved.reader
     module.settings.dispellable, module.settings.silentOutOfCombat = saved.settings, saved.silent
-    module.members, module.aliases, module.dispelDirty, module.nextDispelRepeat = {}, {}, {}, nil
+    module.dispelMembers, module.dispelAliases, module.dispelDirty, module.nextDispelRepeat = {}, {}, {}, nil
     if not ok then
         error(err, 0)
     end
@@ -153,7 +156,7 @@ testRunner:addSuite("GroupHealthDispel", {
             advance(5)
             module:checkDispels()
             t:assertEqual(#spoken, 1)
-            t:assertFalse(module.members.party1.dispel.active)
+            t:assertFalse(module.dispelMembers.party1.dispel.active)
         end)
     end,
 
