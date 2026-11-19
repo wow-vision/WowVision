@@ -59,7 +59,7 @@ m:setDB({ char = charNode, global = globalNode })
 
 **Stores:** WowVisionDB (per character) + WowVisionGlobalDB (account). Per-store migrations in `core/db.lua`. Settings default to the account store; monitors/buffers move per instance via the context menu (Shift-F10 -> Scope).
 
-**Testing:** the class system is pure Lua -- `lua tools/headless-tests.lua` runs the full suite plus construction smokes for alerts, buffers, and monitors. Add a smoke when converting or adding a class family.
+**Testing:** the class system is pure Lua -- `luajit tools/headless-tests.lua` runs the full suite plus construction smokes for alerts, buffers, and monitors. Add a smoke when converting or adding a class family. Run it with LuaJIT (as the WowNav packer tools/wownav-pack.lua is): plain Lua 5.1 drops the extra arguments of `xpcall`, which WoW's Lua passes on, so about 40 menu, scanner and error-handling tests fail there for no fault of the code.
 
 ## Core Systems
 

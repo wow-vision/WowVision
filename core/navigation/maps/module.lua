@@ -927,7 +927,7 @@ function module:pathfind(path)
     path.events.arriveAtWaypoint:subscribe(self, function(_, _, _, waypoint)
         self:rememberHeight(waypoint)
         module:fireAlert("beacon", { action = "arrived" })
-        if not self.stepping and WowVision.base.navigation.settings.announceRemaining then
+        if not self.stepping then
             C_Timer.After(REMAINING_DELAY, function()
                 self:announceRemaining(path)
             end)
@@ -949,11 +949,13 @@ function module:remainingWaypoints(path)
     return remaining
 end
 
--- After a waypoint reached: "3 remaining". The last waypoint says Arrived
--- instead, so nothing is said once none is left.
+-- After a waypoint reached: "3 remaining", when the player's Announce
+-- Remaining Waypoints mode says so (navigation/remainingAnnounce.lua). The
+-- last waypoint says Arrived instead, so nothing is said once none is left.
 function module:announceRemaining(path)
     local remaining = self:remainingWaypoints(path)
-    if remaining ~= nil then
+    local mode = WowVision.base.navigation.settings.announceRemainingMode
+    if remaining ~= nil and WowVision.remainingAnnounce.shouldAnnounce(mode, remaining, #path.waypoints) then
         WowVision:speak(string.format(L["%d remaining"], remaining))
     end
 end

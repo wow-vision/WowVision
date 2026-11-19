@@ -275,6 +275,22 @@ local function carryQuestMessageMutes(db)
     end
 end
 
+-- Announce Remaining Waypoints went from a checkbox (announceRemaining) to
+-- a dropdown of modes (announceRemainingMode, navigation/remainingAnnounce.lua).
+-- A player who had it off keeps silence: Never. On was the default, Always is
+-- too, so it just goes. A mode already chosen is left alone. Both stores.
+local function moveRemainingToMode(db)
+    local navigation = db.submodules and db.submodules.navigation
+    local settings = navigation and navigation.settings
+    if settings == nil or settings.announceRemaining == nil then
+        return
+    end
+    if settings.announceRemaining == false and settings.announceRemainingMode == nil then
+        settings.announceRemainingMode = "never"
+    end
+    settings.announceRemaining = nil
+end
+
 local migrations = {
     {
         version = 1,
@@ -323,6 +339,10 @@ local migrations = {
     {
         version = 9,
         migrate = carryQuestMessageMutes,
+    },
+    {
+        version = 10,
+        migrate = moveRemainingToMode,
     },
 }
 
@@ -375,6 +395,10 @@ local globalMigrations = {
     {
         version = 7,
         migrate = carryQuestMessageMutes,
+    },
+    {
+        version = 8,
+        migrate = moveRemainingToMode,
     },
 }
 
