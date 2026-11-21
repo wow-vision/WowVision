@@ -266,7 +266,7 @@ settings:add({
     type = "Number",
     key = "repeatDelay",
     label = L["Repeat Delay"],
-    default = 5,
+    default = 2,
     min = 0,
     max = 30,
 })

@@ -48,7 +48,7 @@ Inside some instances the game does not tell addons which way you face; the comp
 
 You hear "outdoors" or "indoors" when the game decides that you changed from one to the other, "flying" when you take off on a flying mount, "flying ended" when you land, "swimming" when you enter water, and "diving" when you go under the surface. Walking back out of water does not say anything.
 
-At a shore, a doorway or a ledge the game can switch these states many times a second. So each of them is said again only after Repeat Delay (5 seconds by default, 0 to 30) on the Environmental Alerts screen; one delay covers them all. A change inside the delay waits: when the delay is over and the state is still different from what you heard last, it is said then, so the last word you hear always matches where you are. A newer line also replaces an older one of the same kind still waiting to be spoken. Walking back into the water after the delay is said at once.
+At a shore, a doorway or a ledge the game can switch these states many times a second. So each of them is said again only after Repeat Delay (2 seconds by default, 0 to 30) on the Environmental Alerts screen; one delay covers them all. A change inside the delay waits: when the delay is over and the state is still different from what you heard last, it is said then, so the last word you hear always matches where you are. A newer line also replaces an older one of the same kind still waiting to be spoken. Walking back into the water after the delay is said at once.
 
 ### Breath and fatigue
 
