@@ -48,6 +48,8 @@ Der "Gebietsänderungs-Alarm" spricht den Gebietsnamen, wenn du in ein neues Geb
 
 Du hörst "draußen" oder "drinnen", wenn das Spiel entscheidet, dass du von einem zum anderen gewechselt hast, "fliegen", wenn du auf einem Flugreittier abhebst, "Flug beendet", wenn du landest, "schwimmen", wenn du ins Wasser gehst, und "tauchen", wenn du unter die Oberfläche gehst. Wenn du wieder aus dem Wasser läufst, wird nichts gesagt.
 
+An einem Ufer, einer Tür oder einer Kante kann das Spiel diese Zustände viele Male pro Sekunde wechseln. Darum wird jeder davon erst nach der Wiederholungsverzögerung (standardmäßig 5 Sekunden, 0 bis 30) im Bildschirm Umwelt-Alarme wieder gesagt; eine Verzögerung gilt für alle. Ein Wechsel innerhalb der Verzögerung wartet: Ist sie vorbei und der Zustand noch anders als das zuletzt Gehörte, wird er dann gesagt, so passt das letzte Wort immer dazu, wo du bist. Eine neuere Zeile ersetzt auch eine ältere derselben Art, die noch auf ihre Ansage wartet. Läufst du nach der Verzögerung wieder ins Wasser, wird das sofort gesagt.
+
 ### Atem und Erschöpfung
 
 Unter Wasser zeigt das Spiel eine Atemleiste, die sinkt, solange du die Luft anhältst. Schwimmst du zu weit ins tiefe Wasser hinaus, erscheint eine Erschöpfungsleiste. Jäger sehen eine Leiste, während sie sich tot stellen. Der Atem-Alarm sagt den Namen der Leiste und wie voll sie ist, eine Zeile pro Schritt nach unten: "Atem 90", "Atem 80" und so weiter bis "Atem 0", wenn du zu ertrinken beginnst. Während sich die Leiste nach dem Auftauchen wieder füllt, wird nichts gesagt; tauchst du wieder ab, zählen die Schritte von dort herunter, wo die Leiste gerade steht.
