@@ -217,6 +217,27 @@ function utils.moneyLineText(text, sellLabel, coinText)
     return nil
 end
 
+-- A statistic's value as speech can read it. GetStatistic hands out the
+-- display string: a count, coins as amounts with coin textures, sometimes
+-- coloured, and "--" for a statistic never recorded. Coins are spoken by
+-- coinText, markup is dropped, and an unrecorded statistic reads "0"
+-- (speech says nothing for "--"). Nil when there is no value at all.
+function utils.statisticValueText(raw, coinText)
+    if type(raw) == "number" then
+        return tostring(raw)
+    end
+    if type(raw) ~= "string" then
+        return nil
+    end
+    local text = utils.moneyLineText(raw, nil, coinText) or raw
+    text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|[TA].-|[ta]", "")
+    text = text:gsub("^%s+", ""):gsub("%s+$", "")
+    if text == "" or text:match("^%-+$") then
+        return "0"
+    end
+    return text
+end
+
 -- Runs func(...) so that an error in it never stops the caller: one failing
 -- part of the frame (a module's update, an object type, the windows) must
 -- not leave the rest dead. The error still goes to the game's error handler
