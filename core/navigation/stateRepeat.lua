@@ -21,18 +21,20 @@ function stateRepeat.new(value)
 end
 
 -- value: the state now. speaks: whether that state has a line. delay: seconds,
--- 0 or nil for none. Returns true when the line for value is due now.
+-- 0 or nil for none. Returns two booleans: whether the tracker took value over
+-- now (spoken or silently: an older line of this state still waiting to be
+-- spoken is out of date), and whether value's line is due now.
 function stateRepeat.update(tracker, value, now, delay, speaks)
     if value == tracker.said then
-        return false
+        return false, false
     end
     if tracker.saidAt ~= nil and delay ~= nil and delay > 0 and now - tracker.saidAt < delay then
-        return false
+        return false, false
     end
     tracker.said = value
     if not speaks then
-        return false
+        return true, false
     end
     tracker.saidAt = now
-    return true
+    return true, true
 end

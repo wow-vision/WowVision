@@ -37,6 +37,8 @@ local module = WowVision.base:createModule("speech")
 local L = module.L
 module:setLabel(L["Speech"])
 module:setVital(true)
+-- No queue of its own: tagging is a no-op here, so callers need no version check (core/speechTags.lua).
+WowVision.speechTags.install(module)
 local settings = module:hasSettings()
 
 -- Saved by the voice's name, so installing voices keeps it (core/fieldTypes.lua).

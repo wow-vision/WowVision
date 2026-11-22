@@ -7,7 +7,8 @@ local function run(tracker, steps, delay, bothSpeak)
     local spoken = {}
     for _, step in ipairs(steps) do
         local time, value = step[1], step[2]
-        if stateRepeat.update(tracker, value, time, delay, bothSpeak or value == true) then
+        local _, due = stateRepeat.update(tracker, value, time, delay, bothSpeak or value == true)
+        if due then
             table.insert(spoken, tostring(value))
         end
     end
@@ -74,6 +75,21 @@ testRunner:addSuite("StateRepeat", {
         t:assertEqual(run(tracker, steps, 5, true), "indoors")
         -- Still outdoors when the delay is over: now that is said.
         t:assertEqual(run(tracker, { { 4.9, "outdoors" }, { 5.1, "outdoors" }, { 6, "outdoors" } }, 5, true), "outdoors")
+    end,
+
+    ["a silent take-over is reported as a change, not as a line"] = function(t)
+        local tracker = stateRepeat.new(false)
+        local changed, due = stateRepeat.update(tracker, true, 0, 2, true)
+        t:assertTrue(changed)
+        t:assertTrue(due)
+        -- Out of the water inside the delay: nothing yet.
+        changed, due = stateRepeat.update(tracker, false, 1, 2, false)
+        t:assertFalse(changed)
+        t:assertFalse(due)
+        -- Still out once the delay is over: taken over, silently.
+        changed, due = stateRepeat.update(tracker, false, 2.5, 2, false)
+        t:assertTrue(changed)
+        t:assertFalse(due)
     end,
 
     ["a flicker ending where it began says nothing more"] = function(t)

@@ -324,23 +324,21 @@ function module:getOutdoorsIndoors()
     return nil
 end
 
--- The speech queue owners of the state lines: a new line clears the old one of
--- its group still waiting (the speech module's withTag/dropQueued), so a run of
--- changes never builds a backlog. Swimming and diving share one: a newer water
--- line replaces an older one. Without the speech queue (Vanilla, or the Speech
--- Queue setting off) the line is just fired.
-local waterLines, indoorsLines, flyingLines = {}, {}, {}
-
-local function speakState(alert, owner)
+-- A state tracker took a new value over (stateRepeat.update): the line of its
+-- old value still waiting in the speech queue is out of date, and goes
+-- (core/speechTags.lua: each tracker owns its lines). Then the new value's
+-- line, if it has one and it is due. So a run of changes never builds a
+-- backlog, and leaving the water drops a "swimming" not yet heard. Without a
+-- queue of WowVision's own (Vanilla, or the Speech Queue setting off) there is
+-- nothing to drop and the line is just fired.
+local function stateChanged(tracker, alert)
     local speech = WowVision.base.speech
-    if not (speech and speech.withTag) then
-        alert:fire({})
-        return
+    speech:dropQueued(tracker)
+    if alert then
+        speech:withTag({ owner = tracker }, function()
+            alert:fire({})
+        end)
     end
-    speech:dropQueued(owner)
-    speech:withTag({ owner = owner }, function()
-        alert:fire({})
-    end)
 end
 
 function module:onEnable()
@@ -371,24 +369,30 @@ function module:onEnable()
 
         -- nil (neither indoors nor outdoors) keeps the last known state.
         local outdoorsIndoors = self:getOutdoorsIndoors()
-        if outdoorsIndoors ~= nil and stateRepeat.update(self.indoorsState, outdoorsIndoors, now, delay, true) then
-            speakState(outdoorsIndoors == "outdoors" and outdoorsAlert or indoorsAlert, indoorsLines)
+        if outdoorsIndoors ~= nil then
+            local changed, due = stateRepeat.update(self.indoorsState, outdoorsIndoors, now, delay, true)
+            if changed then
+                stateChanged(self.indoorsState, due and (outdoorsIndoors == "outdoors" and outdoorsAlert or indoorsAlert))
+            end
         end
 
         local isFlying = IsFlying() == true
-        if stateRepeat.update(self.flyingState, isFlying, now, delay, true) then
-            speakState(isFlying and flyingStartedAlert or flyingEndedAlert, flyingLines)
+        local changed, due = stateRepeat.update(self.flyingState, isFlying, now, delay, true)
+        if changed then
+            stateChanged(self.flyingState, due and (isFlying and flyingStartedAlert or flyingEndedAlert))
         end
 
         -- Only going in is spoken; coming out is taken over silently.
         local isSwimming = IsSwimming() == true
-        if stateRepeat.update(self.swimmingState, isSwimming, now, delay, isSwimming) then
-            speakState(swimmingAlert, waterLines)
+        changed, due = stateRepeat.update(self.swimmingState, isSwimming, now, delay, isSwimming)
+        if changed then
+            stateChanged(self.swimmingState, due and swimmingAlert)
         end
 
         local isSubmerged = IsSubmerged() == true
-        if stateRepeat.update(self.submergedState, isSubmerged, now, delay, isSubmerged) then
-            speakState(divingAlert, waterLines)
+        changed, due = stateRepeat.update(self.submergedState, isSubmerged, now, delay, isSubmerged)
+        if changed then
+            stateChanged(self.submergedState, due and divingAlert)
         end
 
         self:updateTimerBars()
