@@ -103,6 +103,7 @@ Quest log details per version are on the [Quests](../world/quests.md) page. See 
 | Pets, toys, heirlooms, appearances | No | No | No | No | Yes |
 | Legacy (reward track, challenges, trees) | No | No | No | No | Yes |
 | Group finder | No | Yes | No | Yes (Dungeon Finder; other tabs not yet) | Yes |
+| LFG Forever (third-party group finder addon) | No | No | No | No | Yes, when the addon is installed |
 | Pet stable | No | Yes | No | No | No |
 | Auction house | No | Yes (with price database and full scan) | Yes | Yes (with price database and full scan) | Yes (with price database and full scan) |
 

@@ -29,6 +29,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /wv close | Schließt jedes WowVision-Fenster | alle |
 | /wv version | Gibt die WowVision-Version aus | alle |
 | /wv accept | Nimmt eine Gruppeneinladung an, auch im Kampf | alle |
+| /wv lfg | Öffnet oder schließt LFG Forever, die Gruppensuche eines Fremd-Addons | WoW: Forever, mit installiertem LFG Forever |
 | /wv pendingtest | Zeigt einen Testkasten, der wie eine Gruppeneinladung wartet | alle |
 | /beacon | Setzt ein Beacon, routet zu einem benannten Ort oder liest deine Position vor | alle |
 | /focus1 bis /focus5 | Setzt ein virtuelles Fokusziel | alle, nicht mit Sku |
@@ -89,6 +90,10 @@ Gibt die installierte WowVision-Version in dein Chatfenster aus, zum Beispiel V0
 ### /wv accept
 
 Nimmt die Gruppeneinladung an, die gerade angezeigt wird, und sagt "Gruppeneinladung angenommen". Das geht auch im Kampf, wo WowVision das Einladungs-Popup nicht öffnen kann. Ist keine Einladung da, sagt es "Keine Gruppeneinladung". Eine Einladung, die nach der Rolle fragt, braucht erst eine aktivierte Rolle, sonst sagt es "Erst eine Rolle wählen". Die Taste Gruppeneinladung annehmen (Accept Group Invitation) tut dasselbe; sie ist unbelegt. Versionen: alle. Siehe [Gruppensuche](../windows/group-finder.md).
+
+### /wv lfg
+
+Öffnet das Fenster von LFG Forever, dem Gruppensuche-Addon eines anderen Autors, oder schließt es, wenn es offen ist: dasselbe wie /lfg und die Taste LFG Forever öffnen oder schließen (Alt+Strg+G). WowVision liest das Fenster, sobald es offen ist. Ohne LFG Forever gibt es den Befehl nicht, und solange Sku geladen ist, bleibt er Sku überlassen. Versionen: WoW: Forever. Siehe [Gruppensuche](../windows/group-finder.md).
 
 ### /wv pendingtest
 

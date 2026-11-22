@@ -27,6 +27,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv close | Closes every WowVision window | all |
 | /wv version | Prints the WowVision version | all |
 | /wv accept | Accepts a group invitation, also in combat | all |
+| /wv lfg | Opens or closes LFG Forever, the third-party group finder | WoW: Forever, with LFG Forever installed |
 | /wv pendingtest | Shows a test box that waits like a group invitation | all |
 | /beacon | Sets a beacon, routes to a named place, or reads your position | all |
 | /focus1 to /focus5 | Sets a virtual focus target | all, not with Sku |
@@ -88,6 +89,10 @@ Prints the installed WowVision version to your chat window, for example V0.9.0, 
 ### /wv accept
 
 Accepts the group invitation that is shown and says "Group invitation accepted". It also works in combat, where WowVision cannot open the invitation popup. Without an invitation it says "No group invitation". An invitation that asks for a role needs a checked role first, otherwise it says "Choose a role first". The Accept Group Invitation key does the same; it is unbound. Versions: all. See [Group Finder](../windows/group-finder.md).
+
+### /wv lfg
+
+Opens the window of LFG Forever, the third-party group finder addon, or closes it when it is open: the same as /lfg and the Open or Close LFG Forever key (Alt+Ctrl+G). WowVision reads the window once it is open. Without LFG Forever the command does not exist, and while Sku is loaded it is left to Sku. Versions: WoW: Forever. See [Group Finder](../windows/group-finder.md).
 
 ### /wv pendingtest
 

@@ -2,7 +2,7 @@
 ## Version: @project-version@
 ## Author: bradjrenshaw
 ## Interface: 16001
-## OptionalDeps: Sku, BlindSlash, Questie
+## OptionalDeps: Sku, BlindSlash, Questie, LFGForever
 ## Notes: Provides accessibility for the visually impaired.
 ## SavedVariablesPerCharacter: WowVisionDB
 ## SavedVariables: WowVisionDump, WowVisionPriceDB, WowVisionGlobalDB

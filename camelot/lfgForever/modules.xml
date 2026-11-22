@@ -1,0 +1,9 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+  <!-- Each file stops at once when LFG Forever is not loaded (lfgForever.lua makes the module only then). -->
+  <Script file="lfgForever.lua" />
+  <Script file="labels.lua" />
+  <Script file="screen.lua" />
+
+</Ui>
