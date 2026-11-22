@@ -1,5 +1,6 @@
 -- Group invitations: /wv accept (popups.acceptInvite) on the plain invitation
--- popup and on the invitation that asks for a role (LFGInvitePopup), and the
+-- popup, on the leader's confirmation of a suggested invitation or a request
+-- to join, and on the invitation that asks for a role (LFGInvitePopup), and the
 -- role popup screen's render on the invitation (title, warning, roles,
 -- buttons). The harness in tools/headless-tests.lua loads popups.lua and
 -- RolePoll.lua against a stand-in window module and hands over what they
@@ -172,6 +173,34 @@ local tests = {
         t:assertEqual(accept.clicks, 1)
         t:assertEqual(hidden.clicks, 0)
         t:assertEqual(spoken[1], "Group invitation accepted")
+    end,
+
+    ["accept takes a suggested invitation or a request to join (the leader's confirmation)"] = function(t)
+        local accept, decline = fakeButton(), fakeButton()
+        local spoken, restore = installGame({
+            dialogs = { { which = "GROUP_INVITE_CONFIRMATION", buttons = { accept, decline } } },
+        })
+        local ok = popups.acceptInvite()
+        restore()
+        t:assertTrue(ok)
+        t:assertEqual(accept.clicks, 1)
+        t:assertEqual(decline.clicks, 0)
+        t:assertEqual(spoken[1], "Group invitation accepted")
+    end,
+
+    ["accept prefers the player's own invitation over a confirmation listed first"] = function(t)
+        local confirm, own = fakeButton(), fakeButton()
+        local _, restore = installGame({
+            dialogs = {
+                { which = "GROUP_INVITE_CONFIRMATION", buttons = { confirm } },
+                { which = "PARTY_INVITE", buttons = { own } },
+            },
+        })
+        local ok = popups.acceptInvite()
+        restore()
+        t:assertTrue(ok)
+        t:assertEqual(own.clicks, 1)
+        t:assertEqual(confirm.clicks, 0)
     end,
 
     ["accept takes the role invitation when a role is checked"] = function(t)

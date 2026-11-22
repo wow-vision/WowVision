@@ -100,12 +100,15 @@ local function firstShownButton(frame)
 end
 
 -- The dialogs whose buttons may run their own click from addon code in combat (graph/Host.lua combatKey): their
--- handlers call nothing protected (AcceptGroup, DeclineGroup, the summon and resurrection answers, RepopMe,
+-- handlers call nothing protected (AcceptGroup, DeclineGroup, RespondToInviteConfirmation for a suggested invitation
+-- or a request to join, the summon and resurrection answers, RepopMe,
 -- DeleteCursorItem; GameDialogDefs.lua), and the delete questions were answered so in a fight in game. Any other
 -- dialog's buttons say Not available in combat: a handler that calls a protected function (AcceptBattlefieldPort)
 -- would be blocked from addon code.
 local COMBAT_CLICKS = {
     PARTY_INVITE = true,
+    PARTY_INVITE_XREALM = true,
+    GROUP_INVITE_CONFIRMATION = true,
     CONFIRM_SUMMON = true,
     CONFIRM_SUMMON_SCENARIO = true,
     CONFIRM_SUMMON_STARTING_AREA = true,
@@ -210,13 +213,24 @@ end
 -- skips, so it is checked by name; its Accept takes the checked role and
 -- stays disabled until one is checked (the game checks it when only one is
 -- open), so then the role has to be picked in that window first.
-local INVITE_POPUPS = { PARTY_INVITE = true, PARTY_INVITE_XREALM = true }
+--
+-- A group member suggesting someone to invite, or a player asking to join the
+-- group, comes to the leader as GROUP_INVITE_CONFIRMATION (GameDialogDefs.lua,
+-- the same on Classic and Retail): its Accept runs RespondToInviteConfirmation,
+-- not protected either. An invitation to the player comes first: the two are not
+-- shown together in the game (one needs a group, the other none), but the
+-- player's own invitation is the one meant if they were.
+local INVITE_POPUPS = { PARTY_INVITE = 1, PARTY_INVITE_XREALM = 1, GROUP_INVITE_CONFIRMATION = 2 }
 
 function module.acceptInvite()
-    local accept = nil
+    local accept, rank = nil, nil
     forEachStaticDialog(function(frame)
-        if accept == nil and INVITE_POPUPS[frame.which] then
-            accept = firstShownButton(frame)
+        local popupRank = INVITE_POPUPS[frame.which]
+        if popupRank ~= nil and (rank == nil or popupRank < rank) then
+            local button = firstShownButton(frame)
+            if button ~= nil then
+                accept, rank = button, popupRank
+            end
         end
     end)
     local rolePopup = LFGInvitePopup
@@ -275,6 +289,8 @@ end
 -- A put-aside dialog's short name, said with Pending (its text was read when it opened).
 local TITLES = {
     PARTY_INVITE = "Group Invitation",
+    PARTY_INVITE_XREALM = "Group Invitation",
+    GROUP_INVITE_CONFIRMATION = "Group Invitation",
     CONFIRM_SUMMON = "Summon",
     CONFIRM_SUMMON_SCENARIO = "Summon",
     CONFIRM_SUMMON_STARTING_AREA = "Summon",
