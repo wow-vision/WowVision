@@ -13,11 +13,12 @@ All targeting settings live in the WowVision menu (type /wv) under Targeting. Ta
 | Shift+O | Soft Target Interact | Switches soft interact targeting on or off |
 | Alt+T | Open Target Menu | Opens the menu of your current target |
 | unbound by default | Target of Target | Makes your target's target your target |
+| unbound by default | Ping Target | Pings your target: you hear where it is and how far away |
 | unbound by default | Target Focus 1 to Target Focus 5 | Targets the unit you stored in that virtual focus slot |
 
 You can change or add keys in the keybinding window (WowVision menu, UI, Bindings); see [Keybindings](../basics/keybindings.md). The complete list of all keys is in the [keybinding reference](../reference/keybindings.md).
 
-If the addon Sku is loaded at the same time, WowVision leaves the soft targeting keys, the Target Focus keys and the /focus1 to /focus5 commands to Sku and does not register them. Target of Target and Alt+T are not affected.
+If the addon Sku is loaded at the same time, WowVision leaves the soft targeting keys, the Target Focus keys and the /focus1 to /focus5 commands to Sku and does not register them. Target of Target, Ping Target and Alt+T are not affected.
 
 ## Hearing your target (hard target)
 
@@ -271,6 +272,15 @@ Because the focus is a name, the game targets the nearest unit with that name. T
 Target of Target has no key by default, so give it one in the keybinding window. Press it to target whatever your target is targeting: the enemy a group member is fighting, or the group member an enemy is attacking. WowVision reads the new target as it reads any target change. If the enemy is attacking you, you target yourself. It works in combat too, and it does not start an attack.
 
 If you have no target, you hear "No target". If your target has no target, you hear "Your target has no target", and your target stays as it was.
+
+## Where your target is: Ping Target
+
+Ping Target has no key by default, so give it one in the keybinding window. Press it and the game pings your target, the same ping a sighted player places with the ping wheel. The ping sound comes from where your target stands, so with headphones you hear whether it is to your left or right. Turn until the ping sounds centered, then walk towards it. WowVision also says how far away the target is, for example "25 yards", or "more than 40 yards" when it is further away than WowVision can measure.
+
+- If you have no target, you hear "No target" and nothing is pinged.
+- In a group, the other members see your ping and read it in their chat, like any ping.
+- In combat a friendly target is pinged, but its distance is not said: the game does not allow the measurement then.
+- The ping exists on Retail and WoW: Forever. In the other versions the key only says the distance.
 
 ## The target's menu: Alt+T
 

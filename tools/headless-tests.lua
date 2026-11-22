@@ -2411,6 +2411,8 @@ loadAddonFile("core/graph/combatKeysTests.lua")
 loadAddonFile("core/graph/secretLabelTests.lua")
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
+loadAddonFile("core/targeting/pingTarget.lua")
+loadAddonFile("core/targeting/pingTargetTests.lua")
 
 -- Native quest source and the scanner's quest categories: the adapter and
 -- the provider load against stand-ins for the quest module and the scanner;
