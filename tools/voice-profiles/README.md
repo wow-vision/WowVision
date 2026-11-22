@@ -49,10 +49,19 @@ py -m venv .venv
    (`GroupHealth.END_PAUSE`, read from `logic.lua`), so the silent HIGH
    copy behind it does not cut the number off. As in game, the silent LOW
    copy in front of an audible HIGH copy carries the pause too. The pause
-   brings the two copies closer together; measure with it first, and only
-   when the voice is rejected for too small a range, render and measure
-   again without it (Zira's case; measure.py says so). The printed profile
-   says `endPause = true` when it was measured with the pause.
+   moves the two copies; measure with it first, and only when the voice is
+   rejected for too small a range, render and measure again without it
+   (measure.py says so; a voice without the pause has its numbers cut at
+   the end). The printed profile says `endPause = true` when it was
+   measured with the pause.
+
+   The pause must be silent in a silent copy. A `<silence>` tag is not:
+   SAPI plays the end of the word in front of it at the voice's own volume,
+   whatever the `<volume>` tag says, a short blip in every silent
+   announcement. That is why `END_PAUSE` is SAPI's pause phoneme
+   `<pron sym="_"/>` (logic.lua has the measurements). If you ever change
+   it, render a silent announcement (both copies at volume 0) and check
+   that the WAV's peak is 0 at every pitch.
 
    This writes 63 short WAV files per voice into `render\` (the number 3
    at 21 pitches, three ways) and `render\voices.json`.
@@ -73,7 +82,7 @@ py -m venv .venv
        endPause = true,
        low = { 10, 7, 5, 3, 1, -1, -3, -5, -7, -9 },
        high = { -6, -8, -10 },
-       measured = { low = { 2.21, 0.502 }, high = { -0.45, 0.510 } },
+       measured = { low = { 4.44, 0.505 }, high = { 1.63, 0.516 } },
    })
    ```
 
@@ -123,25 +132,28 @@ The whole method is in the docstring at the top of `measure.py`. In short:
 
 ## Check
 
-Hedda Desktop rendered with -EndPause on 2026-11-12 measured: LOW copy
-+3.69 + 0.50 x absmiddle, HIGH copy -1.46 + 0.50 x absmiddle (5.15
-semitones apart). Values within a few tenths of these mean the setup
-works. Without the pause (2026-10-03): LOW about +5.1, HIGH about -0.25.
-Zira without the pause (2026-11-12): LOW +7.53 + 0.51 x absmiddle, HIGH
-+1.94 + 0.51 x absmiddle; with it the copies are only 1.7 apart.
+Hedda Desktop rendered with -EndPause on 2026-11-22 (the pron pause)
+measured: LOW copy +4.72 + 0.55 x absmiddle, HIGH copy -0.45 + 0.50 x
+absmiddle (5.17 semitones apart). Values within a few tenths of these mean
+the setup works. Without the pause (2026-10-03): LOW about +5.1, HIGH about
+-0.25. Zira with the pron pause (2026-11-22): LOW +5.13 + 0.50 x absmiddle,
+HIGH +1.92 + 0.51 x absmiddle (3.21 apart).
 
 ## Measured voices
 
 - Microsoft Hedda Desktop (the fallback): chosen by ear in game on
   2026-10-03 (the method was built on it), kept with the end pause after
   an ear test on 2026-11-11 (measure.py's even scale with the pause
-  sounded no better); measured with the pause 2026-11-12.
+  sounded no better); measured with the pron pause 2026-11-22.
 - Microsoft Zira Desktop: chosen by ear in game on 2026-10-03, without
-  the end pause (rejected with it, 2026-11-12).
+  the end pause (the `<silence>` pause brought her copies within 1.7
+  semitones, 2026-11-12). Since 2026-11-22 measure.py's profile with the
+  pron pause (3.21 apart); not heard in game yet.
 - Microsoft Hedda (OneCore): the same sound as Hedda Desktop, byte for
   byte; uses Hedda's profile by name.
 - Microsoft Katja (OneCore): profile from measure.py, 2026-10-03; with the
-  end pause 2026-11-12.
+  end pause 2026-11-12, measured again with the pron pause 2026-11-22
+  (same scale).
 - Microsoft Stefan (OneCore): rejected, creaky low pitch.
 - SAPI2SR (Nunosoft's screen reader bridge): rejected, renders no sound.
 
