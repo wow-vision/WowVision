@@ -62,7 +62,7 @@ Bekommt ein beobachtetes Mitglied einen Schwächungszauber, den du bannen kannst
 
 Wer auf Schwächungszauber beobachtet wird, hat unter Bannbare Schwächungszauber eigene Schalter Gruppe beobachten (an) und Schlachtzug beobachten (aus), unabhängig von denen des Monitors. Dich selbst einbeziehen und die Schlachtzugsgruppen gelten wie beim Monitor, und die Nummern sind dieselben. Im Schlachtzug mit nur Gruppe beobachten an wird deine eigene Schlachtzugsgruppe unter ihren Schlachtzugsnummern beobachtet, sodass eine Nummer bei beiden dieselbe Person meint.
 
-- Ein Mitglied wird sofort gesagt, wenn es einen neuen Schwächungszauber bekommt.
+- Ein Mitglied wird sofort gesagt, wenn es einen neuen Schwächungszauber bekommt. WowVision sieht bei jedem beobachteten Mitglied etwa zehnmal pro Sekunde nach, das klappt also auch dort, wo das Spiel Addons einen geänderten Schwächungszauber gar nicht meldet, wie in manchen Instanzen.
 - Solange der Zauber auf ihm bleibt, wird es im Abstand von Wiederholen alle erneut gesagt, sofern WowVision sonst nichts zu sagen hat. Die Wiederholung beginnt nur nach einem neuen Zauber und endet, sobald das Mitglied keinen mehr trägt.
 - Für ein Mitglied ohne bannbaren Zauber wird nie etwas gesagt. Ein Zauber, der gebannt wird oder ausläuft, wird nicht angesagt.
 - Die Art ist das Wort des Spiels selbst, im Kampf und außerhalb gleich. Im Kampf lässt das Spiel Addons dieses Wort sprechen, aber nicht kürzen, deshalb gibt es keine Ein-Buchstaben-Form.

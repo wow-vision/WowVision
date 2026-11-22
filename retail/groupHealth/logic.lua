@@ -399,6 +399,27 @@ function GroupHealth.dispelRepeatDue(state, now, interval)
     return now - state.lastSaid >= interval
 end
 
+-- How many members the poll reads this frame, and what it still owes.
+-- The watched members are read in turn so that everyone is read once per
+-- `sweep` seconds: `total` members, `elapsed` seconds since the last frame,
+-- `owed` the fraction of a member carried over. Never more than `cap` in
+-- one frame and never a member twice; what a long frame would owe beyond
+-- that is dropped, so a hitch is not followed by a burst of reads.
+function GroupHealth.dispelPollStep(owed, total, elapsed, sweep, cap)
+    if total <= 0 then
+        return 0, 0
+    end
+    local limit = math.min(total, cap)
+    -- the clock is a float: 0.1 s comes as 0.0999999, which must still be a
+    -- whole turn
+    owed = owed + total * elapsed / sweep + 1e-9
+    if owed >= limit then
+        return limit, 0
+    end
+    local count = math.floor(owed)
+    return count, math.max(owed - count - 1e-9, 0)
+end
+
 -- What is said: the member's number and the game's word for the debuff's
 -- type, in the chosen order. The word may be secret (in combat): it is
 -- only joined, never looked at. Without a word the number alone.

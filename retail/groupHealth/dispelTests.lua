@@ -59,6 +59,7 @@ local function withDispel(numbers, test)
         module.dispelMembers[unit] = { unit = unit, number = number }
     end
     module.dispelDirty, module.nextDispelRepeat, module.dispelUnavailableSaid = {}, nil, false
+    module.lastDispelPoll, module.dispelOwed = nil, nil
     local function advance(seconds)
         now = now + seconds
     end
@@ -70,6 +71,7 @@ local function withDispel(numbers, test)
     WowVision.base, module.speak, module.dispelReader = saved.base, saved.speak, saved.reader
     module.settings.dispellable, module.settings.silentOutOfCombat = saved.settings, saved.silent
     module.dispelMembers, module.dispelAliases, module.dispelDirty, module.nextDispelRepeat = {}, {}, {}, nil
+    module.lastDispelPoll, module.dispelOwed = nil, nil
     if not ok then
         error(err, 0)
     end
@@ -109,6 +111,105 @@ testRunner:addSuite("GroupHealthDispel", {
         t:assertEqual(GroupHealth.dispelText(3, "Poison", false), "Poison 3")
         t:assertEqual(GroupHealth.dispelText(3, "Poison", true), "3 Poison")
         t:assertEqual(GroupHealth.dispelText(3, nil, false), "3")
+    end,
+
+    ["logic: the poll's share of a frame, a round per sweep"] = function(t)
+        -- 5 members, a round in 0.1 s: a frame of 0.02 s owes one member
+        local count, owed = GroupHealth.dispelPollStep(0, 5, 0.02, 0.1, 10)
+        t:assertEqual(count, 1)
+        t:assertTrue(owed < 0.001)
+        -- a shorter frame owes a part, carried to the next
+        count, owed = GroupHealth.dispelPollStep(0, 5, 0.01, 0.1, 10)
+        t:assertEqual(count, 0)
+        count, owed = GroupHealth.dispelPollStep(owed, 5, 0.01, 0.1, 10)
+        t:assertEqual(count, 1)
+        -- 40 members at 60 frames a second: 6 or 7 a frame
+        count = GroupHealth.dispelPollStep(0, 40, 1 / 60, 0.1, 10)
+        t:assertEqual(count, 6)
+    end,
+
+    ["logic: the poll never reads more than its cap or a member twice, and drops the rest"] = function(t)
+        local count, owed = GroupHealth.dispelPollStep(0, 40, 5, 0.1, 10)
+        t:assertEqual(count, 10, "the cap")
+        t:assertEqual(owed, 0, "nothing carried after a long frame")
+        count = GroupHealth.dispelPollStep(0, 3, 5, 0.1, 10)
+        t:assertEqual(count, 3, "everyone once")
+        count, owed = GroupHealth.dispelPollStep(0.5, 0, 5, 0.1, 10)
+        t:assertEqual(count, 0, "nobody watched")
+        t:assertEqual(owed, 0)
+    end,
+
+    ["a new debuff is said without any aura event"] = function(t)
+        withDispel({ party1 = 2, party2 = 3 }, function(spoken, advance, debuffs)
+            module:checkDispels()
+            debuffs.party2 = { "Magic" }
+            advance(0.1)
+            module:checkDispels()
+            t:assertEqual(#spoken, 1)
+            t:assertEqual(spoken[1], "Magic 3")
+            advance(0.1)
+            module:checkDispels()
+            t:assertEqual(#spoken, 1, "still carried: not a new debuff")
+        end)
+    end,
+
+    ["the poll goes round the members in number order, a frame's share at a time"] = function(t)
+        withDispel({ party1 = 2, party2 = 3, player = 1, party3 = 4 }, function(spoken, advance, debuffs)
+            local reads = {}
+            local fill = module.dispelReader.fill
+            module.dispelReader.fill = function(unit, index)
+                tinsert(reads, unit)
+                return fill(unit, index)
+            end
+            module:checkDispels()
+            t:assertEqual(#reads, 0, "the first frame only starts the clock")
+            -- 4 members, a round in 0.1 s: half a round in 0.05 s
+            advance(0.05)
+            module:checkDispels()
+            t:assertEqual(table.concat(reads, " "), "player party1")
+            advance(0.05)
+            module:checkDispels()
+            t:assertEqual(table.concat(reads, " "), "player party1 party2 party3")
+            advance(0.05)
+            module:checkDispels()
+            t:assertEqual(#reads, 6, "and round again")
+            t:assertEqual(reads[5], "player")
+        end)
+    end,
+
+    ["a member an aura event had read this frame is not read twice"] = function(t)
+        withDispel({ party1 = 2 }, function(spoken, advance, debuffs)
+            local reads = 0
+            local fill = module.dispelReader.fill
+            module.dispelReader.fill = function(unit, index)
+                reads = reads + 1
+                return fill(unit, index)
+            end
+            module:checkDispels()
+            advance(0.1)
+            module:onAura("party1")
+            module:checkDispels()
+            t:assertEqual(reads, 1)
+        end)
+    end,
+
+    ["a refused read says unavailable without any aura event"] = function(t)
+        withDispel({ party1 = 2 }, function(spoken, advance, debuffs, refuse)
+            local notified = {}
+            local savedNotify = WowVision.notify
+            WowVision.notify = function(_, text)
+                tinsert(notified, text)
+            end
+            refuse()
+            module:checkDispels()
+            advance(0.1)
+            module:checkDispels()
+            advance(0.1)
+            module:checkDispels()
+            WowVision.notify = savedNotify
+            t:assertEqual(#notified, 1)
+            t:assertEqual(#spoken, 0)
+        end)
     end,
 
     ["a new debuff is said as type and number"] = function(t)
