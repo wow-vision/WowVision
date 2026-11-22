@@ -345,6 +345,8 @@ loadAddonFile("core/scanner/nearest.lua")
 loadAddonFile("core/scanner/nearestTests.lua")
 loadAddonFile("core/secrets.lua")
 loadAddonFile("core/secretsTests.lua")
+loadAddonFile("core/crowdControl.lua")
+loadAddonFile("core/crowdControlTests.lua")
 -- The group health monitor's module: loaded against a stand-in module whose settings are a real settings class (as
 -- Module:hasSettings makes them), so a setting's change reaches the module as in the game. The suite stubs the
 -- game's unit functions per test.
@@ -622,6 +624,66 @@ WowVision.testing.testRunner:addSuite("AuraBufferStacks", {
         local ok, err = pcall(body)
         restrictedUnits.player = nil
         BuffFrame = savedBuff
+        if not ok then
+            error(err, 0)
+        end
+    end,
+})
+
+WowVision.testing.testRunner:addSuite("AuraBufferRefresh", {
+    ["entering or walking the buffer counts the auras again, with no event from the game"] = function(t)
+        local savedSpeak, savedGetTime = WowVision.speak, GetTime
+        local spoken = {}
+        WowVision.speak = function(_, text)
+            spoken[#spoken + 1] = text
+        end
+        local clock = 0
+        GetTime = function()
+            return clock
+        end
+        local list = fakeAuras.target.HARMFUL
+        local savedList = { unpack(list) }
+        local body = function()
+            local buffer = WowVision.buffers:create("Aura", { label = "Debuffs", sources = { "target:HARMFUL" } })
+            t:assertEqual(#buffer.items, 2)
+
+            -- a new debuff lands; the game sends nothing
+            tinsert(list, { name = "Insect Swarm", applications = 0, duration = 0, dispelName = "" })
+            fakeTooltips["Insect Swarm"] = { "Insect Swarm" }
+            clock = 1
+            buffer:UIMoveItem(1)
+            t:assertEqual(#buffer.items, 3, "walking counts again")
+            buffer:UIMoveItem(1)
+            buffer:UIMoveItem(1)
+            t:assertTrue(spoken[#spoken]:find("Insect Swarm", 1, true) ~= nil, "the new debuff is reached")
+
+            -- two debuffs end; entering the buffer reads the list as it is
+            table.remove(list)
+            table.remove(list)
+            clock = 2
+            local text = buffer:getFocusString()
+            t:assertEqual(#buffer.items, 1)
+            t:assertTrue(text:find("Moonfire", 1, true) ~= nil, "the focus moved back onto what is left")
+            t:assertTrue(text:find("Gone", 1, true) == nil)
+
+            -- the same frame asks again: one count is enough
+            tinsert(list, { name = "Sunfire", applications = 3, duration = 0, dispelName = "" })
+            buffer:startAtTop()
+            t:assertEqual(#buffer.items, 1, "same frame: not counted twice")
+            clock = 3
+            buffer:startAtTop()
+            t:assertEqual(#buffer.items, 2)
+            buffer:unsubscribe()
+        end
+        local ok, err = pcall(body)
+        for i = #list, 1, -1 do
+            list[i] = nil
+        end
+        for i, aura in ipairs(savedList) do
+            list[i] = aura
+        end
+        fakeTooltips["Insect Swarm"] = nil
+        WowVision.speak, GetTime = savedSpeak, savedGetTime
         if not ok then
             error(err, 0)
         end

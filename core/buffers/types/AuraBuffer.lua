@@ -29,6 +29,11 @@ local secrets = WowVision.secrets
 -- The list rebuilds (once per frame at most) when the game says a source
 -- unit's auras changed or the unit itself changed, and the focus stays on
 -- its position. Each item reads the aura afresh when spoken.
+--
+-- The game does not say so everywhere: UNIT_AURA stays away in some
+-- instanced content. So the list is also counted again every time the
+-- buffer is entered or walked (refresh): what is read is the list as it is
+-- at that moment, with or without the event.
 local AuraBuffer = WowVision.buffers:createType("Aura")
 
 -- More auras than any unit carries; the loop stops at the first empty index.
@@ -566,6 +571,33 @@ function AuraBuffer:rebuild()
         index = #self.items
     end
     self.index = index
+end
+
+-- The list as it is now, before the buffer is read or walked. Once per
+-- frame at most: entering a buffer asks several times in a row.
+function AuraBuffer:refresh()
+    local now = GetTime ~= nil and GetTime() or nil
+    if now ~= nil and self.refreshedAt == now then
+        return
+    end
+    self.refreshedAt = now
+    self.dirty = false
+    self:rebuild()
+end
+
+function AuraBuffer:UIMoveItem(direction, restart)
+    self:refresh()
+    return WowVision.buffers.Buffer.UIMoveItem(self, direction, restart)
+end
+
+function AuraBuffer:startAtTop()
+    self:refresh()
+    return WowVision.buffers.Buffer.startAtTop(self)
+end
+
+function AuraBuffer:getFocusString()
+    self:refresh()
+    return WowVision.buffers.Buffer.getFocusString(self)
 end
 
 -- Unnamed, the buffer is called by its one source, or Auras.

@@ -9,6 +9,10 @@
 --
 -- Used by the Target Crowd Control alert and by the enemy count's Announce
 -- Crowd Control.
+--
+-- Nothing here waits for UNIT_AURA: the game does not send it everywhere
+-- (not in some instanced content), so whoever follows a unit reads it on a
+-- timer (newWatch) and takes the event only as a hint to read sooner.
 local crowdControl = {}
 WowVision.crowdControl = crowdControl
 
@@ -51,6 +55,51 @@ function crowdControl.controlled(unit)
         return nil
     end
     return tooltip:NumLines() > 0
+end
+
+-- Follows the crowd control state of whoever stands behind one unit token.
+-- read() tells the state now (true: controlled), announce(controlled) is
+-- called when it changes. The owner calls:
+--   unitChanged()   another unit took the token: it is read at once and
+--                   said when it is controlled; "free" is said only after
+--                   a controlled one.
+--   auraChanged()   the game said the unit's auras changed: read on the
+--                   next update.
+--   update(elapsed) every frame: reads every `interval` seconds by itself.
+function crowdControl.newWatch(read, announce, interval)
+    local watch = { state = false, since = 0, hinted = false }
+
+    function watch.unitChanged()
+        watch.since = 0
+        watch.hinted = false
+        local was = watch.state
+        watch.state = read() == true
+        if watch.state then
+            announce(true)
+        elseif was then
+            announce(false)
+        end
+    end
+
+    function watch.auraChanged()
+        watch.hinted = true
+    end
+
+    function watch.update(elapsed)
+        watch.since = watch.since + elapsed
+        if not watch.hinted and watch.since < interval then
+            return
+        end
+        watch.since = 0
+        watch.hinted = false
+        local now = read() == true
+        if now ~= watch.state then
+            watch.state = now
+            announce(now)
+        end
+    end
+
+    return watch
 end
 
 -- The name of the unit's first crowd control aura, the tooltip's first line

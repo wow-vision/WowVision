@@ -19,39 +19,30 @@ end
 -- /wv cctest watch, 2026-11-02: right from frame 0, and the game sends no
 -- UNIT_AURA for a new target). The sound always tells the current target's
 -- state: on when it is controlled, off when it is free after a controlled
--- one. Aura changes on the same target are checked once per frame at most:
--- UNIT_AURA sets the frame's update script and the check clears it.
-local state = false
-local frame = CreateFrame("Frame")
+-- one. Aura changes on the same target are found by reading it every
+-- POLL seconds: UNIT_AURA is not sent everywhere (not in some instanced
+-- content), so the event only brings the next read forward to the next
+-- frame. One tooltip fill per read, and none without a target.
+local POLL = 0.2
 
-local function announce(controlledNow)
+local watch = crowdControl.newWatch(function()
+    return controlled("target")
+end, function(controlledNow)
     if module:getEnabled() then
         alert:fire({ controlled = controlledNow })
     end
-end
+end, POLL)
 
-local function checkAuras(self)
-    self:SetScript("OnUpdate", nil)
-    local now = controlled("target")
-    if now ~= state then
-        state = now
-        announce(now)
-    end
-end
-
+local frame = CreateFrame("Frame")
 frame:SetScript("OnEvent", function(self, event)
     if event == "PLAYER_TARGET_CHANGED" then
-        self:SetScript("OnUpdate", nil)
-        local was = state
-        state = controlled("target")
-        if state then
-            announce(true)
-        elseif was then
-            announce(false)
-        end
+        watch.unitChanged()
     else
-        self:SetScript("OnUpdate", checkAuras)
+        watch.auraChanged()
     end
+end)
+frame:SetScript("OnUpdate", function(self, elapsed)
+    watch.update(elapsed)
 end)
 frame:RegisterEvent("PLAYER_TARGET_CHANGED")
 frame:RegisterUnitEvent("UNIT_AURA", "target")
