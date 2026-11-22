@@ -80,8 +80,10 @@ Siehe [Tooltips](../basics/tooltips.md).
 | Nächster Puffer (Next Buffer) | Alt+Pfeil rechts |
 | Vorherige Puffergruppe (Previous Buffer Group) | Alt+Strg+Pfeil links |
 | Nächste Puffergruppe (Next Buffer Group) | Alt+Strg+Pfeil rechts |
+| Spieler-Auren ansagen (Speak Player Auras) | Alt+Strg+B |
+| Spieler-Auren (Player Auras) | Alt+Umschalt+B |
 
-Die Einstellung Elementrichtung umkehren (Invert Item Direction) im Modul Puffer vertauscht Alt+Pfeil hoch und Alt+Pfeil runter. Siehe [Puffer](../information/buffers.md).
+Die Einstellung Elementrichtung umkehren (Invert Item Direction) im Modul Puffer vertauscht Alt+Pfeil hoch und Alt+Pfeil runter. Spieler-Auren ansagen sagt jeden Buff und Debuff auf dir an, und Spieler-Auren öffnet eine Liste davon. Siehe [Puffer](../information/buffers.md#deine-buffs-und-debuffs-auf-einen-blick).
 
 ## Chat
 

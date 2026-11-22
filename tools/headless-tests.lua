@@ -2409,6 +2409,51 @@ loadAddonFile("core/windows/options/layoutPagesTests.lua")
 loadAddonFile("core/graph/menuNavTests.lua")
 loadAddonFile("core/graph/combatKeysTests.lua")
 loadAddonFile("core/graph/secretLabelTests.lua")
+
+-- The player auras (the key that says every buff and debuff, the list window): playerAuras.lua loads against a stand-in
+-- buffers module that keeps the key, the command and the window it registers, and the suite runs them on the real Aura
+-- buffer over the fake game of the Aura buffer suites above (its auras, restriction and tooltips).
+do
+    local savedBase = WowVision.base
+    local harness = {
+        world = {
+            auras = fakeAuras,
+            tooltips = fakeTooltips,
+            units = fakeUnits,
+            restricted = restrictedUnits,
+            dispel = fakeDispelTypes,
+        },
+    }
+    local function stubModule()
+        local stub = { L = WowVision:getLocale(), bindings = {}, commands = {}, windows = {} }
+        function stub:setLabel(label)
+            self.label = label
+        end
+        function stub:registerBinding(info)
+            tinsert(self.bindings, info)
+        end
+        function stub:registerCommand(config)
+            tinsert(self.commands, config)
+        end
+        function stub:registerWindow(def)
+            self.windows[def.name] = def
+        end
+        function stub:createModule(key)
+            local child = stubModule()
+            self[key] = child
+            return child
+        end
+        return stub
+    end
+    WowVision.base = { buffers = stubModule() }
+    loadAddonFile("core/buffers/playerAuras.lua")
+    harness.module = WowVision.base.buffers.auras
+    WowVision.base = savedBase
+    WowVision._playerAurasTestHarness = harness
+    loadAddonFile("core/buffers/playerAurasTests.lua")
+    WowVision._playerAurasTestHarness = nil
+end
+
 loadAddonFile("core/targeting/targetNames.lua")
 loadAddonFile("core/targeting/targetNamesTests.lua")
 

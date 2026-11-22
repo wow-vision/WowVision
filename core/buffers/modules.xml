@@ -7,5 +7,6 @@
   <Script file="BufferGroup.lua" />
   <Include file="types/modules.xml" />
   <Script file="module.lua" />
+  <Script file="playerAuras.lua" />
 
 </Ui>
