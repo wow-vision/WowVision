@@ -100,6 +100,12 @@ function nodes.scrollBoxList(builder, config)
         builder:pushContext(keyPrefix, config.label)
     end
 
+    -- Keys config.id has handed out in this list. The game's own data can
+    -- repeat what reads like a unique key (the auction house lists two rows
+    -- under one auction id), and a repeated id fails the whole render, so a
+    -- repeat gets a key of its own.
+    local seenKeys = {}
+
     for index = 1, size do
         -- Through the widget when it can: tree views exclude collapsed
         -- nodes there, while the raw provider asserts without that flag.
@@ -118,6 +124,11 @@ function nodes.scrollBoxList(builder, config)
         local id
         if config.id ~= nil then
             id = config.id(data, capturedIndex)
+            local count = (seenKeys[id.key] or 0) + 1
+            seenKeys[id.key] = count
+            if count > 1 then
+                id = ControlId.referenced(id.reference, tostring(id.key) .. ":repeat" .. count)
+            end
         elseif type(data) == "table" then
             id = ControlId.referenced(data, keyPrefix .. ":" .. capturedIndex)
         else

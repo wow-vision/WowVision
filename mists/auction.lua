@@ -640,6 +640,13 @@ local function renderAuctionsTab(builder)
             id = function(data, index)
                 local entry = rowEntry(auctionsFrame.AllAuctionsList, data)
                 if entry ~= nil and entry.auctionID ~= nil then
+                    -- The game can list two rows under one auction id
+                    -- (seen in game; a sold part next to the part still up
+                    -- is the likely pair, not confirmed). scrollBoxList
+                    -- keeps any other repeat apart.
+                    if entry.status == 1 then
+                        return ControlId.structural("mine:" .. entry.auctionID .. ":sold")
+                    end
                     return ControlId.structural("mine:" .. entry.auctionID)
                 end
                 return ControlId.structural("mine:" .. index)

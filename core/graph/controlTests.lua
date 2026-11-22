@@ -133,6 +133,27 @@ testRunner:addSuite("GraphScrollBox", {
         t:assertNotNil(render.order[1].vtable.bindings[1].target())
     end,
 
+    ["rows that share a custom id still build, each with a key of its own"] = function(t)
+        local rows = { { auction = 7, name = "Sold" }, { auction = 7, name = "Up" }, { auction = 8, name = "Other" } }
+        local builder = Builder:new()
+        graph.nodes.scrollBoxList(builder, {
+            scrollBox = makeFakeScrollBox(rows),
+            key = "mine",
+            id = function(data)
+                return graph.ControlId.structural("mine:" .. data.auction)
+            end,
+            rowLabel = function(data)
+                return data.name
+            end,
+        })
+        local render = builder:build()
+        t:assertEqual(#render.order, 3)
+        t:assertEqual(render.order[1].id.key, "mine:7")
+        t:assertEqual(render.order[2].id.key, "mine:7:repeat2")
+        t:assertEqual(render.order[3].id.key, "mine:8")
+        t:assertEqual(graph.resolveText(render.order[2].vtable.announcements[1]), "Up")
+    end,
+
     ["two lists in one build need distinct keys"] = function(t)
         local rowsA = { { name = "General" }, { name = "Combat" } }
         local rowsB = { { name = "Volume" }, { name = "Music" } }
