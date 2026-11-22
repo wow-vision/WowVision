@@ -694,6 +694,8 @@ function module:onDisable()
     self.dispelAliases = {}
     self.dispelRaidMode = nil
     self.dispelDirty = {}
+    self.lastDispelPoll = nil
+    self.dispelOwed = nil
 end
 
 -- Choosing the bridge voice while already enabled warns too.

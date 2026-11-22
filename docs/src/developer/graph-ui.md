@@ -139,7 +139,7 @@ Coexistence caveat: if a graph window and an old-framework window are open at th
 
 ## Testing
 
-- Headless: `luajit tools/headless-tests.lua [-v] [suiteName]` from the repo root runs the graph core suites (no game client) and parse-checks the WoW-bound files. Run it with LuaJIT (as the WowNav packer tools/wownav-pack.lua is): plain Lua 5.1 drops the extra arguments of `xpcall`, which WoW's Lua passes on, so about 40 menu, scanner and error-handling tests fail there for no fault of the code. Add new pure-core tests to `core/graph/tests.lua`.
+- Headless: `luajit tools/headless-tests.lua [-v] [suiteName]` from the repo root runs the graph core suites (no game client) and parse-checks the WoW-bound files. LuaJIT is the interpreter that has to pass: it is the closest to the game's Lua 5.1 and the one the builds already install for the WowNav packer (tools/wownav-pack.lua). Lua 5.4 (`lua tools/headless-tests.lua`) passes too and is worth a second run, but it accepts syntax the game does not, so it never stands in for LuaJIT. Plain Lua 5.1 does not work: it drops the extra arguments of `xpcall`, which WoW's Lua passes on, so about 40 menu, scanner and error-handling tests fail there for no fault of the code. Add new pure-core tests to `core/graph/tests.lua`.
 - In game: `/wv test` runs all suites, including the input activator tests.
 - Errors: `/wv errors` speaks the most recent Lua error and opens a copyable list; `/wv errors clear` resets.
 

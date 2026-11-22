@@ -1,14 +1,18 @@
 -- Headless runner for the WoW-independent test suites (currently the graph
--- core). Runs under LuaJIT, no game client needed.
+-- core). Runs under LuaJIT (or Lua 5.4), no game client needed.
 --
 -- Usage, from the repo root:
 --   luajit tools/headless-tests.lua [suiteFilter] [-v]
 --
--- LuaJIT, not plain Lua 5.1: WoW's Lua passes xpcall's extra arguments on to
--- the called function (xpcall(f, handler, a, b)), LuaJIT does too, plain 5.1
--- drops them. The code relies on it (utils.guardedCall, graph/Screen.lua), so
--- under plain 5.1 about 40 menu, scanner and error-handling tests fail with
--- "attempt to call global 'geterrorhandler'".
+-- Which interpreter: LuaJIT has to pass. It is the closest to the game's Lua
+-- 5.1 and the builds install it anyway for tools/wownav-pack.lua. Lua 5.4
+-- (lua tools/headless-tests.lua) passes too and is worth a second run, but
+-- it accepts syntax the game does not, so it never stands in for LuaJIT.
+-- Plain Lua 5.1 does not work: WoW's Lua passes xpcall's extra arguments on
+-- to the called function (xpcall(f, handler, a, b)), LuaJIT and 5.4 do too,
+-- plain 5.1 drops them. The code relies on it (utils.guardedCall,
+-- graph/Screen.lua), so under plain 5.1 about 40 menu, scanner and
+-- error-handling tests fail with "attempt to call global 'geterrorhandler'".
 --
 -- Only files with no WoW API dependencies can be loaded here; in-game suites
 -- still run through /wowvision test.

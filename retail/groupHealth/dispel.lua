@@ -30,12 +30,25 @@ local isSecret = secrets.isSecret
 -- What speaks: a member's count going up (a new debuff), at once. The
 -- repeat runs only from such an announcement and only while the member
 -- still carries a debuff; it never says that someone carries nothing.
+--
+-- How a new debuff is noticed: by reading. UNIT_AURA does not fire in some
+-- instanced content, and a monitor that waits for it would be silent
+-- there, which sounds like "nothing to dispel". So the watched members are
+-- read in turn all the time, everyone about ten times a second (the poll
+-- below). Where the event does come, it only brings a member's read
+-- forward to the next frame.
 
 local FILTER = "HARMFUL|RAID"
 -- More debuffs than any member carries; the count stops at the first empty fill.
 local MAX_INDEX = 40
 -- How often the repeat looks for a due member.
 local REPEAT_CHECK = 0.1
+-- The poll: every watched member is read once in this many seconds, the
+-- reads spread over the frames in between, and never more than this many
+-- members in one frame (a full raid at a low frame rate takes a little
+-- longer for its round instead of reading everyone at once).
+local POLL_SWEEP = 0.1
+local POLL_MAX_PER_FRAME = 10
 
 -- Watch Raid starts off: a raid is many members to read and to hear.
 local DEFAULTS = { enabled = false, watchParty = true, watchRaid = false, repeatInterval = 3, numberFirst = false }
@@ -288,16 +301,60 @@ function module:onAura(unit)
     end
 end
 
--- The once-per-frame work: the members marked since the last frame, then
--- the repeat, one member per check and only while nothing else is queued
--- or playing (like the health repeat), so it never holds back other speech.
+-- The watched members in number order, for the poll to go round. Built
+-- anew whenever the list is another one (a roster or settings change).
+function module:dispelPollOrder()
+    if self.dispelOrderOf ~= self.dispelMembers then
+        local order = {}
+        for _, member in pairs(self.dispelMembers) do
+            tinsert(order, member)
+        end
+        table.sort(order, function(a, b)
+            if a.number ~= b.number then
+                return a.number < b.number
+            end
+            return a.unit < b.unit
+        end)
+        self.dispelOrder, self.dispelOrderOf, self.dispelCursor = order, self.dispelMembers, 0
+    end
+    return self.dispelOrder
+end
+
+-- The poll: the next members in turn, as many as this frame's share of
+-- the round. `read` holds the members an aura event already had read this
+-- frame; their turn passes without a second read.
+function module:pollDispels(now, read)
+    local order = self:dispelPollOrder()
+    local total = #order
+    local elapsed = 0
+    if self.lastDispelPoll ~= nil then
+        elapsed = now - self.lastDispelPoll
+    end
+    self.lastDispelPoll = now
+    local count
+    count, self.dispelOwed =
+        GroupHealth.dispelPollStep(self.dispelOwed or 0, total, elapsed, POLL_SWEEP, POLL_MAX_PER_FRAME)
+    for _ = 1, count do
+        self.dispelCursor = self.dispelCursor % total + 1
+        local member = order[self.dispelCursor]
+        if not read[member] then
+            self:checkDispel(member)
+        end
+    end
+end
+
+-- The once-per-frame work: the members an aura event marked since the
+-- last frame, the poll's share of the others, then the repeat, one member
+-- per check and only while nothing else is queued or playing (like the
+-- health repeat), so it never holds back other speech.
 function module:checkDispels()
     if not dispelSetting("enabled") then
         self.dispelDirty = {}
+        self.lastDispelPoll = nil
         return
     end
-    if next(self.dispelDirty) ~= nil then
-        local dirty = self.dispelDirty
+    local dirty = self.dispelDirty
+    if next(dirty) ~= nil then
         self.dispelDirty = {}
         for member in pairs(dirty) do
             -- a member dropped by a roster change since the mark is not read
@@ -307,6 +364,7 @@ function module:checkDispels()
         end
     end
     local now = GetTime()
+    self:pollDispels(now, dirty)
     if self.nextDispelRepeat ~= nil and now < self.nextDispelRepeat then
         return
     end

@@ -62,7 +62,7 @@ When a watched member gets a debuff that you can dispel, you hear the debuff's t
 
 Who is watched for debuffs has its own Watch Party (on) and Watch Raid (off) switches under Dispellable Debuffs, independent of the monitor's. Include Yourself and the raid groups are the monitor's, and the numbers are the same. In a raid with only Watch Party on, your own raid group is watched under its raid numbers, so a number names the same person for both.
 
-- A member is said when they get a new debuff, at once.
+- A member is said when they get a new debuff, at once. WowVision looks at every watched member about ten times a second, so this also works where the game sends addons no word of a changed debuff, as in some instances.
 - While the debuff stays on them, they are said again at the interval of Repeat Every, as long as WowVision has nothing else to say. The repeat only starts after a new debuff, and it stops as soon as the member carries none.
 - Nothing is ever said for a member who carries no debuff you can dispel. A debuff that is removed or runs out is not announced.
 - The type is the game's own word, the same in and out of combat. In combat the game lets addons speak this word but not shorten it, so there is no one-letter form.
