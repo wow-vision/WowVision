@@ -262,6 +262,8 @@ Zustände:
 
 Die globale Abklingzeit zählt nie. Solange der Zauber in Abklingzeit ist oder aufgeladen wird, prüft die Regel ihn etwa zehnmal pro Sekunde, weil das Spiel kein Ereignis sendet, wenn eine Abklingzeit endet.
 
+Eine kurze Sperre, die etwas anderes auf den Zauber legt, etwa ein Schuss mit deinem Zauberstab, zählt ebenfalls nicht: Eine Abklingzeit von höchstens zwei Sekunden wird ignoriert. Wo das Spiel die Länge einer Abklingzeit verbirgt (im Kampf und in Instanzen auf Retail), wird eine Abklingzeit, die nicht mit deinem eigenen Wirken des Zaubers begonnen hat, deshalb etwa zwei Sekunden nach ihrem Beginn gesagt.
+
 ### Regeltyp: Zauber-Proc-Regel
 
 Eine Proc-Regel folgt dem Leuchten, das das Spiel um einen Zauber zeichnet, wenn er procct.

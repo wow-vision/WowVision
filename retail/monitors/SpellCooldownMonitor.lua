@@ -19,12 +19,23 @@ local secrets = WowVision.secrets
 -- a string that is secret in combat but speakable. Nothing here compares or
 -- measures a secret.
 --
+-- Not every active cooldown that is not the global one is the spell's own.
+-- A player reported (2026-11-20) a Ready alert at every shot of a wand: the
+-- shot locks other spells for a moment, the game reports that as an active
+-- cooldown without the global cooldown's mark, and the rule walked On
+-- Cooldown and back to Ready each time. What the game reports there is not
+-- measured; the rule tells the two apart by length (isOwnCooldown).
+--
 -- Procs are the spell activation overlay (the glow): its events carry a
 -- plain spell id.
 local monitors = WowVision.monitors
 
 -- How often a rule on a cooldown asks the plain flag whether it ended.
 local POLL_SECONDS = 0.1
+-- A cooldown no longer than this is a lockout from something else (a wand
+-- shot), not the spell's own cooldown. Above the global cooldown and the
+-- speed of a wand, below any cooldown worth a rule.
+local LOCKOUT_SECONDS = 2
 -- The viewers whose spells the picker offers: the cooldown ones.
 local SPELL_VIEWERS = { "EssentialCooldownViewer", "UtilityCooldownViewer" }
 
@@ -318,6 +329,10 @@ function SpellCooldownStateRule:initialize(config)
     -- Whether the active cooldown is only the global one, as the last
     -- cooldown event said.
     self._gcdOnly = false
+    -- When the cooldown now active was first seen, and when the player
+    -- last cast the spell: our own clock, never the game's secret times.
+    self._activeSince = nil
+    self._castAt = nil
     self._name = nil
     self._nameFor = nil
 end
@@ -356,6 +371,43 @@ function SpellCooldownStateRule:noteCooldownEvent()
     self._gcdOnly = plainBool(cooldown.isActive) == true and plainBool(cooldown.isOnGCD) == true
 end
 
+-- The player cast a spell. Ours (by id, or by name: an override casts
+-- under another id) starts a cooldown that is the spell's own, however the
+-- game describes it. Returns whether it was ours.
+function SpellCooldownStateRule:noteCast(spellID)
+    if self.spell == nil or spellID == nil or secrets.isSecret(spellID) then
+        return false
+    end
+    local name = self:spellName()
+    if spellID == self.spell or (name ~= nil and spellNameOf(spellID) == name) then
+        self._castAt = GetTime()
+        return true
+    end
+    return false
+end
+
+-- Whether an active cooldown that is not the global one is the spell's own
+-- and not a short lockout:
+-- - the player has just cast the spell: its own;
+-- - the game gives the length plainly: its own when longer than a lockout;
+-- - the length is secret (in combat, in instances): its own once it has
+--   outlasted a lockout by our clock. Until then nothing is said, and a
+--   lockout ends without a word.
+function SpellCooldownStateRule:isOwnCooldown(cooldown)
+    local now = GetTime()
+    if self._activeSince == nil then
+        self._activeSince = now
+    end
+    if self._castAt ~= nil and now - self._castAt <= LOCKOUT_SECONDS then
+        return true
+    end
+    local duration = cooldown.duration
+    if not secrets.isSecret(duration) and type(duration) == "number" then
+        return duration > LOCKOUT_SECONDS
+    end
+    return now - self._activeSince >= LOCKOUT_SECONDS
+end
+
 -- The state from the plain flags: a real cooldown is On Cooldown; a charge
 -- set recharging while a charge remains is Charging; anything else Ready.
 function SpellCooldownStateRule:readState()
@@ -366,9 +418,20 @@ function SpellCooldownStateRule:readState()
     local active = cooldown ~= nil and plainBool(cooldown.isActive) == true
     if not active then
         self._gcdOnly = false
+        self._activeSince = nil
+        -- the cast spoke for the cooldown that has just ended, not the next
+        if self:getCurrentState() == "on_cooldown" then
+            self._castAt = nil
+        end
     end
     if active and not self._gcdOnly then
-        return "on_cooldown"
+        -- Once On Cooldown it stays so until the flag drops. A rule that
+        -- has not settled yet takes what it finds: waiting would announce
+        -- a cooldown that was already running at login.
+        local current = self:getCurrentState()
+        if current == "on_cooldown" or current == nil or self:isOwnCooldown(cooldown) then
+            return "on_cooldown"
+        end
     end
     local charges = chargesOf(self.spell)
     if hasCharges(charges) and plainBool(charges.isActive) == true then
@@ -413,6 +476,8 @@ end
 function SpellCooldownStateRule:reset()
     monitors.StateRule.reset(self)
     self._gcdOnly = false
+    self._activeSince = nil
+    self._castAt = nil
 end
 
 function SpellCooldownStateRule:getLabel()
@@ -575,9 +640,13 @@ local function ensureEvents()
     for _, event in ipairs({ "SPELL_UPDATE_COOLDOWN", "SPELL_UPDATE_CHARGES", "SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", "SPELL_ACTIVATION_OVERLAY_GLOW_HIDE", "PLAYER_ENTERING_WORLD" }) do
         pcall(eventFrame.RegisterEvent, eventFrame, event)
     end
-    eventFrame:SetScript("OnEvent", function(_, event, spellID)
+    pcall(eventFrame.RegisterUnitEvent, eventFrame, "UNIT_SPELLCAST_SUCCEEDED", "player")
+    eventFrame:SetScript("OnEvent", function(_, event, spellID, _, castSpellID)
         for monitor in pairs(live) do
-            if event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" then
+            if event == "UNIT_SPELLCAST_SUCCEEDED" then
+                -- unit, cast GUID, spell id
+                monitor:onCast(castSpellID)
+            elseif event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" then
                 monitor:onCooldownEvent(event)
             elseif event == "SPELL_ACTIVATION_OVERLAY_GLOW_SHOW" then
                 monitor:onGlow(spellID, true)
@@ -617,6 +686,19 @@ function SpellCooldownMonitor:onCooldownEvent(event)
     end
 end
 
+-- The player cast a spell: a rule on it knows the cooldown that follows is
+-- the spell's own, whichever of the two events comes first.
+function SpellCooldownMonitor:onCast(spellID)
+    if not self.enabled then
+        return
+    end
+    for _, rule in ipairs(self.rules or {}) do
+        if rule.enabled and rule.noteCast ~= nil and rule:noteCast(spellID) then
+            rule:evaluate()
+        end
+    end
+end
+
 function SpellCooldownMonitor:onGlow(spellID, shown)
     if not self.enabled then
         return
@@ -637,6 +719,8 @@ function SpellCooldownMonitor:settle()
                 rule:forget()
             end
             rule._gcdOnly = false
+            rule._activeSince = nil
+            rule._castAt = nil
             if rule.settle ~= nil then
                 rule:settle()
             elseif rule.evaluate ~= nil then
@@ -647,7 +731,9 @@ function SpellCooldownMonitor:settle()
 end
 
 -- Each tick: settle when dirty; otherwise poll the cooldown rules a few
--- times a second, since the end of a cooldown sends no event.
+-- times a second, since the end of a cooldown sends no event. A rule that
+-- is waiting to see whether an active cooldown outlasts a lockout is
+-- polled too.
 function SpellCooldownMonitor:update()
     if not self.enabled then
         return
@@ -665,7 +751,7 @@ function SpellCooldownMonitor:update()
     for _, rule in ipairs(self.rules or {}) do
         if rule.enabled and rule.evaluate ~= nil then
             local state = rule:getCurrentState()
-            if state == "on_cooldown" or state == "charging" or state == nil then
+            if state == "on_cooldown" or state == "charging" or state == nil or rule._activeSince ~= nil then
                 rule:evaluate()
             end
         end

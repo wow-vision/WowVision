@@ -262,6 +262,8 @@ States:
 
 The global cooldown never counts. While the spell is on cooldown or charging, the rule checks it about ten times a second, because the game sends no event when a cooldown ends.
 
+A short lockout that something else puts on the spell, such as a shot of your wand, does not count either: a cooldown of two seconds or less is ignored. Where the game hides the length of a cooldown (in combat and in instances on Retail), a cooldown that did not start with your own cast of the spell is therefore said about two seconds after it began.
+
 ### Rule type: Spell Proc Rule
 
 A proc rule follows the glow the game draws around a spell when it procs.

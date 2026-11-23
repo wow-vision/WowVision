@@ -2058,7 +2058,7 @@ WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {
         monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
 
         -- A real cooldown: the event says so, with the time left in our words
-        fakeCooldowns[22812] = { isActive = true, isEnabled = true, remaining = 49 }
+        fakeCooldowns[22812] = { isActive = true, isEnabled = true, duration = 60, remaining = 49 }
         monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
         t:assertEqual(fired[#fired], "Barkskin On Cooldown")
         t:assertEqual(rule:currentText(), "Barkskin, On Cooldown, 49 seconds")
@@ -2099,7 +2099,7 @@ WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {
         monitor:onCooldownEvent("SPELL_UPDATE_CHARGES")
         t:assertEqual(chargedFired[#chargedFired], "Fire Blast Charging")
         t:assertEqual(charged:currentText(), "Fire Blast, Charging, 1 charges, 8 seconds")
-        fakeCooldowns[108853] = { isActive = true, isEnabled = true, remaining = 8 }
+        fakeCooldowns[108853] = { isActive = true, isEnabled = true, duration = 10, remaining = 8 }
         fakeCharges[108853].currentCharges = 0
         monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
         t:assertEqual(chargedFired[#chargedFired], "Fire Blast On Cooldown")
@@ -2111,6 +2111,115 @@ WowVision.testing.testRunner:addSuite("SpellCooldownMonitor", {
         monitor:update()
         t:assertEqual(chargedFired[#chargedFired], "Fire Blast Ready")
         GetTime = savedGetTime
+    end,
+    ["a short lockout such as a wand shot is not the spell's cooldown"] = function(t)
+        local savedGetTime = GetTime
+        local now = 900
+        GetTime = function()
+            return now
+        end
+        local monitor = WowVision.monitors:create("SpellCooldown", {})
+        monitor.class:getField("rules"):addElement(monitor, { type = "SpellCooldownState", spell = 22812 })
+        local rule = monitor.rules[1]
+        local fired = {}
+        for _, state in ipairs({ "ready", "on_cooldown" }) do
+            local alert = rule.class:getField(state):getAlert(rule)
+            alert:setEnabled(true)
+            for _, output in ipairs(alert.outputs) do
+                if output.key == "tts" then
+                    output:setEnabled(true)
+                    output.onFire = function(_, message)
+                        tinsert(fired, message.text)
+                    end
+                end
+            end
+        end
+        local function tick(seconds)
+            now = now + seconds
+            monitor:update()
+        end
+        local body = function()
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "ready")
+
+            -- The length is plain and short: five shots, not a word
+            for _ = 1, 5 do
+                fakeCooldowns[22812] = { isActive = true, isEnabled = true, duration = 1.5, remaining = 1 }
+                monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+                tick(0.5)
+                tick(0.5)
+                t:assertEqual(rule:getCurrentState(), "ready")
+                t:assertEqual(rule:currentText(), "Barkskin, Ready")
+                fakeCooldowns[22812] = nil
+                tick(0.6)
+            end
+            t:assertEqual(#fired, 0, "plain short lockouts")
+
+            -- The length is secret (no number to read): our clock decides.
+            -- A lockout ends before it counts...
+            for _ = 1, 3 do
+                fakeCooldowns[22812] = { isActive = true, isEnabled = true, remaining = 1 }
+                monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+                tick(0.7)
+                tick(0.7)
+                fakeCooldowns[22812] = nil
+                tick(0.2)
+            end
+            t:assertEqual(#fired, 0, "secret short lockouts")
+
+            -- ...a cooldown that outlasts one is announced then, and its end too
+            fakeCooldowns[22812] = { isActive = true, isEnabled = true, remaining = 40 }
+            monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+            tick(1.0)
+            t:assertEqual(#fired, 0)
+            tick(1.1)
+            t:assertEqual(fired[#fired], "Barkskin On Cooldown")
+            fakeCooldowns[22812] = nil
+            tick(0.2)
+            t:assertEqual(fired[#fired], "Barkskin Ready")
+            t:assertEqual(#fired, 2)
+
+            -- The player's own cast needs no wait, even with a secret length,
+            -- whichever event comes first
+            fakeCooldowns[22812] = { isActive = true, isEnabled = true, remaining = 40 }
+            monitor:onCast(22812)
+            t:assertEqual(fired[#fired], "Barkskin On Cooldown")
+            t:assertEqual(#fired, 3)
+            fakeCooldowns[22812] = nil
+            tick(0.2)
+            t:assertEqual(#fired, 4)
+            fakeCooldowns[22812] = { isActive = true, isEnabled = true, remaining = 40 }
+            monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+            t:assertEqual(#fired, 4, "the cooldown event came first: still waiting")
+            monitor:onCast(22812)
+            t:assertEqual(fired[#fired], "Barkskin On Cooldown")
+            fakeCooldowns[22812] = nil
+            tick(0.2)
+            t:assertEqual(fired[#fired], "Barkskin Ready")
+            t:assertEqual(#fired, 6)
+
+            -- Another spell's cast, a wand's Shoot, proves nothing
+            fakeCooldowns[22812] = { isActive = true, isEnabled = true, remaining = 1 }
+            monitor:onCast(5019)
+            monitor:onCooldownEvent("SPELL_UPDATE_COOLDOWN")
+            tick(0.5)
+            fakeCooldowns[22812] = nil
+            tick(0.2)
+            t:assertEqual(#fired, 6)
+
+            -- A cooldown already running when the rule settles is taken as it is
+            fakeCooldowns[22812] = { isActive = true, isEnabled = true, remaining = 40 }
+            monitor._trackingDirty = true
+            monitor:update()
+            t:assertEqual(rule:getCurrentState(), "on_cooldown")
+            t:assertEqual(#fired, 6, "settled silently")
+        end
+        local ok, err = pcall(body)
+        fakeCooldowns[22812] = nil
+        GetTime = savedGetTime
+        if not ok then
+            error(err, 0)
+        end
     end,
     ["a proc rule follows the glow"] = function(t)
         local monitor = WowVision.monitors:create("SpellCooldown", {})
