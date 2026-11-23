@@ -45,7 +45,22 @@ testRunner:addSuite("GroupHealth", {
         local voices = GroupHealth.voices
         t:assertEqual(voices:get("hedda").lowEnd, GroupHealth.END_PAUSE)
         t:assertEqual(voices:get("katja").lowEnd, GroupHealth.END_PAUSE)
-        t:assertEqual(voices:get("zira").lowEnd, "")
+        t:assertEqual(voices:get("zira").lowEnd, GroupHealth.END_PAUSE)
+        local bare = GroupHealth.VoiceProfiles:new():register({
+            key = "bare",
+            match = "bare",
+            low = { 10, 8, 5, 3, 0, -2, -5, -7, -10 },
+            high = { -3, -6, -8, -10 },
+        })
+        t:assertEqual(bare.lowEnd, "")
+    end,
+
+    -- A <silence> tag lets SAPI play the end of the word in front of it at
+    -- the voice's own volume, whatever the <volume> tag says: a blip in
+    -- every silent copy (logic.lua, END_PAUSE).
+    ["voices: the pause is the pron pause, never a silence tag"] = function(t)
+        t:assertEqual(GroupHealth.END_PAUSE, ' <pron sym="_"/>')
+        t:assertNil(string.find(GroupHealth.END_PAUSE, "silence", 1, true))
     end,
 
     ["voices: registration refuses a profile that cannot work"] = function(t)

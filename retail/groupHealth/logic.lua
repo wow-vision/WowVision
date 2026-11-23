@@ -222,24 +222,35 @@ end
 -- audible number off: the volume drops to 0 where the next word starts,
 -- while the number is still sounding (Hedda: 60 ms heard instead of 88, at
 -- nearly full loudness, no fade). A short pause after the number lets it
--- end as it would alone. Measured offline through SAPI, 2026-11-10, on
--- Hedda, Zira and Katja: 5 ms gives the whole number with its natural fade
--- and the shortest announcement (about 0.05 s longer than without the
--- pause; 1 or 2 ms make SAPI add a longer pause of its own, about 0.1 s);
--- 10 and 20 ms sound the same as 5. A comma, a dash or a quieter instead
--- of a silent HIGH copy did not help. A comma instead of the pause
--- (2026-11-11) keeps the whole number and sits 0.7 semitones higher, but
--- SAPI adds about 0.22 s after it (and 0.08 s before a HIGH number behind
--- a silent comma copy), and by ear it made no difference.
--- The pause lowers both copies, as the silent LOW copy in front of an
--- audible HIGH copy carries it too (measured 2026-11-12 with exactly the
--- game's text, pad included): Hedda's copies stay 5.15 semitones apart
--- (5.3 without the pause), Katja's 2.66 (3.3), but Zira's come to 1.7
--- (5.6), too close for a scale. So the pause is a profile's choice
+-- end as it would alone.
+--
+-- The pause is SAPI's pause phoneme, <pron sym="_"/>, NOT a <silence>
+-- tag. A <silence> tag (used until 2026-11-22) kept the number whole, but
+-- SAPI plays about 20 ms of the word in front of it at the voice's own
+-- volume, ignoring the <volume> tag around it: at normal volumes that
+-- blends into the word, but in a silent copy it is a short, low blip in
+-- every repeat of a healthy member (heard in game; offline the worst of
+-- the 21 pitches: Hedda 892, Zira 2032, Katja 14660, against a spoken
+-- number's peak of about 30000). Any length of <silence> does it, inside or
+-- outside the volume tag. Measured offline through SAPI, 2026-11-22, on
+-- every voice of the test PC at all 21 pitches with exactly the game's
+-- text: the pron pause is silent where it should be (peak 0) and the
+-- number has faded out before the silent HIGH copy starts. It takes about
+-- as long as the 5 ms <silence> did (Hedda +0.01 s, Katja and Zira a
+-- little shorter). The other silent forms that keep the number whole are
+-- slower: a comma adds about 0.07 s, a period, a line break or an ellipsis
+-- about 0.15 s (a comma also sat 0.7 semitones higher, and by ear made no
+-- difference, 2026-11-11). Nothing at all, a bookmark, a dash or other
+-- space characters leave the number cut.
+-- The pause moves the copies, as the silent LOW copy in front of an
+-- audible HIGH copy carries it too (measured 2026-11-22 with exactly the
+-- game's text, pad included): Hedda's copies are 5.17 semitones apart,
+-- Katja's 2.80, Zira's 3.21 (with the <silence> tag only 1.7, which is
+-- why she went without one before). So the pause is a profile's choice
 -- (endPause, the register call sets profile.lowEnd), measured with it.
 -- Must stay on one line in this form: tools/voice-profiles/render.ps1
 -- reads it from here.
-GroupHealth.END_PAUSE = '<silence msec="5"/>'
+GroupHealth.END_PAUSE = ' <pron sym="_"/>'
 
 -- A cache key for a point list, so equal gates share one curve object.
 function GroupHealth.pointsKey(points)
