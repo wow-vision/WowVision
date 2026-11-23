@@ -76,8 +76,10 @@ See [Tooltips](../basics/tooltips.md).
 | Next Buffer | Alt+Right |
 | Previous Buffer Group | Alt+Ctrl+Left |
 | Next Buffer Group | Alt+Ctrl+Right |
+| Speak Player Auras | Alt+Ctrl+B |
+| Player Auras | Alt+Shift+B |
 
-The Invert Item Direction setting in the Buffers module swaps Alt+Up and Alt+Down. See [Buffers](../information/buffers.md).
+The Invert Item Direction setting in the Buffers module swaps Alt+Up and Alt+Down. Speak Player Auras says every buff and debuff on you, and Player Auras opens a list of them. See [Buffers](../information/buffers.md#your-buffs-and-debuffs-at-a-glance).
 
 ## Chat
 

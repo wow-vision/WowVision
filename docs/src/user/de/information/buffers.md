@@ -155,6 +155,23 @@ Jede Zeile wird als die Nachricht gelesen, gefolgt von ihrem Datum und ihrer Uhr
 
 Wenn du die Bezeichnung leerst, heißt der Puffer wie sein Reiter.
 
+## Deine Buffs und Debuffs auf einen Blick
+
+Um zu hören, was auf dir liegt, brauchst du keinen Aura-Puffer anzulegen. Zwei Tasten funktionieren überall im Spiel und richten nichts ein:
+
+| Aktion | Standardtaste | Was sie bewirkt |
+|---|---|---|
+| Spieler-Auren ansagen (Speak Player Auras) | Alt+Strg+B | Sagt jeden Buff auf dir an, dann jeden Debuff |
+| Spieler-Auren (Player Auras) | Alt+Umschalt+B | Öffnet eine kurze Liste deiner Buffs und Debuffs |
+
+Spieler-Auren ansagen nennt jede Gruppe mit ihrer Anzahl und danach ihre Auren nacheinander, jede so, wie der Aura-Puffer sie sagt: den Namen, die Stapel, wenn sie Stapel hat, die verbleibende Zeit, wenn sie eine Dauer hat, und bei einem Debuff seine Bannart. Eine Gruppe ohne Einträge sagt das stattdessen. Zum Beispiel: „Spieler-Buffs: 2. Machtwort: Seelenstärke, noch 59 Min. Erneuerung, 2 Stapel, noch 12 Sek. Spieler-Debuffs, keine“.
+
+Spieler-Auren öffnet ein Fenster mit zwei Tabstopps, deinen Buffs und deinen Debuffs; Tab und Umschalt+Tab wechseln zwischen ihnen, die Pfeiltasten zwischen den Auren eines Tabstopps. Jede Zeile ist eine Aura, gelesen wie oben. Die Leertaste liest den ganzen Tooltip der Aura vor, auch ihre Beschreibung, und Umschalt+Pfeil runter und Umschalt+Pfeil hoch gehen ihn Zeile für Zeile durch, siehe [Tooltips](../basics/tooltips.md). Esc schließt das Fenster. Die Liste hält sich von selbst aktuell, solange sie offen ist. Die verbleibende Zeit wird gelesen, wenn du bei einer Aura ankommst, und nicht noch einmal gesagt, während sie herunterzählt.
+
+Diese Tasten lesen deine Auren mit demselben Code wie der Aura-Puffer, funktionieren also auf Retail und WoW: Forever im Kampf und in Instanzen auf dieselbe Weise (siehe das Ende von [Aura-Puffer](#aura-puffer)). Sie lesen nur dich: Für dein Ziel, deinen Fokus oder deinen Begleiter und für Filter legst du einen Aura-Puffer an. Die beiden Tasten ändern keinen deiner Puffer, und nichts wird gespeichert.
+
+Der Befehl `/wv auras` öffnet die Liste, `/wv auras say` sagt jeden Buff und Debuff an, und `/wv auras count` sagt nur, wie viele es sind, siehe [Befehle](../reference/commands.md).
+
 ## Elemente und was sie anzeigen können
 
 Ein Element in einem statischen Puffer zeigt ein „Ding“, das WowVision Objekttyp nennt. Wenn du ein Element hinzufügst, wählst du den Typ aus einer Liste. Manche Typen brauchen etwas mehr Information, sogenannte Parameter.
@@ -241,7 +258,7 @@ Die gesamte Pufferverwaltung läuft über das WowVision-Menü. Das Menü ist die
 ### Die Puffereinstellungen öffnen
 
 1. Drücke Umschalt+F1 (oder gib `/wv` ein), um das WowVision-Menü zu öffnen.
-2. Gehe zu Puffer und drücke Eingabe. Der Bildschirm zeigt in dieser Reihenfolge einen Schalter Aktiviert, eine Schaltfläche namens Puffer gefolgt von der Zahl der Gruppen, zum Beispiel „Puffer (1)“, und die Einstellung Elementrichtung umkehren.
+2. Gehe zu Puffer und drücke Eingabe. Der Bildschirm zeigt in dieser Reihenfolge einen Schalter Aktiviert, eine Schaltfläche namens Spieler-Auren (die Einstellungen der beiden Tasten aus [Deine Buffs und Debuffs auf einen Blick](#deine-buffs-und-debuffs-auf-einen-blick)), eine Schaltfläche namens Puffer gefolgt von der Zahl der Gruppen, zum Beispiel „Puffer (1)“, und die Einstellung Elementrichtung umkehren.
 3. Drücke Eingabe auf Puffer (1). Du siehst deine Gruppen, je eine Schaltfläche, gefolgt von einer Schaltfläche Hinzufügen.
 
 Mit Esc gehst du einen Bildschirm zurück.
@@ -355,6 +372,7 @@ Der Bildschirm Puffer im WowVision-Menü hat:
 | Einstellung | Standard | Was sie bewirkt |
 |---|---|---|
 | Aktiviert | An | Schaltet die Pufferfunktion ein oder aus (die Alt-Tasten funktionieren nicht, solange sie aus ist) |
+| Spieler-Auren | | Eine Schaltfläche zu den Einstellungen der beiden Tasten Spieler-Auren, der Liste und des Befehls `/wv auras`: Aktiviert (An; Aus schaltet alle aus) und Buchstaben-Navigation (Aus; An, springen die Buchstabentasten der Liste zum nächsten Eintrag, der mit dem Buchstaben beginnt) |
 | Puffer | eine Gruppe | Die Liste der Gruppen |
 | Elementrichtung umkehren | Aus | Vertauscht Alt+Pfeil hoch und Alt+Pfeil runter, sodass Alt+Pfeil hoch Richtung neuestes Element geht |
 | Immer oben beginnen | Aus | Das erste Alt+Pfeil runter, nachdem du Alt losgelassen hast, führt zum ersten Element. Solange du Alt gedrückt hältst, gehst du mit jedem Pfeil runter ein Element weiter. Auch wenn du zu einem Puffer oder einer Gruppe wechselst, stehst du auf dem ersten Element. Alt+Pfeil hoch geht weiter von dort aus, wo du zuletzt warst. Mit Elementrichtung umkehren sind die beiden Pfeile vertauscht |
@@ -369,6 +387,7 @@ Die Einstellungen der Dinge, die du hinzufügst (Gruppe, Puffer, Element), sind 
 | Gruppen, statische und Chat-Reiter-Puffer | Ja | Ja | Ja | Ja | Ja |
 | Verfolgter Puffer | Ja | Ja | Ja | Nein | Nein |
 | Aura-Puffer | Ja | Ja | Ja | Ja | Ja |
+| Spieler-Auren ansagen und die Liste Spieler-Auren | Ja | Ja | Ja | Ja | Ja |
 | Aura-Puffer-Filter mit Egal und Nur diese | Ja | Ja | Ja | Ja | Ja |
 | Aura-Puffer-Filter mit Ohne diese | Nur Abbrechbar | Nur Abbrechbar | Nur Abbrechbar | Alle Filter | Alle Filter |
 | Tooltip einer Aura mit den Tooltip-Tasten lesen | Ja | Ja | Ja | Ja | Ja |

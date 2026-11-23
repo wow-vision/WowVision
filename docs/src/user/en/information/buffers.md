@@ -155,6 +155,23 @@ Each line is read as the message followed by its date and time. The buffer keeps
 
 If you clear the Label, the buffer is named after its tab.
 
+## Your buffs and debuffs at a glance
+
+To hear what is on you, you do not need to build an aura buffer. Two keys work from anywhere in the game, and they set nothing up:
+
+| Action | Default key | What it does |
+|---|---|---|
+| Speak Player Auras | Alt+Ctrl+B | Says every buff on you, then every debuff |
+| Player Auras | Alt+Shift+B | Opens a short list of your buffs and debuffs |
+
+Speak Player Auras says each group with its number, then its auras one after the other, each the way the aura buffer says it: the name, the stacks when it has stacks, the time left when it has a duration, and for a debuff its dispel type. A group with nothing in it says so instead. For example: "Player Buffs: 2. Power Word: Fortitude, 59 minutes remaining. Renew, 2 stacks, 12 seconds remaining. Player Debuffs, none".
+
+Player Auras opens a window with two tab stops, your buffs and your debuffs; Tab and Shift+Tab move between them, the arrow keys between the auras of a stop. Each line is one aura, read as above. Space reads the aura's whole tooltip, its description included, and Shift+Down and Shift+Up go through it line by line, see [Reading Tooltips](../basics/tooltips.md). Escape closes the window. The list keeps itself up to date while it is open. The time left is read when you arrive on an aura, not said again as it ticks down.
+
+These keys read your auras with the same code as the aura buffer, so they work on Retail and WoW: Forever in combat and in instances in the same way (see the end of [Aura buffer](#aura-buffer)). They only read you: for your target, focus or pet, and for filters, build an aura buffer. The two keys change none of your buffers, and nothing is saved.
+
+The command `/wv auras` opens the list, `/wv auras say` says every buff and debuff, and `/wv auras count` says only how many there are, see [Commands](../reference/commands.md).
+
 ## Items and the things they can show
 
 An item in a static buffer shows one "thing", which WowVision calls an object type. When you add an item you pick the type from a list. Some types need a little more information, called parameters.
@@ -241,7 +258,7 @@ All buffer setup happens in the WowVision menu. The menu is the same keyboard-dr
 ### Opening the buffer settings
 
 1. Press Shift+F1 (or type `/wv`) to open the WowVision menu.
-2. Move to Buffers and press Enter. The screen shows an Enabled toggle, a button named Buffers followed by the number of groups, for example "Buffers (1)", and the Invert Item Direction setting, in that order.
+2. Move to Buffers and press Enter. The screen shows an Enabled toggle, a button named Player Auras (the settings of the two keys of [Your buffs and debuffs at a glance](#your-buffs-and-debuffs-at-a-glance)), a button named Buffers followed by the number of groups, for example "Buffers (1)", and the Invert Item Direction setting, in that order.
 3. Press Enter on Buffers (1). You see your groups, one button each, followed by an Add button.
 
 Pressing Escape goes back one screen.
@@ -355,6 +372,7 @@ The Buffers screen of the WowVision menu has:
 | Setting | Default | What it does |
 |---|---|---|
 | Enabled | On | Turns the buffer feature on or off (the Alt keys stop working while it is off) |
+| Player Auras | | A button to the settings of the two Player Auras keys, the list and the `/wv auras` command: Enabled (on; off switches all of them off) and Letter Navigation (off; on, the letter keys of the list jump to the next entry that starts with the letter) |
 | Buffers | one group | The list of groups |
 | Invert Item Direction | Off | Swaps Alt+Up and Alt+Down so that Alt+Up moves toward the newest item |
 | Always Start at Top | Off | The first Alt+Down after you let go of Alt goes to the first item. While you hold Alt, each Down moves one item further. When you switch to a buffer or group, you also land on its first item. Alt+Up moves on from where you last were. With Invert Item Direction the two arrows are swapped |
@@ -369,6 +387,7 @@ Settings of the things you add (group, buffer, item) are described in the sectio
 | Groups, Static and Chat Tab buffers | Yes | Yes | Yes | Yes | Yes |
 | Tracked buffer | Yes | Yes | Yes | No | No |
 | Aura buffer | Yes | Yes | Yes | Yes | Yes |
+| Speak Player Auras and the Player Auras list | Yes | Yes | Yes | Yes | Yes |
 | Aura buffer filters with Any and Only | Yes | Yes | Yes | Yes | Yes |
 | Aura buffer filters with Not | Cancelable only | Cancelable only | Cancelable only | All filters | All filters |
 | Reading an aura's tooltip with the tooltip keys | Yes | Yes | Yes | Yes | Yes |
