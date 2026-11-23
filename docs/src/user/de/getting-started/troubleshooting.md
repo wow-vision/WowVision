@@ -61,6 +61,7 @@ Wenn eine Taste nichts tut, prüfe diese Ursachen.
 6. Sku ist geladen. WowVision überlässt einige Tasten Sku. Siehe unten.
 7. Du hast die Taste umbelegt oder entfernt. Manche Belegungen brauchen mindestens eine Taste und lassen sich nicht leeren, die meisten aber schon. Die [Tastenreferenz](../reference/keybindings.md) listet die Standardwerte auf.
 8. Buchstaben springen, statt etwas auszulösen. Im WowVision-Menü, in Kontextmenüs und in Dropdown-Listen springt das Tippen eines Buchstabens zum nächsten Eintrag, der damit beginnt. Das lässt sich mit Buchstaben-Navigation in Menüs im Modul Benutzeroberfläche ausschalten.
+9. Das Spiel ist nicht darauf eingestellt, eigene Skripte auszuführen. Dann funktioniert keine Taste von WowVision, und WowVision sagt dir das einige Sekunden, nachdem du die Welt betreten hast. Das passiert, wenn WowVision vor deinem ersten Login in diese Spielversion installiert wurde, oder von Hand. Schließe das Spiel, starte den WowVision-Updater, wähle Einrichtung abschließen und starte das Spiel neu. Siehe [Nach deinem ersten Login](./installer.md#nach-deinem-ersten-login). Hast du von Hand installiert, siehe [Dem Spiel Skripte erlauben](./manual-installation.md#dem-spiel-skripte-erlauben). Die Frage des Spiels, ob ein eigenes Skript ausgeführt werden soll, hilft nicht weiter: Ihre Schaltfläche Ja scheitert mit einem Fehler.
 
 ### Esc und das Schließen von Fenstern
 

@@ -81,6 +81,25 @@ WowVision bringt Texte auf Englisch, Deutsch und Französisch mit; die Sprache d
 
 Die Sounds, Beacon-Töne und aufgenommenen Stimmen (Stimmenpakete) liegen ebenfalls im Ordner WowVision. Wenn du jemals ein Problem mit einem "fehlenden Sound" hast, liegt es an einer beschädigten oder unvollständigen Entpackung: Lösche den Ordner und entpacke das Zip erneut.
 
+## Dem Spiel Skripte erlauben
+
+Die Tasten von WowVision führen Skripte aus, und das Spiel führt sie nur aus, wenn eine seiner Einstellungen an ist. Der Installer schreibt diese Einstellung. Installierst du von Hand, schreibst du sie selbst:
+
+1. Starte das Spiel und logge dich einmal ein. Das Spiel legt dann den Ordner deines Accounts an.
+2. Schließe das Spiel vollständig. Das Spiel schreibt die Datei beim Schließen neu, eine Änderung bei laufendem Spiel geht also verloren.
+3. Öffne den Ordner deiner Spielversion, dann WTF, dann Account, dann den Ordner mit dem Namen deines Accounts (nicht den namens SavedVariables).
+4. Öffne die Datei config-cache.wtf in einem einfachen Texteditor.
+5. Beginnt eine Zeile mit SET AllowDangerousScripts, ersetze sie durch die Zeile unten. Sonst füge die Zeile am Ende der Datei an.
+6. Speichere die Datei und starte das Spiel.
+
+Die Zeile lautet:
+
+```
+SET AllowDangerousScripts "1"
+```
+
+Bis das erledigt ist, tun die Tasten von WowVision nichts, und WowVision sagt dir das einige Sekunden, nachdem du die Welt betreten hast. Die Frage des Spiels, ob ein eigenes Skript ausgeführt werden soll, hilft nicht weiter: Ihre Schaltfläche Ja scheitert mit einem Fehler.
+
 ## Von Hand aktualisieren
 
 1. Schließe das Spiel vollständig.

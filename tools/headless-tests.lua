@@ -364,6 +364,8 @@ loadAddonFile("core/secrets.lua")
 loadAddonFile("core/secretsTests.lua")
 loadAddonFile("core/crowdControl.lua")
 loadAddonFile("core/crowdControlTests.lua")
+loadAddonFile("core/scriptsCheck.lua")
+loadAddonFile("core/scriptsCheckTests.lua")
 -- The group health monitor's module: loaded against a stand-in module whose settings are a real settings class (as
 -- Module:hasSettings makes them), so a setting's change reaches the module as in the game. The suite stubs the
 -- game's unit functions per test.

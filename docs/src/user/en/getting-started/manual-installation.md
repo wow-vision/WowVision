@@ -81,6 +81,25 @@ WowVision comes with text in English, German and French; the language of your ga
 
 The sounds, beacon tones and recorded voices (voice packs) are inside the WowVision folder too. If you ever see a "missing sound" problem, the cause is a damaged or partial extraction: delete the folder and extract the zip again.
 
+## Letting the game run scripts
+
+WowVision's keys run scripts, and the game runs them only when one of its settings is on. The installer writes that setting. If you install by hand, write it yourself:
+
+1. Start the game and log in once. The game then creates the folder of your account.
+2. Close the game completely. The game rewrites the file when it closes, so a change made while it runs is lost.
+3. Open the folder of your game version, then WTF, then Account, then the folder named after your account (not the one named SavedVariables).
+4. Open the file config-cache.wtf in a plain text editor.
+5. If a line begins with SET AllowDangerousScripts, replace it with the line below. Otherwise add the line at the end of the file.
+6. Save the file and start the game.
+
+The line is:
+
+```
+SET AllowDangerousScripts "1"
+```
+
+Until this is done WowVision's keys do nothing, and WowVision says so a few seconds after you enter the world. The game's own question about running a custom script does not help: its Yes button fails with an error.
+
 ## Updating by hand
 
 1. Close the game completely.

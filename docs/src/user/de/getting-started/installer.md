@@ -4,7 +4,7 @@ Der WowVision-Installer ist ein Windows-Programm, das WowVision für dich instal
 
 - Er findet die World-of-Warcraft-Versionen auf deinem Computer selbst und legt WowVision in den richtigen Ordner jeder Version. Die Ordnerfehler, die unter [Installation von Hand](./manual-installation.md) beschrieben sind, können so nicht passieren.
 - Er passt WowVision an den Patch deines Spiels an, sodass ein Patch WowVision nicht am Laden hindert.
-- Er schaltet die Frage "Dieses Skript ausführen?" des Spiels ab, die sonst manche Befehle unterbricht.
+- Er erlaubt dem Spiel, eigene Skripte auszuführen, was die Tasten von WowVision brauchen. Ohne diese Einstellung antwortet das Spiel auf einen Tastendruck mit seiner Frage "Dieses Skript ausführen?". Ein Addon kann die Einstellung nicht selbst ändern.
 - Er kann das WoW Login Tool installieren, mit dem die Anmelde- und Charakterbildschirme bedienbar werden, und eine Reihe von Addons, die viele Spieler nutzen.
 - Startest du ihn später erneut, aktualisiert er all das.
 
@@ -24,12 +24,13 @@ Gibt es eine neuere Version des Installers selbst, bietet er zuerst "Installer j
 
 ## Der Startbildschirm
 
-Die Überschrift sagt dir, wo du stehst: "WowVision ist noch nicht installiert", "Eine Aktualisierung für WowVision ist verfügbar", "WowVision ist installiert und aktuell" oder "Keine World-of-Warcraft-Installation gefunden". Darunter liegen die Schaltflächen:
+Die Überschrift sagt dir, wo du stehst: "WowVision ist noch nicht installiert", "Eine Aktualisierung für WowVision ist verfügbar", "WowVision ist installiert und aktuell", "Die Einrichtung von WowVision ist noch nicht abgeschlossen" oder "Keine World-of-Warcraft-Installation gefunden". Darunter liegen die Schaltflächen:
 
 - Jetzt installieren: installiert WowVision in die Spielversionen, die der Installer gefunden hat, mit der empfohlenen Einrichtung. Bei einer ersten Installation ist das alles, was du brauchst.
 - Jetzt aktualisieren: aktualisiert WowVision dort, wo es installiert ist, und behält deine bisherige Auswahl bei.
+- Einrichtung abschließen: steht anstelle von Jetzt aktualisieren, wenn nichts zu aktualisieren ist, aber noch eine Spieleinstellung fehlt. Schreibt die Einstellung; das Spiel muss geschlossen sein. Siehe [Nach deinem ersten Login](#nach-deinem-ersten-login).
 - WowVision neu oder für weitere Spielversionen installieren: der längere Weg, auf dem du die Spielversionen, die Ordner und die Bestandteile selbst wählst. Siehe den nächsten Abschnitt.
-- Durchsuchen: erscheint, wenn World of Warcraft nicht gefunden wurde. Wähle deinen World-of-Warcraft-Ordner, einen Spielversions-Ordner wie `_retail_` oder dessen Ordner Interface\AddOns.
+- Durchsuchen: erscheint, wenn World of Warcraft nicht gefunden wurde. Wähle deinen World-of-Warcraft-Ordner, einen Spielversions-Ordner wie `_retail_` oder dessen Ordner Interface\AddOns. Auch der Ordner, in dem dein World-of-Warcraft-Ordner liegt, wird angenommen.
 - Alle Protokolle sammeln: schreibt eine Zip-Datei in deinen Ordner Downloads, mit den gespeicherten Daten von WowVision, den Protokollen des Spiels und dem Protokoll des Installers. Hänge sie an eine Fehlermeldung an.
 
 ## Alles selbst wählen
@@ -63,6 +64,18 @@ Für eine erste Installation in eine Spielversion und für die Spieleinstellunge
 Die letzte Seite sagt "Fertig" oder "Mit Problemen beendet", mit dem Grund für jede Spielversion. Ereignisprotokoll anschauen listet jeden Schritt des Durchgangs Zeile für Zeile auf. Installer schließen beendet ihn.
 
 Starte dann World of Warcraft über Battle.net, oder tippe /reload, wenn das Spiel lief. Mach weiter mit [Das Addon einschalten](./installation.md#das-addon-einschalten) und [Erster Login](./first-login.md#in-der-welt).
+
+## Nach deinem ersten Login
+
+Eine Spieleinstellung lässt sich nicht schreiben, bevor du dich zum ersten Mal in eine Spielversion eingeloggt hast: die, die dem Spiel erlaubt, eigene Skripte auszuführen. Das Spiel speichert sie im Ordner deines Accounts, und diesen Ordner gibt es erst nach dem ersten Login.
+
+Installierst du WowVision vor diesem Login, sagt die letzte Seite, dass noch ein Schritt fehlt. Geh so vor:
+
+1. Starte das Spiel und logge dich einmal ein.
+2. Schließe das Spiel.
+3. Starte den WowVision-Updater. Seine Überschrift lautet "Die Einrichtung von WowVision ist noch nicht abgeschlossen". Wähle Einrichtung abschließen.
+
+Bis dahin funktionieren die Tasten von WowVision in dieser Spielversion nicht, und WowVision sagt dir das einige Sekunden, nachdem du die Welt betreten hast. Startest du den Updater vor dem Login, nennt sein Startbildschirm die Spielversion und wiederholt diese Schritte.
 
 ## Aktualisieren mit dem Updater
 

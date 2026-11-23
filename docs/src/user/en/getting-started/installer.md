@@ -4,7 +4,7 @@ The WowVision Installer is a Windows program that installs WowVision for you and
 
 - It finds the World of Warcraft versions on your computer by itself and puts WowVision in the right folder of each, so the folder mistakes described in [Installing by Hand](./manual-installation.md) cannot happen.
 - It matches WowVision to your game's patch, so a game patch does not stop WowVision from loading.
-- It turns off the game's "run this script?" question, which otherwise interrupts some commands.
+- It lets the game run custom scripts, which WowVision's keys need. Without that setting the game answers a key press with its "run this script?" question. An addon cannot change the setting by itself.
 - It can install the WoW Login Tool, which makes the login and character screens usable, and a set of addons many players use.
 - Run again later, it updates all of it.
 
@@ -24,12 +24,13 @@ If a newer version of the installer itself exists, it first offers "Update the i
 
 ## The opening screen
 
-The heading tells you where you stand: "WowVision is not installed yet", "An update for WowVision is available", "WowVision is installed and up to date", or "No World of Warcraft installation found". Below it are the buttons:
+The heading tells you where you stand: "WowVision is not installed yet", "An update for WowVision is available", "WowVision is installed and up to date", "WowVision setup is not finished", or "No World of Warcraft installation found". Below it are the buttons:
 
 - Install now: installs WowVision into the game versions the installer found, with the recommended setup. On a first install this is all you need.
 - Update now: updates WowVision where it is installed and keeps the choices you made last time.
+- Finish setup: takes the place of Update now when nothing needs updating but a game setting is still missing. It writes the setting; the game has to be closed. See [After your first login](#after-your-first-login).
 - Install WowVision fresh, or for further game versions: the longer way, where you choose the game versions, the folders and the components yourself. See the next section.
-- Browse: shown when World of Warcraft was not found. Select your World of Warcraft folder, a game version folder such as `_retail_`, or its Interface\AddOns folder.
+- Browse: shown when World of Warcraft was not found. Select your World of Warcraft folder, a game version folder such as `_retail_`, or its Interface\AddOns folder. The folder that contains your World of Warcraft folder is accepted too.
 - Collect all logs: writes one zip file to your Downloads folder with WowVision's saved data, the game's logs and the installer's own log. Attach it to a bug report.
 
 ## Choosing everything yourself
@@ -63,6 +64,18 @@ The game has to be closed for a first install into a game version and for the ga
 The last page says "Finished", or "Finished with problems" with the reason for each game version. View event log lists every step of the run, line by line. Close installer ends it.
 
 Then start World of Warcraft from Battle.net, or type /reload if the game was running. Continue with [Switching the addon on](./installation.md#switching-the-addon-on) and [First login](./first-login.md#in-the-world).
+
+## After your first login
+
+One game setting cannot be written before you have logged in to a game version for the first time: the one that lets the game run custom scripts. The game keeps it in your account's folder, and that folder only exists after the first login.
+
+If you install WowVision before that login, the last page says that one step is left. Do this:
+
+1. Start the game and log in once.
+2. Close the game.
+3. Start the WowVision Updater. Its heading says "WowVision setup is not finished". Choose Finish setup.
+
+Until then WowVision's keys do not work in that game version, and WowVision tells you so a few seconds after you enter the world. If you start the updater before the login, its opening screen names the game version and repeats these steps.
 
 ## Updating later
 

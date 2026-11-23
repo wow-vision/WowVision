@@ -61,6 +61,7 @@ If a key does nothing, check these causes.
 6. Sku is loaded. WowVision leaves some keys to Sku. See below.
 7. You rebound or removed the key. Some bindings need at least one key and cannot be emptied, but most can. The [keybinding reference](../reference/keybindings.md) lists the defaults.
 8. Letters jump instead of doing something. In the WowVision menu, in context menus and in dropdown lists, typing a letter jumps to the next entry that starts with it. This can be switched off with Letter Navigation in Menus in the UI module.
+9. The game is not set to run custom scripts. Then none of WowVision's keys work, and WowVision says so a few seconds after you enter the world. This happens when WowVision was installed before your first login to that game version, or by hand. Close the game, start the WowVision Updater, choose Finish setup, and start the game again. See [After your first login](./installer.md#after-your-first-login). If you installed by hand, see [Letting the game run scripts](./manual-installation.md#letting-the-game-run-scripts). The game's own question about running a custom script does not help: its Yes button fails with an error.
 
 ### Escape and closing windows
 

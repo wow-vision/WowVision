@@ -146,6 +146,8 @@ function WowVision:OnEnable()
     end)
     self.fullEnable = true
     self.base:fullEnable()
+    -- Says why the keys are dead when the game does not run custom scripts.
+    WowVision.scriptsCheck.start()
 end
 
 function WowVision:OnDisable()
