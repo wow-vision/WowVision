@@ -163,9 +163,16 @@ local function cardInfo(data)
     return {}
 end
 
+-- A friend's key is the BattleTag; the game hands some friends an empty one,
+-- so those go by their account id, which no two friends share.
 local function cardKey(data, index)
     if data.accountInfo ~= nil then
-        return "card:friend:" .. tostring(data.accountInfo.battleTag or data.friendIndex)
+        local accountInfo = data.accountInfo
+        local battleTag = firstText(accountInfo.battleTag)
+        if battleTag ~= nil then
+            return "card:friend:" .. battleTag
+        end
+        return "card:friend:account:" .. tostring(accountInfo.bnetAccountID or data.friendIndex or index)
     end
     if data.inviteIndex ~= nil then
         local inviteInfo = C_BattleNet.GetFriendInviteInfo(data.inviteIndex)
@@ -179,6 +186,7 @@ local function cardKey(data, index)
     end
     return "card:" .. index
 end
+module.cardKey = cardKey -- for the headless tests
 
 -- A card's own buttons, by the keys the card templates use, for its
 -- context menu: invite (friends, recent allies), summon (Recruit a Friend),

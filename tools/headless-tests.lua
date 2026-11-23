@@ -2575,6 +2575,25 @@ do
     WowVision._popupsTestHarness = nil
     StaticPopupDialogs, ACCEPT, DECLINE = savedDialogs, savedAccept, savedDecline
 end
+-- The Social window: loads against a stand-in window module for its card keys.
+do
+    local savedBase = WowVision.base
+    local stub = { L = WowVision:getLocale() }
+    function stub:setLabel() end
+    function stub:registerWindow() end
+    WowVision.base = {
+        windows = {
+            createModule = function()
+                return stub
+            end,
+        },
+    }
+    loadAddonFile("retail/socialUI.lua")
+    WowVision.base = savedBase
+    WowVision._socialUITestHarness = stub
+    loadAddonFile("retail/socialUITests.lua")
+    WowVision._socialUITestHarness = nil
+end
 loadAddonFile("core/windows/options/layoutPages.lua")
 loadAddonFile("core/windows/options/layoutPagesTests.lua")
 loadAddonFile("core/graph/menuNavTests.lua")
