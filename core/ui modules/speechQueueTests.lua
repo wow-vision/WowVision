@@ -23,10 +23,15 @@ local function loadSpeech(path)
     local module = { L = setmetatable({}, { __index = function(_, key) return key end }) }
     function module:setLabel() end
     function module:setVital() end
+    -- The settings' change handlers by key: a test switches the Speech Queue on with them.
+    local onChange = {}
     function module:hasSettings()
         return {
-            add = function()
-                return { events = { valueChange = { subscribe = function() end } } }
+            add = function(_, def)
+                local subscribe = function(_, _, handler)
+                    onChange[def.key] = handler
+                end
+                return { events = { valueChange = { subscribe = subscribe } } }
             end,
         }
     end
@@ -44,6 +49,7 @@ local function loadSpeech(path)
                 bustForeign = function(text) return text end,
             },
             speechSounds = { attach = function() end },
+            speechTags = WowVision.speechTags,
         },
         C_VoiceChat = {
             SpeakText = function() end,
@@ -61,7 +67,7 @@ local function loadSpeech(path)
     chunk("WowVision", {})
     return module, function()
         return stopped
-    end
+    end, onChange
 end
 
 local suite = {}
@@ -80,3 +86,30 @@ for _, path in ipairs({ "tbc/speech.lua", "mists/speech.lua", "retail/speech.lua
     end
 end
 testRunner:addSuite("SpeechQueueStop", suite)
+
+-- The tagged lines of core/speechTags.lua, through each client's real queue:
+-- the environmental alerts drop their out-of-date lines with them.
+local tagSuite = {}
+for _, path in ipairs({ "tbc/speech.lua", "mists/speech.lua", "retail/speech.lua" }) do
+    tagSuite[path .. ": a tagged line waits with its tag and only its owner drops it"] = function(t)
+        local speech, _, onChange = loadSpeech(path)
+        speech.settings = { voiceID = 0, speechRate = 0, speechVolume = 100 }
+        onChange.speechQueue(nil, nil, nil, true)
+        speech:speak("playing") -- sent at once: the queue holds the lines after it
+        local water, tag = {}, nil
+        speech:withTag({ owner = water }, function()
+            speech:speak("swimming")
+        end)
+        speech:speak("other speech")
+        t:assertEqual(#speech.queue, 2)
+        tag = speech.queue[1].tag
+        t:assertEqual(tag.owner, water)
+        t:assertNil(speech.queue[2].tag)
+        speech:dropQueued({})
+        t:assertEqual(#speech.queue, 2)
+        speech:dropQueued(water)
+        t:assertEqual(#speech.queue, 1)
+        t:assertEqual(speech.queue[1].text, "other speech")
+    end
+end
+testRunner:addSuite("SpeechQueueTags", tagSuite)

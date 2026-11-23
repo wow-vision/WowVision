@@ -92,8 +92,14 @@ function tts:onFire(message)
     if self.db.interrupt then
         WowVision.base.speech:uiStop()
         if WowVision.consts.UI_DELAY > 0 then
+            -- The line is queued later, outside the caller's withTag: it keeps
+            -- the tag it is fired with (core/speechTags.lua).
+            local speech = WowVision.base.speech
+            local tag = speech:currentTag()
             C_Timer.After(0.05, function()
-                WowVision:speak(text, voice)
+                speech:withTag(tag, function()
+                    WowVision:speak(text, voice)
+                end)
             end)
         else
             WowVision:speak(text, voice)

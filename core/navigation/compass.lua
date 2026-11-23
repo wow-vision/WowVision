@@ -5,6 +5,7 @@ local L = module.L
 module:setLabel(L["Environmental Alerts"])
 local pi = math.pi
 local breathSteps = WowVision.breathSteps
+local stateRepeat = WowVision.stateRepeat
 local settings = module:hasSettings()
 
 local directionAlert = module:addAlert({
@@ -258,6 +259,18 @@ settings:add({
     },
 })
 
+-- Seconds before an indoors/outdoors, flying, swimming or diving line is said
+-- again: at a shore, a doorway or a ledge the game flips these states many
+-- times a second (core/navigation/stateRepeat.lua). One delay for all of them.
+settings:add({
+    type = "Number",
+    key = "repeatDelay",
+    label = L["Repeat Delay"],
+    default = 2,
+    min = 0,
+    max = 30,
+})
+
 module:registerEvent("event", "ZONE_CHANGED_NEW_AREA")
 module:registerEvent("event", "ZONE_CHANGED")
 module:registerEvent("event", "ZONE_CHANGED_INDOORS")
@@ -311,13 +324,30 @@ function module:getOutdoorsIndoors()
     return nil
 end
 
+-- A state tracker took a new value over (stateRepeat.update): the line of its
+-- old value still waiting in the speech queue is out of date, and goes
+-- (core/speechTags.lua: each tracker owns its lines). Then the new value's
+-- line, if it has one and it is due. So a run of changes never builds a
+-- backlog, and leaving the water drops a "swimming" not yet heard. Without a
+-- queue of WowVision's own (Vanilla, or the Speech Queue setting off) there is
+-- nothing to drop and the line is just fired.
+local function stateChanged(tracker, alert)
+    local speech = WowVision.base.speech
+    speech:dropQueued(tracker)
+    if alert then
+        speech:withTag({ owner = tracker }, function()
+            alert:fire({})
+        end)
+    end
+end
+
 function module:onEnable()
     self.angle = GetPlayerFacing()
     self.direction = self:getDirection(self.angle)
-    self.outdoorsIndoors = self:getOutdoorsIndoors()
-    self.isFlying = IsFlying()
-    self.isSwimming = IsSwimming()
-    self.isSubmerged = IsSubmerged()
+    self.indoorsState = stateRepeat.new(self:getOutdoorsIndoors())
+    self.flyingState = stateRepeat.new(IsFlying() == true)
+    self.swimmingState = stateRepeat.new(IsSwimming() == true)
+    self.submergedState = stateRepeat.new(IsSubmerged() == true)
     self:hasUpdate(function(self)
         -- GetPlayerFacing is nil inside instances. Only the facing alert
         -- needs it; returning here used to silence the indoors/outdoors,
@@ -334,37 +364,36 @@ function module:onEnable()
             self.angle, self.direction = angle, direction
         end
 
+        local now = GetTime()
+        local delay = self.settings.repeatDelay
+
+        -- nil (neither indoors nor outdoors) keeps the last known state.
         local outdoorsIndoors = self:getOutdoorsIndoors()
-        if outdoorsIndoors ~= self.outdoorsIndoors and outdoorsIndoors ~= nil then
-            if outdoorsIndoors == "outdoors" then
-                outdoorsAlert:fire({})
-            elseif outdoorsIndoors == "indoors" then
-                indoorsAlert:fire({})
+        if outdoorsIndoors ~= nil then
+            local changed, due = stateRepeat.update(self.indoorsState, outdoorsIndoors, now, delay, true)
+            if changed then
+                stateChanged(self.indoorsState, due and (outdoorsIndoors == "outdoors" and outdoorsAlert or indoorsAlert))
             end
-            self.outdoorsIndoors = outdoorsIndoors
         end
 
-        local isFlying = IsFlying()
-        if isFlying ~= self.isFlying then
-            if isFlying then
-                flyingStartedAlert:fire({})
-            else
-                flyingEndedAlert:fire({})
-            end
-            self.isFlying = isFlying
+        local isFlying = IsFlying() == true
+        local changed, due = stateRepeat.update(self.flyingState, isFlying, now, delay, true)
+        if changed then
+            stateChanged(self.flyingState, due and (isFlying and flyingStartedAlert or flyingEndedAlert))
         end
 
-        local isSwimming = IsSwimming()
-        if isSwimming and not self.isSwimming then
-            swimmingAlert:fire({})
+        -- Only going in is spoken; coming out is taken over silently.
+        local isSwimming = IsSwimming() == true
+        changed, due = stateRepeat.update(self.swimmingState, isSwimming, now, delay, isSwimming)
+        if changed then
+            stateChanged(self.swimmingState, due and swimmingAlert)
         end
-        self.isSwimming = isSwimming
 
-        local isSubmerged = IsSubmerged()
-        if isSubmerged and not self.isSubmerged then
-            divingAlert:fire({})
+        local isSubmerged = IsSubmerged() == true
+        changed, due = stateRepeat.update(self.submergedState, isSubmerged, now, delay, isSubmerged)
+        if changed then
+            stateChanged(self.submergedState, due and divingAlert)
         end
-        self.isSubmerged = isSubmerged
 
         self:updateTimerBars()
     end)

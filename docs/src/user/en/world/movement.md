@@ -48,6 +48,8 @@ Inside some instances the game does not tell addons which way you face; the comp
 
 You hear "outdoors" or "indoors" when the game decides that you changed from one to the other, "flying" when you take off on a flying mount, "flying ended" when you land, "swimming" when you enter water, and "diving" when you go under the surface. Walking back out of water does not say anything.
 
+At a shore, a doorway or a ledge the game can switch these states many times a second. So each of them is said again only after Repeat Delay (2 seconds by default, 0 to 30) on the Environmental Alerts screen; one delay covers them all. A change inside the delay waits: when the delay is over and the state is still different from what you heard last, it is said then. Landing within 2 seconds of taking off, for example, says "flying ended" when the 2 seconds are over. A line that is out of date before it is spoken (you left the water while "swimming" still waited behind other speech) is dropped. That last part needs WowVision's Speech Queue (on by default); Classic Era speaks through the game's own queue, where the delay still keeps lines from piling up. Walking back into the water after the delay is said at once.
+
 ### Breath and fatigue
 
 Under water the game shows a breath bar that runs down while you hold your breath. Swim too far out into deep water and a fatigue bar appears. Hunters see a bar while they feign death. Breath Alert speaks the bar's name and how full it is, one line per step down: "Breath 90", "Breath 80", and so on to "Breath 0", when you start to drown. Nothing is said while the bar fills up again after you surface; dive again and the steps count down from wherever the bar is.

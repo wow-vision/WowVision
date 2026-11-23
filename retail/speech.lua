@@ -15,6 +15,8 @@ local settings = module:hasSettings()
 local oldSpeak = C_VoiceChat.SpeakText
 module.queue = {}
 module.speaking = false
+-- Tagged lines: module:withTag, module:dropQueued (core/speechTags.lua).
+WowVision.speechTags.install(module)
 
 -- After a stop the next line cuts a screen reader bridge voice (core/speechInterrupt.lua).
 local handOver = WowVision.speechInterrupt.handOver
@@ -34,7 +36,7 @@ local function pollQueue()
 end
 
 local function enqueue(voice, text, rate, volume)
-    tinsert(module.queue, { voice = voice, text = text, rate = rate, volume = volume })
+    tinsert(module.queue, { voice = voice, text = text, rate = rate, volume = volume, tag = module.queueTag })
     pollQueue()
 end
 

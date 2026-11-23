@@ -12,6 +12,8 @@
   <Script file="falling.lua" />
   <Script file="breathSteps.lua" />
   <Script file="breathTests.lua" />
+  <Script file="stateRepeat.lua" />
+  <Script file="stateRepeatTests.lua" />
   <Script file="compass.lua" />
   <Script file="follow.lua" />
   <Script file="pitchLock.lua" />

@@ -414,7 +414,9 @@ end
 -- A stop replaces the queue table with a new one (tbc/, mists/, retail/
 -- speech.lua) and never takes a line out of the old one, so a line still in
 -- the old table after the swap was never sent. One the queue sent is no
--- longer in it.
+-- longer in it. (speech:dropQueued, core/speechTags.lua, does take lines out,
+-- but only tagged ones: the count's lines are untagged, so a missing line of
+-- ours was sent. Tagging them would break this.)
 enemyCount.RESAY_AFTER = 5
 
 local LostLine = WowVision.Class("EnemyCountLostLine")
