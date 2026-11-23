@@ -1,5 +1,5 @@
 -- WowNav engine by Broesel33 (github.com/Broesel33/WoW_NavigationData, DemoAddon/WowVisionNavigation/NavNetwork.lua at
--- 52c6c83), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
+-- 72777e3), carried in WowVision with his permission. Changes for WowVision: see camelot/wownav/engine/README.md.
 
 -- NavNetwork (schema 7, concept chapters 7, 7a and 8): loader/decoder, continent graph, attachment cells and the
 -- A* search. Replaces the graph, funnel, guidance and zone-by-zone world travel of the old core.
@@ -49,6 +49,29 @@ function N.SetComfort(percent)
     return true
 end
 N.SetComfort(N.COMFORT_DEFAULT)
+
+-- Safety factor (user request 2026-11-23, /vn safety <p>): p percent, 0 to 300, default 0 = off. X = 1 + p/100 is how much longer a safer route may be
+-- than the shortest one (pass (a)). The danger of a link is the length of the link (yd, horizontal) within DANGER_RADIUS of a monster spawn of the
+-- logical targets (classes of kind mob / creature; npc and objects do not count). Values to be confirmed by the user.
+N.SAFETY_DEFAULT, N.SAFETY_MAX = 0, 300
+N.DANGER_RADIUS = 20.0        -- yd: a spawn endangers the part of a link that lies this close to it (aggro range of the usual mobs plus a margin)
+N.DANGER_DZ = 8.0             -- yd: a spawn whose height differs this much from the link at its nearest point does not count (caves, floors)
+N.DANGER_DEDUP = 2.0          -- yd: spawns of the same name this close to each other (several sources of one spawn) count once
+N.DANGER_WEIGHTS = { 30, 8, 2 }   -- cost per yd of danger of the safety passes, strongest first: a long detour for a certain gain, then milder ones
+function N.SetSafety(percent)
+    if type(percent) ~= "number" or percent ~= percent or percent < 0 or percent > N.SAFETY_MAX then return false end
+    N.safety, N.SAFETY_RATIO = percent, 1 + percent / 100
+    return true
+end
+N.SetSafety(N.SAFETY_DEFAULT)
+N.dangerGen = 0               -- counts the changes of the catalogue the spawns come from (the target catalogue bumps it on activation)
+-- The spawns of a zone: function(zoneId) -> token, { {x, y, z (or nil), name}, ... } | nil. The token identifies the data (the zone
+-- keeps its danger table while the token stays). Default: the compact logical catalogue of the target catalogue.
+N.DangerSource = function(zoneId)
+    local catalog = _G.WowVisionNavigationTargetCatalog
+    if catalog and catalog.DangerSpawns then return catalog:DangerSpawns(zoneId) end
+    return nil
+end
 
 -- Attachment parameters (chapter 7)
 N.HEIGHT_TOLERANCE = 3.0     -- yd: height band of the cell +- 3 yd
@@ -1609,10 +1632,10 @@ function N.BindingFromId(id)
 end
 
 -- Route between two IDs (bindings, link points or real nodes). Result as N.Route.
-function N.RouteIds(startId, targetId, penalties, footOnly, startPool, targetPool)
+function N.RouteIds(startId, targetId, penalties, footOnly, startPool, targetPool, points)
     local start, target = N.BindingFromId(startId), N.BindingFromId(targetId)
     if not start or not target then return nil, "invalid_point" end
-    return N.Route(start, target, penalties, footOnly, startPool, targetPool)
+    return N.Route(start, target, penalties, footOnly, startPool, targetPool, points)
 end
 
 -- ---------------------------------------------------------------------------
@@ -1687,6 +1710,201 @@ local function Options(binding, road, asStart)
         if direction == 0 or direction == 2 then options[#options + 1] = { id = v, cost = length * (256 - t) / 256 } end
     end
     return options
+end
+
+-- ---------------------------------------------------------------------------
+-- Safe routes (/vn safety). Per zone, once and lazily (first route that needs it): the spawns (deduplicated, on a grid of cell size
+-- DANGER_RADIUS) and, per link, the yards of the link within DANGER_RADIUS of a spawn, summed over the spawns (danger.len[k], only links with
+-- danger > 0; one number per link keeps the table small). The spawns around the start and the end of a route do not count for that route (the
+-- quest target often lies in the camp): `excl[zone] = { list = {spawn, ...}, cache = {} }`; the yards of those few spawns are computed again for a
+-- link when the search first touches it, and subtracted.
+-- ---------------------------------------------------------------------------
+local function DangerCell(value) return floor(value / N.DANGER_RADIUS) end
+local function DangerKey(cx, cy) return (cx + 4096) * 8192 + (cy + 4096) end
+
+-- Yards of the link (x1, y1, z1) - (x2, y2, z2) (horizontal) within `radius` of the spawn (sx, sy, sz or false = height unknown); 0 when the spawn
+-- is farther than `dz` above or below the link at its nearest point. root = horizontal length, a = root squared.
+local function ClipLink(x1, y1, z1, x2, y2, z2, a, root, sx, sy, sz, radius, dz)
+    local dx, dy = x2 - x1, y2 - y1
+    local px, py = x1 - sx, y1 - sy
+    local b = dx * px + dy * py
+    local disc = b * b - a * (px * px + py * py - radius * radius)
+    if disc <= 0 then return 0 end
+    local s = sqrt(disc)
+    local t1, t2 = (-b - s) / a, (-b + s) / a
+    if t1 < 0 then t1 = 0 end
+    if t2 > 1 then t2 = 1 end
+    if t2 <= t1 then return 0 end
+    if sz then
+        local tn = -b / a
+        if tn < 0 then tn = 0 elseif tn > 1 then tn = 1 end
+        if abs(z1 + (z2 - z1) * tn - sz) > dz then return 0 end
+    end
+    return (t2 - t1) * root
+end
+
+local function BuildDanger(zone, spawns)
+    local radius, dz = N.DANGER_RADIUS, N.DANGER_DZ
+    local danger = { len = {}, sx = {}, sy = {}, sz = {}, grid = {}, count = 0 }
+    local sx, sy, sz, grid = danger.sx, danger.sy, danger.sz, danger.grid
+    -- deduplication: the same name within DANGER_DEDUP counts once
+    local names, dedup, step = {}, {}, N.DANGER_DEDUP
+    for _, spawn in ipairs(spawns or {}) do
+        local x, y = spawn.x, spawn.y
+        local cx, cy = floor(x / step), floor(y / step)
+        local duplicate = false
+        for gx = cx - 1, cx + 1 do
+            for gy = cy - 1, cy + 1 do
+                local list = dedup[DangerKey(gx, gy)]
+                if list then
+                    for _, i in ipairs(list) do
+                        if names[i] == spawn.name and (sx[i] - x) ^ 2 + (sy[i] - y) ^ 2 <= step * step then duplicate = true; break end
+                    end
+                end
+                if duplicate then break end
+            end
+            if duplicate then break end
+        end
+        if not duplicate then
+            local i = danger.count + 1
+            danger.count = i
+            sx[i], sy[i], sz[i], names[i] = x, y, spawn.z or false, spawn.name
+            local key = DangerKey(cx, cy)
+            local list = dedup[key]
+            if not list then list = {}; dedup[key] = list end
+            list[#list + 1] = i
+            key = DangerKey(DangerCell(x), DangerCell(y))
+            list = grid[key]
+            if not list then list = {}; grid[key] = list end
+            list[#list + 1] = i
+        end
+    end
+    if danger.count == 0 then return danger end
+    local len = danger.len
+    local lu, lv, nx, ny, nz = zone.lu, zone.lv, zone.x, zone.y, zone.z
+    for k = 1, #lu do
+        local u, v = lu[k] + 1, lv[k] + 1
+        local x1, y1, z1, x2, y2, z2 = nx[u], ny[u], nz[u], nx[v], ny[v], nz[v]
+        local dx, dy = x2 - x1, y2 - y1
+        local a = dx * dx + dy * dy
+        if a > 1e-9 then
+            local total
+            local root = sqrt(a)
+            for cx = DangerCell(min(x1, x2) - radius), DangerCell(max(x1, x2) + radius) do
+                for cy = DangerCell(min(y1, y2) - radius), DangerCell(max(y1, y2) + radius) do
+                    local bucket = grid[DangerKey(cx, cy)]
+                    if bucket then
+                        for _, i in ipairs(bucket) do
+                            local yards = ClipLink(x1, y1, z1, x2, y2, z2, a, root, sx[i], sy[i], sz[i], radius, dz)
+                            if yards > 0 then total = (total or 0) + yards end
+                        end
+                    end
+                end
+            end
+            if total then len[k] = total end
+        end
+    end
+    return danger
+end
+
+-- The danger table of a zone (built on first use; rebuilt when the catalogue changed).
+local function DangerOf(zone)
+    local danger = zone.danger
+    if danger and danger.gen == N.dangerGen then return danger end
+    local token, spawns = N.DangerSource(zone.id)
+    if danger and danger.token == token then
+        danger.gen = N.dangerGen
+        return danger
+    end
+    danger = BuildDanger(zone, spawns)
+    danger.token, danger.gen = token, N.dangerGen
+    zone.danger = danger
+    return danger
+end
+N.ZoneDanger = DangerOf          -- tests and measurements
+
+-- Danger of link k in yd for a route whose start and end spawns are `excl` (nil = none).
+local function EdgeDanger(zone, danger, k, excl)
+    local yards = danger.len[k]
+    if not yards then return 0 end
+    local skip = excl and excl[zone]
+    if skip then
+        local cached = skip.cache[k]
+        if cached == nil then
+            local u, v = zone.lu[k] + 1, zone.lv[k] + 1
+            local x1, y1, z1, x2, y2, z2 = zone.x[u], zone.y[u], zone.z[u], zone.x[v], zone.y[v], zone.z[v]
+            local a = (x2 - x1) ^ 2 + (y2 - y1) ^ 2
+            local root = sqrt(a)
+            local radius, dz = N.DANGER_RADIUS, N.DANGER_DZ
+            for _, i in ipairs(skip.list) do
+                yards = yards - ClipLink(x1, y1, z1, x2, y2, z2, a, root, danger.sx[i], danger.sy[i], danger.sz[i], radius, dz)
+            end
+            if yards < 1e-9 then yards = 0 end
+            skip.cache[k] = yards
+            return yards
+        end
+        return cached
+    end
+    return yards
+end
+
+-- Spawns around a point (start or end of a route): they do not endanger this route.
+local function ExcludeAround(excl, zone, x, y, z)
+    local danger = DangerOf(zone)
+    if danger.count == 0 then return end
+    local radius = N.DANGER_RADIUS
+    local cx, cy = DangerCell(x), DangerCell(y)
+    for gx = cx - 1, cx + 1 do
+        for gy = cy - 1, cy + 1 do
+            local bucket = danger.grid[DangerKey(gx, gy)]
+            if bucket then
+                for _, i in ipairs(bucket) do
+                    local zs = danger.sz[i]
+                    if (danger.sx[i] - x) ^ 2 + (danger.sy[i] - y) ^ 2 <= radius * radius
+                        and (not z or not zs or abs(z - zs) <= N.DANGER_DZ) then
+                        local skip = excl[zone]
+                        if not skip then skip = { list = {}, seen = {}, cache = {} }; excl[zone] = skip end
+                        if not skip.seen[i] then skip.seen[i] = true; skip.list[#skip.list + 1] = i end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- starts/goals: pass entries ({ binding = ... }); points: optional list of { x, y, z } (the exact player and target positions).
+local function ExcludedSpawns(starts, goals, points)
+    local excl = {}
+    for _, side in ipairs({ starts, goals }) do
+        for _, entry in ipairs(side) do
+            local binding = entry.binding
+            if binding.zone then ExcludeAround(excl, binding.zone, binding.x, binding.y, binding.z) end
+        end
+    end
+    for _, point in ipairs(points or {}) do
+        for _, zoneId in ipairs(N.ZonesForPoint(point.x, point.y)) do
+            local zone = N.zones[zoneId]
+            if zone then ExcludeAround(excl, zone, point.x, point.y, point.z) end
+        end
+    end
+    return excl
+end
+
+-- Danger of a search result in yd: the links it walks completely (partial links to seam points and link-point starts count 0).
+local function RouteDanger(result, excl)
+    local sum = 0
+    for _, edge in ipairs(result.edges) do
+        if edge.zone and edge.link and not edge.partial then
+            sum = sum + EdgeDanger(edge.zone, DangerOf(edge.zone), edge.link, excl)
+        end
+    end
+    return sum
+end
+
+-- Danger (yd) of any result of N.Route, with the spawns around its start, its target and `points` (as in N.Route) left out. Tests and measurements:
+-- a route computed without safety carries no danger.
+function N.RouteDangerOf(result, points)
+    return RouteDanger(result, ExcludedSpawns({ { binding = result.startBinding } }, { { binding = result.targetBinding } }, points))
 end
 
 -- ---------------------------------------------------------------------------
@@ -1961,7 +2179,9 @@ local function ActionBound(goals, hmin, footOnly)
     return nearest, goalMap, startsByMap
 end
 
-local function Pass(starts, goals, road, penalties, footOnly, avoid)
+-- danger (optional, safety pass): { w = cost per yd of danger, excl = spawns of this route that do not count } adds w x danger of the link
+-- to the cost of every land link (cost only grows: the straight-line heuristic stays admissible).
+local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
     local targetMap = {}
     for _, entry in ipairs(goals) do
         for _, option in ipairs(Options(entry.binding, road, false)) do
@@ -2138,9 +2358,14 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid)
                 local hostile = avoid and zone.hasFactions and HostileTable(zone, avoid.faction) or nil
                 local open = avoid and avoid.open
                 local onGoal, starts = zoneBound(zone)
+                -- safe routes (his /vn safety): the danger yards of the zone's links, only in a safety pass (nil otherwise,
+                -- so a plain search pays one test per link)
+                local zoneDanger = danger and DangerOf(zone) or nil
+                local dangerLen = zoneDanger and zoneDanger.len
                 for j = 1, #adj, 2 do
                     local v, k = adj[j], adj[j + 1]
                     local new = cost + (llen[k] + hop) * (factors[lflag[k] + 1] or factorOf(lflag[k]))
+                    if dangerLen and dangerLen[k] then new = new + danger.w * EdgeDanger(zone, zoneDanger, k, danger.excl) end
                     local vid = base + v
                     if row and row[vid] then new = new + row[vid] end
                     if new < (g[vid] or huge) then
@@ -2301,7 +2526,7 @@ end
 -- (startBinding, targetBinding). Start and target on one link: the piece of the link between them (B1).
 -- WowVision: the key of a search for routeCache: the bindings by id, the pools by their members' ids and approach
 -- lengths, the foot-only switch and the penalty table by identity (it is not changed while a job runs).
-local function SearchKey(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+local function SearchKey(startBinding, targetBinding, penalties, footOnly, startPool, targetPool, points)
     local parts = { tostring(startBinding.id), tostring(targetBinding.id), footOnly and "foot" or "all",
         penalties and tostring(penalties) or "-" }
     for _, pool in ipairs({ startPool or false, targetPool or false }) do
@@ -2311,6 +2536,13 @@ local function SearchKey(startBinding, targetBinding, penalties, footOnly, start
             end
         end
         parts[#parts + 1] = "|"
+    end
+    -- safe routes: the factor and the points whose spawns do not count change the answer (nothing added while off)
+    if N.safety > 0 then
+        parts[#parts + 1] = string.format("s%.17g", N.safety)
+        for _, point in ipairs(points or {}) do
+            parts[#parts + 1] = string.format("%.17g/%.17g/%s", point.x, point.y, tostring(point.z))
+        end
     end
     return table.concat(parts, ":")
 end
@@ -2346,11 +2578,11 @@ local function SharesMap(starts, goals)
     return false
 end
 
-function N.Route(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+function N.Route(startBinding, targetBinding, penalties, footOnly, startPool, targetPool, points)
     if not routeCache then
-        return RouteSearch(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+        return RouteSearch(startBinding, targetBinding, penalties, footOnly, startPool, targetPool, points)
     end
-    local key = SearchKey(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+    local key = SearchKey(startBinding, targetBinding, penalties, footOnly, startPool, targetPool, points)
     local known = routeCache[key]
     if known then
         N.repeatedSearches = N.repeatedSearches + 1
@@ -2358,12 +2590,12 @@ function N.Route(startBinding, targetBinding, penalties, footOnly, startPool, ta
         return nil, known.reason
     end
     local cache = routeCache
-    local result, reason = RouteSearch(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+    local result, reason = RouteSearch(startBinding, targetBinding, penalties, footOnly, startPool, targetPool, points)
     cache[key] = { result = result and CopyAnswer(result), reason = reason }
     return result, reason
 end
 
-RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPool, targetPool)
+RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPool, targetPool, points)
     local starts, goals = SideEntries(startBinding, startPool), SideEntries(targetBinding, targetPool)
     -- WowVision: goals in closed water (N.ClosedWater) are never reached
     goals = OpenGoals(starts, goals)
@@ -2395,7 +2627,8 @@ RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPo
         return a, N.comfort > 0 and Pass(starts, goals, true, penalties, footOnly, avoidance) or nil
     end
     local a, b = passes(avoid)
-    if not a and avoid then a, b = passes(nil) end     -- Z2: no route without a hostile outpost: through it, never no route
+    local passAvoid = avoid
+    if not a and avoid then a, b = passes(nil); passAvoid = nil end    -- Z2: no route without a hostile outpost: through it, never no route
     if not a then
         if sets and exhausted then
             sets[#sets + 1] = exhausted
@@ -2405,6 +2638,29 @@ RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPo
     end
     local chosen, pass = a, "a"
     if b and b.length <= N.ROAD_MAX_RATIO * a.length then chosen, pass = b, "b" end
+    -- his safe routes (/vn safety): after the choice between (a) and (b), safety passes with the cost of that pass + w x danger
+    -- for the weights N.DANGER_WEIGHTS. A candidate counts when its length is at most N.SAFETY_RATIO x that of (a); of the
+    -- candidates and the former choice the one with the least danger wins, the shorter on a tie (pass "s"). Never "no route"
+    -- because of the safety. Off (0): nothing of this runs.
+    local danger, dangerA
+    if N.safety > 0 and not a.direct then
+        local excl = ExcludedSpawns(starts, goals, points)
+        dangerA = RouteDanger(a, excl)
+        danger = RouteDanger(chosen, excl)
+        if danger > 0 then
+            local limit = N.SAFETY_RATIO * a.length
+            local road = pass == "b"
+            for _, weight in ipairs(N.DANGER_WEIGHTS) do
+                local candidate = Pass(starts, goals, road, penalties, footOnly, passAvoid, { w = weight, excl = excl })
+                if candidate and candidate.length <= limit then
+                    local d = RouteDanger(candidate, excl)
+                    if d < danger - 1e-6 or (d <= danger + 1e-6 and candidate.length < chosen.length - 1e-6) then
+                        chosen, pass, danger = candidate, "s", d
+                    end
+                end
+            end
+        end
+    end
     local from, to = chosen.startBinding, chosen.targetBinding
     local path = {}
     -- virtual link-point attachments at the start and end (steering targets, chapter 7 point 2)
@@ -2421,6 +2677,7 @@ RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPo
     end
     return { path = path, edges = chosen.edges, length = chosen.length, cost = chosen.cost, total = chosen.total, pass = pass,
         lengthA = a.length, lengthB = b and b.length or nil, expansions = chosen.expansions, outpost = outpost,
+        danger = danger, dangerA = dangerA,
         startBinding = from, targetBinding = to, direct = chosen.direct }
 end
 

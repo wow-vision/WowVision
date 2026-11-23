@@ -1520,7 +1520,9 @@ if haveNetwork then
         end
         t:assertNotNil(portal, portalId)
         local sv, av = portal.sourceVolume, portal.arrivalVolume
-        sv.radius = radius or sv.radius
+        -- the data's radius again after the test (the decoded zone stays for the other tests)
+        portal.dataRadius = portal.dataRadius or sv.radius
+        sv.radius = radius or portal.dataRadius
         local startId
         for i = 0, 5000 do
             local id = zoneId * N.ZONE_BASE + i
@@ -1565,6 +1567,7 @@ if haveNetwork then
         if state == nil then
             state = route:observeAction(av.x + 1, av.y + 1, map, 3)
         end
+        sv.radius = portal.dataRadius
         return transit, state, route, transitAt, aheadAt
     end
 
@@ -1584,18 +1587,60 @@ if haveNetwork then
     end
 
     suite["a portal at the route's last waypoint: the route waits for it, seen in it or not"] = function(t)
-        -- Rut'theran to Darnassus: the route's last waypoint lies 11.0 yd from the centre of the 10 yd portal (data
-        -- 51460d3), so the volume is widened to put it on the rim, the case this test is about
-        local radius = 12
-        local transit, state, route, at = throughPortal(t, 1, 57, "portal:areatrigger:542", false, radius)
+        -- Rut'theran to Darnassus with the data's own 10 yd trigger: the portal's start node (its pre-point) lies 11.0 yd
+        -- from the centre, outside it; his walk-in portal as a link (5a1290b) goes on from there to the activation point
+        -- of the entrance capture inside the trigger, the leg's last waypoint
+        local transit, state, route, at = throughPortal(t, 1, 57, "portal:areatrigger:542", false)
+        local action = transit.action
+        local sv = action.sourceVolume
+        t:assertEqual(sv.radius, 10, "the data's trigger")
+        local px, py = N.Position(action.fromNode)
+        t:assertTrue(Route.distance(px, py, sv.x, sv.y) > sv.radius, "the pre-point lies outside the trigger")
+        t:assertEqual(route.path[#route.path], route.triggerPoint, "the leg ends at the activation point")
+        local tx, ty = N.Position(route.triggerPoint)
+        t:assertTrue(Route.distance(tx, ty, sv.x, sv.y) < sv.radius, "the activation point lies inside the trigger")
         t:assertEqual(at, #route.path, "in the portal at the route's last waypoint")
         t:assertTrue(transit.sourceEntered == true)
         t:assertTrue(transit.announced == true, "said before the portal, not again in it")
         t:assertEqual(state, "arrived", "the route goes on in Darnassus")
-        transit, state = throughPortal(t, 1, 57, "portal:areatrigger:542", true, radius)
+        transit, state = throughPortal(t, 1, 57, "portal:areatrigger:542", true)
         t:assertTrue(transit.teleported == true, "only the landing was seen")
         t:assertTrue(transit.announced == true, "said before the teleport")
         t:assertEqual(state, "arrived")
+    end
+
+    suite["a walk-in portal into a neighbouring zone: through it, the route goes on in that zone"] = function(t)
+        -- Darnassus to Rut'theran (zone 1457 to zone 57 of map 1) with the data's own trigger: the leg ends in the
+        -- trigger, and after the landing the continuation is planned in Teldrassil
+        local transit, state, route = throughPortal(t, 1, 1457, "portal:areatrigger:527", false)
+        t:assertEqual(route.path[#route.path], route.triggerPoint, "the leg goes on into the trigger")
+        t:assertTrue(transit.sourceEntered == true, "in the portal")
+        t:assertEqual(state, "arrived")
+        local _, toNode, targetNodeId = route:actionArrival()
+        t:assertEqual(math.floor(toNode / N.ZONE_BASE), 57, "the far end lies in Teldrassil")
+        local next = runJob(N.Job(route.continueTo, route, toNode, targetNodeId, nil))
+        t:assertEqual(next.kind, "start", tostring(next.reason))
+    end
+
+    suite["a portal without an entrance capture keeps its leg ending at the pre-point"] = function(t)
+        setup()
+        local zone = N.LoadZone(57)
+        local portal
+        for _, action in ipairs(zone.actions) do
+            if action.id == "portal:areatrigger:542" then
+                portal = action
+            end
+        end
+        t:assertNotNil(Route.triggerPoint(N, portal), "the data's capture")
+        local moved = {}
+        for k, v in pairs(portal) do
+            moved[k] = v
+        end
+        moved.fromNode = 57 * N.ZONE_BASE + 1
+        t:assertNil(Route.triggerPoint(N, moved), "no capture for another pre-point")
+        moved.fromNode = portal.fromNode
+        moved.activation = { mode = "click" }
+        t:assertNil(Route.triggerPoint(N, moved), "only a walk-in portal")
     end
 
     suite["a portal walked into after the route's end: its teleport alone proves it"] = function(t)
@@ -1615,7 +1660,8 @@ if haveNetwork then
         -- 39 yd below it; the route ends 11.7 yd from the centre of the 7 yd portal, at its height
         local transit, state, route, at, aheadAt = throughPortal(t, 0, STORMWIND, "portal:areatrigger:704", false)
         t:assertEqual(at, #route.path, "the transit at the route's last waypoint, not on the ramp below the portal")
-        t:assertNil(transit.sourceEntered, "the route ends outside the portal")
+        t:assertEqual(route.path[#route.path], route.triggerPoint, "the leg goes on into the portal (his 5a1290b)")
+        t:assertTrue(transit.sourceEntered == true, "the route ends in the portal")
         t:assertTrue(transit.announced == true, "said before the portal, not again at the route's end")
         local _, _, z = N.Position(route.path[aheadAt])
         local sv = transit.action.sourceVolume
@@ -2287,6 +2333,70 @@ if haveNetwork then
         -- outside a job every search runs
         N.RouteIds(from, to)
         t:assertEqual(N.repeatedSearches, repeated + 1)
+    end
+
+    -- his safe routes (/vn safety): monster spawns on the shortest route; off (0) nothing changes and no spawn is read
+    suite["safe routes: off the route is the shortest and reads no spawns; on it keeps away within the factor"] = function(t)
+        setup()
+        local zone = N.LoadZone(STORMWIND)
+        local from, to = STORMWIND * N.ZONE_BASE + 8390, STORMWIND * N.ZONE_BASE + 2959
+        local source, asked = N.DangerSource, 0
+        local spawns = {}
+        N.DangerSource = function(zoneId)
+            asked = asked + 1
+            return zoneId == STORMWIND and spawns or nil, zoneId == STORMWIND and spawns or nil
+        end
+        N.dangerGen = N.dangerGen + 1
+        local ok, err = pcall(function()
+            N.SetSafety(0)
+            local plain = N.RouteIds(from, to)
+            t:assertNotNil(plain, "a route across Stormwind")
+            t:assertNil(plain.danger, "off: no danger in the result")
+            t:assertEqual(asked, 0, "off: no spawn table is built")
+            -- spawns around the middle third of the shortest route
+            local n = #plain.path
+            for i = math.floor(n / 3), math.floor(2 * n / 3) do
+                local x, y, z = N.Position(plain.path[i])
+                spawns[#spawns + 1] = { x = x, y = y, z = z, name = "Spawn " .. i }
+            end
+            N.dangerGen = N.dangerGen + 1
+            t:assertEqual(routeShape(N.RouteIds(from, to)), routeShape(plain), "off: the same route with spawns")
+            N.SetSafety(300)
+            local safe = N.RouteIds(from, to)
+            t:assertNotNil(safe, "on: still a route")
+            t:assertTrue(asked > 0, "on: the spawns are read")
+            t:assertTrue(safe.dangerA > 0, "the shortest route passes the spawns")
+            t:assertTrue(safe.danger < safe.dangerA, "the safe route passes fewer of them")
+            t:assertTrue(safe.length <= N.SAFETY_RATIO * safe.lengthA + 1e-6, "within the factor")
+            t:assertEqual(safe.pass, "s", "a safety pass won")
+            -- the same answer inside a job, where the cache key carries the factor
+            local inJob = runJob(N.Job(function()
+                return N.RouteIds(from, to)
+            end))
+            t:assertEqual(routeShape(inJob), routeShape(safe))
+            -- a factor too small for any detour keeps the former choice
+            N.SetSafety(0.001)
+            local tight = N.RouteIds(from, to)
+            t:assertTrue(tight.length <= N.SAFETY_RATIO * tight.lengthA + 1e-6, "never longer than the factor")
+        end)
+        N.DangerSource = source
+        N.SetSafety(0)
+        N.dangerGen = N.dangerGen + 1
+        zone.danger = nil
+        if not ok then
+            error(err, 0)
+        end
+    end
+
+    suite["safe routes: the monster spawns of a zone come from its logical catalogue"] = function(t)
+        setup()
+        local rows = zoneRows(ELWYNN)
+        t:assertTrue(#rows > 0, "Elwynn's catalogue is active")
+        local token, list = C:DangerSpawns(ELWYNN)
+        t:assertNotNil(token, "a catalogue")
+        t:assertTrue(#list > 100, "Elwynn has monster spawns")
+        t:assertEqual(type(list[1].x), "number")
+        t:assertEqual(type(list[1].name), "string")
     end
 end
 

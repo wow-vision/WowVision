@@ -137,10 +137,23 @@ end
 -- other checked attachments of that cell; endPool (optional) does the same for the target side. The pair with the lowest
 -- approach + network + approach cost wins; usedStartId and result.targetBinding name it. Unchecked attachments and those of
 -- neighbouring cells only serve as alternatives when no route exists.
+-- endPoint (optional): the target's exact position ({ x, y, z }); with the player's position, the monster spawns around
+-- it do not endanger the route (his safe routes, /vn safety; read only with the setting on).
 -- Returns path, edges, result, usedStartId | nil, reason.
-function Route:routeFromStart(startId, endId, footOnly, x, y, endPool)
+function Route:routeFromStart(startId, endId, footOnly, x, y, endPool, endPoint)
     local N = self.N
     local options, startPool
+    -- off (0): no points at all, the searches run as before
+    local points
+    if (N.safety or 0) > 0 then
+        points = {}
+        if x then
+            points[1] = { x = x, y = y, z = self:estimatedHeight() }
+        end
+        if type(endPoint) == "table" and type(endPoint.x) == "number" and type(endPoint.y) == "number" then
+            points[#points + 1] = { x = endPoint.x, y = endPoint.y, z = endPoint.z }
+        end
+    end
     if x then
         options = self:startOptions()
         if not options.swimming then
@@ -156,7 +169,7 @@ function Route:routeFromStart(startId, endId, footOnly, x, y, endPool)
             end
         end
     end
-    local result, reason = N.RouteIds(startId, endId, self.penalties, footOnly, startPool, endPool)
+    local result, reason = N.RouteIds(startId, endId, self.penalties, footOnly, startPool, endPool, points)
     if result or not x then
         if result then
             return result.path, result.edges, result, result.startBinding and result.startBinding.id or startId
@@ -166,7 +179,7 @@ function Route:routeFromStart(startId, endId, footOnly, x, y, endPool)
     local list = N.StartBindings(x, y, self:estimatedHeight(), options)
     for _, binding in ipairs(list or {}) do
         if binding.id ~= startId then
-            local alternative = N.RouteIds(binding.id, endId, self.penalties, footOnly, nil, endPool)
+            local alternative = N.RouteIds(binding.id, endId, self.penalties, footOnly, nil, endPool, points)
             if alternative then
                 return alternative.path, alternative.edges, alternative, binding.id
             end
@@ -385,6 +398,7 @@ function Route:reset(keepPenalties)
     self.activationPrepointSaid = nil
     self.activationInside = nil
     self.transitAheadSaid = nil -- the walk-in transit ahead was announced
+    self.triggerPoint = nil   -- the activation point in a walk-in portal's trigger, the leg's last waypoint
     self.source = nil         -- the target (his layerTargetSource)
     self.anchor.height = nil
     if not keepPenalties then
@@ -405,7 +419,8 @@ end
 -- far end of a transit, a start chosen by the resolver), else the player's position is bound. Returns a plan for
 -- Route:begin, or nil, reason key.
 -- footOnly: no transit links (his routes to docks and walk-in targets, StartNavigationToNode).
-function Route:planToNode(targetNodeId, start, footOnly)
+-- endPoint (optional): the target's exact position, for the safe routes (Route:routeFromStart).
+function Route:planToNode(targetNodeId, start, footOnly, endPoint)
     local N = self.N
     local startId, startX, startY
     if start and start.id then
@@ -421,7 +436,7 @@ function Route:planToNode(targetNodeId, start, footOnly)
         end
         startId, startX, startY = id, x, y
     end
-    local path, edges, result = self:routeFromStart(startId, targetNodeId, footOnly, startX, startY)
+    local path, edges, result = self:routeFromStart(startId, targetNodeId, footOnly, startX, startY, nil, endPoint)
     if not path then
         return nil, "no_route_found"
     end
@@ -444,9 +459,56 @@ function Route:planToNode(targetNodeId, start, footOnly)
             break
         end
     end
-    -- steering targets are the waypoints of the route, nothing else (his chapter 7 point 5)
+    -- steering targets are the waypoints of the route, nothing else (his chapter 7 point 5); a walk-in portal's leg goes
+    -- on into its trigger (Route.triggerPoint, appended in Route:begin)
     return { path = N.SteeringTargets(path), rawLength = #path, pendingAction = pendingAction,
+        triggerPoint = pendingAction and Route.triggerPoint(N, pendingAction) or nil,
         targetNodeId = targetNodeId, result = result }
+end
+
+-- His WowVisionNavigationTriggerPoint (DemoAddon 5a1290b): a walk-in portal (activation walk_into_volume) is a link of
+-- the route like any other. Its start node is only the pre-point, which may lie outside the trigger (Rut'theran to
+-- Darnassus: 11.0 yd from the centre of the 10 yd trigger), so the leg does not end there but goes on to the activation
+-- point of the trigger: the entrance capture of the data whose pre-point is the action's start node (x and y within the
+-- export tolerance of the node coordinates) and whose activation point lies inside the trigger, the same certified
+-- approach as a route to the portal itself (TransitActivation). Nil when the data have none; the leg then ends at the
+-- pre-point as before.
+local function inVolume3D(volume, x, y, z)
+    if type(volume) ~= "table" or type(volume.x) ~= "number" or type(volume.y) ~= "number"
+        or type(volume.z) ~= "number" then
+        return false
+    end
+    local dx, dy, dz = x - volume.x, y - volume.y, z - volume.z
+    if volume.type == "sphere" or (volume.type == nil and type(volume.radius) == "number") then
+        return type(volume.radius) == "number" and volume.radius > 0
+            and dx * dx + dy * dy + dz * dz <= volume.radius * volume.radius
+    end
+    if volume.half_x and volume.half_y and volume.half_z and volume.yaw_radians then
+        local c, s = math.cos(volume.yaw_radians), math.sin(volume.yaw_radians)
+        local lx, ly = c * dx + s * dy, -s * dx + c * dy
+        return abs(lx) <= volume.half_x and abs(ly) <= volume.half_y and abs(dz) <= volume.half_z
+    end
+    return false
+end
+
+function Route.triggerPoint(N, action)
+    if type(action) ~= "table" or type(action.activation) ~= "table" or action.activation.mode ~= "walk_into_volume"
+        or type(action.fromNode) ~= "number" or not N.Exists(action.fromNode) then
+        return nil
+    end
+    local px, py = N.Position(action.fromNode)
+    local tolerance = N.TARGET_XY_TOLERANCE
+    local zone = N.zones[math.floor(action.fromNode / N.ZONE_BASE)]
+    for _, capture in ipairs(zone and zone.captures or {}) do
+        if capture.activationMode == "walk_into_trigger" and capture.facilityRole == "entrance"
+            and type(capture.activationPreX) == "number" and type(capture.activationPreY) == "number"
+            and abs(capture.activationPreX - px) <= tolerance and abs(capture.activationPreY - py) <= tolerance
+            and type(capture.x) == "number" and type(capture.y) == "number" and type(capture.z) == "number"
+            and inVolume3D(action.sourceVolume, capture.x, capture.y, capture.z) then
+            return capture
+        end
+    end
+    return nil
 end
 
 -- An unchecked finish stays outside of graph and height proofs: the exact target position is the last point.
@@ -567,6 +629,14 @@ function Route:begin(plan, source, result, name)
     local _, _, startHeight = N.Position(self.path[1])
     self:setHeightAnchor(startHeight)
     self:setRouteState(nil, self.path[1])
+    -- his walk-in portal as a link (5a1290b): the leg goes on from the pre-point to the activation point in the trigger
+    self.triggerPoint = nil
+    local trigger = plan.triggerPoint
+    if trigger ~= nil and self.pendingAction ~= nil then
+        self.triggerPoint = N.NewVirtual({ x = trigger.x, y = trigger.y, z = trigger.z, type = "trigger",
+            radius = trigger.activationCaptureRadius })
+        self.path[#self.path + 1] = self.triggerPoint
+    end
     self:appendLogicalTarget(source, result)
     -- a live route's first node is often right under the player: skip it only when it is really reached in the plane
     if result and result.zUnknown and #self.path > 1 and self.path[1] ~= self.logicalPrepoint then
@@ -603,7 +673,8 @@ function Route:targetContext(startOverride, footOnly)
     -- endPool (optional): the checked attachments of the target cell; the third result is the target attachment of the
     -- cheapest pair
     context.route = function(endId, endPool)
-        local path, _, result, used = self:routeFromStart(context.startNodeId, endId, footOnly, px, py, endPool)
+        local path, _, result, used = self:routeFromStart(context.startNodeId, endId, footOnly, px, py, endPool,
+            context.endPoint)
         if not path then
             return nil
         end
@@ -635,6 +706,7 @@ function Route:prepare(target, nav, startOverride)
             ambiguousStart = why == "ambiguous" }
     end
     context.heightBand = target.heightBand
+    context.endPoint = target
     local result = self.R:Resolve(nav, target, context)
     if result.quality == "ambiguous" and result.bands then
         -- which floor can be reached from here: the same check as his Prepare. A band of certified levels holds
@@ -663,7 +735,7 @@ function Route:prepare(target, nav, startOverride)
     if result.endNodeId == nil then
         return { kind = "fail", reason = result.reason, result = result }
     end
-    local plan, why = self:planToNode(result.endNodeId, { id = context.startNodeId }, footOnly)
+    local plan, why = self:planToNode(result.endNodeId, { id = context.startNodeId }, footOnly, target)
     if not plan then
         return { kind = "fail", reason = why, result = result }
     end
@@ -816,6 +888,21 @@ function Route:update(x, y)
     end
     local afterId = self.path[self.pathIndex + 1]
     local beforeLogical = self.logicalTarget ~= nil and afterId == self.logicalTarget
+    -- the activation point in a walk-in portal's trigger: the leg ends when the player is in the trigger
+    -- (walkInTransit) or the game teleports him; the arrival distance (Alt-P) would end it outside, at the trigger's rim,
+    -- so only the point's own capture radius counts here
+    if waypointId == self.triggerPoint then
+        if dist <= (N.Radius(waypointId) or Route.ARRIVAL_TARGET_RADIUS) then
+            self.lastConfirmedNode = waypointId
+            self.active = false
+            return { kind = "transit", action = self.pendingAction, announced = self.transitAheadSaid }
+        end
+        local reaction = self:checkApproach(x, y, dist, now)
+        if reaction then
+            return { kind = reaction }
+        end
+        return nil
+    end
     -- before an unchecked last stretch the last network point counts only within the target radius
     if not lastActivation and (not beforeLogical or dist <= G.EffectiveRadius(Route.ARRIVAL_TARGET_RADIUS))
         and self:waypointIsReached(x, y, waypointId, previousId, not beforeLogical and afterId or nil) then
@@ -1072,12 +1159,13 @@ function Route:actionArrival()
 end
 
 -- The continuation's route (inside a job): from the far end of the transit to the target's binding (his
--- StartNavigationToNode with manualStartNode = action.toNode). Returns an outcome like Route:prepare.
-function Route:continueTo(toNode, targetNodeId, result)
+-- StartNavigationToNode with manualStartNode = action.toNode). Returns an outcome like Route:prepare. endPoint
+-- (optional): the target's exact position, for the safe routes.
+function Route:continueTo(toNode, targetNodeId, result, endPoint)
     if targetNodeId == nil or not self.N.Exists(targetNodeId) then
         return { kind = "fail", reason = "no_route_found" }
     end
-    local plan, why = self:planToNode(targetNodeId, { id = toNode })
+    local plan, why = self:planToNode(targetNodeId, { id = toNode }, nil, endPoint)
     if not plan then
         return { kind = "fail", reason = why, result = result }
     end
