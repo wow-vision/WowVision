@@ -87,7 +87,7 @@ Prints the installed WowVision version to your chat window, for example V0.9.0, 
 
 ### /wv accept
 
-Accepts the group invitation that is shown and says "Group invitation accepted". It also works in combat, where WowVision cannot open the invitation popup. Without an invitation it says "No group invitation". An invitation that asks for a role needs a checked role first, otherwise it says "Choose a role first". The Accept Group Invitation key does the same; it is unbound. Versions: all. See [Group Finder](../windows/group-finder.md).
+Accepts the group invitation that is shown and says "Group invitation accepted". It also works in combat, where WowVision cannot open the invitation popup. Without an invitation it says "No group invitation". If you lead a group, it also accepts when a group member suggests inviting someone or a player asks to join your group. An invitation that asks for a role needs a checked role first, otherwise it says "Choose a role first". The Accept Group Invitation key does the same; it is unbound. Versions: all. See [Group Finder](../windows/group-finder.md).
 
 ### /wv pendingtest
 

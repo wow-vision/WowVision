@@ -88,7 +88,7 @@ Gibt die installierte WowVision-Version in dein Chatfenster aus, zum Beispiel V0
 
 ### /wv accept
 
-Nimmt die Gruppeneinladung an, die gerade angezeigt wird, und sagt "Gruppeneinladung angenommen". Das geht auch im Kampf, wo WowVision das Einladungs-Popup nicht öffnen kann. Ist keine Einladung da, sagt es "Keine Gruppeneinladung". Eine Einladung, die nach der Rolle fragt, braucht erst eine aktivierte Rolle, sonst sagt es "Erst eine Rolle wählen". Die Taste Gruppeneinladung annehmen (Accept Group Invitation) tut dasselbe; sie ist unbelegt. Versionen: alle. Siehe [Gruppensuche](../windows/group-finder.md).
+Nimmt die Gruppeneinladung an, die gerade angezeigt wird, und sagt "Gruppeneinladung angenommen". Das geht auch im Kampf, wo WowVision das Einladungs-Popup nicht öffnen kann. Ist keine Einladung da, sagt es "Keine Gruppeneinladung". Führst du eine Gruppe, nimmt es auch an, wenn ein Gruppenmitglied vorschlägt, jemanden einzuladen, oder wenn ein Spieler deiner Gruppe beitreten möchte. Eine Einladung, die nach der Rolle fragt, braucht erst eine aktivierte Rolle, sonst sagt es "Erst eine Rolle wählen". Die Taste Gruppeneinladung annehmen (Accept Group Invitation) tut dasselbe; sie ist unbelegt. Versionen: alle. Siehe [Gruppensuche](../windows/group-finder.md).
 
 ### /wv pendingtest
 
