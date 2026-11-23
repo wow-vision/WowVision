@@ -127,6 +127,7 @@ See [Minimap](../world/minimap.md).
 | Soft Target Friend | Shift+P | The same for soft friend targeting |
 | Soft Target Interact | Shift+O | The same for soft interact targeting |
 | Target of Target | Unbound | Makes your target's target your target, without starting an attack |
+| Ping Target | Unbound | Pings your target, so you hear where it is, and says how far away it is. Without a target you hear "No target" |
 | Open Target Menu | Alt+T | Opens the menu of your target, like a right click on its portrait |
 | Target Focus 1 to Target Focus 5 | Unbound | Targets one of the five WowVision focus targets |
 

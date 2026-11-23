@@ -15,11 +15,12 @@ Hinweis: Die Beispiele unten zeigen, was du auf einem deutschen Client hörst. W
 | Umschalt+O | Soft Target Interaktion (Soft Target Interact) | Schaltet die weiche Zielerfassung für Interaktion ein oder aus |
 | Alt+T | Zielmenü öffnen (Open Target Menu) | Öffnet das Menü deines aktuellen Ziels |
 | standardmäßig unbelegt | Ziel des Ziels (Target of Target) | Macht das Ziel deines Ziels zu deinem Ziel |
+| standardmäßig unbelegt | Ziel anpingen (Ping Target) | Pingt dein Ziel an: du hörst, wo es ist und wie weit weg |
 | standardmäßig unbelegt | Zielfokus 1 bis Zielfokus 5 (Target Focus 1 bis 5) | Erfasst die Einheit, die du in diesem virtuellen Fokusplatz gespeichert hast |
 
 Du kannst Tasten ändern oder hinzufügen im Fenster für die Tastenbelegung (WowVision-Menü, Benutzeroberfläche, Tastenbelegung); siehe [Tastenbelegung](../basics/keybindings.md). Die vollständige Liste aller Tasten steht in der [Tastenreferenz](../reference/keybindings.md).
 
-Ist gleichzeitig das Addon Sku geladen, überlässt WowVision die Tasten der weichen Zielerfassung, die Zielfokus-Tasten und die Befehle /focus1 bis /focus5 Sku und registriert sie nicht. Ziel des Ziels und Alt+T sind davon nicht betroffen.
+Ist gleichzeitig das Addon Sku geladen, überlässt WowVision die Tasten der weichen Zielerfassung, die Zielfokus-Tasten und die Befehle /focus1 bis /focus5 Sku und registriert sie nicht. Ziel des Ziels, Ziel anpingen und Alt+T sind davon nicht betroffen.
 
 ## Dein Ziel hören (festes Ziel)
 
@@ -273,6 +274,15 @@ Weil der Fokus ein Name ist, erfasst das Spiel die nächste Einheit mit diesem N
 Ziel des Ziels hat von Haus aus keine Taste, leg sie also im Fenster für die Tastenbelegung auf eine. Drücke sie, um zu erfassen, was dein Ziel im Ziel hat: den Gegner, gegen den ein Gruppenmitglied kämpft, oder das Gruppenmitglied, das ein Gegner angreift. WowVision liest das neue Ziel vor wie jeden Zielwechsel. Greift der Gegner dich an, erfasst du dich selbst. Das geht auch im Kampf, und es beginnt keinen Angriff.
 
 Hast du kein Ziel, hörst du "Kein Ziel". Hat dein Ziel kein Ziel, hörst du "Dein Ziel hat kein Ziel", und dein Ziel bleibt, wie es war.
+
+## Wo dein Ziel ist: Ziel anpingen
+
+Ziel anpingen hat von Haus aus keine Taste, leg sie also im Fenster für die Tastenbelegung auf eine. Drückst du sie, pingt das Spiel dein Ziel an, mit demselben Ping, den ein sehender Spieler über das Ping-Rad setzt. Der Ping-Ton kommt von dort, wo dein Ziel steht: Mit Kopfhörern hörst du, ob es links oder rechts von dir ist. Dreh dich, bis der Ping mittig klingt, und lauf darauf zu. WowVision sagt dazu, wie weit das Ziel weg ist, zum Beispiel "25 Meter", oder "mehr als 40 Meter", wenn es weiter weg ist, als WowVision messen kann.
+
+- Hast du kein Ziel, hörst du "Kein Ziel", und nichts wird angepingt.
+- In einer Gruppe sehen die anderen Mitglieder deinen Ping und lesen ihn in ihrem Chat, wie jeden Ping.
+- Im Kampf wird ein freundliches Ziel angepingt, seine Entfernung aber nicht gesagt: Das Spiel lässt die Messung dann nicht zu.
+- Den Ping gibt es auf Retail und WoW: Forever. In den anderen Versionen sagt die Taste nur die Entfernung.
 
 ## Das Menü des Ziels: Alt+T
 

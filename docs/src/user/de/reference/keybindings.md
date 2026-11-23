@@ -131,6 +131,7 @@ Siehe [Minimap](../world/minimap.md).
 | Soft Target Freund (Soft Target Friend) | Umschalt+P | Dasselbe für die weiche Zielerfassung von Freunden |
 | Soft Target Interaktion (Soft Target Interact) | Umschalt+O | Dasselbe für die weiche Zielerfassung zur Interaktion |
 | Ziel des Ziels (Target of Target) | Unbelegt | Macht das Ziel deines Ziels zu deinem Ziel, ohne einen Angriff zu beginnen |
+| Ziel anpingen (Ping Target) | Unbelegt | Pingt dein Ziel an, damit du hörst, wo es ist, und sagt, wie weit es weg ist. Ohne Ziel hörst du "Kein Ziel" |
 | Zielmenü öffnen (Open Target Menu) | Alt+T | Öffnet das Menü deines Ziels, wie ein Rechtsklick auf sein Porträt |
 | Zielfokus 1 bis Zielfokus 5 (Target Focus 1 bis 5) | Unbelegt | Erfasst eines der fünf WowVision-Fokusziele |
 

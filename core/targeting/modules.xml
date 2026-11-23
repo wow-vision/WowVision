@@ -12,6 +12,8 @@
   <Script file="crowdControl.lua" />
   <Script file="unitMenus.lua" />
   <Script file="targetOfTarget.lua" />
+  <Script file="pingTarget.lua" />
+  <Script file="pingTargetTests.lua" />
   <Script file="ccTest.lua" />
 
 </Ui>
