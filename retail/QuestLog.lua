@@ -137,8 +137,33 @@ local function questRowId(questID)
     return ControlId.structural("quest:" .. tostring(questID))
 end
 
-local function headerRowId(title)
-    return ControlId.structural("header:" .. tostring(title))
+-- Two headers can share a title (Forever's log can show the city and the dungeon
+-- both as "Dalaran"), so the second and later ones carry their place among the
+-- headers of that title, top to bottom.
+local function headerRowId(title, occurrence)
+    local id = "header:" .. tostring(title)
+    if occurrence ~= nil and occurrence > 1 then
+        id = id .. "#" .. occurrence
+    end
+    return ControlId.structural(id)
+end
+
+-- The occurrence-th shown header with this title, in screen order.
+local function findHeader(title, occurrence)
+    local scrollChild = questScrollChild()
+    if scrollChild == nil then
+        return nil
+    end
+    local seen = 0
+    for _, row in ipairs(visibleRowsByLayout(scrollChild)) do
+        if row.CollapseButton ~= nil and rowText(row) == title then
+            seen = seen + 1
+            if seen == (occurrence or 1) then
+                return row
+            end
+        end
+    end
+    return nil
 end
 
 local function headerStateText(kid)
@@ -154,12 +179,10 @@ end
 
 -- Enter is the game's own left click (collapse or expand), Backspace its
 -- right click (the menu: Track All, Untrack All).
-local function emitHeader(builder, kid)
+local function emitHeader(builder, kid, occurrence)
     local title = rowText(kid)
     local function find()
-        return findRow(function(row)
-            return row.CollapseButton ~= nil and rowText(row) == title
-        end)
+        return findHeader(title, occurrence)
     end
     local vtable = nodes.proxyFoundButton({ find = find, label = rowText })
     vtable.announcements[1].live = "focus"
@@ -172,7 +195,7 @@ local function emitHeader(builder, kid)
         live = "focus",
     })
     vtable.tooltipFrame = find
-    builder:addItem(headerRowId(title), vtable)
+    builder:addItem(headerRowId(title, occurrence), vtable)
 end
 
 local function isTracked(questID)
@@ -291,10 +314,13 @@ end
 local function listEntries(scrollChild)
     local entries = {}
     local current = nil
+    local headerCounts = {}
     for _, kid in ipairs(visibleRowsByLayout(scrollChild)) do
         if kid.CollapseButton ~= nil then
             current = nil
-            tinsert(entries, { header = kid })
+            local title = tostring(rowText(kid))
+            headerCounts[title] = (headerCounts[title] or 0) + 1
+            tinsert(entries, { header = kid, occurrence = headerCounts[title] })
         elseif isQuestRow(kid) then
             current = { quest = kid, objectives = {} }
             tinsert(entries, current)
@@ -327,7 +353,8 @@ local function landOnTop(screen, entries)
     state.questLogLanded = true
     if module.settings.alwaysStartAtTop then
         local top = entries[1]
-        state.nextSuggestedMove = top.header ~= nil and headerRowId(rowText(top.header)) or questRowId(top.quest.questID)
+        state.nextSuggestedMove = top.header ~= nil and headerRowId(rowText(top.header), top.occurrence)
+            or questRowId(top.quest.questID)
     end
 end
 
@@ -348,7 +375,7 @@ local function renderQuestList(builder, questsFrame, screen)
     landOnTop(screen, entries)
     for _, entry in ipairs(entries) do
         if entry.header ~= nil then
-            emitHeader(builder, entry.header)
+            emitHeader(builder, entry.header, entry.occurrence)
         else
             emitQuest(builder, entry.quest, entry.objectives)
         end
