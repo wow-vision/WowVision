@@ -33,7 +33,7 @@ Things WowNav does not do:
 - No instances. Dungeon and raid interiors do not exist in the data. Dungeon entrances do, and you can walk to them. Entrances of some of the dungeons that are new in WoW Forever are missing.
 - No vehicles in a route. Routes are always on foot. A boat, a zeppelin or the tram is not part of a route: WowNav guides you to its dock and you board it yourself.
 - No flight paths.
-- No danger warnings about enemies or creature levels. The only exception is the enemy outpost warning described below.
+- No warnings about enemies or creature levels. WowNav does not know where monsters are right now or how strong they are. With Safe Routes on, it keeps your route away from the places where monsters usually stand; see [Safe routes](#safe-routes). The enemy outpost warning is described below.
 - Diving is yours. Water is flat in the data. The only dive route is the Ruins of Blackfathom in Darkshore.
 
 On a map the data does not know, F10 lists nothing and /beacon to answers "No route found". The scanner's Enter then sets a straight beacon, as it does without map data. Where WowNav has data, the scanner's Enter on an NPC or object that WowNav's place list knows near that spot routes to WowNav's own entry of it, with its height; see [Scanner](./scanner.md). If the place list of a map cannot be read at all, you hear "WowNav catalogue not usable" followed by a reason; include it in a bug report.
@@ -101,6 +101,7 @@ The summary may continue:
 - "then the portal" (or "the tram", "the elevator", "a dive", "surfacing"): the route ends at a transit that is described below.
 - "Approximate target position." when the data's position of the place is itself an estimate.
 - "Warning: there is no way around the enemy outpost, the route leads through it." or "Warning: the target lies in an enemy outpost.", only with Avoid Enemy Outposts on.
+- "The route leads 40 yards near monsters, the shortest route 160 yards.", only with Safe Routes on and when the shortest way passes monsters; see [Safe routes](#safe-routes).
 
 The beacon, its sounds, Ctrl+W, Ctrl+S, Shift+F12, Alt Gr and I all work as in [Navigation](./navigation.md). The differences:
 
@@ -137,7 +138,7 @@ Two bindings are unbound by default; bind them in the keybinding window (WowVisi
 
 | Binding | What it does |
 |---------|--------------|
-| WowNav Route Status | Says what WowNav is doing: "Searching the route to Allison", "En route to Allison, waypoint 3 of 14", "Waiting for the far end of the portal", "Riding to the noted dock Ship dock to Auberdine", "At a dock, waiting", "At a fishing spot" or "No active route". |
+| WowNav Route Status | Says what WowNav is doing: "Searching the route to Allison", "En route to Allison, waypoint 3 of 14", "Waiting for the far end of the portal", "Riding to the noted dock Ship dock to Auberdine", "At a dock, waiting", "At a fishing spot" or "No active route". With Safe Routes on, "En route to" is followed by how many yards the route leads near monsters. |
 | New WowNav Route Around a Blocked Spot | Use it when you are stuck on a link (a fence, a closed door, a ramp you cannot climb). The link you are on is blocked in the plan, and a new route is searched from the last waypoint you reached. You hear "Searching a new route". Without a route you hear "No active route". |
 
 ## Transit: docks, boats, zeppelins, trams, portals and elevators
@@ -154,7 +155,7 @@ Some docks, so far the one in Stormwind's harbour, work without a waiting circle
 
 ### Portals, the tram entrance and walk-in places
 
-Portals and the tram entrance work by walking into them. A route ends at the portal, and WowNav says so before you reach it, because a portal teleports at once: "Ahead: walk into the portal; the route goes on after it". Walk into it. When you come out at the far end, you hear "The route goes on", and WowNav searches the rest of the way from there. If nothing happens within about 90 seconds (longer for rides, which wait three full cycles of the vehicle) you hear "The transit took too long; route ended". The Wind Bridge of Zephras Isle has no such limit: it comes at its own time.
+Portals and the tram entrance work by walking into them. A route ends at the portal, and WowNav says so before you reach it, because a portal teleports at once: "Ahead: walk into the portal; the route goes on after it". The beacon leads you on into the portal itself, also where the portal takes you into the next zone, as between Rut'theran Village and Darnassus. Follow it until the portal takes you. If you stand in the portal and nothing has happened yet, you hear "Keep walking straight on; the route goes on by itself after the transition". When you come out at the far end, you hear "The route goes on", and WowNav searches the rest of the way from there. If nothing happens within about 90 seconds (longer for rides, which wait three full cycles of the vehicle) you hear "The transit took too long; route ended". The Wind Bridge of Zephras Isle has no such limit: it comes at its own time.
 
 If you choose the portal or the tram entrance itself as your destination, you are guided to a point just before it and told: "Prepoint reached. Walk straight ahead through the entrance or portal; the beacon stays on until the activation area." Then: "In the activation area. Keep walking straight ahead; only a map change confirms the transition. The route stays on until then." After the map change you hear "Map change after the activation area; route ended. The destination is not confirmed."
 
@@ -185,6 +186,23 @@ WowNav knows 788 places to stand and fish, at the waters of 45 zones. A fishing 
 
 The water point is only there to face. WowNav never routes you into the water. If the network ends farther from the spot than your cast range, you hear the usual "The network ends ... from the target" instead, and no beacon starts.
 
+## Safe routes
+
+Safe Routes lets a route make a detour around monsters. WowNav knows where the monsters and creatures of each zone usually stand: the same ones you find in the destination list. A stretch of the route that passes within 20 yards of one counts as near monsters. Monsters more than 8 yards above or below the route do not count (a cave under you, the floor above you), and neither do the monsters right around your start and your destination, because a quest target often stands in the middle of a camp.
+
+The setting is a percentage, like Road Preference: the route may be up to that much longer than the shortest way. 50 means up to one and a half times as long, 100 up to twice as long, 300 up to four times as long. Of the routes within that length, WowNav takes the one that leads the fewest yards near monsters. Where no route is safer, you get the usual one. Safe Routes never leaves you without a route.
+
+Safe Routes is off (0) by default. Off, routes are planned exactly as before and just as fast. On, planning a route takes a little longer, because WowNav compares several routes.
+
+To turn it on:
+
+1. Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
+2. Set Safe Routes (Percent Longer) to the detour you accept, for example 100.
+
+When the shortest way passes monsters, the summary at the start of the route says how much, for example "The route leads 40 yards near monsters, the shortest route 160 yards." The first number is your route, the second the shortest way. The WowNav Route Status key says it again while you walk.
+
+WowNav knows where monsters usually stand, not where they are now, how strong they are or whether they would attack you. Monsters that wander around, and monsters the destination list does not have, are not avoided.
+
 ## Settings
 
 Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
@@ -194,6 +212,7 @@ Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
 | Enabled | On | Switches the whole module on or off. |
 | Routes from WowNav | On | Sends every route request to WowNav instead of the classic routes. |
 | Road Preference (Percent Longer) | 60 | A route on roads and paths may be this many percent longer than the shortest way. 0 means always the shortest. Up to 300. Swimming also counts as this much longer. When you change it during a route, one second after you stop adjusting you hear "Searching the route again with the new road preference". |
+| Safe Routes (Percent Longer) | 0 | How much longer a route may be to keep away from monsters; see [Safe routes](#safe-routes). 0 is off. Up to 300. When you change it during a route, one second after you stop adjusting you hear "Searching the route again with the new safety setting". |
 | Avoid Enemy Outposts | On | Routes go around the outposts and capitals of the opposing faction. Where there is no way around, the route leads through and warns you. Changing it re-plans a running route. |
 | Show Automatic Waypoints | Off | Adds the network's own waypoints within 60 yards of you to the destination list, and mixes the waypoints up to 300 yards away into the entry points. Without it, the entry points still list the waypoints within 10 yards of you. They read "Auto, height N". |
 | Target Radius Around the Network (Yards) | 30 | How far from the network a place may lie and still get a route (1 to 100). Farther places have no network point. |

@@ -35,7 +35,7 @@ Was WowNav nicht tut:
 - Keine Instanzen. Das Innere von Dungeons und Schlachtzügen gibt es in den Daten nicht. Dungeoneingänge schon, und du kannst zu ihnen gehen. Die Eingänge einiger der Dungeons, die in WoW Forever neu sind, fehlen.
 - Keine Fahrzeuge in einer Route. Routen gehen immer zu Fuß. Ein Schiff, ein Zeppelin oder die Tiefenbahn ist kein Teil einer Route: WowNav führt dich zu ihrem Anleger, und du steigst selbst ein.
 - Keine Flugrouten.
-- Keine Gefahrenwarnungen vor Gegnern oder Kreaturenstufen. Die einzige Ausnahme ist die weiter unten beschriebene Warnung vor feindlichen Posten.
+- Keine Warnungen vor Gegnern oder Kreaturenstufen. WowNav weiß nicht, wo gerade Monster sind oder wie stark sie sind. Mit Sichere Routen hält es deine Route von den Stellen fern, an denen Monster gewöhnlich stehen; siehe [Sichere Routen](#sichere-routen). Die Warnung vor feindlichen Posten ist weiter unten beschrieben.
 - Das Tauchen ist deine Sache. Wasser ist in den Daten flach. Die einzige Tauchroute sind die Ruins of Blackfathom in Dunkelküste.
 
 Auf einer Karte, die die Daten nicht kennen, listet F10 nichts auf, und /beacon to antwortet "Keine Route gefunden". Der Scanner setzt mit Eingabe dann ein gerades Beacon, wie ohne Kartendaten. Wo WowNav Daten hat, führt Eingabe im Scanner auf einem NPC oder Objekt, das WowNavs Ortsliste an dieser Stelle kennt, zu WowNavs eigenem Eintrag dafür, mit seiner Höhe; siehe [Scanner](./scanner.md). Kann die Ortsliste einer Karte gar nicht gelesen werden, hörst du "WowNav-Katalog nicht nutzbar", gefolgt von einem Grund; gib ihn bei einer Fehlermeldung an.
@@ -103,6 +103,7 @@ Die Zusammenfassung kann weitergehen:
 - "dann das Portal" (oder "die Tiefenbahn", "den Aufzug", "ein Tauchgang", "Auftauchen"): Die Route endet an einem Verkehrsmittel, das weiter unten beschrieben ist.
 - "Ungefähre Zielposition.", wenn die Position des Ortes in den Daten selbst eine Schätzung ist.
 - "Warnung: Es gibt keinen Weg um den feindlichen Posten, die Route führt hindurch." oder "Warnung: Das Ziel liegt in einem feindlichen Posten.", nur mit Feindliche Posten meiden an.
+- "Die Route führt 40 Meter in der Nähe von Monstern, die kürzeste Route 160 Meter.", nur mit Sichere Routen an und wenn der kürzeste Weg an Monstern vorbeiführt; siehe [Sichere Routen](#sichere-routen).
 
 Das Beacon, seine Töne, Strg+W, Strg+S, Umschalt+F12, Alt Gr und I funktionieren alle wie in [Navigation und Routen](./navigation.md). Die Unterschiede:
 
@@ -139,7 +140,7 @@ Zwei Belegungen sind standardmäßig nicht belegt; belege sie im Fenster für di
 
 | Belegung | Was sie tut |
 |----------|-------------|
-| WowNav-Routenstatus | Sagt, was WowNav gerade tut: "Suche die Route zu Allison", "Unterwegs zu Allison, Wegpunkt 3 von 14", "Warte auf das andere Ende von das Portal", "Fahrt zum vorgemerkten Anleger Schiffsanleger nach Auberdine", "Am Anleger, warten", "Am Angelplatz" oder "Keine aktive Route". |
+| WowNav-Routenstatus | Sagt, was WowNav gerade tut: "Suche die Route zu Allison", "Unterwegs zu Allison, Wegpunkt 3 von 14", "Warte auf das andere Ende von das Portal", "Fahrt zum vorgemerkten Anleger Schiffsanleger nach Auberdine", "Am Anleger, warten", "Am Angelplatz" oder "Keine aktive Route". Mit Sichere Routen an folgt auf "Unterwegs zu", wie viele Meter die Route in der Nähe von Monstern führt. |
 | Neue WowNav-Route um eine versperrte Stelle | Benutze sie, wenn du an einer Verbindung festhängst (ein Zaun, eine geschlossene Tür, eine Rampe, die du nicht hochkommst). Die Verbindung, auf der du bist, wird im Plan gesperrt, und ab dem letzten Wegpunkt, den du erreicht hast, wird eine neue Route gesucht. Du hörst "Neue Route wird gesucht". Ohne Route hörst du "Keine aktive Route". |
 
 ## Verkehrsmittel: Anleger, Schiffe, Zeppeline, Tiefenbahn, Portale und Aufzüge
@@ -156,7 +157,7 @@ Manche Anleger, bisher der im Hafen von Sturmwind, funktionieren ohne Wartekreis
 
 ### Portale, der Eingang der Tiefenbahn und begehbare Orte
 
-Portale und der Eingang der Tiefenbahn funktionieren, indem du hineingehst. Eine Route endet am Portal, und WowNav sagt das, bevor du es erreichst, weil ein Portal sofort teleportiert: "Gleich vor dir: geh in das Portal, danach geht die Route weiter". Geh hinein. Wenn du am anderen Ende wieder herauskommst, hörst du "Die Route geht weiter", und WowNav sucht von dort den Rest des Weges. Passiert innerhalb von etwa 90 Sekunden nichts (länger bei Fahrten, die drei volle Umläufe des Fahrzeugs abwarten), hörst du "Die Fahrt dauerte zu lange; Route beendet". Die Windbrücke von Zephras Isle hat keine solche Grenze: Sie kommt, wann sie kommt.
+Portale und der Eingang der Tiefenbahn funktionieren, indem du hineingehst. Eine Route endet am Portal, und WowNav sagt das, bevor du es erreichst, weil ein Portal sofort teleportiert: "Gleich vor dir: geh in das Portal, danach geht die Route weiter". Das Beacon führt dich bis in das Portal hinein, auch wenn das Portal dich ins nächste Gebiet bringt, wie zwischen Rut'theran und Darnassus. Folge ihm, bis das Portal dich mitnimmt. Stehst du im Portal und es ist noch nichts passiert, hörst du "Geradeaus weitergehen; nach dem Übergang geht die Route von selbst weiter". Wenn du am anderen Ende wieder herauskommst, hörst du "Die Route geht weiter", und WowNav sucht von dort den Rest des Weges. Passiert innerhalb von etwa 90 Sekunden nichts (länger bei Fahrten, die drei volle Umläufe des Fahrzeugs abwarten), hörst du "Die Fahrt dauerte zu lange; Route beendet". Die Windbrücke von Zephras Isle hat keine solche Grenze: Sie kommt, wann sie kommt.
 
 Wählst du das Portal oder den Eingang der Tiefenbahn selbst als Ziel, wirst du zu einem Punkt kurz davor geführt und hörst: "Vorpunkt erreicht. Gehe geradeaus durch den Eingang oder das Portal; das Beacon bleibt bis zum Aktivierungsbereich an." Dann: "Im Aktivierungsbereich. Gehe geradeaus weiter; erst ein Kartenwechsel bestätigt den Übergang. Die Route bleibt bis dahin an." Nach dem Kartenwechsel hörst du "Kartenwechsel nach dem Aktivierungsbereich; Route beendet. Der Zielort ist nicht bestätigt."
 
@@ -187,6 +188,23 @@ WowNav kennt 788 Plätze zum Angeln an den Gewässern von 45 Gebieten. Ein Angel
 
 Der Punkt im Wasser ist nur zum Ausrichten da. WowNav schickt dich nie ins Wasser. Endet das Netz weiter vom Platz entfernt als deine Wurfweite, hörst du stattdessen das übliche "Das Netz endet ... vom Ziel", und es kommt kein Beacon.
 
+## Sichere Routen
+
+Mit Sichere Routen darf eine Route einen Umweg um Monster machen. WowNav weiß, wo die Monster und Kreaturen jedes Gebiets gewöhnlich stehen: dieselben, die du in der Zielliste findest. Ein Stück der Route, das näher als 20 Meter an einem vorbeiführt, zählt als in der Nähe von Monstern. Monster, die mehr als 8 Meter über oder unter der Route stehen, zählen nicht (eine Höhle unter dir, das Stockwerk über dir), und auch nicht die Monster direkt um deinen Start und um dein Ziel, weil ein Questziel oft mitten in einem Lager steht.
+
+Die Einstellung ist eine Prozentzahl, wie Straßen bevorzugen: Die Route darf bis zu so viel länger sein als der kürzeste Weg. 50 heißt bis zu anderthalbmal so lang, 100 bis zu doppelt so lang, 300 bis zu viermal so lang. Von den Routen in dieser Länge nimmt WowNav die, die am wenigsten Meter in der Nähe von Monstern führt. Wo keine Route sicherer ist, bekommst du die übliche. Sichere Routen lässt dich nie ohne Route.
+
+Sichere Routen ist standardmäßig aus (0). Aus werden Routen genau wie bisher und genauso schnell geplant. An dauert das Planen einer Route etwas länger, weil WowNav mehrere Routen vergleicht.
+
+So schaltest du es ein:
+
+1. Öffne das WowVision-Menü (/wv), dann Navigation, dann WowNav-Routen.
+2. Stelle Sichere Routen (Prozent länger) auf den Umweg, den du in Kauf nimmst, zum Beispiel 100.
+
+Führt der kürzeste Weg an Monstern vorbei, sagt die Zusammenfassung beim Start der Route, wie weit, zum Beispiel "Die Route führt 40 Meter in der Nähe von Monstern, die kürzeste Route 160 Meter." Die erste Zahl ist deine Route, die zweite der kürzeste Weg. Die Taste WowNav-Routenstatus sagt es unterwegs noch einmal.
+
+WowNav weiß, wo Monster gewöhnlich stehen, nicht, wo sie gerade sind, wie stark sie sind oder ob sie dich angreifen würden. Monster, die umherlaufen, und Monster, die die Zielliste nicht kennt, werden nicht gemieden.
+
 ## Einstellungen
 
 Öffne das WowVision-Menü (/wv), dann Navigation, dann WowNav-Routen.
@@ -196,6 +214,7 @@ Der Punkt im Wasser ist nur zum Ausrichten da. WowNav schickt dich nie ins Wasse
 | Aktiviert | An | Schaltet das ganze Modul ein oder aus. |
 | Routen von WowNav | An | Schickt jede Routenanfrage an WowNav statt an die klassischen Routen. |
 | Straßen bevorzugen (Prozent länger) | 60 | Eine Route auf Straßen und Wegen darf um so viel Prozent länger sein als der kürzeste Weg. 0 heißt immer der kürzeste. Bis zu 300. Auch Schwimmen zählt um so viel länger. Änderst du es während einer Route, hörst du eine Sekunde nach dem letzten Verstellen "Route wird mit der neuen Straßenvorliebe neu gesucht". |
+| Sichere Routen (Prozent länger) | 0 | Wie viel länger eine Route sein darf, um Monstern aus dem Weg zu gehen; siehe [Sichere Routen](#sichere-routen). 0 heißt aus. Bis zu 300. Änderst du es während einer Route, hörst du eine Sekunde nach dem letzten Verstellen "Route wird mit der neuen Sicherheitseinstellung neu gesucht". |
 | Feindliche Posten meiden | An | Routen führen um die Posten und Hauptstädte der gegnerischen Fraktion herum. Wo es keinen Weg drumherum gibt, führt die Route hindurch und warnt dich. Ändern plant eine laufende Route neu. |
 | Automatische Wegpunkte zeigen | Aus | Fügt der Zielliste die eigenen Wegpunkte des Netzes im Umkreis von 60 Metern hinzu und mischt die Wegpunkte bis 300 Meter unter die Einstiegspunkte. Ohne die Einstellung zeigen die Einstiegspunkte trotzdem die Wegpunkte im Umkreis von 10 Metern. Sie lesen sich "Auto, Höhe N". |
 | Zielradius um das Netz (Meter) | 30 | Wie weit vom Netz ein Ort liegen darf und trotzdem eine Route bekommt (1 bis 100). Weiter entfernte Orte haben keinen Netzpunkt. |

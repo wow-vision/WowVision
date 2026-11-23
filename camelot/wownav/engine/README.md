@@ -79,6 +79,16 @@ Keep this list current; everything else is his text, line for line (line endings
   stays.
 - `NavNetwork.lua`, routes on foot between maps: no seam joins two maps (0 of 3,042 in data a9bf246), so a foot-only
   route from one map to another is "no route" at once (`SharesMap`) instead of after a search of the whole continent.
+- `NavNetwork.lua`, safe routes (his `/vn safety`, 72777e3): his danger tables, `Pass(..., danger)` and the safety
+  passes of `N.Route` are taken as they are; in our `Pass` the danger is added in the loop over the links after the
+  link cost (one test per link while the factor is 0, no table, no extra pass). `SearchKey` adds the factor and the
+  `points` only while the factor is above 0, so a repeated search inside a job is answered as before when it is off.
+  The module sets the factor from the setting Safe Routes (`N.SetSafety`), and `../route.lua` passes the player's and
+  the target's position as `points` only while it is on.
+- His walk-in portal as a link of the route (WowVisionNavigation.lua, 5a1290b) is in `../route.lua`, not here:
+  `Route.triggerPoint` (his `WowVisionNavigationTriggerPoint`) and the leg's last waypoint in the trigger
+  (`Route:begin`). His `PendingTriggerEntered` was already WowVision's `Route:walkInTransit`, and the exit zone of a
+  teleport into a neighbouring zone is decoded by `Route:actionArrival`, so his `exitReady` change has no counterpart.
 - `Guidance.lua`: `G.MinArrivalRadius` reads `G.arrivalMin` (WowVision's arrival distance, set by the module)
   instead of his saved variable `arrivalMin`; the wownav module writes the radius Alt-P picks there (0.1 to 20 yd,
   default 1; his default 0 = the data's radius alone).
