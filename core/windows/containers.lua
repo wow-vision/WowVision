@@ -217,6 +217,51 @@ function module.visualRows(buttons)
     return rows
 end
 
+-- One item slot of a bag or the bank: the label (with "[Favorite]" and "[Junk]"
+-- ahead of it when the player marked its item, see favorites.lua and junk.lua),
+-- the clicks, and the Select Favorite and Select Junk keys and menu entries.
+-- The bags' Item Lists stop (retail/containers/Bags.lua) lists slots again and
+-- builds them with this too, so they read the same wherever they are.
+--
+-- A slot is built again on every rebuild of the window (every frame), so what
+-- does not change is made once per item button and kept: where the button
+-- points and how its label reads. Item buttons are the game's own frames and
+-- stay for the session.
+local slotParts = {}
+
+local function partsOf(itemButton)
+    local parts = slotParts[itemButton]
+    if parts == nil then
+        local function locate()
+            return module.slotLocation(itemButton)
+        end
+        parts = {
+            locate = locate,
+            label = function()
+                local windows = WowVision.base.windows
+                local label = windows.junk:tagLabel(module.getBagItemLabel(itemButton), locate())
+                return windows.favorites:tagLabel(label, locate())
+            end,
+        }
+        slotParts[itemButton] = parts
+    end
+    return parts
+end
+
+local function slotNode(itemButton)
+    local parts = partsOf(itemButton)
+    local windows = WowVision.base.windows
+    local node = module.itemSlotNode(
+        itemButton,
+        parts.label,
+        module.itemClickLabels(itemButton),
+        module.slotIsEmpty(itemButton)
+    )
+    node = windows.favorites:decorateSlot(node, parts.locate, itemButton)
+    return windows.junk:decorateSlot(node, parts.locate, itemButton)
+end
+module.slotNode = slotNode
+
 -- The text in the game's bag search box. The bag and bank boxes hold the
 -- same text (the game copies one into the others as it is typed), and the
 -- game clears it when the last of them hides.
@@ -280,12 +325,7 @@ function module.renderSlots(builder, buttons)
     if not grid then
         for _, itemButton in ipairs(buttons) do
             if itemButton:IsShown() then
-                builder:addItem(
-                    ControlId.forObject(itemButton),
-                    module.itemSlotNode(itemButton, function()
-                        return module.getBagItemLabel(itemButton)
-                    end, module.itemClickLabels(itemButton), module.slotIsEmpty(itemButton))
-                )
+                builder:addItem(ControlId.forObject(itemButton), slotNode(itemButton))
             end
         end
         return #rows
@@ -293,12 +333,7 @@ function module.renderSlots(builder, buttons)
     for _, row in ipairs(rows) do
         builder:startRow("grid")
         for _, itemButton in ipairs(row) do
-            builder:addItem(
-                ControlId.forObject(itemButton),
-                module.itemSlotNode(itemButton, function()
-                    return module.getBagItemLabel(itemButton)
-                end, module.itemClickLabels(itemButton), module.slotIsEmpty(itemButton))
-            )
+            builder:addItem(ControlId.forObject(itemButton), slotNode(itemButton))
         end
         builder:endRow()
     end

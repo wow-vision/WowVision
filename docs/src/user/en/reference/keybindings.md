@@ -89,6 +89,16 @@ The Invert Item Direction setting in the Buffers module swaps Alt+Up and Alt+Dow
 
 See [Chat](../windows/chat.md).
 
+## Bags
+
+| Action | Default key | Notes |
+|---|---|---|
+| Select Junk | Unbound | On an item slot of the bags or the bank: marks the item as junk, or takes the mark off. The slot's context menu (Shift+F10) does the same without a key. Do not give it Shift+Enter or Shift+Backspace: on a bag slot those are the game's shift clicks (splitting a stack, linking an item into chat) |
+
+| Select Favorite | Unbound | On an item slot of the bags or the bank: marks the item as a favorite, or takes the mark off. The slot's context menu (Shift+F10) does the same without a key. A favorite reads "[Favorite]" before its name and is never sold |
+
+See [Junk](../windows/bags-and-bank.md#junk) and [Favorites](../windows/bags-and-bank.md#favorites).
+
 ## Navigation and routes
 
 | Action | Default key | Notes |

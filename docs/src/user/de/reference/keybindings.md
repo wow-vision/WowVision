@@ -93,6 +93,16 @@ Die Einstellung Elementrichtung umkehren (Invert Item Direction) im Modul Puffer
 
 Siehe [Chat](../windows/chat.md).
 
+## Taschen
+
+| Aktion | Standardtaste | Hinweise |
+|---|---|---|
+| Plunder auswählen (Select Junk) | Unbelegt | Auf einem Gegenstandsplatz der Taschen oder der Bank: markiert den Gegenstand als Plunder oder nimmt die Markierung weg. Das Kontextmenü des Platzes (Umschalt+F10) tut dasselbe ohne Taste. Gib der Belegung nicht Umschalt+Eingabe oder Umschalt+Rücktaste: Auf einem Taschenplatz sind das die Umschaltklicks des Spiels (einen Stapel teilen, einen Gegenstand in den Chat linken) |
+
+| Favorit auswählen (Select Favorite) | Unbelegt | Auf einem Gegenstandsplatz der Taschen oder der Bank: markiert den Gegenstand als Favorit oder nimmt die Markierung weg. Das Kontextmenü des Platzes (Umschalt+F10) tut dasselbe ohne Taste. Ein Favorit wird mit „[Favorit]“ vor dem Namen gelesen und wird nie verkauft |
+
+Siehe [Plunder](../windows/bags-and-bank.md#plunder) und [Favoriten](../windows/bags-and-bank.md#favoriten).
+
 ## Navigation und Routen
 
 | Aktion | Standardtaste | Hinweise |

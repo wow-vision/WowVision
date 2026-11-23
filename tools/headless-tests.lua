@@ -347,6 +347,8 @@ loadAddonFile("core/colors/colors.lua")
 loadAddonFile("core/colors/tests.lua")
 loadAddonFile("core/windows/bars/lock.lua")
 loadAddonFile("core/windows/bars/tests.lua")
+loadAddonFile("core/windows/junkStore.lua")
+loadAddonFile("core/windows/junkStoreTests.lua")
 loadAddonFile("core/targeting/softTargeting.lua")
 loadAddonFile("core/targeting/softTargetingTests.lua")
 loadAddonFile("core/ui modules/enemyCount.lua")
@@ -366,6 +368,10 @@ loadAddonFile("core/crowdControl.lua")
 loadAddonFile("core/crowdControlTests.lua")
 loadAddonFile("core/scriptsCheck.lua")
 loadAddonFile("core/scriptsCheckTests.lua")
+loadAddonFile("core/windows/bagLists.lua")
+loadAddonFile("core/windows/bagListsTests.lua")
+loadAddonFile("core/windows/newItems.lua")
+loadAddonFile("core/windows/newItemsTests.lua")
 -- The group health monitor's module: loaded against a stand-in module whose settings are a real settings class (as
 -- Module:hasSettings makes them), so a setting's change reaches the module as in the game. The suite stubs the
 -- game's unit functions per test.
@@ -2625,6 +2631,8 @@ loadAddonFile("core/targeting/targetNamesTests.lua")
 loadAddonFile("core/targeting/pingTarget.lua")
 loadAddonFile("core/targeting/pingTargetTests.lua")
 
+-- The junk module and the merchant sale, against a stand-in for the game.
+loadAddonFile("tools/junkModuleTests.lua")
 -- Native quest source and the scanner's quest categories: the adapter and
 -- the provider load against stand-ins for the quest module and the scanner;
 -- the suite installs the game's map and quest log APIs per test and points
@@ -2722,6 +2730,9 @@ local parseOnly = {
     "core/graph/hybridScroll.lua",
     "mists/QuestLog.lua",
     "core/windows/merchant.lua",
+    "core/windows/marks.lua",
+    "core/windows/junk.lua",
+    "core/windows/favorites.lua",
     "core/windows/containers.lua",
     "classic/containers/Bag.lua",
     "classic/containers/Bank.lua",

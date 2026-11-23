@@ -35,6 +35,11 @@ local ControlId = graph.ControlId
 -- stop), right before the bags it searches. A fresh open still lands on the
 -- first bag.
 --
+-- Right after the bags comes the Item Lists stop, when the player switched it
+-- on (Show Item Lists, off by default) and some list has something in it: categories of items that belong together whichever bag they sit in
+-- (the items the game flags as new, the items the player marked as junk or as
+-- favorites; see core/windows/bagLists.lua).
+--
 -- WoW: Forever adds the keyring as a held bag (bag id Enum.BagIndex.Keyring,
 -- its own frame in both modes) with KeyRingButton as its slot button.
 local Bags = WowVision.components.createType("containers", { key = "RetailBags" })
@@ -64,7 +69,12 @@ local function shownContainerFrames()
 end
 
 function Bags:isOpen()
-    return #shownContainerFrames() > 0
+    local open = #shownContainerFrames() > 0
+    if not open then
+        -- what was new has been looked at once the bags close (core/windows/bagLists.lua)
+        WowVision.bagLists.reset()
+    end
+    return open
 end
 
 -- The backpack of an account without an authenticator draws four extra
@@ -294,8 +304,79 @@ local function renderFrameControls(builder, frame, frameKey)
     end
 end
 
+-- Item Lists: a stop of its own right after the bags, with one category per list (the items the game marks as
+-- new, the items marked as junk, the favorites; see core/windows/bagLists.lua). A category reads its name and how
+-- many items it holds, opens with Right and closes with Left like the scanner's, and lists the slots the way the
+-- bags read them (with their tags and keys, see containers.lua). The same slots are also in the bags where they
+-- sit; here they have control ids of their own. The stop is only there while some list has something in it.
+--
+-- Only with Show Item Lists on (off by default): the bags read as they always did unless the player asks for the
+-- extra stop, and nothing is looked up for it while it is off.
+module:hasSettings():add({
+    type = "Bool",
+    key = "showItemLists",
+    label = L["Show Item Lists"],
+    default = false,
+})
+
+local function renderLists(builder, frames)
+    if not module.settings.showItemLists then
+        return
+    end
+    local bagLists = WowVision.bagLists
+    local buttons = {}
+    for _, frame in ipairs(frames) do
+        for _, itemButton in ipairs(usableSlots(frame.Items)) do
+            tinsert(buttons, itemButton)
+        end
+    end
+    local collected = bagLists.collect(bagLists.sorted(buttons))
+    if #collected == 0 then
+        return
+    end
+    builder:beginStop("lists")
+    builder:pushContext("lists", L["Item Lists"])
+    for _, entry in ipairs(collected) do
+        local list = entry.list
+        local id = ControlId.structural("list:" .. list.key)
+        -- A list that starts open does so once per time the bags are open: the player may close it, and a
+        -- rebuild must not open it again. The builder's expansion set is the screen's own state.
+        if list.expanded and not bagLists.seeded[list.key] and builder.expansion ~= nil then
+            builder.expansion[id.key] = true
+            bagLists.seeded[list.key] = true
+        end
+        builder:beginGroup(id, {
+            controlType = graph.controlTypes.group,
+            announcements = {
+                { text = list.label .. " (" .. #entry.buttons .. ")", kind = graph.kinds.label },
+            },
+        }, nil, list.expanded)
+        for _, itemButton in ipairs(entry.buttons) do
+            builder:addItem(
+                ControlId.structural("list:" .. list.key .. ":" .. bagIdOf(itemButton) .. ":" .. itemButton:GetID()),
+                module.slotNode(itemButton)
+            )
+        end
+        builder:endGroup()
+    end
+    builder:popContext()
+end
+
 function Bags:renderGraph(builder)
     local frames = shownContainerFrames()
+    -- Once, right after the bags: after the combined grid and its bag slots, or after the last bag when each bag
+    -- is a frame.
+    local listsShown = false
+    local function lists()
+        if listsShown then
+            return
+        end
+        listsShown = true
+        local ok, err = pcall(renderLists, builder, frames)
+        if not ok then
+            geterrorhandler()(err)
+        end
+    end
     -- Bags shown as their own frame alongside the combined grid.
     local separateBags = {}
     for _, frame in ipairs(frames) do
@@ -314,6 +395,7 @@ function Bags:renderGraph(builder)
                 landed = true
             end
             renderGrid(builder, frame, frameKey, separateBags)
+            lists()
         else
             local order, groups = slotsByBag(frame)
             for _, bagID in ipairs(order) do
@@ -325,4 +407,5 @@ function Bags:renderGraph(builder)
             end
         end
     end
+    lists()
 end
