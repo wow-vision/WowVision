@@ -241,6 +241,33 @@ testRunner:addSuite("MoneyLineText", {
     end,
 })
 
+testRunner:addSuite("StatisticValueText", {
+    ["a count reads as it is"] = function(t)
+        t:assertEqual(utils.statisticValueText("42", coins), "42")
+        t:assertEqual(utils.statisticValueText(7, coins), "7")
+    end,
+
+    ["an unrecorded statistic reads zero"] = function(t)
+        t:assertEqual(utils.statisticValueText("--", coins), "0")
+        t:assertEqual(utils.statisticValueText("", coins), "0")
+        t:assertEqual(utils.statisticValueText("  ", coins), "0")
+    end,
+
+    ["coins are spoken"] = function(t)
+        local text = "3 " .. GOLD .. " 4 " .. SILVER .. " 5 " .. COPPER
+        t:assertEqual(utils.statisticValueText(text, coins), "3 Gold, 4 Silver, 5 Copper")
+    end,
+
+    ["colour codes and stray textures are dropped"] = function(t)
+        t:assertEqual(utils.statisticValueText("|cffffffff1.234|r", coins), "1.234")
+        t:assertEqual(utils.statisticValueText("|TInterface\\Icons\\X:0|t 12", coins), "12")
+    end,
+
+    ["no value at all is nil"] = function(t)
+        t:assertEqual(utils.statisticValueText(nil, coins), nil)
+    end,
+})
+
 testRunner:addSuite("FoldCase", {
     ["ASCII lowers as before"] = function(t)
         t:assertEqual(utils.foldCase("The Deadmines;285"), "the deadmines;285")

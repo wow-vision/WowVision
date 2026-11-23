@@ -918,6 +918,23 @@ local function statisticNodeData(node)
     return node
 end
 
+-- The value straight from the game (the row data only holds Blizzard's
+-- "--" for anything it could not read as a plain number, money included),
+-- falling back to what the row shows.
+local function statisticValue(data)
+    local raw = nil
+    if data.statID ~= nil and GetStatistic ~= nil then
+        local ok, quantity = pcall(GetStatistic, data.statID)
+        if ok then
+            raw = quantity
+        end
+    end
+    if raw == nil then
+        raw = data.value
+    end
+    return WowVision.utils.statisticValueText(raw, C_CurrencyInfo.GetCoinText)
+end
+
 local function renderStatistics(builder)
     local frame = StatisticsFrame
     if frame == nil or frame.ScrollBox == nil then
@@ -942,16 +959,23 @@ local function renderStatistics(builder)
                         return node:IsCollapsed()
                     end)
                 )
+            elseif not data.isCategory then
+                -- A statistic does nothing on click, so it is a text row:
+                -- name, then its value, then the position.
+                local row = listText(helpers, tostring(data.name or ""))
+                tinsert(row.announcements, {
+                    text = function()
+                        return statisticValue(data)
+                    end,
+                    kind = kinds.value,
+                    live = "focus",
+                })
+                builder:addItem(helpers.id, row)
+                return
             end
             builder:addItem(
                 helpers.id,
-                listRow(helpers, function()
-                    local label = tostring(data.name or "")
-                    if not data.isCategory and data.value ~= nil then
-                        return label .. " " .. tostring(data.value)
-                    end
-                    return label
-                end, parts)
+                listRow(helpers, tostring(data.name or ""), parts)
             )
         end,
     })
