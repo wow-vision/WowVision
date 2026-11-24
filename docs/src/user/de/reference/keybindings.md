@@ -179,6 +179,14 @@ Siehe [Beute, Handel und Post](../windows/loot-trade-mail.md).
 
 Siehe [Gruppensuche](../windows/group-finder.md).
 
+## LFG Forever
+
+| Aktion | Standardtaste | Hinweise |
+|---|---|---|
+| LFG Forever öffnen oder schließen (Open or Close LFG Forever) | Alt+Strg+G | Öffnet das Fenster des Addons LFG Forever oder schließt es, wie /lfg und /wv lfg. Gibt es nur in WoW: Forever mit installiertem LFG Forever. Die zwei eigenen Tasten von LFG Forever (Öffnen und Suchen, in der Tastenbelegung des Spiels) bleiben unberührt |
+
+Siehe [Gruppensuche](../windows/group-finder.md).
+
 ## Monitore
 
 | Aktion | Standardtaste | Hinweise |
@@ -228,6 +236,7 @@ Einige WowVision-Belegungen erfüllen dieselbe Aufgabe wie Tasten von Sku, dem �
 
 - die sechs Tooltip-Tasten (Umschalt+Pfeil hoch, Umschalt+Pfeil runter, Strg+Umschalt+Pfeil hoch, Strg+Umschalt+Pfeil runter, Umschalt+Pfeil links, Umschalt+Pfeil rechts)
 - Handel annehmen (Alt+Strg+T)
+- LFG Forever öffnen oder schließen (Alt+Strg+G)
 - die Umschalter der weichen Zielerfassung (Umschalt+I, Umschalt+P, Umschalt+O)
 - Zielfokus 1 bis Zielfokus 5 (und die Befehle `/focus1` bis `/focus5`)
 

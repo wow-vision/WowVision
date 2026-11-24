@@ -9,6 +9,7 @@ Diese Seite behandelt alles rund ums Finden und Bilden von Gruppen: das Gruppens
 | Gruppensuche-Werkzeug (Eintragen, Durchsuchen) | nein | ja | noch nicht | noch nicht | ja |
 | Dungeonbrowser (Follower- und bestimmte Dungeons) | nein | nein | noch nicht | ja | nein |
 | Who-Reiter in der Gruppensuche | nein | nein | nein | nein | ja |
+| LFG Forever (Fremd-Addon, /lfg) | nein | nein | nein | nein | ja, wenn das Addon installiert ist |
 | Popup für den Bereitschaftscheck | ja | ja | ja | ja | ja |
 | Popup „Dungeon bereit“ und Popups für die Rollenüberprüfung | wo das Spiel sie zeigt | wo das Spiel sie zeigt | ja | ja | wo das Spiel sie zeigt |
 | /pquit und /dquit | ja | ja | ja | ja | ja |
@@ -16,7 +17,7 @@ Diese Seite behandelt alles rund ums Finden und Bilden von Gruppen: das Gruppens
 
 In Mists werden die Fenster für Dungeonbrowser, Schlachtzugsbrowser und vorgefertigte Gruppen selbst noch nicht vorgelesen. In Retail wird der Dungeonbrowser vorgelesen, der Schlachtzugsbrowser, die vorgefertigten Gruppen und die anderen Reiter des Fensters dagegen nicht. Die Popups, die daraus entstehen (Dungeon bereit, Rollenüberprüfung), werden vorgelesen, und /dquit verlässt die Gruppe danach.
 
-Ist das Addon Sku geladen, überlässt WowVision den Bereitschaftscheck, die Popups für „Dungeon bereit“ und Rollenabfrage sowie die Befehle /pquit und /dquit Sku.
+Ist das Addon Sku geladen, überlässt WowVision den Bereitschaftscheck, die Popups für „Dungeon bereit“ und Rollenabfrage, die Befehle /pquit und /dquit sowie das Fenster von LFG Forever Sku.
 
 ## Das Gruppensuche-Werkzeug (TBC und WoW: Forever)
 
@@ -101,6 +102,36 @@ In WoW: Forever hat das Freundesfenster keinen Wer-Reiter, deshalb steckt er in 
 4. Eine Summenzeile. Sie wird nur gelesen, wenn der Server mehr Spieler gefunden als gesendet hat; der Server sendet höchstens 50.
 
 Das Kontextmenü (Umschalt+F10) eines Ergebnisses hat zuerst Einladen (Invite), danach die Einträge des Spielermenüs.
+
+## LFG Forever (WoW: Forever, optionales Addon)
+
+LFG Forever von Artefius ist ein Gruppensuche-Addon für WoW: Forever. Es ist etwas anderes als das oben beschriebene Gruppensuche-Werkzeug des Spiels: Du öffnest es mit /lfg, es hat ein eigenes Fenster und arbeitet mit eigenen Filtern (Rollen, Stufe, Klassen, Spielstil, Sprachen). Es listet die Gruppen und die Spieler auf, die eine Gruppe suchen und die seine Suche gefunden hat, führt ein Protokoll der empfangenen Flüsternachrichten und eine Liste der Spieler, mit denen du gespielt hast und die du bewerten kannst. WowVision liest dieses Fenster, wenn das Addon installiert und eingeschaltet ist. Ohne LFG Forever gibt es nichts davon: keine Taste, keinen Befehl und kein Modul in den Einstellungen.
+
+WowVision öffnet seinen Bildschirm, sobald sich das Fenster von LFG Forever öffnet, egal wie: /lfg, die eigene Taste von LFG Forever, seine Minikarten-Schaltfläche, die Taste LFG Forever öffnen oder schließen (standardmäßig Alt+Strg+G, in der Tastenbelegung aufgeführt) oder /wv lfg. Esc schließt das Fenster. Jedes Bedienelement ist das echte von LFG Forever: Eingabe klickt darauf, an der Arbeitsweise von LFG Forever ändert sich also nichts, und jedes Wort seiner Filter, Reiter und Aktivitäten wird in der Sprache gelesen, in der LFG Forever angezeigt wird.
+
+Die Stationen von oben nach unten:
+
+1. Reiter: Filter, Flüstern und Spielerbewertungen, die Reiter der rechten Spalte. Links und Rechts bewegen sich entlang der Reiter; der offene Reiter sagt „ausgewählt“. Eingabe öffnet einen.
+2. Suche: die Dropdowns Kategorie und Aktivität (jedes liest seinen Namen und deine Wahl; Eingabe öffnet das Menü des Spiels), die Schaltfläche Suchen und, wenn LFG Forever ihn zeigt, die Schaltfläche Rollencheck. Hier beginnt der Cursor. Im Menü Aktivität tragen die Zeilen von Dungeons und Schlachtzügen den Favoritenstern von LFG Forever: Pfeil rechts auf einer Zeile geht zu ihm, und Eingabe markiert die Aktivität als Favorit oder hebt die Markierung auf. Favoriten stehen beim nächsten Öffnen des Menüs zuerst.
+3. Suchergebnisse: „Suche läuft“, solange eine Suche läuft, dann zwei Teile, Gruppen und Spieler, jeder eine Überschrift, die liest, wie viele Zeilen sie enthält, und „Ausgeklappt“ oder „Eingeklappt“ (Eingabe klappt sie ein oder aus), und eine Zeile pro Gruppe oder Spieler.
+4. Für den offenen Reiter:
+   - Filter: vier Stationen, eine pro Abschnitt, jede mit ihrer Überschrift (Eingabe klappt sie ein oder aus; ein eingeklappter Abschnitt sagt „Filter sind geändert“, wenn etwas darin nicht auf seinem Standardwert steht) und ihren Bedienelementen: Gruppen (welche Rollen die Gruppe noch braucht, welche Klassen ausgeschlossen sind, Filter zurücksetzen, Neuen Filter speichern, Meine Filter), Spieler (die Rollen, die Mindest- und die Höchststufe, die du eintippst), Klassen (ein Kontrollkästchen pro Klasse, Alle auswählen, Alle abwählen) und Verschiedenes (Spielstil und Sprachen).
+   - Flüstern: das Protokoll, eine Zeile pro Flüsternachricht, dann Chat löschen.
+   - Spielerbewertungen: deine letzten Gruppenmitglieder, dann Bewertung löschen.
+5. Einstellungen: die Einstellungsschaltfläche von LFG Forever.
+
+Die Zeile einer Gruppe liest den Anführer, wofür sie sucht, wie viele Mitglieder sie hat und welche („3 Mitglieder (1 Tank, 2 Schaden)“), den Spielstil und die Notiz. Die Zeile eines Spielers liest den Namen, „Stufe 17 Mage“, die Rollen, wofür, die Zone, den Spielstil und die Notiz. Danach, wo es zutrifft, „dein eigener Eintrag“, „Eintrag entfernt“ und „neulingsfreundlich“. Was das Spiel geheim hält (in einem Dungeon, einem Schlachtzug oder einem Kampf), wird weggelassen und nie geraten; eine Zeile, von der nichts lesbar ist, sagt „Gruppe, Details nicht verfügbar“. Nach ihrem Text sagt die Zeile, was Eingabe tut: „Beitritt anfragen“ bei einer Gruppe („schon angefragt“, wenn du es getan hast), „Einladen“ bei einem Spieler, „Meinen Eintrag entfernen“ bei deinem eigenen Eintrag, wenn LFG Forever dich ihn entfernen lässt (du bist allein oder führst die Gruppe an). Danach, wenn LFG Forever die Zeile markiert, „Gildenmitglied“ oder „Freund“ und deine Bewertung des Spielers („mit 2 von 3 Sternen bewertet“; bei einer Gruppe die niedrigste Bewertung unter ihren Mitgliedern: „niedrigste Bewertung in der Gruppe: 1 von 3 Sternen“).
+
+| Taste auf einem Ergebnis | Was sie tut |
+|---|---|
+| Eingabe | Bei einer Gruppe: Beitritt anfragen (die eigene Schaltfläche von LFG Forever; sie flüstert dem Anführer der Gruppe die Nachricht, die du in LFG Forever eingestellt hast). Bei einem Spieler: Einladen. Bei deinem eigenen Eintrag: Meinen Eintrag entfernen |
+| Rücktaste | Öffnet das Rechtsklick-Menü des Spiels für diesen Eintrag (Flüstern, als Freund hinzufügen, melden) |
+| Umschalt+F10 | Listet, was für die Zeile gilt (Beitritt anfragen, Einladen oder Meinen Eintrag entfernen), danach das Rechtsklick-Menü |
+| Leertaste | Liest den Tooltip der Zeile |
+
+LFG Forever lässt etwa zwei Sekunden zwischen zwei dieser Aktionen, in denen seine Schaltfläche deaktiviert ist. In den Reitern Flüstern und Spielerbewertungen öffnet Eingabe das Rechtsklick-Menü der Zeile. Das Kontextmenü (Umschalt+F10) einer Flüsternachricht hat Einladen, Wo ist dieser Spieler (wenn LFG Forever es anbietet) und Entfernen; das eines Spielers, den du bewerten kannst, hat Mit 1 Stern bewerten, Mit 2 Sternen bewerten und Mit 3 Sternen bewerten. Die Zeile einer Flüsternachricht sagt außerdem „Gildenmitglied“ oder „Freund“ und deine Bewertung des Absenders, und ein Spieler, den du bewerten kannst, sagt „Gildenmitglied“ oder „Freund“, wenn LFG Forever sie markiert.
+
+LFG Forever hält seinen Code privat, deshalb erreicht WowVision es nur über die Namen, die es seinem Fenster und seinen Bedienelementen gibt (diese Seite wurde für Version 2.3.0 geschrieben und mit 2.5.0 geprüft). Benennt ein Update von LFG Forever einige davon um, wird der Teil des Bildschirms, der davon abhängt, weggelassen und der Fehler einmal gemeldet, und der Rest funktioniert weiter. Kann das ganze Fenster nicht gelesen werden, hörst du einmal „Das Fenster von LFG Forever hat sich geändert und kann nicht gelesen werden“. Solange Sku geladen ist, überlässt WowVision LFG Forever, seine Taste und seinen Befehl Sku.
 
 ## Die Gruppensuche in Retail
 

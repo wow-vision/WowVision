@@ -9,6 +9,7 @@ This page covers everything about finding and forming groups: the Looking for Gr
 | Looking for Group tool (listing, browse) | no | yes | not yet | not yet | yes |
 | Dungeon Finder (follower and specific dungeons) | no | no | not yet | yes | no |
 | Who tab inside the group finder | no | no | no | no | yes |
+| LFG Forever (third-party addon, /lfg) | no | no | no | no | yes, when the addon is installed |
 | Ready check popup | yes | yes | yes | yes | yes |
 | Dungeon-ready popup and role check popups | where the game shows them | where the game shows them | yes | yes | where the game shows them |
 | /pquit and /dquit | yes | yes | yes | yes | yes |
@@ -16,7 +17,7 @@ This page covers everything about finding and forming groups: the Looking for Gr
 
 On Mists the dungeon finder, raid finder and premade groups windows themselves are not read yet. On Retail the Dungeon Finder is read, but the Raid Finder, Premade Groups and the other tabs of the window are not. The popups that come out of them (dungeon ready, role check) are read, and /dquit leaves the group afterwards.
 
-If the addon Sku is loaded, WowVision leaves the ready check, dungeon-ready and role popups and the /pquit and /dquit commands to Sku.
+If the addon Sku is loaded, WowVision leaves the ready check, dungeon-ready and role popups, the /pquit and /dquit commands and the LFG Forever window to Sku.
 
 ## The Looking for Group tool (TBC and WoW: Forever)
 
@@ -100,6 +101,36 @@ On WoW: Forever the friends window has no Who tab, so the group finder holds it.
 4. A totals line. It is read only when the server found more players than it sent; the server sends at most 50.
 
 The context menu (Shift+F10) of a result has Invite first, then the player menu's entries.
+
+## LFG Forever (WoW: Forever, optional addon)
+
+LFG Forever, by Artefius, is a group finder addon for WoW: Forever. It is a different thing from the game's own Looking for Group tool described above: you open it with /lfg, it has a window of its own, and it works from its own filters (roles, level, classes, play style, languages). It lists the groups and the players looking for a group that its search found, keeps a log of the whispers it received, and a list of the players you grouped with that you can rate. WowVision reads that window when the addon is installed and switched on. Without LFG Forever none of this exists: there is no key, no command and no module in the settings.
+
+WowVision opens its screen whenever LFG Forever's window opens, whichever way: /lfg, LFG Forever's own key, its minimap button, the Open or Close LFG Forever key (Alt+Ctrl+G by default, listed in the keybinding window) or /wv lfg. Escape closes the window. Every control is the real one of LFG Forever: Enter clicks it, so nothing changes in how LFG Forever works, and every word of its filters, tabs and activities is read in the language LFG Forever is shown in.
+
+Stops from top to bottom:
+
+1. Tabs: Filters, Whispers and Player ratings, the tabs of the right-hand column. Left and Right move along them; the open tab reads "selected". Enter opens one.
+2. Search: the Category and Activity dropdowns (each reads its name and your pick; Enter opens the game's menu), the Search button and, when LFG Forever shows it, the Role check button. This is where the cursor starts. In the Activity menu, the rows of Dungeons and Raids carry LFG Forever's favorite star: Right arrow on a row moves to it, and Enter marks the activity as a favorite or takes the mark off. Favorites are listed first the next time the menu opens.
+3. Search results: "Searching" while a search runs, then two parts, Groups and Players, each a header reading how many lines it holds and "Expanded" or "Collapsed" (Enter folds or unfolds it), and one line per group or player.
+4. For the open tab:
+   - Filters: four stops, one per section, each with its header (Enter folds or unfolds it; a folded section says "has changed filters" when something in it is not at its default) and its controls: Groups (which roles the group still needs, which classes to leave out, Reset filters, Save new filter, My filters), Players (the roles, the minimum and maximum level, which you type), Classes (a check box per class, Select all, Unselect all) and Miscellaneous (play style and languages).
+   - Whispers: the log, one line per whisper, then Clear chat.
+   - Player ratings: your recent party members, then Clear a rating.
+5. Settings: LFG Forever's settings button.
+
+A group's line reads its leader, what it is for, how many members it has and what they are ("3 members (1 Tank, 2 Damage)"), the play style and the note. A player's line reads the name, "level 17 Mage", the roles, what for, the zone, the play style and the note. Then, where they apply, "your own listing", "listing removed" and "welcomes new players". What the game keeps hidden (in a dungeon, a raid or a fight) is left out and never guessed; a line with nothing readable says "Group, details unavailable". After its text the line says what Enter does: "Ask to join" on a group ("already asked" when you did), "Invite" on a player, "Remove my listing" on your own listing when LFG Forever lets you remove it (you are alone or lead the group). Then, when LFG Forever marks the line, "guild member" or "friend", and your rating of the player ("rated 2 of 3 stars"; for a group, the lowest rating among its members: "lowest rating in the group: 1 of 3 stars").
+
+| Key on a result | What it does |
+|---|---|
+| Enter | On a group: Ask to join (LFG Forever's own button; it whispers the group's leader the message you set in LFG Forever). On a player: Invite. On your own listing: Remove my listing |
+| Backspace | Opens the game's right click menu for that listing (whisper, add as friend, report) |
+| Shift+F10 | Lists what applies to the line (Ask to join, Invite or Remove my listing), then the right click menu |
+| Space | Reads the tooltip of the line |
+
+LFG Forever leaves about two seconds between two of these actions, and its button is disabled during that time. On the Whispers and Player ratings tabs Enter opens the line's right click menu. The context menu (Shift+F10) of a whisper has Invite, Where is this player (when LFG Forever offers it) and Remove; the one of a player to rate has Rate 1 star, Rate 2 stars and Rate 3 stars. A whisper's line also says "guild member" or "friend" and your rating of its sender, and a player to rate says "guild member" or "friend", when LFG Forever marks them.
+
+LFG Forever keeps its code private, so WowVision reaches it only through the names it gives its window and its controls (this page was written for version 2.3.0 and checked against 2.5.0). If an update of LFG Forever renames some of them, the part of the screen that depends on it is left out and the error is reported once, and the rest keeps working. If the whole window cannot be read you hear "LFG Forever's window has changed and cannot be read" once. While Sku is loaded, WowVision leaves LFG Forever, its key and its command alone.
 
 ## The group finder on Retail
 

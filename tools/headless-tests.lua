@@ -2621,6 +2621,47 @@ do
     loadAddonFile("retail/socialUITests.lua")
     WowVision._socialUITestHarness = nil
 end
+-- LFG Forever's window (camelot/lfgForever): the files load against a stand-in window module, as many times as a test
+-- asks (harness.load takes the addons that count as loaded); the window, key and command they register come back
+-- to the suite, and the game's frames are per test.
+do
+    local savedBase, savedLoaded = WowVision.base, WowVision.loadedAddons
+    local function stubModule(registered)
+        local stub = { L = WowVision:getLocale() }
+        function stub:setLabel() end
+        function stub:registerWindow(def)
+            registered.windows[def.name] = def
+        end
+        function stub:registerBinding(def)
+            registered.bindings[def.key] = def
+        end
+        function stub:registerCommand(def)
+            registered.commands[def.name] = def
+        end
+        function stub:createModule(key)
+            local child = stubModule(registered)
+            self[key] = child
+            return child
+        end
+        return stub
+    end
+    local harness = {}
+    function harness.load(loaded)
+        local registered = { windows = {}, bindings = {}, commands = {} }
+        WowVision.base = { windows = stubModule(registered) }
+        WowVision.loadedAddons = loaded
+        for _, file in ipairs({ "lfgForever", "labels", "screen" }) do
+            loadAddonFile("camelot/lfgForever/" .. file .. ".lua")
+        end
+        local module = WowVision.base.windows.lfgForever
+        WowVision.base, WowVision.loadedAddons = savedBase, savedLoaded
+        return module, registered
+    end
+    harness.module, harness.registered = harness.load({ LFGForever = true })
+    WowVision._lfgForeverTestHarness = harness
+    loadAddonFile("camelot/lfgForever/tests.lua")
+    WowVision._lfgForeverTestHarness = nil
+end
 loadAddonFile("core/windows/options/layoutPages.lua")
 loadAddonFile("core/windows/options/layoutPagesTests.lua")
 loadAddonFile("core/graph/menuNavTests.lua")

@@ -30,6 +30,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /wv version | Gibt die WowVision-Version aus | alle |
 | /wv accept | Nimmt eine Gruppeneinladung an, auch im Kampf | alle |
 | /wv auras | Öffnet die Liste deiner Buffs und Debuffs oder sagt sie an | alle |
+| /wv lfg | Öffnet oder schließt LFG Forever, die Gruppensuche eines Fremd-Addons | WoW: Forever, mit installiertem LFG Forever |
 | /wv pendingtest | Zeigt einen Testkasten, der wie eine Gruppeneinladung wartet | alle |
 | /beacon | Setzt ein Beacon, routet zu einem benannten Ort oder liest deine Position vor | alle |
 | /focus1 bis /focus5 | Setzt ein virtuelles Fokusziel | alle, nicht mit Sku |
@@ -94,6 +95,10 @@ Nimmt die Gruppeneinladung an, die gerade angezeigt wird, und sagt "Gruppeneinla
 ### /wv auras
 
 Deine Buffs und Debuffs, ohne einen Aura-Puffer. Ohne Zusatz öffnet /wv auras die Liste, wie die Taste Spieler-Auren (Alt+Umschalt+B). /wv auras say sagt zuerst jeden Buff und dann jeden Debuff an, wie Spieler-Auren ansagen (Alt+Strg+B), zum Beispiel „Spieler-Buffs: 2. Machtwort: Seelenstärke, noch 59 Min. Erneuerung, 2 Stapel, noch 12 Sek. Spieler-Debuffs, keine“. /wv auras count sagt nur, wie viele es sind: „Spieler-Buffs: 2. Spieler-Debuffs: 0.“. Auf einer Spielversion, die Auren nicht lesen kann, hörst du „Auren sind nicht verfügbar.“. Versionen: alle. Siehe [Puffer](../information/buffers.md#deine-buffs-und-debuffs-auf-einen-blick).
+
+### /wv lfg
+
+Öffnet das Fenster von LFG Forever, dem Gruppensuche-Addon eines anderen Autors, oder schließt es, wenn es offen ist: dasselbe wie /lfg und die Taste LFG Forever öffnen oder schließen (Alt+Strg+G). WowVision liest das Fenster, sobald es offen ist. Ohne LFG Forever gibt es den Befehl nicht, und solange Sku geladen ist, bleibt er Sku überlassen. Versionen: WoW: Forever. Siehe [Gruppensuche](../windows/group-finder.md).
 
 ### /wv pendingtest
 

@@ -28,6 +28,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv version | Prints the WowVision version | all |
 | /wv accept | Accepts a group invitation, also in combat | all |
 | /wv auras | Opens the list of your buffs and debuffs, or says them | all |
+| /wv lfg | Opens or closes LFG Forever, the third-party group finder | WoW: Forever, with LFG Forever installed |
 | /wv pendingtest | Shows a test box that waits like a group invitation | all |
 | /beacon | Sets a beacon, routes to a named place, or reads your position | all |
 | /focus1 to /focus5 | Sets a virtual focus target | all, not with Sku |
@@ -93,6 +94,10 @@ Accepts the group invitation that is shown and says "Group invitation accepted".
 ### /wv auras
 
 Your buffs and debuffs, without an aura buffer. With nothing after it, /wv auras opens the list, the same as the Player Auras key (Alt+Shift+B). /wv auras say says every buff and then every debuff, the same as Speak Player Auras (Alt+Ctrl+B), for example "Player Buffs: 2. Power Word: Fortitude, 59 minutes remaining. Renew, 2 stacks, 12 seconds remaining. Player Debuffs, none". /wv auras count says only how many there are: "Player Buffs: 2. Player Debuffs: 0.". On a game version that cannot read auras you hear "Auras are not available.". Versions: all. See [Buffers](../information/buffers.md#your-buffs-and-debuffs-at-a-glance).
+
+### /wv lfg
+
+Opens the window of LFG Forever, the third-party group finder addon, or closes it when it is open: the same as /lfg and the Open or Close LFG Forever key (Alt+Ctrl+G). WowVision reads the window once it is open. Without LFG Forever the command does not exist, and while Sku is loaded it is left to Sku. Versions: WoW: Forever. See [Group Finder](../windows/group-finder.md).
 
 ### /wv pendingtest
 

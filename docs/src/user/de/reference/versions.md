@@ -103,6 +103,7 @@ Einzelheiten zum Questlog pro Version stehen auf der Seite [Quests](../world/que
 | Haustiere, Spielzeuge, Erbstücke, Erscheinungen | Nein | Nein | Nein | Nein | Ja |
 | Vermächtnis (Belohnungsleiste, Herausforderungen, Bäume) | Nein | Nein | Nein | Nein | Ja |
 | Gruppensuche | Nein | Ja | Nein | Ja (Dungeonbrowser; andere Reiter noch nicht) | Ja |
+| LFG Forever (Gruppensuche-Addon eines anderen Autors) | Nein | Nein | Nein | Nein | Ja, wenn das Addon installiert ist |
 | Tierstall | Nein | Ja | Nein | Nein | Nein |
 | Auktionshaus | Nein | Ja (mit Preisdatenbank und Komplett-Scan) | Ja | Ja (mit Preisdatenbank und Komplett-Scan) | Ja (mit Preisdatenbank und Komplett-Scan) |
 

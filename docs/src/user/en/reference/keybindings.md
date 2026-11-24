@@ -175,6 +175,14 @@ See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
 
 See [Group Finder](../windows/group-finder.md).
 
+## LFG Forever
+
+| Action | Default key | Notes |
+|---|---|---|
+| Open or Close LFG Forever | Alt+Ctrl+G | Opens the window of the LFG Forever addon, or closes it, the same as /lfg and /wv lfg. Only exists on WoW: Forever with LFG Forever installed. LFG Forever's own two keys (Open and Search, in the game's key bindings) are left as they are |
+
+See [Group Finder](../windows/group-finder.md).
+
 ## Monitors
 
 | Action | Default key | Notes |
@@ -224,6 +232,7 @@ Some WowVision bindings do the same job as keys of Sku, the older accessibility 
 
 - the six tooltip keys (Shift+Up, Shift+Down, Ctrl+Shift+Up, Ctrl+Shift+Down, Shift+Left, Shift+Right)
 - Accept Trade (Alt+Ctrl+T)
+- Open or Close LFG Forever (Alt+Ctrl+G)
 - the soft targeting switches (Shift+I, Shift+P, Shift+O)
 - Target Focus 1 to Target Focus 5 (and the `/focus1` to `/focus5` commands)
 
