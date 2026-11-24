@@ -12,11 +12,18 @@ local kinds = graph.kinds
 -- slots (current pet and the two stable slots), Purchase with the price of
 -- the next slot, and the money you carry.
 --
+-- WoW: Forever loads this file too. Its stable is the same window on a newer
+-- build: the slots keep their global names, but Purchase, the diet icon and
+-- the model are unnamed parts of the frame (purchaseButton, diet,
+-- modelScene), there is no GetNextStableSlotCost (the price is only in the
+-- cost money frame), and an experience bar (expBar) is added. Every lookup
+-- below tries the TBC name first, so TBC reads exactly what it did.
+--
 -- Everything goes through the slots' own scripts, as the mouse does. Enter
 -- on a slot is its left click (ClickStablePet): it selects the pet there,
--- or, while a pet is on the cursor, puts it down in that slot. Drag in a
--- slot's context menu runs its drag script (PickupStablePet), which picks
--- the pet up. So: Drag on the current pet, Enter on a free stable slot
+-- or, while a pet is on the cursor, puts it down in that slot. Drag (the
+-- drag key, or Drag in a slot's context menu) runs its drag script
+-- (PickupStablePet), which picks the pet up. So: Drag on the current pet, Enter on a free stable slot
 -- stables it; Drag on a stabled pet, Enter on the current pet slot takes it
 -- out (or swaps it with the pet you have).
 
@@ -55,6 +62,9 @@ local function addSlot(builder, button, index)
         end,
         kind = kinds.selected,
     })
+    -- The drag key does what Drag in the context menu does: the slot's own
+    -- drag script picks the pet up, or with a pet held, its drop script.
+    tinsert(vtable.bindings, { binding = "drag", type = "Function", func = nodes.dragScript(button) })
     builder:addItem(ControlId.forObject(button), vtable)
 end
 
@@ -80,6 +90,41 @@ local function shownText(builder, key, fontString)
     )
 end
 
+-- The frame's part under a TBC global name, else under Forever's parent key.
+local function part(globalName, key)
+    local frame = rawget(_G, globalName)
+    if frame ~= nil then
+        return frame
+    end
+    return PetStableFrame[key]
+end
+
+-- What the next stable slot costs, in copper. TBC asks the game; Forever
+-- has no such function, so this reads the cost money frame the window shows.
+local function nextSlotCost()
+    local getCost = rawget(_G, "GetNextStableSlotCost")
+    if getCost ~= nil then
+        return getCost()
+    end
+    local moneyFrame = rawget(_G, "PetStableCostMoneyFrame")
+    if moneyFrame == nil then
+        return nil
+    end
+    if type(moneyFrame.staticMoney) == "number" then
+        return moneyFrame.staticMoney
+    end
+    local total, found = 0, false
+    for unit, factor in pairs({ Gold = 10000, Silver = 100, Copper = 1 }) do
+        local button = rawget(_G, "PetStableCostMoneyFrame" .. unit .. "Button")
+        if button ~= nil and button:IsShown() then
+            local digits = tostring(button:GetText() or ""):gsub("%D", "")
+            total = total + (tonumber(digits) or 0) * factor
+            found = true
+        end
+    end
+    return found and total or nil
+end
+
 local function render(builder, screen)
     if PetStableFrame == nil or not PetStableFrame:IsShown() then
         return
@@ -91,13 +136,20 @@ local function render(builder, screen)
     builder:pushContext("pet", L["Selected Pet"])
     shownText(builder, "pet:level", PetStableLevelText)
     shownText(builder, "pet:loyalty", PetStableLoyaltyText)
-    local modelShown = PetStableModel ~= nil and PetStableModel:IsShown()
-    if PetStablePetInfo ~= nil and PetStablePetInfo.tooltip ~= nil and modelShown then
+    -- Forever's experience bar ("XP 1257/2525").
+    local experience = PetStableFrame.expBar
+    if experience ~= nil and experience:IsShown() then
+        shownText(builder, "pet:experience", experience.Text)
+    end
+    local model = part("PetStableModel", "modelScene")
+    local modelShown = model ~= nil and model:IsShown()
+    local diet = part("PetStablePetInfo", "diet")
+    if diet ~= nil and diet.tooltip ~= nil and modelShown then
         builder:addItem(
             ControlId.structural("pet:diet"),
             nodes.text({
                 label = function()
-                    return PetStablePetInfo.tooltip
+                    return diet.tooltip
                 end,
             })
         )
@@ -111,19 +163,18 @@ local function render(builder, screen)
     end
     builder:popContext()
 
-    if PetStablePurchaseButton ~= nil and PetStablePurchaseButton:IsShown() then
+    local purchase = part("PetStablePurchaseButton", "purchaseButton")
+    if purchase ~= nil and purchase:IsShown() then
         builder:beginStop("purchase")
         local vtable = nodes.proxyButton({
-            target = PetStablePurchaseButton,
+            target = purchase,
             label = function()
-                return nodes.joinLabel(
-                    PetStablePurchaseButton:GetText(),
-                    C_CurrencyInfo.GetCoinText(GetNextStableSlotCost() or 0)
-                )
+                local cost = nextSlotCost()
+                return nodes.joinLabel(purchase:GetText(), cost ~= nil and C_CurrencyInfo.GetCoinText(cost) or nil)
             end,
         })
         if vtable ~= nil then
-            builder:addItem(ControlId.forObject(PetStablePurchaseButton), vtable)
+            builder:addItem(ControlId.forObject(purchase), vtable)
         end
     end
 
