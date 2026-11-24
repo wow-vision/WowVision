@@ -3,4 +3,5 @@
 * Pet stable (The Burning Crusade and WoW: Forever): the Drag keys (\\ and Ctrl+D) now pick up the pet on a stable slot, as Drag in the slot's context menu does. Before, they did nothing there.
 
 ### Forever
+* World refresh: when the game is about to move you to another copy of the world, WowVision says so again. The game now shows this as a small notice over the chat instead of a popup, and nothing read it. You hear the time left when the countdown starts, again at one minute, and when the time is up; a cancelled refresh is said too. To go at once, open the WowVision menu: World Refresh is at the top while the notice is up, and Enter on it opens the game's own box with Refresh Now.
 * Pet stable: the hunter's stable is now read on WoW: Forever, as on The Burning Crusade: the selected pet with its level, loyalty, experience and what it eats, the slots, Purchase with the price of the next slot, and your money. Before, the window was silent there.

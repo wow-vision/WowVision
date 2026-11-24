@@ -47,6 +47,10 @@
   <Script file="gamepadRadial.lua" />
   <!-- The hunter's Beast Training: the pet's skills in the class trainer
        window, with no trainer NPC. -->
+  <!-- The world refresh (shard transfer): the game's toast with its countdown is said, and World Refresh in
+       the WowVision menu clicks it. -->
+  <Script file="worldRefresh.lua" />
+  <Script file="worldRefreshTests.lua" />
   <Script file="petTraining.lua" />
   <Script file="petTrainingTests.lua" />
   <Script file="beastTraining.lua" />
