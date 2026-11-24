@@ -196,6 +196,8 @@ Das Spiel erlaubt es nicht, diese Schalter im Kampf zu ändern. Drückst du die 
 
 Hast du die Interaktionstaste in den eigenen Optionen des Spiels eingeschaltet, schaltet WowVision sie beim Einloggen nicht wieder aus; es schaltet nur die Arten ein, die du in WowVision aktiviert hast.
 
+Die Interaktionstaste selbst hat keine Taste, bis du ihr eine gibst: siehe [Die Interaktionstaste](../getting-started/first-login.md#die-interaktionstaste).
+
 ### Was du hörst
 
 Solange eine Art der weichen Zielerfassung an ist, sagt WowVision jedes neue Soft Target dieser Art mit den Angaben an, die du unter Namen ausgewählt hast (siehe [Was angesagt wird: Namen](#was-angesagt-wird-namen)), dazu einen kurzen Ton, der für Feind, Freund und Interaktion verschieden ist. Dinge, die keine Einheiten sind, etwa ein Briefkasten, sprechen ihren Tooltip-Text, mindestens aber ihren Namen. Wenn das weiche Ziel verschwindet, wird nichts gesagt.

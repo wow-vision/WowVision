@@ -47,12 +47,17 @@ The General buffer also gains a few new lines (free bag slots, durability, mail,
 
 The UI menu has a button, Apply Recommended Game Settings. It is only a suggestion: nothing changes unless you press it, and every setting stays yours to change afterward in the game options. It sets:
 
+- Interact With Target: this key binding of the game gets the key G. The game's options list it under that name, on the Controls page and under Targeting in the key bindings. This is the key that talks to a character, loots a corpse and opens a mailbox, and the game gives it no key of its own. G is only set when the action has no key yet. In the game's default keys G is Target Last Hostile, which then loses the key; if you gave G to anything else, nothing is changed and the report names what holds G. If Interact With Target or Interact With Mouseover already has a key, it is kept.
 - Auto loot on, and all action bars shown.
 - Offscreen nameplates on: while the game shows enemy nameplates, an enemy behind you or beside you gets its nameplate at once, so the enemy count can say it right away. Enemy nameplates themselves are not switched on here; see [Nameplates are required](../world/combat.md#nameplates-are-required).
 - Friendly NPC nameplates on, so that Turn to Target and Turn to Focus find NPCs (see [Navigation](../world/navigation.md#turn-to-target-and-focus-ctrli-ctrlu)).
 - The game's Audio Assist on, saying your health, your target's health and your resource every 20 percent (the health as the number alone), and when you are targeted (without the attacker's name). Combat start and end, target name and your debuffs are switched off.
 
-Key bindings, camera, soft targeting and sound volumes are not touched. The button does nothing in combat. After a change the interface reloads, then WowVision says what changed and prints the same to your chat window. Resource and "targeted" are kept per specialization by the game; press the button again after switching specialization.
+No other key binding is touched, and neither are the camera, soft targeting and sound volumes. The button does nothing in combat. After a change the interface reloads, then WowVision says what changed and prints the same to your chat window. Resource and "targeted" are kept per specialization by the game; press the button again after switching specialization.
+
+### The interact key
+
+You talk to characters, loot and open mailboxes with one key of the game, the key binding called Interact With Target. The game's options list it on the Controls page and under Targeting in the key bindings. It has no key until you give it one. While it has none, WowVision says so a few seconds after you enter the world, once per session, and tells you where the button above is: press Shift+F1, open UI, and choose Apply Recommended Game Settings, which sets the key to G. You can also give Interact With Target any key of your own in the game's options. The message stops once it has a key; to switch the message off without one, turn off Say at Login When Interact With Target Has No Key in the UI menu.
 
 ## Where to go next
 

@@ -7,6 +7,16 @@ local gameDefaults = WowVision.gameDefaults
 -- rules of gameDefaults.lua, then reloads the interface. The reload makes a
 -- fresh interface, so nothing the changes touched stays tainted; the report
 -- waits in WowVisionDump and is spoken (and printed to chat) after it.
+--
+-- Also here: the message at login while the game's interact action has no key
+-- (gameDefaults.checkInteractKey), and the setting that switches it off.
+
+module:hasSettings():add({
+    type = "Bool",
+    key = "interactKeyWarning",
+    label = L["Say at Login When Interact With Target Has No Key"],
+    default = true,
+})
 
 local function actionBarToggles()
     if GetActionBarToggles == nil or SetActionBarToggles == nil then
@@ -53,6 +63,42 @@ local function audioAssist()
     }
 end
 
+-- The game's key bindings. Setting a key is refused in combat, which
+-- gameDefaults.apply never does; a set key is saved to the binding set the
+-- player uses (account or character), as the game's own key bindings page does.
+local function bindings()
+    local save = SaveBindings or AttemptToSaveBindings
+    if GetBindingKey == nil or GetBindingAction == nil or SetBinding == nil then
+        return nil
+    end
+    if save == nil or GetCurrentBindingSet == nil then
+        return nil
+    end
+    return {
+        keyOf = function(action)
+            return (GetBindingKey(action))
+        end,
+        actionOf = function(key)
+            local action = GetBindingAction(key)
+            if action == nil or action == "" then
+                return nil
+            end
+            return action
+        end,
+        nameOf = function(action)
+            local name = GetBindingName ~= nil and GetBindingName(action) or nil
+            if type(name) ~= "string" or name == "" then
+                return action
+            end
+            return name
+        end,
+        bind = function(key, action)
+            succeeded(SetBinding(key, action))
+            save(GetCurrentBindingSet())
+        end,
+    }
+end
+
 local function gameApi()
     return {
         inCombat = InCombatLockdown,
@@ -63,7 +109,29 @@ local function gameApi()
             SetActionBarToggles(unpack(list))
         end,
         audioAssist = audioAssist(),
+        bindings = bindings(),
     }
+end
+
+function gameDefaults.runInteractKeyCheck()
+    local api = bindings()
+    if api == nil then
+        return
+    end
+    local scriptsAllowed = nil
+    if WowVision.scriptsCheck ~= nil then
+        scriptsAllowed = WowVision.scriptsCheck.allowed()
+    end
+    gameDefaults.checkInteractKey({
+        keyOf = api.keyOf,
+        enabled = module.settings.interactKeyWarning,
+        scriptsAllowed = scriptsAllowed,
+        actionName = api.nameOf(gameDefaults.INTERACT.action),
+        L = L,
+        say = function(text)
+            WowVision:notify(text)
+        end,
+    })
 end
 
 local function announce(lines)
@@ -108,6 +176,13 @@ end
 local previousFullEnable = module.onFullEnable
 function module:onFullEnable()
     previousFullEnable(self)
+    -- this runs at login, before the world is entered
+    local frame = CreateFrame("Frame")
+    frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    frame:SetScript("OnEvent", function(self)
+        self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+        C_Timer.After(gameDefaults.interactCheck.DELAY, gameDefaults.runInteractKeyCheck)
+    end)
     local lines = WowVisionDump ~= nil and WowVisionDump.gameDefaultsReport or nil
     if type(lines) ~= "table" then
         return

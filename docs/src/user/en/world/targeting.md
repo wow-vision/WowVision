@@ -194,6 +194,8 @@ The game does not allow these switches to change during combat. If you press the
 
 If you have turned the interact key on in the game's own options, WowVision does not turn it off again when you log in; it only switches on the ones you have enabled in WowVision.
 
+The interact key itself has no key until you give it one: see [The interact key](../getting-started/first-login.md#the-interact-key).
+
 ### What you hear
 
 While a soft target type is on, WowVision announces each new soft target of that type with the facts you picked under Names (see [What the announcement says: Names](#what-the-announcement-says-names)), plus a short sound that is different for enemy, friend and interact. Things that are not units, such as a mailbox, speak their tooltip text, or at least their name. When the soft target disappears nothing is said.

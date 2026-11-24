@@ -47,11 +47,16 @@ Der Puffer Allgemein bekommt außerdem ein paar neue Zeilen (freie Taschenplätz
 
 Im Menü Benutzeroberfläche gibt es den Schalter Empfohlene Spieleinstellungen übernehmen. Das ist nur ein Vorschlag: Es ändert sich nichts, solange du ihn nicht drückst, und jede Einstellung kannst du danach in den Spieloptionen wieder ändern. Er setzt:
 
+- Mit Ziel interagieren: Diese Tastenbelegung des Spiels bekommt die Taste G. Die Spieloptionen führen sie unter diesem Namen, auf der Seite Steuerung und unter Zielauswahl in der Tastaturbelegung. Das ist die Taste, die einen Charakter anspricht, eine Leiche plündert und einen Briefkasten öffnet, und das Spiel gibt ihr von sich aus keine Taste. G wird nur gesetzt, wenn die Aktion noch keine Taste hat. In den Standardtasten des Spiels liegt auf G Letztes feindliches Ziel anvisieren, das die Taste dann verliert; hast du G etwas anderem gegeben, wird nichts geändert und der Bericht nennt, was auf G liegt. Hat Mit Ziel interagieren oder Mit Mouseover interagieren schon eine Taste, bleibt sie.
 - Automatisch plündern an und alle Aktionsleisten sichtbar.
 - Namensplaketten außerhalb des Bildschirms an: Solange das Spiel feindliche Namensplaketten zeigt, bekommt ein Gegner hinter oder neben dir sofort seine Namensplakette, so kann die Gegnerzahl ihn gleich ansagen. Die feindlichen Namensplaketten selbst werden hier nicht eingeschaltet; siehe [Namensplaketten sind Pflicht](../world/combat.md#namensplaketten-sind-pflicht).
 - Die Audiounterstützung des Spiels an: deine Gesundheit, die Gesundheit deines Ziels und deine Ressource alle 20 Prozent (die Gesundheit nur als Zahl) und wenn du anvisiert wirst (ohne Namen des Angreifers). Kampfbeginn und -ende, Zielname und deine Schwächungen werden abgeschaltet.
 
-Tastenbelegungen, Kamera, weiche Zielerfassung und Lautstärken bleiben unberührt. Im Kampf tut der Schalter nichts. Nach einer Änderung lädt die Oberfläche neu, dann sagt WowVision an, was sich geändert hat, und schreibt dasselbe in dein Chatfenster. Ressource und Anvisiert speichert das Spiel je Spezialisierung; drücke den Schalter nach einem Wechsel der Spezialisierung noch einmal.
+Keine andere Tastenbelegung wird berührt, ebenso wenig Kamera, weiche Zielerfassung und Lautstärken. Im Kampf tut der Schalter nichts. Nach einer Änderung lädt die Oberfläche neu, dann sagt WowVision an, was sich geändert hat, und schreibt dasselbe in dein Chatfenster. Ressource und Anvisiert speichert das Spiel je Spezialisierung; drücke den Schalter nach einem Wechsel der Spezialisierung noch einmal.
+
+### Die Interaktionstaste
+
+Du sprichst Charaktere an, plünderst und öffnest Briefkästen mit einer Taste des Spiels, der Tastenbelegung Mit Ziel interagieren. Die Spieloptionen führen sie auf der Seite Steuerung und unter Zielauswahl in der Tastaturbelegung. Sie hat keine Taste, bis du ihr eine gibst. Solange sie keine hat, sagt WowVision das einige Sekunden nach dem Betreten der Welt an, einmal pro Sitzung, und sagt dir, wo der Schalter von oben ist: Drücke Umschalt+F1, öffne Benutzeroberfläche und wähle Empfohlene Spieleinstellungen übernehmen, das legt die Taste auf G. Du kannst Mit Ziel interagieren auch in den Spieloptionen eine eigene Taste geben. Die Meldung hört auf, sobald es eine Taste hat; um die Meldung ohne Taste abzuschalten, schalte im Menü Benutzeroberfläche Beim Einloggen ansagen, wenn Mit Ziel interagieren keine Taste hat aus.
 
 ## Wie es weitergeht
 
