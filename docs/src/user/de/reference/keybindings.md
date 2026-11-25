@@ -196,8 +196,9 @@ Siehe [Gruppensuche](../windows/group-finder.md).
 | Verfolgte Abklingzeiten ansagen (Speak Tracked Cooldowns) | Unbelegt | (Retail und WoW: Forever) Liest jeden Zauber deiner aktivierten Monitore Zauber-Abklingzeiten (Spell Cooldowns) vor oder sagt "Keine verfolgten Abklingzeiten" |
 | Hauptressource sprechen (Speak Main Resource) | Unbelegt | Sagt die Ressource, die das Spiel gerade für dich zeigt, etwa „Energie 80%“ oder „Kombopunkte 3“ |
 | Gruppengesundheit ansagen (Speak Group Health) | Alt+H | (Retail und WoW: Forever) Sagt jedes Gruppenmitglied einmal an, in der Reihenfolge der Nummern, mit der Tonhöhe seiner Gesundheit. Auf dem Controller: rechter Trigger + Druck auf den rechten Stick. Funktioniert nur, solange der Gruppen-Gesundheitsmonitor aktiviert ist |
+| Gesundheit des Begleiters ansagen (Speak Pet Health) | Alt+Umschalt+H | (Retail und WoW: Forever) Sagt die Gesundheit deines Begleiters, zum Beispiel „Begleiter 45 Prozent“ |
 
-Siehe [Monitore](../information/monitors.md) und [Gruppen-Gesundheitsmonitor](../information/group-health.md).
+Siehe [Monitore](../information/monitors.md), [Gruppen-Gesundheitsmonitor](../information/group-health.md) und [Begleiter-Gesundheit](../information/pet-health.md).
 
 ## Controller
 
