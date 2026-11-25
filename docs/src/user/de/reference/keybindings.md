@@ -179,6 +179,14 @@ Siehe [Beute, Handel und Post](../windows/loot-trade-mail.md).
 
 Siehe [Gruppensuche](../windows/group-finder.md).
 
+## AtlasLoot
+
+| Aktion | Standardtaste | Hinweise |
+|---|---|---|
+| Beute-Browser öffnen (Open the loot browser (AtlasLoot)) | Alt+L | WoW: Forever, mit installiertem AtlasLoot. Auch /wv atlasloot |
+
+Siehe [AtlasLoot](../windows/atlasloot.md).
+
 ## LFG Forever
 
 | Aktion | Standardtaste | Hinweise |

@@ -408,6 +408,71 @@ loadAddonFile("retail/groupHealth/moduleTests.lua")
 loadAddonFile("retail/groupHealth/dispelTests.lua")
 loadAddonFile("camelot/worldRefresh.lua")
 loadAddonFile("camelot/worldRefreshTests.lua")
+-- The loot browser over AtlasLoot (camelot/atlasLoot): its files, then module.lua against a stand-in window module
+-- as many times as a test asks (harness.load takes the addons that count as loaded; loadOther keeps the first load's
+-- namespace untouched).
+do
+    loadAddonFile("camelot/atlasLoot/namespace.lua")
+    loadAddonFile("camelot/atlasLoot/game.lua")
+    loadAddonFile("camelot/atlasLoot/loot.lua")
+    loadAddonFile("camelot/atlasLoot/screen.lua")
+    local harness = {}
+    function harness.load(loaded)
+        local savedBase, savedLoaded = WowVision.base, WowVision.loadedAddons
+        local registered = { bindings = {}, commands = {}, events = {} }
+        local stub = nil
+        local base = {
+            windows = {
+                createModule = function()
+                    stub = { L = WowVision:getLocale() }
+                    function stub:setLabel() end
+                    function stub:getEnabled()
+                        return true
+                    end
+                    function stub:registerBinding(info)
+                        tinsert(registered.bindings, info)
+                    end
+                    function stub:registerCommand(config)
+                        registered.commands[config.name] = config
+                    end
+                    function stub:registerEvent(...)
+                        tinsert(registered.events, { ... })
+                    end
+                    function stub:hasSettings()
+                        local settingsClass = WowVision.Class("Settings:atlasLootTest")
+                        self.settings = settingsClass:new()
+                        return {
+                            add = function(_, def)
+                                settingsClass:addFields({ def })
+                                return settingsClass:getField(def.key)
+                            end,
+                        }
+                    end
+                    return stub
+                end,
+            },
+        }
+        WowVision.base, WowVision.loadedAddons = base, loaded
+        loadAddonFile("camelot/atlasLoot/module.lua")
+        WowVision.base, WowVision.loadedAddons = savedBase, savedLoaded
+        return stub, registered
+    end
+    function harness.loadOther(loaded)
+        local ns = WowVision.atlasLoot
+        local saved = {}
+        for _, key in ipairs({ "module", "settings", "toggle", "afterClose", "hookAtlasFrame", "openedByAl", "frameHooked" }) do
+            saved[key] = ns[key]
+        end
+        local stub, registered = harness.load(loaded)
+        for key, value in pairs(saved) do
+            ns[key] = value
+        end
+        return stub, registered
+    end
+    WowVision._atlasLootTestHarness = harness
+    loadAddonFile("camelot/atlasLoot/tests.lua")
+    WowVision._atlasLootTestHarness = nil
+end
 loadAddonFile("camelot/petTraining.lua")
 loadAddonFile("camelot/petTrainingTests.lua")
 loadAddonFile("core/gameDB/itemQuality.lua")
@@ -2898,6 +2963,7 @@ local parseOnly = {
     "tbc/tradeskill.lua",
     "tbc/lfg.lua",
     "camelot/lfg.lua",
+    "camelot/atlasLoot/module.lua",
     "tbc/character/character.lua",
     "tbc/character/PaperDoll.lua",
     "tbc/character/Pet.lua",

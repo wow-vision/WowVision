@@ -29,6 +29,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /wv close | Schließt jedes WowVision-Fenster | alle |
 | /wv version | Gibt die WowVision-Version aus | alle |
 | /wv accept | Nimmt eine Gruppeneinladung an, auch im Kampf | alle |
+| /wv atlasloot | Öffnet oder schließt den AtlasLoot-Beutebrowser | WoW: Forever, mit AtlasLoot |
 | /wv auras | Öffnet die Liste deiner Buffs und Debuffs oder sagt sie an | alle |
 | /wv lfg | Öffnet oder schließt LFG Forever, die Gruppensuche eines Fremd-Addons | WoW: Forever, mit installiertem LFG Forever |
 | /wv pendingtest | Zeigt einen Testkasten, der wie eine Gruppeneinladung wartet | alle |

@@ -104,6 +104,7 @@ Einzelheiten zum Questlog pro Version stehen auf der Seite [Quests](../world/que
 | Vermächtnis (Belohnungsleiste, Herausforderungen, Bäume) | Nein | Nein | Nein | Nein | Ja |
 | Gruppensuche | Nein | Ja | Nein | Ja (Dungeonbrowser; andere Reiter noch nicht) | Ja |
 | LFG Forever (Gruppensuche-Addon eines anderen Autors) | Nein | Nein | Nein | Nein | Ja, wenn das Addon installiert ist |
+| AtlasLoot-Beutebrowser (Addon eines Drittanbieters) | Nein | Nein | Nein | Nein | Ja, wenn AtlasLoot installiert ist |
 | Tierstall | Nein | Ja | Nein | Nein | Ja |
 | Auktionshaus | Nein | Ja (mit Preisdatenbank und Komplett-Scan) | Ja | Ja (mit Preisdatenbank und Komplett-Scan) | Ja (mit Preisdatenbank und Komplett-Scan) |
 

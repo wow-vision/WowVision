@@ -38,6 +38,8 @@
   <!-- LFG Forever (Artefius, /lfg), the third-party group finder addon of WoW: Forever, as a window of its own. Not
        Blizzard's group finder above. Loads only when that addon does (OptionalDeps in the TOC). -->
   <Include file="lfgForever\modules.xml" />
+  <!-- A loot browser over AtlasLoot's tables, when AtlasLoot is installed. -->
+  <Include file="atlasLoot/modules.xml" />
   <!-- WoW: Forever has no pandemic window: the cooldown manager aura rule
        drops its Pandemic state. -->
   <Script file="cdmAuras.lua" />
