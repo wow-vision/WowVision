@@ -106,6 +106,7 @@ Einzelheiten zum Questlog pro Version stehen auf der Seite [Quests](../world/que
 | LFG Forever (Gruppensuche-Addon eines anderen Autors) | Nein | Nein | Nein | Nein | Ja, wenn das Addon installiert ist |
 | Tierstall | Nein | Ja | Nein | Nein | Ja |
 | Auktionshaus | Nein | Ja (mit Preisdatenbank und Komplett-Scan) | Ja | Ja (mit Preisdatenbank und Komplett-Scan) | Ja (mit Preisdatenbank und Komplett-Scan) |
+| Verkaufshinweise in den Taschen (mit dem Addon Life on Azeroth Market) | Nein | Nein | Nein | Nein | Ja |
 
 Siehe [Sammlungen und Vermächtnis](../windows/collections.md), [Gruppensuche](../windows/group-finder.md) und [Auktionshaus](../windows/auction-house.md).
 

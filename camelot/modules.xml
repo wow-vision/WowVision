@@ -38,6 +38,8 @@
   <!-- LFG Forever (Artefius, /lfg), the third-party group finder addon of WoW: Forever, as a window of its own. Not
        Blizzard's group finder above. Loads only when that addon does (OptionalDeps in the TOC). -->
   <Include file="lfgForever\modules.xml" />
+  <!-- Which items are worth the auction house, with the prices of Life on Azeroth Market, when it is installed. -->
+  <Include file="auctionHints/modules.xml" />
   <!-- WoW: Forever has no pandemic window: the cooldown manager aura rule
        drops its Pandemic state. -->
   <Script file="cdmAuras.lua" />

@@ -50,6 +50,60 @@ local function keys(entries)
     return table.concat(out, ",")
 end
 
+testRunner:addSuite("Bag stops", {
+    ["stops are drawn in their order, one registration per key"] = function(t)
+        local stops, reported = bagLists.stops, bagLists.reported
+        bagLists.stops, bagLists.reported = {}, {}
+        local drawn = {}
+        local function stop(key, order)
+            return {
+                key = key,
+                order = order,
+                render = function(builder)
+                    tinsert(drawn, key .. builder)
+                end,
+            }
+        end
+        bagLists.registerStop(stop("b", 20))
+        bagLists.registerStop(stop("a", 20))
+        bagLists.registerStop(stop("z", 5))
+        bagLists.registerStop(stop("b", 20))
+        bagLists.renderStops("!")
+        bagLists.stops, bagLists.reported = stops, reported
+        t:assertEqual(table.concat(drawn, " "), "z! a! b!")
+    end,
+
+    ["a stop that fails is reported once and the others are drawn"] = function(t)
+        local stops, reported, handler = bagLists.stops, bagLists.reported, geterrorhandler
+        bagLists.stops, bagLists.reported = {}, {}
+        local errors, drawn = 0, 0
+        geterrorhandler = function()
+            return function()
+                errors = errors + 1
+            end
+        end
+        bagLists.registerStop({
+            key = "broken",
+            order = 1,
+            render = function()
+                error("boom")
+            end,
+        })
+        bagLists.registerStop({
+            key = "fine",
+            order = 2,
+            render = function()
+                drawn = drawn + 1
+            end,
+        })
+        bagLists.renderStops({})
+        bagLists.renderStops({})
+        bagLists.stops, bagLists.reported, geterrorhandler = stops, reported, handler
+        t:assertEqual(errors, 1)
+        t:assertEqual(drawn, 2)
+    end,
+})
+
 testRunner:addSuite("Bag lists", {
     ["lists come in their order, then by key"] = function(t)
         withRegistry(function()

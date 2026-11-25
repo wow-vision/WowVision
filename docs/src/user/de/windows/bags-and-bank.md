@@ -164,6 +164,19 @@ Ist Gegenstandslisten anzeigen (Show Item Lists) eingeschaltet (Fenster, dann Be
 - Favoriten: jeder Gegenstand, den du als Favorit markiert hast, in Taschenreihenfolge (siehe [Favoriten](#favoriten)). Die Kategorie ist zu Beginn geschlossen.
 - Neue Gegenstände: was du seit deinem letzten Blick bekommen hast, etwa Erbeutetes, Gekauftes oder Zugeschicktes und die Belohnungen von Quests. Die Kategorie ist zu Beginn offen. Das Spiel markiert manche neuen Gegenstände selbst, und WowVision listet diese. Aber das Spiel markiert nicht immer alles (die Belohnung einer Quest blieb in WoW: Forever unmarkiert), deshalb zählt WowVision nach jeder Änderung auch, was deine Taschen von jedem Gegenstand enthalten. Ein Gegenstand, von dem du jetzt mehr hast als vorher, ist neu, auf jedem Platz, der ihn enthält. Gegenstände zu verschieben, zu sortieren oder zu teilen oder einen Teil eines Stapels zu benutzen macht nichts neu, und auch nicht die Gegenstände, die du beim Einloggen oder Neuladen schon bei dir hattest. Das Spiel nimmt seine Neu-Markierung von einem Gegenstand, sobald du den Cursor darauf bewegst, und WowVision tut dasselbe, wenn du auf einem Platz landest; ein Gegenstand würde also verschwinden, sobald du ihn erreichst. WowVision behält deshalb die neuen Gegenstände in der Liste, bis du die Taschen geöffnet und wieder geschlossen hast. Ein Gegenstand, der ankommt, während die Taschen geschlossen sind, wartet auf dich.
 
+### Verkaufshinweise
+
+Nur in WoW: Forever, mit dem Addon Life on Azeroth Market eines Drittanbieters und seinen Preisdaten. Ohne dieses Addon gibt es nichts davon.
+
+Schalte Verkaufshinweise anzeigen ein (im WowVision-Menü unter Fenster, dann Verkaufshinweise; standardmäßig aus). Die Taschen sagen dann, was sich im Auktionshaus zu verkaufen lohnt:
+
+- Ein letzter Halt, Zum Verkauf im Auktionshaus, erreichbar mit Tab. Zuerst sagt er, wie viele Gegenstände im Auktionshaus mindestens 10 Prozent mehr bringen als beim Händler, den geschätzten Gewinn und wie alt die Preise sind. Dann eine Zeile je Gegenstand, egal in wie vielen Stapeln er liegt, der größte Gewinn zuerst: Anzahl, Händlerpreis, Auktionshauspreis je Stück und insgesamt, der Unterschied in Prozent und der Gewinn. Eine Zeile ist der Taschenplatz des ersten Stapels, mit denselben Tasten und demselben Kontextmenü.
+- Eine Kategorie der [Gegenstandslisten](#gegenstandslisten), Für den Händler (wenn die Gegenstandslisten an sind): was ein Händler kauft und der Auktionshaus-Halt auslässt. Ein Gegenstand steht nie in beiden, und ein Favorit wird nie angeboten.
+
+Die Regeln: Der Preis ist der übliche Preis von Market für den Gegenstand in deinem Auktionshaus (Art deines Realms und Fraktion; hat deines keine Daten, wird das andere genannt). Die Provision des Auktionshauses (5 Prozent, 15 im Blackwater-Haus) wird vorher abgezogen, außer du schaltest Provision des Auktionshauses abziehen aus. Gebundenes, Beschädigtes und bis zum Anlegen an den Account Gebundenes wird nie fürs Auktionshaus angeboten.
+
+`/wv sell` sagt die Zusammenfassung und wohin jeder Platz deiner Taschen gehört, auch bei geschlossenen Taschen.
+
 ### Zusammengefasste Taschen
 
 Alle deine Taschen werden als ein großes Raster gezeichnet, und WowVision liest es genauso: zuerst der Rucksack, dann die anderen Taschen, ohne Taschengrenzen. Das Fenster öffnet sich auf dem Stopp Taschen. Die Stopps sind:

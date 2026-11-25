@@ -354,6 +354,8 @@ local function render(builder, screen)
             end
         end
     end)
+    -- the stops other modules add at the end (bagLists.lua)
+    WowVision.bagLists.renderStops(builder)
     builder:popContext()
 end
 

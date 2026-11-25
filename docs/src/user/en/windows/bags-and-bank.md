@@ -162,6 +162,19 @@ With Show Item Lists switched on (Windows, then Containers in the WowVision menu
 - Favorites: every item you marked as a favorite, in bag order (see [Favorites](#favorites)). It starts closed.
 - New Items: what you got since you last looked, such as the things you looted, bought or were sent, and the rewards of quests. It starts open. The game marks some new items itself, and WowVision lists those. But the game does not always mark everything (the reward of a quest went unmarked on WoW: Forever), so WowVision also counts what your bags hold of each item after every change. An item of which you now have more than before is new, on every slot that holds it. Moving, sorting or splitting items, or using part of a stack, makes nothing new, and neither do the items you already carried when you logged in or reloaded. The game takes its new mark off an item as soon as you move the cursor onto it, and WowVision does the same when you land on a slot, so an item would vanish the moment you reach it. WowVision therefore keeps the new items in the list until you have opened the bags and closed them again. An item that arrives while the bags are closed waits for you.
 
+### Auction hints
+
+Only on WoW: Forever, with the third-party addon Life on Azeroth Market and its price data. Without it, none of this exists.
+
+Switch on Show Auction Hints (Windows, then Auction Hints in the WowVision menu; it is off by default). The bags then say what is worth selling at the auction house:
+
+- A last stop, For Sale at the Auction House, reached with Tab. It first says how many items sell for at least 10 percent more at the auction house than to a vendor, the estimated gain, and how old the prices are, for example "2 items sell for at least 10 percent more... Estimated gain 1 Gold 20 Silver, after the auction house's cut of 5 percent (the deposit comes back when an item sells). Prices from Life on Azeroth Market, taken November 19 at 23:05, 3 hours ago." Then one line per item, however many stacks hold it, biggest gain first: the quantity, the vendor price, the auction house price each and in all, the difference in percent and the gain. A line is the bag slot of the item's first stack, with the same keys and context menu.
+- A category of the [Item lists](#item-lists), For Sale to a Merchant (when Show Item Lists is on): what a merchant buys and the auction house stop leaves alone. An item is never in both, and a favorite is never offered.
+
+The rules: the price is Market's typical price of the item at your auction house (your realm's kind and faction; another house is named when yours has no data). The auction house's cut (5 percent, 15 at the Blackwater house) is taken off first, unless you switch off Count the Auction House Cut. Anything bound, anything bound until equipped to your account and anything damaged is never offered to the auction house.
+
+`/wv sell` says the summary and where every slot of your bags went, with the bags closed.
+
 ### Combined bags
 
 All your bags are drawn as one big grid, and WowVision reads it the same way: the backpack first, then the other bags, no bag boundaries. The window opens on the Bags stop. The stops are:
