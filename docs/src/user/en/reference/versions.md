@@ -48,6 +48,7 @@ These work the same everywhere (small differences are explained on each page):
 | Resource monitor for bars (mana, energy, rage and the like) | Yes | Yes | Yes | Only bars the game does not hide (not mana or energy) | Only bars the game does not hide (not mana or energy) |
 | Speak Main Resource key | Yes | Yes | Yes | Yes | Yes |
 | Group Health Monitor (speaks your group's health as pitched numbers, off by default) | No | No | No | Yes | Yes |
+| RestedXP leveling guide (third-party addon) | No | No | No | No | Yes, when RestedXP is installed |
 | Cooldown manager window (`/cdm`) | No | No | No | Yes | Yes |
 
 On Retail and WoW: Forever the game hides aura and cooldown data from addons in combat and in instances, which is why those versions have their own monitor types. See [Monitors](../information/monitors.md).

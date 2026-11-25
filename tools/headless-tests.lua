@@ -410,6 +410,75 @@ loadAddonFile("camelot/worldRefresh.lua")
 loadAddonFile("camelot/worldRefreshTests.lua")
 loadAddonFile("camelot/petTraining.lua")
 loadAddonFile("camelot/petTrainingTests.lua")
+-- RestedXP (camelot/restedXP): its files, then module.lua against a stand-in window module as many times as a test
+-- asks (harness.load takes the addons that count as loaded; loadOther keeps the first load's namespace untouched).
+do
+    for _, file in ipairs({ "namespace", "text", "source", "options", "menu", "guidance", "import", "game", "screens" }) do
+        loadAddonFile("camelot/restedXP/" .. file .. ".lua")
+    end
+    local harness = {}
+    function harness.load(loaded)
+        local savedBase, savedLoaded = WowVision.base, WowVision.loadedAddons
+        local registered = { bindings = {}, commands = {}, windows = {}, events = {} }
+        local stub = nil
+        WowVision.base = {
+            windows = {
+                createModule = function()
+                    stub = { L = WowVision:getLocale() }
+                    function stub:setLabel() end
+                    function stub:registerBinding(info)
+                        tinsert(registered.bindings, info)
+                    end
+                    function stub:registerCommand(config)
+                        registered.commands[config.name] = config
+                    end
+                    function stub:registerWindow(config)
+                        registered.windows[config.name] = config
+                    end
+                    function stub:registerEvent(...)
+                        tinsert(registered.events, { ... })
+                    end
+                    function stub:hasUpdate(func)
+                        self.update = func
+                    end
+                    function stub:hasSettings()
+                        local settingsClass = WowVision.Class("Settings:restedXPTest")
+                        self.settings = settingsClass:new()
+                        return {
+                            add = function(_, def)
+                                settingsClass:addFields({ def })
+                                return settingsClass:getField(def.key)
+                            end,
+                        }
+                    end
+                    return stub
+                end,
+            },
+        }
+        WowVision.loadedAddons = loaded
+        loadAddonFile("camelot/restedXP/module.lua")
+        WowVision.base, WowVision.loadedAddons = savedBase, savedLoaded
+        return stub, registered
+    end
+    function harness.loadOther(loaded)
+        local ns = WowVision.restedXP
+        local saved = {}
+        for key, value in pairs(ns) do
+            saved[key] = value
+        end
+        local stub, registered = harness.load(loaded)
+        for key in pairs(ns) do
+            ns[key] = nil
+        end
+        for key, value in pairs(saved) do
+            ns[key] = value
+        end
+        return stub, registered
+    end
+    WowVision._restedXPTestHarness = harness
+    loadAddonFile("camelot/restedXP/tests.lua")
+    WowVision._restedXPTestHarness = nil
+end
 loadAddonFile("core/gameDB/itemQuality.lua")
 loadAddonFile("core/gameDB/itemCompare.lua")
 loadAddonFile("core/gameDB/itemCompareTests.lua")
@@ -2898,6 +2967,7 @@ local parseOnly = {
     "tbc/tradeskill.lua",
     "tbc/lfg.lua",
     "camelot/lfg.lua",
+    "camelot/restedXP/module.lua",
     "tbc/character/character.lua",
     "tbc/character/PaperDoll.lua",
     "tbc/character/Pet.lua",

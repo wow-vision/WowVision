@@ -183,6 +183,20 @@ See [Group Finder](../windows/group-finder.md).
 
 See [Group Finder](../windows/group-finder.md).
 
+## RestedXP
+
+| Action | Default key | Notes |
+|---|---|---|
+| RestedXP Menu | Shift+F2 | WoW: Forever, with RestedXP |
+| Say the RestedXP Step | Alt+F2 | |
+| Say Where the RestedXP Arrow Points | Ctrl+F2 | |
+| Sound Beacon Toward the RestedXP Arrow | Ctrl+Shift+F2 | |
+| WowVision Route to the RestedXP Arrow | Alt+Shift+F2 | |
+| Right-Click Menu of RestedXP (Guides) | Alt+Ctrl+F2 | |
+| Stop Guiding to the RestedXP Arrow, Skip, Next and Previous RestedXP Step | Unbound | |
+
+See [RestedXP](../windows/restedxp.md).
+
 ## Monitors
 
 | Action | Default key | Notes |

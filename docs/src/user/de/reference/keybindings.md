@@ -187,6 +187,20 @@ Siehe [Gruppensuche](../windows/group-finder.md).
 
 Siehe [Gruppensuche](../windows/group-finder.md).
 
+## RestedXP
+
+| Aktion | Standardtaste | Hinweise |
+|---|---|---|
+| RestedXP-Menü | Umschalt+F2 | WoW: Forever, mit RestedXP |
+| RestedXP-Schritt ansagen | Alt+F2 | |
+| Ansagen, wohin der RestedXP-Pfeil zeigt | Strg+F2 | |
+| Klangsignal zum RestedXP-Pfeil | Strg+Umschalt+F2 | |
+| WowVision-Route zum RestedXP-Pfeil | Alt+Umschalt+F2 | |
+| Rechtsklick-Menü von RestedXP (Guides) | Alt+Strg+F2 | |
+| Führung beenden, Schritt überspringen, nächster und vorheriger Schritt | Unbelegt | |
+
+Siehe [RestedXP](../windows/restedxp.md).
+
 ## Monitore
 
 | Aktion | Standardtaste | Hinweise |
