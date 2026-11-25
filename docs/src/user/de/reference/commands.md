@@ -30,6 +30,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /wv version | Gibt die WowVision-Version aus | alle |
 | /wv accept | Nimmt eine Gruppeneinladung an, auch im Kampf | alle |
 | /wv auras | Öffnet die Liste deiner Buffs und Debuffs oder sagt sie an | alle |
+| /wv sell | Sagt, was in deinen Taschen sich im Auktionshaus zu verkaufen lohnt | WoW: Forever, mit Life on Azeroth Market |
 | /wv lfg | Öffnet oder schließt LFG Forever, die Gruppensuche eines Fremd-Addons | WoW: Forever, mit installiertem LFG Forever |
 | /wv pendingtest | Zeigt einen Testkasten, der wie eine Gruppeneinladung wartet | alle |
 | /beacon | Setzt ein Beacon, routet zu einem benannten Ort oder liest deine Position vor | alle |
@@ -91,6 +92,10 @@ Gibt die installierte WowVision-Version in dein Chatfenster aus, zum Beispiel V0
 ### /wv accept
 
 Nimmt die Gruppeneinladung an, die gerade angezeigt wird, und sagt "Gruppeneinladung angenommen". Das geht auch im Kampf, wo WowVision das Einladungs-Popup nicht öffnen kann. Ist keine Einladung da, sagt es "Keine Gruppeneinladung". Führst du eine Gruppe, nimmt es auch an, wenn ein Gruppenmitglied vorschlägt, jemanden einzuladen, oder wenn ein Spieler deiner Gruppe beitreten möchte. Eine Einladung, die nach der Rolle fragt, braucht erst eine aktivierte Rolle, sonst sagt es "Erst eine Rolle wählen". Die Taste Gruppeneinladung annehmen (Accept Group Invitation) tut dasselbe; sie ist unbelegt. Versionen: alle. Siehe [Gruppensuche](../windows/group-finder.md).
+
+### /wv sell
+
+Was sich im Auktionshaus zu verkaufen lohnt, aus deinen Taschen gelesen, ob sie offen sind oder nicht: wie viele Gegenstände dort mindestens 10 Prozent mehr bringen als beim Händler, der geschätzte Gewinn, das Alter der Preise und wie viele Plätze gebunden, ohne Preis, unter 10 Prozent, beschädigt oder noch nicht geladen sind. Nicht im Kampf. Nur mit dem Addon Life on Azeroth Market. Siehe [Taschen und Bank](../windows/bags-and-bank.md#verkaufshinweise).
 
 ### /wv auras
 

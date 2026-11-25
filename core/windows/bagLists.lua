@@ -4,7 +4,7 @@
 -- A list is { key, label, order, expanded, select, reset }: select(buttons) answers the slots of the list out of
 -- all the bag slots given (bag by bag, slots ascending), and reset() is called when the bags close. A list with
 -- nothing in it is not shown; expanded makes it start open each time the bags open.
-local bagLists = { lists = {}, seeded = {}, reported = {} }
+local bagLists = { lists = {}, stops = {}, seeded = {}, reported = {} }
 WowVision.bagLists = bagLists
 
 local function bagIdOf(itemButton)
@@ -61,6 +61,36 @@ function bagLists.collect(buttons)
         end
     end
     return collected
+end
+
+-- Stops of their own at the end of the bags window, for what is not a category of Item Lists: { key, order,
+-- render = function(builder) }. Drawn after every container, in their order, outside combat.
+function bagLists.registerStop(stop)
+    for index, existing in ipairs(bagLists.stops) do
+        if existing.key == stop.key then
+            bagLists.stops[index] = stop
+            return
+        end
+    end
+    tinsert(bagLists.stops, stop)
+    table.sort(bagLists.stops, function(a, b)
+        local aOrder, bOrder = a.order or 100, b.order or 100
+        if aOrder ~= bOrder then
+            return aOrder < bOrder
+        end
+        return a.key < b.key
+    end)
+end
+
+-- Draws the registered stops; one that fails is reported once and the others are drawn.
+function bagLists.renderStops(builder)
+    for _, stop in ipairs(bagLists.stops) do
+        local ok, err = pcall(stop.render, builder)
+        if not ok and not bagLists.reported["stop:" .. stop.key] then
+            bagLists.reported["stop:" .. stop.key] = true
+            geterrorhandler()(err)
+        end
+    end
 end
 
 -- The bags closed.

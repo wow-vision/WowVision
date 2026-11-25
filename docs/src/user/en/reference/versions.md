@@ -106,6 +106,7 @@ Quest log details per version are on the [Quests](../world/quests.md) page. See 
 | LFG Forever (third-party group finder addon) | No | No | No | No | Yes, when the addon is installed |
 | Pet stable | No | Yes | No | No | Yes |
 | Auction house | No | Yes (with price database and full scan) | Yes | Yes (with price database and full scan) | Yes (with price database and full scan) |
+| Auction hints in the bags (with the addon Life on Azeroth Market) | No | No | No | No | Yes |
 
 See [Collections](../windows/collections.md), [Group Finder](../windows/group-finder.md) and [Auction House](../windows/auction-house.md).
 

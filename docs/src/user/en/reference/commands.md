@@ -28,6 +28,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv version | Prints the WowVision version | all |
 | /wv accept | Accepts a group invitation, also in combat | all |
 | /wv auras | Opens the list of your buffs and debuffs, or says them | all |
+| /wv sell | Says what in your bags is worth selling at the auction house | WoW: Forever, with Life on Azeroth Market |
 | /wv lfg | Opens or closes LFG Forever, the third-party group finder | WoW: Forever, with LFG Forever installed |
 | /wv pendingtest | Shows a test box that waits like a group invitation | all |
 | /beacon | Sets a beacon, routes to a named place, or reads your position | all |
@@ -90,6 +91,10 @@ Prints the installed WowVision version to your chat window, for example V0.9.0, 
 ### /wv accept
 
 Accepts the group invitation that is shown and says "Group invitation accepted". It also works in combat, where WowVision cannot open the invitation popup. Without an invitation it says "No group invitation". If you lead a group, it also accepts when a group member suggests inviting someone or a player asks to join your group. An invitation that asks for a role needs a checked role first, otherwise it says "Choose a role first". The Accept Group Invitation key does the same; it is unbound. Versions: all. See [Group Finder](../windows/group-finder.md).
+
+### /wv sell
+
+What is worth selling at the auction house, read from your bags whether they are open or not: how many items sell for at least 10 percent more there than to a vendor, the estimated gain, the age of the prices, and how many slots are bound, without a price, under 10 percent, damaged or not loaded yet. Not available in combat. Only with the addon Life on Azeroth Market. See [Bags and Bank](../windows/bags-and-bank.md#auction-hints).
 
 ### /wv auras
 

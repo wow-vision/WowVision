@@ -370,6 +370,58 @@ loadAddonFile("core/scriptsCheck.lua")
 loadAddonFile("core/scriptsCheckTests.lua")
 loadAddonFile("core/windows/bagLists.lua")
 loadAddonFile("core/windows/bagListsTests.lua")
+-- Auction hints (camelot/auctionHints): the pure files, then the module against a stand-in window module as many
+-- times as a test asks (harness.load takes the addons that count as loaded).
+loadAddonFile("camelot/auctionHints/market.lua")
+loadAddonFile("camelot/auctionHints/logic.lua")
+loadAddonFile("camelot/auctionHints/tests.lua")
+do
+    local harness = {}
+    function harness.load(loaded)
+        local savedBase, savedLoaded = WowVision.base, WowVision.loadedAddons
+        local savedLists = WowVision.bagLists.lists
+        local savedStops = WowVision.bagLists.stops
+        WowVision.bagLists.lists, WowVision.bagLists.stops = {}, {}
+        local registered = { commands = {} }
+        local module = nil
+        local stub = { L = WowVision:getLocale() }
+        function stub:setLabel() end
+        function stub:getEnabled()
+            return self.enabled ~= false
+        end
+        function stub:hasSettings()
+            local settingsClass = WowVision.Class("Settings:auctionHintsTest")
+            self.settings = settingsClass:new()
+            return {
+                add = function(_, def)
+                    settingsClass:addFields({ def })
+                    return settingsClass:getField(def.key)
+                end,
+            }
+        end
+        function stub:registerCommand(config)
+            registered.commands[config.name] = config
+        end
+        WowVision.base = {
+            windows = {
+                createModule = function(_, key)
+                    module = stub
+                    registered.key = key
+                    return stub
+                end,
+            },
+        }
+        WowVision.loadedAddons = loaded
+        loadAddonFile("camelot/auctionHints/module.lua")
+        registered.lists, registered.stops = WowVision.bagLists.lists, WowVision.bagLists.stops
+        WowVision.base, WowVision.loadedAddons = savedBase, savedLoaded
+        WowVision.bagLists.lists, WowVision.bagLists.stops = savedLists, savedStops
+        return module, registered
+    end
+    WowVision._auctionHintsTestHarness = harness
+    loadAddonFile("camelot/auctionHints/moduleTests.lua")
+    WowVision._auctionHintsTestHarness = nil
+end
 loadAddonFile("core/windows/newItems.lua")
 loadAddonFile("core/windows/newItemsTests.lua")
 -- The group health monitor's module: loaded against a stand-in module whose settings are a real settings class (as
@@ -2818,6 +2870,7 @@ local parseOnly = {
     "core/graph/hybridScroll.lua",
     "mists/QuestLog.lua",
     "core/windows/merchant.lua",
+    "camelot/auctionHints/module.lua",
     "core/windows/marks.lua",
     "core/windows/junk.lua",
     "core/windows/favorites.lua",
