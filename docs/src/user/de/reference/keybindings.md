@@ -163,6 +163,14 @@ Die Würfeltasten wirken auf das erste Würfelfenster auf dem Bildschirm. Ist ke
 
 Siehe [Beute, Handel und Post](../windows/loot-trade-mail.md).
 
+## Forever Fishing
+
+| Aktion | Standardtaste | Hinweise |
+|---|---|---|
+| Bildschirm des Angelfensters öffnen | Umschalt+F7 | WoW: Forever, mit Forever Fishing. Mit dem Angeln beginnen steht im WowVision-Menü |
+
+Siehe [Forever Fishing](../windows/forever-fishing.md).
+
 ## Handel
 
 | Aktion | Standardtaste | Hinweise |

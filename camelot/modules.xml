@@ -24,6 +24,8 @@
   <!-- The professions book and the crafting page are the two pages of the
        retail ProfessionsFrame. -->
   <Script file="professions.lua" />
+  <!-- Forever Fishing's window made accessible, when that addon is installed. -->
+  <Include file="foreverFishing\modules.xml" />
   <Script file="crafting.lua" />
   <!-- The Legacy window: reward track, challenges, and the Legacy talent
        trees. -->

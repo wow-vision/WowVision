@@ -49,6 +49,7 @@ Das funktioniert überall gleich (kleine Unterschiede werden auf den einzelnen S
 | Taste Hauptressource sprechen | Ja | Ja | Ja | Ja | Ja |
 | Gruppen-Gesundheitsmonitor (spricht die Gesundheit deiner Gruppe als Zahlen mit Tonhöhe, standardmäßig aus) | Nein | Nein | Nein | Ja | Ja |
 | Fenster des Abklingzeitmanagers (`/cdm`) | Nein | Nein | Nein | Ja | Ja |
+| Fenster von Forever Fishing (Addon eines Drittanbieters) | Nein | Nein | Nein | Nein | Ja, wenn installiert |
 
 In Retail und WoW: Forever verbirgt das Spiel Aura- und Abklingzeitdaten im Kampf und in Instanzen vor Addons, deshalb haben diese Versionen eigene Monitortypen. Siehe [Monitore](../information/monitors.md).
 
