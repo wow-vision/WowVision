@@ -145,6 +145,17 @@ See [Minimap](../world/minimap.md).
 
 See [Targeting](../world/targeting.md).
 
+## Damage meter
+
+| Action | Default key | Notes |
+|---|---|---|
+| Open the Details damage meter | Shift+F6 | WoW: Forever, with Details |
+| Say my line in the Details damage meter | Alt+Ctrl+D | |
+| Next measure of the damage meter | Alt+Ctrl+M | |
+| Next fight of the damage meter | Alt+Ctrl+C | |
+
+See [Damage Meter](../windows/damage-meter.md).
+
 ## Loot rolls
 
 | Action | Default key | Notes |

@@ -342,6 +342,65 @@ loadAddonFile("retail/groupHealth/tests.lua")
 loadAddonFile("retail/auction/prices.lua")
 loadAddonFile("retail/auction/ReplicateScanner.lua")
 loadAddonFile("retail/auction/tests.lua")
+-- The Details damage meter (camelot/detailsMeter): its files, then module.lua against a stand-in window module as
+-- many times as a test asks (harness.load takes the addons that count as loaded; loadOther keeps the first load's
+-- namespace untouched).
+do
+    for _, file in ipairs({ "namespace", "text", "game", "data", "screen", "menu" }) do
+        loadAddonFile("camelot/detailsMeter/" .. file .. ".lua")
+    end
+    local harness = {}
+    function harness.load(loaded)
+        local savedBase, savedLoaded = WowVision.base, WowVision.loadedAddons
+        local registered = { bindings = {}, commands = {} }
+        local stub = nil
+        WowVision.base = {
+            windows = {
+                createModule = function()
+                    stub = { L = WowVision:getLocale() }
+                    function stub:setLabel() end
+                    function stub:registerBinding(info)
+                        tinsert(registered.bindings, info)
+                    end
+                    function stub:registerCommand(config)
+                        registered.commands[config.name] = config
+                    end
+                    function stub:hasSettings()
+                        local settingsClass = WowVision.Class("Settings:detailsMeterTest")
+                        self.settings = settingsClass:new()
+                        return {
+                            add = function(_, def)
+                                settingsClass:addFields({ def })
+                                return settingsClass:getField(def.key)
+                            end,
+                        }
+                    end
+                    return stub
+                end,
+            },
+        }
+        WowVision.loadedAddons = loaded
+        loadAddonFile("camelot/detailsMeter/module.lua")
+        WowVision.base, WowVision.loadedAddons = savedBase, savedLoaded
+        return stub, registered
+    end
+    function harness.loadOther(loaded)
+        local ns = WowVision.detailsMeter
+        local saved = {}
+        for key, value in pairs(ns) do
+            saved[key] = value
+        end
+        local stub, registered = harness.load(loaded)
+        for key in pairs(ns) do
+            ns[key] = nil
+        end
+        for key, value in pairs(saved) do
+            ns[key] = value
+        end
+        return stub, registered
+    end
+    WowVision._detailsMeterTestHarness = harness
+end
 loadAddonFile("core/colors/names.lua")
 loadAddonFile("core/colors/colors.lua")
 loadAddonFile("core/colors/tests.lua")
@@ -2545,6 +2604,8 @@ loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
 loadAddonFile("core/graph/doublePressTests.lua")
 loadAddonFile("core/graph/controlTests.lua")
+loadAddonFile("camelot/detailsMeter/tests.lua")
+WowVision._detailsMeterTestHarness = nil
 -- The graph host, with its frame stubbed (its announcer words saved and restored so the graph suites keep their
 -- own), then the scanner window and the key-press suite on it and the window manager loaded further up.
 do
@@ -2898,6 +2959,7 @@ local parseOnly = {
     "tbc/tradeskill.lua",
     "tbc/lfg.lua",
     "camelot/lfg.lua",
+    "camelot/detailsMeter/module.lua",
     "tbc/character/character.lua",
     "tbc/character/PaperDoll.lua",
     "tbc/character/Pet.lua",

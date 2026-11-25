@@ -149,6 +149,17 @@ Siehe [Minimap](../world/minimap.md).
 
 Siehe [Zielerfassung](../world/targeting.md).
 
+## Schadensmesser
+
+| Aktion | Standardtaste | Hinweise |
+|---|---|---|
+| Details-Schadensmesser öffnen | Umschalt+F6 | WoW: Forever, mit Details |
+| Meine Zeile im Details-Schadensmesser sagen | Alt+Strg+D | |
+| Nächster Messwert des Schadensmessers | Alt+Strg+M | |
+| Nächster Kampf des Schadensmessers | Alt+Strg+C | |
+
+Siehe [Schadensmesser](../windows/damage-meter.md).
+
 ## Beutewürfe
 
 | Aktion | Standardtaste | Hinweise |
