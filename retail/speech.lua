@@ -104,10 +104,105 @@ end)
 -- turned off once per character.
 WowVision.speechSounds.attach(module, settings, L)
 
-local function frame_OnEvent(frame, event, utteranceID)
+-- The chat's own channel ------------------------------------------------------
+-- With Chat Voice on Its Own Channel, a chat message read in a voice other than the speech voice goes to the engine on
+-- its own, beside the queue: the engine plays it while WowVision's lines play, chat lines one after the other (overlap
+-- false). While one plays, WowVision's stops leave it alone (Keep Chat Messages When Speech Stops); Stop Chat Voice
+-- cuts it. Nothing in the engine's events tells a chat line apart, so how long one plays is estimated from its length
+-- and rate, leaning long: holding a stop back a little too long costs nothing, cutting a message loses it.
+settings:add({
+    type = "Bool",
+    key = "chatChannel",
+    label = L["Chat Voice on Its Own Channel"],
+    default = false,
+})
+settings:add({
+    type = "Bool",
+    key = "chatProtect",
+    label = L["Keep Chat Messages When Speech Stops"],
+    default = true,
+})
+settings:add({
+    type = "Number",
+    key = "chatRateOffset",
+    label = L["Chat Voice Rate Difference"],
+    default = 0,
+    min = -10,
+    max = 10,
+})
+-- A SAPI pitch tag around the message, as the group health monitor's numbers (a real Windows voice honours it, the
+-- screen reader bridge ignores it).
+settings:add({
+    type = "Number",
+    key = "chatPitch",
+    label = L["Chat Voice Pitch"],
+    default = 0,
+    min = -10,
+    max = 10,
+})
+
+local ASIDE_SPEED = 12 -- characters per second at rate 0
+local ASIDE_MARGIN = 1
+local ASIDE_UNKNOWN = 8 -- a hidden text, whose length cannot be read
+
+-- Until when chat lines are estimated to play, and the utterance ids of chat lines seen starting.
+module.asideUntil = 0
+module.asideIds = {}
+
+function module:asideBusy()
+    return self.asideUntil > 0 and GetTime() < self.asideUntil
+end
+
+function module:asideRate()
+    local rate = (self.settings.speechRate or 0) + (self.settings.chatRateOffset or 0)
+    return math.max(-10, math.min(10, rate))
+end
+
+function module.asideSeconds(text, rate)
+    if WowVision.secrets.isSecret(text) then
+        return ASIDE_UNKNOWN
+    end
+    return #text / (ASIDE_SPEED * 3 ^ (rate / 10)) + ASIDE_MARGIN
+end
+
+local function pitched(text, pitch)
+    if pitch == 0 or WowVision.secrets.isSecret(text) then
+        return text
+    end
+    local escaped = text:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
+    return '<pitch absmiddle="' .. pitch .. '">' .. escaped .. "</pitch>"
+end
+
+-- Speaks a chat line beside the queue when the player wants that and the voice is one of its own. True when taken.
+function module:speakAside(text, voice)
+    if not self.settings.chatChannel or voice == nil or voice == self.settings.voiceID then
+        return false
+    end
+    local rate = self:asideRate()
+    local volume = math.max(0, math.min(100, self.settings.speechVolume or 100))
+    local seconds = module.asideSeconds(text, rate)
+    oldSpeak(voice, WowVision.ttsCacheBust.bust(pitched(text, self.settings.chatPitch or 0)), rate, volume, false)
+    self.asideUntil = math.max(self.asideUntil, GetTime()) + seconds
+    return true
+end
+
+local function frame_OnEvent(frame, event, _, utteranceID)
     if event == "VOICE_CHAT_TTS_PLAYBACK_STARTED" then
+        -- Every line of ours is marked as playing when it is handed over: a start that finds nothing marked while a chat
+        -- line plays is that chat line, and must not hold the queue.
+        if not module.speaking and module:asideBusy() then
+            if utteranceID ~= nil then
+                module.asideIds[utteranceID] = true
+            end
+            return
+        end
         module.speaking = true
     elseif event == "VOICE_CHAT_TTS_PLAYBACK_FINISHED" or event == "VOICE_CHAT_TTS_PLAYBACK_FAILED" then
+        -- A chat line ending says nothing about WowVision's line.
+        if utteranceID ~= nil and module.asideIds[utteranceID] then
+            module.asideIds[utteranceID] = nil
+            return
+        end
         -- FAILED fires instead of FINISHED for rejected utterances (too short,
         -- too long, internal error). Without handling it the queue stalls forever.
         module.speaking = false
@@ -181,9 +276,17 @@ function module:idle()
     return not self.speaking and #self.queue == 0
 end
 
-function module:stop()
+-- force: cut a chat line of its own channel too (Stop Chat Voice).
+function module:stop(force)
     self.queue = {}
-    C_VoiceChat.StopSpeakingText()
+    if not force and self.asideUntil ~= nil and self:asideBusy() and self.settings.chatProtect ~= false then
+        -- The engine's stop would cut the chat line as well: not called. The next line still cuts a screen reader.
+        WowVision.speechInterrupt.noteStop()
+    else
+        self.asideUntil = 0
+        self.asideIds = {}
+        C_VoiceChat.StopSpeakingText()
+    end
     self.speaking = false
 end
 
@@ -191,3 +294,14 @@ function module:uiStop()
     self:stop()
     return true
 end
+
+module:registerBinding({
+    type = "Function",
+    key = "speech/stopChat",
+    inputs = { "ALT-SHIFT-C" },
+    label = L["Stop Chat Voice"],
+    func = function()
+        module:stop(true)
+        WowVision:speak(L["Chat voice stopped."])
+    end,
+})

@@ -88,6 +88,7 @@ The Invert Item Direction setting in the Buffers module swaps Alt+Up and Alt+Dow
 | Previous Link in Message | Ctrl+Left | In the chat window: previous clickable part of a message |
 | Next Link in Message | Ctrl+Right | Next clickable part |
 | Shift Click | Shift+Enter | Shift click the selected part (puts a link into the chat box) |
+| Stop Chat Voice | Alt+Shift+C | (Retail and WoW: Forever) Cuts the chat message of its own channel, which other stops leave playing. See [Speech and Sound](../basics/speech.md#chat-in-its-own-voice-beside-the-rest) |
 
 See [Chat](../windows/chat.md).
 

@@ -80,6 +80,24 @@ Jede TTS-Ausgabe eines Alarms hat ihre eigene Einstellung Stimme. Solange du dor
 
 Die Ansagen, die beim Laufen gemacht werden (neue Punkte auf der Minikarte), werden von der Stimme Nummer 0 des Spiels mit deiner Sprachgeschwindigkeit und Sprachlautstärke gesprochen statt mit deiner Sprachstimme, weil ein Screenreader sie bei jedem Tastendruck abschneiden würde. Auch bei diesem Alarm kannst du die Einstellung Stimme ändern. Dieser Alarm hat keine Einstellung Prioritätsnachricht (unterbricht).
 
+## Chat in eigener Stimme, neben allem anderen
+
+In Retail und WoW: Forever kann der Chat in einer eigenen Stimme gleichzeitig mit der Sprache von WowVision gelesen werden, ohne dass deine Tastendrücke ihn abschneiden.
+
+1. Gib einem Chat-Alarm eine andere Stimme als deine Sprachstimme (Chat, dann der Alarm eines Reiters).
+2. Schalte im Menü Sprache Chatstimme auf eigenem Kanal ein (standardmäßig aus).
+
+Nachrichten in dieser Stimme laufen dann neben den Zeilen von WowVision, eine Chatnachricht nach der anderen. Während eine läuft, lassen die Stopps von WowVision (Strg, Navigationstasten, vorrangige Alarme) sie in Ruhe; Chatstimme anhalten (Alt+Umschalt+C) schneidet sie ab. Chat-Alarme mit der Sprachstimme werden wie bisher in der Warteschlange gelesen, und Vorrangige Nachricht wirkt nicht auf eine Nachricht auf eigenem Kanal.
+
+| Einstellung | Standard | Wirkung |
+|---|---|---|
+| Chatstimme auf eigenem Kanal | Aus | Liest Chatstimmen neben der Warteschlange, wie oben beschrieben |
+| Chatnachrichten behalten, wenn die Sprache stoppt | An | Aus schneidet ein Stopp Chatnachrichten ab wie alles andere |
+| Abweichung des Sprechtempos der Chatstimme | 0 | Wird für diese Nachrichten zu deinem Sprechtempo addiert |
+| Tonhöhe der Chatstimme | 0 | Tonhöhe dieser Nachrichten, von -10 bis 10. Eine echte Windows-Stimme folgt ihr, eine Screenreader-Brückenstimme ignoriert sie |
+
+Wie lange eine Nachricht läuft, wird aus ihrer Länge geschätzt, weil das Spiel nicht sagt, welche Zeile gerade läuft: Ein Stopp kurz nach einer Nachricht wird vielleicht noch einen Moment zurückgehalten.
+
 ## Eine Screenreader-Stimme verwenden
 
 Reicht deine TTS-Stimme den Text an einen Screenreader weiter, etwa an NVDA über die Stimme SAPI2SR, sorgt WowVision dafür, dass wiederholte Zeilen jedes Mal gesprochen werden und eine neue Zeile die alte abschneidet, genau wie bei einer normalen Stimme.
