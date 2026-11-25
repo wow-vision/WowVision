@@ -23,6 +23,7 @@ local function loadSpeech(path)
     local module = { L = setmetatable({}, { __index = function(_, key) return key end }) }
     function module:setLabel() end
     function module:setVital() end
+    function module:registerBinding() end
     -- The settings' change handlers by key: a test switches the Speech Queue on with them.
     local onChange = {}
     function module:hasSettings()

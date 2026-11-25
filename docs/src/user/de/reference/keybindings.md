@@ -92,6 +92,7 @@ Die Einstellung Elementrichtung umkehren (Invert Item Direction) im Modul Puffer
 | Vorheriger Link in der Nachricht (Previous Link in Message) | Strg+Pfeil links | Im Chatfenster: vorheriger anklickbarer Teil einer Nachricht |
 | Nächster Link in der Nachricht (Next Link in Message) | Strg+Pfeil rechts | Nächster anklickbarer Teil |
 | Umschaltklick (Shift Click) | Umschalt+Eingabe | Klickt den ausgewählten Teil mit Umschalt an (legt einen Link ins Chatfeld) |
+| Chatstimme anhalten (Stop Chat Voice) | Alt+Umschalt+C | (Retail und WoW: Forever) Schneidet die Chatnachricht auf eigenem Kanal ab, die andere Stopps weiterlaufen lassen. Siehe [Sprache und Ton](../basics/speech.md#chat-in-eigener-stimme-neben-allem-anderen) |
 
 Siehe [Chat](../windows/chat.md).
 

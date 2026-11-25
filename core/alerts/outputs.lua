@@ -4,6 +4,9 @@ local tts = WowVision.alerts:createOutput("TTS")
 tts:addFields({
     { key = "buildMessage" },
     { key = "message" },
+    -- Chat messages: spoken beside the speech queue when the speech module has a channel for them and takes the line
+    -- (retail/speech.lua).
+    { key = "aside" },
     -- A game TTS voice index: when set, the text is spoken by the game (at the speech module's rate
     -- and volume) instead of through the speech module, with the voice the output's Voice setting
     -- picks; this index is that setting's default. For announcements made while walking: a screen
@@ -88,6 +91,10 @@ function tts:onFire(message)
     local voice = self.parameters:getFieldValue("voice")
     if voice == WowVision.classes.SPEECH_VOICE then
         voice = nil
+    end
+    local speechModule = WowVision.base.speech
+    if self.aside and voice ~= nil and speechModule.speakAside ~= nil and speechModule:speakAside(text, voice) then
+        return
     end
     if self.db.interrupt then
         WowVision.base.speech:uiStop()

@@ -28,6 +28,7 @@ local function addMessageAlert(key, label, speakDefault)
         type = "TTS",
         key = "tts",
         label = L["TTS Alert"],
+        aside = true,
         buildMessage = function(self, message)
             return message.message
         end,

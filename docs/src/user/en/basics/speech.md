@@ -80,6 +80,24 @@ Every TTS alert output has its own Voice setting. Until you choose something the
 
 The announcements made while you walk (new dots on the minimap) are spoken by the game's voice number 0 at your Speech Rate and Speech Volume, instead of your Speech Voice, because a screen reader would cut them off at every key press. You can change that alert's Voice setting as well. This alert has no Priority Message (interrupts) setting.
 
+## Chat in its own voice, beside the rest
+
+On Retail and WoW: Forever, chat can be read in a voice of its own at the same time as WowVision's speech, without being cut off by your key presses.
+
+1. Give a chat alert a Voice other than your Speech Voice (Chat, then the alert of a tab, see [Voices for single alerts](#voices-for-single-alerts)).
+2. In the Speech menu, switch on Chat Voice on Its Own Channel (off by default).
+
+Messages of that voice then play beside WowVision's lines, one chat message after the other. While one plays, WowVision's stops (Ctrl, navigation keys, priority alerts) leave it alone; Stop Chat Voice (Alt+Shift+C) cuts it. Chat alerts that follow the Speech Voice read in the queue as before, and Priority Message (interrupts) has no effect on a message of its own channel.
+
+| Setting | Default | What it does |
+|---|---|---|
+| Chat Voice on Its Own Channel | Off | Reads chat voices beside the queue, as described above |
+| Keep Chat Messages When Speech Stops | On | Off, a stop cuts chat messages like everything else |
+| Chat Voice Rate Difference | 0 | Added to your Speech Rate for these messages |
+| Chat Voice Pitch | 0 | Pitch of these messages, from -10 to 10. A real Windows voice follows it; a screen reader bridge voice ignores it |
+
+How long a message plays is estimated from its length, since the game does not say which line is playing: a stop right after a message may still be held back for a moment.
+
 ## Using a screen reader voice
 
 If your TTS voice hands the text to a screen reader, such as NVDA through the SAPI2SR voice, WowVision makes sure that repeated lines are spoken every time and that a new line cuts off the old one, just as with a normal voice.
