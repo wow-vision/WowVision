@@ -159,6 +159,14 @@ The roll keys act on the first roll window on screen. With none open you hear "N
 
 See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
 
+## Forever Fishing
+
+| Action | Default key | Notes |
+|---|---|---|
+| Open the fishing window screen | Shift+F7 | WoW: Forever, with Forever Fishing. Start Fishing is in the WowVision menu |
+
+See [Forever Fishing](../windows/forever-fishing.md).
+
 ## Trade
 
 | Action | Default key | Notes |

@@ -49,6 +49,7 @@ These work the same everywhere (small differences are explained on each page):
 | Speak Main Resource key | Yes | Yes | Yes | Yes | Yes |
 | Group Health Monitor (speaks your group's health as pitched numbers, off by default) | No | No | No | Yes | Yes |
 | Cooldown manager window (`/cdm`) | No | No | No | Yes | Yes |
+| Forever Fishing window (third-party addon) | No | No | No | No | Yes, when installed |
 
 On Retail and WoW: Forever the game hides aura and cooldown data from addons in combat and in instances, which is why those versions have their own monitor types. See [Monitors](../information/monitors.md).
 

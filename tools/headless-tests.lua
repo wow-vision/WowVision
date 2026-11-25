@@ -2544,6 +2544,78 @@ loadAddonFile("core/graph/settings.lua")
 loadAddonFile("core/graph/fieldControls.lua")
 loadAddonFile("core/graph/tests.lua")
 loadAddonFile("core/graph/doublePressTests.lua")
+-- Forever Fishing (camelot/foreverFishing), after the graph core: its files, then module.lua against a stand-in
+-- window module as many times as a test asks (harness.load takes the addons that count as loaded; loadOther keeps the
+-- first load's namespace untouched). The menu entry it adds to the WowVision menu is kept aside.
+do
+    for _, file in ipairs({ "namespace", "value", "fishing", "game", "screen" }) do
+        loadAddonFile("camelot/foreverFishing/" .. file .. ".lua")
+    end
+    local harness = {}
+    function harness.load(loaded)
+        local savedBase, savedLoaded = WowVision.base, WowVision.loadedAddons
+        local savedRoot = WowVision.graph.settings.registerRootEntry
+        local registered = { bindings = {}, commands = {}, events = {} }
+        local stub = nil
+        WowVision.graph.settings.registerRootEntry = function(render)
+            registered.rootEntry = render
+        end
+        WowVision.base = {
+            windows = {
+                createModule = function()
+                    stub = { L = WowVision:getLocale() }
+                    function stub:setLabel() end
+                    function stub:getEnabled()
+                        return true
+                    end
+                    function stub:registerBinding(info)
+                        tinsert(registered.bindings, info)
+                    end
+                    function stub:registerCommand(config)
+                        registered.commands[config.name] = config
+                    end
+                    function stub:registerEvent(...)
+                        tinsert(registered.events, { ... })
+                    end
+                    function stub:hasSettings()
+                        local settingsClass = WowVision.Class("Settings:foreverFishingTest")
+                        self.settings = settingsClass:new()
+                        return {
+                            add = function(_, def)
+                                settingsClass:addFields({ def })
+                                return settingsClass:getField(def.key)
+                            end,
+                        }
+                    end
+                    return stub
+                end,
+            },
+        }
+        WowVision.loadedAddons = loaded
+        loadAddonFile("camelot/foreverFishing/module.lua")
+        WowVision.base, WowVision.loadedAddons = savedBase, savedLoaded
+        WowVision.graph.settings.registerRootEntry = savedRoot
+        return stub, registered
+    end
+    function harness.loadOther(loaded)
+        local ns = WowVision.foreverFishing
+        local saved = {}
+        for key, value in pairs(ns) do
+            saved[key] = value
+        end
+        local stub, registered = harness.load(loaded)
+        for key in pairs(ns) do
+            ns[key] = nil
+        end
+        for key, value in pairs(saved) do
+            ns[key] = value
+        end
+        return stub, registered
+    end
+    WowVision._foreverFishingTestHarness = harness
+    loadAddonFile("camelot/foreverFishing/tests.lua")
+    WowVision._foreverFishingTestHarness = nil
+end
 loadAddonFile("core/graph/controlTests.lua")
 -- The graph host, with its frame stubbed (its announcer words saved and restored so the graph suites keep their
 -- own), then the scanner window and the key-press suite on it and the window manager loaded further up.
@@ -2898,6 +2970,7 @@ local parseOnly = {
     "tbc/tradeskill.lua",
     "tbc/lfg.lua",
     "camelot/lfg.lua",
+    "camelot/foreverFishing/module.lua",
     "tbc/character/character.lua",
     "tbc/character/PaperDoll.lua",
     "tbc/character/Pet.lua",
