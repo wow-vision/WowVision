@@ -175,6 +175,14 @@ See [Loot, Trade and Mail](../windows/loot-trade-mail.md).
 
 See [Group Finder](../windows/group-finder.md).
 
+## AtlasLoot
+
+| Action | Default key | Notes |
+|---|---|---|
+| Open the loot browser (AtlasLoot) | Alt+L | WoW: Forever, with AtlasLoot installed. Also /wv atlasloot |
+
+See [AtlasLoot](../windows/atlasloot.md).
+
 ## LFG Forever
 
 | Action | Default key | Notes |

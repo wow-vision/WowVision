@@ -27,6 +27,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv close | Closes every WowVision window | all |
 | /wv version | Prints the WowVision version | all |
 | /wv accept | Accepts a group invitation, also in combat | all |
+| /wv atlasloot | Opens or closes the AtlasLoot loot browser | WoW: Forever, with AtlasLoot |
 | /wv auras | Opens the list of your buffs and debuffs, or says them | all |
 | /wv lfg | Opens or closes LFG Forever, the third-party group finder | WoW: Forever, with LFG Forever installed |
 | /wv pendingtest | Shows a test box that waits like a group invitation | all |
