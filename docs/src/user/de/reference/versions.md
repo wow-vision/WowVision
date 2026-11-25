@@ -48,6 +48,7 @@ Das funktioniert überall gleich (kleine Unterschiede werden auf den einzelnen S
 | Ressourcen-Monitor für Leisten (Mana, Energie, Wut und Ähnliches) | Ja | Ja | Ja | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) | Nur Leisten, die das Spiel nicht verbirgt (nicht Mana oder Energie) |
 | Taste Hauptressource sprechen | Ja | Ja | Ja | Ja | Ja |
 | Gruppen-Gesundheitsmonitor (spricht die Gesundheit deiner Gruppe als Zahlen mit Tonhöhe, standardmäßig aus) | Nein | Nein | Nein | Ja | Ja |
+| Begleiter-Gesundheit (sagt die Gesundheit deines Begleiters, auf eine Taste oder im Kampf von selbst) | Nein | Nein | Nein | Ja | Ja |
 | Fenster des Abklingzeitmanagers (`/cdm`) | Nein | Nein | Nein | Ja | Ja |
 
 In Retail und WoW: Forever verbirgt das Spiel Aura- und Abklingzeitdaten im Kampf und in Instanzen vor Addons, deshalb haben diese Versionen eigene Monitortypen. Siehe [Monitore](../information/monitors.md).

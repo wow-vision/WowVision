@@ -339,6 +339,8 @@ loadAddonFile("core/minimap/tests.lua")
 loadAddonFile("retail/groupHealth/logic.lua")
 loadAddonFile("retail/groupHealth/voices.lua")
 loadAddonFile("retail/groupHealth/tests.lua")
+loadAddonFile("retail/petHealth/logic.lua")
+loadAddonFile("retail/petHealth/tests.lua")
 loadAddonFile("retail/auction/prices.lua")
 loadAddonFile("retail/auction/ReplicateScanner.lua")
 loadAddonFile("retail/auction/tests.lua")
@@ -406,6 +408,43 @@ do
 end
 loadAddonFile("retail/groupHealth/moduleTests.lua")
 loadAddonFile("retail/groupHealth/dispelTests.lua")
+-- The pet health module: loaded against a stand-in module that keeps its key
+-- and events and whose settings are a real settings class. The suite stubs the
+-- game's pet functions per test.
+do
+    local savedBase = WowVision.base
+    local stub = { key = "petHealth", L = WowVision:getLocale() }
+    local harness = { module = stub, bindings = {}, events = {} }
+    stub.setLabel = function() end
+    function stub:registerEvent(...)
+        tinsert(harness.events, { ... })
+    end
+    function stub:registerBinding(info)
+        tinsert(harness.bindings, info)
+    end
+    function stub:hasUpdate(func)
+        self.update = func
+    end
+    function stub:hasSettings()
+        local settingsClass = WowVision.Class("Settings:petHealthTest")
+        self.settings = settingsClass:new()
+        return {
+            add = function(_, def)
+                settingsClass:addFields({ def })
+                return settingsClass:getField(def.key)
+            end,
+        }
+    end
+    WowVision.base = {
+        createModule = function()
+            return stub
+        end,
+    }
+    loadAddonFile("retail/petHealth/module.lua")
+    WowVision.base = savedBase
+    WowVision.petHealth._moduleTestHarness = harness
+end
+loadAddonFile("retail/petHealth/moduleTests.lua")
 loadAddonFile("camelot/worldRefresh.lua")
 loadAddonFile("camelot/worldRefreshTests.lua")
 loadAddonFile("camelot/petTraining.lua")
@@ -2856,6 +2895,7 @@ local parseOnly = {
     "core/minimap/tracking.lua",
     "retail/groupHealth/module.lua",
     "retail/groupHealth/dispel.lua",
+    "retail/petHealth/module.lua",
     "core/scanner/module.lua",
     "core/scanner/ui.lua",
     "core/scanner/providers.lua",
