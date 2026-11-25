@@ -336,6 +336,55 @@ loadAddonFile("core/quests/zonesTests.lua")
 loadAddonFile("core/minimap/logic.lua")
 loadAddonFile("core/minimap/gatheringNames.lua")
 loadAddonFile("core/minimap/tests.lua")
+-- Name sources (camelot/nameSources): the walk and the dictionaries, then module.lua against a stand-in WowNav module
+-- whose setting is a real settings class, so turning it on reaches the module as in the game.
+do
+    local savedBase = WowVision.base
+    loadAddonFile("camelot/nameSources/namespace.lua")
+    loadAddonFile("camelot/nameSources/names.lua")
+    loadAddonFile("camelot/nameSources/sources.lua")
+    local harness = { commands = {}, events = {}, defaults = {} }
+    local stub = { L = WowVision:getLocale() }
+    function stub:setLabel() end
+    function stub:getEnabled()
+        return self.enabled ~= false
+    end
+    function stub:registerCommand(config)
+        harness.commands[config.name] = config
+    end
+    function stub:registerEvent(...)
+        tinsert(harness.events, { ... })
+    end
+    function stub:hasUpdate(func)
+        self.update = func
+    end
+    function stub:hasSettings()
+        local settingsClass = WowVision.Class("Settings:nameSourcesTest")
+        self.settings = settingsClass:new()
+        return {
+            add = function(_, def)
+                settingsClass:addFields({ def })
+                harness.defaults[def.key] = def.default
+                return settingsClass:getField(def.key)
+            end,
+        }
+    end
+    harness.module = stub
+    WowVision.base = {
+        navigation = {
+            wownav = {
+                createModule = function()
+                    return stub
+                end,
+            },
+        },
+    }
+    loadAddonFile("camelot/nameSources/module.lua")
+    WowVision.base = savedBase
+    WowVision._nameSourcesTestHarness = harness
+    loadAddonFile("camelot/nameSources/tests.lua")
+    WowVision._nameSourcesTestHarness = nil
+end
 loadAddonFile("retail/groupHealth/logic.lua")
 loadAddonFile("retail/groupHealth/voices.lua")
 loadAddonFile("retail/groupHealth/tests.lua")
@@ -2898,6 +2947,7 @@ local parseOnly = {
     "tbc/tradeskill.lua",
     "tbc/lfg.lua",
     "camelot/lfg.lua",
+    "camelot/nameSources/module.lua",
     "tbc/character/character.lua",
     "tbc/character/PaperDoll.lua",
     "tbc/character/Pet.lua",

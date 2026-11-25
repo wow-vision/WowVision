@@ -221,6 +221,12 @@ Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
 | Prepare Neighbouring Zones | On | Prepares your zone and the zones next to it in the background, so the first route there does not wait. |
 | Names in Your Language | On | Names creatures and objects in your game language from Questie's database where it knows them; see [Destinations](#destinations). Has no effect on English and German clients. |
 
+## Completing the missing names
+
+Questie's database has no name in many languages for part of the creatures, most titles under their names and most world objects (mailboxes, anvils, herbs, signs). With Complete Missing Names switched on (WowNav, Name Sources; off by default), WowVision walks the database a few seconds after you enter the world, in small steps, and fills what it can from: the same English name already translated on another entry, WowVision's own herb, ore and chest names, Questie's own translations, the game's area names, and sources other addons register (`WowVision.nameSources.addSource(key, fn)`). The names are given to Questie's database through its correction layer, so the destination lists, the scanner and Questie's tooltips all read them. The result is kept until the database changes.
+
+`/wv names` says what was added; `on`, `off`, `recalculate` and `test` followed by an English name, which says what it would become and from which source. The same two buttons, Say the State and Recalculate, are on the module's screen. Does nothing on an English client or without Questie's database.
+
 ## Examples
 
 ### Walk to a trainer in a city
