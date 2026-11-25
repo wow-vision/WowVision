@@ -37,6 +37,8 @@
   <Script file="lfg.lua" />
   <!-- LFG Forever (Artefius, /lfg), the third-party group finder addon of WoW: Forever, as a window of its own. Not
        Blizzard's group finder above. Loads only when that addon does (OptionalDeps in the TOC). -->
+  <!-- The damage meter shown by Details, when that addon is installed. -->
+  <Include file="detailsMeter\modules.xml" />
   <Include file="lfgForever\modules.xml" />
   <!-- WoW: Forever has no pandemic window: the cooldown manager aura rule
        drops its Pandemic state. -->
