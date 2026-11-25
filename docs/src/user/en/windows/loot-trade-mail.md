@@ -38,6 +38,17 @@ The Roll Bonus key exists only on game versions where the bonus roll window exis
 
 Disenchant rolls are not offered with these keys.
 
+### Sharpie's Gear Judge on a roll
+
+With the addon Sharpie's Gear Judge installed (version 3.2.7 or later; WoW: Forever, Classic Era and The Burning Crusade), WowVision has one more roll key. Without that addon the key does not exist.
+
+| Key | Binding name | What it does |
+|-----|--------------|--------------|
+| Alt+Ctrl+J | Roll Gear Judge Verdict | Says what Gear Judge thinks of the item up for a roll: for example "Gold Band, upgrade of 4.2 percent, instead of Old Ring", or that your class cannot use it. |
+| Unbound | All Rolls Gear Judge Verdicts | The same for every open roll window, numbered. |
+
+The verdict is Gear Judge's own, for the specialisation it judges you for. The percentage says how much better or worse your whole character gets. An item the game has not loaded yet is asked for again for about two seconds, after "The item is loading.".
+
 ## Trade
 
 When another player trades with you, the trade window opens and WowVision reads it. Start a trade the way the game does. With the player targeted, open the target menu with Alt+T, see [Targeting](../world/targeting.md), or use the game's own trade key or command.

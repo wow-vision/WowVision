@@ -2719,6 +2719,39 @@ loadAddonFile("core/targeting/targetNamesTests.lua")
 loadAddonFile("core/targeting/pingTarget.lua")
 loadAddonFile("core/targeting/pingTargetTests.lua")
 
+-- Sharpie's Gear Judge on loot rolls (core/windows/gearJudge.lua): the file loads against a stand-in loot module,
+-- as many times as a test asks (harness.load takes the addons that count as loaded); the keys it registers come back
+-- to the suite.
+do
+    local savedBase, savedLoaded = WowVision.base, WowVision.loadedAddons
+    local harness = {}
+    function harness.load(loaded)
+        local registered = { bindings = {} }
+        local function stubModule()
+            local stub = { L = WowVision:getLocale() }
+            function stub:setLabel() end
+            function stub:registerBinding(info)
+                tinsert(registered.bindings, info)
+            end
+            function stub:createModule(key)
+                local child = stubModule()
+                self[key] = child
+                return child
+            end
+            return stub
+        end
+        WowVision.base = { windows = { loot = stubModule() } }
+        WowVision.loadedAddons = loaded
+        loadAddonFile("core/windows/gearJudge.lua")
+        local module = WowVision.base.windows.loot.gearJudge
+        WowVision.base, WowVision.loadedAddons = savedBase, savedLoaded
+        return module, registered
+    end
+    WowVision._gearJudgeTestHarness = harness
+    loadAddonFile("core/windows/gearJudgeTests.lua")
+    WowVision._gearJudgeTestHarness = nil
+end
+
 -- The junk module and the merchant sale, against a stand-in for the game.
 loadAddonFile("tools/junkModuleTests.lua")
 -- Native quest source and the scanner's quest categories: the adapter and

@@ -2,7 +2,7 @@
 ## Version: @project-version@
 ## Author: bradjrenshaw
 ## Interface: 20505,20506
-## OptionalDeps: Sku, Questie
+## OptionalDeps: Sku, Questie, SharpiesGearJudge
 ## Notes: Provides accessibility for the visually impaired.
 ## SavedVariables: WowVisionDump, WowVisionPriceDB, WowVisionGlobalDB
 ## SavedVariablesPerCharacter: WowVisionDB
