@@ -1218,7 +1218,8 @@ function Loot.describe(entry, filters, game, where)
         parts[#parts + 1] = entry.note
     end
     if where ~= nil then
-        parts[#parts + 1] = string.format(L["from %s"], where)
+        -- (WowVision's "from %s" is worded for damage taken; a loot source reads differently in French and German)
+        parts[#parts + 1] = string.format(L["loot from %s"], where)
     end
     if not filters.classFilter and entry.usable == false then
         parts[#parts + 1] = L["your class cannot use it"]
