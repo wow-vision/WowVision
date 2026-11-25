@@ -28,6 +28,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv version | Prints the WowVision version | all |
 | /wv accept | Accepts a group invitation, also in combat | all |
 | /wv auras | Opens the list of your buffs and debuffs, or says them | all |
+| /wv rxp | RestedXP: menu, step, arrow, beacon, route, stop | WoW: Forever, with RestedXP |
 | /wv lfg | Opens or closes LFG Forever, the third-party group finder | WoW: Forever, with LFG Forever installed |
 | /wv pendingtest | Shows a test box that waits like a group invitation | all |
 | /beacon | Sets a beacon, routes to a named place, or reads your position | all |

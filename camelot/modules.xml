@@ -50,6 +50,8 @@
   <!-- The world refresh (shard transfer): the game's toast with its countdown is said, and World Refresh in
        the WowVision menu clicks it. -->
   <Script file="worldRefresh.lua" />
+  <!-- The RestedXP leveling guide (third-party addon), when installed. -->
+  <Include file="restedXP/modules.xml" />
   <Script file="worldRefreshTests.lua" />
   <Script file="petTraining.lua" />
   <Script file="petTrainingTests.lua" />
