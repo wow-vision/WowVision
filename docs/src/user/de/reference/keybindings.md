@@ -158,6 +158,8 @@ Siehe [Zielerfassung](../world/targeting.md).
 | Gier würfeln (Roll Greed) | Alt+Strg+I | |
 | Passen (Roll Pass) | Alt+Strg+O | |
 | Bonuswurf (Roll Bonus) | Alt+Strg+P | Gibt es nur in Spielversionen mit Bonuswürfen |
+| Gear-Judge-Urteil zur Beute (Roll Gear Judge Verdict) | Alt+Strg+J | Nur mit dem Addon Sharpie's Gear Judge: ob der Gegenstand, um den gewürfelt wird, deine Ausrüstung verbessert, und um wie viel |
+| Gear-Judge-Urteile zu allen Beutestücken (All Rolls Gear Judge Verdicts) | Unbelegt | Nur mit Sharpie's Gear Judge: dasselbe für jeden offenen Wurf |
 
 Die Würfeltasten wirken auf das erste Würfelfenster auf dem Bildschirm. Ist keines offen, hörst du "Keine Beute.".
 

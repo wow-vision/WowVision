@@ -38,6 +38,17 @@ Die Taste Bonuswurf gibt es nur in Spielversionen, in denen das Bonuswurf-Fenste
 
 Entzauberwürfe werden mit diesen Tasten nicht angeboten.
 
+### Sharpie's Gear Judge beim Würfeln
+
+Ist das Addon Sharpie's Gear Judge installiert (Version 3.2.7 oder neuer; WoW: Forever, Classic Era und The Burning Crusade), hat WowVision eine weitere Würfeltaste. Ohne dieses Addon gibt es die Taste nicht.
+
+| Taste | Name der Belegung | Wirkung |
+|-----|--------------|--------------|
+| Alt+Strg+J | Gear-Judge-Urteil zur Beute (Roll Gear Judge Verdict) | Sagt, was Gear Judge vom Gegenstand hält, um den gewürfelt wird, zum Beispiel „Gold Band, Aufwertung um 4,2 Prozent, anstelle von Old Ring“, oder dass deine Klasse ihn nicht benutzen kann. |
+| Unbelegt | Gear-Judge-Urteile zu allen Beutestücken (All Rolls Gear Judge Verdicts) | Dasselbe für jedes offene Würfelfenster, nummeriert. |
+
+Das Urteil stammt von Gear Judge selbst, für die Spezialisierung, nach der es dich bewertet. Der Prozentwert sagt, um wie viel besser oder schlechter dein ganzer Charakter wird. Nach einem Gegenstand, den das Spiel noch nicht geladen hat, wird etwa zwei Sekunden lang erneut gefragt, nach „Der Gegenstand wird geladen.“.
+
 ## Handel
 
 Wenn ein anderer Spieler mit dir handelt, öffnet sich das Handelsfenster, und WowVision liest es. Starte einen Handel so, wie es das Spiel tut. Öffne bei anvisiertem Spieler das Zielmenü mit Alt+T, siehe [Zielerfassung](../world/targeting.md), oder benutze die Handelstaste oder den Handelsbefehl des Spiels.

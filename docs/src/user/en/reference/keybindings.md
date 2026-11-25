@@ -154,6 +154,8 @@ See [Targeting](../world/targeting.md).
 | Roll Greed | Alt+Ctrl+I | |
 | Roll Pass | Alt+Ctrl+O | |
 | Roll Bonus | Alt+Ctrl+P | Only exists on game versions that have bonus rolls |
+| Roll Gear Judge Verdict | Alt+Ctrl+J | Only with the addon Sharpie's Gear Judge: whether the item up for a roll improves your gear, and by how much |
+| All Rolls Gear Judge Verdicts | Unbound | Only with Sharpie's Gear Judge: the same for every open roll |
 
 The roll keys act on the first roll window on screen. With none open you hear "No loot.".
 

@@ -19,6 +19,8 @@
   <Script file="gossip.lua" />
   <Script file="itemText.lua" />
   <Script file="loot.lua" />
+  <!-- Sharpie's Gear Judge on the item up for a roll, when that addon is installed. -->
+  <Script file="gearJudge.lua" />
 <Script file="Macros.lua" />
 <Script file="mail.lua" />
   <Script file="merchant.lua" />
