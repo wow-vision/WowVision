@@ -28,6 +28,7 @@ Unless a command says otherwise, it exists on all game versions: Classic Era, Th
 | /wv version | Prints the WowVision version | all |
 | /wv accept | Accepts a group invitation, also in combat | all |
 | /wv auras | Opens the list of your buffs and debuffs, or says them | all |
+| /wv names | The missing names added to Questie's database: state, on, off, recalculate, test | WoW: Forever |
 | /wv lfg | Opens or closes LFG Forever, the third-party group finder | WoW: Forever, with LFG Forever installed |
 | /wv pendingtest | Shows a test box that waits like a group invitation | all |
 | /beacon | Sets a beacon, routes to a named place, or reads your position | all |

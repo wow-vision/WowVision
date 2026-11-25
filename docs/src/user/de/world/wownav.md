@@ -223,6 +223,12 @@ WowNav weiß, wo Monster gewöhnlich stehen, nicht, wo sie gerade sind, wie star
 | Nachbargebiete vorbereiten | An | Bereitet dein Gebiet und die Nachbargebiete im Hintergrund vor, damit die erste Route dorthin nicht wartet. |
 | Namen in deiner Sprache | An | Benennt Kreaturen und Objekte in deiner Spielsprache aus Questies Datenbank, wo sie sie kennt; siehe [Ziele](#ziele). Auf englischen und deutschen Clients ohne Wirkung. |
 
+## Fehlende Namen ergänzen
+
+Questies Datenbank hat in vielen Sprachen für einen Teil der Kreaturen, die meisten Titel unter ihren Namen und die meisten Weltobjekte (Briefkästen, Ambosse, Kräuter, Schilder) keinen Namen. Mit Fehlende Namen ergänzen (WowNav, Namensquellen; standardmäßig aus) geht WowVision einige Sekunden nach dem Betreten der Welt in kleinen Schritten durch die Datenbank und füllt, was möglich ist: aus demselben englischen Namen, der an anderer Stelle schon übersetzt ist, aus WowVisions eigenen Kräuter-, Erz- und Truhennamen, aus Questies Übersetzungen, aus den Gebietsnamen des Spiels und aus Quellen, die andere Addons anmelden (`WowVision.nameSources.addSource(key, fn)`). Die Namen gehen über die Korrekturschicht an Questies Datenbank, also lesen sie die Ziellisten, der Scanner und Questies Tooltips. Das Ergebnis bleibt, bis sich die Datenbank ändert.
+
+`/wv names` sagt, was ergänzt wurde; `on`, `off`, `recalculate` und `test` mit einem englischen Namen, was sagt, was daraus würde und woher. Die Knöpfe Zustand sagen und Neu berechnen stehen auch auf dem Bildschirm des Moduls. Auf einem englischen Client oder ohne Questies Datenbank passiert nichts.
+
 ## Beispiele
 
 ### Zu einem Lehrer in einer Stadt gehen

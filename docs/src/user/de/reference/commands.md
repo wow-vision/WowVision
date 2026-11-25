@@ -30,6 +30,7 @@ Sofern ein Befehl nichts anderes sagt, gibt es ihn in allen Spielversionen: Clas
 | /wv version | Gibt die WowVision-Version aus | alle |
 | /wv accept | Nimmt eine Gruppeneinladung an, auch im Kampf | alle |
 | /wv auras | Öffnet die Liste deiner Buffs und Debuffs oder sagt sie an | alle |
+| /wv names | Die in Questies Datenbank ergänzten Namen: Zustand, an, aus, neu berechnen, Test | WoW: Forever |
 | /wv lfg | Öffnet oder schließt LFG Forever, die Gruppensuche eines Fremd-Addons | WoW: Forever, mit installiertem LFG Forever |
 | /wv pendingtest | Zeigt einen Testkasten, der wie eine Gruppeneinladung wartet | alle |
 | /beacon | Setzt ein Beacon, routet zu einem benannten Ort oder liest deine Position vor | alle |

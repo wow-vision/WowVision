@@ -58,6 +58,8 @@
        (the WoW_NavigationData repository as a submodule), packed by tools/wownav-pack.lua into
        mapdata/WowNavPacked. -->
   <Include file="wownav\modules.xml" />
+  <!-- Completes the names Questie's database lacks, for WowNav's lists and the scanner. -->
+  <Include file="nameSources\modules.xml" />
   <Include file="..\mapdata\WowNavPacked\data.xml" />
   <!-- what the player bumps into (core/navigation/bumps.lua), written by tools/bumps/pack.lua -->
   <Include file="..\mapdata\bumps\forever\data.xml" />
