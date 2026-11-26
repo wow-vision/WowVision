@@ -2112,6 +2112,70 @@ if haveNetwork then
         end
     end
 
+    suite["a dock route searched again is still a dock route: its arrival starts the route to the point on board"] = function(t)
+        setup()
+        local saved = _G.UnitPosition
+        _G.UnitPosition = function()
+            return -8650, 1337, 0, 0
+        end
+        local ok, err = pcall(function()
+            local dockRow, boardRow = stormwindHarbor()
+            t:assertNotNil(dockRow)
+            t:assertNotNil(boardRow)
+            local Dock = _G.WowVisionNavigationDockNavigation
+            local target = dock.target(N, dockRow)
+            local shipTarget = dock.boardingTarget(N, boardRow)
+            t:assertNotNil(shipTarget)
+            -- what the module's request to the dock carries (targetRequest), then searched again from another start
+            -- (the stuck key's new route, a changed road preference, safety or zone setting)
+            local contract = catalog.contract(dockRow, 0)
+            local onArrive = function() end
+            local request = { contract = contract, label = dockRow.n, onArrive = onArrive, dockTarget = target,
+                start = { nodeId = 1 }, approx = true, lowestFloor = true, chainLeg = 2, windowsClosed = true }
+            local start = { nodeId = 2, z = 0 }
+            local again = Route.searchAgain(request, contract, start)
+            t:assertTrue(again.dockTarget == target, "the dock comes along")
+            t:assertTrue(again.contract == contract)
+            t:assertEqual(again.label, dockRow.n)
+            t:assertTrue(again.onArrive == onArrive)
+            t:assertTrue(again.start == start, "the new start, not the old one")
+            t:assertTrue(again.approx == true and again.lowestFloor == true)
+            t:assertEqual(again.chainLeg, 2)
+            t:assertTrue(again.windowsClosed == true, "the windows are not closed a second time")
+            t:assertNil(again.reversed, "a turned route is said once, at its first start")
+            -- its arrival: the dock is reached and the point on board is next, as on the first search
+            Dock:Reset(false)
+            text.say = function() end
+            local landing = R:Resolve({ nativeMapId = 0 }, contract, {})
+            local nodeX, nodeY = N.Position(landing.endNodeId)
+            local beacon, ship = dock.arrived(N, again.dockTarget, nodeX, nodeY)
+            t:assertNil(beacon)
+            t:assertNotNil(ship, "the route to the point on board starts")
+            t:assertEqual(ship.id, boardRow.tid)
+            -- the point on board and a walk-in target's activation come along too
+            local boarding = Route.searchAgain({ contract = contract, boardingTarget = shipTarget }, contract, start)
+            t:assertTrue(boarding.boardingTarget == shipTarget, "its arrival sets the dock reached again")
+            local activation = { id = "portal" }
+            t:assertTrue(Route.searchAgain({ activationTarget = activation }, contract, start).activationTarget
+                == activation, "a portal is still walked into")
+            -- the module searches again only through it (the new route and the recalculation)
+            local file = io.open("camelot/wownav/module.lua", "rb")
+            if file ~= nil then
+                local source = file:read("*a")
+                file:close()
+                local _, uses = source:gsub("Route%.searchAgain%(request, contract, start%)", "")
+                t:assertEqual(uses, 2, "the new route and the recalculation")
+                t:assertNil(source:find("search%(self, {"), "no request is built by hand for a search")
+            end
+        end)
+        _G.UnitPosition = saved
+        _G.WowVisionNavigationDockNavigation:Reset(false)
+        text.say = nil
+        if not ok then
+            error(err, 0)
+        end
+    end
+
     -- N.LoadZoneInSteps: the zones around the player are decoded over several frames.
     local function firstZone()
         local ids = {}

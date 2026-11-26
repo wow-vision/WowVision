@@ -1299,8 +1299,7 @@ local function checkRecalculation(self)
         say(text)
         local start = restartPoint(self, request)
         self:stopRoute()
-        search(self, { contract = contract, nodeId = request.nodeId, label = request.label,
-            onArrive = request.onArrive, start = start })
+        search(self, Route.searchAgain(request, contract, start))
     end
 end
 
@@ -1322,8 +1321,7 @@ function module:newRoute()
         return false
     end
     say(L["Searching a new route"])
-    search(self, { contract = contract, nodeId = request.nodeId, label = request.label,
-        onArrive = request.onArrive, start = start })
+    search(self, Route.searchAgain(request, contract, start))
     return true
 end
 
