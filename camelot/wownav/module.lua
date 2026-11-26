@@ -35,6 +35,9 @@ module:setLabel(L["WowNav Routes"])
 
 local settings = module:hasSettings()
 settings:add({ key = "enabled", type = "Bool", label = L["Routes from WowNav"], default = true })
+-- as few zone changes as possible (default off): a hard rule, above the road preference, enemy outposts and safe
+-- routes; a target in the player's zone is reached without leaving it whenever the network allows (N.SetFewestZoneChanges)
+settings:add({ key = "fewestZoneChanges", type = "Bool", label = L["As Few Zone Changes as Possible"], default = false })
 -- WowNav's comfort level: a road route may be up to this many percent longer than the shortest way (his default 60
 -- since 2026-10-25).
 settings:add({ key = "comfort", type = "Number", label = L["Road Preference (Percent Longer)"], default = 60, min = 0, max = 300 })
@@ -150,6 +153,9 @@ local function ready(self)
         N.SetSafety(0)
     end
     N.SetAvoidOutposts(self.settings.avoidOutposts ~= false)
+    if N.SetFewestZoneChanges ~= nil then
+        N.SetFewestZoneChanges(self.settings.fewestZoneChanges == true)
+    end
     -- his settings live in WowVisionNavigationDB, where his resolver and route rules read them (R:Settings,
     -- Route.chokeFallback); while the standalone addon is loaded this module is off and the table is his
     WowVisionNavigationDB = type(WowVisionNavigationDB) == "table" and WowVisionNavigationDB or {}
@@ -1548,6 +1554,18 @@ module.settings.class:getField("avoidOutposts").events.valueChange:subscribe(mod
     if module:runningRequest() ~= nil then
         recalcAt = GetTime() + RECALC_DELAY
         recalcText = nil
+    end
+end)
+
+-- as few zone changes as possible: the new rule at once, and the running route searched again with it
+module.settings.class:getField("fewestZoneChanges").events.valueChange:subscribe(module, function(_, _, _, _, value)
+    local N = module:network()
+    if N ~= nil and N.SetFewestZoneChanges ~= nil then
+        N.SetFewestZoneChanges(value == true)
+    end
+    if module:runningRequest() ~= nil then
+        recalcAt = GetTime() + RECALC_DELAY
+        recalcText = L["Searching the route again with the new zone change setting"]
     end
 end)
 

@@ -85,6 +85,16 @@ Keep this list current; everything else is his text, line for line (line endings
   `points` only while the factor is above 0, so a repeated search inside a job is answered as before when it is off.
   The module sets the factor from the setting Safe Routes (`N.SetSafety`), and `../route.lua` passes the player's and
   the target's position as `points` only while it is on.
+- `NavNetwork.lua`, fewest zone changes (WowVision's setting "As Few Zone Changes as Possible", default off,
+  `N.SetFewestZoneChanges`): a hard rule above comfort, outposts and safety. In `Pass` every step from a waypoint of one
+  zone to one of another (a seam, a seam point of another zone, an action) costs `N.ZONE_CHANGE_COST` (10^8) more, far
+  more than any route on a continent costs; the estimate adds that cost times the fewest zone changes left
+  (`ZoneChangeBound`: breadth first over the zones joined by a seam of the index or an action of `WVN7ActionEnds` and
+  the decoded zones, in both directions, so it never overestimates; without `WVN7ActionEnds` a route that may take
+  actions gets no estimate). The result's `cost` and `total` are without it, `zoneChanges` counts the changes (also
+  while off). `N.Route`: pass (b) and the safety candidates never cross more zone borders than (a); when the way around
+  an outpost crosses more than the way through, the route leads through (`outpost = "through"`). `SearchKey` adds "z"
+  while on. Silverpine, Hillsbrad border to Tirisfal border: off 2 changes (out into Hillsbrad and back), on 0.
 - His walk-in portal as a link of the route (WowVisionNavigation.lua, 5a1290b) is in `../route.lua`, not here:
   `Route.triggerPoint` (his `WowVisionNavigationTriggerPoint`) and the leg's last waypoint in the trigger
   (`Route:begin`). His `PendingTriggerEntered` was already WowVision's `Route:walkInTransit`, and the exit zone of a

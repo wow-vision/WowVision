@@ -64,6 +64,18 @@ function N.SetSafety(percent)
     return true
 end
 N.SetSafety(N.SAFETY_DEFAULT)
+-- WowVision: as few zone changes as possible (user request 2026-11-26, setting of the wownav module, default off). On, a
+-- route crosses the fewest zone borders there are between its start and its target; that is a hard rule, however much
+-- longer the route gets. Comfort, enemy outposts and safe routes then choose among the routes with that number only.
+-- Every step from a waypoint of one zone to a waypoint of another (a seam, an action into another zone) costs
+-- ZONE_CHANGE_COST on top: far more than any route on a continent costs, with every factor, danger weight and penalty.
+N.ZONE_CHANGE_COST = 1e8
+N.fewestZoneChanges = false
+N.zoneChangeEstimate = true   -- the search estimates the zone changes left (ZoneChangeBound); false only for the tests
+function N.SetFewestZoneChanges(enabled)
+    N.fewestZoneChanges = enabled == true
+    return true
+end
 N.dangerGen = 0               -- counts the changes of the catalogue the spawns come from (the target catalogue bumps it on activation)
 -- The spawns of a zone: function(zoneId) -> token, { {x, y, z (or nil), name}, ... } | nil. The token identifies the data (the zone
 -- keeps its danger table while the token stays). Default: the compact logical catalogue of the target catalogue.
@@ -2179,8 +2191,104 @@ local function ActionBound(goals, hmin, footOnly)
     return nearest, goalMap, startsByMap
 end
 
+-- WowVision, fewest zone changes: the zone of a waypoint (a virtual point: the zone of its link).
+local function ZoneIdOf(id)
+    if id >= VIRT_BASE then
+        local point = N.virt[id]
+        return point and point.zone and point.zone.id or nil
+    end
+    return floor(id / ZONE_BASE)
+end
+N.ZoneIdOf = ZoneIdOf
+
+-- The number of zone changes along a path of waypoints.
+function N.ZoneChanges(path)
+    local changes, last = 0, nil
+    for _, id in ipairs(path or {}) do
+        local zoneId = ZoneIdOf(id)
+        if zoneId ~= nil then
+            if last ~= nil and zoneId ~= last then changes = changes + 1 end
+            last = zoneId
+        end
+    end
+    return changes
+end
+
+-- The zones next to each other, in both directions: every seam of the index, and (unless foot-only) every action of the
+-- whole data (WVN7ActionEnds) and of the decoded zones. Kept per index and data; nil when an action could be missing
+-- (no WVN7ActionEnds for a route that may take actions).
+local zoneGraph = { foot = nil, all = nil, index = nil, ends = nil, generation = nil }
+local function ZoneGraph(footOnly)
+    local ends = _G.WVN7ActionEnds
+    if not footOnly and type(ends) ~= "table" then return nil end
+    if zoneGraph.index ~= N.index or zoneGraph.ends ~= ends or zoneGraph.generation ~= N.generation then
+        zoneGraph.index, zoneGraph.ends, zoneGraph.generation = N.index, ends, N.generation
+        zoneGraph.foot, zoneGraph.all = nil, nil
+    end
+    local key = footOnly and "foot" or "all"
+    if zoneGraph[key] then return zoneGraph[key] end
+    local graph = {}
+    local function join(a, b)
+        if a == nil or b == nil or a == b then return end
+        graph[a] = graph[a] or {}
+        graph[b] = graph[b] or {}
+        graph[a][b], graph[b][a] = true, true
+    end
+    for _, entry in pairs(N.index or {}) do
+        for _, seam in ipairs(type(entry.seams) == "table" and entry.seams or {}) do
+            join(SeamEndOf(seam, "a").zoneId, SeamEndOf(seam, "b").zoneId)
+        end
+    end
+    if not footOnly then
+        for _, action in ipairs(ends) do
+            if action.from and action.to then join(floor(action.from / ZONE_BASE), floor(action.to / ZONE_BASE)) end
+        end
+        for zoneId, zone in pairs(N.zones) do
+            for _, list in pairs(zone.actionsFrom or {}) do
+                for _, action in ipairs(list) do
+                    if action.toNode then join(zoneId, floor(action.toNode / ZONE_BASE)) end
+                end
+            end
+        end
+    end
+    zoneGraph[key] = graph
+    return graph
+end
+
+-- The fewest zone changes from each zone to a zone of the goals (breadth first over ZoneGraph, from the goals). Never
+-- more than a route needs (the graph holds every way between zones, in both directions), so it stays a lower bound for
+-- the search. A zone the graph does not reach gets none (0). Returns { [zoneId] = changes } | nil (no bound).
+local function ZoneChangeBound(goals, footOnly)
+    local graph = ZoneGraph(footOnly)
+    if not graph then return nil end
+    local bound, queue = {}, {}
+    for _, entry in ipairs(goals) do
+        local binding = entry.binding
+        local zoneId = binding.zone and binding.zone.id or ZoneIdOf(binding.id)
+        if zoneId ~= nil and bound[zoneId] == nil then
+            bound[zoneId] = 0
+            queue[#queue + 1] = zoneId
+        end
+    end
+    local head = 1
+    while head <= #queue do
+        local zoneId = queue[head]
+        head = head + 1
+        for other in pairs(graph[zoneId] or {}) do
+            if bound[other] == nil then
+                bound[other] = bound[zoneId] + 1
+                queue[#queue + 1] = other
+            end
+        end
+    end
+    return bound
+end
+
 -- danger (optional, safety pass): { w = cost per yd of danger, excl = spawns of this route that do not count } adds w x danger of the link
 -- to the cost of every land link (cost only grows: the straight-line heuristic stays admissible).
+-- WowVision, fewest zone changes (N.fewestZoneChanges): every step into another zone costs N.ZONE_CHANGE_COST more, and the
+-- estimate adds that cost times the fewest zone changes left (ZoneChangeBound). The result's cost and total are those
+-- without it; zoneChanges counts the changes.
 local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
     local targetMap = {}
     for _, entry in ipairs(goals) do
@@ -2247,8 +2355,25 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
         end
         return onGoal, zoneStarts[zone] or nil
     end
+    -- WowVision, fewest zone changes: the cost of a step into another zone (0 while off) and, per zone, that cost times
+    -- the fewest zone changes left to the goals (0 without a bound)
+    local zoneCost = N.fewestZoneChanges and N.ZONE_CHANGE_COST or 0
+    local changesLeft = zoneCost > 0 and N.zoneChangeEstimate and ZoneChangeBound(goals, footOnly) or nil
+    local zoneTerms = {}
+    local function zoneTerm(zone)
+        if not changesLeft or zone == nil then return 0 end
+        local term = zoneTerms[zone]
+        if term == nil then
+            term = zoneCost * (changesLeft[zone.id] or 0)
+            zoneTerms[zone] = term
+        end
+        return term
+    end
+    local function crossing(fromZoneId, toZoneId)
+        if zoneCost == 0 or fromZoneId == nil or toZoneId == nil or fromZoneId == toZoneId then return 0 end
+        return zoneCost
+    end
     local function estimate(id)
-        if not useStraightLine then return 0 end
         local zone
         if id >= VIRT_BASE then
             local point = N.virt[id]
@@ -2256,9 +2381,11 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
         else
             zone = ZoneOf(id)
         end
+        local term = zoneTerm(zone)
+        if not useStraightLine then return term end
         local onGoal, starts = zoneBound(zone)
         local x, y, z = N.Position(id)
-        return estimateAt(x, y, z, onGoal, starts)
+        return estimateAt(x, y, z, onGoal, starts) + term
     end
     -- WowVision, speed: LinkFactor per flag once per pass (the same values, without a call per link)
     local hop = N.HOP_COST
@@ -2358,6 +2485,7 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
                 local hostile = avoid and zone.hasFactions and HostileTable(zone, avoid.faction) or nil
                 local open = avoid and avoid.open
                 local onGoal, starts = zoneBound(zone)
+                local term = zoneTerm(zone)       -- a link stays in its zone: the same zone term for every link
                 -- safe routes (his /vn safety): the danger yards of the zone's links, only in a safety pass (nil otherwise,
                 -- so a plain search pays one test per link)
                 local zoneDanger = danger and DangerOf(zone) or nil
@@ -2374,8 +2502,8 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
                             g[vid] = new
                             previous[vid], via[vid] = id, k
                             local i = v + 1
-                            HeapPush(heap, new + (useStraightLine and estimateAt(zx[i], zy[i], zz[i], onGoal, starts) or 0),
-                                vid, new)
+                            HeapPush(heap, new + (useStraightLine and estimateAt(zx[i], zy[i], zz[i], onGoal, starts) or 0)
+                                + term, vid, new)
                         end
                     end
                 end
@@ -2386,7 +2514,7 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
                         local otherZone = floor(action.toNode / ZONE_BASE)
                         if allowed and not N.zones[otherZone] then N.LoadZone(otherZone) end
                         if allowed and N.zones[otherZone] and not (avoid and Blocked(avoid, action.toNode)) then
-                            local new = cost + action.cost
+                            local new = cost + action.cost + crossing(zone.id, otherZone)
                             if new < (g[action.toNode] or math.huge) then
                                 g[action.toNode] = new
                                 previous[action.toNode], via[action.toNode] = id, action
@@ -2405,7 +2533,8 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
                         if (atU and (direction == 0 or direction == 1)) or (not atU and (direction == 0 or direction == 2)) then
                             local point = SeamPoint(zone.id, entry.seamId)
                             if point then
-                                relax(point, cost + length * (atU and t or 256 - t) / 256, id, -k)
+                                relax(point, cost + length * (atU and t or 256 - t) / 256 + crossing(zone.id, ZoneIdOf(point)),
+                                    id, -k)
                             end
                         end
                     end
@@ -2415,13 +2544,16 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
                     for _, seam in ipairs(seams) do
                         if seam.link then
                             local point = SeamPoint(seam.zoneId, seam.seamId)
-                            if point then relax(point, cost + seam[2] * (seam.water and N.SWIM_COMFORT or 1), id, false) end
+                            if point then
+                                relax(point, cost + seam[2] * (seam.water and N.SWIM_COMFORT or 1)
+                                    + crossing(zone.id, ZoneIdOf(point)), id, false)
+                            end
                         else
                             local otherZone = floor(seam[1] / ZONE_BASE)
                             if not N.zones[otherZone] then N.LoadZone(otherZone) end
                             if N.zones[otherZone] and not (seam.seamId and N.zones[otherZone].seamBad[seam.seamId])
                                 and not (avoid and Blocked(avoid, seam[1])) then
-                                local new = cost + seam[2] * (seam.water and N.SWIM_COMFORT or 1)
+                                local new = cost + seam[2] * (seam.water and N.SWIM_COMFORT or 1) + crossing(zone.id, otherZone)
                                 if new < (g[seam[1]] or math.huge) then
                                     g[seam[1]] = new
                                     previous[seam[1]], via[seam[1]] = id, false
@@ -2439,7 +2571,10 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
                     local otherZone = floor(partner.gid / ZONE_BASE)
                     if not N.zones[otherZone] then N.LoadZone(otherZone) end
                     local oz = N.zones[otherZone]
-                    if oz and not oz.seamBad[partner.seamId] and not (avoid and Blocked(avoid, partner.gid)) then relax(partner.gid, cost + partner.cost * (partner.water and N.SWIM_COMFORT or 1), id, false) end
+                    if oz and not oz.seamBad[partner.seamId] and not (avoid and Blocked(avoid, partner.gid)) then
+                        relax(partner.gid, cost + partner.cost * (partner.water and N.SWIM_COMFORT or 1)
+                            + crossing(virtual.zone and virtual.zone.id, otherZone), id, false)
+                    end
                 end
                 local came = via[id]
                 if not (type(came) == "number" and came < 0) then
@@ -2459,13 +2594,16 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
     if direct then
         return { path = {}, edges = direct.edge and { direct.edge } or {}, length = direct.length, cost = direct.cost,
             total = bestSum, direct = true, startBinding = direct.start.binding, targetBinding = direct.goal.binding,
-            expansions = expansions }
+            expansions = expansions, zoneChanges = 0 }
     end
     if not bestEnd then return nil, expansions, g end
     local path, edges, length = { bestEnd }, {}, 0
+    local changes = 0
     local id = bestEnd
     while previous[id] do
         local from, edge = previous[id], via[id]
+        local fromZone, toZone = ZoneIdOf(from), ZoneIdOf(id)
+        if fromZone ~= nil and toZone ~= nil and fromZone ~= toZone then changes = changes + 1 end
         table.insert(path, 1, from)
         if type(edge) == "table" then
             table.insert(edges, 1, { action = edge })
@@ -2492,8 +2630,10 @@ local function Pass(starts, goals, road, penalties, footOnly, avoid, danger)
         id = from
     end
     local first = startEntry[id]       -- the root of the chain is a start option
-    return { path = path, edges = edges, length = length, cost = bestSum - first.extra - bestGoal.extra, total = bestSum,
-        startBinding = first.binding, targetBinding = bestGoal.binding, expansions = expansions }
+    -- the cost and total without the cost of the zone changes (the same as without the setting for the same route)
+    local sum = bestSum - zoneCost * changes
+    return { path = path, edges = edges, length = length, cost = sum - first.extra - bestGoal.extra, total = sum,
+        startBinding = first.binding, targetBinding = bestGoal.binding, expansions = expansions, zoneChanges = changes }
 end
 
 -- Two passes: (a) comfort costs, (b) with the road factor 1/r; (b) wins when its geometric length is at most r x that
@@ -2544,6 +2684,8 @@ local function SearchKey(startBinding, targetBinding, penalties, footOnly, start
             parts[#parts + 1] = string.format("%.17g/%.17g/%s", point.x, point.y, tostring(point.z))
         end
     end
+    -- fewest zone changes: another answer (nothing added while off)
+    if N.fewestZoneChanges then parts[#parts + 1] = "z" end
     return table.concat(parts, ":")
 end
 
@@ -2629,6 +2771,16 @@ RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPo
     local a, b = passes(avoid)
     local passAvoid = avoid
     if not a and avoid then a, b = passes(nil); passAvoid = nil end    -- Z2: no route without a hostile outpost: through it, never no route
+    -- WowVision, fewest zone changes: the rule above the outposts. When the way around them crosses more zone borders
+    -- than a way through, the route leads through (and says so, as without a way around)
+    if a and passAvoid and N.fewestZoneChanges and (a.zoneChanges or 0) > 0 then
+        local through = Pass(starts, goals, false, penalties, footOnly, nil)
+        if through and (through.zoneChanges or 0) < a.zoneChanges then
+            a = through
+            b = N.comfort > 0 and Pass(starts, goals, true, penalties, footOnly, nil) or nil
+            passAvoid = nil
+        end
+    end
     if not a then
         if sets and exhausted then
             sets[#sets + 1] = exhausted
@@ -2636,8 +2788,13 @@ RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPo
         end
         return nil, "no_route"
     end
+    -- fewest zone changes: a candidate never crosses more zone borders than (a) (the cost already rules that out; the
+    -- check keeps the rule above comfort and safety whatever the costs)
+    local function fewerOrSameZones(candidate, than)
+        return not N.fewestZoneChanges or (candidate.zoneChanges or 0) <= (than.zoneChanges or 0)
+    end
     local chosen, pass = a, "a"
-    if b and b.length <= N.ROAD_MAX_RATIO * a.length then chosen, pass = b, "b" end
+    if b and b.length <= N.ROAD_MAX_RATIO * a.length and fewerOrSameZones(b, a) then chosen, pass = b, "b" end
     -- his safe routes (/vn safety): after the choice between (a) and (b), safety passes with the cost of that pass + w x danger
     -- for the weights N.DANGER_WEIGHTS. A candidate counts when its length is at most N.SAFETY_RATIO x that of (a); of the
     -- candidates and the former choice the one with the least danger wins, the shorter on a tie (pass "s"). Never "no route"
@@ -2652,7 +2809,7 @@ RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPo
             local road = pass == "b"
             for _, weight in ipairs(N.DANGER_WEIGHTS) do
                 local candidate = Pass(starts, goals, road, penalties, footOnly, passAvoid, { w = weight, excl = excl })
-                if candidate and candidate.length <= limit then
+                if candidate and candidate.length <= limit and fewerOrSameZones(candidate, chosen) then
                     local d = RouteDanger(candidate, excl)
                     if d < danger - 1e-6 or (d <= danger + 1e-6 and candidate.length < chosen.length - 1e-6) then
                         chosen, pass, danger = candidate, "s", d
@@ -2677,7 +2834,7 @@ RouteSearch = function(startBinding, targetBinding, penalties, footOnly, startPo
     end
     return { path = path, edges = chosen.edges, length = chosen.length, cost = chosen.cost, total = chosen.total, pass = pass,
         lengthA = a.length, lengthB = b and b.length or nil, expansions = chosen.expansions, outpost = outpost,
-        danger = danger, dangerA = dangerA,
+        danger = danger, dangerA = dangerA, zoneChanges = chosen.zoneChanges or 0,
         startBinding = from, targetBinding = to, direct = chosen.direct }
 end
 
