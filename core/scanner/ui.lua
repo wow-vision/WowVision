@@ -21,6 +21,21 @@ local function maps()
     return WowVision.base.navigation and WowVision.base.navigation.maps or nil
 end
 
+-- The tree unfolds the path to a quest and lands on it.
+local function unfoldQuest(screen, questId)
+    local quests = WowVision.base.quests
+    if questId == nil or quests == nil or quests.scannerQuestPath == nil then
+        return
+    end
+    local key = "scanner"
+    for _, part in ipairs(quests:scannerQuestPath(questId)) do
+        key = key .. "/" .. part
+        screen.state.expanded[key] = true
+    end
+    screen.state.expanded[key] = nil
+    screen.state.nextSuggestedMove = ControlId.structural(key)
+end
+
 local function ensureTree(screen)
     if screen._tree ~= nil then
         return screen._tree
@@ -40,16 +55,7 @@ local function ensureTree(screen)
     -- scanner lands on it
     local questId = module.focusQuest
     module.focusQuest = nil
-    local quests = WowVision.base.quests
-    if questId ~= nil and quests ~= nil and quests.scannerQuestPath ~= nil then
-        local key = "scanner"
-        for _, part in ipairs(quests:scannerQuestPath(questId)) do
-            key = key .. "/" .. part
-            screen.state.expanded[key] = true
-        end
-        screen.state.expanded[key] = nil
-        screen.state.nextSuggestedMove = ControlId.structural(key)
-    end
+    unfoldQuest(screen, questId)
     return screen._tree
 end
 
@@ -57,19 +63,43 @@ local function isTree()
     return module.settings == nil or module.settings.asTree ~= false
 end
 
--- F9. From the quest log the scanner lands on the quest the log is on.
+-- F9. From the quest log the scanner lands on the quest the log is on. Already open, it comes to the front as it
+-- is (WindowManager:openWindow); from the quest log on its first screen, built afresh (the quest may be new since
+-- it opened), landing on the quest. Pressed in the Scanner itself (the quest log may still be on screen behind
+-- it), the Scanner stays as it is.
 function module:openFromKey()
     local quests = WowVision.base.quests
-    self.focusQuest = quests ~= nil and quests.safeLogQuest ~= nil and quests:safeLogQuest() or nil
-    local instance = WowVision.UIHost:openWindow(WINDOW)
-    if not isTree() then
-        -- the menu walks to the quest here; the tree unfolds it as it renders
-        local questId = self.focusQuest
-        self.focusQuest = nil
-        if questId ~= nil and instance ~= nil and instance.stack ~= nil
-            and quests ~= nil and quests.scannerQuestPath ~= nil then
-            module:openMenuPath(instance.stack, quests:scannerQuestPath(questId))
+    local UIHost = WowVision.UIHost
+    local questId = nil
+    if not UIHost:isWindowInFront(WINDOW) then
+        questId = quests ~= nil and quests.safeLogQuest ~= nil and quests:safeLogQuest() or nil
+    end
+    local path = questId ~= nil and quests.scannerQuestPath ~= nil and quests:scannerQuestPath(questId) or nil
+    if path == nil or UIHost:openWindowStack(WINDOW) == nil then
+        -- the tree unfolds the quest as it renders, the menu walks to it here
+        self.focusQuest = path ~= nil and questId or nil
+        local instance = UIHost:openWindow(WINDOW)
+        if instance == nil or not isTree() then
+            self.focusQuest = nil
         end
+        if path ~= nil and instance ~= nil and instance.stack ~= nil and not isTree() then
+            module:openMenuPath(instance.stack, path)
+        end
+        return
+    end
+    local stack = UIHost:bringWindowToFront(WINDOW, true)
+    local screen = stack ~= nil and stack.screens[1] or nil
+    if screen == nil then
+        return
+    end
+    if isTree() then
+        screen._tree = nil
+        self.focusQuest = questId
+        ensureTree(screen)
+    else
+        screen._session = screen._session or {}
+        screen._session.tree = nil
+        module:openMenuPath(stack, path)
     end
 end
 

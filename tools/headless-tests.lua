@@ -2564,6 +2564,7 @@ do
 end
 loadAddonFile("core/graph/hostTooltipTests.lua")
 loadAddonFile("core/scanner/menuTests.lua")
+loadAddonFile("core/navigation/maps/openAgainTests.lua")
 -- Group invitations: the popups window and the role popups load against a stand-in window module (the
 -- windows they register and the popups module come back to the suite); the game's frames are per test.
 do
