@@ -85,6 +85,9 @@ scanner.providers = {}
 function scanner:registerProvider(provider)
     self.providers[provider.key] = provider
 end
+-- Where the fake group member Bert stands; a test moves him.
+local bertAt = { x = 3, y = 4 }
+
 function scanner:buildTree()
     self.builds = self.builds + 1
     return {
@@ -129,7 +132,16 @@ function scanner:buildTree()
             label = "Player",
             children = {
                 { key = "self", label = "Anna", nameDetail = "Elwynn Forest, Level 12", unit = "player" },
-                { key = "unit:party1", label = "Bert", x = 3, y = 4, routeData = { unit = "party1" } },
+                {
+                    key = "unit:party1",
+                    label = "Bert",
+                    x = 3,
+                    y = 4,
+                    position = function()
+                        return bertAt.x, bertAt.y
+                    end,
+                    routeData = { unit = "party1" },
+                },
             },
         },
     }
@@ -324,6 +336,56 @@ testRunner:addSuite("ScannerMenu", {
             assert(ok, err)
             t:assertEqual(aimed, "Marshal 5,5")
             t:assertEqual(closed, "scanner")
+        end)
+    end,
+
+    ["a group member's distance is read where they stand now"] = function(t)
+        withHost(function(host)
+            local aimed, notified = nil, nil
+            WowVision.base.navigation = {
+                maps = {
+                    whereText = function(_, x, y)
+                        return x .. "," .. y
+                    end,
+                    openNavigationTo = function(_, x, y)
+                        aimed = x .. "," .. y
+                    end,
+                },
+            }
+            local savedUIHost, savedNotify = WowVision.UIHost, WowVision.notify
+            WowVision.UIHost = { closeWindow = function() end }
+            WowVision.notify = function(_, text)
+                notified = text
+            end
+            local ok, err = pcall(function()
+                bertAt.x, bertAt.y = 3, 4
+                local stack = openScanner(host, false)
+                scanner:openMenuPath(stack, { "player", "unit:party1" })
+                local function where()
+                    local _, node = focused(host)
+                    for _, part in ipairs(graph.announcer.effectiveAnnouncements(node)) do
+                        local text = graph.resolveText(part)
+                        if text ~= nil and text:find(",") then
+                            return text
+                        end
+                    end
+                end
+                t:assertEqual(where(), "3,4")
+                bertAt.x, bertAt.y = 30, 40 -- he walked off
+                t:assertEqual(where(), "30,40")
+                bertAt.x, bertAt.y = nil, nil -- off your map: no distance, Enter says so
+                t:assertNil(where())
+                enter(host)
+                t:assertEqual(notified, "Position unavailable")
+                t:assertNil(aimed)
+                bertAt.x, bertAt.y = 50, 60 -- back: heard and routed to where he is
+                t:assertEqual(where(), "50,60")
+                enter(host)
+            end)
+            WowVision.UIHost, WowVision.notify = savedUIHost, savedNotify
+            bertAt.x, bertAt.y = 3, 4
+            assert(ok, err)
+            t:assertEqual(aimed, "50,60")
         end)
     end,
 
@@ -563,6 +625,26 @@ testRunner:addSuite("ScannerUnits", {
         t:assertEqual(scanner.unitPlace("raid3", { GetRaidRosterInfo = roster(nil), C_Map = map }), "Westfall")
     end,
 
+    ["a group role reads as Tank, Healer or Damage Dealer, none is nothing"] = function(t)
+        local function api(role)
+            return {
+                UnitGroupRolesAssigned = function()
+                    return role
+                end,
+            }
+        end
+        t:assertEqual(scanner.unitRole("party1", api("TANK")), "Tank")
+        t:assertEqual(scanner.unitRole("party1", api("HEALER")), "Healer")
+        t:assertEqual(scanner.unitRole("party1", api("DAMAGER")), "Damage Dealer")
+        t:assertEqual(scanner.unitRole("party1", api("NONE")), nil)
+        t:assertEqual(scanner.unitRole("party1", {}), nil)
+        t:assertEqual(scanner.unitRole("party1", {
+            UnitGroupRolesAssigned = function()
+                error("refused")
+            end,
+        }), nil)
+    end,
+
     ["a place the game does not give is no place"] = function(t)
         t:assertEqual(scanner.unitPlace("party1", {}), nil)
         t:assertEqual(scanner.unitPlace("party1", {
@@ -605,6 +687,7 @@ testRunner:addSuite("ScannerUnits", {
     end,
 
     ["Group lists every member, a place only where the game gives one"] = function(t)
+        local bertX = 10
         withGame({
             IsInRaid = function()
                 return false
@@ -623,9 +706,12 @@ testRunner:addSuite("ScannerUnits", {
             end,
             UnitPosition = function(unit)
                 if unit == "party1" then
-                    return 10, 20
+                    return bertX, 20
                 end
                 return nil
+            end,
+            UnitGroupRolesAssigned = function(unit)
+                return unit == "party1" and "TANK" or "NONE"
             end,
             UnitLevel = function()
                 return 60
@@ -642,15 +728,64 @@ testRunner:addSuite("ScannerUnits", {
             local out = scanner.providers.group.build({})
             t:assertEqual(#out, 2)
             t:assertEqual(out[1].label, "Bert")
-            t:assertEqual(out[1].nameDetail(), "Westfall, Level 60")
+            -- the role reads first; no role (NONE) is left out
+            t:assertEqual(out[1].nameDetail(), "Tank, Westfall, Level 60")
+            t:assertEqual(out[2].nameDetail(), "Westfall, Level 60")
             -- Enter routes (the position), it never targets (no unit)
             t:assertEqual(out[1].unit, nil)
             t:assertEqual(out[1].x, 10)
             t:assertEqual(out[1].routeData.unit, "party1")
+            -- the position is read again when asked: a member who moved
+            bertX = 40
+            local x, y = out[1].position()
+            t:assertEqual(x, 40)
+            t:assertEqual(y, 20)
+            -- no position now; she is read again, so one she gets later is heard
             t:assertEqual(out[2].label, "Cleo")
             t:assertEqual(out[2].unit, nil)
             t:assertEqual(out[2].x, nil)
-            t:assertTrue(out[2].onActivate ~= nil)
+            t:assertNil(out[2].position())
+            t:assertEqual(out[2].routeData.unit, "party2")
+        end)
+    end,
+
+    ["a member who left reads no place and no role from whoever took the token"] = function(t)
+        local holder = "Bert"
+        withGame({
+            IsInRaid = function()
+                return false
+            end,
+            GetNumGroupMembers = function()
+                return 2
+            end,
+            UnitExists = function(unit)
+                return unit == "party1"
+            end,
+            UnitIsUnit = function()
+                return false
+            end,
+            UnitName = function()
+                return holder
+            end,
+            UnitGUID = function()
+                return "Player-1-" .. holder
+            end,
+            UnitPosition = function()
+                return holder == "Bert" and 10 or 99, 20
+            end,
+            UnitGroupRolesAssigned = function()
+                return holder == "Bert" and "TANK" or "HEALER"
+            end,
+            UnitLevel = function()
+                return 60
+            end,
+        }, function()
+            local out = scanner.providers.group.build({})
+            t:assertEqual(out[1].nameDetail(), "Tank, Level 60")
+            holder = "Cleo" -- Bert left, Cleo is party1 now
+            t:assertEqual(out[1].label, "Bert")
+            t:assertNil(out[1].nameDetail())
+            t:assertNil(out[1].position())
         end)
     end,
 

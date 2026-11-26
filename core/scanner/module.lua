@@ -8,9 +8,10 @@ local settings = module:hasSettings()
 -- its subtree from live data when the scanner OPENS (never per tick -- a
 -- flying player cannot afford a hitch, so the tree is a snapshot and the
 -- Refresh stop rebuilds it on demand). Only distance and direction are
--- live, computed per focused node from the player's current position,
--- plus labels and details a provider gives as functions: a cheap read of
--- one thing's current state when it is spoken (quest progress).
+-- live, computed per focused node from the player's current position (and
+-- the node's, for one that moves: `position`), plus labels and details a
+-- provider gives as functions: a cheap read of one thing's current state
+-- when it is spoken (quest progress, a member's role).
 --
 -- A provider: { key, label, order?, build = function(ctx) -> nodes }
 -- Every category is always there, empty or not, so each one keeps its place
@@ -27,6 +28,12 @@ local settings = module:hasSettings()
 --              for the kind of entry
 --   detail     string | function -> extra spoken part after the label
 --   x, y       world position (Enter sets a beacon there and closes)
+--   position   function -> x, y | nil: where a node that moves is now (a
+--              group member), read each time it is spoken, routed to or
+--              weighed as the nearest; x, y then hold the last place read.
+--              nil: no place now, Enter says Position unavailable
+--   routeData  handed on to the route engine with the place (a member's
+--              unit, so WowNav can read the position again)
 --   children   list of nodes, or function() -> list (built when expanded)
 --   expanded   true to start expanded on first sight
 --   onActivate function -> replaces the beacon action
