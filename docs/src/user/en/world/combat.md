@@ -41,7 +41,7 @@ Classic Era, The Burning Crusade and Mists of Pandaria do not have these limits.
 
 ### Opening and closing
 
-The keys that open a WowVision window work in a fight as they do outside: the WowVision menu (Shift+F1), chat (Shift+F3), the Scanner (F9), navigation (F10) and the action bars (Shift+F4). The key of a window that is already open brings that window to the front as you left it. Opening one hands WowVision its menu keys: the arrows, Tab and Shift+Tab, Ctrl+Tab, Home and End, Enter and Backspace, Shift+F10, Space and Escape. A window that was already open as the fight began keeps them, unless you were holding one of them for the game at that moment (see [Keys you are holding as a menu opens](#keys-you-are-holding-as-a-menu-opens)).
+The keys that open a WowVision window work in a fight as they do outside: the WowVision menu (Shift+F1), chat (Shift+F3), the Scanner (F9), navigation (F10) and the action bars (Shift+F4). Pressed while its window is already open, the key of the Scanner, navigation, chat or the action bars brings that window to the front as you left it. Opening one hands WowVision its menu keys: the arrows, Tab and Shift+Tab, Ctrl+Tab, Home and End, Enter and Backspace, Shift+F10, Space and Escape. A window that was already open as the fight began keeps them, unless you were holding one of them for the game at that moment (see [Keys you are holding as a menu opens](#keys-you-are-holding-as-a-menu-opens)).
 
 Escape closes WowVision's own windows and gives every key back to the game at once. The game's windows (the quest log, the character pane) cannot be closed by an addon in a fight; they stay on screen and are there again after the fight.
 

@@ -125,7 +125,7 @@ function WindowManager:openWindow(windowOrName, props)
 
     -- A WowVision window that is already open (its key pressed again, maybe from another window in front) comes to
     -- the front as it is: nothing of it is reset. Nil as before: no new window opened.
-    if window:getOpenInstance() ~= nil then
+    if self:openStack(window.name) ~= nil then
         self:bringToFront(window.name)
         return nil
     end
@@ -133,13 +133,48 @@ function WindowManager:openWindow(windowOrName, props)
     return window:open(self, props)
 end
 
--- Focus an open WowVision window as it is, read afresh. toFirstScreen: the screens on top of its first one close (a
--- context menu, a details screen) and a letter filter on it ends, for a caller that lands somewhere on it (F10 from
--- the quest log: the quest's target). Its stack, nil when the window is not open.
-function WindowManager:bringToFront(name, toFirstScreen)
+-- The screen stack of an open WowVision window, nil when it is not open. A stack the graph host closed by itself (a
+-- screen with nothing to show) leaves the window marked open: it is forgotten here, quietly (no close sound, no
+-- speech stopped), so the window's key opens it afresh.
+function WindowManager:openStack(name)
     local window = self.windows[name]
     local instance = window ~= nil and window:getOpenInstance() or nil
     local stack = instance ~= nil and instance.stack or nil
+    if stack == nil then
+        return nil
+    end
+    for _, open in ipairs(WowVision.graphHost.stacks) do
+        if open == stack then
+            return stack
+        end
+    end
+    if window:needsPolling() then
+        -- a game window: its own state check closes it
+        return nil
+    end
+    window._openInstance = nil
+    window._isCurrentlyOpen = false
+    for i, v in ipairs(self.openWindows) do
+        if v == instance then
+            table.remove(self.openWindows, i)
+            break
+        end
+    end
+    return nil
+end
+
+-- True when the open WowVision window has the focus.
+function WindowManager:isInFront(name)
+    local stack = self:openStack(name)
+    return stack ~= nil and stack == WowVision.graphHost:focusedStack()
+end
+
+-- Focus an open WowVision window as it is, read afresh. toFirstScreen: the screens on top of its first one close (a
+-- context menu, a details screen) and a letter filter on it ends, for a caller that lands somewhere on it (F10 from
+-- the quest log: the quest's target). Its stack, nil when the window is not open. In a fight, while the secure side
+-- walks a mirrored list (the bags), it stays behind like a window opening then (GraphHost:open); Ctrl-Tab reaches it.
+function WindowManager:bringToFront(name, toFirstScreen)
+    local stack = self:openStack(name)
     if stack == nil then
         return nil
     end
@@ -148,6 +183,10 @@ function WindowManager:bringToFront(name, toFirstScreen)
         while host:pop(stack) ~= nil do
         end
         host:clearListFilter(stack.screens[1], false)
+    end
+    local combatKeys = WowVision.graph.combatKeys
+    if combatKeys ~= nil and combatKeys.walking() ~= nil and InCombatLockdown ~= nil and InCombatLockdown() then
+        return stack
     end
     host:focusStack(function(open)
         return open == stack

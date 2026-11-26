@@ -30,6 +30,15 @@ function UIHost:bringWindowToFront(window, toFirstScreen)
     return self.windowManager:bringToFront(window, toFirstScreen)
 end
 
+-- See WindowManager:openStack and isInFront.
+function UIHost:openWindowStack(window)
+    return self.windowManager:openStack(window)
+end
+
+function UIHost:isWindowInFront(window)
+    return self.windowManager:isInFront(window)
+end
+
 function UIHost:openTemporaryWindow(config)
     return self.windowManager:openTemporaryWindow(config)
 end

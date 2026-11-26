@@ -64,36 +64,42 @@ local function isTree()
 end
 
 -- F9. From the quest log the scanner lands on the quest the log is on. Already open, it comes to the front as it
--- is (WindowManager:openWindow); from the quest log on its first screen, landing on the quest.
+-- is (WindowManager:openWindow); from the quest log on its first screen, built afresh (the quest may be new since
+-- it opened), landing on the quest. Pressed in the Scanner itself (the quest log may still be on screen behind
+-- it), the Scanner stays as it is.
 function module:openFromKey()
     local quests = WowVision.base.quests
-    local questId = quests ~= nil and quests.safeLogQuest ~= nil and quests:safeLogQuest() or nil
-    self.focusQuest = questId
-    local instance = WowVision.UIHost:openWindow(WINDOW)
-    local stack = instance ~= nil and instance.stack or nil
-    if instance == nil then
-        stack = questId ~= nil and WowVision.UIHost:bringWindowToFront(WINDOW, true) or nil
-        if stack == nil then
-            -- not opened at all: the quest is dropped, it never turns up in a later open
-            self.focusQuest = nil
-            return
-        end
-        if isTree() then
-            -- a tree not read yet unfolds it as it renders
-            local screen = stack.screens[1]
-            if screen ~= nil and screen._tree ~= nil then
-                self.focusQuest = nil
-                unfoldQuest(screen, questId)
-            end
-            return
-        end
+    local UIHost = WowVision.UIHost
+    local questId = nil
+    if not UIHost:isWindowInFront(WINDOW) then
+        questId = quests ~= nil and quests.safeLogQuest ~= nil and quests:safeLogQuest() or nil
     end
-    if not isTree() then
-        -- the menu walks to the quest here; the tree unfolds it as it renders
-        self.focusQuest = nil
-        if questId ~= nil and stack ~= nil and quests ~= nil and quests.scannerQuestPath ~= nil then
-            module:openMenuPath(stack, quests:scannerQuestPath(questId))
+    local path = questId ~= nil and quests.scannerQuestPath ~= nil and quests:scannerQuestPath(questId) or nil
+    if path == nil or UIHost:openWindowStack(WINDOW) == nil then
+        -- the tree unfolds the quest as it renders, the menu walks to it here
+        self.focusQuest = path ~= nil and questId or nil
+        local instance = UIHost:openWindow(WINDOW)
+        if instance == nil or not isTree() then
+            self.focusQuest = nil
         end
+        if path ~= nil and instance ~= nil and instance.stack ~= nil and not isTree() then
+            module:openMenuPath(instance.stack, path)
+        end
+        return
+    end
+    local stack = UIHost:bringWindowToFront(WINDOW, true)
+    local screen = stack ~= nil and stack.screens[1] or nil
+    if screen == nil then
+        return
+    end
+    if isTree() then
+        screen._tree = nil
+        self.focusQuest = questId
+        ensureTree(screen)
+    else
+        screen._session = screen._session or {}
+        screen._session.tree = nil
+        module:openMenuPath(stack, path)
     end
 end
 

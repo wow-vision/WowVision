@@ -109,23 +109,52 @@ local function ensureData(screen)
     return true
 end
 
--- The window was already open when a target came (F10 from the quest log, the scanner's Enter): it comes to the
--- front on its first screen with everything set in it kept (search, entry point, Direct), the target heads its
--- destinations and takes the focus. Not open: the target is dropped, it never turns up in a later open. False then.
-function module:aimOpenNavigation()
-    local target = self.pendingTarget
-    local stack = WowVision.UIHost:bringWindowToFront("atlas", true)
-    if stack == nil then
+-- Show the window for module.pendingTarget (F10 from the quest log, the scanner's Enter, the target route). Closed,
+-- it opens and its first read takes the target. Already open, it comes to the front on its first screen and takes
+-- the target there: it reads the network and the entry points again from where the player is now, and keeps what
+-- the player set in it (the search, Direct, the entry point while it is still among the nearest); the target heads
+-- the destinations, in place of an earlier one, and takes the focus. The target is never left over for a later
+-- open. False when the window could not be shown.
+function module:showNavigation()
+    local UIHost = WowVision.UIHost
+    if UIHost:openWindowStack("atlas") == nil then
+        if UIHost:openWindow("atlas") ~= nil then
+            return true
+        end
         self.pendingTarget = nil
         return false
     end
-    local screen = stack.screens[1]
-    -- not read yet (no position so far): its first read takes the target
-    if screen._waypoints == nil or target == nil then
+    local target = self.pendingTarget
+    self.pendingTarget = nil
+    local stack = UIHost:bringWindowToFront("atlas", true)
+    local screen = stack ~= nil and stack.screens[1] or nil
+    if screen == nil or target == nil then
+        return screen ~= nil
+    end
+    if UnitPosition("player") == nil then
+        -- no position now: the snapshot from the open stays, the target joins it
+        if screen._waypoints ~= nil then
+            joinTarget(screen, target)
+        end
         return true
     end
+    local kept = screen._waypoints ~= nil
+        and { search = screen._search, direct = screen._direct, entryId = screen._entryId }
+        or nil
+    screen._waypoints = nil
+    screen._entryId = nil
+    self.pendingTarget = target
+    ensureData(screen)
     self.pendingTarget = nil
-    joinTarget(screen, target)
+    if kept ~= nil then
+        screen._search = kept.search
+        screen._direct = kept.direct
+        for _, entry in ipairs(screen._entries) do
+            if entry.waypoint.id == kept.entryId then
+                screen._entryId = kept.entryId
+            end
+        end
+    end
     return true
 end
 

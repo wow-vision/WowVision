@@ -177,13 +177,7 @@ function pending.reopen(entry)
     takenUp[entry.window] = GetTime()
     drop(entry.frame)
     C_Timer.After(0, function()
-        local window = WowVision.UIHost.windowManager:getWindow(entry.window)
-        local instance = window ~= nil and window:getOpenInstance() or nil
-        if instance ~= nil and instance.stack ~= nil then
-            WowVision.graphHost:focusStack(function(stack)
-                return stack == instance.stack
-            end)
-        end
+        WowVision.UIHost:bringWindowToFront(entry.window)
     end)
 end
 

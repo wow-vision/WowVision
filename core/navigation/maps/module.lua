@@ -793,10 +793,8 @@ function module:openNavigationTo(wx, wy, label, onArrive, data, match)
         return false
     end
     self.pendingTarget = { x = wx, y = wy, label = label, onArrive = onArrive, data = data, match = match }
-    -- already open (or not openable): the open window takes the target (ui.lua), else it is dropped
-    if WowVision.UIHost:openWindow("atlas") == nil then
-        self:aimOpenNavigation()
-    end
+    -- opened, or the open window takes the target (ui.lua)
+    self:showNavigation()
     return true
 end
 
@@ -819,10 +817,14 @@ function module:engineMatch(engine, target, map)
 end
 
 -- F10. From the quest log the window opens aimed at the quest's next target (as the scanner's Enter on that
--- quest), where there is a network to route through; otherwise as usual.
+-- quest), where there is a network to route through; otherwise as usual. Pressed in the navigation window itself
+-- (the quest log may still be on screen behind it), the window stays as it is.
 function module:openNavigationFromKey()
     local quests = WowVision.base.quests
-    local questId = quests ~= nil and quests.safeLogQuest ~= nil and quests:safeLogQuest() or nil
+    local questId = nil
+    if not WowVision.UIHost:isWindowInFront("atlas") then
+        questId = quests ~= nil and quests.safeLogQuest ~= nil and quests:safeLogQuest() or nil
+    end
     if questId ~= nil and (self:activeRouteEngine() ~= nil or next(self:currentWaypoints()) ~= nil) then
         local ok, target = pcall(quests.questNavigationTarget, quests, questId)
         if not ok then

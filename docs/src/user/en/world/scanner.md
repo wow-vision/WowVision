@@ -6,7 +6,7 @@ Press F9 to open the Scanner. Press Escape to close it. The key is called Scanne
 
 The Scanner is a tree by default. If you would rather go through it like the WowVision menu, one level at a time with Enter and back with Escape, switch off Scanner as Tree in the Scanner settings; see [The Scanner as a menu](#the-scanner-as-a-menu).
 
-Pressing F9 while you are in the quest log opens the Scanner right on that quest, under Quests, In Progress and the quest's zone: the quest your cursor is on in the log, or else the quest whose details are open. Press Right to hear its objectives, or Enter to be guided to its next target. If the Scanner is already open, F9 brings it to the front and puts you on the quest the same way.
+Pressing F9 while you are in the quest log opens the Scanner right on that quest, under Quests, In Progress and the quest's zone: the quest your cursor is on in the log, or else the quest whose details are open. Press Right to hear its objectives, or Enter to be guided to its next target. If the Scanner is already open, F9 brings it to the front, built afresh, and puts you on the quest the same way. Pressed in the Scanner itself, F9 leaves it as it is.
 
 ## How it is laid out
 

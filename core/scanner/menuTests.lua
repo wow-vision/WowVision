@@ -462,50 +462,66 @@ testRunner:addSuite("ScannerMenu", {
         end)
     end,
 
-    ["F9 from the quest log with the scanner open lands on the quest, in the menu and in the tree"] = function(t)
+    ["F9 from the quest log with the scanner open lands on the quest, built afresh, in the menu and in the tree"] = function(t)
         for _, asTree in ipairs({ false, true }) do
             withHost(function(host)
-                local stack = openScanner(host, asTree)
-                press(host, "down")
-                press(host, "down")
-                t:assertEqual((focused(host)), asTree and "Nearby" or "Group")
-                local quest = host:open({
-                    key = "questLog",
-                    render = function(builder)
-                        builder:addItem(ControlId.structural("q"), nodes.text({ label = "Quest log" }))
-                    end,
-                })
-                WowVision.base.quests = {
-                    safeLogQuest = function()
-                        return 5
-                    end,
-                    scannerQuestPath = function()
-                        return { "quests", "inProgress", "quest:5" }
-                    end,
-                }
                 local savedUIHost = WowVision.UIHost
-                WowVision.UIHost = {
-                    -- already open: no new window (WindowManager:openWindow)
-                    openWindow = function()
-                        return nil
-                    end,
-                    bringWindowToFront = function(_, name, toFirstScreen)
-                        t:assertEqual(name, "scanner")
-                        t:assertTrue(toFirstScreen)
-                        host:focusStack(function(open)
-                            return open == stack
-                        end)
-                        return stack
-                    end,
-                }
-                local ok, err = pcall(scanner.openFromKey, scanner)
+                local manager = WowVision.WindowManager:new()
+                manager:RegisterWindow(manager:CreateWindow("ManualWindow", {
+                    name = "scanner",
+                    graphScreen = scanner.window.graphScreen,
+                }))
+                WowVision.UIHost = WowVision.testing.fakeUIHost(manager)
+                WowVision.base.ui = { settings = { menuSounds = false } }
+                local ok, err = pcall(function()
+                    scanner.settings.asTree = asTree
+                    scanner._expanded = nil
+                    scanner.builds = 0
+                    local stack = manager:openWindow("scanner").stack
+                    if asTree then
+                        press(host, "down")
+                        press(host, "down")
+                        t:assertEqual((focused(host)), "Nearby")
+                    else
+                        enter(host) -- Quests
+                        press(host, "down")
+                        t:assertEqual((focused(host)), "Nearby")
+                        t:assertEqual(#stack.screens, 2)
+                    end
+                    local builds = scanner.builds
+                    host:open({
+                        key = "questLog",
+                        render = function(builder)
+                            builder:addItem(ControlId.structural("q"), nodes.text({ label = "Quest log" }))
+                        end,
+                    })
+                    WowVision.base.quests = {
+                        safeLogQuest = function()
+                            return 5
+                        end,
+                        scannerQuestPath = function()
+                            return { "quests", "inProgress", "quest:5" }
+                        end,
+                    }
+                    scanner:openFromKey()
+                    t:assertNil(scanner.focusQuest, "nothing left for a later open")
+                    t:assertEqual(#host.stacks, 2, "no second scanner")
+                    t:assertTrue(host:focusedStack() == stack, "the scanner is in front of the quest log")
+                    t:assertEqual((focused(host)), "Kobold Camp")
+                    t:assertEqual(#stack.screens, asTree and 1 or 3, "the levels down to the quest")
+                    t:assertTrue(scanner.builds > builds, "the tree is built afresh")
+                    -- F9 again in the Scanner itself, the quest log still on screen behind: it stays as it is
+                    press(host, "up")
+                    local here = (focused(host))
+                    local count = #stack.screens
+                    builds = scanner.builds
+                    scanner:openFromKey()
+                    t:assertEqual((focused(host)), here)
+                    t:assertEqual(#stack.screens, count)
+                    t:assertEqual(scanner.builds, builds)
+                end)
                 WowVision.UIHost = savedUIHost
                 assert(ok, err)
-                t:assertNil(scanner.focusQuest, "nothing left for a later open")
-                t:assertEqual(#host.stacks, 2)
-                t:assertTrue(host:focusedStack() == stack, "the scanner is in front of the quest log")
-                t:assertTrue(quest ~= stack)
-                t:assertEqual((focused(host)), "Kobold Camp")
             end)
         end
     end,
