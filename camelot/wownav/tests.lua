@@ -2112,6 +2112,70 @@ if haveNetwork then
         end
     end
 
+    suite["a dock route searched again is still a dock route: its arrival starts the route to the point on board"] = function(t)
+        setup()
+        local saved = _G.UnitPosition
+        _G.UnitPosition = function()
+            return -8650, 1337, 0, 0
+        end
+        local ok, err = pcall(function()
+            local dockRow, boardRow = stormwindHarbor()
+            t:assertNotNil(dockRow)
+            t:assertNotNil(boardRow)
+            local Dock = _G.WowVisionNavigationDockNavigation
+            local target = dock.target(N, dockRow)
+            local shipTarget = dock.boardingTarget(N, boardRow)
+            t:assertNotNil(shipTarget)
+            -- what the module's request to the dock carries (targetRequest), then searched again from another start
+            -- (the stuck key's new route, a changed road preference, safety or zone setting)
+            local contract = catalog.contract(dockRow, 0)
+            local onArrive = function() end
+            local request = { contract = contract, label = dockRow.n, onArrive = onArrive, dockTarget = target,
+                start = { nodeId = 1 }, approx = true, lowestFloor = true, chainLeg = 2, windowsClosed = true }
+            local start = { nodeId = 2, z = 0 }
+            local again = Route.searchAgain(request, contract, start)
+            t:assertTrue(again.dockTarget == target, "the dock comes along")
+            t:assertTrue(again.contract == contract)
+            t:assertEqual(again.label, dockRow.n)
+            t:assertTrue(again.onArrive == onArrive)
+            t:assertTrue(again.start == start, "the new start, not the old one")
+            t:assertTrue(again.approx == true and again.lowestFloor == true)
+            t:assertEqual(again.chainLeg, 2)
+            t:assertTrue(again.windowsClosed == true, "the windows are not closed a second time")
+            t:assertNil(again.reversed, "a turned route is said once, at its first start")
+            -- its arrival: the dock is reached and the point on board is next, as on the first search
+            Dock:Reset(false)
+            text.say = function() end
+            local landing = R:Resolve({ nativeMapId = 0 }, contract, {})
+            local nodeX, nodeY = N.Position(landing.endNodeId)
+            local beacon, ship = dock.arrived(N, again.dockTarget, nodeX, nodeY)
+            t:assertNil(beacon)
+            t:assertNotNil(ship, "the route to the point on board starts")
+            t:assertEqual(ship.id, boardRow.tid)
+            -- the point on board and a walk-in target's activation come along too
+            local boarding = Route.searchAgain({ contract = contract, boardingTarget = shipTarget }, contract, start)
+            t:assertTrue(boarding.boardingTarget == shipTarget, "its arrival sets the dock reached again")
+            local activation = { id = "portal" }
+            t:assertTrue(Route.searchAgain({ activationTarget = activation }, contract, start).activationTarget
+                == activation, "a portal is still walked into")
+            -- the module searches again only through it (the new route and the recalculation)
+            local file = io.open("camelot/wownav/module.lua", "rb")
+            if file ~= nil then
+                local source = file:read("*a")
+                file:close()
+                local _, uses = source:gsub("Route%.searchAgain%(request, contract, start%)", "")
+                t:assertEqual(uses, 2, "the new route and the recalculation")
+                t:assertNil(source:find("search%(self, {"), "no request is built by hand for a search")
+            end
+        end)
+        _G.UnitPosition = saved
+        _G.WowVisionNavigationDockNavigation:Reset(false)
+        text.say = nil
+        if not ok then
+            error(err, 0)
+        end
+    end
+
     -- N.LoadZoneInSteps: the zones around the player are decoded over several frames.
     local function firstZone()
         local ids = {}
@@ -2397,6 +2461,284 @@ if haveNetwork then
         t:assertTrue(#list > 100, "Elwynn has monster spawns")
         t:assertEqual(type(list[1].x), "number")
         t:assertEqual(type(list[1].name), "string")
+    end
+
+    -- As few zone changes as possible (setting of the wownav module, default off). The user's case: in Silverpine at the
+    -- border to Hillsbrad, a route to the border to Tirisfal led out into Hillsbrad and back (shorter, but the monsters
+    -- there were too strong).
+    local SILVERPINE, HILLSBRAD, TIRISFAL = 1421, 1424, 18
+    local SP_AT_HILLSBRAD = SILVERPINE * N.ZONE_BASE + 1078     -- the Silverpine end of a seam to Hillsbrad
+    local SP_AT_TIRISFAL = SILVERPINE * N.ZONE_BASE + 28826     -- the Silverpine end of a seam to Tirisfal
+
+    -- the waypoints of a route (routeShape without the cost)
+    local function pathShape(result)
+        return (routeShape(result):gsub("^[^,]*,?", ""))
+    end
+
+    local function zonesOf(result)
+        local list, last = {}, nil
+        for _, id in ipairs(result.path) do
+            local zoneId = N.ZoneIdOf(id)
+            if zoneId ~= last then
+                list[#list + 1] = zoneId
+                last = zoneId
+            end
+        end
+        return list
+    end
+
+    local function visits(result, zoneId)
+        for _, id in ipairs(zonesOf(result)) do
+            if id == zoneId then
+                return true
+            end
+        end
+        return false
+    end
+
+    -- runs fn with the rule on or off and puts every changed engine setting back, also when fn fails
+    local function withZoneRule(enabled, fn)
+        local before, estimate, comfort = N.fewestZoneChanges, N.zoneChangeEstimate, N.comfort
+        N.SetFewestZoneChanges(enabled)
+        local ok, a, b = pcall(fn)
+        N.SetFewestZoneChanges(before)
+        N.zoneChangeEstimate = estimate
+        N.SetComfort(comfort)
+        if not ok then
+            error(a, 0)
+        end
+        return a, b
+    end
+
+    local function loadSilverpine()
+        for _, zoneId in ipairs({ SILVERPINE, HILLSBRAD, TIRISFAL }) do
+            N.LoadZone(zoneId)
+        end
+    end
+
+    suite["fewest zone changes: off by default, and off the routes are the ones without it"] = function(t)
+        t:assertEqual(N.fewestZoneChanges, false, "the engine starts with the rule off")
+        setup()
+        loadSilverpine()
+        local plain = N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+        t:assertNotNil(plain)
+        t:assertEqual(plain.zoneChanges, N.ZoneChanges(plain.path), "off, the result still counts its zone changes")
+        -- the user's case: the shortest route leaves Silverpine for Hillsbrad and comes back
+        t:assertTrue(visits(plain, HILLSBRAD), "off: the route runs through Hillsbrad")
+        t:assertEqual(plain.zoneChanges, 2, "off: out into Hillsbrad and back")
+    end
+
+    suite["fewest zone changes: in Silverpine from the Hillsbrad border to the Tirisfal border, the route stays in Silverpine"] = function(t)
+        setup()
+        loadSilverpine()
+        local plain = N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+        local kept = withZoneRule(true, function()
+            return N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+        end)
+        t:assertNotNil(kept, "a route with the rule on")
+        t:assertEqual(kept.zoneChanges, 0, "no zone change")
+        t:assertEqual(N.ZoneChanges(kept.path), 0)
+        for _, id in ipairs(kept.path) do
+            t:assertEqual(N.ZoneIdOf(id), SILVERPINE, "every waypoint lies in Silverpine")
+        end
+        t:assertFalse(visits(kept, HILLSBRAD))
+        t:assertTrue(kept.path[1] ~= nil and kept.path[#kept.path] ~= nil)
+        -- the cost is the route's own (yards with the factors), without the cost of the rule
+        t:assertTrue(kept.cost < N.ZONE_CHANGE_COST / 10, "the cost carries no zone change cost")
+        t:assertTrue(kept.total < N.ZONE_CHANGE_COST / 10)
+        -- the rule is off again: the same route as before
+        t:assertEqual(routeShape(N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)), routeShape(plain))
+    end
+
+    suite["fewest zone changes: however much longer the route gets (pass (a) alone, comfort 0)"] = function(t)
+        setup()
+        loadSilverpine()
+        N.SetComfort(0)
+        local ok, err = pcall(function()
+            local plain = N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+            local kept = withZoneRule(true, function()
+                return N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+            end)
+            t:assertEqual(plain.pass, "a")
+            t:assertEqual(kept.pass, "a")
+            t:assertTrue(plain.zoneChanges > 0, "the cheapest route leaves Silverpine")
+            t:assertEqual(kept.zoneChanges, 0)
+            -- the cheapest route of all is never cheaper than the cheapest one that stays: the rule paid for staying
+            t:assertTrue(kept.cost >= plain.cost - 1e-6, "staying costs at least as much as the cheapest route")
+        end)
+        N.SetComfort(50)
+        if not ok then
+            error(err, 0)
+        end
+    end
+
+    suite["fewest zone changes: a route into other zones crosses the fewest borders there are"] = function(t)
+        setup()
+        for _, zoneId in ipairs({ TIRISFAL, SILVERPINE, HILLSBRAD, 1416, 1417, 1422 }) do
+            N.LoadZone(zoneId)
+        end
+        local from, to = TIRISFAL * N.ZONE_BASE + 5, HILLSBRAD * N.ZONE_BASE + 5
+        local plain = N.RouteIds(from, to)
+        local fewest, unaided = withZoneRule(true, function()
+            local a = N.RouteIds(from, to)
+            -- the same search without the estimate of the zone changes left: an exhaustive search over the same costs
+            N.zoneChangeEstimate = false
+            local b = N.RouteIds(from, to)
+            return a, b
+        end)
+        t:assertNotNil(plain)
+        t:assertNotNil(fewest)
+        t:assertTrue(fewest.zoneChanges < plain.zoneChanges, "fewer zone changes than the shortest route")
+        t:assertEqual(fewest.zoneChanges, 2, "Tirisfal, Silverpine, Hillsbrad")
+        local zones = zonesOf(fewest)
+        t:assertEqual(table.concat(zones, ">"), table.concat({ TIRISFAL, SILVERPINE, HILLSBRAD }, ">"))
+        -- the estimate never overestimates: the same number of changes and the same cost without it
+        t:assertEqual(unaided.zoneChanges, fewest.zoneChanges, "the estimate keeps the fewest changes")
+        t:assertTrue(math.abs(unaided.cost - fewest.cost) < 1e-6, "and the same cost")
+        t:assertTrue(fewest.expansions <= unaided.expansions, "the estimate saves search work")
+    end
+
+    suite["fewest zone changes: a target in the zone its network does not reach still gets a route, through as few zones as needed"] = function(t)
+        setup()
+        loadSilverpine()
+        -- Silverpine's south coast (waypoint 5): the network joins it to the rest of Silverpine only through Hillsbrad
+        local from, to = SILVERPINE * N.ZONE_BASE + 1000, SILVERPINE * N.ZONE_BASE + 5
+        local result = withZoneRule(true, function()
+            return N.RouteIds(from, to)
+        end)
+        t:assertNotNil(result, "the rule never leaves the player without a route")
+        t:assertEqual(result.zoneChanges, 2, "out into Hillsbrad and back, nothing more")
+        t:assertTrue(visits(result, HILLSBRAD))
+    end
+
+    suite["fewest zone changes: a route that is the same either way is unchanged"] = function(t)
+        setup()
+        N.LoadZone(HILLSBRAD)
+        N.LoadZone(1417)
+        local from, to = HILLSBRAD * N.ZONE_BASE + 5, 1417 * N.ZONE_BASE + 5
+        local plain = N.RouteIds(from, to)
+        local kept = withZoneRule(true, function()
+            return N.RouteIds(from, to)
+        end)
+        t:assertEqual(plain.zoneChanges, 1)
+        t:assertEqual(kept.zoneChanges, 1)
+        t:assertEqual(pathShape(kept), pathShape(plain), "the same waypoints")
+        -- the same cost: the rule's cost is taken out again (up to the rounding of adding and taking out 10^8)
+        t:assertTrue(math.abs(kept.cost - plain.cost) < 1e-6, "the same cost")
+        t:assertTrue(math.abs(kept.total - plain.total) < 1e-6)
+        -- inside the zone: a route in Stormwind is the same with the rule, cost and all
+        N.LoadZone(STORMWIND)
+        local a, b = STORMWIND * N.ZONE_BASE + 8390, STORMWIND * N.ZONE_BASE + 2959
+        local inside = N.RouteIds(a, b)
+        t:assertEqual(routeShape(withZoneRule(true, function()
+            return N.RouteIds(a, b)
+        end)), routeShape(inside))
+    end
+
+    suite["fewest zone changes: inside a job the rule is part of the repeated-search key"] = function(t)
+        setup()
+        loadSilverpine()
+        local plain, kept = runJob(N.Job(function()
+            local a = N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+            local b = withZoneRule(true, function()
+                return N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+            end)
+            return a, b
+        end))
+        t:assertEqual(plain.zoneChanges, 2, "off in the job: through Hillsbrad")
+        t:assertEqual(kept.zoneChanges, 0, "on in the same job: searched anew, stays in Silverpine")
+    end
+
+    -- the rule is above the others: road preference, safe routes and enemy outposts only choose among the routes with
+    -- the fewest zone changes
+    suite["fewest zone changes: safe routes choose among the routes that stay in the zone"] = function(t)
+        setup()
+        loadSilverpine()
+        local kept = withZoneRule(true, function()
+            return N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+        end)
+        local source = N.DangerSource
+        local spawns = {}
+        N.DangerSource = function(zoneId)
+            return zoneId == SILVERPINE and spawns or nil, zoneId == SILVERPINE and spawns or nil
+        end
+        -- monsters along the middle of the route that stays in Silverpine, none in Hillsbrad
+        local n = #kept.path
+        for i = math.floor(n / 4), math.floor(3 * n / 4) do
+            local x, y, z = N.Position(kept.path[i])
+            spawns[#spawns + 1] = { x = x, y = y, z = z, name = "Spawn " .. i }
+        end
+        N.dangerGen = N.dangerGen + 1
+        local ok, err = pcall(function()
+            N.SetSafety(300)
+            local safe = withZoneRule(true, function()
+                return N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+            end)
+            t:assertNotNil(safe)
+            t:assertEqual(safe.zoneChanges, 0, "the safe route stays in Silverpine too")
+            t:assertTrue(safe.dangerA > 0, "the monsters stand on the route")
+            t:assertTrue(safe.danger <= safe.dangerA + 1e-6, "never more danger than the route without safety")
+            -- off, the safety may take the way through Hillsbrad
+            local free = N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+            t:assertNotNil(free)
+        end)
+        N.DangerSource = source
+        N.SetSafety(0)
+        N.dangerGen = N.dangerGen + 1
+        N.zones[SILVERPINE].danger = nil
+        N.zones[HILLSBRAD].danger = nil
+        if not ok then
+            error(err, 0)
+        end
+    end
+
+    suite["fewest zone changes: through an enemy outpost rather than around it through another zone"] = function(t)
+        setup()
+        loadSilverpine()
+        local zone = N.zones[SILVERPINE]
+        -- a stand-in outpost of the Horde: every Silverpine waypoint except those of the shortest route (which leaves
+        -- Silverpine for Hillsbrad and comes back). An Alliance player then has a way around it, through Hillsbrad;
+        -- staying in Silverpine leads through it. (Long links of the data cross any narrow band, so a band would not do.)
+        local plain = N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+        local open = {}
+        for _, id in ipairs(plain.path) do
+            open[id] = true
+        end
+        local hostile, group = {}, nil
+        for i = 1, zone.n do
+            if not open[zone.base + i - 1] then
+                group = group or (zone.base + i - 1)
+                hostile[i] = group
+            end
+        end
+        local saved = { zone.hasFactions, zone.hostileFor, zone.hostile }
+        zone.hasFactions, zone.hostileFor, zone.hostile = true, "alliance", hostile
+        N.SetPlayerFaction("Alliance")
+        local ok, err = pcall(function()
+            local around = N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+            t:assertNotNil(around, "off: a route")
+            t:assertNil(around.outpost, "off: around the outpost")
+            t:assertEqual(around.zoneChanges, 2, "off: the way around leaves Silverpine for Hillsbrad")
+            local through = withZoneRule(true, function()
+                return N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+            end)
+            t:assertNotNil(through)
+            t:assertEqual(through.zoneChanges, 0, "on: the route stays in Silverpine")
+            t:assertEqual(through.outpost, "through", "and says it leads through the outpost")
+            -- the route through is the one without outpost avoidance
+            N.SetAvoidOutposts(false)
+            local ignored = withZoneRule(true, function()
+                return N.RouteIds(SP_AT_HILLSBRAD, SP_AT_TIRISFAL)
+            end)
+            N.SetAvoidOutposts(true)
+            t:assertEqual(pathShape(through), pathShape(ignored))
+        end)
+        N.SetAvoidOutposts(true)
+        N.SetPlayerFaction(nil)
+        zone.hasFactions, zone.hostileFor, zone.hostile = saved[1], saved[2], saved[3]
+        if not ok then
+            error(err, 0)
+        end
     end
 end
 

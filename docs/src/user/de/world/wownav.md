@@ -205,6 +205,23 @@ Führt der kürzeste Weg an Monstern vorbei, sagt die Zusammenfassung beim Start
 
 WowNav weiß, wo Monster gewöhnlich stehen, nicht, wo sie gerade sind, wie stark sie sind oder ob sie dich angreifen würden. Monster, die umherlaufen, und Monster, die die Zielliste nicht kennt, werden nicht gemieden.
 
+## So wenige Zonenwechsel wie möglich
+
+Mit So wenige Zonenwechsel wie möglich wechselt eine Route so selten in eine andere Zone, wie es geht. Liegt dein Ziel in der Zone, in der du stehst, bleibt die Route in dieser Zone, auch wenn der Weg durch eine Nachbarzone kürzer wäre. Wie viel länger die Route dadurch wird, spielt keine Rolle.
+
+Ein Beispiel: Du stehst im Silberwald am Übergang zum Vorgebirge des Hügellands und willst zum Übergang nach Tirisfal. Der kürzeste Weg führt ein Stück durch das Vorgebirge des Hügellands, wo die Gegner für dich zu stark sein können. Mit der Einstellung bleibt die Route im Silberwald.
+
+Liegt das Ziel in einer anderen Zone, führt die Route durch so wenige Zonen wie möglich dorthin.
+
+Diese Regel geht allen anderen vor. Straßen bevorzugen, Sichere Routen und Feindliche Posten meiden wählen nur noch unter den Routen mit den wenigsten Zonenwechseln. Führt der Weg um einen feindlichen Posten herum durch mehr Zonen als der Weg hindurch, führt die Route hindurch und warnt dich.
+
+Manche Orte erreicht das Netz innerhalb ihrer eigenen Zone nicht, zum Beispiel ein Stück Küste, zu dem der Weg nur durch die Nachbarzone führt. Dann führt die Route durch so wenige andere Zonen wie nötig. Die Einstellung lässt dich nie ohne Route.
+
+So wenige Zonenwechsel wie möglich ist standardmäßig aus. So schaltest du es ein:
+
+1. Öffne das WowVision-Menü (/wv), dann Navigation, dann WowNav-Routen.
+2. Schalte So wenige Zonenwechsel wie möglich ein.
+
 ## Einstellungen
 
 Öffne das WowVision-Menü (/wv), dann Navigation, dann WowNav-Routen.
@@ -213,6 +230,7 @@ WowNav weiß, wo Monster gewöhnlich stehen, nicht, wo sie gerade sind, wie star
 |-------------|----------|-------------|
 | Aktiviert | An | Schaltet das ganze Modul ein oder aus. |
 | Routen von WowNav | An | Schickt jede Routenanfrage an WowNav statt an die klassischen Routen. |
+| So wenige Zonenwechsel wie möglich | Aus | Eine Route wechselt so selten in eine andere Zone, wie es geht, egal wie viel länger sie dadurch wird. Diese Regel geht Straßen bevorzugen, Sicheren Routen und Feindliche Posten meiden vor; siehe [So wenige Zonenwechsel wie möglich](#so-wenige-zonenwechsel-wie-möglich). Änderst du es während einer Route, hörst du nach einer Sekunde "Route wird mit der neuen Zonenwechsel-Einstellung neu gesucht". |
 | Straßen bevorzugen (Prozent länger) | 60 | Eine Route auf Straßen und Wegen darf um so viel Prozent länger sein als der kürzeste Weg. 0 heißt immer der kürzeste. Bis zu 300. Auch Schwimmen zählt um so viel länger. Änderst du es während einer Route, hörst du eine Sekunde nach dem letzten Verstellen "Route wird mit der neuen Straßenvorliebe neu gesucht". |
 | Sichere Routen (Prozent länger) | 0 | Wie viel länger eine Route sein darf, um Monstern aus dem Weg zu gehen; siehe [Sichere Routen](#sichere-routen). 0 heißt aus. Bis zu 300. Änderst du es während einer Route, hörst du eine Sekunde nach dem letzten Verstellen "Route wird mit der neuen Sicherheitseinstellung neu gesucht". |
 | Feindliche Posten meiden | An | Routen führen um die Posten und Hauptstädte der gegnerischen Fraktion herum. Wo es keinen Weg drumherum gibt, führt die Route hindurch und warnt dich. Ändern plant eine laufende Route neu. |

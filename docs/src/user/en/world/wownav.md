@@ -203,6 +203,23 @@ When the shortest way passes monsters, the summary at the start of the route say
 
 WowNav knows where monsters usually stand, not where they are now, how strong they are or whether they would attack you. Monsters that wander around, and monsters the destination list does not have, are not avoided.
 
+## As few zone changes as possible
+
+With As Few Zone Changes as Possible, a route changes into another zone as rarely as it can. When your destination lies in the zone you stand in, the route stays in that zone, even when the way through a neighbouring zone is shorter. How much longer the route gets does not matter.
+
+An example: you stand in Silverpine Forest at the border to Hillsbrad Foothills and want to go to the border to Tirisfal Glades. The shortest way runs through a piece of Hillsbrad Foothills, where the monsters can be too strong for you. With the setting, the route stays in Silverpine Forest.
+
+When the destination lies in another zone, the route leads there through as few zones as possible.
+
+This rule comes before all others. Road Preference, Safe Routes and Avoid Enemy Outposts only choose among the routes with the fewest zone changes. When the way around an enemy outpost runs through more zones than the way through it, the route leads through and warns you.
+
+The network does not reach some places from inside their own zone, for example a piece of coast that is only reached through the neighbouring zone. Then the route leads through as few other zones as needed. The setting never leaves you without a route.
+
+As Few Zone Changes as Possible is off by default. To turn it on:
+
+1. Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
+2. Turn on As Few Zone Changes as Possible.
+
 ## Settings
 
 Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
@@ -211,6 +228,7 @@ Open the WowVision menu (/wv), then Navigation, then WowNav Routes.
 |---------|---------|--------------|
 | Enabled | On | Switches the whole module on or off. |
 | Routes from WowNav | On | Sends every route request to WowNav instead of the classic routes. |
+| As Few Zone Changes as Possible | Off | A route changes into another zone as rarely as it can, however much longer it gets. This rule comes before Road Preference, Safe Routes and Avoid Enemy Outposts; see [As few zone changes as possible](#as-few-zone-changes-as-possible). When you change it during a route, after one second you hear "Searching the route again with the new zone change setting". |
 | Road Preference (Percent Longer) | 60 | A route on roads and paths may be this many percent longer than the shortest way. 0 means always the shortest. Up to 300. Swimming also counts as this much longer. When you change it during a route, one second after you stop adjusting you hear "Searching the route again with the new road preference". |
 | Safe Routes (Percent Longer) | 0 | How much longer a route may be to keep away from monsters; see [Safe routes](#safe-routes). 0 is off. Up to 300. When you change it during a route, one second after you stop adjusting you hear "Searching the route again with the new safety setting". |
 | Avoid Enemy Outposts | On | Routes go around the outposts and capitals of the opposing faction. Where there is no way around, the route leads through and warns you. Changing it re-plans a running route. |

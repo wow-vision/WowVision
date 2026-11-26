@@ -61,6 +61,21 @@ function Route.reachesTarget(result, radius)
     return not result.normalizedWater and (result.delta3D or result.deltaXY or 0) <= radius
 end
 
+-- A route searched again (the stuck key's new route, a changed road preference, safety or zone setting): the same
+-- target from another start. What made the target more than a place comes along: the dock (its arrival names the point
+-- on board and starts the route there; a tram dock's waiting circle), the point on board (its arrival sets the dock
+-- reached again), a walk-in target's activation, the approximate and lowest-floor hints, and the chain leg and closed
+-- windows of the first search. Without it a dock was reached as a plain place: "Arrived", no route to the ship.
+-- contract: the target now (a group member read anew); start: where the new route starts.
+function Route.searchAgain(request, contract, start)
+    return {
+        contract = contract, nodeId = request.nodeId, label = request.label, onArrive = request.onArrive, start = start,
+        dockTarget = request.dockTarget, boardingTarget = request.boardingTarget,
+        activationTarget = request.activationTarget, approx = request.approx, lowestFloor = request.lowestFloor,
+        chainLeg = request.chainLeg, windowsClosed = request.windowsClosed,
+    }
+end
+
 -- His chokeFallback setting (WowVisionNavigationDB, written from WowVision's settings by the module): on unless false.
 function Route.chokeFallback()
     return not (type(WowVisionNavigationDB) == "table" and WowVisionNavigationDB.chokeFallback == false)
