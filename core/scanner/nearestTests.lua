@@ -45,6 +45,42 @@ testRunner:addSuite("ScannerNearest", {
         t:assertEqual(node.key, "other")
     end,
 
+    ["a node that moves is weighed where it is now, and that place comes back"] = function(t)
+        local at = { 100, 0 }
+        local nodes = {
+            { key = "fixed", x = 50, y = 0 },
+            {
+                key = "member",
+                x = 100,
+                y = 0,
+                position = function()
+                    return at[1], at[2]
+                end,
+            },
+            { key = "away", position = function() end },
+            { key = "group", children = { { key = "deep", x = 200, y = 0, position = function()
+                return 5, 0
+            end } } },
+        }
+        local function place(node)
+            if node.position ~= nil then
+                return node.position()
+            end
+            return node.x, node.y
+        end
+        local node, distance, x, y = nearest.pick(nodes, fromOrigin, nil, place)
+        t:assertEqual(node.key, "deep", "a moving node one level down is read too")
+        t:assertEqual(distance, 5)
+        t:assertEqual(x, 5)
+        t:assertEqual(y, 0)
+        at = { 3, 0 }
+        node, distance = nearest.pick(nodes, fromOrigin, nil, place)
+        t:assertEqual(node.key, "member")
+        t:assertEqual(distance, 3)
+        -- without a place reader the fixed x, y count
+        t:assertEqual((nearest.pick(nodes, fromOrigin)).key, "fixed")
+    end,
+
     ["nothing placed, or no player position, gives nil"] = function(t)
         t:assertNil(nearest.pick({ { key = "loading" }, { key = "empty", children = {} } }, fromOrigin))
         t:assertNil(nearest.pick({ { key = "a", x = 1, y = 1 } }, function()

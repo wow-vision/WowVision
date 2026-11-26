@@ -117,14 +117,39 @@ function module.unitRole(unit, api)
     return ROLE_TEXTS[role]
 end
 
+-- A readable GUID of a unit, nil when the game does not give one.
+local function unitGuid(unit)
+    if UnitGUID == nil then
+        return nil
+    end
+    local ok, guid = pcall(UnitGUID, unit)
+    return ok and readable(guid) and guid or nil
+end
+
+-- Whether a unit token still stands for the member an entry was built for:
+-- the game hands party1 to the next member when someone leaves. A GUID the
+-- game does not give now cannot tell, so it counts as the same member.
+local function sameMember(unit, guid)
+    if guid == nil then
+        return true
+    end
+    local now = unitGuid(unit)
+    return now == nil or now == guid
+end
+
 -- A unit's entry: its name, then (withRole) its group role, where it is and
--- its description, read when spoken. What Enter does is up to the category
--- (see the node's `unit` in module.lua).
-local function unitNode(key, unit, withRole)
+-- its description, read when spoken. guid: the member the entry was built
+-- for; once the unit token stands for someone else the entry reads only the
+-- name. What Enter does is up to the category (see the node's `unit` in
+-- module.lua).
+local function unitNode(key, unit, withRole, guid)
     return {
         key = key,
         label = UnitName(unit) or unit,
         nameDetail = function()
+            if not sameMember(unit, guid) then
+                return nil
+            end
             local parts = {}
             local role = withRole and module.unitRole(unit) or nil
             if role ~= nil then
@@ -146,24 +171,15 @@ local function unitNode(key, unit, withRole)
     }
 end
 
--- Where the game puts a group member now; nil when it does not say (another
--- continent, an instance, a secret value).
-local function memberPosition(unit)
-    local ok, x, y = pcall(UnitPosition, unit)
-    if ok and type(x) == "number" and type(y) == "number"
-        and not (issecretvalue ~= nil and (issecretvalue(x) or issecretvalue(y))) then
-        return x, y
-    end
-    return nil
-end
-
--- The party or raid members, each with its group role. A member whose
--- position the game gives (on the map for everyone in the group) also reads
--- distance and direction; `position` reads it again each time the entry is
--- spoken, so arrowing onto a member who moved says where they are now.
--- Enter opens the navigation window aimed at it, and its unit as routeData
--- lets a route engine read the position again (WowNav: a new route). Enter
--- on any other member says there is no position.
+-- The party or raid members, each with its group role. `position` reads
+-- where the game puts a member now (core/navigation/unitPosition.lua: on the
+-- player's map only), each time the entry is spoken or routed to, so a
+-- member who moves, or only now gets a position, is heard where they are;
+-- one who left the group (the token went to someone else) has none. A
+-- member with a position reads distance and direction; Enter opens the
+-- navigation window aimed at it, and its unit as routeData lets a route
+-- engine read the position again (WowNav: a new route). Enter on a member
+-- without a position says so.
 module:registerProvider({
     key = "group",
     label = L["Group"],
@@ -175,19 +191,16 @@ module:registerProvider({
         for i = 1, raid and count or math.min(count, 4) do
             local unit = raid and ("raid" .. i) or ("party" .. i)
             if UnitExists(unit) and not UnitIsUnit(unit, "player") then
-                local node = unitNode("unit:" .. unit, unit, true)
-                local x, y = memberPosition(unit)
-                if x ~= nil then
-                    node.x, node.y = x, y
-                    node.position = function()
-                        return memberPosition(unit)
+                local guid = unitGuid(unit)
+                local node = unitNode("unit:" .. unit, unit, true, guid)
+                node.position = function()
+                    if not sameMember(unit, guid) then
+                        return nil
                     end
-                    node.routeData = { unit = unit }
-                else
-                    node.onActivate = function()
-                        WowVision:notify(L["Position unavailable"])
-                    end
+                    return WowVision.unitPosition(unit)
                 end
+                node.x, node.y = node.position()
+                node.routeData = { unit = unit }
                 tinsert(out, node)
             end
         end

@@ -13,16 +13,9 @@ local function usable(value)
     return value ~= nil and not WowVision.isSecret(value)
 end
 
-local function finite(value)
-    return type(value) == "number" and value == value and math.abs(value) < math.huge
-end
-
+-- core/navigation/unitPosition.lua: nil as well for a member on another map than the player.
 local function unitPosition(unit)
-    local ok, x, y = pcall(UnitPosition, unit)
-    if ok and usable(x) and usable(y) and finite(x) and finite(y) then
-        return x, y
-    end
-    return nil
+    return WowVision.unitPosition(unit)
 end
 
 -- The party or raid unit that is the target, nil when the target is in no group of the player's.

@@ -76,6 +76,8 @@ loadAddonFile("core/navigation/visitedStore.lua")
 loadAddonFile("core/navigation/visitedTests.lua")
 loadAddonFile("core/navigation/corpseFind.lua")
 loadAddonFile("core/navigation/corpseTests.lua")
+loadAddonFile("core/navigation/unitPosition.lua")
+loadAddonFile("core/navigation/unitPositionTests.lua")
 loadAddonFile("core/navigation/targetFind.lua")
 loadAddonFile("core/navigation/targetTests.lua")
 

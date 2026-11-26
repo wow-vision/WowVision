@@ -109,45 +109,73 @@ local function emptyText(node)
     return nil
 end
 
--- A node that moves (a group member) carries `position`, a function giving
--- its place now; it is read when the node is spoken or routed to, so the
--- distance is current without a Refresh. One position read per line spoken,
--- nothing in the background. Where the game stops giving one, the last
--- known place stays.
-local function updatePosition(node)
+local function coordinate(value)
+    return type(value) == "number"
+        and not (WowVision.isSecret ~= nil and WowVision.isSecret(value))
+        and value == value
+        and math.abs(value) < math.huge
+end
+
+-- Where a node is now. A node that moves (a group member) carries
+-- `position`, a function giving its place now or nil; it is read whenever
+-- the node is spoken, routed to or weighed as the nearest, so the distance
+-- is current without a Refresh. That is one position read per read of the
+-- line: the focused line's parts are watched each frame (graph/liveWatch),
+-- so while a member is focused their distance is said again as it changes,
+-- as it already is while you walk. Any other node: its fixed x, y.
+local function currentPosition(node)
     if type(node.position) ~= "function" then
-        return
+        return node.x, node.y
     end
     local ok, x, y = pcall(node.position)
-    if ok and x ~= nil and y ~= nil then
+    if ok and coordinate(x) and coordinate(y) then
         node.x, node.y = x, y
+        return x, y
     end
+    return nil
+end
+
+-- A node with a place: a fixed one, or one that may have one now.
+local function placed(node)
+    return node.x ~= nil or node.position ~= nil
 end
 
 local function whereText(node)
     local m = maps()
-    if m == nil or node.x == nil then
+    if m == nil then
         return nil
     end
-    updatePosition(node)
-    return m:whereText(node.x, node.y)
+    local x, y = currentPosition(node)
+    if x == nil then
+        return nil
+    end
+    return m:whereText(x, y)
 end
 
 -- Enter on a placed node: the navigation window opens aimed at it, with the
 -- closest entry point and the node as destination preselected, so Enter
 -- there routes through the waypoint network (a straight beacon when the
 -- continent has no map data).
-local function beaconTo(node)
+-- A node that has no place now (a group member off your map) says so and
+-- the scanner stays open. x, y: a place already read for this action (the
+-- nearest), else the node's current one.
+local function beaconTo(node, x, y)
     local m = maps()
     if m == nil then
         return
     end
-    updatePosition(node)
+    if x == nil then
+        x, y = currentPosition(node)
+    end
+    if x == nil then
+        WowVision:notify(L["Position unavailable"])
+        return
+    end
     WowVision.UIHost:closeWindow(WINDOW)
     if m.openNavigationTo ~= nil then
-        m:openNavigationTo(node.x, node.y, labelText(node), node.onArrive, node.routeData, node.match)
+        m:openNavigationTo(x, y, labelText(node), node.onArrive, node.routeData, node.match)
     else
-        m:beaconTo(node.x, node.y, labelText(node), node.onArrive)
+        m:beaconTo(x, y, labelText(node), node.onArrive)
     end
 end
 
@@ -158,23 +186,21 @@ local function navigateNearest(node)
     if m == nil then
         return
     end
-    for _, child in ipairs(resolveChildren(node)) do
-        updatePosition(child)
-    end
-    local nearest, distance = WowVision.scannerNearest.pick(resolveChildren(node), function(x, y)
-        return m:distanceTo(x, y)
-    end, resolveChildren)
+    -- one read of each place: the one weighed is the one said and routed to
+    local nearest, _, x, y = WowVision.scannerNearest.pick(resolveChildren(node), function(px, py)
+        return m:distanceTo(px, py)
+    end, resolveChildren, currentPosition)
     if nearest == nil then
         WowVision:notify(L["Nothing to navigate to"])
         return
     end
     local text = labelText(nearest) or ""
-    local where = whereText(nearest)
+    local where = m:whereText(x, y)
     if where ~= nil then
         text = text .. ", " .. where
     end
     WowVision:notify(text)
-    beaconTo(nearest)
+    beaconTo(nearest, x, y)
 end
 
 local function pushDetails(node)
@@ -220,7 +246,7 @@ local function vtableFor(node, screen, id)
     if node.detail ~= nil then
         tinsert(announcements, { text = node.detail, kind = kinds.value })
     end
-    if node.x ~= nil then
+    if placed(node) then
         -- A value part, not a position part: the auto-stamped "n of m"
         -- still reads after it.
         tinsert(announcements, {
@@ -243,7 +269,7 @@ local function vtableFor(node, screen, id)
     local vtable = { announcements = announcements }
     if node.children ~= nil then
         vtable.controlType = graph.controlTypes.group
-    elseif node.x ~= nil or node.onActivate ~= nil or node.unit ~= nil then
+    elseif placed(node) or node.onActivate ~= nil or node.unit ~= nil then
         vtable.controlType = graph.controlTypes.button
     else
         vtable.controlType = graph.controlTypes.text
@@ -254,7 +280,7 @@ local function vtableFor(node, screen, id)
         vtable.bindings = { { binding = "leftClick", type = "Target", unit = node.unit } }
     elseif node.onActivate ~= nil then
         vtable.onActivate = node.onActivate
-    elseif node.x ~= nil then
+    elseif placed(node) then
         vtable.onActivate = function()
             beaconTo(node)
         end

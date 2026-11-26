@@ -341,7 +341,7 @@ testRunner:addSuite("ScannerMenu", {
 
     ["a group member's distance is read where they stand now"] = function(t)
         withHost(function(host)
-            local aimed = nil
+            local aimed, notified = nil, nil
             WowVision.base.navigation = {
                 maps = {
                     whereText = function(_, x, y)
@@ -352,8 +352,11 @@ testRunner:addSuite("ScannerMenu", {
                     end,
                 },
             }
-            local savedUIHost = WowVision.UIHost
+            local savedUIHost, savedNotify = WowVision.UIHost, WowVision.notify
             WowVision.UIHost = { closeWindow = function() end }
+            WowVision.notify = function(_, text)
+                notified = text
+            end
             local ok, err = pcall(function()
                 bertAt.x, bertAt.y = 3, 4
                 local stack = openScanner(host, false)
@@ -361,7 +364,7 @@ testRunner:addSuite("ScannerMenu", {
                 local function where()
                     local _, node = focused(host)
                     for _, part in ipairs(graph.announcer.effectiveAnnouncements(node)) do
-                        local text = type(part.text) == "function" and part.text() or part.text
+                        local text = graph.resolveText(part)
                         if text ~= nil and text:find(",") then
                             return text
                         end
@@ -370,12 +373,16 @@ testRunner:addSuite("ScannerMenu", {
                 t:assertEqual(where(), "3,4")
                 bertAt.x, bertAt.y = 30, 40 -- he walked off
                 t:assertEqual(where(), "30,40")
-                bertAt.x, bertAt.y = nil, nil -- the game stops saying: the last place stays
-                t:assertEqual(where(), "30,40")
-                bertAt.x, bertAt.y = 50, 60
+                bertAt.x, bertAt.y = nil, nil -- off your map: no distance, Enter says so
+                t:assertNil(where())
+                enter(host)
+                t:assertEqual(notified, "Position unavailable")
+                t:assertNil(aimed)
+                bertAt.x, bertAt.y = 50, 60 -- back: heard and routed to where he is
+                t:assertEqual(where(), "50,60")
                 enter(host)
             end)
-            WowVision.UIHost = savedUIHost
+            WowVision.UIHost, WowVision.notify = savedUIHost, savedNotify
             bertAt.x, bertAt.y = 3, 4
             assert(ok, err)
             t:assertEqual(aimed, "50,60")
@@ -733,11 +740,52 @@ testRunner:addSuite("ScannerUnits", {
             local x, y = out[1].position()
             t:assertEqual(x, 40)
             t:assertEqual(y, 20)
+            -- no position now; she is read again, so one she gets later is heard
             t:assertEqual(out[2].label, "Cleo")
             t:assertEqual(out[2].unit, nil)
             t:assertEqual(out[2].x, nil)
-            t:assertEqual(out[2].position, nil)
-            t:assertTrue(out[2].onActivate ~= nil)
+            t:assertNil(out[2].position())
+            t:assertEqual(out[2].routeData.unit, "party2")
+        end)
+    end,
+
+    ["a member who left reads no place and no role from whoever took the token"] = function(t)
+        local holder = "Bert"
+        withGame({
+            IsInRaid = function()
+                return false
+            end,
+            GetNumGroupMembers = function()
+                return 2
+            end,
+            UnitExists = function(unit)
+                return unit == "party1"
+            end,
+            UnitIsUnit = function()
+                return false
+            end,
+            UnitName = function()
+                return holder
+            end,
+            UnitGUID = function()
+                return "Player-1-" .. holder
+            end,
+            UnitPosition = function()
+                return holder == "Bert" and 10 or 99, 20
+            end,
+            UnitGroupRolesAssigned = function()
+                return holder == "Bert" and "TANK" or "HEALER"
+            end,
+            UnitLevel = function()
+                return 60
+            end,
+        }, function()
+            local out = scanner.providers.group.build({})
+            t:assertEqual(out[1].nameDetail(), "Tank, Level 60")
+            holder = "Cleo" -- Bert left, Cleo is party1 now
+            t:assertEqual(out[1].label, "Bert")
+            t:assertNil(out[1].nameDetail())
+            t:assertNil(out[1].position())
         end)
     end,
 

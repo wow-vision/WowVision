@@ -45,7 +45,7 @@ For each entry with a position you hear its name, an extra note when it has one,
 
 ### A snapshot, not a live list
 
-The Scanner builds its lists once, when you open it. It does not change while it is open, so it never slows the game down in the middle of a fight or a flight. Only distance and direction update. To bring the lists up to date without closing the window, press Tab to the Refresh button and press Enter. You hear "Refreshed". Opening the Scanner again also builds fresh lists.
+The Scanner builds its lists once, when you open it. It does not change while it is open, so it never slows the game down in the middle of a fight or a flight. Only distance and direction update, and for group members also where the member is now. To bring the lists up to date without closing the window, press Tab to the Refresh button and press Enter. You hear "Refreshed". Opening the Scanner again also builds fresh lists.
 
 Which groups you have opened is remembered between openings until you log out. On your first opening of a session every category is open except Tracking.
 
@@ -63,7 +63,7 @@ The categories are always there, in this order, even when one has nothing to lis
 
 ### Group
 
-Your party or raid members. Each is listed by name, then the zone the member is in, then level, race, class and guild. The game only gives a position for group members who are on your map; for them you also hear distance and direction. Press Enter on such a member to be guided there: the navigation window aims at the member's position at that moment. On a member without a position, Enter says "Position unavailable". With WowNav on WoW: Forever, WowNav is told which member you chose, so a new route or Ctrl+Shift+N reads the member's position again instead of using the old one; see [WowNav](wownav.md). If the member is no longer on your map you hear "No position of the group member available". While you are not in a group, Group says "Empty".
+Your party or raid members. Each is listed by name, then the role the member was given in the group (Tank, Healer or Damage Dealer, left out when none is set), then the zone the member is in, then level, race, class and guild, for example "Bert, Tank, Westfall, Level 60, Dwarf, Warrior". The game only gives a position for group members who are on your map; for them you also hear distance and direction. Their position is read again each time you land on the member, so while the Scanner is open the distance follows the member as they move, and a member who comes onto your map gets one without a Refresh. While you stay on a member who is moving, the new distance is said as it changes, as it is while you walk yourself. Press Enter on such a member to be guided there: the navigation window aims at the member's position at that moment. On a member without a position, Enter says "Position unavailable". A member who left the group since you opened the Scanner is read by name only and has no position. With WowNav on WoW: Forever, WowNav is told which member you chose, so a new route or Ctrl+Shift+N reads the member's position again instead of using the old one; see [WowNav](wownav.md). If the member is no longer on your map you hear "No position of the group member available". While you are not in a group, Group says "Empty".
 
 ### Quests
 
