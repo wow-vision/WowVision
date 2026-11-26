@@ -109,11 +109,27 @@ local function emptyText(node)
     return nil
 end
 
+-- A node that moves (a group member) carries `position`, a function giving
+-- its place now; it is read when the node is spoken or routed to, so the
+-- distance is current without a Refresh. One position read per line spoken,
+-- nothing in the background. Where the game stops giving one, the last
+-- known place stays.
+local function updatePosition(node)
+    if type(node.position) ~= "function" then
+        return
+    end
+    local ok, x, y = pcall(node.position)
+    if ok and x ~= nil and y ~= nil then
+        node.x, node.y = x, y
+    end
+end
+
 local function whereText(node)
     local m = maps()
     if m == nil or node.x == nil then
         return nil
     end
+    updatePosition(node)
     return m:whereText(node.x, node.y)
 end
 
@@ -126,6 +142,7 @@ local function beaconTo(node)
     if m == nil then
         return
     end
+    updatePosition(node)
     WowVision.UIHost:closeWindow(WINDOW)
     if m.openNavigationTo ~= nil then
         m:openNavigationTo(node.x, node.y, labelText(node), node.onArrive, node.routeData, node.match)
@@ -140,6 +157,9 @@ local function navigateNearest(node)
     local m = maps()
     if m == nil then
         return
+    end
+    for _, child in ipairs(resolveChildren(node)) do
+        updatePosition(child)
     end
     local nearest, distance = WowVision.scannerNearest.pick(resolveChildren(node), function(x, y)
         return m:distanceTo(x, y)

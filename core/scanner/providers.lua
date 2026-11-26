@@ -96,26 +96,71 @@ function module.unitPlace(unit, api)
     return readable(place) and place or nil
 end
 
--- A unit's entry: its name, then where it is and its description, read when
--- spoken. What Enter does is up to the category (see the node's `unit` in
--- module.lua).
-local function unitNode(key, unit)
+local ROLE_TEXTS = {
+    TANK = L["Tank"],
+    HEALER = L["Healer"],
+    DAMAGER = L["Damage Dealer"],
+}
+
+-- The group role a unit was given (the role icon on the group frames):
+-- Tank, Healer or Damage Dealer; nil for none or when the game does not
+-- say. api: the game reads (tests pass fakes).
+function module.unitRole(unit, api)
+    api = api or _G
+    if api.UnitGroupRolesAssigned == nil then
+        return nil
+    end
+    local ok, role = pcall(api.UnitGroupRolesAssigned, unit)
+    if not ok or not readable(role) then
+        return nil
+    end
+    return ROLE_TEXTS[role]
+end
+
+-- A unit's entry: its name, then (withRole) its group role, where it is and
+-- its description, read when spoken. What Enter does is up to the category
+-- (see the node's `unit` in module.lua).
+local function unitNode(key, unit, withRole)
     return {
         key = key,
         label = UnitName(unit) or unit,
         nameDetail = function()
-            local place = module.unitPlace(unit)
-            local description = module.unitDescription(unit)
-            if place ~= nil and description ~= nil then
-                return place .. ", " .. description
+            local parts = {}
+            local role = withRole and module.unitRole(unit) or nil
+            if role ~= nil then
+                tinsert(parts, role)
             end
-            return place or description
+            local place = module.unitPlace(unit)
+            if place ~= nil then
+                tinsert(parts, place)
+            end
+            local description = module.unitDescription(unit)
+            if description ~= nil then
+                tinsert(parts, description)
+            end
+            if #parts == 0 then
+                return nil
+            end
+            return table.concat(parts, ", ")
         end,
     }
 end
 
--- The party or raid members. A member whose position the game gives (on
--- the map for everyone in the group) also reads distance and direction;
+-- Where the game puts a group member now; nil when it does not say (another
+-- continent, an instance, a secret value).
+local function memberPosition(unit)
+    local ok, x, y = pcall(UnitPosition, unit)
+    if ok and type(x) == "number" and type(y) == "number"
+        and not (issecretvalue ~= nil and (issecretvalue(x) or issecretvalue(y))) then
+        return x, y
+    end
+    return nil
+end
+
+-- The party or raid members, each with its group role. A member whose
+-- position the game gives (on the map for everyone in the group) also reads
+-- distance and direction; `position` reads it again each time the entry is
+-- spoken, so arrowing onto a member who moved says where they are now.
 -- Enter opens the navigation window aimed at it, and its unit as routeData
 -- lets a route engine read the position again (WowNav: a new route). Enter
 -- on any other member says there is no position.
@@ -130,11 +175,13 @@ module:registerProvider({
         for i = 1, raid and count or math.min(count, 4) do
             local unit = raid and ("raid" .. i) or ("party" .. i)
             if UnitExists(unit) and not UnitIsUnit(unit, "player") then
-                local node = unitNode("unit:" .. unit, unit)
-                local ok, x, y = pcall(UnitPosition, unit)
-                if ok and type(x) == "number" and type(y) == "number"
-                    and not (issecretvalue ~= nil and (issecretvalue(x) or issecretvalue(y))) then
+                local node = unitNode("unit:" .. unit, unit, true)
+                local x, y = memberPosition(unit)
+                if x ~= nil then
                     node.x, node.y = x, y
+                    node.position = function()
+                        return memberPosition(unit)
+                    end
                     node.routeData = { unit = unit }
                 else
                     node.onActivate = function()
