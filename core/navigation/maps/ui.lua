@@ -55,6 +55,25 @@ end
 -- the closest entry point and the target are both selected on open.
 local TARGET_ID = "navigation:target"
 
+-- The target joins the destinations (in place of an earlier one), heads the list and takes the focus.
+local function joinTarget(screen, target)
+    local wp = { id = TARGET_ID, n = target.label, x = target.x, y = target.y, virtual = true, onArrive = target.onArrive,
+        routeData = target.data }
+    -- a route engine that knows the same target (WowNav: the creature, or a target of that name, near the
+    -- position) routes to its own row, with the height the position alone lacks
+    local row = module:engineMatch(screen._engine, target, screen._map)
+    if row ~= nil then
+        wp.x, wp.y, wp.z, wp.routeData = row.x, row.y, row.z, row
+    end
+    screen._waypoints[TARGET_ID] = wp
+    screen._target = wp
+    screen._destinations = nil
+    screen._destIndex = 1
+    if screen.state ~= nil then
+        screen.state.nextSuggestedMove = ControlId.structural("destinations")
+    end
+end
+
 local function ensureData(screen)
     if screen._waypoints ~= nil then
         return true
@@ -80,26 +99,33 @@ local function ensureData(screen)
     local target = module.pendingTarget
     module.pendingTarget = nil
     if target ~= nil then
-        local wp = { id = TARGET_ID, n = target.label, x = target.x, y = target.y, virtual = true, onArrive = target.onArrive,
-            routeData = target.data }
-        -- a route engine that knows the same target (WowNav: the creature, or a target of that name, near the
-        -- position) routes to its own row, with the height the position alone lacks
-        local row = module:engineMatch(screen._engine, target, map)
-        if row ~= nil then
-            wp.x, wp.y, wp.z, wp.routeData = row.x, row.y, row.z, row
-        end
-        screen._waypoints[TARGET_ID] = wp
-        screen._target = wp
-        screen._destIndex = 1
-        if screen.state ~= nil then
-            screen.state.nextSuggestedMove = ControlId.structural("destinations")
-        end
+        joinTarget(screen, target)
     elseif screen.state ~= nil then
         -- the Direct checkbox comes first, the window lands on the selected entry point as before
         screen.state.nextSuggestedMove = ControlId.structural(screen._entryId ~= nil and ("entry:" .. screen._entryId)
             or "entriesEmpty")
     end
     screen._direct = false
+    return true
+end
+
+-- The window was already open when a target came (F10 from the quest log, the scanner's Enter): it comes to the
+-- front on its first screen with everything set in it kept (search, entry point, Direct), the target heads its
+-- destinations and takes the focus. Not open: the target is dropped, it never turns up in a later open. False then.
+function module:aimOpenNavigation()
+    local target = self.pendingTarget
+    local stack = WowVision.UIHost:bringWindowToFront("atlas", true)
+    if stack == nil then
+        self.pendingTarget = nil
+        return false
+    end
+    local screen = stack.screens[1]
+    -- not read yet (no position so far): its first read takes the target
+    if screen._waypoints == nil or target == nil then
+        return true
+    end
+    self.pendingTarget = nil
+    joinTarget(screen, target)
     return true
 end
 

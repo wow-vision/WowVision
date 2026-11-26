@@ -793,7 +793,10 @@ function module:openNavigationTo(wx, wy, label, onArrive, data, match)
         return false
     end
     self.pendingTarget = { x = wx, y = wy, label = label, onArrive = onArrive, data = data, match = match }
-    WowVision.UIHost:openWindow("atlas")
+    -- already open (or not openable): the open window takes the target (ui.lua), else it is dropped
+    if WowVision.UIHost:openWindow("atlas") == nil then
+        self:aimOpenNavigation()
+    end
     return true
 end
 

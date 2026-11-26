@@ -461,6 +461,54 @@ testRunner:addSuite("ScannerMenu", {
             t:assertEqual((focused(host)), "Kobold Camp")
         end)
     end,
+
+    ["F9 from the quest log with the scanner open lands on the quest, in the menu and in the tree"] = function(t)
+        for _, asTree in ipairs({ false, true }) do
+            withHost(function(host)
+                local stack = openScanner(host, asTree)
+                press(host, "down")
+                press(host, "down")
+                t:assertEqual((focused(host)), asTree and "Nearby" or "Group")
+                local quest = host:open({
+                    key = "questLog",
+                    render = function(builder)
+                        builder:addItem(ControlId.structural("q"), nodes.text({ label = "Quest log" }))
+                    end,
+                })
+                WowVision.base.quests = {
+                    safeLogQuest = function()
+                        return 5
+                    end,
+                    scannerQuestPath = function()
+                        return { "quests", "inProgress", "quest:5" }
+                    end,
+                }
+                local savedUIHost = WowVision.UIHost
+                WowVision.UIHost = {
+                    -- already open: no new window (WindowManager:openWindow)
+                    openWindow = function()
+                        return nil
+                    end,
+                    bringWindowToFront = function(_, name, toFirstScreen)
+                        t:assertEqual(name, "scanner")
+                        t:assertTrue(toFirstScreen)
+                        host:focusStack(function(open)
+                            return open == stack
+                        end)
+                        return stack
+                    end,
+                }
+                local ok, err = pcall(scanner.openFromKey, scanner)
+                WowVision.UIHost = savedUIHost
+                assert(ok, err)
+                t:assertNil(scanner.focusQuest, "nothing left for a later open")
+                t:assertEqual(#host.stacks, 2)
+                t:assertTrue(host:focusedStack() == stack, "the scanner is in front of the quest log")
+                t:assertTrue(quest ~= stack)
+                t:assertEqual((focused(host)), "Kobold Camp")
+            end)
+        end
+    end,
 })
 
 -- ---- the Player and Group categories (core/scanner/providers.lua) ----

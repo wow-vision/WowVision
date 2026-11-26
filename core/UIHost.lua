@@ -25,6 +25,11 @@ function UIHost:openWindow(window)
     return self.windowManager:openWindow(window)
 end
 
+-- See WindowManager:bringToFront.
+function UIHost:bringWindowToFront(window, toFirstScreen)
+    return self.windowManager:bringToFront(window, toFirstScreen)
+end
+
 function UIHost:openTemporaryWindow(config)
     return self.windowManager:openTemporaryWindow(config)
 end

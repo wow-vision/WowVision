@@ -123,7 +123,36 @@ function WindowManager:openWindow(windowOrName, props)
         return nil
     end
 
+    -- A WowVision window that is already open (its key pressed again, maybe from another window in front) comes to
+    -- the front as it is: nothing of it is reset. Nil as before: no new window opened.
+    if window:getOpenInstance() ~= nil then
+        self:bringToFront(window.name)
+        return nil
+    end
+
     return window:open(self, props)
+end
+
+-- Focus an open WowVision window as it is, read afresh. toFirstScreen: the screens on top of its first one close (a
+-- context menu, a details screen) and a letter filter on it ends, for a caller that lands somewhere on it (F10 from
+-- the quest log: the quest's target). Its stack, nil when the window is not open.
+function WindowManager:bringToFront(name, toFirstScreen)
+    local window = self.windows[name]
+    local instance = window ~= nil and window:getOpenInstance() or nil
+    local stack = instance ~= nil and instance.stack or nil
+    if stack == nil then
+        return nil
+    end
+    local host = WowVision.graphHost
+    if toFirstScreen then
+        while host:pop(stack) ~= nil do
+        end
+        host:clearListFilter(stack.screens[1], false)
+    end
+    host:focusStack(function(open)
+        return open == stack
+    end)
+    return stack
 end
 
 -- Open an ad-hoc window from a raw config table (not registered)
