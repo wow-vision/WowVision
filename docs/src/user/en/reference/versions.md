@@ -104,7 +104,7 @@ Quest log details per version are on the [Quests](../world/quests.md) page. See 
 | Legacy (reward track, challenges, trees) | No | No | No | No | Yes |
 | Group finder | No | Yes | No | Yes (Dungeon Finder; other tabs not yet) | Yes |
 | LFG Forever (third-party group finder addon) | No | No | No | No | Yes, when the addon is installed |
-| Pet stable | No | Yes | No | No | No |
+| Pet stable | No | Yes | No | No | Yes |
 | Auction house | No | Yes (with price database and full scan) | Yes | Yes (with price database and full scan) | Yes (with price database and full scan) |
 
 See [Collections](../windows/collections.md), [Group Finder](../windows/group-finder.md) and [Auction House](../windows/auction-house.md).

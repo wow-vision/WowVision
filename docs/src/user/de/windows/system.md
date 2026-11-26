@@ -115,6 +115,14 @@ Beispiel: eine Gruppeneinladung annehmen.
 
 Ist das Addon Sku geladen, überlässt WowVision Popups Sku.
 
+### Weltaktualisierung (WoW: Forever)
+
+In WoW: Forever verschiebt dich das Spiel manchmal in eine andere Kopie der Welt, um die Spieler gleichmäßig zu verteilen. Vorher zählt es die Zeit herunter, und du kannst auch sofort wechseln. Das Spiel zeigt das als kleinen Hinweis über dem Chat, nicht als Kasten in der Bildschirmmitte, deshalb gibt es dafür kein Popup-Fenster.
+
+WowVision sagt den Hinweis an, wenn der Countdown beginnt, zum Beispiel „Die Welt wird in 5 Minuten aktualisiert“, und wo du handeln kannst. Es sagt die Zeit noch einmal an, wenn eine Minute übrig ist, und sagt Bescheid, wenn die Zeit abgelaufen ist; ab dann kann das Spiel dich jederzeit verschieben. Sagt das Spiel die Aktualisierung ab, hörst du „Weltaktualisierung abgebrochen“.
+
+Um sofort zu wechseln statt zu warten: Öffne das WowVision-Menü (Umschalt+F1). Solange der Hinweis angezeigt wird, steht Weltaktualisierung ganz oben, mit der verbleibenden Zeit. Drücke darauf Eingabe. Das Spiel öffnet dann seinen eigenen Kasten mit Jetzt aktualisieren und Okay, der als Popup gelesen wird. Jetzt aktualisieren ist im Kampf deaktiviert. Okay schließt den Kasten und lässt den Countdown weiterlaufen.
+
 ## Makros
 
 Öffne das Makrofenster über das Spielmenü (Makros) oder mit dem Slash-Befehl `/macro`. Das Fenster liest sich in zwei Modi.

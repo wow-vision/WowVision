@@ -142,11 +142,11 @@ The text can take a moment to come from the server. WowVision stays quiet until 
 
 ## Pet stable
 
-(The Burning Crusade only.)
+(The Burning Crusade and WoW: Forever.)
 
-Hunters use the pet stable on The Burning Crusade to keep extra pets. Talk to a stable master and choose to open the stable. The window reads:
+Hunters use the pet stable to keep extra pets. Talk to a stable master and choose to open the stable. The window reads:
 
-1. Selected Pet: the pet's level, its loyalty or happiness text where the game shows one, and what it eats.
+1. Selected Pet: the pet's level, its loyalty or happiness text where the game shows one, on WoW: Forever its experience ("XP 1257/2525"), and what it eats.
 2. Slots: the current pet, then Stable slot 1 and Stable slot 2. Each reads its heading, the pet's name and "Level N Family", or "Empty Stable Slot". The slot you have selected says "selected".
 3. Purchase: the button to buy the next slot, with its price.
 4. Money: your money.
@@ -154,10 +154,10 @@ Hunters use the pet stable on The Burning Crusade to keep extra pets. Talk to a 
 
 Stabling and taking a pet out work with the cursor, like items:
 
-- To stable your current pet: press Shift+F10 on the current pet slot, choose Drag, then press Enter on a free stable slot.
-- To bring a stabled pet out: press Shift+F10 on the stabled pet, choose Drag, then press Enter on the current pet slot. The two pets swap if you already have one.
+- To stable your current pet: press a Drag key (\\ or Ctrl+D) on the current pet slot, then press Enter on a free stable slot.
+- To bring a stabled pet out: press a Drag key on the stabled pet, then press Enter on the current pet slot. The two pets swap if you already have one.
 - Enter on a slot with nothing on your cursor selects it, and the window shows that pet's details.
 
-The Drag keys (\\ and Ctrl+D) do nothing on stable slots, so use the Drag entry of the context menu.
+The Drag entry of a slot's context menu (Shift+F10) does the same as the Drag keys.
 
-Classic Era, Mists of Pandaria, Retail and WoW: Forever have no stable reader.
+Classic Era, Mists of Pandaria and Retail have no stable reader.

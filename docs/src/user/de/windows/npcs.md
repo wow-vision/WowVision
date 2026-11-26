@@ -142,11 +142,11 @@ Der Text kann einen Moment brauchen, bis er vom Server kommt. WowVision bleibt s
 
 ## Tierstall
 
-(Nur The Burning Crusade.)
+(The Burning Crusade und WoW: Forever.)
 
-Jäger benutzen in The Burning Crusade den Tierstall, um zusätzliche Tiere unterzubringen. Sprich mit einem Stallmeister und wähle, den Stall zu öffnen. Das Fenster liest:
+Jäger benutzen den Tierstall, um zusätzliche Tiere unterzubringen. Sprich mit einem Stallmeister und wähle, den Stall zu öffnen. Das Fenster liest:
 
-1. Ausgewähltes Tier (Selected Pet): die Stufe des Tiers, den Text zu Loyalität oder Zufriedenheit, wo das Spiel einen zeigt, und was es frisst.
+1. Ausgewähltes Tier (Selected Pet): die Stufe des Tiers, den Text zu Loyalität oder Zufriedenheit, wo das Spiel einen zeigt, in WoW: Forever seine Erfahrung („XP 1257/2525“), und was es frisst.
 2. Plätze (Slots): das aktuelle Tier, dann Stallplatz 1 und Stallplatz 2. Jeder liest seine Überschrift, den Namen des Tiers und „Stufe N Familie“ oder „Leerer Stallplatz“. Der Platz, den du gewählt hast, sagt „ausgewählt“.
 3. Kaufen (Purchase): die Schaltfläche, um den nächsten Platz zu kaufen, mit ihrem Preis.
 4. Geld (Money): dein Geld.
@@ -154,10 +154,10 @@ Jäger benutzen in The Burning Crusade den Tierstall, um zusätzliche Tiere unte
 
 Ein Tier einstallen und herausholen funktioniert mit dem Cursor, wie bei Gegenständen:
 
-- Um dein aktuelles Tier einzustallen: Drücke Umschalt+F10 auf dem Platz des aktuellen Tiers, wähle Ziehen und drücke dann Eingabe auf einem freien Stallplatz.
-- Um ein eingestalltes Tier herauszuholen: Drücke Umschalt+F10 auf dem eingestallten Tier, wähle Ziehen und drücke dann Eingabe auf dem Platz des aktuellen Tiers. Die beiden Tiere tauschen, wenn du schon eins hast.
+- Um dein aktuelles Tier einzustallen: Drücke eine Taste für Ziehen (\\ oder Strg+D) auf dem Platz des aktuellen Tiers und dann Eingabe auf einem freien Stallplatz.
+- Um ein eingestalltes Tier herauszuholen: Drücke eine Taste für Ziehen auf dem eingestallten Tier und dann Eingabe auf dem Platz des aktuellen Tiers. Die beiden Tiere tauschen, wenn du schon eins hast.
 - Eingabe auf einem Platz wählt ihn aus, wenn nichts auf deinem Cursor liegt, und das Fenster zeigt die Details dieses Tiers.
 
-Die Tasten für Ziehen (\\ und Strg+D) tun auf Stallplätzen nichts, benutze also den Eintrag Ziehen im Kontextmenü. (\\ liegt auf deutschen Tastaturen auf Alt Gr+ß; belege die Aktion bei Bedarf um.)
+Der Eintrag Ziehen im Kontextmenü eines Platzes (Umschalt+F10) tut dasselbe wie die Tasten für Ziehen. (\\ liegt auf deutschen Tastaturen auf Alt Gr+ß; belege die Aktion bei Bedarf um.)
 
-Classic Era, Mists of Pandaria, Retail und WoW: Forever haben keinen Stall-Leser.
+Classic Era, Mists of Pandaria und Retail haben keinen Stall-Leser.

@@ -1,2 +1,12 @@
+### Summary
+A small release with two fixes for things that went silent and one for new players. On WoW: Forever, the world refresh is said again: the game now shows its countdown as a small notice instead of a popup, WowVision says the time left and reminds you, and World Refresh at the top of the WowVision menu lets you go at once. Also on WoW: Forever, the hunter's pet stable is now read, and the Drag keys work on stable slots there and on The Burning Crusade. For new players on every version: the game's key binding Interact With Target, the key that talks to characters, loots and opens mailboxes, has no key until you give it one. WowVision now says so after login, and Apply Recommended Game Settings in the UI menu gives it the key G.
+
+The full manual is online, in English and German: [WowVision documentation](https://wow-vision.github.io/WowVision/).
+
 ### All Versions
 * Interact With Target: this key binding of the game, the key that talks to a character, loots a corpse and opens a mailbox, has no key until you give it one, and until now nothing said so. Apply Recommended Game Settings (WowVision menu, UI) now gives it the key G. It only does so when it has no key yet: G is taken from Target Last Hostile, which holds it in the game's default keys, but a G you gave to anything else is left alone and the report names what holds it. While it has no key, WowVision says so a few seconds after you enter the world, once per session, and tells you how to reach the button. The message can be switched off with the new UI setting Say at Login When Interact With Target Has No Key.
+* Pet stable (The Burning Crusade and WoW: Forever): the Drag keys (\\ and Ctrl+D) now pick up the pet on a stable slot, as Drag in the slot's context menu does. Before, they did nothing there.
+
+### Forever
+* World refresh: when the game is about to move you to another copy of the world, WowVision says so again. The game now shows this as a small notice over the chat instead of a popup, and nothing read it. You hear the time left when the countdown starts, again at one minute, and when the time is up; a cancelled refresh is said too. To go at once, open the WowVision menu: World Refresh is at the top while the notice is up, and Enter on it opens the game's own box with Refresh Now.
+* Pet stable: the hunter's stable is now read on WoW: Forever, as on The Burning Crusade: the selected pet with its level, loyalty, experience and what it eats, the slots, Purchase with the price of the next slot, and your money. Before, the window was silent there.

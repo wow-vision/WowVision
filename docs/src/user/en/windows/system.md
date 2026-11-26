@@ -117,6 +117,14 @@ Example: accept a group invitation.
 
 If the addon Sku is loaded, WowVision leaves popups to Sku.
 
+### World refresh (WoW: Forever)
+
+On WoW: Forever the game sometimes moves you to another copy of the world to even out how many players are in each. It counts the time down first, and it lets you go at once. The game shows this as a small notice over the chat, not as a box in the middle of the screen, so there is no Popup window for it.
+
+WowVision says the notice when the countdown starts, for example "The world will refresh in 5 minutes", and where to act. It says the time again when one minute is left, and tells you when the time is up; from then on the game can move you at any moment. If the game calls the refresh off, you hear "World refresh cancelled".
+
+To go at once instead of waiting: open the WowVision menu (Shift+F1). While the notice is up, World Refresh is at the top, with the time left. Press Enter on it. The game then opens its own box with Refresh Now and Okay, which reads as a Popup. Refresh Now is disabled while you are in combat. Okay closes the box and leaves the countdown running.
+
 ## Macros
 
 Open the macro window with the game menu (Macros) or with the slash command `/macro`. The window reads in two modes.

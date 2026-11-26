@@ -408,6 +408,8 @@ do
 end
 loadAddonFile("retail/groupHealth/moduleTests.lua")
 loadAddonFile("retail/groupHealth/dispelTests.lua")
+loadAddonFile("camelot/worldRefresh.lua")
+loadAddonFile("camelot/worldRefreshTests.lua")
 loadAddonFile("camelot/petTraining.lua")
 loadAddonFile("camelot/petTrainingTests.lua")
 loadAddonFile("core/gameDB/itemQuality.lua")
